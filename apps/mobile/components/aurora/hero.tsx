@@ -20,7 +20,6 @@ import {
   heroNavMaterial,
   heroRailPin,
   heroSnapTarget,
-  heroStatusBar,
   heroTitleType,
   isDetour,
   type HeroBackdrop as HeroBackdropKind,
@@ -31,7 +30,7 @@ import {
 import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../../lib/layout";
 import { useNavScroll } from "../../lib/nav-scroll";
 import { useTheme } from "../../lib/theme";
-import { F, serifIf, useEntrance, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
+import { F, useEntrance, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
@@ -236,7 +235,7 @@ export function HeroAccessory({ label, onPress, active, onDark = true }: { label
  *  two-line title share the same last baseline — nothing below the hero moves
  *  because a name got longer. */
 export function HeroTitle({ title, rank, onDark = true, style }: { title: string; rank: HeroRank; onDark?: boolean; style?: StyleProp<ViewStyle> }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const type = heroTitleType(title, rank);
   return (
     <Text
@@ -244,7 +243,7 @@ export function HeroTitle({ title, rank, onDark = true, style }: { title: string
       numberOfLines={type.maxLines}
       style={[
         {
-          fontFamily: serifIf(scheme, F.black),
+          fontFamily: F.black,
           fontSize: type.size,
           lineHeight: type.lineHeight,
           letterSpacing: type.tracking * type.size,
@@ -509,7 +508,7 @@ export function HeroScreen({
   scroller?: HeroScrollerFn;
   children?: ReactNode;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const insets = useSafeAreaInsets();
   const mode = hero.mode ?? "page";
   const accent = hero.accent ?? C.lime;
@@ -520,7 +519,7 @@ export function HeroScreen({
   const safeTop = usePresented() ? Math.max(insets.top, HERO.presentedTop) : insets.top;
   const geom = heroGeometry(hero.rank, safeTop, mode);
   const backdrop = heroBackdrop(hero.rank, mode, !!hero.glyph || !!hero.artPaths?.length);
-  const onDark = backdrop !== "field" || scheme === "dark";
+  const onDark = true;
   const dark = backdrop !== "field";
 
   const scrollRef = useRef<ScrollView>(null);
@@ -635,7 +634,7 @@ export function HeroScreen({
         // of this container's measuring — see the dock point above.)
         style={{ marginHorizontal: -HERO.gutter.edge, backgroundColor: withAlpha(C.ink, 0.88), borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line, overflow: "hidden" }}
       >
-        <BlurView intensity={26} tint={scheme === "light" ? "light" : "dark"} style={StyleSheet.absoluteFill} />
+        <BlurView intensity={26} tint="dark" style={StyleSheet.absoluteFill} />
         {rail}
       </View>
     </Animated.View>
@@ -650,16 +649,15 @@ export function HeroScreen({
 
   return (
     <View style={{ flex: 1, backgroundColor: dark ? (mode === "takeover" ? HERO_TAKEOVER_INK : C.ink) : C.ink }}>
-      <StatusBar style={heroStatusBar(hero.rank, mode, scheme)} />
+      <StatusBar style="light" />
       {backdrop === "field" && <AuroraField />}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.View style={[{ flex: 1 }, entrance]}>
           {/* the hero ink bleeding into the page — glued to the CONTENT, so it
               slides up under the pinned hero and is gone by the time the
               collapsed bar's hairline takes over as the edge. Dark grounds
-              only: on the light theme a dark cover meeting warm paper is a real
-              boundary, not an artifact. */}
-          {dark && scheme !== "light" && (
+              only. */}
+          {dark && (
             <Animated.View
               pointerEvents="none"
               style={{ position: "absolute", left: 0, right: 0, top: geom.height - BLEED_OVER, height: BLEED_OVER + BLEED_FADE, opacity: scrimOpacity as never, transform: [{ translateY: Animated.multiply(scrollY, -1) }] }}
@@ -707,7 +705,7 @@ export function HeroScreen({
                 its substrate arrive together. */}
             {!dark && (
               <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: geom.barHeight, overflow: "hidden", opacity: hairlineOpacity as never }}>
-                <BlurView intensity={26} tint={scheme === "light" ? "light" : "dark"} style={StyleSheet.absoluteFill} />
+                <BlurView intensity={26} tint="dark" style={StyleSheet.absoluteFill} />
                 <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(C.ink, 0.72) }]} />
               </Animated.View>
             )}
@@ -745,7 +743,7 @@ export function HeroScreen({
               {/* the collapsed bar's inline title — arrives only after the
                   display title has fully left, so the two are never both up */}
               <Animated.View pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: "absolute", left: HERO.nav.hit + 8, right: HERO.nav.hit + 8, alignItems: "center", justifyContent: "center", height: HERO.rail.height, opacity: inlineOpacity as never }}>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: onDark ? "#fff" : C.chalk }}>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: onDark ? "#fff" : C.chalk }}>
                   {hero.title}
                 </Text>
               </Animated.View>

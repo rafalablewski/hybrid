@@ -180,7 +180,7 @@ describe("source marks", () => {
     // lays out at ~41px wide without the renderer having to measure anything.
     expect(m.aspect).toBeCloseTo(1.593, 2);
     // The keylines between the letterforms are HOLES, not painted white: that
-    // is what keeps the mark legible on the charcoal card and the washi one.
+    // is what keeps the mark legible on the charcoal card.
     expect(m.svg).toContain('fill-rule="evenodd"');
     expect(sourceMarkCredits().find((c) => c.sourceId === "max-premium-burgers")!.credit)
       .toMatch(/Max Burgers AB/);
@@ -191,8 +191,8 @@ describe("source marks", () => {
     expect(m.svg).toMatch(/^<svg/);
     expect(m.alt).toBe("Lidl");
     expect(m.aspect).toBe(1); // the roundel is square
-    // A SOLID badge, not knockouts: it carries its own ground, so it reads the
-    // same on the AURORA charcoal card and the Kyoto Hour washi one.
+    // A SOLID badge, not knockouts: it carries its own ground, so it reads on
+    // the AURORA charcoal card without depending on it.
     for (const hex of ["#0050AA", "#FFF000", "#E60A14"]) expect(m.svg).toContain(hex);
     // Sizes to whatever the renderer asks for: viewBox kept, width/height gone.
     expect(m.svg).toContain('viewBox="0 0 60 60"');

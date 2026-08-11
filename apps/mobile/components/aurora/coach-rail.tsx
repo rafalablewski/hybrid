@@ -3,7 +3,7 @@ import { View, Text, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 import RailTail from "./rail-tail";
@@ -59,13 +59,10 @@ const SCREEN_PAD = GUTTER;
 // with it — a rail always ends in its exit, so there was nothing left for the
 // flag to switch off. Mirrors web coach-rail.tsx.
 export default function CoachRail({ onOpen, headerless = false, bleed = false }: { onOpen: () => void; headerless?: boolean; bleed?: boolean }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
-  // Soft theme-aware card lift (web --shadow-card parity): warm sumi-wash on
-  // Kyoto Hour, the usual black bloom on Aurora — never black on washi.
-  const cardShadow = scheme === "light"
-    ? ({ shadowColor: "#584934", shadowOpacity: 0.3, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const)
-    : ({ shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const);
+  // Soft card lift (web --shadow-card parity) — the black bloom.
+  const cardShadow = { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 } as const;
   const [coaches, setCoaches] = useState<DiscoverCoach[] | null>(null);
 
   useEffect(() => {
@@ -80,7 +77,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
     <View style={{ marginTop: headerless ? 0 : 18 }}>
       {!headerless && (
         <View style={{ marginBottom: 10 }}>
-          <Text style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 17 }}>{t("w.explore.coaches")}</Text>
+          <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: 17 }}>{t("w.explore.coaches")}</Text>
           <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>{t("w.explore.coachSwipe")}</Text>
         </View>
       )}
@@ -108,12 +105,12 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
                   <Text style={{ color: accentText, fontFamily: F.mono, fontWeight: "700", fontSize: 13 }}>{initials(c.name)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  {/* Name in the display face — Mincho under Kyoto Hour — so the
-                      person leads the card the way a byline leads an article. */}
+                  {/* Name in the display face, so the person leads the card
+                      the way a byline leads an article. */}
                   {/* Name + check as row siblings: nested inside one truncating
                       Text the ✓ would be the first thing ellipsized away. */}
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ color: C.chalk, fontFamily: serifIf(scheme, F.black), fontSize: 16, flexShrink: 1 }}>{c.name}</Text>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ color: C.chalk, fontFamily: F.black, fontSize: 16, flexShrink: 1 }}>{c.name}</Text>
                     {c.verified ? <Text style={{ color: accentText, fontSize: 12, marginLeft: 4 }}>✓</Text> : null}
                   </View>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, fontWeight: "600", letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>

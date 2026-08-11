@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, TextInput, FlatList, RefreshControl, Animated } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
-import { LoadSwap, F, fs, leading, serifIf, tracking, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
+import { LoadSwap, F, fs, leading, tracking, useScreenBottomPad, useHubDissolve, PressScale as Pressable } from "../lib/ui";
 import { router } from "expo-router";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -36,7 +36,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   // The face travels into the page this opens — see lib/shared-element.
   const armPerson = usePersonSource();
   const { notify, confirm } = useConfirm();
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const units = useLoggerPrefs().units;
   const [feed, setFeed] = useState<FeedItemView[] | null>(null);

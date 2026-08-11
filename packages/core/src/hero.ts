@@ -193,11 +193,11 @@ export const HERO_TAKEOVER_INK = "#0a0b09";
  *
  * This existed as the bare literal `#0e0f0d` at seven sites before it had a
  * name, which made it indistinguishable from a theme-token BUG: the same literal
- * was also being used on ordinary themed screens, where it does not flip under
- * Kyoto Hour and strands a control at the wrong end of the value scale. Naming
- * it separates the two cases — on a takeover, fixed-dark is the intent (a
- * printed object does not change colour because the room did); anywhere else,
- * this constant is the wrong tool and `palette.ink2` is the right one.
+ * was also being used on ordinary themed screens, where a hardcoded surface
+ * strands a control off the palette. Naming it separates the two cases — on a
+ * takeover, fixed-dark is the intent (a printed object does not change colour
+ * because the room did); anywhere else, this constant is the wrong tool and
+ * `palette.ink2` is the right one.
  */
 export const HERO_TAKEOVER_RAISED = "#0e0f0d";
 
@@ -438,14 +438,6 @@ export function heroBackdrop(rank: HeroRank, mode: HeroMode, hasArt: boolean): H
  *  levels of the same stack therefore never read as the same cover. */
 export function heroLight(level: "container" | "item"): HeroLight {
   return level === "container" ? "left" : "right";
-}
-
-/** A cover is fixed-dark in both themes, so its status bar content is ALWAYS
- *  light. A `title` hero follows the theme — except once collapsed under a
- *  scrolled dark page, which the client resolves from `heroLayers().barred`. */
-export function heroStatusBar(rank: HeroRank, mode: HeroMode, scheme: "light" | "dark"): "light" | "dark" {
-  if (mode === "takeover" || rank === "cover") return "light";
-  return scheme === "light" ? "dark" : "light";
 }
 
 /* ── 7. THE NAVIGATION BUTTON ────────────────────────────────────────────── */

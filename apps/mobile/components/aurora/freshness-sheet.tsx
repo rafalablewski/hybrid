@@ -6,12 +6,11 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, fs, F, serifIf } from "../../lib/ui";
+import { leading, fs, F } from "../../lib/ui";
 import { withAlpha } from "./kit";
 import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-type Scheme = ReturnType<typeof useTheme>["scheme"];
 
 /**
  * THE FRESHNESS EXPLAINER (mobile) — the door under "Strength fresh" and
@@ -36,7 +35,7 @@ export default function FreshnessSheet({ explain, onClose }: {
   explain: FreshnessExplain | null;
   onClose: () => void;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   // Hold the last explanation through the EXIT animation. Reading `explain`
   // directly would empty the panel the instant it starts sliding down, so the
@@ -55,13 +54,13 @@ export default function FreshnessSheet({ explain, onClose }: {
               rule as the headline above it, and the one sentence that says what
               it does to that headline. */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 44, letterSpacing: -1, color: txt(C, roleColor(C, e.role)) }}>{e.score}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: txt(C, roleColor(C, e.role)) }}>{e.score}</Text>
             <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>
               {t("w.home.fresh.rollup").replace("{n}", String(e.weightPct))}
             </Text>
           </View>
 
-          <Block C={C} scheme={scheme} head={t("w.home.fresh.whatHead")}>
+          <Block C={C} head={t("w.home.fresh.whatHead")}>
             <P C={C}>{t(copy.what)}</P>
           </Block>
 
@@ -70,7 +69,6 @@ export default function FreshnessSheet({ explain, onClose }: {
               zeros and letting the reader mistake an absence for an all-clear. */}
           <Block
             C={C}
-            scheme={scheme}
             head={t(copy.inputs)}
             meta={e.pillar === "strength" ? t("w.home.fresh.colFatigue") : t("w.home.fresh.colLoad")}
           >
@@ -85,7 +83,7 @@ export default function FreshnessSheet({ explain, onClose }: {
             )}
           </Block>
 
-          <Block C={C} scheme={scheme} head={t("w.home.fresh.howHead")}>
+          <Block C={C} head={t("w.home.fresh.howHead")}>
             <P C={C}>{t(copy.how)}</P>
             <P C={C} dim>{t("w.home.fresh.decay").replace("{n}", String(e.halfLifeDays))}</P>
             <P C={C} dim>
@@ -97,13 +95,13 @@ export default function FreshnessSheet({ explain, onClose }: {
 
           {/* THE LEDGER — the same shape the readiness drawer uses, ending on
               the very figure at the top of this sheet. */}
-          <Block C={C} scheme={scheme} head={t("w.home.fresh.ledgerHead")}>
+          <Block C={C} head={t("w.home.fresh.ledgerHead")}>
             <View style={{ gap: 8 }}>
               {e.steps.map((s, i) => <Step key={i} C={C} step={s} t={t} />)}
             </View>
           </Block>
 
-          <Block C={C} scheme={scheme} head={t("w.home.fresh.limitHead")}>
+          <Block C={C} head={t("w.home.fresh.limitHead")}>
             <P C={C}>{t(copy.limit)}</P>
           </Block>
         </View>
@@ -115,13 +113,13 @@ export default function FreshnessSheet({ explain, onClose }: {
 /* ---------- small primitives ---------- */
 /** One section: the SectionHead idiom — display-face title left, mono meta on
  *  the RIGHT of the same row, and never a marker before it (house rule). */
-function Block({ C, scheme, head, meta, children }: {
-  C: Palette; scheme: Scheme; head: string; meta?: string; children: ReactNode;
+function Block({ C, head, meta, children }: {
+  C: Palette; head: string; meta?: string; children: ReactNode;
 }) {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
-        <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 15, color: C.chalk }}>{head}</Text>
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: 15, color: C.chalk }}>{head}</Text>
         {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{meta}</Text> : null}
       </View>
       {children}

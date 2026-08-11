@@ -5,7 +5,7 @@ import { ago, searchSports, sportIndex, sportIndexMeta, type LoggedSession, type
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
 import { useListMotion } from "../../lib/list-motion";
 
@@ -22,7 +22,7 @@ import { useListMotion } from "../../lib/list-motion";
 export default function AuroraSport() {
   // Survivors of a filter MOVE to their new positions; only arrivals fade.
   const refilter = useListMotion();
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
@@ -72,7 +72,7 @@ export default function AuroraSport() {
     list.length === 0 ? null : (
       <View style={{ marginTop: space.xxl }}>
         <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md, marginBottom: space.xs }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
           {!!meta && <Text style={{ ...mono(fs.micro), textTransform: "uppercase", letterSpacing: 1.2 }}>{meta}</Text>}
         </View>
         {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} showTransfer={showTransfer} />)}

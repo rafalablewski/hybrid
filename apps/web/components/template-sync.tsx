@@ -6,7 +6,7 @@ import { useTemplate } from "@/lib/use-template";
 /**
  * Mirrors the active UI template onto <html data-template> so global CSS in
  * globals.css ([data-template="aurora"] …) can soften every app-shell screen
- * to the Aurora look, the same way data-theme drives light/dark. Renders null.
+ * to the Aurora look. Renders null.
  */
 export default function TemplateSync() {
   const { template } = useTemplate();

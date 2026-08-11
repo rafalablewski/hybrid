@@ -1,16 +1,16 @@
 /**
- * Theme palettes — the single source of truth for the app's light/dark surface,
- * text and FOREGROUND-accent colours.
+ * Theme palette — the single source of truth for the app's surface, text and
+ * FOREGROUND-accent colours.
  *
- * MIRRORED by apps/web/app/globals.css (the `:root` defaults + the
- * `[data-theme="light"]` overrides). Keep the two in lockstep — the contrast
- * test (theme.test.ts) guards the ratios, but it can only see THIS file.
+ * MIRRORED by apps/web/app/globals.css (the `:root` defaults). Keep the two in
+ * lockstep — the contrast test (theme.test.ts) guards the ratios, but it can
+ * only see THIS file.
  *
  * Note: the bright accents in brand.ts (lime/blue/…) are used for fills,
- * borders and chart strokes and stay fixed across themes; `accentText` here is
- * the darkened-on-light variant used when an accent is rendered as TEXT.
+ * borders and chart strokes; `accentText` here is the variant used when an
+ * accent is rendered as TEXT.
  *
- * AURORA SPECTRUM: the dark accents are the brand's coolors palette (chartreuse
+ * AURORA SPECTRUM: the accents are the brand's coolors palette (chartreuse
  * / teal / sand / terracotta). The raw teal/terracotta fills are a touch dark to
  * read as small TEXT on the card, so `accentText.blue`/`.red` are lifted variants
  * that clear WCAG AA (guarded by palette.test.ts); chartreuse/sand are already
@@ -29,35 +29,25 @@ export interface ThemePalette {
   chalk: string;
   /** muted text */
   ash: string;
-  /** the PRIMARY action fill for this theme (a filled button / FAB / progress).
-   *  Per-theme so light stops borrowing the fixed dark-theme chartreuse fill —
-   *  dark keeps chartreuse; light (Kyoto Hour) uses pine. */
+  /** the PRIMARY action fill (a filled button / FAB / progress) — chartreuse. */
   accent: string;
   /** text/icon colour that sits ON the `accent` fill (guarded ≥ AA vs `accent`). */
   onAccent: string;
-  /** rating GOLD (coach ★ ratings) — a Pantone-gold, lifted on dark / deepened on
-   *  light so it reads as gold on either surface. Decorative (not AA-guarded). */
+  /** rating GOLD (coach ★ ratings) — a Pantone-gold, lifted so it reads as gold
+   *  on the dark card. Decorative (not AA-guarded). */
   gold: string;
   /** accent colours when used as foreground text */
   accentText: { lime: string; blue: string; violet: string; amber: string; red: string };
 }
 
-export type ThemeName = "dark" | "light";
+export type ThemeName = "dark";
 
 /**
- * Two disciplined themes (see reference/today-cockpit-design-concepts and
- * design/japandi-light-10-kyoto-hour.html):
- * - `dark`  = AURORA — a true neutral charcoal ramp; chartreuse is the single
- *             accent fill, red is kept strictly for risk.
- * - `light` = KYOTO HOUR — the true-Japandi light theme. Warm washi-ivory
- *             surfaces (lifted well above the old midtone oat ground so cards
- *             actually float), sumi-ink text, and a deep PINE green primary
- *             action carrying an ivory ink. The old brick-clay fill is retired:
- *             on the midtone ground it read as mud. Vermilion (the hanko-seal
- *             red) rides the `red` accent-text channel — a mark, never a fill.
- * Both `accent`/`onAccent` (the action fill + its ink) and `accentText` are
- * per-theme, so every action and every accent-as-text clears AA on the theme's
- * own surfaces (guarded by palette.test.ts).
+ * One disciplined theme (see reference/today-cockpit-design-concepts):
+ * - `dark` = AURORA — a true neutral charcoal ramp; chartreuse is the single
+ *            accent fill, red is kept strictly for risk.
+ * Both `accent`/`onAccent` (the action fill + its ink) and `accentText` clear
+ * AA on the theme's surfaces (guarded by palette.test.ts).
  */
 export const THEMES: Record<ThemeName, ThemePalette> = {
   dark: {
@@ -75,36 +65,5 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     // are lifted (#6cb6bd / #e58a5c) to clear AA on the card; `violet` (now a
     // steel/slate blue coach accent) is lifted to #8ba0cc for the same reason.
     accentText: { lime: "#c6f84f", blue: "#6cb6bd", violet: "#8ba0cc", amber: "#d0cd94", red: "#e58a5c" },
-  },
-  // KYOTO HOUR — the warm light theme. Surfaces run as a WASHI ramp that gets
-  // LIGHTER as it rises: ground #f6f3ea → raised #faf7ef → near-white card
-  // #fcfaf3, each a clear step so cards float (the first cut shipped ink2
-  // DARKER than the ground — an inverted ramp that sank every card into the
-  // page and read flat), with a soft warm hairline #e6e1d2. The PRIMARY action is a
-  // deep PINE (#44584c) carrying an ivory ink (#f2f5ef, 6.95:1). The SAGE
-  // secondary (#5f6d4b) lives on the `blue`/conditioning channel (see
-  // globals.css --color-blue + mobile paletteFor). accent-text: `lime` is the
-  // pine-as-text tone, `blue` is the sage-as-text tone, `red` is the hanko
-  // VERMILION (#a3442f) — violet/amber keep their darkened hues. Every value
-  // clears WCAG AA on the washi card (guarded by palette.test.ts). MIRROR any
-  // change in apps/web/app/globals.css ([data-theme="light"]) and
-  // apps/mobile/lib/theme.tsx.
-  light: {
-    ink: "#f6f3ea",
-    ink2: "#faf7ef",
-    card: "#fcfaf3",
-    line: "#e6e1d2",
-    chalk: "#2b2a26",
-    ash: "#6f6b5e",
-    accent: "#44584c", // pine — the primary action fill
-    onAccent: "#f2f5ef", // ivory ink on the pine fill
-    gold: "#b58a24", // deep antique gold — reads as gold on the washi card
-    // `amber` is a deep OCHRE (#885c00), not the brown it used to be (#875427).
-    // The brown sat ΔE 13 from the hanko vermilion beside it — both cleared AA
-    // against the paper and were still the same warm mark at an 8px swatch,
-    // which is what the readiness ledger's tissue and wearable rows are. Ochre
-    // moves it up the hue circle to ΔE 22 from vermilion and 22 from sage, in
-    // line with the dark set's own floor. Guarded by palette.test.ts.
-    accentText: { lime: "#3c4f43", blue: "#4f5c3a", violet: "#4c5a78", amber: "#885c00", red: "#a3442f" },
   },
 };

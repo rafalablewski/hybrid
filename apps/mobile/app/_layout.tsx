@@ -11,10 +11,6 @@ import {
   Archivo_900Black,
 } from "@expo-google-fonts/archivo";
 import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
-// Kyoto Hour (light) hero headings use the Shippori Mincho Japanese book serif
-// (parity with web's --font-heading); Aurora keeps Archivo. Loaded here,
-// applied via serifIf().
-import { ShipporiMincho_500Medium, ShipporiMincho_600SemiBold, ShipporiMincho_700Bold, ShipporiMincho_800ExtraBold } from "@expo-google-fonts/shippori-mincho";
 import { springs, springDurationMs, MODAL_SCREENS, COVER_SCREENS } from "@hybrid/core";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
@@ -64,7 +60,7 @@ const MOBILE_COVERS = COVER_SCREENS.filter((r) => r !== "log");
 // light/dark (system by default, overridable in Settings). In Aurora it also
 // renders the global floating pill nav over every screen (self-gating).
 function Shell() {
-  const { scheme, palette } = useTheme();
+  const { palette } = useTheme();
   // The presenting surface that scales back while a sheet is up. Everything the
   // sheet covers lives inside it — navigator AND the system tab bar — so the
   // whole app recedes as one plane, the way iOS presents a sheet.
@@ -81,7 +77,7 @@ function Shell() {
   }, []);
   return (
     <NavScrollProvider>
-      <StatusBar style={scheme === "light" ? "dark" : "light"} />
+      <StatusBar style="light" />
       {/* Black ground so the receded card's rounded corners actually read —
           the same reason iOS darkens the window behind a presented sheet. */}
       <Animated.View style={[{ flex: 1, backgroundColor: palette.ink, overflow: "hidden" }, recede]}>
@@ -195,10 +191,6 @@ export default function RootLayout() {
     Archivo_900Black,
     JetBrainsMono_400Regular,
     JetBrainsMono_700Bold,
-    ShipporiMincho_500Medium,
-    ShipporiMincho_600SemiBold,
-    ShipporiMincho_700Bold,
-    ShipporiMincho_800ExtraBold,
   });
 
   if (!loaded) return <View style={{ flex: 1, backgroundColor: C.ink }} />;

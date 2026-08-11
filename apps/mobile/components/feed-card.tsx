@@ -24,7 +24,7 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import { colors } from "@hybrid/core";
-import { F, fs, leading, serifIf, tracking, PressScale as Pressable } from "../lib/ui";
+import { F, fs, leading, tracking, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { runShare, toggleSavedPost, useFeedSaved } from "../lib/feed-actions";
@@ -401,7 +401,7 @@ export interface FeedCardProps {
 }
 
 export default function FeedCard({ item, units, onOpenProfile, onKudos, onComments, onOpen, onDelete, onAuthorChanged, children }: FeedCardProps) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const d = item.detail;
   const moment = d?.moment ?? "p2";
@@ -416,11 +416,9 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const records = cardRecords(d);
   const setLines = cardSetLines(d?.sets, records.shown);
 
-  // The app's TITLE face (serifIf — the twin of web's --font-heading): Archivo
-  // under Aurora, Shippori Mincho under Kyoto Hour. A post's headline is a
-  // heading, so it swaps with every other heading in the product — otherwise
-  // the feed is the one tab still in sans on the light theme, with its own
-  // "Now training" head in serif directly above it.
+  // The app's TITLE face (the twin of web's --font-heading): Archivo. A post's
+  // headline is a heading, so it draws in the same face as every other heading
+  // in the product.
   //
   // ONE loud thing per card. A p0 that carries a hero figure sets its headline
   // at the ordinary title rung: the number is the moment, and a display-weight
@@ -428,8 +426,8 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   // some future archetype that leads with words — still gets the big rung.
   const headlineStyle: TextStyle =
     moment === "p0" && !lead
-      ? { fontFamily: serifIf(scheme, F.black), fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking.display }
-      : { fontFamily: serifIf(scheme, F.bold), fontSize: fs.title, lineHeight: leading(fs.title, "snug") };
+      ? { fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking.display }
+      : { fontFamily: F.bold, fontSize: fs.title, lineHeight: leading(fs.title, "snug") };
 
   // "Why you're seeing this" — a ranked card from someone the viewer doesn't
   // follow must be able to say why it's here, or it shouldn't be here at all.

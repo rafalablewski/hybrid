@@ -33,7 +33,7 @@ import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { useFitnessLevel } from "../../lib/use-fitness-level";
-import { leading, fs, F, serifIf, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS, CARD_PAD, ASection } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
@@ -47,10 +47,9 @@ type P = ReturnType<typeof useTheme>["palette"];
 /**
  * The badge's ink. The level ramp reuses the palette's existing tones rather
  * than inventing a colour per tier — ash and chalk for the lower tiers, the
- * lime accent-TEXT tone for advanced, gold reserved for elite. Every one is a
- * per-theme AA-guarded value (palette.test.ts), so the chip clears contrast on
- * Kyoto Hour's washi card as well as on Aurora's near-black. Mirrors web's
- * badgeInk in aurora/profile.tsx.
+ * lime accent-TEXT tone for advanced, gold reserved for elite. Every one is
+ * an AA-guarded value (palette.test.ts), so the chip clears contrast on the
+ * near-black card. Mirrors web's badgeInk in aurora/profile.tsx.
  */
 const badgeInk = (C: P, accent: BadgeAccent): string =>
   accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
@@ -73,7 +72,7 @@ type TabId = "overview" | "prs" | "activity";
  * fabricated.
  */
 export default function AuroraProfile() {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   const { name, email, entitlement, createdYear } = useIdentity();
@@ -267,7 +266,7 @@ export default function AuroraProfile() {
           hitSlop={8}
           style={{ position: "absolute", top: 12, right: 12, width: 38, height: 38, borderRadius: 12, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.16)", alignItems: "center", justifyContent: "center" }}
         >
-          <BlurView intensity={24} tint={scheme} style={StyleSheet.absoluteFill} />
+          <BlurView intensity={24} tint="dark" style={StyleSheet.absoluteFill} />
           <AuroraIcon name="edit" size={17} color={C.chalk} />
         </Pressable>
       </View>

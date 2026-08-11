@@ -20,7 +20,7 @@ import { setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, serifIf, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ADrawer, AHeading, ASection, CardFoot, RADIUS, withAlpha } from "./kit";
 import { HeroAccessory } from "./hero";
 import Sheet from "./sheet";
@@ -79,7 +79,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
    *  ~50 controls revealed inside this read surface by an edit toggle. */
   onOpenModel?: () => void;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const ml = (m: string) => (MUSCLE_KEY[m] ? t(MUSCLE_KEY[m]) : m);
   const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
@@ -256,7 +256,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 46, lineHeight: 50, letterSpacing: -1.6, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 46, lineHeight: 50, letterSpacing: -1.6, color: C.chalk }}>{summary.inRange}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
             </View>
@@ -334,7 +334,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 10 }}>
-              <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 68, lineHeight: 74, letterSpacing: -2.5, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 68, lineHeight: 74, letterSpacing: -2.5, color: C.chalk }}>{summary.inRange}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, marginLeft: 4 }}>/{summary.total}</Text>
             </View>
             <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: 21, color: C.ash, marginTop: -2, maxWidth: 240 }}>{t("w.analyze.vol.heroCaption")}</Text>
@@ -439,12 +439,12 @@ function ByMuscle({ flat, rows, ml, zoneColor, targetFor, history, open, setOpen
   zone: { key: VolumeBandKey; muscle: MuscleGroup } | null;
   pickZone: (k: VolumeBandKey, m: MuscleGroup) => void;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   return (
     <Panel flat={flat}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-        <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
       </View>
 
@@ -467,7 +467,7 @@ function ByMuscle({ flat, rows, ml, zoneColor, targetFor, history, open, setOpen
 /** The way into the provenance sheet. A row, not a card: "where did these come
  *  from" is a question the reading raises, not another part of the reading. */
 function SourceDoor({ flat, onOpen }: { flat: boolean; onOpen: () => void }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   return (
     <Panel flat={flat}>
@@ -478,7 +478,7 @@ function SourceDoor({ flat, onOpen }: { flat: boolean; onOpen: () => void }) {
         style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}
       >
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
           <Text style={{ marginTop: 4, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.showWork")}</Text>
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
@@ -511,12 +511,12 @@ function ShapeColumn({ s, color, dim }: { s: MuscleVolumeStatus; color: string; 
 function Prescription({ flat, title, why, items, color, ml, unit }: {
   flat: boolean; title: string; why: string; items: MuscleVolumeStatus[]; color: string; ml: (m: string) => string; unit: string;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   if (!items.length) return null;
   return (
     <Panel flat={flat}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-        <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{unit}</Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
@@ -557,13 +557,13 @@ function Toggle({ on, label, onPress }: { on: boolean; label: string; onPress: (
 function BlockCard({ flat, lead, block, ramp, on }: {
   flat: boolean; lead: boolean; block: VolumeBlock; ramp: RampColumn[]; on: boolean;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const current = ramp.find((c) => c.current) ?? ramp[0];
   return (
     <Panel flat={flat} lead={lead}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-        <Text style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.thisBlock")}</Text>
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.thisBlock")}</Text>
         <Toggle on={on} label={t("w.analyze.vol.periodize")} onPress={() => setLoggerPref("periodizeVolume", !on)} />
       </View>
 
@@ -656,7 +656,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
   /** The athlete's weight unit — lifts are shown in the unit they train in. */
   units: WeightUnit;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const done = volumeProfileCompleteness(profile, measuredKeys);
   const ladder = useMemo(() => provenanceLadder(resolved), [resolved]);
@@ -668,7 +668,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
   // opens on the spot — its own state, so reaching for it here doesn't expand
   // every landmark field on the muscle rows above.
   const [work, setWork] = useState(false);
-  const subhead = { fontFamily: serifIf(scheme, F.black), fontSize: fs.body, color: C.chalk } as const;
+  const subhead = { fontFamily: F.black, fontSize: fs.body, color: C.chalk } as const;
   const prose = { fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash } as const;
 
   return (

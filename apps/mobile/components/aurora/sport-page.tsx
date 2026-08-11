@@ -30,7 +30,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
@@ -49,7 +49,7 @@ const PENDING_KEY = "hybrid.pendingSportSession";
  * drawn by hand at the SAME geometry the web twin uses.
  */
 export default function AuroraSportPage() {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   // The param carries EITHER the display name (an in-app push) or the slug (a
@@ -153,7 +153,7 @@ export default function AuroraSportPage() {
   /** The Explore SectionHead: display-face title left, mono meta right. */
   const SectionHead = ({ title, meta }: { title: string; meta?: string }) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md, marginBottom: space.md }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
       {!!meta && <Text style={label()}>{meta}</Text>}
     </View>
   );
@@ -161,7 +161,7 @@ export default function AuroraSportPage() {
   /** Provenance: the device's lockup (white — the device said so) or "typed". */
   const Provenance = ({ provider }: { provider: string | null }) =>
     provider
-      ? <DeviceMark provider={provider} form="lockup" height={9} on={scheme} />
+      ? <DeviceMark provider={provider} form="lockup" height={9} on="dark" />
       : <Text style={label()}>{t("w.train.sportPage.markerTyped")}</Text>;
 
   const dividerTop = { borderTopWidth: 1, borderTopColor: C.line } as const;
@@ -328,7 +328,7 @@ export default function AuroraSportPage() {
           {!!m.split && (
             <View style={{ marginTop: space.xxl }}>
               <SectionHead title={t("w.train.sportPage.effort")} meta={t("w.train.sportPage.effortMeta").replace("{weeks}", String(SPORT_PAGE_WEEKS))} />
-              <EffortSplitBar split={m.split} C={C} scheme={scheme} labels={[t("w.train.sportPage.easy"), t("w.train.sportPage.steady"), t("w.train.sportPage.hard")]} />
+              <EffortSplitBar split={m.split} C={C} labels={[t("w.train.sportPage.easy"), t("w.train.sportPage.steady"), t("w.train.sportPage.hard")]} />
             </View>
           )}
 
@@ -570,12 +570,10 @@ function MarkerSpark({ trend, color }: { trend: number[]; color: string }) {
 function EffortSplitBar({
   split,
   C,
-  scheme,
   labels,
 }: {
   split: { easy: number; moderate: number; hard: number };
   C: Palette;
-  scheme: "dark" | "light";
   labels: [string, string, string] | string[];
 }) {
   const total = Math.max(1, split.easy + split.moderate + split.hard);
@@ -583,8 +581,8 @@ function EffortSplitBar({
   // One hue at three densities — three HUES would imply three meanings; this is
   // one meaning (intensity) at three levels.
   const bands = [
-    { v: pct(split.easy), k: labels[0]!, bg: `${C.lime}${scheme === "dark" ? "61" : "4d"}` },
-    { v: pct(split.moderate), k: labels[1]!, bg: `${C.lime}${scheme === "dark" ? "ad" : "99"}` },
+    { v: pct(split.easy), k: labels[0]!, bg: `${C.lime}61` },
+    { v: pct(split.moderate), k: labels[1]!, bg: `${C.lime}ad` },
     { v: pct(split.hard), k: labels[2]!, bg: C.lime },
   ];
   // A zero band has no label to place, and a thin one must not collide with its

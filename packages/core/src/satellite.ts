@@ -39,8 +39,8 @@ export const SATELLITE = {
    * THE FLOOR'S RIM — what the control wears wherever the real material does
    * not render (Android, iOS < 26, and the web twin's non-glass ground).
    *
-   * Chalk over the screen's own ground rather than a fixed white, so Kyoto Hour
-   * inverts it with everything else. `on` is the only state a satellite has,
+   * Chalk over the screen's own ground rather than a fixed white, so it tracks
+   * the palette. `on` is the only state a satellite has,
    * and it is a fill-and-ring change rather than an accent: an accent here
    * would put a second "go" colour beside the primary, which is the one thing
    * the cluster is arranged to prevent.

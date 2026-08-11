@@ -46,10 +46,10 @@ export function meetsContrast(a: string, b: string, level: number = WCAG.AA): bo
  * every swatch in it can clear AA against the card and still be useless if two
  * of them are the same warm mark at 8px.
  *
- * That gap is not hypothetical — it shipped. In Kyoto Hour the readiness
- * ledger's tissue and wearable rows resolved to #a3442f and #875427, a vermilion
- * and a brown ΔE 13 apart, both comfortably AA. Nothing tested it, because
- * nothing measured colours against EACH OTHER.
+ * That gap is not hypothetical — it shipped. In the since-retired light theme
+ * the readiness ledger's tissue and wearable rows resolved to #a3442f and
+ * #875427, a vermilion and a brown ΔE 13 apart, both comfortably AA. Nothing
+ * tested it, because nothing measured colours against EACH OTHER.
  */
 
 /** CIE L*a*b* (D65) for an sRGB hex — the space perceptual distance is measured in. */

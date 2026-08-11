@@ -102,7 +102,7 @@ arbitrary; if a screen needs a number that isn't here, it has the wrong rank.
 | corner radii | hero is square-topped (it runs under the status bar); chip 999; sheet-presented hero 28 | |
 | spacing grid | eyebrow → title 10, title → meta 8, display block → hero bottom 18 | |
 | blur | only where something floats over content: the nav button's glass, the docked sub-rail | never as decoration |
-| status bar | `cover` and `takeover` are fixed-dark → always light content; `title`/`bar` follow the theme | `heroStatusBar()` |
+| status bar | always light content — every ground is dark | |
 | hairline | the collapsed bar's bottom edge, white @ 16%, fades in from p = 0.5 | |
 
 ---

@@ -84,8 +84,8 @@ export default function ExerciseFavouritesSheet({
         </View>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
-        {/* The pinned star rides the amber TEXT tone, not the fill — the fill
-            is 1.57:1 sand-on-washi in the Kyoto light theme. */}
+        {/* The pinned star rides the amber TEXT tone, not the fill (the
+            accent-text channel). */}
         <Text style={{ fontSize: 15, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
       </Pressable>
     );

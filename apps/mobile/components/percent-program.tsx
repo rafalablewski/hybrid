@@ -41,15 +41,15 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { withAlpha, ASection, GUTTER, CARD_PAD } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
-// Quiet intra-card hairline — derived from the theme's line colour so it
-// inverts with the light theme (a fixed 5% white disappeared on washi).
+// Quiet intra-card hairline — derived from the theme's line colour, not a
+// fixed 5% white.
 const hair = (C: Palette) => withAlpha(C.line, 0.6);
 // content classification (isProseLift / liftKind) is shared from @hybrid/core.
 const isProse = isProseLift;
@@ -93,7 +93,7 @@ export default function PercentProgram({
   onEnrolled?: () => void;
   leaveSection?: ReactNode;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const [week, setWeek] = useState(1);
   // Maxes persist on-device (shared with Today) — seed each input from the store;
@@ -180,7 +180,7 @@ export default function PercentProgram({
       }
     >
       <View style={{ marginTop: 16 }}>
-        <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} scheme={scheme} />
+        <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} />
       </View>
 
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: CARD_PAD, marginBottom: 12 }}>
@@ -273,7 +273,7 @@ function groupLabel(kind: LiftKind, n: number, hasPercent: boolean): string {
 /** What pressing a row opens: the lift plus where it lives. */
 type SheetSel = { lift: ProgramLiftView; day: string; marker: string | null };
 
-function ProgramDays({ days, week, peakNote, C, scheme }: { days: ProgramDayView[]; week: number; peakNote: string | null; C: Palette; scheme: "light" | "dark" }) {
+function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week: number; peakNote: string | null; C: Palette }) {
   const [open, setOpen] = useState(0);
   const [sel, setSel] = useState<SheetSel | null>(null);
   // A new week starts the accordion over at its first day.
@@ -284,7 +284,7 @@ function ProgramDays({ days, week, peakNote, C, scheme }: { days: ProgramDayView
     const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, overflow: "hidden" as const, marginBottom: 12 };
     return (
       <View style={card}>
-        <WeekHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} scheme={scheme} />
+        <WeekHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} />
         {days.map((day, di) => {
           const lifts = day.sessions.flatMap((s) => s.lifts);
           return (
@@ -307,7 +307,7 @@ function ProgramDays({ days, week, peakNote, C, scheme }: { days: ProgramDayView
   return (
     <>
       {days.map((day, di) => (
-        <DayCard key={di} day={day} open={di === open} onToggle={() => setOpen(di === open ? -1 : di)} onLift={(lift, marker) => setSel({ lift, day: day.title, marker })} C={C} scheme={scheme} />
+        <DayCard key={di} day={day} open={di === open} onToggle={() => setOpen(di === open ? -1 : di)} onLift={(lift, marker) => setSel({ lift, day: day.title, marker })} C={C} />
       ))}
       <ExerciseSheet sel={sel} onClose={() => setSel(null)} C={C} />
     </>
@@ -315,10 +315,10 @@ function ProgramDays({ days, week, peakNote, C, scheme }: { days: ProgramDayView
 }
 
 // The all-prose week card's header (endurance weeks keep the one-card layout).
-function WeekHeader({ title, right, C, scheme }: { title: string; right: string | null; C: Palette; scheme: "light" | "dark" }) {
+function WeekHeader({ title, right, C }: { title: string; right: string | null; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: C.chalk, flexShrink: 1 }}>{title}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: -0.3, color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
   );
@@ -380,7 +380,7 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
 
 // One accordion day: a pressable summary row (title + plain-words summary,
 // pulse + volume + chevron) that opens into the day's full tables.
-function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayView; open: boolean; onToggle: () => void; onLift: (l: ProgramLiftView, marker: string | null) => void; C: Palette; scheme: "light" | "dark" }) {
+function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open: boolean; onToggle: () => void; onLift: (l: ProgramLiftView, marker: string | null) => void; C: Palette }) {
   const expandable = day.sessions.some((s) => s.lifts.length > 0);
   const words = dayLeadWords(day);
   const right = dayContentSummary(day);
@@ -395,7 +395,7 @@ function DayCard({ day, open, onToggle, onLift, C, scheme }: { day: ProgramDayVi
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: serifIf(scheme, F.bold), fontSize: 16, letterSpacing: -0.3, color: C.chalk }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: -0.3, color: C.chalk }} numberOfLines={1}>
             {day.title}
             {!!day.kindLabel && <Text style={{ color: C.ash }}> — {day.kindLabel}</Text>}
           </Text>

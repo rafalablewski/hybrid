@@ -35,20 +35,18 @@ export { fs, space };
 export const CARD_PAD = space.xl;
 
 // Tokens come from @hybrid/core (the shared identity). Surface + primary-text
-// tokens resolve through CSS variables (globals.css @theme + [data-theme])
-// so the app re-themes (dark ⇄ light) without touching inline styles. LINE is
-// the THEMED CSS var so hairline borders soften with the theme (the raw dark hex
-// used to paint near-black borders on the light Kyoto washi — a hard contrast
-// break). LINE_HEX keeps the raw hex for recharts SVG presentation attrs, where
-// CSS var() does not resolve. ASH + accents stay raw hex for the same reason.
+// tokens resolve through CSS variables (globals.css @theme) so a token edit
+// lands app-wide without touching inline styles. LINE_HEX keeps the raw hex for
+// recharts SVG presentation attrs, where CSS var() does not resolve. ASH +
+// accents stay raw hex for the same reason.
 export const INK = "var(--color-ink)",
   INK2 = "var(--color-ink2)",
   CARD = "var(--color-card)",
   LINE = "var(--color-line)",
   LINE_HEX = colors.line;
-// LIME is the brand accent as a THEMED CSS var (bright lime in Aurora, pine in
-// Kyoto Hour) so every fill/border/text follows the theme. Use LIME_HEX (raw) only
-// where a CSS var can't resolve — recharts/SVG stroke/fill presentation attrs.
+// LIME is the brand accent as a CSS var so every fill/border/text follows the
+// token. Use LIME_HEX (raw) only where a CSS var can't resolve — recharts/SVG
+// stroke/fill presentation attrs.
 export const LIME = "var(--color-lime)",
   LIME_HEX = colors.lime,
   CHALK = "var(--color-chalk)",
@@ -67,14 +65,9 @@ export const roleVar = (role: SemanticRole): string => `var(--color-${ROLE_COLOR
 
 /**
  * A role as a colour to DRAW WITH — the accent-TEXT channel. This is the web
- * twin of mobile's `txt()`, and web went without it for too long: `roleVar`
- * returns the FILL, which is tuned to sit under something, and Kyoto Hour
- * deliberately leaves `--color-amber` as the pale sand #d0cd94. Used as a text
- * colour on washi paper that is 1.57:1 — a quarter of AA — so every "caution"
- * figure on the light theme (the readiness ledger's wearable row, an elevated
- * tissue's driver label, a compromised HPI score at 46px) was printed in
- * something close to invisible ink. The `-text` variants exist for exactly this
- * and are AA-guarded on BOTH grounds in palette.test.ts.
+ * twin of mobile's `txt()`: `roleVar` returns the FILL, which is tuned to sit
+ * under something; the `-text` variants are the AA-guarded tones for accents
+ * rendered as text (palette.test.ts).
  *
  * `ash` has no `-text` variant and needs none: the muted token is already a
  * text colour.
@@ -91,13 +84,8 @@ export const roleText = (role: SemanticRole): string => {
  * An accent BY NAME as a colour to draw with — the same channel `roleText` uses,
  * for the many call sites that reference an accent directly rather than through
  * a semantic role (an error message is red because it is an error, not because
- * something computed `danger`).
- *
- * Every one of those said `color: C("red")` — the FILL — and the type scale here
- * tops out at 14px, so the WCAG large-text exemption covers none of them:
- * on Kyoto Hour that error text was 3.26:1 against the card, sand was 1.57:1 and
- * steel 2.83:1, all under AA. The `-text` variants are the AA-guarded tone for
- * each theme (palette.test.ts), which is what a glyph must be drawn in.
+ * something computed `danger`). The `-text` variants are the AA-guarded tone
+ * (palette.test.ts), which is what a glyph must be drawn in.
  */
 export const accentText = (accent: AccentKey | "ash"): string =>
   accent === "ash" ? "var(--color-ash)" : `var(--${accent}-text)`;
@@ -106,17 +94,15 @@ export const accentText = (accent: AccentKey | "ash"): string =>
 export const tint = (color: string, pct: number): string =>
   `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
-// Fixed near-black for text/icons placed ON a bright accent fill (lime/amber/…).
-// Text/icons ON a bright accent fill. Theme-aware: dark on Aurora's bright lime,
-// light on Kyoto Hour's deep pine (so it always clears contrast on the fill).
+// Near-black for text/icons placed ON the bright accent fill (lime/amber/…).
 // Mirrors --on-accent in globals.css. Replaces scattered "#0c0d0c".
 export const ON_ACCENT = "var(--on-accent)";
 
-// Theme-aware FOREGROUND accent colours (for text). The bright accents above
-// stay fixed for backgrounds / borders / chart strokes / glows (and recharts,
-// which can't resolve var()); these darken on light so accent TEXT keeps WCAG
-// AA. Use *_T directly for inline accent text, or rely on Mono/Chip which map
-// a bright accent → its themed text colour automatically.
+// FOREGROUND accent colours (for text). The bright accents above stay for
+// backgrounds / borders / chart strokes / glows (and recharts, which can't
+// resolve var()); these are the AA-guarded accent-TEXT tones. Use *_T directly
+// for inline accent text, or rely on Mono/Chip which map a bright accent → its
+// text colour automatically.
 export const LIME_T = "var(--lime-text)",
   BLUE_T = "var(--blue-text)",
   VIOLET_T = "var(--violet-text)",
@@ -132,7 +118,7 @@ const ACCENT_TEXT: Record<string, string> = {
   [colors.ash]: "var(--color-ash)",
 };
 
-/** Map a bright accent (or ash) to its theme-aware text colour; pass anything
+/** Map a bright accent (or ash) to its accent-text colour; pass anything
  *  else through unchanged. Accepts an optional colour (e.g. Mono's `c?`) and
  *  returns undefined for it. Use for inline accent TEXT: `color: txt(BLUE)`. */
 export const txt = (c?: string): string | undefined => (c ? ACCENT_TEXT[c] ?? c : undefined);
@@ -172,8 +158,8 @@ export function Mono({
   s?: CSSProperties;
   c?: string;
 }) {
-  // Auto-map a bright accent (or ash) to its theme-aware text colour so every
-  // `Mono c={LIME}` across the app stays AA in light mode without edits.
+  // Auto-map a bright accent (or ash) to its accent-text colour so every
+  // `Mono c={LIME}` across the app stays AA without edits.
   return <span style={{ ...mono, color: txt(c), ...s }}>{children}</span>;
 }
 

@@ -62,7 +62,7 @@ export default function AuroraEnduranceSummary({
   bw?: BodyweightInput;
 }) {
   const { t } = useLang();
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   // Read-only: the control that WRITES this period is the verdict card's, at
   // the top of the retrospective. Same key, so this follows it live.
   const { range } = useActivityRange(TODAY_RANGE_STORE_KEY);
@@ -127,7 +127,7 @@ export default function AuroraEnduranceSummary({
     <View style={{ marginTop: 20 }}>
       <View style={{
         backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
-        padding: 14, ...cardShadow(scheme),
+        padding: 14, ...cardShadow(),
       }}>
         {/* The window, said once. There is no filter here, so this line is what
             stops "5.4 h" being a figure with no period attached. */}

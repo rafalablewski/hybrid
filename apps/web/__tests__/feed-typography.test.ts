@@ -14,11 +14,10 @@ import { fileURLToPath } from "node:url";
  *     none, so its captions, comments and empty states drew in the PLATFORM UI
  *     font while every other tab drew in Archivo.
  *
- *  2. THE TITLE FACE. Headings read `serifIf(scheme, …)`, which is Archivo
- *     under Aurora and the Shippori Mincho serif under Kyoto Hour. A post's
- *     headline is a heading. Hard-coding the sans left the feed as the one tab
- *     still in sans on the light theme — with its own "Now training" head,
- *     which does swap, sitting directly above it.
+ *  2. THE TITLE FACE. Headings read the app's display face at its heading
+ *     weights (`F.black` / `F.bold`). A post's headline is a heading, so it
+ *     must draw in the same face as every other heading in the product —
+ *     including its own "Now training" head sitting directly above it.
  *
  *  3. THE LADDER. `fs.*` (packages/core/src/scale.ts) is the only source of
  *     sizes. A hand-picked size against the shared scale is exactly the
@@ -49,15 +48,15 @@ describe("the feed's prose is drawn in the app's face, not the platform's", () =
 });
 
 describe("the feed's headings read the app's TITLE face", () => {
-  it("the post headline is set through serifIf", () => {
+  it("the post headline is set in the app's title face", () => {
     const src = mobile("feed-card.tsx");
     const headline = src.slice(src.indexOf("const headlineStyle"), src.indexOf("// \"Why you're seeing this\""));
     // Both moments (the p0 record and the everyday session) are headings.
-    expect(headline.match(/fontFamily: serifIf\(scheme, F\.(black|bold)\)/g)?.length).toBe(2);
+    expect(headline.match(/fontFamily: F\.(black|bold)/g)?.length).toBe(2);
   });
 
-  it("the section head already swaps, and stays that way", () => {
-    expect(mobile("feed-live-strip.tsx")).toContain("fontFamily: serifIf(scheme, F.black)");
+  it("the section head reads the same title face, and stays that way", () => {
+    expect(mobile("feed-live-strip.tsx")).toContain("fontFamily: F.black");
   });
 });
 

@@ -8,7 +8,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { GUTTER, RADIUS } from "./kit";
 import { useChartScrub } from "./chart-scrub";
 import HistoryStrip from "./history-strip";
@@ -48,7 +48,7 @@ export default function AuroraOtherSports({
   sessions: LoggedSession[];
   onOpen?: (sport: string) => void;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const [expanded, setExpanded] = useState(false);
   const u = durationUnits(t);
@@ -79,7 +79,7 @@ export default function AuroraOtherSports({
           "5.4 h", a lifting-inclusive denominator reads as that sentence's
           total and contradicts it. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.other.title")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.other.title")}</Text>
         {/* THE DENOMINATOR IS THE GATE, not the numerator. A quiet week for
             these sports still has something to say — "0min of 3h 12min this
             week" is a real fact, and the whole point of a parentage quote. A

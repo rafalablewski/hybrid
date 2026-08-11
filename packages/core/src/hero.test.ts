@@ -14,7 +14,6 @@ import {
   heroNavMaterial,
   heroRailPin,
   heroSnapTarget,
-  heroStatusBar,
   heroTitleType,
   heroTransition,
 } from "./hero";
@@ -194,12 +193,6 @@ describe("hero backdrops", () => {
   it("lights a container from the left and its contents from the right", () => {
     expect(heroLight("container")).toBe("left");
     expect(heroLight("item")).toBe("right");
-  });
-
-  it("keeps a fixed-dark hero's status bar light in both themes", () => {
-    expect(heroStatusBar("cover", "page", "light")).toBe("light");
-    expect(heroStatusBar("title", "page", "light")).toBe("dark");
-    expect(heroStatusBar("title", "takeover", "light")).toBe("light");
   });
 });
 

@@ -50,7 +50,7 @@ const SHOW_ERROR_MS = 3600;
 /** Mounted ONCE, above the navigator (app/_layout.tsx), so a toast overlays
  *  whatever screen fired it and never recedes with a sheet. */
 export function ToastHost() {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const [msg, setMsg] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function ToastHost() {
           paddingVertical: 9,
           backgroundColor: LIQUID_GLASS_SUPPORTED ? "transparent" : withAlpha(C.ink2, 0.92),
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: withAlpha(scheme === "light" ? C.chalk : "#ffffff", 0.16),
+          borderColor: withAlpha("#ffffff", 0.16),
           opacity: shown,
           transform: reduced ? [] : [{ translateY: shown.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
         }}
@@ -103,7 +103,7 @@ export function ToastHost() {
         {LIQUID_GLASS_SUPPORTED ? (
           <GlassSurface radius={999} />
         ) : (
-          <BlurView intensity={22} tint={scheme === "light" ? "light" : "dark"} style={StyleSheet.absoluteFill} />
+          <BlurView intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
         )}
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.9, textTransform: "uppercase", color: kind === "error" ? C.red : C.chalk }}>
           {msg}

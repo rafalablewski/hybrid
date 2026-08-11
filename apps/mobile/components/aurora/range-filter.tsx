@@ -12,7 +12,7 @@ import { LiquidSeg } from "./liquid-seg";
 import { GlassWheel, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 
 /**
@@ -133,10 +133,10 @@ export function useRangeLabels(range: ActivityRange): RangeLabels {
 /** The Explore-standard head a period-scoped block opens with: display-face
  *  title left, the span as mono meta right. */
 export function RangeHead({ title, meta }: { title: string; meta: string }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
-      <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: C.ash }}>{meta}</Text>
     </View>
   );

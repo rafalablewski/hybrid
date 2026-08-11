@@ -13,7 +13,7 @@ import {
 } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, serifIf, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
@@ -59,7 +59,7 @@ export default function AuroraLogbookRail({
    *  sessions, the quick-log sheet and the Done-today sheet. */
   doneFloor?: ReactNode;
 }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
@@ -103,7 +103,7 @@ export default function AuroraLogbookRail({
     >
       {/* header: the log's name + the window on one baseline row */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: serifIf(scheme, F.black), fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
           {t("w.home.logbook.title")}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.window")}</Text>
@@ -122,7 +122,6 @@ export default function AuroraLogbookRail({
       <DayDetail
         key={sel.dateKey}
         C={C}
-        scheme={scheme}
         day={sel}
         receipt={receipt}
         units={units}
@@ -171,9 +170,8 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
   );
 }
 
-function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onLog, onHistory, t }: {
+function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onLog, onHistory, t }: {
   C: Pal;
-  scheme: "dark" | "light";
   day: LogbookDay;
   receipt: ReturnType<typeof mergeDoneReceipts>;
   units: WeightUnit;
@@ -231,7 +229,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onLo
     return (
       <View>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 19, letterSpacing: -0.5, color: C.chalk, flex: 1 }}>{t("w.home.logbook.emptyToday")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk, flex: 1 }}>{t("w.home.logbook.emptyToday")}</Text>
           {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: leading(fs.caption) }}>{t("w.home.logbook.emptyTodaySub")}</Text>
@@ -254,7 +252,7 @@ function DayDetail({ C, scheme, day, receipt, units, streakDays, doneFloor, onLo
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.ash, flex: 1 }}>{t("w.home.logbook.emptyPast")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash, flex: 1 }}>{t("w.home.logbook.emptyPast")}</Text>
         {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: leading(fs.caption) }}>{t("w.home.today.doneModalEmptyDay")}</Text>

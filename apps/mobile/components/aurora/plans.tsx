@@ -7,7 +7,7 @@ import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useSharedSurfaceSource } from "../../lib/shared-element";
 import { ACard, AField, GUTTER, RADIUS, withAlpha, DockRail, DockChip } from "./kit";
@@ -143,7 +143,7 @@ function CategoryRail({ categories, onJump }: { categories: string[]; onJump: (c
  *  under the rail shows position — the two halves of making a horizontal rail
  *  honest about its tail. */
 function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: string) => void; onLayout: (e: LayoutChangeEvent) => void }) {
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const { t } = useLang();
   const x = useRef(new Animated.Value(0)).current;
   const [rail, setRail] = useState({ view: 0, content: 0 });
@@ -152,7 +152,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
   return (
     <View onLayout={onLayout} style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
-        <Text accessibilityRole="header" style={{ fontFamily: serifIf(scheme, F.black), fontSize: 18, color: C.chalk }}>{group.category}</Text>
+        <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{group.category}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
         </Text>
@@ -223,7 +223,6 @@ function ShelfTrack({ x, view, content }: { x: Animated.Value; view: number; con
  *  precisely the drift this codebase keeps out of clients, and a flying clone
  *  that differs from the thing it flew off is the most visible version of it. */
 function GoalTileFace({ cover, pressed }: { cover: ReturnType<typeof goalCoverView>; pressed: boolean }) {
-  const { scheme } = useTheme();
   return (
     <View
       style={{
@@ -252,7 +251,7 @@ function GoalTileFace({ cover, pressed }: { cover: ReturnType<typeof goalCoverVi
         {cover.glyph}
       </Text>
       <Text style={{ alignSelf: "flex-end", fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", letterSpacing: 0.9, color: cover.ready ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>{cover.count}</Text>
-      <Text numberOfLines={3} style={{ fontFamily: serifIf(scheme, F.black), fontSize: 16, lineHeight: 18, letterSpacing: -0.5, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
+      <Text numberOfLines={3} style={{ fontFamily: F.black, fontSize: 16, lineHeight: 18, letterSpacing: -0.5, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
     </View>
   );
 }

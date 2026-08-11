@@ -11,7 +11,7 @@ import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useAccountSettings } from "../../lib/account";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt, type ThemePref } from "../../lib/theme";
+import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS, ASearch } from "./kit";
@@ -22,13 +22,6 @@ import { LegalLinks } from "../legal-links";
 import { LinearGradient } from "expo-linear-gradient";
 import { useListMotion } from "../../lib/list-motion";
 
-// Theme picker swatches — a mini colour preview per template (shared shape with
-// web's Preferences). system = mixed, Aurora = dark/lime, Kyoto Hour = washi/pine.
-const THEME_SWATCHES: { id: ThemePref; label: string; colors: [string, string, string] }[] = [
-  { id: "system", label: "System", colors: ["#0c0d0c", "#f6f3ea", "#8b8f86"] },
-  { id: "dark", label: "Aurora", colors: ["#0c0d0c", "#c6f84f", "#8b8f86"] },
-  { id: "light", label: "Kyoto Hour", colors: ["#f6f3ea", "#44584c", "#a3442f"] },
-];
 const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "en", label: "English" },
   { id: "pl", label: "Polski" },
@@ -59,7 +52,6 @@ export default function AuroraSettings() {
   const router = useRouter();
   const { t, lang, setLang } = useLang();
   const { signOut, name, role, entitlement } = useSession();
-  const { pref, setPref } = useTheme();
   const acct = useAccountSettings();
   // Mode toggle — Full (athlete) is a paid upgrade; a CLIENT chooses casual vs
   // athlete, mirroring web's useClientPersonaChoice()/setClientPersona().
@@ -132,21 +124,6 @@ export default function AuroraSettings() {
       case "preferences":
         return (
       <>
-        <Section label={t("w.account.settings.appearance")}>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {THEME_SWATCHES.map((s) => {
-              const on = pref === s.id;
-              return (
-                <PressScale key={s.id} onPress={() => setPref(s.id)} accessibilityRole="button" accessibilityLabel={s.label} style={{ flex: 1, padding: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? `${C.lime}14` : "transparent" }}>
-                  <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
-                    {s.colors.map((c, i) => <View key={i} style={{ width: 15, height: 15, borderRadius: 5, backgroundColor: c, borderWidth: 1, borderColor: C.line }} />)}
-                  </View>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{s.label}</Text>
-                </PressScale>
-              );
-            })}
-          </View>
-        </Section>
         <Section label={t("w.account.settings.language")}>
           <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
         </Section>
@@ -346,7 +323,7 @@ export default function AuroraSettings() {
   const summary = (id: SettingsCategoryId): string => {
     switch (id) {
       case "account": return name ?? "";
-      case "preferences": return `${pref === "system" ? "System" : pref === "light" ? "Kyoto Hour" : "Aurora"} – ${lang.toUpperCase()}`;
+      case "preferences": return lang.toUpperCase();
       case "notifications": return `${Object.values(acct.notif).filter(Boolean).length}/${Object.keys(acct.notif).length}`;
       case "privacy": return `${Object.values(acct.priv).filter(Boolean).length}/${Object.keys(acct.priv).length}`;
       case "subscription": return entitlement === "paid" ? "Full" : "Free";

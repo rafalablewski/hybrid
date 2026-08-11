@@ -8,7 +8,7 @@ import {
 import { GUTTER } from "./kit";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, serifIf, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 /**
@@ -119,7 +119,7 @@ export default function PeriodRecords({
   onSession?: (id: string) => void;
 }) {
   const { t } = useLang();
-  const { palette: C, scheme } = useTheme();
+  const { palette: C } = useTheme();
   const reduced = useReducedMotion();
   const win = useWindowDimensions();
 
@@ -186,7 +186,7 @@ export default function PeriodRecords({
           to scroll — so the total earns its place, and past PRS_RAIL_CAP the
           trailing "Show all {n}" cell carries it too. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
-        <Text style={{ fontFamily: serifIf(scheme, F.black), fontSize: fs.title, color: C.chalk }}>{t("w.home.act.recordsTitle")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.act.recordsTitle")}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: C.ash }}>{windowName}</Text>
           {prs.length > 2 && (

@@ -1,16 +1,12 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useColorScheme } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createContext, useContext, type ReactNode } from "react";
 import { THEMES, colors, ROLE_COLOR, type SemanticRole, type ThemeName, type ThemePalette } from "@hybrid/core";
 
 /**
- * Mobile theme. Surfaces/text flip with the OS appearance (or an explicit
- * override); the bright brand accents (lime/blue/…) stay fixed for fills, while
- * `accentText` is the darkened-on-light variant for accent TEXT. Palette values
- * come from @hybrid/core THEMES so web + mobile share one source.
+ * Mobile theme — AURORA (dark), the app's one theme. The bright brand accents
+ * (lime/blue/…) are the fills, while `accentText` carries the AA-guarded tones
+ * for accents rendered as TEXT. Palette values come from @hybrid/core THEMES so
+ * web + mobile share one source.
  */
-export type ThemePref = "system" | ThemeName;
-
 export interface Palette extends ThemePalette {
   lime: string;
   blue: string;
@@ -21,18 +17,9 @@ export interface Palette extends ThemePalette {
   onAccent: string;
 }
 
-// KYOTO HOUR: the primary + secondary accent FILLS now flip per theme
-// (dark = chartreuse/teal; light = pine/sage), mirroring globals.css's
-// --color-lime / --color-blue overrides. violet/amber/red stay on the fixed brand
-// hues. `lime` maps to the theme's primary `accent`; `blue` to the sage secondary
-// on light. `onAccent` comes from the theme (ivory on pine in light, ink on lime
-// in dark). Any raw `colors.lime` fill (not routed through the palette) stays
-// chartreuse — see capabilities.ts → design-system-unification-sweep.
-const SAGE = "#5f6d4b"; // sage secondary — mirror of globals.css --color-blue (light)
-
-const fillsFor = (scheme: ThemeName, t: ThemePalette) => ({
-  lime: t.accent, // primary action fill (pine on light, chartreuse on dark)
-  blue: scheme === "light" ? SAGE : colors.blue,
+const fillsFor = (t: ThemePalette) => ({
+  lime: t.accent, // primary action fill (chartreuse)
+  blue: colors.blue,
   violet: colors.violet,
   amber: colors.amber,
   red: colors.red,
@@ -41,21 +28,19 @@ const fillsFor = (scheme: ThemeName, t: ThemePalette) => ({
 
 export const paletteFor = (scheme: ThemeName): Palette => {
   const t = THEMES[scheme];
-  return { ...t, ...fillsFor(scheme, t) };
+  return { ...t, ...fillsFor(t) };
 };
 
-/** Map a bright accent (or ash) used as TEXT to its theme-aware colour. Accepts
- *  EITHER the fixed brand constant (colors.lime/…) OR the theme's own fill value
- *  (palette.lime/palette.blue) — the accent FILLS now flip per theme (clay/sage on
- *  light), so a screen passing `C.lime` (= palette.lime = clay on light) still
- *  resolves to the right accent-TEXT tone instead of falling through to the raw
- *  fill hex. In dark the palette fill equals the brand constant, so both match. */
+/** Map a bright accent (or ash) used as TEXT to its accent-text colour. Accepts
+ *  EITHER the fixed brand constant (colors.lime/…) OR the palette's own fill
+ *  value (palette.lime/palette.blue) — the two match, so both resolve to the
+ *  AA-guarded accent-TEXT tone instead of falling through to the raw fill hex. */
 export function txt(palette: Palette, c: string): string {
   switch (c) {
-    case palette.lime: // theme primary fill (clay on light)
+    case palette.lime: // theme primary fill
     case colors.lime:
       return palette.accentText.lime;
-    case palette.blue: // theme secondary fill (sage on light)
+    case palette.blue:
     case colors.blue:
       return palette.accentText.blue;
     case colors.violet:
@@ -76,41 +61,18 @@ export function txt(palette: Palette, c: string): string {
  *  core and can't drift per-screen. Wrap with txt() when used as TEXT. */
 export const roleColor = (palette: Palette, role: SemanticRole): string => palette[ROLE_COLOR[role]];
 
-const KEY = "hybrid-theme-pref";
-
 interface ThemeCtx {
   scheme: ThemeName;
   palette: Palette;
-  pref: ThemePref;
-  setPref: (p: ThemePref) => void;
 }
 
 const Ctx = createContext<ThemeCtx>({
   scheme: "dark",
   palette: paletteFor("dark"),
-  pref: "system",
-  setPref: () => {},
 });
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const system = useColorScheme();
-  const [pref, setPrefState] = useState<ThemePref>("system");
-
-  useEffect(() => {
-    AsyncStorage.getItem(KEY).then((v) => {
-      if (v === "system" || v === "dark" || v === "light") setPrefState(v);
-    });
-  }, []);
-
-  const setPref = (p: ThemePref) => {
-    setPrefState(p);
-    AsyncStorage.setItem(KEY, p).catch(() => {});
-  };
-
-  const scheme: ThemeName = pref === "system" ? (system === "light" ? "light" : "dark") : pref;
-  const palette = useMemo(() => paletteFor(scheme), [scheme]);
-
-  return <Ctx.Provider value={{ scheme, palette, pref, setPref }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ scheme: "dark", palette: paletteFor("dark") }}>{children}</Ctx.Provider>;
 }
 
 export const useTheme = () => useContext(Ctx);

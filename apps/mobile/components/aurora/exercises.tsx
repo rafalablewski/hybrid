@@ -112,7 +112,7 @@ export default function AuroraExercises() {
           accessibilityHint={locked ? t("w.home.exw.addFull").replace("{n}", String(MAX_EXERCISE_FAVOURITES)) : undefined}
           style={{ paddingVertical: 12, paddingLeft: 12, paddingRight: 2 }}
         >
-          {/* Amber TEXT tone, not the fill — the fill is 1.57:1 on washi. */}
+          {/* Amber TEXT tone, not the fill — the accent-text channel. */}
           <Text style={{ fontSize: 15, color: on ? txt(C, C.amber) : C.ash, opacity: locked ? 0.25 : on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
         </PressScale>
       </View>

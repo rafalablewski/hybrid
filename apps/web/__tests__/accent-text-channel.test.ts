@@ -6,21 +6,15 @@ import { join } from "node:path";
  * THE ACCENT CHANNEL, ENFORCED.
  *
  * Every brand accent exists twice: a FILL (`--color-red`), tuned to sit under
- * something, and a TEXT tone (`--red-text`), tuned to be legible on the card in
- * whichever theme is showing. `lib/ui.tsx` has mapped between them since the
- * light theme shipped — but only for the RAW HEX constants (`txt(RED)`). The
- * Aurora screens use a different idiom, `C("red")` → `var(--color-red)`, which
- * that mapping never saw, so 78 call sites quietly painted glyphs in the fill.
+ * something, and a TEXT tone (`--red-text`), tuned to be legible on the card.
+ * `lib/ui.tsx` maps between them — but only for the RAW HEX constants
+ * (`txt(RED)`). The Aurora screens use a different idiom, `C("red")` →
+ * `var(--color-red)`, which that mapping never saw, so 78 call sites quietly
+ * painted glyphs in the fill.
  *
- * What that cost, measured against each theme's card:
- *
- *   light   amber #d0cd94  1.57:1   sand on washi paper — near-invisible
- *   light   violet #8296c4 2.83:1
- *   light   red #d56f3e    3.26:1   every `role="alert"` error message
- *   dark    blue #3c787e   3.59:1
- *
+ * What that cost, measured against the card: `blue` #3c787e is 3.59:1 —
  * and the type scale here runs 10–14px, so WCAG's large-text exemption (3:1)
- * covers exactly none of them.
+ * covers none of it.
  *
  * A reviewer cannot hold that distinction in their head across 32 files, so it
  * is a test instead: no `color:` may resolve to an accent FILL. Backgrounds,
