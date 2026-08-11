@@ -19,6 +19,8 @@ import { heatRecovery, personalizeLandmarks, sanitizeVolumeProfile } from "./lan
 import { measuredProfile, withMeasured, measuredFields } from "./landmark-context";
 import { whatIfBio, whatIfHeat } from "./engine-room";
 import { pairReads, saunaClearance } from "./recovery-pairs";
+import type { LoggedSession } from "./session";
+import type { RecoveryReport } from "./landmark-adapt";
 import type { Biometrics } from "./types";
 
 const HOUR = 3_600_000;
@@ -331,15 +333,16 @@ describe("saunaClearance — does heat help THIS athlete?", () => {
    * than a convenient one: HIGHER freshness = less residual = faster clearance
    * = a LOWER index.
    */
-  const day = (i: number, freshness: number, heat: boolean) => {
+  const day = (i: number, freshness: number, heat: boolean): { session: LoggedSession; read: RecoveryReport; heat: HeatSignalRow[] } => {
     const end = T0 + i * DAY;
+    const readAt = new Date(end + 13 * 3_600_000).toISOString();
     return {
       session: {
         id: `s${i}`, title: "Lower", startedAt: new Date(end - 3_600_000).toISOString(),
         completedAt: new Date(end).toISOString(), blocks: [],
         fatigue: 4, feelLoggedAt: new Date(end + 10 * 60_000).toISOString(),
       },
-      read: { date: new Date(end + 13 * 3_600_000).toISOString(), loggedAt: new Date(end + 13 * 3_600_000).toISOString(), soreness: freshness, energy: freshness },
+      read: { date: readAt, loggedAt: readAt, soreness: freshness, energy: freshness },
       heat: heat ? sittingAt(end + 3_600_000, 25, 90) : [],
     };
   };
@@ -353,8 +356,8 @@ describe("saunaClearance — does heat help THIS athlete?", () => {
   const build = (spec: { freshness: number; heat: boolean }[]) => {
     const days = spec.map((x, i) => day(i * 2, x.freshness, x.heat));
     return {
-      sessions: days.map((d) => d.session) as never,
-      recovery: days.map((d) => d.read) as never,
+      sessions: days.map((d) => d.session),
+      recovery: days.map((d) => d.read),
       heatSignals: days.flatMap((d) => d.heat),
       now: T0 + spec.length * 2 * DAY + DAY,
     };
