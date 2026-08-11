@@ -60,6 +60,12 @@ export async function POST(request: Request) {
   // HEAT IS TYPED, so it is the one kind that can carry a fat-finger. Bounce it
   // rather than clamping: 900 °C is a typo, and silently storing 120 would turn
   // a mistake into the hottest sauna in the world and score it accordingly.
+  //
+  // ONE flat range across all three protocols, deliberately. This is a
+  // plausibility gate against typos, not a physiological claim — a steam room
+  // never runs at 110 °C, but rejecting it here would mean the API had opinions
+  // about modalities, and the per-protocol intensity clamp already stops an
+  // implausible entry from earning an implausible dose.
   const bounds =
     kind === "saunaTemp" ? HEAT_TEMP_BOUNDS : kind === "sauna" ? HEAT_MINUTES_BOUNDS : null;
   if (bounds && (b.value < bounds[0] || b.value > bounds[1]))

@@ -39,9 +39,10 @@ import { enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
 import { MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
 import { readinessDeficit, type ReadinessDeficit } from "./readiness-deficit";
 import {
-  HEAT_CREDIT_MAX, HEAT_FLOOR_C, HEAT_FREQUENCY_WEEKS, HEAT_HALF_LIFE_H, HEAT_INTENSITY_MAX,
-  HEAT_REF_C, HEAT_SESSION_MIN_EQUIV, HEAT_TAU_MIN, HEAT_TEMP_BOUNDS, HEAT_WINDOW_H,
-  heatAdjustment, type HeatAdjustment, type HeatSignalRow,
+  HEAT_CREDIT_MAX, HEAT_FREQUENCY_WEEKS, HEAT_HALF_LIFE_H, HEAT_INTENSITY_MAX,
+  HEAT_PROTOCOLS, HEAT_PROTOCOL_LIST, HEAT_SESSION_MIN_EQUIV, HEAT_TAU_MIN,
+  HEAT_TEMP_BOUNDS, HEAT_WINDOW_H, heatAdjustment, heatSource,
+  type HeatAdjustment, type HeatProtocol, type HeatSignalRow,
 } from "./heat";
 import { HEAT_RECOVERY_TIERS } from "./landmark-profile";
 import { COST_OK } from "./landmark-adapt";
@@ -551,14 +552,20 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     id: "heat-intensity",
     engine: "readiness",
     name: "Heat — temperature to equivalent minutes",
-    expression: `intensity(T) = clamp((T − ${HEAT_FLOOR_C}) / (${HEAT_REF_C} − ${HEAT_FLOOR_C}), 0, ${HEAT_INTENSITY_MAX})   •   equivMin = Σ minutesᵢ × intensity(Tᵢ)`,
+    expression: `intensity(T, p) = clamp((T − floor[p]) / (ref[p] − floor[p]), 0, ${HEAT_INTENSITY_MAX})   •   equivMin = Σ minutesᵢ × intensity(Tᵢ, pᵢ)`,
     constants: [
-      { symbol: String(HEAT_FLOOR_C), value: `${HEAT_FLOOR_C} °C`, meaning: "floor — below this a room is warm, not thermally stressful" },
-      { symbol: String(HEAT_REF_C), value: `${HEAT_REF_C} °C`, meaning: "reference — the low end of a traditional sauna, where an equivalent minute IS a minute" },
-      { symbol: String(HEAT_INTENSITY_MAX), value: "clamp", meaning: `reached at 101 °C, so a mistyped 150 cannot manufacture a dose nobody sat through` },
-      { symbol: `${HEAT_TEMP_BOUNDS[0]}..${HEAT_TEMP_BOUNDS[1]}`, value: "accepted °C", meaning: "outside this the entry is REJECTED at the API, not clamped quietly — 900 is a typo" },
+      ...HEAT_PROTOCOL_LIST.map((p) => ({
+        symbol: p,
+        value: `${HEAT_PROTOCOLS[p].floorC} → ${HEAT_PROTOCOLS[p].refC} °C`,
+        meaning:
+          p === "sauna" ? "the ANCHOR — dry air, so it has to be this hot to load you; every other reference is expressed against it"
+          : p === "steam" ? "~100% humidity blocks evaporative cooling, so far less air temperature does the same work"
+          : "radiant panels heat tissue directly, so the air thermometer under-reads the dose by construction",
+      })),
+      { symbol: String(HEAT_INTENSITY_MAX), value: "clamp", meaning: "so an implausible entry cannot earn an implausible dose, whatever the modality" },
+      { symbol: `${HEAT_TEMP_BOUNDS[0]}..${HEAT_TEMP_BOUNDS[1]}`, value: "accepted °C", meaning: "ONE flat gate across all three — a plausibility check against typos, not a claim about modalities; the clamp above handles the physiology" },
     ],
-    note: "NO DEVICE WILL EVER MEASURE A SAUNA, so both halves of the input are typed: how long, and how hot. Duration alone is not the dose — 20 min at 90 °C and 20 min in a 55 °C infrared cabin are not the same stimulus, and a clock-only model scores them identically. The ramp is piecewise-linear between two STATED anchors rather than an exponential fitted to nothing: it is a claim an operator can argue with. HONEST LIMITATION: air temperature cannot see humidity, so a 45 °C steam room at 100% humidity scores zero despite real thermal strain, and infrared is under-read for a related reason. A sitting with no temperature row is read at the reference and MARKED assumed rather than presented as measured.",
+    note: "NO DEVICE WILL EVER MEASURE A SAUNA, so every part of the input is typed: how long, how hot, and WHICH KIND. Duration alone is not the dose, and neither is duration-and-temperature: air temperature means something different in each modality, and a single ramp calibrated on dry sauna scores a 45 °C steam room and a 55 °C infrared cabin at roughly nothing. Each protocol therefore carries its own floor and reference, and every pair answers the same question — what air temperature, in THIS modality, loads an athlete the way 80 °C of dry sauna does? The ramps are piecewise-linear between STATED anchors rather than exponentials fitted to nothing: they are claims an operator can argue with. STILL A CALIBRATION, NOT A MEASUREMENT: a steam room at 60% humidity and one at 100% are different doses and this cannot tell them apart. The protocol rides in Signal.source ('manual' alone is a dry sauna), so no migration and no backfill. A sitting with no temperature row is read at ITS OWN protocol's reference and MARKED assumed — assuming 80 °C for a steam room would be assuming a room nobody has.",
   },
   {
     id: "readiness-heat",
@@ -765,6 +772,8 @@ export interface WhatIf {
   heatMinutes?: number;
   heatTempC?: number;
   heatHoursAgo?: number;
+  /** Which modality the simulated sitting was. Defaults to dry sauna. */
+  heatProtocol?: HeatProtocol;
   /**
    * Answer the stack as if this athlete had NO wearable at all.
    *
@@ -825,9 +834,11 @@ export function whatIfHeat(signals: HeatSignalRow[], w: WhatIf, now: number): He
   if (w.heatMinutes == null) return signals;
   if (w.heatMinutes <= 0) return [];
   const ts = new Date(now - (w.heatHoursAgo ?? 0) * 3_600_000).toISOString();
+  const protocol = w.heatProtocol ?? "sauna";
+  const source = heatSource(protocol, "whatif");
   return [
-    { kind: "sauna", value: w.heatMinutes, source: "whatif", ts },
-    { kind: "saunaTemp", value: w.heatTempC ?? HEAT_REF_C, source: "whatif", ts },
+    { kind: "sauna", value: w.heatMinutes, source, ts },
+    { kind: "saunaTemp", value: w.heatTempC ?? HEAT_PROTOCOLS[protocol].refC, source, ts },
   ];
 }
 

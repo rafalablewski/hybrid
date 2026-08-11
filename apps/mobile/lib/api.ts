@@ -1,5 +1,5 @@
 import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
-import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey } from "@hybrid/core";
+import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, type HeatProtocol } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 
@@ -385,7 +385,7 @@ export async function logWater(ml: number, ts = new Date().toISOString()): Promi
 
 /** One recorded sitting as the client holds it, with both row ids so it can be
  *  removed as a unit. */
-export type HeatLog = { ids: string[]; minutes: number; tempC: number; ts: string };
+export type HeatLog = { ids: string[]; minutes: number; tempC: number; protocol: HeatProtocol; ts: string };
 
 /** Every sauna row this athlete owns, filtered server-side by kind so an
  *  unrelated stream (the food log writes up to eight rows per meal) can never
@@ -409,13 +409,21 @@ export async function fetchHeatSignals(): Promise<CoreSignal[]> {
 
 /** Record a sitting. `ts` is the sitting's own instant, so a back-dated entry
  *  keeps the clock the decay and the pair-matching both read. */
-export async function logHeat(minutes: number, tempC: number, ts = new Date().toISOString()): Promise<HeatLog | null> {
+export async function logHeat(
+  minutes: number,
+  tempC: number,
+  protocol: HeatProtocol = "sauna",
+  ts = new Date().toISOString(),
+): Promise<HeatLog | null> {
+  // The protocol rides in `source` — no migration, and "manual" on its own
+  // stays a dry sauna so every row written before this keeps its meaning.
+  const source = heatSource(protocol);
   const post = async (kind: string, value: number, unit: string): Promise<string | null> => {
     try {
       const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-        body: JSON.stringify({ kind, value, unit, source: "manual", ts }),
+        body: JSON.stringify({ kind, value, unit, source, ts }),
       });
       if (!res.ok) return null;
       const data = (await res.json()) as { signal?: { id?: string } };
@@ -427,7 +435,7 @@ export async function logHeat(minutes: number, tempC: number, ts = new Date().to
   const minId = await post("sauna", minutes, "min");
   if (!minId) return null;
   const tempId = await post("saunaTemp", tempC, "C");
-  return { ids: tempId ? [minId, tempId] : [minId], minutes, tempC, ts };
+  return { ids: tempId ? [minId, tempId] : [minId], minutes, tempC, protocol, ts };
 }
 
 /** Remove a sitting — every row it wrote, so a delete cannot orphan half of it. */

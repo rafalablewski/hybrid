@@ -37,6 +37,8 @@ import {
   sampleHeatSignals,
   whatIfHeat,
   HEAT_CREDIT_MAX,
+  HEAT_PROTOCOLS,
+  HEAT_PROTOCOL_LIST,
   HEAT_REF_C,
   HEAT_WINDOW_H,
   deriveTissueRisk,
@@ -69,6 +71,7 @@ import {
   KEPT_ARC_ALPHA,
   type Derivation,
   type HeatAdjustment,
+  type HeatProtocol,
   type HeatSignalRow,
   type MuscleGroup,
   type Personalization,
@@ -131,13 +134,13 @@ type WhatIfState = {
   loadPct: number; hrv: number | null; restingHr: number | null; sleep: number | null;
   /** A simulated sitting: minutes, °C, and how long ago. Null = leave the
    *  athlete's real heat log alone (0 minutes is how you ask for "none"). */
-  heatMinutes: number | null; heatTempC: number; heatHoursAgo: number;
+  heatMinutes: number | null; heatTempC: number; heatHoursAgo: number; heatProtocol: HeatProtocol;
   /** Run the stack as if this athlete had no wearable at all. */
   noWearable: boolean;
 };
 const WHATIF_OFF: WhatIfState = {
   loadPct: 100, hrv: null, restingHr: null, sleep: null,
-  heatMinutes: null, heatTempC: HEAT_REF_C, heatHoursAgo: 10, noWearable: false,
+  heatMinutes: null, heatTempC: HEAT_REF_C, heatHoursAgo: 10, heatProtocol: "sauna", noWearable: false,
 };
 
 type Scenario = { id: string; name: string; whatIf: WhatIfState };
@@ -257,8 +260,8 @@ export default function EngineRoom() {
     [whatIfActive, bio, whatIf],
   );
   const simHeatSignals = useMemo(
-    () => (whatIfActive ? whatIfHeat(heatSignals, { heatMinutes: whatIf.heatMinutes ?? undefined, heatTempC: whatIf.heatTempC, heatHoursAgo: whatIf.heatHoursAgo }, now) : heatSignals),
-    [whatIfActive, heatSignals, whatIf.heatMinutes, whatIf.heatTempC, whatIf.heatHoursAgo, now],
+    () => (whatIfActive ? whatIfHeat(heatSignals, { heatMinutes: whatIf.heatMinutes ?? undefined, heatTempC: whatIf.heatTempC, heatHoursAgo: whatIf.heatHoursAgo, heatProtocol: whatIf.heatProtocol }, now) : heatSignals),
+    [whatIfActive, heatSignals, whatIf.heatMinutes, whatIf.heatTempC, whatIf.heatHoursAgo, whatIf.heatProtocol, now],
   );
   const sim = useMemo(
     () =>
@@ -304,6 +307,7 @@ export default function EngineRoom() {
                   heatMinutes: s.whatIf.heatMinutes ?? undefined,
                   heatTempC: s.whatIf.heatTempC,
                   heatHoursAgo: s.whatIf.heatHoursAgo,
+                  heatProtocol: s.whatIf.heatProtocol,
                 }, now),
               },
             )
@@ -551,12 +555,29 @@ export default function EngineRoom() {
             label="Sauna — temperature"
             disabled={whatIf.heatMinutes == null}
             value={whatIf.heatTempC}
-            display={`${whatIf.heatTempC} °C (×${heatIntensity(whatIf.heatTempC).toFixed(2)})`}
+            display={`${whatIf.heatTempC} °C (×${heatIntensity(whatIf.heatTempC, whatIf.heatProtocol).toFixed(2)})`}
             min={40}
             max={110}
             step={5}
             onChange={(v) => setWhatIf({ ...whatIf, heatTempC: v })}
           />
+          <div style={{ display: "grid", gap: 6, alignContent: "start" }}>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>Heat — which kind</Mono>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {HEAT_PROTOCOL_LIST.map((p) => (
+                <Button
+                  key={p}
+                  label={p}
+                  variant={whatIf.heatProtocol === p ? "fill" : "outline"}
+                  onClick={() => setWhatIf({ ...whatIf, heatProtocol: p, heatTempC: HEAT_PROTOCOLS[p].refC })}
+                />
+              ))}
+            </div>
+            <Mono s={{ fontSize: fs.nano, lineHeight: 1.5 }}>
+              {HEAT_PROTOCOLS[whatIf.heatProtocol].floorC}&deg;C floor, {HEAT_PROTOCOLS[whatIf.heatProtocol].refC}&deg;C reference.
+              Picking one re-seats the temperature at its own reference.
+            </Mono>
+          </div>
           <Slider
             label="Sauna — hours ago"
             disabled={whatIf.heatMinutes == null}
@@ -1267,7 +1288,7 @@ function HeatPanel({ heat, whatIfActive }: { heat: HeatAdjustment; whatIfActive:
           <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
             {heat.sittings.map((x) => (
               <code key={x.ts} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: INK2, border: `1px solid ${LINE}`, borderRadius: 7, padding: "6px 10px", overflowX: "auto", whiteSpace: "nowrap" }}>
-                {new Date(x.ts).toLocaleString()} – {x.minutes} min @ {x.tempC}&deg;C
+                {new Date(x.ts).toLocaleString()} – {x.protocol} – {x.minutes} min @ {x.tempC}&deg;C
                 {x.assumedTemp ? " (assumed)" : ""} &rarr; {x.equivMin.toFixed(1)} equiv min
               </code>
             ))}

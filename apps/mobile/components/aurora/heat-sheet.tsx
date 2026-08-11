@@ -2,12 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import {
   HEAT_MINUTES_BOUNDS,
-  HEAT_REF_C,
+  HEAT_PROTOCOLS,
+  HEAT_PROTOCOL_LIST,
   HEAT_TEMP_BOUNDS,
   heatIntensity,
   heatSittings,
   fmtTemp,
   space,
+  type HeatProtocol,
   type WeightUnit,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -51,9 +53,17 @@ import { GlassSegment, NativeDateField, NativeStepper, LIQUID_GLASS_SUPPORTED } 
 /** Duration presets, in minutes. Round numbers near the last round number. */
 const MINUTE_PRESETS = [10, 15, 20, 30];
 
-/** Temperature presets, °C. Chosen to span the real range an athlete meets:
- *  an infrared cabin, a cool public sauna, traditional, and hot. */
-const TEMP_PRESETS = [55, 70, 80, 90, 100];
+/**
+ * Temperature presets, per protocol, spanning the real range each modality
+ * actually runs at. Offering 70/80/90/100 for a steam room would be offering
+ * temperatures no steam room reaches — the presets have to be the ones an
+ * athlete could plausibly tap, or they are decoration with a keypad behind them.
+ */
+const TEMP_PRESETS: Record<HeatProtocol, number[]> = {
+  sauna: [70, 80, 90, 100],
+  steam: [40, 45, 50],
+  infrared: [45, 55, 60],
+};
 
 export function HeatSheet({
   visible,
@@ -74,7 +84,17 @@ export function HeatSheet({
   const { palette: C } = useTheme();
   const { t } = useLang();
   const [minutes, setMinutes] = useState(20);
-  const [tempC, setTempC] = useState(HEAT_REF_C);
+  const [protocol, setProtocol] = useState<HeatProtocol>("sauna");
+  const [tempC, setTempC] = useState(HEAT_PROTOCOLS.sauna.refC);
+
+  // Switching modality re-seats the temperature at that modality's reference.
+  // Carrying 90 °C across from the sauna tab into steam would offer a room
+  // nobody has, and the equivalent-minutes line would quote a dose off a
+  // temperature the athlete never sat in.
+  const pickProtocol = (p: HeatProtocol) => {
+    setProtocol(p);
+    setTempC(HEAT_PROTOCOLS[p].refC);
+  };
   const [when, setWhen] = useState<Date>(initialAt ?? new Date());
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
@@ -108,7 +128,7 @@ export function HeatSheet({
     else setMsg(t("w.recovery.heat.failed"));
   };
 
-  const equiv = useMemo(() => minutes * heatIntensity(tempC), [minutes, tempC]);
+  const equiv = useMemo(() => minutes * heatIntensity(tempC, protocol), [minutes, tempC, protocol]);
   // Zero equivalent minutes is a real answer, not an error: below the floor the
   // room is warm rather than thermally stressful, and the sheet says so instead
   // of letting the athlete save something that will silently score nothing.
@@ -118,7 +138,7 @@ export function HeatSheet({
     if (saving) return;
     setSaving(true);
     setMsg("");
-    const ok = await logHeat(minutes, tempC, when.toISOString());
+    const ok = await logHeat(minutes, tempC, protocol, when.toISOString());
     setSaving(false);
     if (!ok) {
       setMsg(t("w.recovery.heat.failed"));
@@ -144,8 +164,44 @@ export function HeatSheet({
 
   return (
     <Sheet visible={visible} onClose={onClose} title={t("w.recovery.heat.title")} sub={t("w.recovery.heat.sub")}>
+      {/* ── WHICH KIND ───────────────────────────────────────────────────
+          First, because it decides what the temperature below it MEANS: 45 °C
+          is nothing in a dry sauna and a full dose in a steam room. */}
+      <Text style={{ ...label, marginBottom: 8 }}>{t("w.recovery.heat.kind")}</Text>
+      {LIQUID_GLASS_SUPPORTED ? (
+        <GlassSegment
+          options={HEAT_PROTOCOL_LIST.map((p) => ({ id: p, label: t(`w.recovery.heat.protocol.${p}`) }))}
+          value={protocol}
+          onPick={pickProtocol}
+          accent={C.amber}
+        />
+      ) : (
+        <View style={{ flexDirection: "row", gap: 7 }}>
+          {HEAT_PROTOCOL_LIST.map((p) => {
+            const on = p === protocol;
+            return (
+              <Pressable
+                key={p}
+                onPress={() => pickProtocol(p)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                style={{
+                  flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: RADIUS.pill,
+                  backgroundColor: on ? C.amber : "transparent",
+                  borderWidth: on ? 0 : 1, borderColor: C.line,
+                }}
+              >
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.onAccent : C.ash }}>
+                  {t(`w.recovery.heat.protocol.${p}`)}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      )}
+
       {/* ── HOW LONG ─────────────────────────────────────────────────────── */}
-      <Text style={{ ...label, marginBottom: 8 }}>{t("w.recovery.heat.howLong")}</Text>
+      <Text style={{ ...label, marginTop: 18, marginBottom: 8 }}>{t("w.recovery.heat.howLong")}</Text>
       {LIQUID_GLASS_SUPPORTED ? (
         <GlassSegment
           options={MINUTE_PRESETS.map((m) => ({ id: String(m), label: `${m}` }))}
@@ -179,13 +235,13 @@ export function HeatSheet({
       <Text style={{ ...label, marginTop: 18, marginBottom: 8 }}>{t("w.recovery.heat.howHot")}</Text>
       {LIQUID_GLASS_SUPPORTED ? (
         <GlassSegment
-          options={TEMP_PRESETS.map((v) => ({ id: String(v), label: `${v}°` }))}
+          options={TEMP_PRESETS[protocol].map((v) => ({ id: String(v), label: `${v}°` }))}
           value={String(tempC)}
           onPick={(v) => setTempC(Number(v))}
           accent={C.amber}
         />
       ) : (
-        <PresetRow C={C} values={TEMP_PRESETS} value={tempC} onPick={setTempC} suffix="°" />
+        <PresetRow C={C} values={TEMP_PRESETS[protocol]} value={tempC} onPick={setTempC} suffix="°" />
       )}
       <View style={{ ...rowBox, marginTop: 10 }}>
         {LIQUID_GLASS_SUPPORTED ? (
@@ -209,7 +265,7 @@ export function HeatSheet({
       {/* ── THE MODEL, SHOWN AS IT IS ENTERED ────────────────────────────── */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, marginTop: 12, paddingHorizontal: 4 }}>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash }}>
-          {worthless ? t("w.recovery.heat.tooCool") : t("w.recovery.heat.thatIs")}
+          {worthless ? t("w.recovery.heat.tooCool").replace("{n}", String(HEAT_PROTOCOLS[protocol].floorC)) : t("w.recovery.heat.thatIs")}
         </Text>
         {!worthless && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>
@@ -269,7 +325,7 @@ export function HeatSheet({
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
-                  {x.minutes} {t("w.recovery.heat.min")} – {fmtTemp(x.tempC, weightUnit)}
+                  {t(`w.recovery.heat.protocol.${x.protocol}`)} – {x.minutes} {t("w.recovery.heat.min")} – {fmtTemp(x.tempC, weightUnit)}
                 </Text>
                 <Pressable
                   onPress={() => remove(x.ids)}

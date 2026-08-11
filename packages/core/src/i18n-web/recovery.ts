@@ -6,6 +6,10 @@
 export const web_recovery = {
   en: {
     // heat-sheet.tsx — the sauna log (the one input no device reports)
+    "w.recovery.heat.kind": "Which kind",
+    "w.recovery.heat.protocol.sauna": "Sauna",
+    "w.recovery.heat.protocol.steam": "Steam",
+    "w.recovery.heat.protocol.infrared": "Infrared",
     "w.recovery.heat.recent": "Recent",
     "w.recovery.heat.remove": "Remove",
     "w.recovery.heat.afterSession": "Finish in the sauna?",
@@ -26,7 +30,7 @@ export const web_recovery = {
     "w.recovery.heat.min": "min",
     "w.recovery.heat.thatIs": "That is",
     "w.recovery.heat.equiv": "{n} equivalent min",
-    "w.recovery.heat.tooCool": "Too cool to count — below 45 °C a room is warm, not a dose.",
+    "w.recovery.heat.tooCool": "Too cool to count — below {n} °C this is a warm room, not a dose.",
     "w.recovery.heat.save": "Save",
     "w.recovery.heat.failed": "Couldn't save that — check your connection and try again.",
     "w.recovery.heat.row": "Heat",
@@ -639,6 +643,10 @@ export const web_recovery = {
   } as Record<string, string>,
   pl: {
     // heat-sheet.tsx — the sauna log (the one input no device reports)
+    "w.recovery.heat.kind": "Rodzaj",
+    "w.recovery.heat.protocol.sauna": "Sauna",
+    "w.recovery.heat.protocol.steam": "Parowa",
+    "w.recovery.heat.protocol.infrared": "Podczerwień",
     "w.recovery.heat.recent": "Ostatnie",
     "w.recovery.heat.remove": "Usuń",
     "w.recovery.heat.afterSession": "Sauna po treningu?",
@@ -659,7 +667,7 @@ export const web_recovery = {
     "w.recovery.heat.min": "min",
     "w.recovery.heat.thatIs": "To daje",
     "w.recovery.heat.equiv": "{n} min równoważnych",
-    "w.recovery.heat.tooCool": "Za chłodno, by się liczyło — poniżej 45 °C to ciepłe pomieszczenie, nie dawka.",
+    "w.recovery.heat.tooCool": "Za chłodno, by się liczyło — poniżej {n} °C to ciepłe pomieszczenie, nie dawka.",
     "w.recovery.heat.save": "Zapisz",
     "w.recovery.heat.failed": "Nie udało się zapisać — sprawdź połączenie i spróbuj ponownie.",
     "w.recovery.heat.row": "Sauna",
@@ -1252,6 +1260,10 @@ export const web_recovery = {
   } as Record<string, string>,
   de: {
     // heat-sheet.tsx — the sauna log (the one input no device reports)
+    "w.recovery.heat.kind": "Welche Art",
+    "w.recovery.heat.protocol.sauna": "Sauna",
+    "w.recovery.heat.protocol.steam": "Dampf",
+    "w.recovery.heat.protocol.infrared": "Infrarot",
     "w.recovery.heat.recent": "Zuletzt",
     "w.recovery.heat.remove": "Entfernen",
     "w.recovery.heat.afterSession": "Zum Abschluss in die Sauna?",
@@ -1272,7 +1284,7 @@ export const web_recovery = {
     "w.recovery.heat.min": "Min",
     "w.recovery.heat.thatIs": "Das sind",
     "w.recovery.heat.equiv": "{n} Äquivalentminuten",
-    "w.recovery.heat.tooCool": "Zu kühl, um zu zählen — unter 45 °C ist ein Raum warm, keine Dosis.",
+    "w.recovery.heat.tooCool": "Zu kühl, um zu zählen — unter {n} °C ist das ein warmer Raum, keine Dosis.",
     "w.recovery.heat.save": "Speichern",
     "w.recovery.heat.failed": "Konnte nicht gespeichert werden — Verbindung prüfen und erneut versuchen.",
     "w.recovery.heat.row": "Hitze",

@@ -10,6 +10,10 @@ import {
   heatIntensity,
   heatSittings,
   heatWeeklyFrequency,
+  HEAT_PROTOCOLS,
+  heatProtocolOf,
+  heatSource,
+  type HeatProtocol,
   type HeatSignalRow,
 } from "./heat";
 import { computeReadiness } from "./readiness";
@@ -27,10 +31,11 @@ const HOUR = 3_600_000;
 const NOW = Date.parse("2026-08-12T07:10:00.000Z");
 
 /** Both rows one save writes, at one exact instant. */
-const sitting = (minutes: number, tempC: number | null, hoursAgo: number): HeatSignalRow[] => {
+const sitting = (minutes: number, tempC: number | null, hoursAgo: number, protocol: HeatProtocol = "sauna"): HeatSignalRow[] => {
   const ts = new Date(NOW - hoursAgo * HOUR).toISOString();
-  const rows: HeatSignalRow[] = [{ id: `m${hoursAgo}`, kind: "sauna", value: minutes, source: "manual", ts }];
-  if (tempC !== null) rows.push({ id: `t${hoursAgo}`, kind: "saunaTemp", value: tempC, source: "manual", ts });
+  const source = heatSource(protocol);
+  const rows: HeatSignalRow[] = [{ id: `m${hoursAgo}`, kind: "sauna", value: minutes, source, ts }];
+  if (tempC !== null) rows.push({ id: `t${hoursAgo}`, kind: "saunaTemp", value: tempC, source, ts });
   return rows;
 };
 
@@ -408,5 +413,79 @@ describe("saunaClearance — does heat help THIS athlete?", () => {
     // reported sore (2), so the heat group cleared more of the same session —
     // a lower ratio against the population curve, so a negative delta.
     expect(c.delta).toBeLessThan(0);
+  });
+});
+
+
+/* ── THREE MODALITIES, THREE RAMPS ─────────────────────────────────────────── */
+
+describe("heatIntensity per protocol — air temperature means something different in each", () => {
+  it("keeps dry sauna as the anchor, unchanged", () => {
+    expect(heatIntensity(80, "sauna")).toBe(1);
+    expect(heatIntensity(90, "sauna")).toBeCloseTo(1.286, 3);
+    // The default IS sauna, so every pre-protocol call still reads the same.
+    expect(heatIntensity(90)).toBe(heatIntensity(90, "sauna"));
+  });
+
+  it("scores a steam room that the dry ramp called nothing", () => {
+    // 45 °C is exactly the dry FLOOR — zero — and a real dose in steam.
+    expect(heatIntensity(45, "sauna")).toBe(0);
+    expect(heatIntensity(45, "steam")).toBeGreaterThan(0.7);
+    expect(heatIntensity(48, "steam")).toBe(1);
+  });
+
+  it("scores an infrared cabin the dry ramp barely registered", () => {
+    expect(heatIntensity(55, "sauna")).toBeCloseTo(0.286, 3);
+    expect(heatIntensity(55, "infrared")).toBeCloseTo(0.8, 3);
+    expect(heatIntensity(60, "infrared")).toBe(1);
+  });
+
+  it("gives every protocol a reference worth exactly 1 and a floor worth 0", () => {
+    for (const p of Object.keys(HEAT_PROTOCOLS) as HeatProtocol[]) {
+      expect(heatIntensity(HEAT_PROTOCOLS[p].refC, p)).toBe(1);
+      expect(heatIntensity(HEAT_PROTOCOLS[p].floorC, p)).toBe(0);
+      expect(heatIntensity(HEAT_PROTOCOLS[p].floorC - 5, p)).toBe(0);
+    }
+  });
+
+  it("still clamps in every modality, so no entry earns an implausible dose", () => {
+    for (const p of Object.keys(HEAT_PROTOCOLS) as HeatProtocol[]) {
+      expect(heatIntensity(120, p)).toBe(HEAT_INTENSITY_MAX);
+    }
+  });
+});
+
+describe("the protocol rides in `source`, so nothing needs migrating", () => {
+  it("leaves a plain 'manual' row meaning a dry sauna", () => {
+    expect(heatSource("sauna")).toBe("manual");
+    expect(heatProtocolOf("manual")).toBe("sauna");
+    // Which is what every row written before this existed looks like.
+    expect(heatSittings(sitting(20, 90, 2))[0]!.protocol).toBe("sauna");
+  });
+
+  it("round-trips the other two, keeping provenance as the prefix", () => {
+    expect(heatSource("steam")).toBe("manual:steam");
+    expect(heatSource("infrared", "whatif")).toBe("whatif:infrared");
+    expect(heatProtocolOf("whatif:infrared")).toBe("infrared");
+  });
+
+  it("falls back to dry sauna for anything it does not recognise", () => {
+    expect(heatProtocolOf("manual:banya")).toBe("sauna");
+    expect(heatProtocolOf("")).toBe("sauna");
+  });
+
+  it("reads a missing temperature at ITS OWN reference, not the sauna's", () => {
+    const [s] = heatSittings(sitting(20, null, 2, "steam"));
+    expect(s).toMatchObject({ protocol: "steam", assumedTemp: true, tempC: HEAT_PROTOCOLS.steam.refC });
+    // Assuming 80 °C here would have been assuming a room nobody has.
+    expect(s!.equivMin).toBe(20);
+  });
+
+  it("scores a real steam sitting through the whole engine", () => {
+    // 20 min at 45 °C steam — under the dry model this was worth exactly zero.
+    const h = heatAdjustment(sitting(20, 45, 4, "steam"), { now: NOW });
+    expect(h.sittings[0]!.protocol).toBe("steam");
+    expect(h.points).toBeGreaterThan(0);
+    expect(heatAdjustment(sitting(20, 45, 4, "sauna"), { now: NOW }).points).toBe(0);
   });
 });
