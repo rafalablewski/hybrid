@@ -9,7 +9,7 @@ import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, ASection, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, ASection, AStepper, RADIUS, withAlpha } from "./kit";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
 const EXP_KEY = { beginner: "w.analyze.vol.expBeginner", intermediate: "w.analyze.vol.expIntermediate", advanced: "w.analyze.vol.expAdvanced" } as const;
@@ -213,8 +213,8 @@ export default function AuroraVolumeModel() {
               <Text style={{ color: C.ash }}>{" — "}</Text>
               <Text style={{ color: txt(C, current?.kind === "deload" ? C.blue : C.lime) }}>{current ? t(blockKindKey(current.kind)) : ""}</Text>
             </Text>
-            <Stepper C={C} label={t("w.analyze.vol.currentWeek")} value={block.week} min={1} max={block.weeks} onChange={(v) => setBlock({ week: v })} />
-            <Stepper C={C} label={t("w.analyze.vol.blockLength")} value={block.weeks} suffix={t("w.analyze.vol.weeksShort")} min={1} max={16} onChange={(v) => setBlock({ weeks: v })} />
+            <AStepper label={t("w.analyze.vol.currentWeek")} value={block.week} min={1} max={block.weeks} onChange={(v) => setBlock({ week: v })} />
+            <AStepper label={t("w.analyze.vol.blockLength")} value={block.weeks} suffix={t("w.analyze.vol.weeksShort")} min={1} max={16} onChange={(v) => setBlock({ weeks: v })} />
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap" }}>
               <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vol.lastLoadWeek")}</Text>
               <View style={{ flexDirection: "row", gap: 6 }}>
@@ -249,20 +249,3 @@ function Toggle({ C, on, label, onPress }: { C: Palette; on: boolean; label: str
 }
 
 /** A −/+ stepper for the small integer block settings. */
-function Stepper({ C, label, value, suffix, min, max, onChange }: {
-  C: Palette; label: string; value: number; suffix?: string; min: number; max: number; onChange: (v: number) => void;
-}) {
-  const btn = { width: 30, height: 30, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center" as const, justifyContent: "center" as const };
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-      <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{label}</Text>
-      <Pressable onPress={() => onChange(Math.max(min, value - 1))} accessibilityLabel={`${label} −`} style={btn}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>−</Text>
-      </Pressable>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, minWidth: 46, textAlign: "center" }}>{value}{suffix ? ` ${suffix}` : ""}</Text>
-      <Pressable onPress={() => onChange(Math.min(max, value + 1))} accessibilityLabel={`${label} +`} style={btn}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>+</Text>
-      </Pressable>
-    </View>
-  );
-}

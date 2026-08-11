@@ -246,7 +246,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
                     <Path d="M6.6 10.3 5.2 15.2l3.8-1.9 3.8 1.9-1.4-4.9" fill="none" stroke={txt(C, colors.lime)} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
-                <SButton label={posting ? t("w.social.sharing") : t("w.social.share")} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+                <SButton label={t("w.social.share")} busyLabel={posting ? t("w.social.sharing") : undefined} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
               </View>
             ) : null}
           </View>

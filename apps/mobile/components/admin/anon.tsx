@@ -92,7 +92,8 @@ export default function AdminAnon() {
                   <Mono color={palette.ash} style={{ marginTop: 8 }}>started {fmt(s.startedAt)}</Mono>
                   <View style={{ marginTop: 12 }}>
                     <PillBtn
-                      label={busy === s.id ? "Deleting…" : "Delete"}
+                      label="Delete"
+                      busyLabel="Deleting…"
                       onPress={() => remove(s.id, s.title)}
                       color={palette.red}
                       outline

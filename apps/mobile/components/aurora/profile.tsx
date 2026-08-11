@@ -742,7 +742,14 @@ function HighlightGrid({
             <Animated.View
               key={key}
               onLayout={(e) => { const { x, y, width, height } = e.nativeEvent.layout; layouts.current.set(key, { x, y, w: width, h: height }); }}
-              style={{ width: "31.5%", aspectRatio: 1, marginBottom: 8, zIndex: isDrag ? 50 : 0, elevation: isDrag ? 8 : 0, transform }}
+              // A dragged tile grows (the `scale` above) and casts a shadow, so
+              // it reads as picked UP rather than merely as the one that
+              // happens to be moving. `elevation` alone said that on Android
+              // and nothing at all on iOS, which is the platform this ships to.
+              // Static rather than interpolated: the scale beside it is
+              // native-driven, and a JS-driven shadow in the same style node is
+              // the one combination RN refuses.
+              style={{ width: "31.5%", aspectRatio: 1, marginBottom: 8, zIndex: isDrag ? 50 : 0, elevation: isDrag ? 8 : 0, shadowColor: "#000", shadowOpacity: isDrag ? 0.4 : 0, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, transform }}
             >
               <Pressable
                 onPress={tile.to && !editMode ? () => onOpen(tile.to!) : undefined}

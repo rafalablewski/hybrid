@@ -113,7 +113,7 @@ export default function AuroraRunTrack() {
 
       {msg && <Text accessibilityLiveRegion={msg.ok ? "polite" : "assertive"} accessibilityRole={msg.ok ? undefined : "alert"} style={{ fontFamily: F.reg, fontSize: fs.body, color: msg.ok ? txt(C, C.lime) : txt(C, C.amber), marginBottom: 8 }}>{msg.text}</Text>}
 
-      <APill label={saving ? t("w.train.runTrack.saving") : t("w.train.runTrack.saveRun")} onPress={save} disabled={saving} />
+      <APill label={t("w.train.runTrack.saveRun")} savingLabel={t("w.train.runTrack.saving")} state={saving ? "saving" : "idle"} onPress={save} />
 
       <Pressable onPress={() => router.push("/endurance")} style={{ paddingVertical: 16, alignItems: "center" }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.runTrack.seeAnalytics")}</Text>

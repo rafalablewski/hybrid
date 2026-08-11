@@ -66,4 +66,51 @@ describe("APill", () => {
     const { container } = renderScreen(<APill label="Enrol" onPress={() => {}} />);
     expect(container.textContent).toContain("Enrol");
   });
+
+  /**
+   * THE WRAPPER MUST NOT SWALLOW THE LAYOUT — the gate for a regression that
+   * shipped in this file's own history.
+   *
+   * Giving the pill a commit state meant giving it an outer node to carry the
+   * error shake (the press primitive applies its own scale last and would
+   * clobber a merged transform). The moment that wrapper existed, the caller's
+   * `flex: 1` was landing on the INNER node while the wrapper — the actual
+   * child of the caller's row — sized to content and refused to stretch.
+   *
+   * Eleven callers pass `flex: 1`. Nothing caught it: the types are identical,
+   * the bundle exports, and every unit test passes. It is only visible in a
+   * resolved tree, which is exactly what this gate can see.
+   */
+  const outermost = (container: HTMLElement) => {
+    const wrap = container.querySelector('[data-testid="wrap"]') as HTMLElement;
+    const el = wrap?.firstElementChild as HTMLElement | null;
+    if (!el) throw new Error("the pill did not render");
+    return el;
+  };
+
+  it("puts flex on the outermost node, where the caller's row can see it", () => {
+    const { container } = renderScreen(
+      <View testID="wrap"><APill label="Save" onPress={() => {}} style={{ flex: 1 }} /></View>,
+    );
+    expect(outermost(container).style.flexGrow || outermost(container).style.flex).toBeTruthy();
+  });
+
+  it("keeps padding on the pill itself, not on the wrapper", () => {
+    // The other half of the split: padding hoisted to the wrapper would inset
+    // the pill inside an invisible box instead of making the pill bigger.
+    const { container } = renderScreen(
+      <View testID="wrap"><APill label="Save" onPress={() => {}} style={{ paddingVertical: 40 }} /></View>,
+    );
+    expect(outermost(container).style.paddingTop).toBeFalsy();
+  });
+
+  it("still reports its state without changing which node carries the layout", () => {
+    const { container } = renderScreen(
+      <View testID="wrap"><APill label="Send to Slack" savingLabel="Sending…" state="saving" onPress={() => {}} style={{ flex: 1 }} /></View>,
+    );
+    expect(container.textContent).toContain("Sending…");
+    // The idle label stays mounted — it is what holds the width.
+    expect(container.textContent).toContain("Send to Slack");
+    expect(outermost(container).style.flexGrow || outermost(container).style.flex).toBeTruthy();
+  });
 });

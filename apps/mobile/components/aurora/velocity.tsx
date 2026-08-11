@@ -11,7 +11,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, RADIUS } from "./kit";
+import { AuroraScreen, ACard, AStepper, RADIUS } from "./kit";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const zoneColor = (id: string, C: Palette) =>
@@ -88,10 +88,18 @@ export default function AuroraVelocity() {
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.vel.aiLoad")}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginVertical: 12 }}>
-          <Stepper label="−" onPress={() => setTargetVel((v) => Math.max(0.2, +(v - 0.05).toFixed(2)))} />
-          <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{targetVel.toFixed(2)} m/s</Text>
-          <Stepper label="+" onPress={() => setTargetVel((v) => Math.min(1.3, +(v + 0.05).toFixed(2)))} />
+        <View style={{ alignItems: "center", marginVertical: 12 }}>
+          <AStepper
+            tone="hero"
+            value={targetVel}
+            min={0.2}
+            max={1.3}
+            step={0.05}
+            format={(v) => v.toFixed(2)}
+            suffix="m/s"
+            onChange={setTargetVel}
+            a11y={t("w.analyze.vel.aiLoad")}
+          />
         </View>
         {rec ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
@@ -141,14 +149,6 @@ export default function AuroraVelocity() {
   );
 }
 
-function Stepper({ label, onPress }: { label: string; onPress: () => void }) {
-  const { palette: C } = useTheme();
-  return (
-    <Pressable onPress={onPress} style={{ width: 48, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: `${C.lime}66`, backgroundColor: `${C.lime}1f`, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: 22, color: txt(C, C.lime) }}>{label}</Text>
-    </Pressable>
-  );
-}
 
 function Plot({ points, profile }: { points: LVPoint[]; profile: LoadVelocityProfile }) {
   const { palette: C } = useTheme();

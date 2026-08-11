@@ -127,6 +127,7 @@ export function PillBtn({
   outline,
   disabled,
   busy,
+  busyLabel,
 }: {
   label: string;
   onPress: () => void;
@@ -136,6 +137,10 @@ export function PillBtn({
   /** Show a live spinner beside the label — an in-flight action reads as active
    *  rather than stalled (e.g. the "Deleting…" button). */
   busy?: boolean;
+  /** The in-flight WORD. Pass it here rather than swapping `label`: the idle
+   *  label keeps its place (invisibly) so the pill cannot change width under a
+   *  finger that is still on it. Same contract as the kit's APill `state`. */
+  busyLabel?: string;
 }) {
   const { palette } = useTheme();
   const c = color ?? palette.lime;
@@ -165,7 +170,17 @@ export function PillBtn({
       }}
     >
       {busy ? <ActivityIndicator size="small" color={fg} /> : null}
-      <CtaLabel label={label} color={fg} fontSize={fs.caption} />
+      {/* The idle label always holds the width; the busy word sits over it. */}
+      <View>
+        <View style={{ opacity: busy && busyLabel ? 0 : 1 }}>
+          <CtaLabel label={label} color={fg} fontSize={fs.caption} />
+        </View>
+        {busy && busyLabel ? (
+          <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center" }}>
+            <CtaLabel label={busyLabel} color={fg} fontSize={fs.caption} />
+          </View>
+        ) : null}
+      </View>
     </PressScale>
   );
 }

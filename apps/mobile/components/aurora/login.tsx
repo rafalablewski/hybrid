@@ -146,7 +146,7 @@ export default function AuroraLogin() {
           {!!error && (
             <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.red), marginTop: 10 }}>{error}</Text>
           )}
-          <APill label={busy ? "…" : t("w.account.login.verify")} variant="light" onPress={verifyMfa} disabled={busy || !isValidTotpCode(mfaCode)} style={{ marginTop: 16 }} />
+          <APill label={t("w.account.login.verify")} state={busy ? "saving" : "idle"} variant="light" onPress={verifyMfa} disabled={!isValidTotpCode(mfaCode)} style={{ marginTop: 16 }} />
           <Pressable onPress={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={{ marginTop: 16, alignItems: "center" }}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.ash }}>← {t("w.account.login.cancel")}</Text>
           </Pressable>
@@ -178,7 +178,8 @@ export default function AuroraLogin() {
         )}
 
         <APill
-          label={busy ? "…" : isSignup ? t("w.account.login.register") : t("w.account.login.login")}
+          label={isSignup ? t("w.account.login.register") : t("w.account.login.login")}
+          state={busy ? "saving" : "idle"}
           variant="light"
           onPress={submit}
           disabled={busy || !live}

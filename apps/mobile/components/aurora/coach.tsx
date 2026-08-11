@@ -428,7 +428,9 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             </ScrollView>
             <View style={{ marginTop: 12 }}>
               <APill
-                label={generating ? t("w.teams.coach.generating") : t("w.teams.coach.generateAssign")}
+                label={t("w.teams.coach.generateAssign")}
+                savingLabel={t("w.teams.coach.generating")}
+                state={generating ? "saving" : "idle"}
                 variant={sessions.length > 0 && !generating ? "primary" : "soft"}
                 disabled={sessions.length === 0 || generating}
                 onPress={generateWeek}

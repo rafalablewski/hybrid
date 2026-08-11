@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, TextInput, StyleSheet, RefreshControl, KeyboardAvoidingView, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
+import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, useEntrance, HubDissolve, cardShadow, 
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -445,6 +445,9 @@ export function APill({
   color,
   disabled,
   style,
+  state = "idle",
+  savingLabel,
+  savedLabel,
 }: {
   label: string;
   onPress: () => void;
@@ -454,6 +457,29 @@ export function APill({
   color?: string;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  /**
+   * THE COMMIT STATE (audit §17). A button that reports what happened to the
+   * thing it committed, WITHOUT changing size while it does.
+   *
+   * That size is the whole reason this lives in the shared pill. Every save in
+   * the app hand-rolled the same pattern — swap the label to "Adding…", drop
+   * the opacity — and "Add meal" and "Adding…" are different widths, so the
+   * button resized under a finger that was still on it. Here the idle label is
+   * always laid out (invisibly) to HOLD the width, and the states cross-fade on
+   * top of it. The pill cannot resize because its size is not a function of
+   * which state it is in.
+   *
+   * `saved` holds a tick for `states.savedHoldMs` and knocks Success; `error`
+   * shakes on core's `shakeOffsets` and knocks Error. Both are the caller's to
+   * set and clear — the button reports, it does not decide.
+   */
+  state?: "idle" | "saving" | "saved" | "error";
+  /** Word for the in-flight state. Defaults to the idle label: the pill is
+   *  already dimmed and non-interactive, so a caller with nothing better to say
+   *  should not be forced to invent "Saving…". */
+  savingLabel?: string;
+  /** Word for the landed state, beside the tick. */
+  savedLabel?: string;
 }) {
   const { palette } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED;
@@ -471,27 +497,82 @@ export function APill({
         : glassSoft
           ? "transparent"
           : palette.ink2;
-  const fg = outline
+  const restFg = outline
     ? color
       ? txt(palette, color)
       : palette.ash
     : variant === "soft"
       ? palette.chalk
       : palette.onAccent;
+  // A FAILED commit is drawn as a filled red pill whatever the variant was.
+  // Painting red under an outline pill's own foreground would have left ash on
+  // red — the failure state is the one place the label must not get quieter.
+  const fg = state === "error" ? palette.onAccent : restFg;
+
+  // ── the commit state ──────────────────────────────────────────────────
+  const reduced = useReducedMotion();
+  const shake = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(0)).current;   // 0 = idle, 1 = reporting
+  const busy = state === "saving";
+  const reporting = state !== "idle";
+
+  useEffect(() => {
+    Animated.timing(fade, {
+      toValue: reporting ? 1 : 0,
+      duration: durations.dissolve,
+      useNativeDriver: true,
+    }).start();
+  }, [reporting, fade]);
+
+  useEffect(() => {
+    if (state !== "error") return;
+    haptic.error();
+    // Reduce Motion drops the TRAVEL, not the report — the knock and the
+    // colour still land, so the failure is never silent.
+    if (reduced) return;
+    const offsets = shakeOffsets();
+    Animated.sequence(
+      offsets.map((to) =>
+        Animated.timing(shake, {
+          toValue: to,
+          duration: states.shakeMs / offsets.length,
+          useNativeDriver: true,
+        }),
+      ),
+    ).start();
+  }, [state, shake, reduced]);
+
+  useEffect(() => {
+    if (state === "saved") haptic.success();
+  }, [state]);
+
+  const stateLabel = state === "saving" ? (savingLabel ?? label) : state === "saved" ? (savedLabel ?? label) : label;
+
+  // The caller's style is SPLIT (core `splitBoxStyle`): how-I-sit-in-my-parent
+  // goes on the shake wrapper, which is the node the caller's row actually
+  // sees; what-I-look-like stays on the pill. Without this the wrapper swallows
+  // `flex: 1` — 11 callers pass it — and the button quietly stops stretching.
+  const { outer, inner } = splitBoxStyle(StyleSheet.flatten(style) as Record<string, unknown>);
   return (
+    <Animated.View style={[{ transform: [{ translateX: shake }] }, outer as StyleProp<ViewStyle>]}>
     <PressScale
       onPress={onPress}
-      disabled={disabled}
+      // A button mid-commit must not accept a second one. This is the gate the
+      // hand-rolled copies each remembered separately (`disabled={saving}`).
+      disabled={disabled || busy}
       // APill is the app's primary action and was the ONE button primitive with
       // no accessibility contract — VoiceOver announced it as a plain view with
       // no role and no disabled state, while lib/ui's Button next to it was
       // fully labelled. The merge keeps the labelled behaviour.
       accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
+      accessibilityLabel={stateLabel}
+      // `busy` is what VoiceOver announces for an in-flight action. Without it
+      // a saving button reads as an ordinary enabled one that simply ignores
+      // you.
+      accessibilityState={{ disabled: !!disabled || busy, busy }}
       style={[
         {
-          backgroundColor: bg,
+          backgroundColor: state === "error" ? palette.red : bg,
           borderRadius: RADIUS.pill,
           paddingVertical: 18,
           // Was absent, because APill was only ever stretched by its parent.
@@ -505,13 +586,45 @@ export function APill({
           borderWidth: variant === "soft" || outline ? 1 : 0,
           borderColor: outline && color ? withAlpha(color, 0.45) : palette.line,
           overflow: "hidden",
+          // Fill the wrapper, whatever the wrapper turned out to be. A no-op
+          // when it is content-sized, which is the common case.
+          alignSelf: "stretch",
         },
-        style,
+        inner as StyleProp<ViewStyle>,
       ]}
     >
       {glassSoft && <GlassSurface radius={RADIUS.pill} />}
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
+      {/* THE WIDTH-HOLDER. The idle label is always laid out, and only its
+          opacity changes — so the pill's size is a function of its LABEL and
+          never of its state. This is the layout shift the audit names: a
+          button that grows or shrinks under a finger still resting on it. */}
+      <Animated.Text
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        numberOfLines={1}
+        style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg, opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}
+      >
+        {label}
+      </Animated.Text>
+      {/* The reporting states sit ON TOP, centred in the space the label
+          already claimed. `pointerEvents none` so they never eat the press. */}
+      {reporting && (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: "absolute", top: 0, right: 0, bottom: 0, left: 0,
+            flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+            opacity: fade,
+          }}
+        >
+          {state === "saving" && <ActivityIndicator size="small" color={fg} />}
+          {state === "saved" && <AuroraIcon name="check" size={17} color={fg} />}
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>
+            {stateLabel}
+          </Text>
+        </Animated.View>
+      )}
     </PressScale>
+    </Animated.View>
   );
 }
 
@@ -1078,6 +1191,177 @@ export function AStat({
         </Text>
       ) : null}
     </ACard>
+  );
+}
+
+/**
+ * THE STEPPER — −/＋ around a figure that ROLLS to its new value.
+ *
+ * The audit's §13 table singles this control out, and it is right to: this is a
+ * training app, so a number changing IS the content. A weight going 80 → 82.5,
+ * a block going week 3 → 4. Every stepper in the app swapped the old string for
+ * the new one in a single frame and buzzed at nothing, which is the one place
+ * where the app's own `RollingNumber` was most obviously missing.
+ *
+ * It is a shared component because there were two hand-rolled ones (the volume
+ * model's and the velocity screen's) that agreed on neither their geometry nor
+ * their behaviour — the same drift the rail tails and the drag lifts had.
+ *
+ * `haptic.selection()` per step, never `light`: a stepper is movement through
+ * DISCRETE VALUES, which is what selection feedback is for (see lib/haptics).
+ * It fires only when the value actually changes, so holding ＋ at the maximum
+ * ticks once and then goes quiet rather than buzzing against the clamp.
+ */
+export function AStepper({
+  label,
+  a11y,
+  value,
+  format,
+  onChange,
+  min,
+  max,
+  step = 1,
+  suffix,
+  tone = "row",
+}: {
+  /** Row label. Omit for a bare −/figure/＋ cluster with no leading text. */
+  label?: string;
+  /** What the −/＋ buttons ANNOUNCE, when the control's name is already on
+   *  screen as a kicker and printing it again inside the row would duplicate
+   *  it. Without this a label-less stepper reads out as "minus", "plus". */
+  a11y?: string;
+  value: number;
+  /** How the figure reads. Defaults to the plain number; pass this for a
+   *  decimal or a unit that belongs INSIDE the rolling figure. */
+  format?: (v: number) => string;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  /** Static unit printed beside the figure — it never rolls, because it is
+   *  prose rather than part of the value. */
+  suffix?: string;
+  /** TWO RUNGS, not a free size. `row` is a settings line (mono, beside a
+   *  label); `hero` is a screen's primary control, where the figure is the
+   *  thing you came to set. Two named rungs is a vocabulary — a `size` number
+   *  would be how the two hand-rolled steppers diverged in the first place. */
+  tone?: "row" | "hero";
+}) {
+  const { palette: C } = useTheme();
+  const hero = tone === "hero";
+  const at = (next: number) => {
+    // Round to the step's own precision: 0.05 steps otherwise accumulate
+    // float error and the figure starts reading 0.7500000000000001.
+    const dp = String(step).split(".")[1]?.length ?? 0;
+    const v = Math.min(max, Math.max(min, Number(next.toFixed(dp))));
+    // No tick for a step that does nothing. This is reachable only if a value
+    // arrives off the step grid; at the limits the button is DISABLED, which is
+    // what UIStepper does and what `accessibilityState` should say, so there is
+    // no press to answer there. (An earlier cut fired `haptic.rigid()` here for
+    // §15's "value clamped at max" — unreachable behind the same `disabled`,
+    // and dead code claiming a behaviour is worse than no code. Rigid's live
+    // home is the swipe row's rubber-band limit, where the drag does continue
+    // past the stop.)
+    if (v === value) return;
+    haptic.selection();
+    onChange(v);
+  };
+  const btn = {
+    width: HIT_TARGET, height: HIT_TARGET - (hero ? 0 : 6), borderRadius: RADIUS.inner,
+    // Neutral, never lime. The velocity screen's copy tinted its −/＋ with the
+    // accent, but a stepper does not GO anywhere — it is the same reasoning
+    // that keeps an expander's count in ash (see the exit-affordance rule).
+    borderWidth: 1, borderColor: C.line, backgroundColor: C.ink,
+    alignItems: "center" as const, justifyContent: "center" as const,
+  };
+  const glyph = { fontFamily: F.mono, fontSize: hero ? fs.subtitle : fs.bodyLg, color: C.chalk };
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+      {label ? (
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{label}</Text>
+      ) : null}
+      <Pressable
+        onPress={() => at(value - step)}
+        disabled={value <= min}
+        accessibilityRole="button"
+        accessibilityLabel={`${a11y ?? label ?? ""} −`.trim()}
+        style={[btn, value <= min && { opacity: 0.4 }]}
+      >
+        <Text style={glyph}>−</Text>
+      </Pressable>
+      {/* Centred and min-width so the row does not shuffle as the figure
+          gains or loses a column mid-roll. */}
+      <View style={{ minWidth: hero ? 108 : 62, flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 4 }}>
+        <RollingNumber
+          value={(format ?? String)(value)}
+          align="center"
+          style={hero
+            ? { fontFamily: F.black, fontSize: fs.title, color: C.chalk }
+            : { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk }}
+        />
+        {suffix ? <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: hero ? fs.body : fs.caption, color: C.ash }}>{suffix}</Text> : null}
+      </View>
+      <Pressable
+        onPress={() => at(value + step)}
+        disabled={value >= max}
+        accessibilityRole="button"
+        accessibilityLabel={`${a11y ?? label ?? ""} ＋`.trim()}
+        style={[btn, value >= max && { opacity: 0.4 }]}
+      >
+        <Text style={glyph}>+</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/**
+ * THE CHECK MARK — the box a checkbox row ticks.
+ *
+ * §13's row asks for the fill to scale FROM THE CENTRE and the tick to draw
+ * after it. Both halves matter and the order is the point: the box filling and
+ * the tick arriving in the same frame reads as a swap of two pictures, while
+ * filling then ticking reads as one thing being marked.
+ *
+ * Reduce Motion substitutes a cross-dissolve of the same two states — the mark
+ * still changes, it just does not travel to get there.
+ */
+export function ACheckMark({ on, size = 20, accent }: { on: boolean; size?: number; accent?: string }) {
+  const { palette: C } = useTheme();
+  const reduced = useReducedMotion();
+  const fill = accent ?? C.lime;
+  const a = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduced) { Animated.timing(a, { toValue: on ? 1 : 0, duration: durations.dissolve, useNativeDriver: true }).start(); return; }
+    Animated.timing(a, {
+      toValue: on ? 1 : 0,
+      // 120ms for the fill, per the audit's own figure — a mark is a state
+      // change, not a journey, so it is a short curve rather than a spring.
+      duration: 120,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [on, a, reduced]);
+  // The tick draws over the last third of the fill, so it lands ON a filled box.
+  const tick = a.interpolate({ inputRange: [0, 0.66, 1], outputRange: [0, 0, 1] });
+  return (
+    <View
+      style={{
+        width: size, height: size, borderRadius: 999, alignItems: "center", justifyContent: "center",
+        borderWidth: on ? 0 : 1.5, borderColor: `${C.ash}b3`,
+      }}
+    >
+      <Animated.View
+        style={{
+          position: "absolute", top: 0, right: 0, bottom: 0, left: 0,
+          borderRadius: 999, backgroundColor: fill,
+          opacity: reduced ? a : 1,
+          transform: reduced ? [] : [{ scale: a }],
+        }}
+      />
+      <Animated.View style={{ opacity: tick, transform: reduced ? [] : [{ scale: tick }] }}>
+        <AuroraIcon name="check" size={Math.round(size * 0.62)} color={C.ink} />
+      </Animated.View>
+    </View>
   );
 }
 

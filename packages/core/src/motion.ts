@@ -178,6 +178,109 @@ export const skeleton = {
 } as const;
 
 /**
+ * STATE CHANGES — the vocabulary for a thing REPORTING WHAT HAPPENED TO IT.
+ *
+ * Audit §17 lists ten of these (empty → populated, editing, saving, saved,
+ * error, offline…) and the app had numbers for none. Every save button in the
+ * app therefore invented its own: swap the label to "Adding…", drop the opacity
+ * to 0.6, and hope. That has one concrete defect the audit names outright — the
+ * button RESIZES, because "Add meal" and "Adding…" are different widths, so the
+ * layout shifts under a finger that is still on the button.
+ *
+ * These are the numbers. The behaviour that uses them is the clients' shared
+ * commit button; the numbers are here so the two cannot disagree about how long
+ * a tick holds or how far an error shakes.
+ */
+export const states = {
+  /** Empty state leaving. Shorter than the arrival: the thing you are waiting
+   *  for should feel like it arrives, not like the placeholder resents going. */
+  emptyOutMs: 160,
+  /** Content arriving IN PLACE — no positional move, because the container is
+   *  the constant. A first-data arrival that also slides reads as a new screen. */
+  emptyInMs: 200,
+  /** Siblings' opacity while one field is being edited. Editing is a MODE, and
+   *  the mode is legible only if the things you are not editing recede. */
+  editDim: 0.6,
+  editMs: 180,
+  /** How long a commit button holds its tick before returning to its label.
+   *  Long enough to be read, short enough that a second save isn't blocked on
+   *  watching an animation. */
+  savedHoldMs: 800,
+  /** THE ERROR SHAKE: ±4px, three cycles, 250ms all in. A shake is a TRANSFORM
+   *  and never a layout change — a field that grows or reflows to report an
+   *  error moves everything under it, which is the one thing a user reading an
+   *  error message does not need. */
+  shakeDx: 4,
+  shakeCycles: 3,
+  shakeMs: 250,
+} as const;
+
+/**
+ * The shake as a list of offsets, so both clients shake identically and neither
+ * has to hand-write a keyframe list that drifts from the other's.
+ *
+ * Starts and ends at 0 (a shake that ends off-centre has moved the thing it was
+ * only supposed to draw attention to), and DECAYS — a constant-amplitude shake
+ * reads as a broken animation loop rather than as an object recoiling.
+ */
+export function shakeOffsets(dx: number = states.shakeDx, cycles: number = states.shakeCycles): number[] {
+  const out: number[] = [0];
+  const steps = cycles * 2;
+  for (let i = 0; i < steps; i++) {
+    // Decay across the whole shake, so the last swing is a fraction of the first.
+    const decay = 1 - (i + 1) / (steps + 1);
+    out.push((i % 2 === 0 ? 1 : -1) * dx * decay);
+  }
+  out.push(0);
+  return out;
+}
+
+/**
+ * Style keys that describe an element's relationship to its PARENT rather than
+ * its own appearance.
+ *
+ * This exists because wrapping a component changes who those keys belong to. A
+ * commit button that shakes needs an outer node to carry the transform (the
+ * press primitive applies its own scale last and would clobber a merged one),
+ * and the moment that wrapper appears, a caller's `flex: 1` is being applied to
+ * the INNER node while the wrapper — the actual child of the caller's row —
+ * sizes to content and refuses to stretch.
+ *
+ * That is not a hypothetical: 11 of APill's callers pass `flex: 1` and about as
+ * many pass padding, so neither "all to the wrapper" nor "all to the inner" is
+ * right. The split is by MEANING — how do I sit in my parent (outer) versus
+ * what do I look like (inner).
+ *
+ * Width is outer with the rest: a percentage width resolved against a
+ * content-sized wrapper is circular. The inner node then stretches to fill,
+ * which is a no-op in the common case where the wrapper is content-sized.
+ */
+export const OUTER_BOX_KEYS = [
+  "flex", "flexGrow", "flexShrink", "flexBasis", "alignSelf",
+  "width", "minWidth", "maxWidth",
+  "margin", "marginTop", "marginBottom", "marginLeft", "marginRight",
+  "marginHorizontal", "marginVertical", "marginStart", "marginEnd",
+  "position", "top", "right", "bottom", "left", "start", "end", "zIndex",
+] as const;
+
+/**
+ * Split a flattened style into the part that belongs on a WRAPPER and the part
+ * that belongs on the thing inside it. Pure, so it can be tested without a
+ * renderer — the failure it guards against (a button that silently stops
+ * stretching) is invisible in a typecheck and easy to miss by eye.
+ */
+export function splitBoxStyle<T extends Record<string, unknown>>(
+  style: T | null | undefined,
+): { outer: Partial<T>; inner: Partial<T> } {
+  const outer: Record<string, unknown> = {};
+  const inner: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(style ?? {})) {
+    ((OUTER_BOX_KEYS as readonly string[]).includes(k) ? outer : inner)[k] = v;
+  }
+  return { outer: outer as Partial<T>, inner: inner as Partial<T> };
+}
+
+/**
  * SWIPE ACTIONS — the geometry and the release rule for a row you swipe to
  * reveal a destructive action on.
  *
