@@ -12,7 +12,7 @@ import { AuroraIcon } from "./icons";
 import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
-import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { LiquidSeg } from "./liquid-seg";
 import { RollingNumber } from "./rolling-number";
 import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
@@ -916,21 +916,22 @@ export function ASearch({
 }
 
 /**
- * THE SEGMENTED CONTROL — one entry point, two renderings, no third.
+ * THE SEGMENTED CONTROL — one entry point, ONE rendering, no second.
  *
- * `ASegment` dispatches: on iOS it is a real SwiftUI `Picker` (GlassSegment,
- * tinted with the live accent); everywhere else it is `LiquidSeg`, the
- * gesture-tracked lens that inflates under touch, scrubs across segments as you
- * drag and lands on the shared `springs.lens`.
+ * `ASegment` is `LiquidSeg`: the gesture-tracked lens that inflates under
+ * touch, scrubs across segments as you drag and lands on the shared
+ * `springs.lens`. Every platform, no fork.
  *
- * That second branch is the change. The fallback used to be a static RN pill
- * row — correct, inert, and nothing like the control beside it — so the best
- * motion in the product reached exactly two surfaces while everything else got
- * a flat highlight. The audit counted eight segmented implementations; two of
- * them (the admin `Segmented` and History's `ViewSwitcher`) turned out on
- * reading to be WRAPPING and SCROLLING chip rails rather than segmented
- * controls at all, and became `AChip` rows. What is left is this and the
- * LiquidSeg it delegates to.
+ * It used to dispatch — a real SwiftUI segmented `Picker` on iOS, this
+ * everywhere else. That branch is deleted, and swiftui.tsx (where GlassSegment
+ * was) documents why in full: the native host sized itself from the SwiftUI
+ * content ONCE at mount, before the labels were translated, so on device the
+ * control drew outside its own box and over the content next to it.
+ *
+ * The audit counted eight segmented implementations; two of them (the admin
+ * `Segmented` and History's `ViewSwitcher`) turned out on reading to be
+ * WRAPPING and SCROLLING chip rails rather than segmented controls at all, and
+ * became `AChip` rows. What is left is this and the LiquidSeg it delegates to.
  */
 export function ASegment<T extends string>({
   options,
@@ -943,9 +944,6 @@ export function ASegment<T extends string>({
 }) {
   const { palette } = useTheme();
   const index = Math.max(0, options.findIndex((o) => o.id === value));
-  if (LIQUID_GLASS_SUPPORTED) {
-    return <GlassSegment options={options} value={value} onPick={onPick} accent={palette.lime} />;
-  }
   return (
     <LiquidSeg
       items={options.map((o) => ({
