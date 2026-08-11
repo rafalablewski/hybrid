@@ -224,7 +224,21 @@ code {
   margin-top: 6px; background: var(--lime); color: #101208; border-radius: 999px;
   padding: 11px 26px; font-weight: 800; font-size: 15.5px;
 }
-.quiet-link { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); margin-top: 12px; display: inline-flex; align-items: center; gap: 7px; }
+/* the action pair — one filled primary, one glass satellite */
+.pair { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.sat {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 11px 18px; border-radius: 999px;
+  background: var(--glass); border: 1px solid var(--rim);
+  -webkit-backdrop-filter: blur(16px) saturate(140%); backdrop-filter: blur(16px) saturate(140%);
+  font-weight: 700; font-size: 14.5px; letter-spacing: -.01em; color: var(--chalk);
+}
+.pair.fused {
+  display: inline-flex; flex-wrap: nowrap; justify-content: flex-start; gap: 1px;
+  margin-top: 18px; background: var(--rim); border: 1px solid var(--rim);
+  border-radius: 999px; overflow: hidden;
+}
+.pair.fused .sat { border: 0; border-radius: 0; font-size: 13.5px; padding: 10px 16px; }
 
 /* exit affordance (ringed = leaves) */
 .ring { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(139,143,134,.5); display: grid; place-items: center; color: var(--ash); font-size: 13px; flex: none; }
@@ -286,7 +300,7 @@ footer span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
     Seven proposals for the logbook card — the block that carries <b>Your training</b>, the week strip
     and the day's receipt. Each one trades a hand-drawn React&nbsp;Native imitation for the control iOS
     already ships, and each is measured against the same brief: <b>less drawing, more material; fewer
-    edges, more air; one number, one verb.</b>
+    edges, more air; one hierarchy instead of two.</b>
   </p>
   <div class="facts">
     <div class="fact"><span class="k">Surface</span><span class="v">apps/mobile — Today</span></div>
@@ -359,7 +373,7 @@ footer span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
         <ul>
           <li><span class="m">01</span><span>A drawn box <em>and</em> a shadow <em>and</em> a border <em>and</em> three hairlines — four separation devices where the system uses one.</span></li>
           <li><span class="m">02</span><span>The week is a fixed Wed→Tue window that can't be scrolled, so the label has to say <code>LAST 7 DAYS</code> because the control can't show it.</span></li>
-          <li><span class="m">03</span><span>Two primary actions in one empty state: a full-bleed chartreuse pill and a dashed ＋ tile forty pixels below it.</span></li>
+          <li><span class="m">03</span><span>Two actions drawn at the same weight in two different vocabularies — a glowing full-bleed pill, and a dashed ＋ tile forty pixels below it. Both belong here; only one can be first.</span></li>
           <li><span class="m">04</span><span>🎾 as content. Emoji don't tint, don't take weight, don't respond to Dynamic Type, and redraw themselves on every OS update.</span></li>
           <li><span class="m">05</span><span>The tab bar smears "Train your way" into an unreadable ghost — a hand-rolled blur doing a job <code>scrollEdgeEffectStyle</code> does properly.</span></li>
           <li><span class="m">06</span><span>Changing day remounts on <code>key={sel.dateKey}</code>. Values hard-cut. Nothing in the card is animated at all.</span></li>
@@ -540,13 +554,13 @@ footer span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
   <article class="idea" id="i3">
     <div class="idea-head">
       <span class="idea-num">03</span>
-      <h2>One verb. The second action moves into the system's own menu.</h2>
+      <h2>A primary and its satellite. Both actions stay — only one is first.</h2>
     </div>
-    <div class="principle">ContentUnavailableView — Apple's grammar for an empty day</div>
+    <div class="principle">Hierarchy by fill, not by removal</div>
 
     <div class="split">
       <div class="stage">
-        <div class="cap">Empty today — one symbol, one line, one action</div>
+        <div class="cap">Empty today — symbol, line, and the pair</div>
         <div class="frame bare">
           <div class="unavailable">
             <span class="glyph">
@@ -556,47 +570,95 @@ footer span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
             </span>
             <span class="h">No training logged</span>
             <span class="d">Whatever you do today lands here — a lift, a run, a match.</span>
-            <span class="cap-cta">Start a session</span>
-            <span class="quiet-link">Log something else ⌄</span>
+            <div class="pair">
+              <span class="cap-cta">Start a session</span>
+              <span class="sat">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="14.6" cy="4.5" r="1.7" /><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4" />
+                </svg>
+                Log a sport
+              </span>
+            </div>
           </div>
         </div>
-        <div class="cap" style="color:var(--ash)">The ⌄ opens a native Menu: Log a sport · Quick start · Import from Watch</div>
+
+        <div class="cap" style="margin-top:6px">Once the day holds training — the accent retires, the pair fuses</div>
+        <div class="frame bare">
+          <div class="m-row">
+            <span style="font-weight:900;font-size:19px;letter-spacing:-.03em">Logged</span>
+            <span class="m-mono" style="letter-spacing:0;text-transform:none">2-day streak</span>
+          </div>
+          <div class="hero-fig"><span class="n">4.11</span><span class="u">km</span></div>
+          <div class="sub-figs"><span>81 min</span><span>815 kcal</span></div>
+          <div class="pair fused">
+            <span class="sat">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10" /></svg>
+              Another session
+            </span>
+            <span class="sat">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="14.6" cy="4.5" r="1.7" /><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4" />
+              </svg>
+              Log a sport
+            </span>
+          </div>
+        </div>
       </div>
 
       <div>
         <p>
-          The empty state currently asks twice. A glowing full-width chartreuse pill says
-          <b>Log a session</b>; forty pixels below, a dashed square and a lime word say
-          <b>Log a sport</b>. Two primaries is no primary — and the dashed square is a web-era
-          affordance that appears nowhere in iOS.
+          <b>Log a sport stays.</b> It isn't an overflow item — it is a genuinely different job from
+          the structured logger: a session you <em>start</em> (live, now, sets and reps), a sport you
+          <em>log</em> (it already happened, and you're telling the app about it). Bury it in a menu
+          and a hybrid athlete's most common Sunday-evening action costs two taps and a guess.
         </p>
         <p>
-          Apple shipped the exact component for this: <code>ContentUnavailableView</code> — symbol,
-          title, one explanatory line, one action. Adopt its <em>grammar</em> (the RN drawing can
-          stay ours) and the block loses a hairline, a caption, a dashed tile and roughly 90&nbsp;pt
-          of height.
+          So the fault isn't that both exist — it's that they're drawn at the same weight in two
+          different vocabularies. A glowing full-bleed chartreuse pill. Then a hairline. Then a
+          whispered caption. Then a dashed square with a lime word beside it. That's four devices
+          spent on saying "and also this", and a dashed border is a web affordance that appears
+          nowhere in iOS.
         </p>
         <p>
-          The second action doesn't disappear, it descends one level. <code>GlassSelectMenu</code>
-          already exists in the kit — a text trigger that opens a real system menu. "Log something
-          else ⌄" holds <em>Log a sport</em>, <em>Quick start</em> and <em>Import from Watch</em>, and
-          those three stop competing with each other on the surface.
+          iOS says it in one move: a filled primary with a neutral capsule beside it. The kit
+          <em>already has that component and its argument written down</em> —
+          <code>GlassSatellite</code> (<code>swiftui.tsx:259</code>), "a neutral glass button that
+          orbits a filled primary", explicitly sanctioned as the case that doesn't touch brand paint.
+          It was built for the logger's Pause and Finish. This is the same shape: one lime pill, one
+          glass capsule, one baseline.
+        </p>
+        <p>
+          And the state change becomes a <em>fill</em> change rather than a layout change. Nothing
+          logged: Start a session wears the chartreuse. Once the day holds training, the accent
+          retires and the two settle into equal glass capsules that fuse into a single lozenge — the
+          <code>GlassEffectContainer</code> behaviour the app already ships in
+          <code>GlassToolbarGroup</code>. The card stops asking without anything moving.
         </p>
 
         <div class="delta">
           <span class="k">The delta</span>
           <ul>
-            <li class="cut"><span class="m">−</span><span><code>done-floor.tsx:145-152</code> — the dashed ＋ tile and its lime label, wholesale.</span></li>
-            <li class="cut"><span class="m">−</span><span><code>w.home.today.alsoTodaySubEmpty</code> ("a match, a run, a swim") — the invitation is now the description line, said once.</span></li>
-            <li><span class="m">+</span><span><code>GlassSelectMenu</code> (<code>swiftui.tsx:322</code>) mounted as the secondary, with the RN text fallback it already ships off-iOS.</span></li>
-            <li><span class="m">+</span><span>An <code>AEmptyState</code> in <code>kit.tsx</code> — symbol / title / line / one action — so History, Nutrition and Messages stop inventing their own.</span></li>
+            <li class="cut"><span class="m">−</span><span><code>done-floor.tsx:145-152</code> — the dashed ＋ tile. <b>The action survives; its box doesn't.</b></span></li>
+            <li><span class="m">+</span><span><code>GlassSatellite</code> (<code>swiftui.tsx:259</code>) with <code>word="Log a sport"</code> and <code>glyph="figure.mixed.cardio"</code>, keeping the RN capsule fallback it already ships off-iOS.</span></li>
+            <li><span class="m">+</span><span><code>AActionPair</code> in <code>kit.tsx</code> — primary + satellite, wrapped in a <code>GlassEffectContainer</code> so the logged state can fuse them.</span></li>
+            <li><span class="m">+</span><span><code>AEmptyState</code> — symbol / title / one line / the pair — so History, Nutrition and Messages stop inventing their own.</span></li>
+            <li class="cut"><span class="m">−</span><span><code>w.home.today.alsoTodaySubEmpty</code> ("a match, a run, a swim"). The capsule is now labelled, so the invitation is said once, in the description line.</span></li>
           </ul>
         </div>
 
         <div class="note">
-          <span class="k">House rule kept</span>
-          The exit rule stands: no bordered box at the end of a thing. The menu trigger is bare mono
-          text with a chevron — it opens a sheet, it isn't an item.
+          <span class="k">House rules kept</span>
+          The no-bordered-box rule governs <em>exits</em> — an end-of-thing affordance that carries no
+          content. This is an action, and a capsule is its native form. The rule that binds here is the
+          other one: chartreuse stays reserved for the single primary, which is exactly what the
+          satellite protects.
+        </div>
+
+        <div class="note" style="border-left-color:rgba(139,143,134,.5);background:rgba(139,143,134,.06)">
+          <span class="k" style="color:var(--ash)">One copy call to veto</span>
+          <b>Start</b> a session against <b>Log</b> a sport: the verbs differ on purpose, because the
+          tense does — one is about to happen, one already did. If you'd rather keep "Log a session",
+          the pair still works; it just leans on the noun alone to carry the difference.
         </div>
       </div>
     </div>
@@ -967,17 +1029,18 @@ footer span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
         <tr><td>Two of three hairlines</td><td>logbook-rail.tsx:120 · done-floor.tsx:86</td><td>Whitespace, per the existing cluster rule</td></tr>
         <tr><td>The "LAST 7 DAYS" caption</td><td>w.home.logbook.window</td><td>A scrollable rail that shows its own extent</td></tr>
         <tr><td>The ✓ marks</td><td>logbook-rail.tsx:166–168</td><td>Load bars — same pixels, real information</td></tr>
-        <tr><td>The dashed ＋ tile</td><td>done-floor.tsx:145–152</td><td>A system Menu behind one quiet trigger</td></tr>
+        <tr><td>The dashed ＋ tile <span style="color:var(--ash);font-weight:400">(the box, not the action)</span></td><td>done-floor.tsx:145–152</td><td>A labelled glass capsule on the primary's baseline</td></tr>
         <tr><td>The "a match, a run, a swim" line</td><td>alsoTodaySubEmpty</td><td>Said once, as the empty state's description</td></tr>
         <tr><td>🎾 and the whole emoji set</td><td>core sessionIcon</td><td>SF Symbols, with emoji kept as the off-iOS floor</td></tr>
         <tr><td>The day remount</td><td>logbook-rail.tsx:123</td><td>A scrub gesture and rolling figures</td></tr>
-        <tr><td>Two competing CTAs</td><td>logbook-rail.tsx:236 + done-floor.tsx:146</td><td>One verb</td></tr>
+        <tr><td>Two CTAs at equal weight</td><td>logbook-rail.tsx:236 + done-floor.tsx:146</td><td>Both kept — one filled, one glass, on one baseline</td></tr>
       </tbody>
     </table>
   </div>
   <p style="margin-top:22px">
-    Nine deletions, four additions, and the section keeps every capability it has today. That ratio is
-    the point of the exercise — an iOS redesign that adds surfaces isn't one.
+    Nine deletions against five new shared components — and the section keeps <b>every</b> capability it
+    has today, Log a sport included. Every row above removes a <em>drawing</em>, never an action. That
+    ratio is the point of the exercise: an iOS redesign that adds surfaces isn't one.
   </p>
 </section>
 
@@ -994,10 +1057,11 @@ footer span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
       <div class="body">
         <h3>01 + 03 + 04 — the still frame</h3>
         <p>
-          Pure JS, no native change, shippable over EAS Update. The card loses its box, the empty state
-          loses its second action, the rows lose their emoji. Nothing animates yet, and the section
-          already reads native — this is the build that proves the direction on a device before any
-          gesture work is paid for.
+          Pure JS, no native change, shippable over EAS Update. The card loses its box, the two actions
+          resolve into a primary and its satellite, the rows lose their emoji. Nothing animates yet and
+          the section already reads native — this is the build that proves the direction on a device
+          before any gesture work is paid for. It is also the one that puts Log a sport on the same
+          baseline as the logger, which is worth watching in the numbers on its own.
         </p>
       </div>
     </div>
