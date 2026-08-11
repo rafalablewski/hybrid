@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Today → Train — the build audit</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap");
+
+:root {
+  --ink:#0c0d0c; --ink2:#141614; --line:#2a2d2a;
+  --chalk:#f3f4ef; --mist:#b6bab0; --ash:#8b8f86;
+  --lime:#c6f84f; --blue:#6cb6bd; --amber:#d0cd94; --terra:#e58a5c;
+  --display:"Archivo","Archivo Fallback",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--ink); color:var(--chalk);
+  font-family:var(--display); font-size:15px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+body::before {
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(72vw 44vh at 10% -8%, rgba(229,138,92,.055), transparent 62%),
+             radial-gradient(60vw 40vh at 95% 4%, rgba(198,248,79,.05), transparent 66%);
+}
+.wrap { position:relative; z-index:1; max-width:1180px; margin:0 auto; padding:0 20px 110px; }
+
+.eyebrow { font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.17em; text-transform:uppercase; color:var(--ash); }
+h1 { font-weight:900; font-size:clamp(36px,6.4vw,66px); line-height:.97; letter-spacing:-.035em; margin:14px 0 0; text-wrap:balance; }
+h2 { font-weight:900; font-size:clamp(22px,3vw,29px); line-height:1.1; letter-spacing:-.028em; margin:0; text-wrap:balance; }
+h3 { font-weight:800; font-size:15.5px; letter-spacing:-.015em; margin:0; }
+p { margin:0; color:var(--mist); max-width:66ch; }
+p + p { margin-top:12px; }
+b, strong { color:var(--chalk); font-weight:700; }
+em { color:var(--chalk); font-style:normal; }
+code { font-family:var(--mono); font-size:11.5px; color:var(--blue); background:rgba(108,182,189,.09); padding:1px 5px; border-radius:5px; white-space:nowrap; }
+
+.masthead { padding:76px 0 0; }
+.standfirst { font-size:clamp(16px,1.9vw,18.5px); line-height:1.55; color:var(--mist); max-width:58ch; margin-top:24px; }
+.facts { display:flex; flex-wrap:wrap; gap:10px 32px; margin-top:32px; padding-top:20px; border-top:1px solid var(--line); }
+.fact { display:grid; gap:3px; }
+.fact .k { font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ash); }
+.fact .v { font-family:var(--mono); font-size:12.5px; color:var(--chalk); }
+
+.section { margin-top:84px; }
+.rule-head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:15px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.lede { margin-top:22px; }
+
+/* ── the record ─────────────────────────────────────────────────────────── */
+.grp { margin-top:40px; }
+.grp-head { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.grp-head .n { font-family:var(--mono); font-size:10.5px; letter-spacing:.13em; color:var(--terra); }
+.grp-head h3 { font-size:17px; }
+.grp-head .who { font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ash); }
+
+.miss { border-left:2px solid rgba(229,138,92,.5); padding:2px 0 2px 18px; margin-top:22px; display:grid; gap:11px; }
+.miss.self { border-left-color:rgba(208,205,148,.5); }
+.miss.rules { border-left-color:rgba(108,182,189,.5); }
+.miss h4 { margin:0; font-size:15.5px; font-weight:800; letter-spacing:-.015em; color:var(--chalk); }
+.miss .pair { display:grid; gap:8px; }
+@media (min-width:760px) { .miss .pair { grid-template-columns:1fr 1fr; gap:14px; } }
+.miss .cell { border-radius:10px; padding:11px 13px; font-size:13px; line-height:1.5; }
+.miss .cell .k { font-family:var(--mono); font-size:8.5px; letter-spacing:.15em; text-transform:uppercase; display:block; margin-bottom:4px; }
+.miss .said { background:rgba(229,138,92,.07); color:var(--mist); }
+.miss .said .k { color:var(--terra); }
+.miss .was { background:rgba(243,244,239,.05); color:var(--mist); }
+.miss .was .k { color:var(--ash); }
+.miss .cost { font-size:13.5px; color:var(--mist); }
+.miss .guard { font-family:var(--mono); font-size:11.5px; color:var(--lime); display:flex; gap:8px; align-items:flex-start; line-height:1.5; }
+.miss .guard span:first-child { flex:none; opacity:.7; }
+
+/* ── screens ────────────────────────────────────────────────────────────── */
+.build { margin-top:30px; }
+.gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(292px,1fr)); gap:30px 24px; margin-top:24px; }
+.screen { display:grid; gap:10px; align-content:start; }
+.screen .lab { display:flex; align-items:baseline; gap:8px; }
+.screen .lab .s { font-family:var(--mono); font-size:10px; letter-spacing:.08em; flex:none; }
+.screen .why { font-size:12.5px; line-height:1.55; color:var(--mist); }
+.screen.bad .lab .s { color:var(--terra); }
+.screen.good .lab .s { color:var(--lime); }
+
+.frame {
+  background:var(--ink); border:1px solid var(--line); border-radius:30px;
+  padding:15px 13px; box-shadow:0 36px 70px -48px #000;
+  position:relative; overflow:hidden; width:100%;
+}
+.m-mono { font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--ash); }
+.m-row { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+
+.navbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.avatar { width:29px; height:29px; border-radius:9px; background:rgba(198,248,79,.16); box-shadow:inset 0 0 0 1px rgba(198,248,79,.4); display:grid; place-items:center; font-family:var(--mono); font-size:10px; font-weight:700; color:var(--lime); }
+.wordmark { display:grid; justify-items:center; gap:1px; }
+.wordmark .w { font-weight:900; font-size:13.5px; letter-spacing:-.02em; }
+.wordmark .w i { color:var(--lime); font-style:normal; }
+.wordmark .s { font-family:var(--mono); font-size:7.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--terra); }
+.ring { width:27px; height:27px; border-radius:50%; border:1px solid rgba(139,143,134,.5); display:grid; place-items:center; color:var(--ash); font-size:12px; flex:none; }
+.seg { display:flex; background:rgba(243,244,239,.07); border-radius:999px; padding:3px; margin-top:10px; }
+.seg span { flex:1; text-align:center; padding:5px 0; border-radius:999px; font-family:var(--mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--ash); }
+.seg span.on { background:rgba(243,244,239,.14); color:var(--chalk); }
+.datestamp { font-family:var(--mono); font-size:8.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash); margin-top:12px; }
+.bigtitle { font-weight:900; font-size:27px; letter-spacing:-.04em; line-height:1; color:var(--chalk); margin-top:4px; }
+.bigtitle.quiet { color:var(--mist); }
+.tabbar { display:flex; justify-content:space-around; margin-top:13px; padding:8px 8px 2px; border-top:1px solid rgba(255,255,255,.06); }
+.tabbar span { font-family:var(--mono); font-size:8px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); }
+.tabbar span.on { color:var(--lime); }
+
+.plate { background:var(--ink2); border-radius:22px; padding:15px; margin-top:12px; }
+.seam { height:1px; background:var(--line); margin:13px -15px; }
+.sec-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.sec-head .t { font-weight:900; font-size:17.5px; letter-spacing:-.03em; }
+
+.rail-bleed { margin:11px -15px 0; overflow-x:auto; scrollbar-width:none; }
+.rail-bleed::-webkit-scrollbar { display:none; }
+.rail { display:flex; gap:6px; padding:3px 15px; width:max-content; }
+.rday { width:39px; flex:none; display:grid; justify-items:center; gap:5px; padding:6px 0 7px; }
+.rday .wd { font-family:var(--mono); font-size:7.5px; letter-spacing:.1em; color:var(--ash); }
+.rday .n { font-weight:800; font-size:14.5px; letter-spacing:-.02em; color:var(--mist); font-variant-numeric:tabular-nums; }
+.rday .load { width:17px; height:3px; border-radius:2px; background:rgba(243,244,239,.15); overflow:hidden; }
+.rday .load i { display:block; height:100%; background:rgba(243,244,239,.7); border-radius:2px; }
+.rday.today .n { width:26px; height:26px; border-radius:50%; background:var(--lime); color:#101208; display:grid; place-items:center; font-size:13px; font-weight:900; }
+.rday.sel .n { width:26px; height:26px; border-radius:50%; box-shadow:inset 0 0 0 1px rgba(243,244,239,.35); display:grid; place-items:center; color:var(--chalk); }
+.rday.faded { opacity:.4; }
+
+.empty { display:grid; justify-items:center; text-align:center; gap:6px; padding:13px 6px 2px; }
+.empty .glyph { color:rgba(139,143,134,.68); }
+.empty .h { font-weight:900; font-size:16px; letter-spacing:-.02em; color:var(--chalk); }
+.empty .d { font-size:12px; color:var(--ash); max-width:29ch; line-height:1.5; }
+.empty.past .h { color:var(--ash); }
+
+.pair { display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:12px; justify-content:center; }
+.pair.start { justify-content:flex-start; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 15px; border-radius:999px; font-weight:800; font-size:13px; letter-spacing:-.01em; }
+.btn.prom { background:var(--lime); color:#101208; }
+.btn.bord { background:rgba(243,244,239,.09); color:var(--chalk); box-shadow:inset 0 0 0 1px rgba(243,244,239,.15); }
+
+.srow { display:flex; align-items:center; gap:11px; padding:7px 0; }
+.sym { width:33px; height:33px; border-radius:11px; flex:none; display:grid; place-items:center; background:rgba(108,182,189,.16); font-size:16px; }
+.srow .t { font-weight:700; font-size:13.5px; color:var(--chalk); display:block; }
+.srow .s { font-family:var(--mono); font-size:10px; color:var(--ash); margin-top:2px; display:block; }
+.hero-fig { display:flex; align-items:baseline; gap:6px; margin-top:3px; }
+.hero-fig .n { font-weight:900; font-size:38px; line-height:.92; letter-spacing:-.045em; color:var(--chalk); font-variant-numeric:tabular-nums; }
+.hero-fig .u { font-family:var(--mono); font-size:11px; color:var(--ash); }
+.sub-figs { font-family:var(--mono); font-size:10.5px; color:var(--ash); margin-top:6px; display:flex; gap:13px; }
+.exit { font-family:var(--mono); font-size:9px; letter-spacing:.13em; text-transform:uppercase; color:var(--ash); margin-top:12px; display:flex; justify-content:space-between; align-items:center; }
+.dashed-row { display:flex; align-items:center; gap:11px; margin-top:8px; }
+.dashed-tile { width:33px; height:33px; border-radius:11px; border:1px dashed rgba(139,143,134,.45); display:grid; place-items:center; color:var(--ash); font-size:15px; }
+.dashed-row .lbl { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--lime); }
+
+/* callouts on a screen */
+.flag { display:flex; align-items:flex-start; gap:8px; margin-top:8px; font-family:var(--mono); font-size:10px; line-height:1.5; letter-spacing:.02em; }
+.flag .m { flex:none; width:15px; height:15px; border-radius:4px; display:grid; place-items:center; font-size:9px; font-weight:700; }
+.flag.bad .m { background:rgba(229,138,92,.2); color:var(--terra); }
+.flag.bad { color:var(--terra); }
+.flag.good .m { background:rgba(198,248,79,.16); color:var(--lime); }
+.flag.good { color:var(--mist); }
+.flag.ok .m { background:rgba(108,182,189,.16); color:var(--blue); }
+.flag.ok { color:var(--mist); }
+
+.tag-bad { outline:1px dashed rgba(229,138,92,.7); outline-offset:3px; border-radius:6px; }
+
+/* tables */
+.tbl-wrap { overflow-x:auto; }
+table.t { width:100%; border-collapse:collapse; margin-top:18px; font-size:13px; min-width:600px; }
+table.t th { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--ash); text-align:left; font-weight:700; padding:0 14px 10px 0; border-bottom:1px solid var(--line); }
+table.t td { padding:11px 14px 11px 0; border-bottom:1px solid rgba(42,45,42,.6); color:var(--mist); vertical-align:top; }
+table.t td:first-child { color:var(--chalk); font-weight:700; }
+table.t .yes { color:var(--lime); font-family:var(--mono); font-size:11.5px; }
+table.t .no { color:var(--terra); font-family:var(--mono); font-size:11.5px; }
+table.t .dash { color:rgba(139,143,134,.55); font-family:var(--mono); font-size:11.5px; }
+
+.note { margin-top:20px; padding:14px 16px; border-left:2px solid rgba(198,248,79,.45); background:rgba(198,248,79,.045); border-radius:0 10px 10px 0; font-size:13px; line-height:1.55; color:var(--mist); }
+.note .k { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--lime); display:block; margin-bottom:5px; }
+.note.warn { border-left-color:rgba(229,138,92,.5); background:rgba(229,138,92,.05); }
+.note.warn .k { color:var(--terra); }
+
+footer { margin-top:88px; padding-top:20px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:12px 28px; }
+footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; color:var(--ash); text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">HYBRID — Today → Train — build audit</div>
+  <h1>What I got wrong,<br />and what you'll see next.</h1>
+  <p class="standfirst">
+    Your TestFlight screenshot was right: on the day you were looking at, almost nothing had changed.
+    This is the full record — <b>ten mistakes</b>, what each one cost, what caught it — then the card as it
+    stands on your current build, and as it will stand after the next one.
+  </p>
+  <div class="facts">
+    <div class="fact"><span class="k">Your build</span><span class="v">PR #413 — db70a36</span></div>
+    <div class="fact"><span class="k">Next build</span><span class="v">PR #415 — 1280dee</span></div>
+    <div class="fact"><span class="k">Mistakes</span><span class="v">10</span></div>
+    <div class="fact"><span class="k">Caught by you</span><span class="v">5</span></div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════ the record ══ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>The record</h2>
+    <span class="eyebrow">grouped by who found it, which is the part that matters</span>
+  </div>
+
+  <p class="lede">
+    Five of these you found. Two the repository's own tests found. Three I found myself, one of them
+    only because a screenshot forced me to go back and read the code I had already called finished.
+    The grouping is deliberate: a mistake caught by the person paying for the work is a different kind
+    of failure from one caught by a test.
+  </p>
+
+  <!-- GROUP A -->
+  <div class="grp">
+    <div class="grp-head">
+      <span class="n">A</span><h3>Design errors — you caught all four in review</h3>
+      <span class="who">before any code was written</span>
+    </div>
+
+    <div class="miss">
+      <h4>01 — I chased the material instead of the view set.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I built</span>Seven proposals organised around Liquid Glass: glass surfaces, glass lenses, a glass tail.</div>
+        <div class="cell was"><span class="k">What was true</span><code>@expo/ui@56</code> ships about fifty real SwiftUI views — <code>List</code>, <code>Section</code>, <code>Gauge</code>, <code>SwipeActions</code>, <code>ContentUnavailableView</code>. The card used none of them.</div>
+      </div>
+      <p class="cost">
+        A material changes how a surface looks; a view changes what it knows. I spent a whole revision
+        on the least interesting layer, and only checked what the package actually exported after you
+        told me to.
+      </p>
+      <div class="guard"><span>→</span><span>Every proposal after that names the view it is made of, verified against <code>node_modules</code> rather than remembered.</span></div>
+    </div>
+
+    <div class="miss">
+      <h4>02 — I designed "Log a sport" into a menu.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I built</span>The empty state collapsed to one action, with Log a sport demoted into a system <code>Menu</code> behind a "Log something else ⌄" trigger.</div>
+        <div class="cell was"><span class="k">What was true</span>It is a different job from the structured logger — a session you <em>start</em>, a sport you <em>log</em> after the fact. Not an overflow item.</div>
+      </div>
+      <p class="cost">
+        I correctly identified that two equal-weight actions were the problem, then fixed it by removing
+        one instead of ranking them. The fix was a hierarchy, not a deletion.
+      </p>
+      <div class="guard"><span>→</span><span>It became an invariant: Log a sport appears wherever a sport could exist — now fifteen of eighteen states.</span></div>
+    </div>
+
+    <div class="miss">
+      <h4>03 — I broke my own invariant inside the same document.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I built</span>A first run got the empty block; today-with-history got a bare text row and a different headline — and I wrote a justification for the split.</div>
+        <div class="cell was"><span class="k">What was true</span>One state in two tenses. The inconsistency was the exact thing the move existed to end.</div>
+      </div>
+      <p class="cost">
+        A rule stated once and abandoned three screens later is worse than no rule, because it reads as
+        considered.
+      </p>
+      <div class="guard"><span>→</span><span>The tense logic moved into <code>core/empty-day.ts</code>, unit-tested, with ONE title key in every tense — so the split can't be re-argued in a component.</span></div>
+    </div>
+
+    <div class="miss">
+      <h4>04 — I redesigned the sport sheet without reading it.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I built</span>A plain <code>Form</code>: sport picker row, date row, duration row.</div>
+        <div class="cell was"><span class="k">What was true</span><code>quick-sport.tsx</code> already had a 2×2 grid of one-tap sport cards and a watch-import bar above them. I replaced a faster interface with a slower one.</div>
+      </div>
+      <p class="cost">
+        This is the one that should have been impossible. I had the file open earlier in the session and
+        redesigned from memory of the screenshot instead of from the code.
+      </p>
+      <div class="guard"><span>→</span><span>The cards and the import bar are untouched in the shipped work; the sheet gained a date row and nothing else.</span></div>
+    </div>
+  </div>
+
+  <!-- GROUP B -->
+  <div class="grp">
+    <div class="grp-head">
+      <span class="n">B</span><h3>Shipping errors — your TestFlight build caught these</h3>
+      <span class="who">after I had called them done</span>
+    </div>
+
+    <div class="miss">
+      <h4>05 — I said the dashed ＋ tile was retired. It was still there.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I claimed</span>In the PR body and in <code>capabilities.ts</code>: "the dashed ＋ tile is retired — the box, not the action".</div>
+        <div class="cell was"><span class="k">What shipped</span><code>done-floor.tsx</code> still drew it. On an empty today the new action pair AND the old dashed row both rendered, forty pixels apart, both reading <b>Log a sport</b>.</div>
+      </div>
+      <p class="cost">
+        Worse than before the redesign. The duplication was the precise fault the pair was built to
+        remove, and I shipped a second copy of it while writing that I had removed the first.
+      </p>
+      <div class="guard"><span>→</span><span>Fixed in #415, and a HARD test now asserts the floor draws no dashed border.</span></div>
+    </div>
+
+    <div class="miss">
+      <h4>06 — The action pair only ever rendered on empty days.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I claimed</span>The study's own state matrix: <code>S9 past, logged → Log a sport: dated to that day</code>.</div>
+        <div class="cell was"><span class="k">What shipped</span>The pair was wired into the two EMPTY branches only. A logged day got none — so the day in your screenshot had no way to log anything at all.</div>
+      </div>
+      <p class="cost">
+        This is the worst of the ten. <b>A past day with training on it had no way to add the match you
+        forgot</b> — which is the exact case the whole dated-sport-log feature was built for. The feature
+        shipped, and the only screen that needed it couldn't reach it.
+      </p>
+      <div class="guard"><span>→</span><span>The pair renders in the logged branch too, both actions neutral. A HARD test asserts it appears in BOTH day states.</span></div>
+    </div>
+
+    <div class="miss">
+      <h4>07 — Swipe-to-delete reached one of two surfaces.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I claimed</span>"A mis-logged session can finally be deleted from the card."</div>
+        <div class="cell was"><span class="k">What shipped</span><code>home.tsx</code> mounts the done floor twice. I wired <code>onDelete</code> into the first and not the second, so the plan-hero path had no delete.</div>
+      </div>
+      <p class="cost">
+        A scripted edit that asserted it matched exactly one site, when the right answer was two. The
+        assertion passed and I moved on.
+      </p>
+      <div class="guard"><span>→</span><span>Wired on both mounts.</span></div>
+    </div>
+  </div>
+
+  <!-- GROUP C -->
+  <div class="grp">
+    <div class="grp-head">
+      <span class="n">C</span><h3>Caught by your repository's own tests</h3>
+      <span class="who">the house rules were stricter than I was</span>
+    </div>
+
+    <div class="miss rules">
+      <h4>08 — I used a system alert for the delete confirmation.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">My reasoning</span>"A native alert is the platform's confirmation, and the one control an app has nothing to add to."</div>
+        <div class="cell was"><span class="k">The house rule</span><code>design-tokens.test.ts</code> bans <code>Alert.alert</code> outright as HARD — 34 sites were migrated onto the app's own confirm sheet precisely because the most consequential moments were the only ones not drawn by the product.</div>
+      </div>
+      <p class="cost">Nothing — the test failed before it could land. But my reasoning was confidently wrong, and the codebase had already settled the argument.</p>
+      <div class="guard"><span>→</span><span>On <code>useConfirm()</code>, destructive styling, affirmative second.</span></div>
+    </div>
+
+    <div class="miss rules">
+      <h4>09 — I added an absolute line-height.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I wrote</span><code>lineHeight: 36</code> on the empty state's glyph.</div>
+        <div class="cell was"><span class="k">The house rule</span>A ratchet caps absolute line-heights at 77 across the app and pushes everything onto <code>leading(size, role)</code>. I made it 78.</div>
+      </div>
+      <p class="cost">Nothing. Fixed the code rather than raising the ceiling — and it surfaced that the token set has a <code>relaxed</code> role reserved for empty-state bodies, which the block now uses.</p>
+      <div class="guard"><span>→</span><span>The ratchet is unchanged at 77.</span></div>
+    </div>
+  </div>
+
+  <!-- GROUP D -->
+  <div class="grp">
+    <div class="grp-head">
+      <span class="n">D</span><h3>The root cause</h3>
+      <span class="who">the reason five of these reached you</span>
+    </div>
+
+    <div class="miss self">
+      <h4>10 — I verified that it compiled, and reported that the design had landed.</h4>
+      <div class="pair">
+        <div class="cell said"><span class="k">What I ran</span>Typecheck, 3 193 core tests, 77 mobile tests, an iOS bundle export. All green, every time, and reported as the verification.</div>
+        <div class="cell was"><span class="k">What that proves</span>That the code builds. <b>Not one of those checks can see a button rendered twice, or a state that renders no button at all.</b></div>
+      </div>
+      <p class="cost">
+        Every green check was true and none of them was evidence for the claim I attached to it. The gap
+        between "it compiles" and "it looks like the design" is exactly the gap your screenshot closed.
+      </p>
+      <div class="guard"><span>→</span><span>Design invariants are now STATIC TESTS over the source, not prose. Three HARD cases so far — one offer per surface, both rails on one chrome, no system alerts.</span></div>
+      <div class="guard"><span>→</span><span>The new test was run against the broken code first and confirmed to FAIL, so it reproduces the defect rather than merely describing it.</span></div>
+      <div class="guard"><span>→</span><span>"Shipped" now means seen on a device. Until then the word is "merged".</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ what you have now ══ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>What you have now</h2>
+    <span class="eyebrow">build db70a36 — the one in TestFlight</span>
+  </div>
+
+  <p class="lede">
+    Your screenshot showed a <b>past day with a session on it</b> — which is, by bad luck, the single
+    state where almost none of the work applies. Here is that screen and the two beside it, with what
+    genuinely changed marked in blue and the defects marked in terracotta.
+  </p>
+
+  <div class="gallery">
+
+    <!-- current: past logged -->
+    <div class="screen bad">
+      <div class="frame">
+        <div class="plate" style="margin-top:0">
+          <div class="sec-head"><span class="t">Your training</span></div>
+          <div class="rail-bleed"><div class="rail">
+            <div class="rday faded"><span class="wd">Tue</span><span class="n">4</span><span class="load"><i style="width:30%"></i></span></div>
+            <div class="rday"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:70%"></i></span></div>
+            <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:35%"></i></span></div>
+            <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:45%"></i></span></div>
+            <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+            <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:60%"></i></span></div>
+            <div class="rday sel"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:32%"></i></span></div>
+            <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"></span></div>
+          </div></div>
+          <div class="seam"></div>
+          <div class="m-row"><span style="font-weight:900;font-size:17px;letter-spacing:-.03em">✓ Logged</span><span class="m-mono" style="letter-spacing:0;text-transform:none">Yesterday</span></div>
+          <div class="hero-fig"><span class="n">4.11</span><span class="u">km</span></div>
+          <div class="sub-figs"><span>81 min</span><span>815 kcal</span></div>
+          <div style="margin-top:10px"><div class="m-mono">1 done Mon 10 Aug</div>
+            <div class="srow"><span class="sym">🎾</span><span style="flex:1"><span class="t">Tennis</span><span class="s">4.11 km – 81 min – 19:49 /km</span></span></div>
+          </div>
+          <div class="exit"><span>View in history →</span></div>
+        </div>
+      </div>
+      <div class="lab"><span class="s">NOW</span><h3>Past day, logged — your screenshot</h3></div>
+      <div class="flag ok"><span class="m">✓</span><span>The rail scrolls, and the ✓ marks are load bars — visible in your image as the varying widths under each date.</span></div>
+      <div class="flag ok"><span class="m">✓</span><span>"Last 7 days" gone, card border and shadow gone, no hairline above "1 done".</span></div>
+      <div class="flag bad"><span class="m">!</span><span>Defect 06 — no Log a sport anywhere. The pair never reached a logged day.</span></div>
+    </div>
+
+    <!-- current: today empty -->
+    <div class="screen bad">
+      <div class="frame">
+        <div class="plate" style="margin-top:0">
+          <div class="sec-head"><span class="t">Your training</span></div>
+          <div class="rail-bleed"><div class="rail">
+            <div class="rday faded"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:45%"></i></span></div>
+            <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+            <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:60%"></i></span></div>
+            <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:32%"></i></span></div>
+            <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"></span></div>
+          </div></div>
+          <div class="seam"></div>
+          <div class="m-row"><span></span><span class="m-mono" style="letter-spacing:0;text-transform:none">Today</span></div>
+          <div class="empty">
+            <span class="glyph"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+            <span class="h">No training logged</span>
+            <span class="d">Whatever you do today lands here — a lift, a run, a match.</span>
+          </div>
+          <div class="pair">
+            <span class="btn prom">Log a workout</span>
+            <span class="btn bord tag-bad">Log a sport</span>
+          </div>
+          <div style="height:16px"></div>
+          <div class="m-mono" style="font-size:9px;text-transform:none;letter-spacing:0">a match, a run, a swim — it lands here</div>
+          <div class="dashed-row"><span class="dashed-tile tag-bad">＋</span><span class="lbl tag-bad">Log a sport</span></div>
+        </div>
+      </div>
+      <div class="lab"><span class="s">NOW</span><h3>Today, nothing logged</h3></div>
+      <div class="flag ok"><span class="m">✓</span><span>The empty block is real: one symbol, one title, one line.</span></div>
+      <div class="flag bad"><span class="m">!</span><span>Defect 05 — <b>Log a sport twice</b>, forty pixels apart, one of them still in the dashed tile I said was deleted.</span></div>
+      <div class="flag bad"><span class="m">!</span><span>And the caption says a third time what the description line above already said.</span></div>
+    </div>
+
+    <!-- current: past empty -->
+    <div class="screen good">
+      <div class="frame">
+        <div class="plate" style="margin-top:0">
+          <div class="sec-head"><span class="t">Your training</span></div>
+          <div class="rail-bleed"><div class="rail">
+            <div class="rday faded"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:35%"></i></span></div>
+            <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:45%"></i></span></div>
+            <div class="rday sel"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+            <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:60%"></i></span></div>
+            <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:32%"></i></span></div>
+            <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"></span></div>
+          </div></div>
+          <div class="seam"></div>
+          <div class="m-row"><span></span><span class="m-mono" style="letter-spacing:0;text-transform:none">Sat 8 Aug</span></div>
+          <div class="empty past">
+            <span class="glyph" style="color:rgba(139,143,134,.5);font-size:26px;line-height:1.15">☾</span>
+            <span class="h">No training logged</span>
+            <span class="d">A rest day, or one that got away. You can still add it.</span>
+          </div>
+          <div class="pair"><span class="btn bord">Log a sport on Sat</span></div>
+        </div>
+      </div>
+      <div class="lab"><span class="s">NOW</span><h3>Past day, empty — this one is correct</h3></div>
+      <div class="flag good"><span class="m">✓</span><span>The one state where everything landed: same block, past tense, and a dated action that opens the sheet already set to Saturday.</span></div>
+      <div class="flag good"><span class="m">✓</span><span>Before this work you could not log a past day at all — the log row was hidden on every day but today.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════ after the next testflight ══ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>After you update TestFlight</h2>
+    <span class="eyebrow">build 1280dee — merged, not yet built</span>
+  </div>
+
+  <p class="lede">
+    Three changes, all of them about the same thing: <b>one offer per surface, on every day state</b>.
+    Nothing else moves — the rail, the load bars, the chrome and the empty block are already what you
+    have.
+  </p>
+
+  <div class="gallery">
+
+    <!-- next: past logged -->
+    <div class="screen good">
+      <div class="frame">
+        <div class="plate" style="margin-top:0">
+          <div class="sec-head"><span class="t">Your training</span></div>
+          <div class="rail-bleed"><div class="rail">
+            <div class="rday faded"><span class="wd">Tue</span><span class="n">4</span><span class="load"><i style="width:30%"></i></span></div>
+            <div class="rday"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:70%"></i></span></div>
+            <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:35%"></i></span></div>
+            <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:45%"></i></span></div>
+            <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+            <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:60%"></i></span></div>
+            <div class="rday sel"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:32%"></i></span></div>
+            <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"></span></div>
+          </div></div>
+          <div class="seam"></div>
+          <div class="m-row"><span style="font-weight:900;font-size:17px;letter-spacing:-.03em">✓ Logged</span><span class="m-mono" style="letter-spacing:0;text-transform:none">Yesterday</span></div>
+          <div class="hero-fig"><span class="n">4.11</span><span class="u">km</span></div>
+          <div class="sub-figs"><span>81 min</span><span>815 kcal</span></div>
+          <div style="margin-top:10px"><div class="m-mono">1 done Mon 10 Aug</div>
+            <div class="srow"><span class="sym">🎾</span><span style="flex:1"><span class="t">Tennis</span><span class="s">4.11 km – 81 min – 19:49 /km</span></span></div>
+          </div>
+          <div class="pair start"><span class="btn bord">Log a sport on Mon</span></div>
+          <div class="exit"><span>View in history →</span></div>
+        </div>
+      </div>
+      <div class="lab"><span class="s">NEXT</span><h3>Past day, logged — the screen you photographed</h3></div>
+      <div class="flag good"><span class="m">+</span><span><b>Log a sport on Mon</b> — the fix for defect 06. Opens the sheet already dated to Monday.</span></div>
+      <div class="flag good"><span class="m">+</span><span>Swipe the Tennis row to delete it. Confirmed by the app's own sheet, not a system alert.</span></div>
+      <div class="flag good"><span class="m">+</span><span>No filled button: the day's work is real, so the accent retires.</span></div>
+    </div>
+
+    <!-- next: today empty -->
+    <div class="screen good">
+      <div class="frame">
+        <div class="plate" style="margin-top:0">
+          <div class="sec-head"><span class="t">Your training</span></div>
+          <div class="rail-bleed"><div class="rail">
+            <div class="rday faded"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:45%"></i></span></div>
+            <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+            <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:60%"></i></span></div>
+            <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:32%"></i></span></div>
+            <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"></span></div>
+          </div></div>
+          <div class="seam"></div>
+          <div class="m-row"><span></span><span class="m-mono" style="letter-spacing:0;text-transform:none">Today</span></div>
+          <div class="empty">
+            <span class="glyph"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+            <span class="h">No training logged</span>
+            <span class="d">Whatever you do today lands here — a lift, a run, a match.</span>
+          </div>
+          <div class="pair">
+            <span class="btn prom">Log a workout</span>
+            <span class="btn bord">Log a sport</span>
+          </div>
+        </div>
+      </div>
+      <div class="lab"><span class="s">NEXT</span><h3>Today, nothing logged</h3></div>
+      <div class="flag good"><span class="m">+</span><span>The dashed tile is gone for real — fix for defect 05. One offer, said once.</span></div>
+      <div class="flag good"><span class="m">+</span><span>The caption goes with it: on an empty day the floor could only repeat the description line.</span></div>
+      <div class="flag good"><span class="m">+</span><span>Roughly 90 pt of the card returned.</span></div>
+    </div>
+
+    <!-- next: today logged -->
+    <div class="screen good">
+      <div class="frame">
+        <div class="plate" style="margin-top:0">
+          <div class="sec-head"><span class="t">Your training</span></div>
+          <div class="rail-bleed"><div class="rail">
+            <div class="rday faded"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:45%"></i></span></div>
+            <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+            <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:60%"></i></span></div>
+            <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:32%"></i></span></div>
+            <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:100%"></i></span></div>
+          </div></div>
+          <div class="seam"></div>
+          <div class="m-row"><span style="font-weight:900;font-size:17px;letter-spacing:-.03em">✓ All done for today</span><span class="m-mono" style="letter-spacing:0;text-transform:none">3-day streak</span></div>
+          <div class="hero-fig"><span class="n">4 820</span><span class="u">kg</span></div>
+          <div class="sub-figs"><span>108 min</span><span>1 240 kcal</span></div>
+          <div style="margin-top:10px"><div class="m-mono">2 done today</div>
+            <div class="srow"><span class="sym" style="background:rgba(198,248,79,.16)">🏋️</span><span style="flex:1"><span class="t">Lower — Strength</span><span class="s">6 lifts – 14 sets</span></span></div>
+            <div class="srow"><span class="sym">🎾</span><span style="flex:1"><span class="t">Tennis</span><span class="s">4.11 km – 81 min</span></span><span class="m-mono" style="color:var(--lime)">Rate</span></div>
+          </div>
+          <div class="pair start">
+            <span class="btn bord">Log a workout</span>
+            <span class="btn bord">Log a sport</span>
+          </div>
+          <div class="exit"><span>View in history →</span></div>
+        </div>
+      </div>
+      <div class="lab"><span class="s">NEXT</span><h3>Today, already trained</h3></div>
+      <div class="flag good"><span class="m">+</span><span>Both actions present and both neutral — a lift in the morning and five-a-side at seven is an ordinary Tuesday.</span></div>
+      <div class="flag good"><span class="m">+</span><span>The dashed row that used to carry this is gone; the pair carries it instead.</span></div>
+    </div>
+
+    <!-- next: the sheet -->
+    <div class="screen good">
+      <div class="frame">
+        <div class="plate" style="margin-top:0;background:var(--ink2);border-radius:20px">
+          <div style="width:32px;height:4px;border-radius:2px;background:rgba(243,244,239,.2);margin:0 auto 12px"></div>
+          <div class="m-row"><span style="font-weight:900;font-size:17px;letter-spacing:-.03em">Log a sport</span><span class="m-mono">Close</span></div>
+          <div class="m-mono" style="text-transform:none;letter-spacing:0;margin-top:5px">A run, a swim, a match — it still counts</div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px">
+            <span class="m-mono">When</span>
+            <span style="font-family:var(--mono);font-size:11.5px;color:var(--lime);background:rgba(198,248,79,.12);border-radius:8px;padding:4px 9px">Mon 10 Aug, 10:30 ⌄</span>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:10px;border-radius:15px;padding:11px 13px;background:rgba(198,248,79,.06);box-shadow:inset 0 0 0 1px rgba(198,248,79,.42);margin-top:11px">
+            <span style="color:var(--lime)">⌚</span>
+            <span style="flex:1"><span style="font-weight:700;font-size:13px;display:block">Import from your watch</span><span style="font-family:var(--mono);font-size:9px;color:var(--ash);display:block;margin-top:2px">Trained on your watch? Pull it in with every value it measured.</span></span>
+            <span style="color:var(--lime);font-size:12px">→</span>
+          </div>
+
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+            <div style="border-radius:15px;padding:11px;background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)"><span style="font-size:19px">🏃</span><div style="font-weight:900;font-size:14px;margin-top:5px">Run</div><div class="m-mono" style="font-size:7.5px;margin-top:3px">Tap to log</div></div>
+            <div style="border-radius:15px;padding:11px;background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)"><span style="font-size:19px">🚴</span><div style="font-weight:900;font-size:14px;margin-top:5px">Ride</div><div class="m-mono" style="font-size:7.5px;margin-top:3px">Tap to log</div></div>
+            <div style="border-radius:15px;padding:11px;background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)"><span style="font-size:19px">🏊</span><div style="font-weight:900;font-size:14px;margin-top:5px">Swim</div><div class="m-mono" style="font-size:7.5px;margin-top:3px">Tap to log</div></div>
+            <div style="border-radius:15px;padding:11px;background:rgba(255,255,255,.045);box-shadow:inset 0 0 0 1px rgba(255,255,255,.09)"><span style="font-size:19px">🎾</span><div style="font-weight:900;font-size:14px;margin-top:5px">Tennis</div><div class="m-mono" style="font-size:7.5px;margin-top:3px">Tap to log</div></div>
+          </div>
+          <div style="margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:15px;padding:11px;background:rgba(255,255,255,.04);box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);font-weight:700;font-size:13px"><b style="color:var(--lime);font-size:15px">＋</b>Other sport</div>
+        </div>
+      </div>
+      <div class="lab"><span class="s">NEXT</span><h3>Where every Log a sport arrives</h3></div>
+      <div class="flag good"><span class="m">+</span><span><b>When</b> is a real SwiftUI <code>DatePicker</code> — already dated to the day you pressed from.</span></div>
+      <div class="flag ok"><span class="m">✓</span><span>The card grid and the watch-import bar are exactly as they were. This is the sheet I nearly replaced with a form.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ the truth ══ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>State by state, honestly</h2>
+    <span class="eyebrow">no claims without a screen behind them</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="t">
+      <thead><tr><th>State</th><th>Now (db70a36)</th><th>Next (1280dee)</th></tr></thead>
+      <tbody>
+        <tr><td>Scrolling rail, 4 weeks</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Load bars instead of ✓</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>"Last 7 days" caption gone</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Card border + shadow gone</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Empty block — today</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Empty block — past day</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Log a sport — today, empty</td><td class="no">twice</td><td class="yes">once</td></tr>
+        <tr><td>Log a sport — today, logged</td><td class="no">dashed tile only</td><td class="yes">in the pair</td></tr>
+        <tr><td>Log a sport — past, logged</td><td class="no">absent</td><td class="yes">dated</td></tr>
+        <tr><td>Log a sport — past, empty</td><td class="yes">dated</td><td class="yes">dated</td></tr>
+        <tr><td>Swipe to delete — logbook</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Swipe to delete — plan hero</td><td class="no">absent</td><td class="yes">yes</td></tr>
+        <tr><td>Date picker in the sport sheet</td><td class="yes">yes</td><td class="yes">yes</td></tr>
+        <tr><td>Sport cards + watch import</td><td class="yes">unchanged</td><td class="yes">unchanged</td></tr>
+        <tr><td>Rolling figures</td><td class="dash">not built</td><td class="dash">not built</td></tr>
+        <tr><td>Swipe between days</td><td class="dash">not built</td><td class="dash">not built</td></tr>
+        <tr><td>Condensing title / scroll edge</td><td class="dash">not built</td><td class="dash">not built</td></tr>
+        <tr><td>SF Symbols instead of emoji</td><td class="dash">not built</td><td class="dash">not built</td></tr>
+        <tr><td>Loading / offline / undo states</td><td class="dash">not built</td><td class="dash">not built</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn">
+    <span class="k">Read this row before the next build</span>
+    <b>Rolling figures, day-swiping, SF Symbols and the edge states are not built and are not coming in
+    this build.</b> Four of the eighteen screens in the design study describe them. If the next
+    TestFlight looks like it is missing those, that is correct and expected — not another defect.
+  </div>
+
+  <div class="note">
+    <span class="k">Why they are not built</span>
+    The day pager collides with the swipe-to-delete that shipped — one horizontal gesture with two
+    meanings. Rolling figures need a <code>View</code> where a <code>Text</code> is, and React Native
+    gives a non-text view its bottom edge as its baseline, so the unit beside <b>4.11</b> would shift by
+    about a descender; that wants a device round, not a guess. The scroll edge effect is not in
+    <code>@expo/ui</code> at all. And the edge states need a live-session handle, a queue depth and a
+    restore endpoint the screen does not carry yet.
+  </div>
+</section>
+
+<footer>
+  <span>HYBRID — build audit</span>
+  <span>Today → Train</span>
+  <span>PR #413 → #415</span>
+  <span>10 mistakes, 5 found by you</span>
+</footer>
+
+</div>
+</body>
+</html>
