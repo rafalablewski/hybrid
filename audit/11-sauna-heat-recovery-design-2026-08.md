@@ -9,6 +9,12 @@ a signal, not as a check-in field. `grep -ri sauna` over the whole repo returns
 nothing. This document works out what it would take, what it should be allowed
 to move, and what it must never touch.
 
+**No device will ever measure this.** A watch does not know you sat in a sauna,
+and nothing in the room reports to us. The entire input is two numbers the
+athlete types: how long, and how hot. That is not a weakness to design around —
+it settles the architecture in §2, and it is why temperature is a first-class
+field rather than a v2 nice-to-have.
+
 ---
 
 ## 1. What the evidence actually supports
@@ -42,6 +48,11 @@ is most likely to log it.
 engine term. The acute channel does not earn a fixed bonus. And a big chunk of
 the real effect is already being measured by instruments we have.
 
+**Duration alone is not the dose.** Twenty minutes at 90 °C and twenty minutes in
+a 55 °C infrared cabin are not the same stimulus. Temperature is therefore not
+decoration on the log entry — it is half the input, and it converts minutes into
+*equivalent minutes at a stated reference* before anything else runs.
+
 ---
 
 ## 2. The double-counting problem, and why it decides the architecture
@@ -62,6 +73,13 @@ observation, it does not stack with it.
 So: **sauna is a prior. The wearable is a measurement. A measurement always
 beats a prior.**
 
+**A typed number is still allowed to count — in its own tier.** HYBRID already
+runs on self-reports: RPE, the post-session feel, the daily check-in, every gram
+of logged food. None are measured either and all move real numbers. But the app
+keeps a hierarchy, and heat is the one recovery input that will never graduate
+out of the report tier — which is exactly why the suppression rule below is a
+permanent shape rather than a stopgap. It is not waiting for a sensor.
+
 ---
 
 ## 3. Proposed model — three channels, phased
@@ -81,20 +99,42 @@ New module `packages/core/src/engines/heat.ts`, one function
 `heatAdjustment(saunaSignals, now, bio?) → { points, minutes, hoursSince, suppressed }`.
 
 ```
-minutes  = Σ sauna minutes in the last HEAT_WINDOW_H (48)
-dose     = HEAT_CREDIT_MAX × (1 − e^(−minutes / HEAT_TAU_MIN))
-decay    = 0.5 ^ (hoursSince / HEAT_HALF_LIFE_H)
-points   = bio ? 0 : round(dose × decay)
+intensity(T) = clamp((T − HEAT_FLOOR_C) / (HEAT_REF_C − HEAT_FLOOR_C), 0, HEAT_INTENSITY_MAX)
+
+equivMin  = Σ minutesᵢ × intensity(tempCᵢ)     // sittings inside HEAT_WINDOW_H
+dose      = HEAT_CREDIT_MAX × (1 − e^(−equivMin / HEAT_TAU_MIN))
+decay     = 0.5 ^ (hoursSinceLast / HEAT_HALF_LIFE_H)
+points    = bio ? 0 : round(dose × decay)
 ```
 
 Proposed constants, all tunable and all deliberately timid:
 
 | constant | value | why |
 | --- | --- | --- |
+| `HEAT_FLOOR_C` | `45` °C | below this a room is warm, not thermally stressful. A hot shower earns nothing. |
+| `HEAT_REF_C` | `80` °C | the low end of a traditional Finnish sauna, and the anchor: here an equivalent minute *is* a minute. |
+| `HEAT_INTENSITY_MAX` | `1.6` × | reached at 101 °C. A ceiling so a mistyped 150 cannot manufacture a dose nobody sat through. |
 | `HEAT_CREDIT_MAX` | `3` | one fifth of the wearable's ±15. A prior should not out-vote a measurement even when the measurement is absent. |
-| `HEAT_TAU_MIN` | `15` min | 10 min → 1.5 pts, 20 min → 2.2, 30 min → 2.6. Saturating, so a 60-minute session is not twice a 30. |
+| `HEAT_TAU_MIN` | `15` equiv min | saturating, so a 60-minute sitting is not twice a 30. |
 | `HEAT_HALF_LIFE_H` | `18` h | last night's sauna is mostly spent by tonight. Same idiom as the fatigue engine's 2-day half-life. |
 | `HEAT_WINDOW_H` | `48` h | beyond this it is a habit, not a statement about today — and habits are channel two. |
+| `HEAT_SESSION_MIN_EQUIV` | `10` equiv min | a sitting only counts toward the weekly frequency once it clears this. Five minutes in a cool cabin is not a fourth session. |
+
+Intensity, worked: 45 °C → 0.00, 55 → 0.29, 70 → 0.71, **80 → 1.00**, 90 → 1.29,
+100 → 1.57, ≥101 → 1.60 (clamp).
+
+**A worked morning.** 22 min at 90 °C ending 21:40, opened 07:10, no wearable
+sync: intensity 1.286 → 28.3 equiv min → dose 2.545 → decay(9.5 h) 0.6936 →
+**+2**. The same 22 minutes at 55 °C: 6.3 equiv min → dose 1.027 → **+1**. That
+gap is the entire reason temperature is collected.
+
+**What air temperature cannot see: humidity.** A steam room at 45 °C and 100%
+humidity blocks evaporative cooling and produces real thermal strain, and this
+model scores it zero; infrared is under-read for a related reason. Both are
+honest limitations of reading one number, and neither is worth papering over
+with an invented humidity term. If a traditional sauna is what the athlete uses,
+air temperature is sufficient and this is the whole model. If not, the fix is a
+protocol tag on the entry — not a fudge factor.
 
 **The suppression rule is the load-bearing part.** When `toBiometrics()` returns
 a fresh reading, `points` is 0 and `suppressed` is true. The card says so
@@ -210,9 +250,21 @@ Nine touch points. Items 3 and 6 are the ones easy to miss.
 
 ## 5. How a user adds a sauna session
 
-### Storage — a Signal, and this needs no migration
+### Storage — two Signals per sitting, and no migration
 
-`Signal { kind: "sauna", value: <minutes>, unit: "min", source: "manual" }`.
+A Signal carries exactly one number, and a sitting is two. That is already a
+solved problem here: the food log writes up to eight Signals for one logged food
+and reassembles them by grouping on **(exact timestamp, source)**, with a
+composite id so deleting the entry removes every row it wrote
+(`derivedFoodEntries()` in `engines/nutrition.ts`). Heat is the same shape with
+two rows instead of eight.
+
+```
+{ kind: "sauna",     value: 22, unit: "min", source: "manual", ts: "2026-08-11T21:40:00Z" }
+{ kind: "saunaTemp", value: 90, unit: "C",   source: "manual", ts: "2026-08-11T21:40:00Z" }
+```
+
+`heatSittings(signals)` regroups them on read, exactly like the diary does.
 
 - `Signal.kind` is a **String** column, so **no Prisma migration and no SQL for
   the user to run** — which matters, because this sandbox cannot reach the
@@ -225,15 +277,25 @@ Nine touch points. Items 3 and 6 are the ones easy to miss.
 - `water` is the exact precedent, end to end — mobile already does
   `GET /api/signals?kind=water`, POST, and delete-by-id for hydration.
 
-`META` entry: `sauna: { unit: "min", better: "high" }`.
+`META` entries: `sauna: { unit: "min", better: "high" }` and
+`saunaTemp: { unit: "C", better: "high" }`.
 
-**One open question — protocol and temperature.** A Signal carries one number,
-so dry vs infrared vs steam (55 °C vs 90 °C is a genuinely different dose) has
-nowhere to go. Three options: (a) v1 is minutes only, since the dose curve reads
-only minutes anyway; (b) encode it in `source` (`"sauna:dry"` / `"sauna:infrared"`),
-which is a String already carrying varied values, no migration; (c) a real
-column, which needs a migration the sandbox cannot run. **Recommend (a) for v1,
-(b) when the dose curve is calibrated enough to care.** Your call.
+A sitting with no temperature row still counts, at the reference — read as 80 °C
+and **marked as assumed** rather than silently treated as measured, the same
+distinction `BiometricMetric.measured` already draws. A temperature outside
+`HEAT_TEMP_BOUNDS` (40–120 °C) is rejected at the API rather than clamped
+quietly: 900 is a typo, and a typo should bounce rather than become 120.
+
+Units: store canonical °C always, and derive the display unit from the weight
+unit the athlete already set (lb → °F), the way `heightUnitFor()` already
+derives inches against centimetres. No third preference to manage.
+
+**One open question — protocol.** Air temperature fully describes a traditional
+dry sauna. It systematically under-reads steam and infrared (see the humidity
+note in §3). If those are in the athlete's mix, the entry needs a protocol tag,
+and `source: "sauna:infrared"` carries it with no migration — that column
+already holds varied values. If it is always a traditional sauna, air
+temperature is sufficient and nothing more is needed. **Your call.**
 
 ### Why not the two obvious alternatives
 
@@ -258,8 +320,11 @@ column, which needs a migration the sandbox cannot run. **Recommend (a) for v1,
    the `RtpPanel`. Opens the same sheet. Supports back-dating, because most
    saunas will not follow a session.
 
-3. **The sheet** — presets 10 / 15 / 20 / 30 min plus a custom stepper, time
-   defaulting to now, and delete. Modelled on the hydration quick-add.
+3. **The sheet** — both typed numbers, each with presets plus a keypad: minutes
+   (10 / 15 / 30) and °C (70 / 90 / 100), time defaulting to now, and delete. It
+   shows the resulting **equivalent minutes live**, so the model is visible at the
+   point of entry and the athlete can see that hotter is worth more before
+   anything scores it.
 
 4. **Its own read surface** — once phase 3 has data, a small block showing the
    athlete's measured clearance with and without heat. This is the payoff, and

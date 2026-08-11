@@ -283,18 +283,20 @@ pre.code .k{color:var(--teal)}
 <div class="wrap">
 
 <header class="mast">
-  <p class="kicker">HYBRID &nbsp;/&nbsp; Recovery system &nbsp;/&nbsp; Specification</p>
+  <p class="kicker">HYBRID &#160;/&#160; Recovery system &#160;/&#160; Specification</p>
   <h1>Heat as a<br><em>recovery input</em></h1>
   <div class="rule"></div>
-  <p class="lede">Sauna is the most common recovery practice HYBRID cannot see. This is the
-  complete proposal for making it visible: what it is allowed to move, how the arithmetic
-  works, how an athlete records one, and the order it gets built in.</p>
+  <p class="lede">Sauna is the most common recovery practice HYBRID cannot see, and the only
+  one no device will ever report. It is two typed numbers &#8212; minutes, and how hot it was. This
+  is the complete proposal for making those two numbers count: what they are allowed to move,
+  how the arithmetic works, how an athlete records them, and the order it gets built in.</p>
   <div style="margin:30px 0 26px"><span class="badge">Planned &#8212; not built</span></div>
   <div class="meta">
     <div><b>Capability</b><span>heat-recovery</span></div>
     <div><b>Branch</b><span>claude/sauna-recovery-enhancement-o1lqgt</span></div>
     <div><b>Source doc</b><span>audit/11-sauna-heat-recovery-design-2026-08.md</span></div>
     <div><b>Date</b><span>August 2026</span></div>
+    <div><b>Input</b><span>Typed &#8212; minutes + &#176;C</span></div>
     <div><b>Migration required</b><span style="color:var(--lime)">None</span></div>
   </div>
 </header>
@@ -311,6 +313,11 @@ pre.code .k{color:var(--teal)}
     <p>That is the gap. What follows is deliberately narrower than &#8220;add sauna tracking&#8221;, because
     the interesting question is not how to store fifteen minutes &#8212; it is <strong>what those
     fifteen minutes are allowed to move, and on what evidence</strong>.</p>
+    <p><strong>No device will ever measure this.</strong> A watch does not know you sat in a
+    sauna, and nothing in the room reports to us. The entire input is what the athlete types:
+    how long, and how hot. That is not a weakness to design around &#8212; it is the fact that settles
+    the architecture in &#167;3, and it is why temperature is a first-class field here rather than a
+    nice-to-have deferred to a later release.</p>
   </div>
 </section>
 
@@ -334,7 +341,7 @@ pre.code .k{color:var(--teal)}
         consistent exposure, raised HSP70, improved thermoregulation and cardiovascular
         stability at submaximal loads.</td>
         <td>Good. Repeated trials, consistent direction, and a cohort dose-response that
-        strengthens at 4+ sessions&nbsp;/&nbsp;week.</td>
+        strengthens at 4+ sessions&#160;/&#160;week.</td>
         <td>The <strong>MRV recovery multiplier</strong> &#8212; how much work you can absorb.</td>
       </tr>
       <tr>
@@ -347,7 +354,7 @@ pre.code .k{color:var(--teal)}
       </tr>
       <tr>
         <td><strong style="color:var(--terra)">Cost</strong><br><span class="note">same night</span></td>
-        <td>Sauna is itself a load: heart rate 100&#8211;150&nbsp;bpm, real fluid loss, and suppressed
+        <td>Sauna is itself a load: heart rate 100&#8211;150&#160;bpm, real fluid loss, and suppressed
         overnight HRV when taken hot, long, or immediately after a hard session.</td>
         <td>Well established, and it fires in exactly the case an athlete is most likely to log.</td>
         <td>Nothing. The wearable already measures it &#8212; see &#167;3.</td>
@@ -414,6 +421,16 @@ pre.code .k{color:var(--teal)}
   </div>
 
   <div class="col">
+    <h4>A typed number is allowed to count &#8212; in its own tier</h4>
+    <p>HYBRID already runs on self-reports: RPE, the post-session feel, the daily check-in, every
+    gram of logged food. None of those are measured either, and all of them move real numbers. So
+    &#8220;the athlete typed it&#8221; is not a reason to discount heat.</p>
+    <p>But the app keeps a strict hierarchy, and this is where the device-truth rule points even
+    though no device is involved: <strong>a measurement outranks a report</strong>. Heat is the
+    one recovery input that will never graduate out of the report tier &#8212; which is precisely why
+    the suppression rule above is the right permanent shape rather than a stopgap. It is not
+    waiting for a sensor. There is never going to be one.</p>
+
     <h4>Why there is no negative term</h4>
     <p>The overdose case is real. It is also unmeasurable from a logged duration &#8212; and the
     wearable measures its consequence the following morning anyway. Putting an arc on the
@@ -434,12 +451,34 @@ pre.code .k{color:var(--teal)}
     than a hand-copied duplicate &#8212; the same rule the other engines follow.</p>
   </div>
 
-  <div class="formula"><span class="cm">// engines/heat.ts</span>
-minutes  = <span class="k">&#931;</span> sauna minutes logged inside <span class="c">HEAT_WINDOW_H</span>
-dose     = <span class="c">HEAT_CREDIT_MAX</span> &#215; (1 &#8722; e<span class="k">^</span>(&#8722;minutes / <span class="c">HEAT_TAU_MIN</span>))
-decay    = 0.5 <span class="k">^</span> (hoursSinceLast / <span class="c">HEAT_HALF_LIFE_H</span>)
+  <div class="formula"><span class="cm">// engines/heat.ts &#8212; two typed numbers per sitting: minutes, tempC</span>
+intensity(T) = clamp((T &#8722; <span class="c">HEAT_FLOOR_C</span>) / (<span class="c">HEAT_REF_C</span> &#8722; <span class="c">HEAT_FLOOR_C</span>), 0, <span class="c">HEAT_INTENSITY_MAX</span>)
 
-points   = bio ? <span class="c">0</span> : round(dose &#215; decay)     <span class="cm">// the suppression rule, &#167;3</span></div>
+equivMin  = <span class="k">&#931;</span> minutes&#7522; &#215; intensity(tempC&#7522;)      <span class="cm">// sittings inside HEAT_WINDOW_H</span>
+dose      = <span class="c">HEAT_CREDIT_MAX</span> &#215; (1 &#8722; e<span class="k">^</span>(&#8722;equivMin / <span class="c">HEAT_TAU_MIN</span>))
+decay     = 0.5 <span class="k">^</span> (hoursSinceLast / <span class="c">HEAT_HALF_LIFE_H</span>)
+
+points    = bio ? <span class="c">0</span> : round(dose &#215; decay)      <span class="cm">// the suppression rule, &#167;3</span></div>
+
+  <div class="col">
+    <p>Duration alone is not the dose. Twenty minutes at 90&nbsp;&#176;C and twenty minutes in a
+    55&nbsp;&#176;C infrared cabin are not the same stimulus, and a model that reads only the clock
+    would score them identically. So temperature converts minutes into
+    <em>equivalent minutes at the reference</em>, and everything downstream &#8212; the saturating
+    curve, the cap, the decay &#8212; is unchanged and now takes an honest input.</p>
+  </div>
+
+  <p class="kicker ash" style="margin:34px 0 0">The temperature model</p>
+  <div class="consts">
+    <div><dt>HEAT_FLOOR_C</dt><dd>45<small>&#176;C</small></dd>
+      <p>Below this a room is warm, not thermally stressful. No credit at all, so a hot shower cannot earn points.</p></div>
+    <div><dt>HEAT_REF_C</dt><dd>80<small>&#176;C</small></dd>
+      <p>The low end of a traditional Finnish sauna, and the anchor: at 80&nbsp;&#176;C an equivalent minute <em>is</em> a minute.</p></div>
+    <div><dt>HEAT_INTENSITY_MAX</dt><dd>1.6<small>&#215;</small></dd>
+      <p>Reached at 101&nbsp;&#176;C. A ceiling so a mistyped 150 cannot manufacture a dose nobody sat through.</p></div>
+  </div>
+
+  <p class="kicker ash" style="margin:34px 0 0">The dose model</p>
 
   <div class="consts">
     <div><dt>HEAT_CREDIT_MAX</dt><dd>3<small>points</small></dd>
@@ -454,8 +493,29 @@ points   = bio ? <span class="c">0</span> : round(dose &#215; decay)     <span c
 
   <div class="charts">
     <div class="panel" style="margin:0">
-      <div class="panel-head"><p class="kicker">Dose &#8212; credit vs minutes</p><span class="val">cap 3.0</span></div>
-      <svg class="chart" viewBox="0 0 640 250" role="img" aria-label="Saturating dose curve: credit rises steeply to about 1.5 points at 10 minutes, 2.2 at 20 minutes, and approaches the 3-point cap beyond 40 minutes.">
+      <div class="panel-head"><p class="kicker">Intensity &#8212; factor vs temperature</p><span class="val">1.00 at 80 &#176;C</span></div>
+      <svg class="chart" viewBox="0 0 640 250" role="img" aria-label="Intensity ramp: zero below 45 degrees, rising linearly to 1.0 at the 80 degree reference, 1.29 at 90 degrees, and clamped at 1.6 from 101 degrees upward.">
+        <g class="grid">
+          <line x1="56" y1="24" x2="610" y2="24"/><line x1="56" y1="94" x2="610" y2="94"/>
+          <line x1="56" y1="152" x2="610" y2="152"/><line x1="56" y1="210" x2="610" y2="210"/>
+        </g>
+        <path class="fillA" d="M56,210 L96,210 L175,177 L254,144 L373,94 L452,61 L539,24 L610,24 L610,210 Z"/>
+        <path class="curve" d="M56,210 L96,210 L175,177 L254,144 L373,94 L452,61 L539,24 L610,24"/>
+        <circle class="dot-hi" cx="373" cy="94" r="5"/>
+        <text class="hi" x="373" y="83" text-anchor="middle">80 &#176;C &#8594; 1.00</text>
+        <text x="48" y="28" text-anchor="end">1.6</text><text x="48" y="98" text-anchor="end">1.0</text>
+        <text x="48" y="156" text-anchor="end">0.5</text><text x="48" y="214" text-anchor="end">0</text>
+        <text x="56" y="230">40</text><text x="214" y="230" text-anchor="middle">60</text>
+        <text x="373" y="230" text-anchor="middle">80</text><text x="531" y="230" text-anchor="middle">100</text>
+        <text x="610" y="230" text-anchor="end">110</text>
+        <text class="ax" x="56" y="245">AIR TEMPERATURE, &#176;C</text>
+        <text class="ax" x="610" y="19" text-anchor="end" fill="#e58a5c">CLAMP</text>
+      </svg>
+    </div>
+
+    <div class="panel" style="margin:0">
+      <div class="panel-head"><p class="kicker">Dose &#8212; credit vs equivalent minutes</p><span class="val">cap 3.0</span></div>
+      <svg class="chart" viewBox="0 0 640 250" role="img" aria-label="Saturating dose curve: credit rises steeply to about 1.5 points at 10 equivalent minutes, 2.2 at 20, and approaches the 3-point cap beyond 40.">
         <g class="grid">
           <line x1="56" y1="24" x2="610" y2="24"/><line x1="56" y1="86" x2="610" y2="86"/>
           <line x1="56" y1="148" x2="610" y2="148"/><line x1="56" y1="210" x2="610" y2="210"/>
@@ -464,13 +524,13 @@ points   = bio ? <span class="c">0</span> : round(dose &#215; decay)     <span c
         <path class="fillA" d="M56,210 L102,157 L148,120 L195,92 L241,73 L287,59 L333,49 L379,42 L425,37 L472,33 L518,31 L564,29 L610,27 L610,210 Z"/>
         <path class="curve" d="M56,210 L102,157 L148,120 L195,92 L241,73 L287,59 L333,49 L379,42 L425,37 L472,33 L518,31 L564,29 L610,27"/>
         <circle class="dot-hi" cx="241" cy="73" r="5"/>
-        <text class="hi" x="241" y="62" text-anchor="middle">20 min &#8594; 2.2</text>
+        <text class="hi" x="241" y="62" text-anchor="middle">20 equiv &#8594; 2.2</text>
         <text x="48" y="28" text-anchor="end">3</text><text x="48" y="90" text-anchor="end">2</text>
         <text x="48" y="152" text-anchor="end">1</text><text x="48" y="214" text-anchor="end">0</text>
         <text x="56" y="230">0</text><text x="195" y="230" text-anchor="middle">15</text>
         <text x="333" y="230" text-anchor="middle">30</text><text x="472" y="230" text-anchor="middle">45</text>
         <text x="610" y="230" text-anchor="end">60</text>
-        <text class="ax" x="56" y="245">MINUTES IN WINDOW</text>
+        <text class="ax" x="56" y="245">EQUIVALENT MINUTES AT 80 &#176;C</text>
         <text class="ax" x="610" y="19" text-anchor="end" fill="#e58a5c">CAP</text>
       </svg>
     </div>
@@ -497,31 +557,65 @@ points   = bio ? <span class="c">0</span> : round(dose &#215; decay)     <span c
     </div>
   </div>
 
+  <div class="tw">
+  <table style="min-width:560px">
+    <thead><tr><th>Air temperature</th><th class="num">Intensity</th><th class="num">20 min becomes</th><th>Typically</th></tr></thead>
+    <tbody>
+      <tr><td class="num">45 &#176;C</td><td class="num dash">0.00</td><td class="num dash">0 equiv min</td><td class="note">The floor. A warm room.</td></tr>
+      <tr><td class="num">55 &#176;C</td><td class="num">0.29</td><td class="num">5.7 equiv min</td><td class="note">Infrared cabin.</td></tr>
+      <tr><td class="num">70 &#176;C</td><td class="num">0.71</td><td class="num">14.3 equiv min</td><td class="note">A cool public sauna.</td></tr>
+      <tr><td class="num">80 &#176;C</td><td class="num" style="color:var(--sand)">1.00</td><td class="num" style="color:var(--sand)">20.0 equiv min</td><td class="note">The reference. Traditional, lower end.</td></tr>
+      <tr><td class="num">90 &#176;C</td><td class="num">1.29</td><td class="num">25.7 equiv min</td><td class="note">Traditional, typical.</td></tr>
+      <tr><td class="num">100 &#176;C</td><td class="num">1.57</td><td class="num">31.4 equiv min</td><td class="note">Hot. Near the clamp.</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout warn">
+    <p class="kicker">What air temperature cannot see</p>
+    <p>Humidity. A steam room at 45&nbsp;&#176;C and 100% humidity blocks evaporative cooling and
+    produces real thermal strain, and this model scores it at zero. Infrared is under-read for a
+    related reason &#8212; it heats the body radiantly at a low air temperature. Both are honest
+    limitations of reading one number, and neither is worth papering over with an invented
+    humidity term. <strong>If a traditional sauna is what you actually use, air temperature is
+    sufficient and this is the whole model.</strong> If steam or infrared is in the mix, the fix
+    is a protocol tag on the entry, not a fudge factor &#8212; see &#167;11.</p>
+  </div>
+
   <h3>A worked morning</h3>
   <div class="col">
-    <p>An athlete finishes a lower-body session at 19:20, sits in the sauna for 22 minutes ending
-    21:40, and opens the app at 07:10 the next day. Their watch has not synced since Tuesday.
-    This is what the Engine Room prints:</p>
+    <p>An athlete finishes a lower-body session at 19:20, sits in a 90&#160;&#176;C sauna for 22 minutes
+    ending 21:40, and opens the app at 07:10 the next day. Their watch has not synced since
+    Tuesday. This is what the Engine Room prints:</p>
   </div>
 
   <div class="panel">
     <div class="panel-head"><p class="kicker">Substituted arithmetic &#8212; deriveReadiness()</p>
-      <span class="val">2026-08-12 &nbsp;07:10</span></div>
+      <span class="val">2026-08-12 &#160;07:10</span></div>
     <div class="ledger">
-      <div class="row"><span class="lbl">Heat minutes in window (48 h)</span><span class="val">22 min &nbsp;&#8212; one entry, 21:40</span></div>
-      <div class="row"><span class="lbl">Dose &nbsp;3 &#215; (1 &#8722; e^(&#8722;22 / 15))</span><span class="val">3 &#215; 0.7693 = 2.308</span></div>
+      <div class="row"><span class="lbl">Sittings in window (48 h)</span><span class="val">one &#160;&#8212; 22 min at 90 &#176;C, 21:40</span></div>
+      <div class="row"><span class="lbl">Intensity &#160;clamp((90 &#8722; 45) / 35, 0, 1.6)</span><span class="val">1.286</span></div>
+      <div class="row"><span class="lbl">Equivalent minutes &#160;22 &#215; 1.286</span><span class="val">28.3 equiv min</span></div>
+      <div class="row"><span class="lbl">Dose &#160;3 &#215; (1 &#8722; e^(&#8722;28.3 / 15))</span><span class="val">3 &#215; 0.8483 = 2.545</span></div>
       <div class="row"><span class="lbl">Hours since</span><span class="val">9.5 h</span></div>
-      <div class="row"><span class="lbl">Decay &nbsp;0.5^(9.5 / 18)</span><span class="val">0.6936</span></div>
+      <div class="row"><span class="lbl">Decay &#160;0.5^(9.5 / 18)</span><span class="val">0.6936</span></div>
       <div class="row"><span class="lbl">Wearable freshness gate</span><span class="val" style="color:var(--sand)">no reading in 7 days &#8594; prior applies</span></div>
-      <div class="row"><span class="lbl">Credit &nbsp;round(2.308 &#215; 0.6936)</span><span class="val">round(1.601)</span></div>
+      <div class="row"><span class="lbl">Credit &#160;round(2.545 &#215; 0.6936)</span><span class="val">round(1.765)</span></div>
       <div class="row total"><span class="lbl">heatAdj</span><span class="val">+2</span></div>
     </div>
   </div>
 
   <div class="col">
+    <p>The same 22 minutes in a 55&#160;&#176;C infrared cabin runs the identical arithmetic to a different
+    answer: intensity 0.29, 6.3 equivalent minutes, dose 1.027, credit
+    <span class="mono" style="color:var(--sand)">+1</span>. That gap is the entire reason
+    temperature is collected.</p>
+  </div>
+
+  <div class="col">
     <p class="note">Had the watch synced at 06:12, every line above would still be computed and
     printed &#8212; and the last one would read <span class="mono" style="color:var(--chalk)">+0
-    &nbsp;(suppressed: wearable read 06:12)</span>. That is the difference between a rule and a
+    &#160;(suppressed: wearable read 06:12)</span>. That is the difference between a rule and a
     silent zero, and it is the reason the derivation surface is listed as a hard requirement in
     &#167;7 rather than a nice-to-have.</p>
   </div>
@@ -536,6 +630,11 @@ points   = bio ? <span class="c">0</span> : round(dose &#215; decay)     <span c
     <p>Crucially it is <strong>derived from the signals, never asked</strong>. The athlete has
     already told us by logging; a second question in a profile form would be a worse copy of an
     answer we hold.</p>
+    <p>The frequency tier counts <em>sittings</em> rather than equivalent minutes, because
+    sessions per week is what the cohort evidence is actually expressed in. But a sitting only
+    counts once it clears <code>HEAT_SESSION_MIN_EQUIV</code> &#8212; 10 equivalent minutes, which is
+    ten minutes at the reference or eight at 90&#160;&#176;C. Five minutes in a cool cabin is not a fourth
+    session.</p>
   </div>
 
   <div class="tw">
@@ -619,17 +718,34 @@ saunaClearance(sessions, recovery, signals) &#8594; {
 <section>
   <span class="sec-no">06 &#8212; How it is logged</span>
   <div class="col">
-    <h2>A Signal, and it needs no migration</h2>
-    <p>Sauna becomes one row in the universal time-series every measurement about an athlete
-    already lands in.</p>
+    <h2>Two Signals per sitting, and no migration</h2>
+    <p>A Signal carries exactly one number, and a sitting is two. That is not an obstacle &#8212; it is
+    a solved problem in this codebase. The food log already writes up to eight Signals for one
+    logged food and reassembles them by grouping on <strong>(exact timestamp, source)</strong>,
+    with a composite id so deleting the entry removes every row it wrote. Heat is the same shape
+    with two rows instead of eight.</p>
   </div>
 
-  <pre class="code"><span class="cm">// one tap in the app &#8594;</span>
-{ kind: <span class="s">"sauna"</span>, value: <span class="k">22</span>, unit: <span class="s">"min"</span>, source: <span class="s">"manual"</span>, ts: <span class="s">"2026-08-11T21:40:00Z"</span> }
+  <pre class="code"><span class="cm">// one save in the app &#8594; two rows sharing an EXACT ts</span>
+{ kind: <span class="s">"sauna"</span>,     value: <span class="k">22</span>, unit: <span class="s">"min"</span>, source: <span class="s">"manual"</span>, ts: <span class="s">"2026-08-11T21:40:00Z"</span> }
+{ kind: <span class="s">"saunaTemp"</span>, value: <span class="k">90</span>, unit: <span class="s">"C"</span>,   source: <span class="s">"manual"</span>, ts: <span class="s">"2026-08-11T21:40:00Z"</span> }
 
-<span class="cm">// engines/signals.ts &#8212; the only two lines that gate it</span>
-type SignalKind = &#8230; | <span class="s">"sauna"</span>
-META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high"</span> }</pre>
+<span class="cm">// engines/signals.ts &#8212; the lines that gate it</span>
+type SignalKind = &#8230; | <span class="s">"sauna"</span> | <span class="s">"saunaTemp"</span>
+META.sauna     = { unit: <span class="s">"min"</span>, better: <span class="s">"high"</span> }
+META.saunaTemp = { unit: <span class="s">"C"</span>,   better: <span class="s">"high"</span> }
+
+<span class="cm">// engines/heat.ts &#8212; regrouped on read, exactly like derivedFoodEntries()</span>
+heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <span class="k">90</span>, ts, ids: [<span class="s">"sig_a"</span>, <span class="s">"sig_b"</span>] }]</pre>
+
+  <div class="col">
+    <p class="note">A sitting with no temperature row still counts, at the reference &#8212; an entry
+    logged before the field existed, or one where the athlete genuinely did not know, is read as
+    80&nbsp;&#176;C and <strong>marked as assumed</strong> rather than silently treated as measured.
+    The same distinction <code>BiometricMetric.measured</code> already draws. A temperature
+    outside <code>HEAT_TEMP_BOUNDS</code> (40&#8211;120&nbsp;&#176;C) is rejected at the API, not clamped
+    quietly: 900 is a typo, and a typo should bounce rather than become 120.</p>
+  </div>
 
   <div class="panel">
     <div class="panel-head"><p class="kicker">Everything this reuses</p><span class="val">zero new endpoints, zero SQL</span></div>
@@ -642,6 +758,8 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
         <tr><td class="file">DELETE /api/signals/[id]</td><td class="yes">exists</td><td class="note">A mis-tap is already undoable.</td></tr>
         <tr><td class="file">RLS signal_own</td><td class="yes">no change</td><td class="note">Row-scoped by user and kind-agnostic. Coach read follows the active-link policy like every other signal.</td></tr>
         <tr><td class="file">Hydration (<code>water</code>)</td><td class="dash">precedent</td><td class="note">The identical shape end to end: filtered GET, POST, delete-by-id. Nothing here is a new pattern.</td></tr>
+        <tr><td class="file">derivedFoodEntries()</td><td class="dash">precedent</td><td class="note">The multi-row grouping: one event, several Signals, matched on exact ts and source, deleted as a unit. Heat copies the idiom rather than inventing one.</td></tr>
+        <tr><td class="file">units.ts</td><td style="color:var(--sand);font-family:var(--mono);font-size:12.5px">extend</td><td class="note">Store canonical &#176;C always. A <code>TempUnit</code> derived from the athlete&rsquo;s weight unit (lb &#8594; &#176;F) mirrors how <code>heightUnitFor()</code> already derives cm against inches, so nobody sets a third preference.</td></tr>
       </tbody>
     </table>
     </div>
@@ -652,13 +770,13 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
     <div class="tw">
     <svg class="flow" viewBox="0 0 900 232" role="img" aria-label="Flow: the mobile sheet posts a sauna signal to the signals API, which writes one Signal row; the mobile client reads it back and core computes the heat adjustment, which feeds readiness, the volume landmarks and the prescription.">
       <rect class="box hot" x="0" y="34" width="150" height="62" rx="10"/>
-      <text x="16" y="60">Heat sheet</text><text class="sub" x="16" y="78">mobile &#8212; 22 min</text>
+      <text x="16" y="60">Heat sheet</text><text class="sub" x="16" y="78">22 min at 90 &#176;C</text>
 
       <rect class="box" x="196" y="34" width="164" height="62" rx="10"/>
       <text x="212" y="60">POST /api/signals</text><text class="sub" x="212" y="78">kind allow-list</text>
 
       <rect class="box hot" x="406" y="34" width="150" height="62" rx="10"/>
-      <text x="422" y="60">Signal row</text><text class="sub" x="422" y="78">no migration needed</text>
+      <text x="422" y="60">2 Signal rows</text><text class="sub" x="422" y="78">same exact ts</text>
 
       <rect class="box" x="602" y="34" width="164" height="62" rx="10"/>
       <text x="618" y="60">toBiometrics +</text><text x="618" y="78">heatAdjustment()</text>
@@ -700,15 +818,6 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
   </table>
   </div>
 
-  <div class="callout">
-    <p class="kicker">Open &#8212; needs your call</p>
-    <p>Dry, infrared and steam are genuinely different doses (55&nbsp;&#176;C against 90&nbsp;&#176;C), and a
-    Signal carries exactly one number. <strong>Recommendation: v1 is minutes only</strong>, since
-    the dose curve reads only minutes anyway. When the curve is calibrated enough to care,
-    <code>source: "sauna:infrared"</code> is a legitimate no-migration encoding &#8212; that column
-    already carries varied values. A real column is the third option and the only one that needs
-    a migration.</p>
-  </div>
 </section>
 
 <!-- &#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552; -->
@@ -717,8 +826,9 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
   <div class="col">
     <h2>Four surfaces on the phone, one sheet</h2>
     <p>Mobile only, per the mobile-first rule &#8212; the web client is retired and gets nothing here
-    except the admin Engine Room. Drawn to the Aurora kit&#8217;s real tokens: 28&nbsp;px card radius,
-    12&nbsp;dp gutter, mono kickers at 1.3&nbsp;px tracking, chartreuse reserved for actions,
+    except the admin Engine Room. Every screen assumes the input is typed: there is no import,
+    no device match, no &#8220;connect your sauna&#8221;. Drawn to the Aurora kit&#8217;s real tokens: 28&#160;px card radius,
+    12&#160;dp gutter, mono kickers at 1.3&#160;px tracking, chartreuse reserved for actions,
     sand carrying heat.</p>
   </div>
 
@@ -731,7 +841,7 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
         <div class="sbody">
           <p class="ameta" style="margin:0 0 6px">SESSION COMPLETE</p>
           <p class="ahead" style="font-size:22px;margin:0 0 4px">Lower &#8212; W4D2</p>
-          <p class="ameta" style="margin:0 0 18px;letter-spacing:.06em;text-transform:none">72 min &nbsp;&#8211; &nbsp;18 hard sets</p>
+          <p class="ameta" style="margin:0 0 18px;letter-spacing:.06em;text-transform:none">72 min &#160;&#8211; &#160;18 hard sets</p>
 
           <div class="acard" style="margin-bottom:12px">
             <div class="arow"><span class="ameta">HOW DID THAT FEEL?</span><span class="aval" style="font-size:12px;color:var(--sand)">ANSWERED</span></div>
@@ -774,22 +884,33 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
           <p class="ahead" style="font-size:19px;margin:0 0 3px">Log heat</p>
           <p style="margin:0 0 18px;font-size:12.5px;color:var(--ash)">Sauna, steam or infrared.</p>
 
-          <p class="ameta" style="margin:0 0 9px">HOW LONG</p>
-          <div style="display:flex;gap:7px;margin-bottom:8px">
-            <span class="pill off">10</span><span class="pill off">15</span>
-            <span class="pill on">20</span><span class="pill off">30</span>
-          </div>
-          <div class="arow" style="border:1px solid var(--line);border-radius:16px;padding:11px 14px;margin-bottom:18px">
-            <span style="font-size:13px;color:var(--ash)">Custom</span>
-            <div style="display:flex;align-items:center;gap:14px">
-              <span style="color:var(--ash);font-size:15px">&#8722;</span>
-              <span class="aval" style="font-size:17px;font-weight:700">22 min</span>
-              <span style="color:var(--sand);font-size:15px">+</span>
+          <p class="ameta" style="margin:0 0 8px">HOW LONG</p>
+          <div class="arow" style="border:1px solid var(--line);border-radius:16px;padding:10px 13px;margin-bottom:13px">
+            <div style="display:flex;gap:6px">
+              <span class="pill off" style="padding:5px 9px;flex:0 0 auto">10</span>
+              <span class="pill off" style="padding:5px 9px;flex:0 0 auto">15</span>
+              <span class="pill off" style="padding:5px 9px;flex:0 0 auto">30</span>
             </div>
+            <span class="aval" style="font-size:16px;font-weight:700">22 min</span>
           </div>
 
-          <p class="ameta" style="margin:0 0 9px">WHEN</p>
-          <div class="arow" style="border:1px solid var(--line);border-radius:16px;padding:11px 14px;margin-bottom:20px">
+          <p class="ameta" style="margin:0 0 8px">HOW HOT</p>
+          <div class="arow" style="border:1px solid var(--line);border-radius:16px;padding:10px 13px;margin-bottom:13px">
+            <div style="display:flex;gap:6px">
+              <span class="pill off" style="padding:5px 9px;flex:0 0 auto">70</span>
+              <span class="pill on" style="padding:5px 9px;flex:0 0 auto">90</span>
+              <span class="pill off" style="padding:5px 9px;flex:0 0 auto">100</span>
+            </div>
+            <span class="aval" style="font-size:16px;font-weight:700">90 &#176;C</span>
+          </div>
+
+          <div class="arow" style="padding:0 3px;margin-bottom:13px">
+            <span style="font-size:11.5px;color:var(--ash)">That is</span>
+            <span class="aval" style="font-size:12px;color:var(--sand)">28 equivalent min</span>
+          </div>
+
+          <p class="ameta" style="margin:0 0 8px">WHEN</p>
+          <div class="arow" style="border:1px solid var(--line);border-radius:16px;padding:10px 13px;margin-bottom:16px">
             <span style="font-size:13px;color:var(--chalk)">Today, 21:40</span>
             <span class="ameta" style="color:var(--sand)">CHANGE</span>
           </div>
@@ -797,10 +918,11 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
           <span class="cta">SAVE</span>
         </div>
       </div></div>
-      <p class="cap-note"><b>One sheet, both entries</b>Presets plus a stepper, time defaulting to
-      now and back-datable. Bottom pad is <span class="mono" style="color:var(--sand);font-size:12px">sheetPadBottom(insets.bottom)</span>
-      on the panel, and nothing inside adds its own &#8212; the house rule that keeps a dead band from
-      forming under every sheet.</p>
+      <p class="cap-note"><b>Two numbers, one sheet</b>Both inputs are typed, so both get presets
+      and a keypad. The equivalent-minutes line is the model made visible at the point of entry &#8212;
+      the athlete sees that hotter is worth more before anything scores it. Bottom pad is
+      <span class="mono" style="color:var(--sand);font-size:12px">sheetPadBottom(insets.bottom)</span>
+      on the panel, nothing inside adds its own.</p>
     </div>
 
     <!-- 3 &#8212; today -->
@@ -821,7 +943,7 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
             <div class="ahair"></div>
             <div class="arow" style="margin-bottom:7px"><span style="font-size:12.5px;color:var(--ash)">Glutes, quads</span><span class="aval" style="font-size:12.5px">&#8722;18</span></div>
             <div class="arow" style="margin-bottom:7px"><span style="font-size:12.5px;color:var(--ash)">Energy systems</span><span class="aval" style="font-size:12.5px">&#8722;8</span></div>
-            <div class="arow"><span style="font-size:12.5px;color:var(--sand)">Heat, 22 min last night</span><span class="aval" style="font-size:12.5px;color:var(--sand)">+2</span></div>
+            <div class="arow"><span style="font-size:12.5px;color:var(--sand)">Heat, 22 min at 90 &#176;C</span><span class="aval" style="font-size:12.5px;color:var(--sand)">+2</span></div>
           </div>
 
           <p class="ameta" style="margin:16px 0 9px">RECOVER</p>
@@ -832,7 +954,7 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
             <div class="arow">
               <div>
                 <span style="font-size:13.5px;color:var(--chalk)">Heat</span>
-                <p style="margin:2px 0 0;font-size:11.5px;color:var(--ash)">3 this week &nbsp;&#8211; &nbsp;58 min</p>
+                <p style="margin:2px 0 0;font-size:11.5px;color:var(--ash)">3 this week &#160;&#8211; &#160;74 equiv min</p>
               </div>
               <div class="ring" style="border-color:var(--sand-line);color:var(--sand)">&#65291;</div>
             </div>
@@ -866,11 +988,13 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
             <div class="ahair"></div>
             <p style="margin:0;font-size:12.5px;color:var(--ash);line-height:1.5">
               Measured across <span class="mono" style="color:var(--chalk)">9</span> clean pairs
-              since June. You clear faster after heat than the population curve predicts.</p>
+              since June, at a typical <span class="mono" style="color:var(--chalk)">19 min</span>
+              and <span class="mono" style="color:var(--chalk)">88 &#176;C</span>. You clear faster
+              after heat than the curve predicts.</p>
           </div>
 
           <div class="acard" style="margin-bottom:12px">
-            <div class="arow" style="margin-bottom:11px"><span class="ameta">LAST 8 WEEKS</span><span class="ameta">MIN / WK</span></div>
+            <div class="arow" style="margin-bottom:11px"><span class="ameta">LAST 8 WEEKS</span><span class="ameta">EQUIV / WK</span></div>
             <div class="bars">
               <i style="height:34%"></i><i style="height:52%"></i><i style="height:44%"></i>
               <i style="height:70%"></i><i style="height:62%"></i><i style="height:88%"></i>
@@ -925,7 +1049,7 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
       <tr><td class="num dash">4</td><td class="file">engines/engine-room.ts</td><td><code>computeEngineTrace()</code> signature gains the signals</td><td class="note">It currently takes <span class="mono" style="font-size:12px">(log, bio)</span>. Heat needs the stream, so the admin route that calls it changes too.</td></tr>
       <tr><td class="num dash">5</td><td class="file">engines/engine-room.ts</td><td>New <code>whatIfHeat</code> transform</td><td class="note">So the simulator can answer &#8220;what does this athlete look like at four sessions a week&#8221;. Same reason <code>whatIfLog</code> and <code>whatIfBio</code> live in core: tested math, not ad-hoc UI state.</td></tr>
       <tr><td class="num" style="color:var(--sand)">6</td><td class="file">engines/readiness-deficit.ts</td><td>No new cost kind &#8212; but a new <code>readinessFacts()</code> line</td><td class="note"><strong>Easy to miss.</strong> A positive credit takes no arc, exactly as a positive <code>bioAdj</code> takes none, so the sum law is untouched. Which is precisely why the facts line is needed: without it, a term that moved the score appears nowhere on the card.</td></tr>
-      <tr><td class="num dash">7</td><td class="file">engines/performance-state.ts</td><td><code>performanceTrajectory()</code> applies heat to the <code>daysAgo === 0</code> point only</td><td class="note">Same rule bio takes, because there is no stored history to replay. Break it and the headline figure disagrees with the sparkline 8&nbsp;px away &#8212; the exact defect the last Performance rebuild existed to fix.</td></tr>
+      <tr><td class="num dash">7</td><td class="file">engines/performance-state.ts</td><td><code>performanceTrajectory()</code> applies heat to the <code>daysAgo === 0</code> point only</td><td class="note">Same rule bio takes, because there is no stored history to replay. Break it and the headline figure disagrees with the sparkline 8&#160;px away &#8212; the exact defect the last Performance rebuild existed to fix.</td></tr>
       <tr><td class="num dash">8</td><td class="file">engines/prescription.ts</td><td>Credit propagates to prescribed load</td><td class="note">Readiness prescribes today&#8217;s work, so this is the point of the feature. Bounded at 3 points by design: a nudge, not a jump.</td></tr>
       <tr><td class="num dash">9</td><td class="file">admin/engine-room.tsx + mobile console</td><td>Render it on both</td><td class="note">Admin capabilities are two-sided; the web panel and the mobile console stay in step.</td></tr>
     </tbody>
@@ -976,8 +1100,8 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
   <span class="sec-no">10 &#8212; How it gets built</span>
   <div class="col">
     <h2>Four phases, in this order</h2>
-    <p>The order is not arbitrary. Phase&nbsp;1 is what makes phase&nbsp;4 possible, and
-    phase&nbsp;4 is the version worth having.</p>
+    <p>The order is not arbitrary. Phase&#160;1 is what makes phase&#160;4 possible, and
+    phase&#160;4 is the version worth having.</p>
   </div>
 
   <div class="phases">
@@ -1002,8 +1126,10 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
         <p>Storage plus both mobile entry points. Zero engine impact, so it cannot regress a
         score &#8212; and the data phases 2 and 4 need starts accumulating from day one.</p>
         <ul>
-          <li><b>engines/signals.ts</b> &#8212; <span class="mono">"sauna"</span> kind + META entry</li>
-          <li><b>aurora/heat-sheet.tsx</b> &#8212; the sheet, new</li>
+          <li><b>engines/signals.ts</b> &#8212; <span class="mono">"sauna"</span> + <span class="mono">"saunaTemp"</span></li>
+          <li><b>engines/heat.ts</b> &#8212; <span class="mono">heatSittings()</span> regrouping</li>
+          <li><b>units.ts</b> &#8212; <span class="mono">TempUnit</span>, &#176;C canonical</li>
+          <li><b>aurora/heat-sheet.tsx</b> &#8212; minutes + &#176;C, new</li>
           <li><b>aurora/session-wrapped</b> &#8212; the post-session row</li>
           <li><b>aurora/home.tsx</b> &#8212; the Recover cluster row</li>
           <li><b>lib/api.ts</b> &#8212; create, list, delete</li>
@@ -1037,7 +1163,7 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
         <p>The readiness term and all nine Engine Room touch points, together. The console work
         is not a follow-up: a term the admin surface cannot explain is a term nobody can defend.</p>
         <ul>
-          <li><b>engines/heat.ts</b> &#8212; <span class="mono">heatAdjustment()</span> + the four constants</li>
+          <li><b>engines/heat.ts</b> &#8212; <span class="mono">intensity()</span> + <span class="mono">heatAdjustment()</span></li>
           <li><b>engines/readiness.ts</b> &#8212; the term</li>
           <li><b>engines/readiness-deficit.ts</b> &#8212; the facts line</li>
           <li><b>engines/derivation.ts</b> &#8212; dose, decay, suppression</li>
@@ -1082,16 +1208,35 @@ META.sauna = { unit: <span class="s">"min"</span>, better: <span class="s">"high
       Room&#8217;s arithmetic much harder to read.</p>
     </div>
     <div class="ask">
-      <h4>Protocol in v1, or minutes only?</h4>
-      <p>Recommendation: <b>minutes only</b>, since the dose curve reads nothing else.
-      <span class="mono" style="color:var(--sand)">source: "sauna:infrared"</span> is available
-      later with no migration if you want the distinction once the curve is calibrated.</p>
+      <h4>Traditional sauna only, or is steam and infrared in the mix?</h4>
+      <p>This is now <b>the question that matters most</b>, and only you can answer it. Air
+      temperature fully describes a traditional dry sauna, and it is the whole model above. It
+      systematically under-reads steam (humidity blocks evaporative cooling) and infrared
+      (radiant heat at a low air temperature). If a traditional sauna is what you use, ship as
+      specified. If not, the entry needs a third field &#8212; a protocol tag with its own intensity
+      floor &#8212; and <span class="mono" style="color:var(--sand)">source: "sauna:infrared"</span>
+      carries it with no migration.</p>
+    </div>
+    <div class="ask">
+      <h4>Is 45 to 80 &#176;C the right ramp?</h4>
+      <p>The floor and the reference set everything else, and they are <b>judgement calls, not
+      findings</b>. A 45 &#176;C floor means a warm room earns nothing; an 80 &#176;C reference means a
+      typical 90 &#176;C sitting is worth 1.29&#215; its clock. Both retune easily later &#8212; they are
+      exported constants and the Engine Room reads them live &#8212; but the first release sets the
+      expectation, so it is worth agreeing now.</p>
     </div>
     <div class="ask">
       <h4>Scope of the first release</h4>
       <p>Recommendation: ship the <b>prerequisite plus phases 1 and 2</b> together. That is
-      logging, both entry points, and the best-evidenced engine effect, with no risk of
-      double-counting and no readiness term to defend yet.</p>
+      logging both numbers, both entry points, and the best-evidenced engine effect, with no risk
+      of double-counting and no readiness term to defend yet.</p>
+    </div>
+    <div class="ask">
+      <h4>&#176;C only, or &#176;F as well?</h4>
+      <p>Recommendation: <b>store &#176;C always</b>, and derive the display unit from the weight unit
+      the athlete already set (lb &#8594; &#176;F), the way <span class="mono">heightUnitFor()</span>
+      already derives inches against centimetres. No third preference, no ambiguous stored
+      values.</p>
     </div>
     <div class="ask">
       <h4>Are 3 points and 4% the right ceilings?</h4>
