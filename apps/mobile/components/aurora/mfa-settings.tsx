@@ -4,7 +4,7 @@ import { isValidTotpCode } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { ACard, RADIUS } from "./kit";
+import { APill, ACard, RADIUS } from "./kit";
 import { QrMatrix } from "../coach-invite";
 
 type Factor = { id: string; friendly_name?: string | null; status: string };
@@ -136,9 +136,12 @@ export default function MfaSettings() {
 
             {/* enrolment flow */}
             {!enroll && (
-              <Pressable onPress={start} disabled={busy} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.5 : 1 }}>
-                {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{verified.length ? "Add another factor" : "Set up 2FA"}</Text>}
-              </Pressable>
+              <APill
+                label={verified.length ? "Add another factor" : "Set up 2FA"}
+                onPress={start}
+                state={busy ? "saving" : "idle"}
+                style={{ marginTop: 16 }}
+              />
             )}
 
             {enroll && (

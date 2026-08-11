@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { APill } from "./aurora/kit";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import {
   DEVICE_IMPORT_DAYS,
@@ -296,14 +297,11 @@ export function DeviceImportSheet({
               with every row excluded there is nothing to import, and a disabled
               "Import 0" is a button pretending to be an option. */}
           {phase === "list" && pending.length > 0 && (
-            <Pressable
+            <APill
+              label={t("device.import.cta").replace("{n}", String(pending.length))}
               onPress={() => void run()}
-              style={{ marginTop: 6, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 16, alignItems: "center" }}
-            >
-              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>
-                {t("device.import.cta").replace("{n}", String(pending.length))}
-              </Text>
-            </Pressable>
+              style={{ marginTop: 6 }}
+            />
           )}
 
           {/* THE ASK — one prompt per session that just landed, seeded blank

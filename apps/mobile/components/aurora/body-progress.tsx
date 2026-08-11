@@ -9,7 +9,7 @@ import {
 import { sapi } from "../../lib/social-api";
 import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
-import { ACard } from "./kit";
+import { APill, ACard } from "./kit";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { DoorRow } from "./week-verdict";
@@ -204,9 +204,11 @@ function LogForm({ C, units, form, setField, onSave, busy }: { C: Palette; units
           <MetricInput key={def.key} C={C} label={t(def.labelKey)} unit={unitLabel(def.unit)} value={form[def.key] ?? ""} onChange={(v) => setField(def.key, v)} />
         ))}
       </View>
-      <Pressable onPress={onSave} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", opacity: busy ? 0.6 : 1, marginTop: 2 }}>
-        {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>}
-      </Pressable>
+      {/* APill's commit state, not a spinner swap: the idle label is laid out
+          invisibly to hold the width, so the button cannot resize while it
+          saves — and VoiceOver gets `busy` rather than an unannounced
+          ActivityIndicator. */}
+      <APill label={t("common.save")} onPress={onSave} state={busy ? "saving" : "idle"} style={{ marginTop: 2 }} />
     </View>
   );
 }
