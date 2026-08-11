@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
+import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -1328,6 +1328,146 @@ export function AStepper({
       >
         <Text style={glyph}>+</Text>
       </Pressable>
+    </View>
+  );
+}
+
+/** How far the finger travels for ONE step of a scrub field, in dp. Small
+ *  enough that 10 → 30 minutes is a comfortable thumb-flick, large enough that
+ *  a value can be landed on exactly. */
+const SCRUB_TRAVEL = 14;
+
+/**
+ * THE SCRUB FIELD — the figure IS the control.
+ *
+ * `AStepper` answers "nudge this by one rung"; this answers "set this", where
+ * the value is the thing you came to the screen for and the label above it
+ * would only be repeating the unit printed beside it. The figure takes the
+ * screen's big display size, and a horizontal drag ACROSS it walks the value —
+ * so the same control is coarse (one flick covers the whole plausible range)
+ * and fine (the −/＋ land an exact number) without being two controls.
+ *
+ * It exists because the alternative kept being TWO controls. Heat's log sheet
+ * drew a preset row AND a stepper for each of its two numbers: four rows, 98dp
+ * per value, and nothing to say which was authoritative — plus a segmented
+ * control that could hold no state at all once the stepper moved the value off
+ * the preset grid. A segmented control must always have a selection; a value
+ * that is continuous is not a segmented control's job.
+ *
+ * ONE TICK PER DETENT, never per frame — the audit's slider rule, applied to a
+ * gesture with no thumb (see `useChartScrub`'s pinch, which reads the same
+ * way). The drag re-bases on GRANT rather than tracking absolute position, so a
+ * slow drag accumulates no rounding error.
+ *
+ * THE −/＋ ARE BARE. No border, no fill: the figure beside them is already the
+ * affordance, and a box drawn around a glyph that sits next to a 34dp number is
+ * chrome competing with the content. They keep the full 44dp target (the
+ * drawing shrinks, the target does not) and they carry `adjustable` to
+ * VoiceOver, which is the one thing a hand-drawn ± normally loses against the
+ * platform's own stepper.
+ */
+export function AScrubField({
+  value,
+  onChange,
+  min,
+  max,
+  step = 1,
+  format,
+  suffix,
+  a11y,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min: number;
+  max: number;
+  step?: number;
+  /** How the figure reads. Defaults to the plain number. */
+  format?: (v: number) => string;
+  /** Static unit beside the figure — prose, so it never rolls. */
+  suffix?: string;
+  /** The accessible name. The row prints only the value, so without this the
+   *  control reads out as a bare number. */
+  a11y: string;
+}) {
+  const { palette: C } = useTheme();
+  const show = (format ?? String)(value);
+
+  // Read through refs so the responder is built ONCE: rebuilding it per value
+  // would drop the gesture mid-drag.
+  const vRef = useRef(value);
+  vRef.current = value;
+  const cfg = useRef({ min, max, step });
+  cfg.current = { min, max, step };
+  const cb = useRef(onChange);
+  cb.current = onChange;
+  const from = useRef(value);
+
+  const commit = (next: number) => {
+    const { min: lo, max: hi, step: by } = cfg.current;
+    const dp = String(by).split(".")[1]?.length ?? 0;
+    const v = Math.min(hi, Math.max(lo, Number(next.toFixed(dp))));
+    if (v === vRef.current) return;
+    haptic.selection();
+    cb.current(v);
+  };
+
+  const pan = useRef(
+    PanResponder.create({
+      // HORIZONTAL only, and only on a clear one: a vertical drag belongs to
+      // the sheet or the scroller this field is sitting in.
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 6 && Math.abs(g.dx) > Math.abs(g.dy) * 1.6,
+      onPanResponderGrant: () => { from.current = vRef.current; },
+      onPanResponderMove: (_, g) => {
+        commit(from.current + Math.round(g.dx / SCRUB_TRAVEL) * cfg.current.step);
+      },
+    }),
+  ).current;
+
+  const btn = { width: HIT_TARGET, height: HIT_TARGET, alignItems: "center" as const, justifyContent: "center" as const };
+  const glyph = { fontFamily: F.mono, fontSize: fs.title, color: C.ash };
+
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md }}>
+      <View
+        {...pan.panHandlers}
+        accessible
+        accessibilityRole="adjustable"
+        accessibilityLabel={a11y}
+        accessibilityValue={{ text: `${show}${suffix ? ` ${suffix}` : ""}` }}
+        accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
+        onAccessibilityAction={(e) => commit(value + (e.nativeEvent.actionName === "increment" ? step : -step))}
+        style={{ flex: 1, flexDirection: "row", alignItems: "baseline", gap: space.xs, paddingVertical: space.sm }}
+      >
+        <RollingNumber
+          value={show}
+          style={{ fontFamily: F.black, fontSize: fs.hero, color: C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking.display }}
+        />
+        {suffix ? (
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>
+            {suffix}
+          </Text>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: "row" }}>
+        <Pressable
+          onPress={() => commit(value - step)}
+          disabled={value <= min}
+          accessibilityRole="button"
+          accessibilityLabel={`${a11y} −`}
+          style={[btn, value <= min && { opacity: 0.35 }]}
+        >
+          <Text style={glyph}>−</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => commit(value + step)}
+          disabled={value >= max}
+          accessibilityRole="button"
+          accessibilityLabel={`${a11y} ＋`}
+          style={[btn, value >= max && { opacity: 0.35 }]}
+        >
+          <Text style={glyph}>+</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
