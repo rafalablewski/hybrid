@@ -30,20 +30,24 @@ import type { Biometrics } from "./types";
  * the one recovery input that will never graduate out of that tier, which is
  * why the suppression rule is a permanent shape rather than a stopgap.
  *
- * ── WHY TEMPERATURE IS HALF THE INPUT ──────────────────────────────────────
+ * ── WHY TEMPERATURE AND MODALITY ARE BOTH INPUTS ───────────────────────────
  * Duration alone is not the dose. Twenty minutes at 90 °C and twenty minutes in
  * a 55 °C infrared cabin are not the same stimulus, and a model that reads only
  * the clock scores them identically. `heatIntensity` converts minutes into
  * EQUIVALENT MINUTES at a stated reference, and everything downstream — the
- * saturating curve, the cap, the decay — is unchanged and now takes an honest
- * input.
+ * saturating curve, the cap, the decay — is unchanged and takes an honest input.
  *
- * WHAT AIR TEMPERATURE CANNOT SEE: humidity. A steam room at 45 °C and 100%
- * humidity blocks evaporative cooling and produces real thermal strain, and
- * this model scores it zero; infrared is under-read for a related reason. Both
- * are honest limitations of reading one number, and neither is worth papering
- * over with an invented humidity term — the fix, if it is ever needed, is a
- * protocol tag on the entry (`source: "sauna:infrared"`), not a fudge factor.
+ * And neither is duration-and-temperature: air temperature is only a PROXY for
+ * thermal strain, and the proxy has a different constant in each modality. One
+ * ramp calibrated on dry sauna scored a 45 °C steam room at exactly zero,
+ * because 45 °C is the dry floor. So each protocol carries its own pair — see
+ * HEAT_PROTOCOLS below, which is where that argument is made in full.
+ *
+ * WHAT THIS STILL CANNOT SEE: humidity, as a measured quantity. A steam room at
+ * 60% and one at 100% are different doses and the model reads the modality you
+ * picked, not the air you were in. Three calibrated ramps is better than one and
+ * is not the same as solved, and a humidity term fitted to nothing would be
+ * false precision wearing a curve.
  *
  * ── NO NEGATIVE TERM ───────────────────────────────────────────────────────
  * The overdose case is real and unmeasurable from a typed duration, and the
@@ -69,13 +73,59 @@ export interface HeatSignalRow {
 
 /* ── THE TEMPERATURE MODEL ─────────────────────────────────────────────────── */
 
+/**
+ * WHAT KIND OF HEAT. Air temperature means something DIFFERENT in each.
+ *
+ * A dry sauna at 90 °C, a steam room at 45 °C and an infrared cabin at 55 °C
+ * are all real thermal doses, and a single ramp calibrated on the first scores
+ * the other two at roughly nothing. The reason is not that the thermometer is
+ * lying — it is that air temperature is only a proxy for thermal strain, and
+ * the proxy has a different constant of proportionality in each modality:
+ *
+ *   • DRY SAUNA — 70–100 °C at 10–20% humidity. Sweat evaporates freely, which
+ *     is exactly why the air has to be that hot to load you. The anchor.
+ *   • STEAM — 40–50 °C at ~100% humidity. Evaporative cooling is essentially
+ *     blocked, so the body cannot shed what it makes and a far lower air
+ *     temperature produces comparable strain.
+ *   • INFRARED — 45–60 °C air, but the panels heat tissue RADIANTLY rather than
+ *     through the air, so the thermometer under-reads the dose by construction.
+ *
+ * So each protocol carries its own floor and reference, and the question each
+ * pair answers is the same one: what air temperature, in THIS modality, loads
+ * an athlete the way 80 °C of dry sauna does?
+ *
+ * These are calibrations, not measurements. A steam room at 60% humidity and
+ * one at 100% are different doses and this still cannot tell them apart — it
+ * has moved from one ramp for three modalities to one ramp EACH, which is
+ * better and is not the same as solved.
+ */
+export type HeatProtocol = "sauna" | "steam" | "infrared";
+
+export const HEAT_PROTOCOLS: Record<HeatProtocol, { floorC: number; refC: number }> = {
+  // The anchor. Unchanged, and everything else is expressed against it.
+  sauna: { floorC: 45, refC: 80 },
+  // A humid room below ~35 °C is not thermally stressful; by the upper 40s,
+  // with evaporation blocked, it is doing the work of a moderate dry sauna.
+  steam: { floorC: 35, refC: 48 },
+  // Radiant load: a 60 °C cabin is a reference dose even though the air is
+  // nowhere near it.
+  infrared: { floorC: 35, refC: 60 },
+};
+
+export const HEAT_PROTOCOL_LIST = Object.keys(HEAT_PROTOCOLS) as HeatProtocol[];
+
+/** The protocol an entry assumes when none was recorded — rows written before
+ *  the field existed, and the overwhelmingly common case. */
+export const HEAT_DEFAULT_PROTOCOL: HeatProtocol = "sauna";
+
 /** Below this a room is warm, not thermally stressful — a hot shower earns
- *  nothing. */
-export const HEAT_FLOOR_C = 45;
+ *  nothing. The DRY-SAUNA floor; each protocol has its own (HEAT_PROTOCOLS). */
+export const HEAT_FLOOR_C = HEAT_PROTOCOLS.sauna.floorC;
 
 /** The anchor: the low end of a traditional Finnish sauna, and the temperature
- *  at which an equivalent minute IS a minute. */
-export const HEAT_REF_C = 80;
+ *  at which an equivalent minute IS a minute. Every other protocol's reference
+ *  is the air temperature that loads an athlete the way this one does. */
+export const HEAT_REF_C = HEAT_PROTOCOLS.sauna.refC;
 
 /** Ceiling on the intensity multiplier, reached at 101 °C. It exists so a
  *  mistyped 150 cannot manufacture a dose nobody sat through. */
@@ -103,9 +153,32 @@ const clamp = (v: number, lo: number, hi: number): number => (v < lo ? lo : v > 
  * exponential fitted to nothing would only be false precision wearing a
  * curve. Phase 4 replaces the whole thing with the athlete's measured delta.
  */
-export function heatIntensity(tempC: number): number {
+export function heatIntensity(tempC: number, protocol: HeatProtocol = HEAT_DEFAULT_PROTOCOL): number {
   if (!Number.isFinite(tempC)) return 0;
-  return clamp((tempC - HEAT_FLOOR_C) / (HEAT_REF_C - HEAT_FLOOR_C), 0, HEAT_INTENSITY_MAX);
+  const { floorC, refC } = HEAT_PROTOCOLS[protocol] ?? HEAT_PROTOCOLS[HEAT_DEFAULT_PROTOCOL];
+  return clamp((tempC - floorC) / (refC - floorC), 0, HEAT_INTENSITY_MAX);
+}
+
+/* ── STORING THE PROTOCOL WITHOUT A MIGRATION ─────────────────────────────── */
+
+/**
+ * The protocol rides in `Signal.source`, which is a String already carrying
+ * varied values ("apple", "whoop", "manual", …). `"manual"` on its own is a dry
+ * sauna, so every row written before this existed keeps its meaning and no
+ * backfill is needed.
+ *
+ * The provenance stays the PREFIX rather than being replaced: a steam sitting
+ * is still something the athlete typed, and a reader that wants to know where a
+ * row came from should not have to learn a protocol vocabulary to find out.
+ */
+export function heatSource(protocol: HeatProtocol, provenance = "manual"): string {
+  return protocol === HEAT_DEFAULT_PROTOCOL ? provenance : `${provenance}:${protocol}`;
+}
+
+/** The protocol a `source` encodes, defaulting to dry sauna. */
+export function heatProtocolOf(source: string): HeatProtocol {
+  const tag = source.split(":")[1];
+  return tag && tag in HEAT_PROTOCOLS ? (tag as HeatProtocol) : HEAT_DEFAULT_PROTOCOL;
 }
 
 /* ── THE DOSE MODEL ────────────────────────────────────────────────────────── */
@@ -153,6 +226,8 @@ export interface HeatSitting {
   ts: string;
   minutes: number;
   tempC: number;
+  /** Which kind of heat — it decides how the temperature is read. */
+  protocol: HeatProtocol;
   /**
    * True when no `saunaTemp` row existed and the reference was assumed.
    *
@@ -178,7 +253,7 @@ const iso = (ts: string | Date): string => (typeof ts === "string" ? ts : ts.toI
  * zero-minute sitting: a temperature on its own records nothing that happened.
  */
 export function heatSittings(signals: HeatSignalRow[]): HeatSitting[] {
-  type Group = { ts: string; minutes: number; tempC: number | null; ids: string[] };
+  type Group = { ts: string; minutes: number; tempC: number | null; protocol: HeatProtocol; ids: string[] };
   const groups = new Map<string, Group>();
   for (const s of signals) {
     if (s.kind !== "sauna" && s.kind !== "saunaTemp") continue;
@@ -187,7 +262,7 @@ export function heatSittings(signals: HeatSignalRow[]): HeatSitting[] {
     if (!Number.isFinite(Date.parse(ts))) continue;
     const key = `${ts}|${s.source}`;
     let g = groups.get(key);
-    if (!g) { g = { ts, minutes: 0, tempC: null, ids: [] }; groups.set(key, g); }
+    if (!g) { g = { ts, minutes: 0, tempC: null, protocol: heatProtocolOf(s.source), ids: [] }; groups.set(key, g); }
     if (s.id) g.ids.push(s.id);
     if (s.kind === "sauna") g.minutes += s.value;
     // Two temperature rows at one instant is not a thing a save can produce;
@@ -199,13 +274,16 @@ export function heatSittings(signals: HeatSignalRow[]): HeatSitting[] {
   for (const g of groups.values()) {
     if (g.minutes <= 0) continue;
     const assumedTemp = g.tempC == null;
-    const tempC = g.tempC ?? HEAT_REF_C;
+    // A sitting with no temperature is read at ITS OWN protocol's reference —
+    // assuming 80 °C for a steam room would be assuming a room nobody has.
+    const tempC = g.tempC ?? HEAT_PROTOCOLS[g.protocol].refC;
     out.push({
       ts: g.ts,
       minutes: g.minutes,
       tempC,
+      protocol: g.protocol,
       assumedTemp,
-      equivMin: g.minutes * heatIntensity(tempC),
+      equivMin: g.minutes * heatIntensity(tempC, g.protocol),
       ids: g.ids.slice().sort(),
     });
   }

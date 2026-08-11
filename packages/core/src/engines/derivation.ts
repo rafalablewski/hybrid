@@ -20,8 +20,8 @@ import { computeFatigue } from "./fatigue";
 import { biometricDeviations, computeReadiness, MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
 import { readinessDeficit, type ReadinessCostKind } from "./readiness-deficit";
 import {
-  HEAT_CREDIT_MAX, HEAT_FLOOR_C, HEAT_HALF_LIFE_H, HEAT_INTENSITY_MAX,
-  HEAT_REF_C, HEAT_TAU_MIN, HEAT_WINDOW_H, type HeatAdjustment,
+  HEAT_CREDIT_MAX, HEAT_HALF_LIFE_H, HEAT_INTENSITY_MAX, HEAT_PROTOCOLS,
+  HEAT_PROTOCOL_LIST, HEAT_REF_C, HEAT_TAU_MIN, HEAT_WINDOW_H, type HeatAdjustment,
 } from "./heat";
 import { computeHpi, enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
 import {
@@ -128,12 +128,12 @@ export function deriveReadiness(log: TrainingLog, bio?: Biometrics, heat?: HeatA
   // cannot be audited anywhere.
   if (heat && heat.sittings.length > 0) {
     const sit = heat.sittings
-      .map((x) => `${f1(x.minutes)} min @ ${f1(x.tempC)}°C${x.assumedTemp ? " (assumed)" : ""} → ${f1(x.equivMin)}`)
+      .map((x) => `${x.protocol} ${f1(x.minutes)} min @ ${f1(x.tempC)}°C${x.assumedTemp ? " (assumed)" : ""} → ${f1(x.equivMin)}`)
       .join(", ");
     steps.push({
       label: `Heat — sittings in the last ${HEAT_WINDOW_H} h`,
       math: sit,
-      note: `intensity = clamp((T − ${HEAT_FLOOR_C}) / (${HEAT_REF_C} − ${HEAT_FLOOR_C}), 0, ${HEAT_INTENSITY_MAX}); minutes × intensity = equivalent minutes at ${HEAT_REF_C}°C`,
+      note: `intensity = clamp((T − floor[p]) / (ref[p] − floor[p]), 0, ${HEAT_INTENSITY_MAX}) — ${HEAT_PROTOCOL_LIST.map((p) => `${p} ${HEAT_PROTOCOLS[p].floorC}→${HEAT_PROTOCOLS[p].refC}`).join(", ")}; minutes × intensity = equivalent minutes at ${HEAT_REF_C}°C of dry sauna`,
     });
     steps.push({
       label: "Heat — dose",
