@@ -178,6 +178,64 @@ export const skeleton = {
 } as const;
 
 /**
+ * STATE CHANGES — the vocabulary for a thing REPORTING WHAT HAPPENED TO IT.
+ *
+ * Audit §17 lists ten of these (empty → populated, editing, saving, saved,
+ * error, offline…) and the app had numbers for none. Every save button in the
+ * app therefore invented its own: swap the label to "Adding…", drop the opacity
+ * to 0.6, and hope. That has one concrete defect the audit names outright — the
+ * button RESIZES, because "Add meal" and "Adding…" are different widths, so the
+ * layout shifts under a finger that is still on the button.
+ *
+ * These are the numbers. The behaviour that uses them is the clients' shared
+ * commit button; the numbers are here so the two cannot disagree about how long
+ * a tick holds or how far an error shakes.
+ */
+export const states = {
+  /** Empty state leaving. Shorter than the arrival: the thing you are waiting
+   *  for should feel like it arrives, not like the placeholder resents going. */
+  emptyOutMs: 160,
+  /** Content arriving IN PLACE — no positional move, because the container is
+   *  the constant. A first-data arrival that also slides reads as a new screen. */
+  emptyInMs: 200,
+  /** Siblings' opacity while one field is being edited. Editing is a MODE, and
+   *  the mode is legible only if the things you are not editing recede. */
+  editDim: 0.6,
+  editMs: 180,
+  /** How long a commit button holds its tick before returning to its label.
+   *  Long enough to be read, short enough that a second save isn't blocked on
+   *  watching an animation. */
+  savedHoldMs: 800,
+  /** THE ERROR SHAKE: ±4px, three cycles, 250ms all in. A shake is a TRANSFORM
+   *  and never a layout change — a field that grows or reflows to report an
+   *  error moves everything under it, which is the one thing a user reading an
+   *  error message does not need. */
+  shakeDx: 4,
+  shakeCycles: 3,
+  shakeMs: 250,
+} as const;
+
+/**
+ * The shake as a list of offsets, so both clients shake identically and neither
+ * has to hand-write a keyframe list that drifts from the other's.
+ *
+ * Starts and ends at 0 (a shake that ends off-centre has moved the thing it was
+ * only supposed to draw attention to), and DECAYS — a constant-amplitude shake
+ * reads as a broken animation loop rather than as an object recoiling.
+ */
+export function shakeOffsets(dx: number = states.shakeDx, cycles: number = states.shakeCycles): number[] {
+  const out: number[] = [0];
+  const steps = cycles * 2;
+  for (let i = 0; i < steps; i++) {
+    // Decay across the whole shake, so the last swing is a fraction of the first.
+    const decay = 1 - (i + 1) / (steps + 1);
+    out.push((i % 2 === 0 ? 1 : -1) * dx * decay);
+  }
+  out.push(0);
+  return out;
+}
+
+/**
  * SWIPE ACTIONS — the geometry and the release rule for a row you swipe to
  * reveal a destructive action on.
  *

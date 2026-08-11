@@ -43,6 +43,9 @@ export default defineConfig({
             "lib/ui.test.ts",
             "lib/design-tokens.test.ts",
             "lib/event-pooling.test.ts",
+            // Greps source text for the label-swap pattern that resizes a
+            // commit button, so it reads files as DATA like the two below.
+            "lib/commit-state.test.ts",
             // Reads package.json + the SDK's own version table as DATA, so it
             // stays inside the boundary while covering every native module.
             "lib/expo-alignment.test.ts",

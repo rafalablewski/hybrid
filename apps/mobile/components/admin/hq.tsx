@@ -607,7 +607,7 @@ function DigestTab() {
     <ACard style={cardStack}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <Kicker color={palette.amber}>Daily digest – last 24h</Kicker>
-        <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
+        <PillBtn label="Send to Slack" busyLabel="Sending…" busy={busy} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
       <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
         <Mono color={error ? palette.amber : palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{error ?? (d ? d.text : "Loading…")}</Mono>
@@ -654,7 +654,7 @@ function CostTab() {
           <View>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <Kicker color={palette.amber}>Monthly cost – real agent spend</Kicker>
-              <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
+              <PillBtn label="Send to Slack" busyLabel="Sending…" busy={busy} outline color={palette.chalk} disabled={busy} onPress={send} />
             </View>
             <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV export is web-only.</Mono>
             {[d.current, d.previous].map((m, i) => (

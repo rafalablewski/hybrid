@@ -435,9 +435,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               </>
             ) : (
               <APill
-                label={saving ? t("w.recovery.checkins.submitting") : t(editing || storedAll ? "w.recovery.checkins.saveChanges" : "w.recovery.checkins.submit")}
+                label={t(editing || storedAll ? "w.recovery.checkins.saveChanges" : "w.recovery.checkins.submit")}
+                savingLabel={t("w.recovery.checkins.submitting")}
+                state={saving ? "saving" : "idle"}
                 onPress={submit}
-                disabled={saving}
                 style={{ flex: 1 }}
               />
             )}

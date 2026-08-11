@@ -112,7 +112,7 @@ export default function AuroraTalent() {
         {profile?.moderationStatus === "rejected" && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{t("w.teams.talent.rejected")}</Text>
         )}
-        <APill label={saving ? t("log.saving") : t("w.teams.talent.saveProfile")} onPress={save} disabled={saving} style={{ marginTop: 16 }} />
+        <APill label={t("w.teams.talent.saveProfile")} savingLabel={t("log.saving")} state={saving ? "saving" : "idle"} onPress={save} style={{ marginTop: 16 }} />
       </ACard>
 
       {/* benchmarks */}

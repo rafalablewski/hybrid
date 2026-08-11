@@ -1202,10 +1202,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         })()}
         {/* Add meal + Scan label — side-by-side rounded pills (Scan is AI vision, Full only → upgrade) */}
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-          <Pressable onPress={add} disabled={saving} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.addMeal")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 12, opacity: saving ? 0.6 : 1 }}>
-            <AuroraIcon name="add" size={15} color={C.onAccent} />
-            <Text style={{ color: C.onAccent, fontFamily: F.mono, fontSize: fs.body, fontWeight: "700" }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text>
-          </Pressable>
+          <APill label={t("w.recovery.nutrition.addMeal")} savingLabel={t("w.recovery.nutrition.adding")} state={saving ? "saving" : "idle"} onPress={add} style={{ flex: 1 }} />
           <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scanLabel")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: `${pa.fill}73`, backgroundColor: "transparent", opacity: scanning ? 0.6 : 1 }}>
             <Glyph name="scan" size={16} color={pa.text} strokeWidth={5} />
             <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.caption, color: C.chalk }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}</Text>
@@ -1393,7 +1390,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         ))}
       </View>
       <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-        <Pressable onPress={async () => { if (await add()) setQuickLog(false); }} disabled={saving} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, opacity: saving ? 0.6 : 1 }}><IPlus size={16} color={C.onAccent} strokeWidth={2.4} /><Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.onAccent }}>{saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.addMeal")}</Text></Pressable>
+        <APill label={t("w.recovery.nutrition.addMeal")} savingLabel={t("w.recovery.nutrition.adding")} state={saving ? "saving" : "idle"} onPress={async () => { if (await add()) setQuickLog(false); }} style={{ flex: 1 }} />
         <Pressable onPress={scan} disabled={scanning} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: `${pa.fill}73`, borderRadius: 999, paddingVertical: 16 }}><Glyph name="scan" size={16} color={pa.text} strokeWidth={5} /><Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: pa.text }}>{scanning ? t("w.recovery.nutrition.scanning") : t("w.recovery.nutrition.scanLabel")}{!full ? " ✦" : ""}</Text></Pressable>
       </View>
     </Sheet>
@@ -2633,7 +2630,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <Cell value={f.carbs} onChange={(v) => setF((s) => ({ ...s, carbs: v }))} ph={t("w.recovery.nutrition.carbsPh")} />
           <Cell value={f.fat} onChange={(v) => setF((s) => ({ ...s, fat: v }))} ph={t("w.recovery.nutrition.fatPh")} />
         </View>
-        <APill label={saving ? t("w.recovery.nutrition.adding") : t("w.recovery.nutrition.add")} onPress={add} disabled={saving} style={{ marginTop: 16 }} />
+        <APill label={t("w.recovery.nutrition.add")} savingLabel={t("w.recovery.nutrition.adding")} state={saving ? "saving" : "idle"} onPress={add} style={{ marginTop: 16 }} />
         {/* QUICK MEALS — one-tap premade meals as time-of-day rows. Full users log
             on tap; free users see them locked and a tap routes to upgrade. */}
         <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 16 }}>

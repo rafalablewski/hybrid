@@ -163,9 +163,11 @@ export default function AuroraBuilder() {
       {allowedSave ? (
         <>
           <APill
-            label={b.saving ? t("w.train.builder.saving") : t("w.train.builder.saveRoutine")}
+            label={t("w.train.builder.saveRoutine")}
+            savingLabel={t("w.train.builder.saving")}
+            state={b.saving ? "saving" : "idle"}
             onPress={b.save}
-            disabled={b.saving || b.items.length === 0}
+            disabled={b.items.length === 0}
             style={{ marginTop: 16 }}
           />
           {isFree && (

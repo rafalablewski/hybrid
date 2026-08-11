@@ -97,7 +97,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
 
               {editing === "name" && (<>
                 <TextInput value={acct.name} onChangeText={acct.setName} placeholder={t("w.profile.namePlaceholder")} placeholderTextColor={C.ash} style={inp} autoFocus />
-                <SButton label={acct.busy ? t("w.profile.saving") : t("common.save")} onPress={() => { acct.saveName(); back(); }} />
+                <SButton label={t("common.save")} busyLabel={acct.busy ? t("w.profile.saving") : undefined} onPress={() => { acct.saveName(); back(); }} />
               </>)}
 
               {editing === "email" && (<>

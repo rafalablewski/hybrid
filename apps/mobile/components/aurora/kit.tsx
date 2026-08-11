@@ -1,5 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, TextInput, StyleSheet, RefreshControl, KeyboardAvoidingView, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
+import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, useEntrance, HubDissolve, cardShadow, 
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -445,6 +445,9 @@ export function APill({
   color,
   disabled,
   style,
+  state = "idle",
+  savingLabel,
+  savedLabel,
 }: {
   label: string;
   onPress: () => void;
@@ -454,6 +457,29 @@ export function APill({
   color?: string;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  /**
+   * THE COMMIT STATE (audit §17). A button that reports what happened to the
+   * thing it committed, WITHOUT changing size while it does.
+   *
+   * That size is the whole reason this lives in the shared pill. Every save in
+   * the app hand-rolled the same pattern — swap the label to "Adding…", drop
+   * the opacity — and "Add meal" and "Adding…" are different widths, so the
+   * button resized under a finger that was still on it. Here the idle label is
+   * always laid out (invisibly) to HOLD the width, and the states cross-fade on
+   * top of it. The pill cannot resize because its size is not a function of
+   * which state it is in.
+   *
+   * `saved` holds a tick for `states.savedHoldMs` and knocks Success; `error`
+   * shakes on core's `shakeOffsets` and knocks Error. Both are the caller's to
+   * set and clear — the button reports, it does not decide.
+   */
+  state?: "idle" | "saving" | "saved" | "error";
+  /** Word for the in-flight state. Defaults to the idle label: the pill is
+   *  already dimmed and non-interactive, so a caller with nothing better to say
+   *  should not be forced to invent "Saving…". */
+  savingLabel?: string;
+  /** Word for the landed state, beside the tick. */
+  savedLabel?: string;
 }) {
   const { palette } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED;
@@ -478,20 +504,66 @@ export function APill({
     : variant === "soft"
       ? palette.chalk
       : palette.onAccent;
+
+  // ── the commit state ──────────────────────────────────────────────────
+  const reduced = useReducedMotion();
+  const shake = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(0)).current;   // 0 = idle, 1 = reporting
+  const busy = state === "saving";
+  const reporting = state !== "idle";
+
+  useEffect(() => {
+    Animated.timing(fade, {
+      toValue: reporting ? 1 : 0,
+      duration: durations.dissolve,
+      useNativeDriver: true,
+    }).start();
+  }, [reporting, fade]);
+
+  useEffect(() => {
+    if (state !== "error") return;
+    haptic.error();
+    // Reduce Motion drops the TRAVEL, not the report — the knock and the
+    // colour still land, so the failure is never silent.
+    if (reduced) return;
+    const offsets = shakeOffsets();
+    Animated.sequence(
+      offsets.map((to) =>
+        Animated.timing(shake, {
+          toValue: to,
+          duration: states.shakeMs / offsets.length,
+          useNativeDriver: true,
+        }),
+      ),
+    ).start();
+  }, [state, shake, reduced]);
+
+  useEffect(() => {
+    if (state === "saved") haptic.success();
+  }, [state]);
+
+  const stateLabel = state === "saving" ? (savingLabel ?? label) : state === "saved" ? (savedLabel ?? label) : label;
+
   return (
+    <Animated.View style={{ transform: [{ translateX: shake }] }}>
     <PressScale
       onPress={onPress}
-      disabled={disabled}
+      // A button mid-commit must not accept a second one. This is the gate the
+      // hand-rolled copies each remembered separately (`disabled={saving}`).
+      disabled={disabled || busy}
       // APill is the app's primary action and was the ONE button primitive with
       // no accessibility contract — VoiceOver announced it as a plain view with
       // no role and no disabled state, while lib/ui's Button next to it was
       // fully labelled. The merge keeps the labelled behaviour.
       accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityState={{ disabled: !!disabled }}
+      accessibilityLabel={stateLabel}
+      // `busy` is what VoiceOver announces for an in-flight action. Without it
+      // a saving button reads as an ordinary enabled one that simply ignores
+      // you.
+      accessibilityState={{ disabled: !!disabled || busy, busy }}
       style={[
         {
-          backgroundColor: bg,
+          backgroundColor: state === "error" ? palette.red : bg,
           borderRadius: RADIUS.pill,
           paddingVertical: 18,
           // Was absent, because APill was only ever stretched by its parent.
@@ -510,8 +582,37 @@ export function APill({
       ]}
     >
       {glassSoft && <GlassSurface radius={RADIUS.pill} />}
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>{label}</Text>
+      {/* THE WIDTH-HOLDER. The idle label is always laid out, and only its
+          opacity changes — so the pill's size is a function of its LABEL and
+          never of its state. This is the layout shift the audit names: a
+          button that grows or shrinks under a finger still resting on it. */}
+      <Animated.Text
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        numberOfLines={1}
+        style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg, opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}
+      >
+        {label}
+      </Animated.Text>
+      {/* The reporting states sit ON TOP, centred in the space the label
+          already claimed. `pointerEvents none` so they never eat the press. */}
+      {reporting && (
+        <Animated.View
+          pointerEvents="none"
+          style={{
+            position: "absolute", top: 0, right: 0, bottom: 0, left: 0,
+            flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+            opacity: fade,
+          }}
+        >
+          {state === "saving" && <ActivityIndicator size="small" color={fg} />}
+          {state === "saved" && <AuroraIcon name="check" size={17} color={fg} />}
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>
+            {stateLabel}
+          </Text>
+        </Animated.View>
+      )}
     </PressScale>
+    </Animated.View>
   );
 }
 
@@ -1141,7 +1242,10 @@ export function AStepper({
     // float error and the figure starts reading 0.7500000000000001.
     const dp = String(step).split(".")[1]?.length ?? 0;
     const v = Math.min(max, Math.max(min, Number(next.toFixed(dp))));
-    if (v === value) return;
+    // A press that CANNOT move answers differently from one that does: `rigid`
+    // is the hard stop, `selection` is the step. Answering both the same way
+    // (or the clamp not at all) is a control that cannot say it refused.
+    if (v === value) { haptic.rigid(); return; }
     haptic.selection();
     onChange(v);
   };

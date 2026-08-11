@@ -59,6 +59,8 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
   const widthRef = useRef(0);
   // Latched so the full-swipe haptic fires ONCE as you cross, not every frame.
   const armedRef = useRef(false);
+  // The same latch for the end of the rubber-band's travel.
+  const limitRef = useRef(false);
   // The PanResponder is built once, so it would close over the first render's
   // props. Read the leading action through a ref kept current each render.
   const leadingRef = useRef(leading);
@@ -120,11 +122,21 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
           armedRef.current = crossed;
           if (crossed) haptic.light();
         }
+        // THE END OF THE TRAVEL, once. Past `swipe.max` the rubber-band has
+        // nothing left to give, and `rigid` is what says so — the map's "hard
+        // stop". Latched like the full-swipe arm above, or it would fire every
+        // frame the finger spends out there.
+        const atLimit = !crossed && Math.abs(raw) >= swipe.max;
+        if (atLimit !== limitRef.current) {
+          limitRef.current = atLimit;
+          if (atLimit) haptic.rigid();
+        }
       },
       onPanResponderRelease: (_, g) => {
         const raw = offset(g.dx);
         const full = widthRef.current * swipe.fullAt;
         armedRef.current = false;
+        limitRef.current = false;
         if (raw < -full) { commitDelete(); return; }
         if (leadingRef.current && raw > full) { commitLeading(); return; }
         // g.vx is px/ms; the shared rule is in px/s.
@@ -135,6 +147,7 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
       },
       onPanResponderTerminate: () => {
         armedRef.current = false;
+        limitRef.current = false;
         settle(sideRef.current);
       },
     }),

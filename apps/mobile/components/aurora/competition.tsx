@@ -64,7 +64,7 @@ export default function AuroraCompetition() {
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 4 }}>{t("w.train.comp.dateLabel")}</Text>
             <TextInput value={date} onChangeText={setDate} placeholder="2026-09-01" placeholderTextColor={C.ash} autoCapitalize="none" style={fieldStyle} />
           </View>
-          <View style={{ width: 120 }}><APill label={busy ? "…" : t("common.add")} onPress={add} disabled={busy} style={{ paddingVertical: 16 }} /></View>
+          <View style={{ width: 120 }}><APill label={t("common.add")} state={busy ? "saving" : "idle"} onPress={add} style={{ paddingVertical: 16 }} /></View>
         </View>
       </ACard>
 

@@ -311,7 +311,8 @@ function UserDetail({
               ) : null}
 
               <PillBtn
-                label={saving ? "Saving…" : "Save changes"}
+                label="Save changes"
+                busyLabel="Saving…"
                 onPress={save}
                 color={palette.amber}
                 disabled={!dirty || saving}
@@ -328,7 +329,8 @@ function UserDetail({
                 be undone.
               </Mono>
               <PillBtn
-                label={deleting ? "Deleting…" : "Delete account"}
+                label="Delete account"
+                busyLabel="Deleting…"
                 onPress={remove}
                 color={palette.red}
                 outline

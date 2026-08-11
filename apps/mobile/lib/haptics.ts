@@ -24,6 +24,14 @@ import { getLoggerPrefs } from "./logger-prefs";
  *    pickup, a context menu opening.
  *  - `heavy`     — a hard arrival worth flinching at. The rest timer hitting
  *    zero, and effectively nothing else.
+ *  - `rigid`     — a HARD STOP: something that will not go further. A stepper
+ *    pressed at its maximum, a rubber-banded row at the end of its travel.
+ *    Distinct from `light` on purpose — light says "that worked", rigid says
+ *    "that is as far as it goes", and a control that answers both the same way
+ *    is a control that cannot tell you it refused.
+ *  - `soft`      — a SOFT LANDING rather than a click: a set banked. The audit
+ *    asks for this by name, and it is the difference between logging a set and
+ *    pressing a button that happens to log a set.
  *  - `success` / `warning` / `error` — outcomes, not interactions. `warning`
  *    is the destructive commit (a delete going through); `error` is a real
  *    failure the user needs to notice on a phone they may not be looking at.
@@ -53,6 +61,14 @@ export const haptic = {
   /** A hard arrival — the rest timer reaching zero. Use sparingly. */
   heavy(): void {
     if (on()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+  },
+  /** A hard STOP: a clamp refusing to move, a rubber-band at its limit. */
+  rigid(): void {
+    if (on()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => {});
+  },
+  /** A soft landing — a set banked. */
+  soft(): void {
+    if (on()) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft).catch(() => {});
   },
   /** An outcome landed: a PR, a finished workout. */
   success(): void {

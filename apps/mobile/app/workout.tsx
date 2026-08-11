@@ -846,7 +846,11 @@ export default function Workout() {
     );
     if (!val) return;
     if (showTip) dismissTip(); // first banked set — the guide has done its job
-    haptic.light();
+    // SOFT, not light (§15's map asks for it by name): banking a set is a soft
+    // landing, not a button click. It is the most-repeated haptic in the app —
+    // dozens per session — and the one that most decides what the app feels
+    // like in the hand.
+    haptic.soft();
     // No rest when this set flows straight into a drop set, or into the next
     // exercise of a superset — you keep moving; the rest comes after the
     // sequence (banking the last drop / the last superset exercise).
