@@ -38,6 +38,12 @@ import {
 import { enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
 import { MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
 import { readinessDeficit, type ReadinessDeficit } from "./readiness-deficit";
+import {
+  HEAT_CREDIT_MAX, HEAT_FLOOR_C, HEAT_FREQUENCY_WEEKS, HEAT_HALF_LIFE_H, HEAT_INTENSITY_MAX,
+  HEAT_REF_C, HEAT_SESSION_MIN_EQUIV, HEAT_TAU_MIN, HEAT_TEMP_BOUNDS, HEAT_WINDOW_H,
+  heatAdjustment, type HeatAdjustment, type HeatSignalRow,
+} from "./heat";
+import { HEAT_RECOVERY_TIERS } from "./landmark-profile";
 import { COST_OK } from "./landmark-adapt";
 import {
   EXPERIENCE_STIMULUS,
@@ -114,7 +120,7 @@ export interface EngineFormula {
 export const ENGINE_FORMULA_GROUPS: { id: EngineFormulaGroup; label: string; source: string }[] = [
   { id: "fatigue", label: "Tissue fatigue", source: "engines/fatigue.ts" },
   { id: "endurance", label: "Endurance load", source: "engines/hpi.ts" },
-  { id: "readiness", label: "Readiness", source: "engines/readiness.ts + engines/readiness-deficit.ts" },
+  { id: "readiness", label: "Readiness", source: "engines/readiness.ts + engines/readiness-deficit.ts + engines/heat.ts" },
   { id: "hpi", label: "HPI", source: "engines/hpi.ts" },
   { id: "load", label: "Session load & ACWR", source: "engines/load.ts + injury.ts" },
   { id: "injury", label: "Injury risk", source: "engines/injury.ts" },
@@ -177,7 +183,7 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     id: "readiness",
     engine: "readiness",
     name: "Readiness score",
-    expression: `readiness = clamp(100 − ${MUSCLE_SLOPE} × avgMuscleFatigue − ${ENDURANCE_SLOPE} × enduranceFatigue + bioAdj, ${READINESS_FLOOR}, ${READINESS_CEILING})`,
+    expression: `readiness = clamp(100 − ${MUSCLE_SLOPE} × avgMuscleFatigue − ${ENDURANCE_SLOPE} × enduranceFatigue + bioAdj + heatAdj, ${READINESS_FLOOR}, ${READINESS_CEILING})`,
     constants: [
       { symbol: String(MUSCLE_SLOPE), value: String(MUSCLE_SLOPE), meaning: "tissue fatigue → readiness slope" },
       { symbol: String(ENDURANCE_SLOPE), value: String(ENDURANCE_SLOPE), meaning: "conditioning load → readiness slope (half the tissue slope)" },
@@ -542,6 +548,44 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     note: "Two clocks, and the later one wins. Session ends 09:00 and the athlete taps at 09:30: cadence alone would open at 13:30, but that session's recovery read is not due until 15:00 — so the gate opens at 15:00 and the second answer lands where it is worth something. Inside the gate a readiness write is a CORRECTION of the read on record (same clock, new value), never a rejection: the guided check-in must not fail a whole submission over one field. It borrows both numbers rather than inventing any, because a re-read the maths would discard is not worth asking for.",
   },
   {
+    id: "heat-intensity",
+    engine: "readiness",
+    name: "Heat — temperature to equivalent minutes",
+    expression: `intensity(T) = clamp((T − ${HEAT_FLOOR_C}) / (${HEAT_REF_C} − ${HEAT_FLOOR_C}), 0, ${HEAT_INTENSITY_MAX})   •   equivMin = Σ minutesᵢ × intensity(Tᵢ)`,
+    constants: [
+      { symbol: String(HEAT_FLOOR_C), value: `${HEAT_FLOOR_C} °C`, meaning: "floor — below this a room is warm, not thermally stressful" },
+      { symbol: String(HEAT_REF_C), value: `${HEAT_REF_C} °C`, meaning: "reference — the low end of a traditional sauna, where an equivalent minute IS a minute" },
+      { symbol: String(HEAT_INTENSITY_MAX), value: "clamp", meaning: `reached at 101 °C, so a mistyped 150 cannot manufacture a dose nobody sat through` },
+      { symbol: `${HEAT_TEMP_BOUNDS[0]}..${HEAT_TEMP_BOUNDS[1]}`, value: "accepted °C", meaning: "outside this the entry is REJECTED at the API, not clamped quietly — 900 is a typo" },
+    ],
+    note: "NO DEVICE WILL EVER MEASURE A SAUNA, so both halves of the input are typed: how long, and how hot. Duration alone is not the dose — 20 min at 90 °C and 20 min in a 55 °C infrared cabin are not the same stimulus, and a clock-only model scores them identically. The ramp is piecewise-linear between two STATED anchors rather than an exponential fitted to nothing: it is a claim an operator can argue with. HONEST LIMITATION: air temperature cannot see humidity, so a 45 °C steam room at 100% humidity scores zero despite real thermal strain, and infrared is under-read for a related reason. A sitting with no temperature row is read at the reference and MARKED assumed rather than presented as measured.",
+  },
+  {
+    id: "readiness-heat",
+    engine: "readiness",
+    name: "Heat prior (suppressed by the wearable)",
+    expression: `dose = ${HEAT_CREDIT_MAX} × (1 − e^(−equivMin / ${HEAT_TAU_MIN}))   •   decay = 0.5^(hoursSince / ${HEAT_HALF_LIFE_H})   •   heatAdj = bio ? 0 : round(dose × decay)`,
+    constants: [
+      { symbol: String(HEAT_CREDIT_MAX), value: "points", meaning: "one fifth of the wearable's ±15 — a prior must not out-vote a measurement even when the measurement is absent" },
+      { symbol: String(HEAT_TAU_MIN), value: "equiv min", meaning: "saturation — an hour is not twice a half hour" },
+      { symbol: `${HEAT_HALF_LIFE_H} h`, value: "half-life", meaning: "last night's sauna is mostly spent by tonight" },
+      { symbol: `${HEAT_WINDOW_H} h`, value: "window", meaning: "beyond this it is a habit, not a statement about today" },
+    ],
+    note: "THE SUPPRESSION RULE IS THE DESIGN. If sauna improves sleep and parasympathetic tone then biometricAdjustment ALREADY credits it at ±15 from the athlete's own baseline — on the mornings it matters that is not a proxy for the effect, it IS the effect. A flat bonus on top counts one night twice, and on a bad dose (long, hot, straight after a hard session, which suppresses overnight HRV) it credits the sauna while the wearable correctly debits it. So heat is a PRIOR, the wearable is a MEASUREMENT, and a measurement beats a prior: with any fresh biometric read the credit is exactly zero and `suppressed` is true, so the card states the rule instead of silently rounding to nothing. Same posture as BIOMETRIC_FRESH_DAYS' 'no measurement, no adjustment'. NEVER NEGATIVE: the overdose case is real but unmeasurable from a typed duration, and the wearable measures its consequence next morning — which is also why readinessDeficit needs no cost kind for it, a positive credit taking no arc exactly as a positive bioAdj takes none.",
+  },
+  {
+    id: "landmark-heat",
+    engine: "landmarks",
+    name: "Heat — chronic recovery multiplier",
+    expression: `recovery ×= ${HEAT_RECOVERY_TIERS.map((t) => `${t.multiplier} (≥${t.minPerWeek}/wk)`).join("  •  ")}`,
+    constants: [
+      { symbol: `${HEAT_SESSION_MIN_EQUIV} equiv min`, value: "sitting floor", meaning: "a sitting counts toward the frequency only once it clears this — five minutes in a cool cabin is not a fourth session" },
+      { symbol: `${HEAT_FREQUENCY_WEEKS} wk`, value: "averaging window", meaning: "derived from the logged signals, never asked" },
+      { symbol: "1.04", value: "ceiling", meaning: "the adaptation is documented; its transfer to weekly-set tolerance is inferred" },
+    ],
+    note: "The BETTER-evidenced of heat's two channels and still the most timid number in the file: plasma volume expansion of ~3–5% over 7–10 days, raised HSP70, better thermoregulation, and a cohort dose-response that strengthens at 4+ sittings a week. Counted in SITTINGS rather than equivalent minutes because sessions-per-week is what that evidence is actually expressed in. Unlike the acute credit this does NOT stand down for a wearable — it operates on a four-week timescale, where there is no single night for the two terms to disagree about.",
+  },
+  {
     id: "readiness-spent",
     engine: "feelTiming",
     name: "Readiness on the spentness scale",
@@ -716,6 +760,11 @@ export interface WhatIf {
   hrv?: number;
   restingHr?: number;
   sleep?: number;
+  /** Simulated heat: a single sitting `heatMinutes` long at `heatTempC`,
+   *  `heatHoursAgo` hours ago. Undefined leaves the athlete's real log alone. */
+  heatMinutes?: number;
+  heatTempC?: number;
+  heatHoursAgo?: number;
 }
 
 /** Scale the last `recentDays` of training by `loadPct`% (sets and minutes). */
@@ -749,6 +798,25 @@ export function whatIfBio(bio: Biometrics | undefined, w: WhatIf): Biometrics | 
   };
 }
 
+/**
+ * Synthesise the heat signals a what-if describes.
+ *
+ * Lives here, beside whatIfLog/whatIfBio, for the same reason they do: the
+ * simulation must be tested math rather than state assembled twice in two
+ * consoles. Returns the athlete's REAL rows untouched when the what-if names
+ * no sitting, so "what if this athlete had not saunaed" is expressed by asking
+ * for 0 minutes rather than by an absent field meaning two different things.
+ */
+export function whatIfHeat(signals: HeatSignalRow[], w: WhatIf, now: number): HeatSignalRow[] {
+  if (w.heatMinutes == null) return signals;
+  if (w.heatMinutes <= 0) return [];
+  const ts = new Date(now - (w.heatHoursAgo ?? 0) * 3_600_000).toISOString();
+  return [
+    { kind: "sauna", value: w.heatMinutes, source: "whatif", ts },
+    { kind: "saunaTemp", value: w.heatTempC ?? HEAT_REF_C, source: "whatif", ts },
+  ];
+}
+
 /** The full materialized computation for one athlete — what the console renders. */
 export interface EngineTrace {
   state: PerformanceState;
@@ -761,6 +829,13 @@ export interface EngineTrace {
   /** where readiness's missing points went — the same split the athlete's ring
    *  draws, so the console and the card can be checked against each other */
   deficit: ReadinessDeficit;
+  /**
+   * The heat prior, WHOLE — dose, decay, the sittings behind it and whether the
+   * wearable suppressed it. Present even when it contributed nothing, because
+   * "computed and suppressed" and "never computed" are different facts and the
+   * console is the only place that distinction can be checked.
+   */
+  heat: HeatAdjustment;
 }
 
 /**
@@ -770,17 +845,25 @@ export interface EngineTrace {
 export function computeEngineTrace(
   log: TrainingLog,
   bio?: Biometrics,
-  opts?: { weights?: HpiWeights; coeffs?: CalibrationCoeffs; days?: number; spikeOnset?: number },
+  opts?: {
+    weights?: HpiWeights; coeffs?: CalibrationCoeffs; days?: number; spikeOnset?: number;
+    /** The athlete's `sauna` / `saunaTemp` rows. Omitted = no heat term, which
+     *  scores exactly what this athlete scored before heat existed. */
+    heatSignals?: HeatSignalRow[];
+    now?: number;
+  },
 ): EngineTrace {
   const weights = opts?.weights ?? HYBRID_WEIGHTS;
-  const state = computePerformanceState(log, bio, weights);
+  const heat = heatAdjustment(opts?.heatSignals ?? [], { now: opts?.now, bio });
+  const state = computePerformanceState(log, bio, weights, heat.points);
   return {
     state,
     injury: computeInjuryRisk(log, bio, opts?.coeffs ?? PRIOR_COEFFS, {
       spikeOnset: opts?.spikeOnset,
     }),
-    trajectory: performanceTrajectory(log, opts?.days ?? 14),
+    trajectory: performanceTrajectory(log, opts?.days ?? 14, bio, heat.points),
     enduranceFatigue: enduranceFatigue(state.fatigue),
-    deficit: readinessDeficit(log, bio),
+    deficit: readinessDeficit(log, bio, heat.points),
+    heat,
   };
 }

@@ -3,6 +3,7 @@ export * from "./movements";
 export * from "./sample-data";
 export * from "./fatigue";
 export * from "./readiness";
+export * from "./heat";
 export * from "./progression";
 export * from "./periodization";
 export * from "./prescription";

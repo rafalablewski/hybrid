@@ -5,6 +5,22 @@
  */
 export const web_recovery = {
   en: {
+    // heat-sheet.tsx — the sauna log (the one input no device reports)
+    "w.recovery.heat.title": "Log heat",
+    "w.recovery.heat.sub": "Sauna, steam or infrared.",
+    "w.recovery.heat.howLong": "How long",
+    "w.recovery.heat.howHot": "How hot",
+    "w.recovery.heat.when": "When",
+    "w.recovery.heat.min": "min",
+    "w.recovery.heat.thatIs": "That is",
+    "w.recovery.heat.equiv": "{n} equivalent min",
+    "w.recovery.heat.tooCool": "Too cool to count — below 45 °C a room is warm, not a dose.",
+    "w.recovery.heat.save": "Save",
+    "w.recovery.heat.failed": "Couldn't save that — check your connection and try again.",
+    "w.recovery.heat.row": "Heat",
+    "w.recovery.heat.rowEmpty": "Log a sauna",
+    "w.recovery.heat.rowMeta": "{n} this week – {m} equiv min",
+    "w.recovery.heat.add": "Log heat",
     // checkins.tsx
     "w.recovery.checkins.title": "Daily check-in",
     "w.recovery.checkins.thisWeek": "This week",
@@ -610,6 +626,22 @@ export const web_recovery = {
     "w.recovery.nutrition.errSaveBody": "Some entries didn't save — check your connection / sign-in, then try again.",
   } as Record<string, string>,
   pl: {
+    // heat-sheet.tsx — the sauna log (the one input no device reports)
+    "w.recovery.heat.title": "Zapisz saunę",
+    "w.recovery.heat.sub": "Sauna, łaźnia parowa lub podczerwień.",
+    "w.recovery.heat.howLong": "Jak długo",
+    "w.recovery.heat.howHot": "Jak gorąco",
+    "w.recovery.heat.when": "Kiedy",
+    "w.recovery.heat.min": "min",
+    "w.recovery.heat.thatIs": "To daje",
+    "w.recovery.heat.equiv": "{n} min równoważnych",
+    "w.recovery.heat.tooCool": "Za chłodno, by się liczyło — poniżej 45 °C to ciepłe pomieszczenie, nie dawka.",
+    "w.recovery.heat.save": "Zapisz",
+    "w.recovery.heat.failed": "Nie udało się zapisać — sprawdź połączenie i spróbuj ponownie.",
+    "w.recovery.heat.row": "Sauna",
+    "w.recovery.heat.rowEmpty": "Zapisz saunę",
+    "w.recovery.heat.rowMeta": "{n} w tym tygodniu – {m} min równoważnych",
+    "w.recovery.heat.add": "Zapisz saunę",
     // checkins.tsx
     "w.recovery.checkins.title": "Codzienne podsumowanie",
     "w.recovery.checkins.thisWeek": "Ten tydzień",
@@ -1195,6 +1227,22 @@ export const web_recovery = {
     "w.recovery.nutrition.errSaveBody": "Część wpisów nie zapisała się — sprawdź połączenie / logowanie i spróbuj ponownie.",
   } as Record<string, string>,
   de: {
+    // heat-sheet.tsx — the sauna log (the one input no device reports)
+    "w.recovery.heat.title": "Hitze erfassen",
+    "w.recovery.heat.sub": "Sauna, Dampfbad oder Infrarot.",
+    "w.recovery.heat.howLong": "Wie lange",
+    "w.recovery.heat.howHot": "Wie heiß",
+    "w.recovery.heat.when": "Wann",
+    "w.recovery.heat.min": "Min",
+    "w.recovery.heat.thatIs": "Das sind",
+    "w.recovery.heat.equiv": "{n} Äquivalentminuten",
+    "w.recovery.heat.tooCool": "Zu kühl, um zu zählen — unter 45 °C ist ein Raum warm, keine Dosis.",
+    "w.recovery.heat.save": "Speichern",
+    "w.recovery.heat.failed": "Konnte nicht gespeichert werden — Verbindung prüfen und erneut versuchen.",
+    "w.recovery.heat.row": "Hitze",
+    "w.recovery.heat.rowEmpty": "Sauna erfassen",
+    "w.recovery.heat.rowMeta": "{n} diese Woche – {m} Äquivalentminuten",
+    "w.recovery.heat.add": "Hitze erfassen",
     // checkins.tsx
     "w.recovery.checkins.title": "Täglicher Check-in",
     "w.recovery.checkins.thisWeek": "Diese Woche",

@@ -8,6 +8,7 @@ import {
   sanitizeDeviceWorkout,
   type LoggedSession,
   type Signal,
+  type HeatSignalRow,
 } from "@hybrid/core";
 import { activeCalibration } from "@/lib/calibration";
 import { publishExerciseCatalog } from "@/lib/cache";
@@ -23,10 +24,20 @@ export async function athleteInputs(userId: string) {
   // publish the admin library first or every library-named lift attributes to no
   // tissue at all (zero fatigue / injury load).
   await publishExerciseCatalog();
-  const [rows, sigRows] = await Promise.all([
+  const [rows, sigRows, heatRows] = await Promise.all([
     // Archived sessions are excluded from analytics (the athlete hid them).
     prisma.session.findMany({ where: { userId, archivedAt: null }, orderBy: { startedAt: "desc" }, take: 30 }),
     prisma.signal.findMany({ where: { userId }, orderBy: { ts: "desc" }, take: 200 }),
+    // HEAT IS QUERIED ON ITS OWN, deliberately. The unfiltered read above takes
+    // the 200 newest rows of ANY kind, and one logged food writes up to eight
+    // of them — so on a diligent nutrition logger that window covers a couple
+    // of weeks and a sauna from Tuesday would simply not be in it. A recovery
+    // input must not be evictable by an unrelated one.
+    prisma.signal.findMany({
+      where: { userId, kind: { in: ["sauna", "saunaTemp"] } },
+      orderBy: { ts: "desc" },
+      take: 120,
+    }),
   ]);
 
   const sessions: LoggedSession[] = rows.map((r) => ({
@@ -56,6 +67,14 @@ export async function athleteInputs(userId: string) {
     ts: r.ts.toISOString(),
   }));
 
+  const heatSignals: HeatSignalRow[] = heatRows.map((r) => ({
+    id: r.id,
+    kind: r.kind,
+    value: r.value,
+    source: r.source,
+    ts: r.ts.toISOString(),
+  }));
+
   const log = personalTrainingLog(sessions);
   // Real signals only — never fabricate biometrics. No data → honest empty Performance State.
   const bio = toBiometrics(signals) ?? undefined;
@@ -63,7 +82,7 @@ export async function athleteInputs(userId: string) {
   // the derived log — the effort model reads each session's reported feeling
   // against the effort its blocks imply, which the TrainingLog has already
   // collapsed away.
-  return { log, bio, sessions, sessionCount: sessions.length };
+  return { log, bio, sessions, heatSignals, sessionCount: sessions.length };
 }
 
 /**

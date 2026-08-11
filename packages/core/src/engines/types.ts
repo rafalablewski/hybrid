@@ -91,6 +91,12 @@ export interface Readiness {
   score: number;
   /** -15..+15 contribution from wearable biometrics */
   bioAdj: number;
+  /**
+   * 0..HEAT_CREDIT_MAX from logged heat exposure (engines/heat.ts). Never
+   * negative, and always 0 when `bioAdj` came from a fresh reading — the
+   * wearable measures what the sauna did, so the prior stands down.
+   */
+  heatAdj: number;
 }
 
 export interface ProgressionSignal {

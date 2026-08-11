@@ -99,6 +99,12 @@ export interface PrescribeOptions {
    * guidance is mechanical, not just copy. Absent → neutral (no adjustment).
    */
   subjectiveReadiness?: ReadinessFeeling;
+  /**
+   * The heat prior's points (engines/heat.ts), already suppressed when a fresh
+   * wearable reading exists. Optional + additive: a caller that has not been
+   * wired to the signals prescribes exactly what it prescribed before.
+   */
+  heatAdj?: number;
 }
 
 /**
@@ -117,7 +123,10 @@ export function prescribeSession(
   opts?: PrescribeOptions,
 ): Prescription {
   const fatigue = computeFatigue(log);
-  const { score: readiness, bioAdj } = computeReadiness(fatigue, bio);
+  // The heat prior rides the same score everything else reads. Bounded at
+  // HEAT_CREDIT_MAX by design, so it is a nudge to prescribed load and never a
+  // jump — which is the intended blast radius of a self-reported input.
+  const { score: readiness, bioAdj } = computeReadiness(fatigue, bio, opts?.heatAdj ?? 0);
 
   const experience = opts?.experience ?? "intermediate";
   const equipment = opts?.equipment ?? "full";

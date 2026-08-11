@@ -105,6 +105,7 @@ import { AppHeader } from "./app-header";
 import { StreakMark } from "./streak-mark";
 import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
+import { HeatRow } from "./heat-row";
 // THE HUB's other two tabs — the same full screens their own routes render,
 // handed Today's header + pills through the `top` slot so the chrome above
 // them never changes as the athlete switches tab.
@@ -984,6 +985,15 @@ export default function AuroraHome() {
             stay one object. Renders nothing when no protocol is open. Mirrors
             web today.tsx. */}
         <RtpPanel />
+
+        {/* HEAT — the sauna log, in the Recover cluster beside the check-in.
+            It sits HERE rather than only on the post-session summary because
+            most sittings do not follow a session: this is the back-dating
+            entry, and the row states the week so far so the chronic channel
+            (which is the better-evidenced one) is visible without opening
+            anything. The trailing glyph is a bare ＋ — it GROWS the log in
+            place, it does not go anywhere. */}
+        <HeatRow />
 
         {/* ═════ GROUP: PROGRESS — where the LIFTING is going. Three named
             things, in the order the question is actually asked: the period's

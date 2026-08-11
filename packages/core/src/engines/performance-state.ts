@@ -78,9 +78,12 @@ export function computePerformanceState(
   log: TrainingLog,
   bio?: Biometrics,
   weights: HpiWeights = HYBRID_WEIGHTS,
+  /** The heat prior's points (engines/heat.ts), already suppressed if a fresh
+   *  wearable reading exists. Optional + additive: omitted scores as before. */
+  heatAdj = 0,
 ): PerformanceState {
   const fatigue = computeFatigue(log);
-  const readiness = computeReadiness(fatigue, bio);
+  const readiness = computeReadiness(fatigue, bio, heatAdj);
   const hpi = computeHpi(fatigue, bio, weights);
 
   const drivers: StateDriver[] = [];
@@ -225,14 +228,16 @@ export interface ReadinessFact {
  *     in the ledger: a positive nudge takes no arc and no row (it shrinks every
  *     other share instead), so without this fact a +4 day would show nothing at
  *     all for a wearable that was read and did move the number.
+ *   - the heat prior's credit, which is the same case exactly: never negative,
+ *     therefore never an arc, therefore invisible without a line of its own.
  *
  * Keys, not prose, so this speaks Polish and German — which the sentences it
  * replaces never did.
  */
-export function readinessFacts(log: TrainingLog, bio?: Biometrics): ReadinessFact[] {
+export function readinessFacts(log: TrainingLog, bio?: Biometrics, heatAdj = 0): ReadinessFact[] {
   if (log.length === 0) return [];
   const fatigue = computeFatigue(log);
-  const { bioAdj } = computeReadiness(fatigue, bio);
+  const { bioAdj, heatAdj: heat } = computeReadiness(fatigue, bio, heatAdj);
   const out: ReadinessFact[] = [];
 
   const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
@@ -244,6 +249,14 @@ export function readinessFacts(log: TrainingLog, bio?: Biometrics): ReadinessFac
   if (endFatigue >= CONDITIONING_VOICE) out.push({ key: "w.home.readiness.factLoad", muscle: null, value: endFatigue });
 
   if (bio && bioAdj !== 0) out.push({ key: "w.home.readiness.factWearable", muscle: null, value: bioAdj });
+
+  // THE HEAT LINE, for exactly the reason the wearable line above it exists: a
+  // positive credit takes no arc and no ledger row (it shrinks every other
+  // share instead), so without this a sauna that was logged AND moved the
+  // score would show nothing anywhere on the card. Suppressed days say nothing
+  // here — the ledger has a wearable line and the sauna took no points, so
+  // there is no figure to report.
+  if (heat > 0) out.push({ key: "w.home.readiness.factHeat", muscle: null, value: heat });
 
   return out;
 }
@@ -384,7 +397,20 @@ export interface TrajectoryPoint {
  * athlete is reading. Callers that want the pure load-driven series (the admin
  * Engine Room, which compares scenarios) simply omit it.
  */
-export function performanceTrajectory(log: TrainingLog, days = 14, bio?: Biometrics): TrajectoryPoint[] {
+export function performanceTrajectory(
+  log: TrainingLog,
+  days = 14,
+  bio?: Biometrics,
+  /**
+   * The heat prior, applied to the `daysAgo === 0` point ONLY — exactly the
+   * rule `bio` already takes, and for exactly the same reason: there is no
+   * stored history of past sittings to replay against past days, and today's
+   * point is the one the card also prints as a figure. Break the symmetry and
+   * the headline figure disagrees with the sparkline 8 px away, which is the
+   * defect the last Performance rebuild existed to fix.
+   */
+  heatAdj = 0,
+): TrajectoryPoint[] {
   const out: TrajectoryPoint[] = [];
   for (let n = days - 1; n >= 0; n--) {
     const subLog = log
@@ -392,10 +418,11 @@ export function performanceTrajectory(log: TrainingLog, days = 14, bio?: Biometr
       .map((s) => ({ ...s, daysAgo: s.daysAgo - n }));
     const fatigue = computeFatigue(subLog);
     const today = n === 0 ? bio : undefined;
+    const todayHeat = n === 0 ? heatAdj : 0;
     out.push({
       daysAgo: n,
       hpi: computeHpi(fatigue, today).score,
-      readiness: computeReadiness(fatigue, today).score,
+      readiness: computeReadiness(fatigue, today, todayHeat).score,
     });
   }
   return out;

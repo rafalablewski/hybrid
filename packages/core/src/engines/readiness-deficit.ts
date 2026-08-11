@@ -37,7 +37,9 @@ import { ALL_MUSCLES } from "./movements";
  * (see readiness.ts, and the `readiness-conditioning` capability).
  *
  * A POSITIVE WEARABLE NUDGE takes no arc. It doesn't cost anything; it makes
- * the whole deficit smaller, so every tissue's share shrinks with it. A cost
+ * the whole deficit smaller, so every tissue's share shrinks with it. The HEAT
+ * credit behaves identically and for the same reason — it is never negative by
+ * construction (engines/heat.ts), so it can never need a cost kind of its own. A cost
  * here is therefore "this tissue's share of TODAY's deficit", not a gross
  * figure — which is the only reading under which the parts can sum to the
  * whole. The wearable's own sentence still says +3 in the drawer.
@@ -75,6 +77,14 @@ export interface ReadinessDeficit {
   costs: ReadinessCost[];
   /** The wearable's signed nudge; positive means it gave points back. */
   bioAdj: number;
+  /**
+   * The heat prior's credit, 0..HEAT_CREDIT_MAX. Like a POSITIVE bioAdj it
+   * takes no arc — it does not cost anything, it makes the whole deficit
+   * smaller — so the sum law is untouched by it. Which is exactly why it needs
+   * a `readinessFacts` line: a term that moved the score and draws nothing
+   * would otherwise be invisible on the card.
+   */
+  heatAdj: number;
   /** Which engine clamp the score hit, if either. */
   clamped: "floor" | "ceiling" | null;
 }
@@ -115,9 +125,9 @@ export function apportion(weights: number[], total: number): number[] {
  * points are apportioned, so the integers are computed once against the number
  * of arcs actually drawn and can't drift when two small tissues become one.
  */
-export function readinessDeficit(log: TrainingLog, bio?: Biometrics): ReadinessDeficit {
+export function readinessDeficit(log: TrainingLog, bio?: Biometrics, heatAdj = 0): ReadinessDeficit {
   const fatigue = computeFatigue(log);
-  const { score, bioAdj } = computeReadiness(fatigue, bio);
+  const { score, bioAdj, heatAdj: heat } = computeReadiness(fatigue, bio, heatAdj);
   const kept = score;
   const deficit = 100 - kept;
 
@@ -126,11 +136,11 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics): ReadinessD
   const rawConditioning = ENDURANCE_SLOPE * enduranceFatigue(fatigue);
   const rawWearable = bioAdj < 0 ? -bioAdj : 0;
 
-  const unclamped = Math.round(100 - rawMuscle - rawConditioning + bioAdj);
+  const unclamped = Math.round(100 - rawMuscle - rawConditioning + bioAdj + heat);
   const clamped: ReadinessDeficit["clamped"] =
     unclamped < READINESS_FLOOR ? "floor" : unclamped > READINESS_CEILING ? "ceiling" : null;
 
-  if (deficit <= 0) return { kept, deficit: 0, costs: [], bioAdj, clamped };
+  if (deficit <= 0) return { kept, deficit: 0, costs: [], bioAdj, heatAdj: heat, clamped };
 
   // ── THE CAUSES. There are two, and the structure is FIXED ──
   //
@@ -162,6 +172,7 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics): ReadinessD
       deficit,
       costs: [{ kind: "ceiling", key: READINESS_COST_KEY.ceiling, muscle: null, points: deficit, role: "neutral" }],
       bioAdj,
+      heatAdj: heat,
       clamped: clamped ?? "ceiling",
     };
   }
@@ -178,7 +189,7 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics): ReadinessD
     }))
     .filter((c) => c.points > 0);
 
-  return { kept, deficit, costs, bioAdj, clamped };
+  return { kept, deficit, costs, bioAdj, heatAdj: heat, clamped };
 }
 
 /* ── THE RING ─────────────────────────────────────────────────────────────── */

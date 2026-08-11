@@ -32,6 +32,13 @@ import {
   computeEngineTrace,
   deriveHpi,
   deriveReadiness,
+  heatAdjustment,
+  heatIntensity,
+  sampleHeatSignals,
+  whatIfHeat,
+  HEAT_CREDIT_MAX,
+  HEAT_REF_C,
+  HEAT_WINDOW_H,
   deriveTissueRisk,
   feelingImpacts,
   FEELING_THRESHOLDS,
@@ -61,6 +68,8 @@ import {
   readinessRingSegments,
   KEPT_ARC_ALPHA,
   type Derivation,
+  type HeatAdjustment,
+  type HeatSignalRow,
   type MuscleGroup,
   type Personalization,
   type EffortModel,
@@ -89,6 +98,9 @@ type Feed = {
   user: PickedUser;
   log: TrainingLog;
   bio: Biometrics | null;
+  /** The athlete's `sauna` / `saunaTemp` rows, queried on their own so an
+   *  unrelated stream can't evict them (see lib/athlete-state.ts). */
+  heatSignals?: HeatSignalRow[];
   sessionCount: number;
   calibration: { coeffs: CalibrationCoeffs; version: string; n: number };
   personal?: Personalization;
@@ -115,17 +127,29 @@ const DRIVER_LABEL: Record<string, string> = {
   recovery: "Recovery",
 };
 
-type WhatIfState = { loadPct: number; hrv: number | null; restingHr: number | null; sleep: number | null };
-const WHATIF_OFF: WhatIfState = { loadPct: 100, hrv: null, restingHr: null, sleep: null };
+type WhatIfState = {
+  loadPct: number; hrv: number | null; restingHr: number | null; sleep: number | null;
+  /** A simulated sitting: minutes, °C, and how long ago. Null = leave the
+   *  athlete's real heat log alone (0 minutes is how you ask for "none"). */
+  heatMinutes: number | null; heatTempC: number; heatHoursAgo: number;
+};
+const WHATIF_OFF: WhatIfState = {
+  loadPct: 100, hrv: null, restingHr: null, sleep: null,
+  heatMinutes: null, heatTempC: HEAT_REF_C, heatHoursAgo: 10,
+};
 
 type Scenario = { id: string; name: string; whatIf: WhatIfState };
 
 /** Ready-made scenarios so comparison starts with one click. Biometric
  *  overrides are RELATIVE (pct of baseline) so they fit any athlete. */
-const SCENARIO_PRESETS: { name: string; loadPct: number; hrvPct?: number; sleepH?: number }[] = [
+const SCENARIO_PRESETS: { name: string; loadPct: number; hrvPct?: number; sleepH?: number; heatMinutes?: number; heatTempC?: number }[] = [
   { name: "Crashed recovery", loadPct: 100, hrvPct: 65, sleepH: 5 },
   { name: "Eased week (50%)", loadPct: 50 },
   { name: "Overreached (150%)", loadPct: 150 },
+  // Heat only ever shows on an athlete with NO fresh wearable — the prior
+  // stands down for a measurement — so the preset that demonstrates it has to
+  // be one, or the panel reads +0 and the slider looks broken.
+  { name: "No wearable, sauna last night", loadPct: 100, heatMinutes: 25, heatTempC: 90 },
 ];
 
 // Feeling accent → the app's semantic tokens (same mapping READINESS_FACE uses).
@@ -199,11 +223,18 @@ export default function EngineRoom() {
   const weights = (PROFILES.find((p) => p.id === profileId) ?? PROFILES[0]!).weights;
 
   const whatIfActive =
-    whatIf.loadPct !== 100 || whatIf.hrv != null || whatIf.restingHr != null || whatIf.sleep != null;
+    whatIf.loadPct !== 100 || whatIf.hrv != null || whatIf.restingHr != null || whatIf.sleep != null ||
+    whatIf.heatMinutes != null;
+
+  // Frozen once per athlete: `heatAdjustment` decays against the clock, and a
+  // console whose arithmetic drifts between two renders cannot be checked
+  // against the athlete's card.
+  const now = useMemo(() => Date.now(), [feed]);
+  const heatSignals: HeatSignalRow[] = useMemo(() => feed?.heatSignals ?? sampleHeatSignals(now), [feed, now]);
 
   const base = useMemo(
-    () => computeEngineTrace(log, bio, { weights, coeffs, spikeOnset }),
-    [log, bio, weights, coeffs, spikeOnset],
+    () => computeEngineTrace(log, bio, { weights, coeffs, spikeOnset, heatSignals, now }),
+    [log, bio, weights, coeffs, spikeOnset, heatSignals, now],
   );
   // The transformed inputs are shared by the headline trace, the derivations,
   // and the feeling lab, so everything on screen describes the SAME state.
@@ -222,15 +253,25 @@ export default function EngineRoom() {
         : bio,
     [whatIfActive, bio, whatIf],
   );
+  const simHeatSignals = useMemo(
+    () => (whatIfActive ? whatIfHeat(heatSignals, { heatMinutes: whatIf.heatMinutes ?? undefined, heatTempC: whatIf.heatTempC, heatHoursAgo: whatIf.heatHoursAgo }, now) : heatSignals),
+    [whatIfActive, heatSignals, whatIf.heatMinutes, whatIf.heatTempC, whatIf.heatHoursAgo, now],
+  );
   const sim = useMemo(
     () =>
-      whatIfActive ? computeEngineTrace(simLog, simBio, { weights, coeffs, spikeOnset }) : base,
-    [whatIfActive, simLog, simBio, weights, coeffs, spikeOnset, base],
+      whatIfActive
+        ? computeEngineTrace(simLog, simBio, { weights, coeffs, spikeOnset, heatSignals: simHeatSignals, now })
+        : base,
+    [whatIfActive, simLog, simBio, weights, coeffs, spikeOnset, simHeatSignals, now, base],
   );
 
   // Step-by-step derivations of the state on screen (simulated when a what-if
   // is active — the math always explains the numbers you're looking at).
-  const readinessDeriv = useMemo(() => deriveReadiness(simLog, simBio), [simLog, simBio]);
+  const simHeat = useMemo(
+    () => heatAdjustment(simHeatSignals, { now, bio: simBio }),
+    [simHeatSignals, now, simBio],
+  );
+  const readinessDeriv = useMemo(() => deriveReadiness(simLog, simBio, simHeat), [simLog, simBio, simHeat]);
   const hpiDeriv = useMemo(() => deriveHpi(simLog, simBio, weights), [simLog, simBio, weights]);
   const tissueDeriv = useMemo(
     () => deriveTissueRisk(simLog, tissue, simBio, coeffs, spikeOnset),
@@ -266,10 +307,12 @@ export default function EngineRoom() {
   };
   const addPreset = (p: (typeof SCENARIO_PRESETS)[number]) => {
     addScenario(p.name, {
+      ...WHATIF_OFF,
       loadPct: p.loadPct,
       hrv: p.hrvPct != null && bio ? Math.round(bio.hrv.baseline * (p.hrvPct / 100)) : null,
       restingHr: null,
       sleep: p.sleepH ?? null,
+      ...(p.heatMinutes != null ? { heatMinutes: p.heatMinutes, heatTempC: p.heatTempC ?? HEAT_REF_C } : {}),
     });
   };
 
@@ -431,6 +474,13 @@ export default function EngineRoom() {
            surfaces is lying and this is where you'd see it. */}
       <DeficitBar deficit={t.deficit} whatIfActive={whatIfActive} />
 
+      {/* ---- THE HEAT PRIOR ----
+           Rendered whenever a sitting is in the window, INCLUDING when the
+           wearable suppressed it: "computed and stood down" and "never
+           computed" are different facts, and this is the only surface where
+           that distinction can be checked. */}
+      <HeatPanel heat={t.heat} whatIfActive={whatIfActive} />
+
       {/* ---- why these numbers: step-by-step derivations ---- */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))", gap: space.lg }}>
         <DerivationPanel derivation={readinessDeriv} accent={LIME} whatIfActive={whatIfActive} />
@@ -449,8 +499,11 @@ export default function EngineRoom() {
           </div>
         </div>
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
-          The sliders transform the INPUTS (last-7-day training scale, today&apos;s wearable readings)
-          and re-run the whole stack live — the exact engines, not an approximation.
+          The sliders transform the INPUTS (last-7-day training scale, today&apos;s wearable readings,
+          a simulated sauna) and re-run the whole stack live — the exact engines, not an
+          approximation. The heat sliders REPLACE the athlete&apos;s own sittings while active, so
+          0&nbsp;minutes answers &ldquo;what if they had not&rdquo;; leave them untouched to read what
+          they actually logged.
         </Mono>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: space.lg, marginTop: 14 }}>
           <Slider
@@ -471,6 +524,35 @@ export default function EngineRoom() {
             max={bio ? Math.round(bio.hrv.baseline * 1.5) : 1}
             step={1}
             onChange={(v) => setWhatIf({ ...whatIf, hrv: v })}
+          />
+          <Slider
+            label="Sauna — minutes"
+            value={whatIf.heatMinutes ?? 0}
+            display={whatIf.heatMinutes == null ? "as logged" : whatIf.heatMinutes === 0 ? "none" : `${whatIf.heatMinutes} min`}
+            min={0}
+            max={90}
+            step={5}
+            onChange={(v) => setWhatIf({ ...whatIf, heatMinutes: v })}
+          />
+          <Slider
+            label="Sauna — temperature"
+            disabled={whatIf.heatMinutes == null}
+            value={whatIf.heatTempC}
+            display={`${whatIf.heatTempC} °C (×${heatIntensity(whatIf.heatTempC).toFixed(2)})`}
+            min={40}
+            max={110}
+            step={5}
+            onChange={(v) => setWhatIf({ ...whatIf, heatTempC: v })}
+          />
+          <Slider
+            label="Sauna — hours ago"
+            disabled={whatIf.heatMinutes == null}
+            value={whatIf.heatHoursAgo}
+            display={`${whatIf.heatHoursAgo} h`}
+            min={0}
+            max={HEAT_WINDOW_H}
+            step={1}
+            onChange={(v) => setWhatIf({ ...whatIf, heatHoursAgo: v })}
           />
           <Slider
             label="Resting HR today"
@@ -1101,6 +1183,95 @@ function DerivationSteps({ derivation }: { derivation: Derivation }) {
 }
 
 /** A headline derivation as a collapsible card ("How is this calculated?"). */
+/**
+ * THE HEAT PRIOR, WITH ITS REASONING SHOWN.
+ *
+ * Two things this must never do, both of which the readiness card has been
+ * caught doing before with other terms:
+ *
+ *  1. Show a bare total. The credit is a product of a temperature ramp, a
+ *     saturating dose and a decay, and an operator asked "why is this +2" needs
+ *     all three, not the 2.
+ *  2. Go quiet when the term contributed nothing. A SUPPRESSED prior and an
+ *     absent one are different states — the first means the wearable is
+ *     carrying the answer, the second means nothing was logged — and if the
+ *     panel renders identically for both, the suppression rule is unauditable
+ *     and might as well not exist.
+ *
+ * So the arithmetic is printed whenever a sitting is in the window, and the
+ * headline says WHY it is worth what it is worth.
+ */
+function HeatPanel({ heat, whatIfActive }: { heat: HeatAdjustment; whatIfActive: boolean }) {
+  const has = heat.sittings.length > 0;
+  const accent = heat.suppressed ? ASH : AMBER;
+  return (
+    <Card style={{ borderLeft: `3px solid ${has ? accent : LINE}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.sm, flexWrap: "wrap" }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={has ? accent : ASH}>
+          Heat prior – the one input no device measures
+        </Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
+          {whatIfActive ? "simulated – " : ""}
+          {has ? `${heat.sittings.length} sitting${heat.sittings.length === 1 ? "" : "s"} in ${HEAT_WINDOW_H} h` : `nothing logged in ${HEAT_WINDOW_H} h`}
+        </Mono>
+      </div>
+
+      {!has ? (
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+          No sauna in the window, so the term contributes +0. Both halves of this input are TYPED
+          (how long, how hot) — there is no device to sync and nothing to wait for.
+        </Mono>
+      ) : (
+        <>
+          <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginTop: 10, flexWrap: "wrap" }}>
+            <span style={{ ...disp, fontSize: 34, lineHeight: 1, color: txt(has && !heat.suppressed ? AMBER : ASH) }}>
+              {heat.suppressed ? "+0" : `+${heat.points}`}
+            </span>
+            <Mono s={{ fontSize: fs.caption, lineHeight: 1.5 }}>
+              {heat.suppressed
+                ? "SUPPRESSED — a fresh wearable reading already measures what the sauna did, so the prior stands down rather than stacking on it."
+                : `no fresh wearable reading, so the prior applies — capped at ${HEAT_CREDIT_MAX}, one fifth of the wearable's ±15.`}
+            </Mono>
+          </div>
+
+          <div style={{ display: "grid", gap: 6, marginTop: 12 }}>
+            {heat.sittings.map((x) => (
+              <code key={x.ts} style={{ ...mono, fontSize: fs.caption, color: txt(CHALK), background: INK2, border: `1px solid ${LINE}`, borderRadius: 7, padding: "6px 10px", overflowX: "auto", whiteSpace: "nowrap" }}>
+                {new Date(x.ts).toLocaleString()} – {x.minutes} min @ {x.tempC}&deg;C
+                {x.assumedTemp ? " (assumed)" : ""} &rarr; {x.equivMin.toFixed(1)} equiv min
+              </code>
+            ))}
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: `4px ${space.lg}px`, marginTop: 12 }}>
+            <HeatFig label="equivalent min" value={heat.equivMin.toFixed(1)} />
+            <HeatFig label="dose" value={heat.dose.toFixed(2)} />
+            <HeatFig label="hours since" value={(heat.hoursSince ?? 0).toFixed(1)} />
+            <HeatFig label="decay" value={heat.decay.toFixed(2)} />
+            <HeatFig label="dose × decay" value={(heat.dose * heat.decay).toFixed(2)} />
+          </div>
+
+          {heat.assumed && (
+            <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+              A sitting carried no temperature and was read at the {HEAT_REF_C}&deg;C reference. It still
+              counts, and it is marked — a stated assumption can be argued with, an invisible one cannot.
+            </Mono>
+          )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+function HeatFig({ label, value }: { label: string; value: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
+      <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>{label}</Mono>
+      <Mono s={{ fontSize: fs.caption }} c={CHALK}>{value}</Mono>
+    </span>
+  );
+}
+
 /**
  * THE DEFICIT, AS ONE BAR. Readiness is 100 minus what today's training and
  * recovery took, and this is that subtraction drawn: the kept run, then one run

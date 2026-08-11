@@ -283,16 +283,18 @@ pre.code .k{color:var(--teal)}
 <div class="wrap">
 
 <header class="mast">
-  <p class="kicker">HYBRID &#160;/&#160; Recovery system &#160;/&#160; Specification</p>
+  <p class="kicker">HYBRID &#160;/&#160; Recovery system &#160;/&#160; Specification &amp; build record</p>
   <h1>Heat as a<br><em>recovery input</em></h1>
   <div class="rule"></div>
   <p class="lede">Sauna is the most common recovery practice HYBRID cannot see, and the only
   one no device will ever report. It is two typed numbers &#8212; minutes, and how hot it was. This
-  is the complete proposal for making those two numbers count: what they are allowed to move,
-  how the arithmetic works, how an athlete records them, and the order it gets built in.</p>
-  <div style="margin:30px 0 26px"><span class="badge">Planned &#8212; not built</span></div>
+  is the complete specification for making those two numbers count: what they are allowed to
+  move, how the arithmetic works, how an athlete records them, and the order it was built in.
+  Phases 1&ndash;3 and the chronic channel are <em>built</em>; the measurement layer in &#167;5 is
+  waiting on data, not on code.</p>
+  <div style="margin:30px 0 26px"><span class="badge" style="color:var(--lime);border-color:rgba(198,248,79,.32);background:rgba(198,248,79,.10)">Built &#8212; engine, admin and mobile</span></div>
   <div class="meta">
-    <div><b>Capability</b><span>heat-recovery</span></div>
+    <div><b>Capability</b><span>heat-recovery &#8212; shipped</span></div>
     <div><b>Branch</b><span>claude/sauna-recovery-enhancement-o1lqgt</span></div>
     <div><b>Source doc</b><span>audit/11-sauna-heat-recovery-design-2026-08.md</span></div>
     <div><b>Date</b><span>August 2026</span></div>
@@ -305,11 +307,11 @@ pre.code .k{color:var(--teal)}
 <section>
   <span class="sec-no">01 &#8212; The gap</span>
   <div class="col">
-    <h2>Today the app cannot see it at all</h2>
-    <p><code>grep -ri sauna</code> across the whole repository returns nothing. Not a session
-    kind, not a signal, not a check-in field, not a string. An athlete who sits in a sauna four
-    times a week is doing something that plausibly changes how much training they can absorb,
-    and every engine in HYBRID is blind to it.</p>
+    <h2>The gap this closed</h2>
+    <p>Before this change, <code>grep -ri sauna</code> across the whole repository returned
+    nothing. Not a session kind, not a signal, not a check-in field, not a string. An athlete
+    who sits in a sauna four times a week was doing something that plausibly changes how much
+    training they can absorb, and every engine in HYBRID was blind to it.</p>
     <p>That is the gap. What follows is deliberately narrower than &#8220;add sauna tracking&#8221;, because
     the interesting question is not how to store fifteen minutes &#8212; it is <strong>what those
     fifteen minutes are allowed to move, and on what evidence</strong>.</p>
@@ -461,8 +463,8 @@ decay     = 0.5 <span class="k">^</span> (hoursSinceLast / <span class="c">HEAT_
 points    = bio ? <span class="c">0</span> : round(dose &#215; decay)      <span class="cm">// the suppression rule, &#167;3</span></div>
 
   <div class="col">
-    <p>Duration alone is not the dose. Twenty minutes at 90&nbsp;&#176;C and twenty minutes in a
-    55&nbsp;&#176;C infrared cabin are not the same stimulus, and a model that reads only the clock
+    <p>Duration alone is not the dose. Twenty minutes at 90&#160;&#176;C and twenty minutes in a
+    55&#160;&#176;C infrared cabin are not the same stimulus, and a model that reads only the clock
     would score them identically. So temperature converts minutes into
     <em>equivalent minutes at the reference</em>, and everything downstream &#8212; the saturating
     curve, the cap, the decay &#8212; is unchanged and now takes an honest input.</p>
@@ -473,9 +475,9 @@ points    = bio ? <span class="c">0</span> : round(dose &#215; decay)      <span
     <div><dt>HEAT_FLOOR_C</dt><dd>45<small>&#176;C</small></dd>
       <p>Below this a room is warm, not thermally stressful. No credit at all, so a hot shower cannot earn points.</p></div>
     <div><dt>HEAT_REF_C</dt><dd>80<small>&#176;C</small></dd>
-      <p>The low end of a traditional Finnish sauna, and the anchor: at 80&nbsp;&#176;C an equivalent minute <em>is</em> a minute.</p></div>
+      <p>The low end of a traditional Finnish sauna, and the anchor: at 80&#160;&#176;C an equivalent minute <em>is</em> a minute.</p></div>
     <div><dt>HEAT_INTENSITY_MAX</dt><dd>1.6<small>&#215;</small></dd>
-      <p>Reached at 101&nbsp;&#176;C. A ceiling so a mistyped 150 cannot manufacture a dose nobody sat through.</p></div>
+      <p>Reached at 101&#160;&#176;C. A ceiling so a mistyped 150 cannot manufacture a dose nobody sat through.</p></div>
   </div>
 
   <p class="kicker ash" style="margin:34px 0 0">The dose model</p>
@@ -573,7 +575,7 @@ points    = bio ? <span class="c">0</span> : round(dose &#215; decay)      <span
 
   <div class="callout warn">
     <p class="kicker">What air temperature cannot see</p>
-    <p>Humidity. A steam room at 45&nbsp;&#176;C and 100% humidity blocks evaporative cooling and
+    <p>Humidity. A steam room at 45&#160;&#176;C and 100% humidity blocks evaporative cooling and
     produces real thermal strain, and this model scores it at zero. Infrared is under-read for a
     related reason &#8212; it heats the body radiantly at a low air temperature. Both are honest
     limitations of reading one number, and neither is worth papering over with an invented
@@ -741,9 +743,9 @@ heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <spa
   <div class="col">
     <p class="note">A sitting with no temperature row still counts, at the reference &#8212; an entry
     logged before the field existed, or one where the athlete genuinely did not know, is read as
-    80&nbsp;&#176;C and <strong>marked as assumed</strong> rather than silently treated as measured.
+    80&#160;&#176;C and <strong>marked as assumed</strong> rather than silently treated as measured.
     The same distinction <code>BiometricMetric.measured</code> already draws. A temperature
-    outside <code>HEAT_TEMP_BOUNDS</code> (40&#8211;120&nbsp;&#176;C) is rejected at the API, not clamped
+    outside <code>HEAT_TEMP_BOUNDS</code> (40&#8211;120&#160;&#176;C) is rejected at the API, not clamped
     quietly: 900 is a typo, and a typo should bounce rather than become 120.</p>
   </div>
 
@@ -759,7 +761,7 @@ heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <spa
         <tr><td class="file">RLS signal_own</td><td class="yes">no change</td><td class="note">Row-scoped by user and kind-agnostic. Coach read follows the active-link policy like every other signal.</td></tr>
         <tr><td class="file">Hydration (<code>water</code>)</td><td class="dash">precedent</td><td class="note">The identical shape end to end: filtered GET, POST, delete-by-id. Nothing here is a new pattern.</td></tr>
         <tr><td class="file">derivedFoodEntries()</td><td class="dash">precedent</td><td class="note">The multi-row grouping: one event, several Signals, matched on exact ts and source, deleted as a unit. Heat copies the idiom rather than inventing one.</td></tr>
-        <tr><td class="file">units.ts</td><td style="color:var(--sand);font-family:var(--mono);font-size:12.5px">extend</td><td class="note">Store canonical &#176;C always. A <code>TempUnit</code> derived from the athlete&rsquo;s weight unit (lb &#8594; &#176;F) mirrors how <code>heightUnitFor()</code> already derives cm against inches, so nobody sets a third preference.</td></tr>
+        <tr><td class="file">units.ts</td><td style="color:var(--sand);font-family:var(--mono);font-size:12.5px">extend</td><td class="note">Store canonical &#176;C always. A <code>TempUnit</code> derived from the athlete&#8217;s weight unit (lb &#8594; &#176;F) mirrors how <code>heightUnitFor()</code> already derives cm against inches, so nobody sets a third preference.</td></tr>
       </tbody>
     </table>
     </div>
@@ -1100,8 +1102,11 @@ heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <spa
   <span class="sec-no">10 &#8212; How it gets built</span>
   <div class="col">
     <h2>Four phases, in this order</h2>
-    <p>The order is not arbitrary. Phase&#160;1 is what makes phase&#160;4 possible, and
-    phase&#160;4 is the version worth having.</p>
+    <p>The order is not arbitrary. Phase&#160;1 is what makes phase&#160;4 possible, and phase&#160;4 is the
+    version worth having. <strong style="color:var(--lime)">Phases 1&ndash;3 and the chronic
+    multiplier are built</strong> &#8212; the engine, all nine Engine Room touch points, the mobile
+    sheet and the Today row, in EN, PL and DE. Phase&#160;4 is blocked on data rather than on code:
+    the sittings start accumulating now.</p>
   </div>
 
   <div class="phases">
@@ -1120,7 +1125,7 @@ heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <spa
     </div>
 
     <div class="phase">
-      <span class="idx">PHASE 1</span>
+      <span class="idx" style="color:var(--lime)">PHASE 1 &#10003;</span>
       <div>
         <h4>Log it, and move nothing</h4>
         <p>Storage plus both mobile entry points. Zero engine impact, so it cannot regress a
@@ -1141,7 +1146,7 @@ heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <spa
     </div>
 
     <div class="phase">
-      <span class="idx">PHASE 2</span>
+      <span class="idx" style="color:var(--lime)">PHASE 2 &#10003;</span>
       <div>
         <h4>The chronic multiplier</h4>
         <p>The best-evidenced channel, landing in an engine already built for this shape of
@@ -1157,7 +1162,7 @@ heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <spa
     </div>
 
     <div class="phase">
-      <span class="idx">PHASE 3</span>
+      <span class="idx" style="color:var(--lime)">PHASE 3 &#10003;</span>
       <div>
         <h4>The acute credit, with its console</h4>
         <p>The readiness term and all nine Engine Room touch points, together. The console work

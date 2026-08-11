@@ -371,6 +371,71 @@ export async function logWater(ml: number, ts = new Date().toISOString()): Promi
   }
 }
 
+/* ── HEAT (sauna) ──────────────────────────────────────────────────────────
+ *
+ * The one input no device will ever report, so both halves are typed. A sitting
+ * is TWO Signals sharing an EXACT timestamp — that is what lets core's
+ * `heatSittings` put them back together, the same way the food diary regroups
+ * the eight rows one logged food writes. The two POSTs are sequential and the
+ * temperature is written SECOND: if the network dies between them the athlete
+ * has a sitting read at the reference and MARKED assumed, which is a degraded
+ * truth rather than a temperature with no sitting attached (which core drops
+ * entirely).
+ */
+
+/** One recorded sitting as the client holds it, with both row ids so it can be
+ *  removed as a unit. */
+export type HeatLog = { ids: string[]; minutes: number; tempC: number; ts: string };
+
+/** Every sauna row this athlete owns, filtered server-side by kind so an
+ *  unrelated stream (the food log writes up to eight rows per meal) can never
+ *  evict them from an unfiltered window. */
+export async function fetchHeatSignals(): Promise<CoreSignal[]> {
+  const out: CoreSignal[] = [];
+  for (const kind of ["sauna", "saunaTemp"]) {
+    try {
+      const data = await fetchJson<{ signals?: { id?: string; userId: string; kind: string; value: number; unit: string; source: string; ts: string }[] }>(
+        `/api/signals?kind=${kind}`,
+      );
+      for (const s of data.signals ?? []) {
+        out.push({ athleteId: s.userId, kind: s.kind, value: s.value, unit: s.unit, source: s.source, ts: s.ts, id: s.id });
+      }
+    } catch {
+      /* soft — a missing heat history must never fail the screen it sits on */
+    }
+  }
+  return out;
+}
+
+/** Record a sitting. `ts` is the sitting's own instant, so a back-dated entry
+ *  keeps the clock the decay and the pair-matching both read. */
+export async function logHeat(minutes: number, tempC: number, ts = new Date().toISOString()): Promise<HeatLog | null> {
+  const post = async (kind: string, value: number, unit: string): Promise<string | null> => {
+    try {
+      const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+        body: JSON.stringify({ kind, value, unit, source: "manual", ts }),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as { signal?: { id?: string } };
+      return data.signal?.id ?? null;
+    } catch {
+      return null;
+    }
+  };
+  const minId = await post("sauna", minutes, "min");
+  if (!minId) return null;
+  const tempId = await post("saunaTemp", tempC, "C");
+  return { ids: tempId ? [minId, tempId] : [minId], minutes, tempC, ts };
+}
+
+/** Remove a sitting — every row it wrote, so a delete cannot orphan half of it. */
+export async function deleteHeat(ids: string[]): Promise<boolean> {
+  const results = await Promise.all(ids.map((id) => deleteSignal(id)));
+  return results.every(Boolean);
+}
+
 /** Remove one reading you own — the undo behind the water control. */
 export async function deleteSignal(id: string): Promise<boolean> {
   try {
@@ -917,7 +982,7 @@ export async function askAiCoach(): Promise<CoachNote> {
 }
 
 // ---- signals (Performance State time-series: recovery, body mass, nutrition…) ----
-export type CoreSignal = { athleteId: string; kind: string; value: number; unit: string; source: string; ts: string };
+export type CoreSignal = { athleteId: string; kind: string; value: number; unit: string; source: string; ts: string; id?: string };
 
 export async function fetchSignals(): Promise<CoreSignal[]> {
   try {

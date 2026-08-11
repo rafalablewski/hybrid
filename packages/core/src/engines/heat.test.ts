@@ -1,0 +1,245 @@
+import { describe, it, expect } from "vitest";
+import {
+  HEAT_CREDIT_MAX,
+  HEAT_FLOOR_C,
+  HEAT_INTENSITY_MAX,
+  HEAT_REF_C,
+  HEAT_SESSION_MIN_EQUIV,
+  HEAT_WINDOW_H,
+  heatAdjustment,
+  heatIntensity,
+  heatSittings,
+  heatWeeklyFrequency,
+  type HeatSignalRow,
+} from "./heat";
+import { computeReadiness } from "./readiness";
+import { readinessDeficit } from "./readiness-deficit";
+import { computeFatigue } from "./fatigue";
+import { heatRecovery, personalizeLandmarks } from "./landmark-profile";
+import type { Biometrics } from "./types";
+
+const HOUR = 3_600_000;
+const NOW = Date.parse("2026-08-12T07:10:00.000Z");
+
+/** Both rows one save writes, at one exact instant. */
+const sitting = (minutes: number, tempC: number | null, hoursAgo: number): HeatSignalRow[] => {
+  const ts = new Date(NOW - hoursAgo * HOUR).toISOString();
+  const rows: HeatSignalRow[] = [{ id: `m${hoursAgo}`, kind: "sauna", value: minutes, source: "manual", ts }];
+  if (tempC !== null) rows.push({ id: `t${hoursAgo}`, kind: "saunaTemp", value: tempC, source: "manual", ts });
+  return rows;
+};
+
+const bio = (): Biometrics => ({
+  hrv: { today: 60, baseline: 60, unit: "ms", better: "high", measured: true, ts: "2026-08-12T06:12:00.000Z" },
+  restingHr: { today: 50, baseline: 50, unit: "bpm", better: "low", measured: true },
+  sleep: { today: 8, baseline: 8, unit: "h", better: "high", measured: true },
+});
+
+describe("heatIntensity — the temperature ramp", () => {
+  it("is zero at and below the floor: a warm room is not a dose", () => {
+    expect(heatIntensity(HEAT_FLOOR_C)).toBe(0);
+    expect(heatIntensity(30)).toBe(0);
+    expect(heatIntensity(-5)).toBe(0);
+  });
+
+  it("is exactly 1 at the reference — an equivalent minute IS a minute there", () => {
+    expect(heatIntensity(HEAT_REF_C)).toBe(1);
+  });
+
+  it("reads the anchors the console prints", () => {
+    expect(heatIntensity(55)).toBeCloseTo(0.286, 3);
+    expect(heatIntensity(70)).toBeCloseTo(0.714, 3);
+    expect(heatIntensity(90)).toBeCloseTo(1.286, 3);
+    expect(heatIntensity(100)).toBeCloseTo(1.571, 3);
+  });
+
+  it("clamps, so a mistyped 150 cannot manufacture a dose nobody sat through", () => {
+    expect(heatIntensity(101)).toBeCloseTo(HEAT_INTENSITY_MAX, 2);
+    expect(heatIntensity(150)).toBe(HEAT_INTENSITY_MAX);
+    expect(heatIntensity(10_000)).toBe(HEAT_INTENSITY_MAX);
+  });
+
+  it("gives a non-finite input nothing rather than the ceiling", () => {
+    // Garbage in is not "the hottest sauna in the world" — the conservative
+    // answer is no credit, which is the same posture the clamp takes at the
+    // other end of the range.
+    expect(heatIntensity(NaN)).toBe(0);
+    expect(heatIntensity(Infinity)).toBe(0);
+  });
+});
+
+describe("heatSittings — two rows back into one sitting", () => {
+  it("groups the pair written at one exact instant", () => {
+    const [s] = heatSittings(sitting(22, 90, 9.5));
+    expect(s).toMatchObject({ minutes: 22, tempC: 90, assumedTemp: false });
+    expect(s!.equivMin).toBeCloseTo(28.29, 2);
+    expect(s!.ids).toEqual(["m9.5", "t9.5"]);
+  });
+
+  it("reads a missing temperature at the reference and MARKS it assumed", () => {
+    const [s] = heatSittings(sitting(20, null, 3));
+    expect(s).toMatchObject({ tempC: HEAT_REF_C, assumedTemp: true });
+    // Assumed still counts — it is marked, not discarded.
+    expect(s!.equivMin).toBe(20);
+  });
+
+  it("drops a temperature with no minutes beside it — that records nothing", () => {
+    const ts = new Date(NOW).toISOString();
+    expect(heatSittings([{ kind: "saunaTemp", value: 90, source: "manual", ts }])).toEqual([]);
+  });
+
+  it("keeps two sittings on one day apart, newest first", () => {
+    const rows = [...sitting(15, 80, 30), ...sitting(20, 90, 4)];
+    const out = heatSittings(rows);
+    expect(out).toHaveLength(2);
+    expect(out[0]!.minutes).toBe(20);
+    expect(out[1]!.minutes).toBe(15);
+  });
+
+  it("ignores unrelated kinds and unusable rows", () => {
+    const ts = new Date(NOW).toISOString();
+    const out = heatSittings([
+      { kind: "hrv", value: 60, source: "apple", ts },
+      { kind: "sauna", value: NaN, source: "manual", ts },
+      { kind: "sauna", value: 10, source: "manual", ts: "not-a-date" },
+    ]);
+    expect(out).toEqual([]);
+  });
+});
+
+describe("heatAdjustment — the worked morning the spec prints", () => {
+  it("22 min at 90 °C, 9.5 h ago, no wearable → +2", () => {
+    const h = heatAdjustment(sitting(22, 90, 9.5), { now: NOW });
+    expect(h.equivMin).toBeCloseTo(28.29, 2);
+    expect(h.dose).toBeCloseTo(2.545, 2);
+    expect(h.decay).toBeCloseTo(0.694, 2);
+    expect(h.points).toBe(2);
+    expect(h.suppressed).toBe(false);
+  });
+
+  it("the SAME 22 minutes at 55 °C is worth half as much — the whole reason temperature is collected", () => {
+    expect(heatAdjustment(sitting(22, 55, 9.5), { now: NOW }).points).toBe(1);
+  });
+
+  it("never exceeds the cap, however long the sitting", () => {
+    const h = heatAdjustment(sitting(180, 100, 0), { now: NOW });
+    expect(h.points).toBeLessThanOrEqual(HEAT_CREDIT_MAX);
+  });
+
+  it("is never negative — there is no cost term, by design", () => {
+    for (const [min, t, h] of [[5, 50, 1], [60, 100, 0], [1, 45, 47]] as const) {
+      expect(heatAdjustment(sitting(min, t, h), { now: NOW }).points).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("decays: the same sitting is worth less this evening than it was this morning", () => {
+    const early = heatAdjustment(sitting(30, 90, 2), { now: NOW }).points;
+    const late = heatAdjustment(sitting(30, 90, 30), { now: NOW }).points;
+    expect(late).toBeLessThan(early);
+  });
+
+  it("drops out entirely past the window", () => {
+    const h = heatAdjustment(sitting(30, 90, HEAT_WINDOW_H + 1), { now: NOW });
+    expect(h.sittings).toEqual([]);
+    expect(h.points).toBe(0);
+  });
+
+  it("ignores a sitting logged in the future", () => {
+    expect(heatAdjustment(sitting(30, 90, -5), { now: NOW }).sittings).toEqual([]);
+  });
+
+  /* THE RULE THE WHOLE MODULE EXISTS AROUND. */
+  it("SUPPRESSES to +0 when a fresh wearable reading exists — and says so", () => {
+    const h = heatAdjustment(sitting(22, 90, 9.5), { now: NOW, bio: bio() });
+    expect(h.points).toBe(0);
+    expect(h.suppressed).toBe(true);
+    // Suppressed is not the same as never computed: every figure survives, so
+    // the console can print the arithmetic AND the reason it was set aside.
+    expect(h.dose).toBeCloseTo(2.545, 2);
+    expect(h.equivMin).toBeCloseTo(28.29, 2);
+  });
+
+  it("reports no suppression when there was nothing to suppress", () => {
+    expect(heatAdjustment([], { now: NOW, bio: bio() }).suppressed).toBe(false);
+  });
+
+  it("flags an assumed temperature so a surface can mark it", () => {
+    expect(heatAdjustment(sitting(20, null, 2), { now: NOW }).assumed).toBe(true);
+    expect(heatAdjustment(sitting(20, 90, 2), { now: NOW }).assumed).toBe(false);
+  });
+});
+
+describe("readiness carries the term without breaking its own laws", () => {
+  const log = [{ daysAgo: 1, items: [{ move: "Back Squat", hardSets: 5, topRpe: 8 }] }];
+
+  it("adds the credit to the score", () => {
+    const f = computeFatigue(log);
+    expect(computeReadiness(f, undefined, 2).score).toBe(computeReadiness(f, undefined, 0).score + 2);
+  });
+
+  it("still clamps at the ceiling", () => {
+    const f = computeFatigue([]);
+    expect(computeReadiness(f, undefined, HEAT_CREDIT_MAX).score).toBeLessThanOrEqual(98);
+  });
+
+  it("omitting it scores exactly what the engine scored before heat existed", () => {
+    const f = computeFatigue(log);
+    expect(computeReadiness(f).score).toBe(computeReadiness(f, undefined, 0).score);
+  });
+
+  /* THE SUM LAW — kept + every cost ≡ 100, with or without a credit. */
+  it("keeps the deficit's sum law with a heat credit applied", () => {
+    for (const heat of [0, 1, 2, 3]) {
+      const d = readinessDeficit(log, undefined, heat);
+      expect(d.kept + d.costs.reduce((a, c) => a + c.points, 0)).toBe(100);
+    }
+  });
+
+  it("gives the credit NO arc — it shrinks the deficit instead", () => {
+    const none = readinessDeficit(log, undefined, 0);
+    const some = readinessDeficit(log, undefined, 3);
+    expect(some.kept).toBeGreaterThan(none.kept);
+    expect(some.costs.map((c) => c.kind)).toEqual(none.costs.map((c) => c.kind));
+    expect(some.heatAdj).toBe(3);
+  });
+});
+
+describe("the chronic channel", () => {
+  const weekly = (n: number, minutes = 20, tempC = 90): HeatSignalRow[] =>
+    Array.from({ length: n }, (_, i) => sitting(minutes, tempC, 6 + i * 12)).flat();
+
+  it("averages sittings per week across the window", () => {
+    // 8 sittings in the last 4 weeks = 2/wk
+    expect(heatWeeklyFrequency(weekly(8), NOW)).toBe(2);
+  });
+
+  it("does not count a sitting below the equivalent-minute floor", () => {
+    // 5 min at 50 °C = 0.7 equiv — a token visit is not a session.
+    const token = weekly(8, 5, 50);
+    expect(heatSittings(token)[0]!.equivMin).toBeLessThan(HEAT_SESSION_MIN_EQUIV);
+    expect(heatWeeklyFrequency(token, NOW)).toBe(0);
+  });
+
+  it("tiers the multiplier, and caps it at 4%", () => {
+    expect(heatRecovery(0)).toBe(1);
+    expect(heatRecovery(1.5)).toBe(1);
+    expect(heatRecovery(2)).toBe(1.02);
+    expect(heatRecovery(3.9)).toBe(1.02);
+    expect(heatRecovery(4)).toBe(1.04);
+    expect(heatRecovery(14)).toBe(1.04);
+  });
+
+  it("raises MRV and records itself as a named factor", () => {
+    const without = personalizeLandmarks({ experience: "intermediate" });
+    const with4 = personalizeLandmarks({ experience: "intermediate", heat: 4 });
+    expect(with4.recovery).toBeGreaterThan(without.recovery);
+    const f = with4.factors.find((x) => x.key === "heat");
+    expect(f).toMatchObject({ affects: "recovery", multiplier: 1.04 });
+    expect(f!.value).toContain("sauna");
+  });
+
+  it("does NOT stand down for a wearable — it is a four-week timescale", () => {
+    // No bio anywhere in this call: the chronic channel never consults one.
+    expect(personalizeLandmarks({ heat: 4 }).recovery).toBeCloseTo(1.04, 5);
+  });
+});

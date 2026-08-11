@@ -19,6 +19,10 @@ import type { Biometrics, MuscleGroup, TrainingLog } from "./types";
 import { computeFatigue } from "./fatigue";
 import { biometricDeviations, computeReadiness, MUSCLE_SLOPE, ENDURANCE_SLOPE, READINESS_FLOOR, READINESS_CEILING } from "./readiness";
 import { readinessDeficit, type ReadinessCostKind } from "./readiness-deficit";
+import {
+  HEAT_CREDIT_MAX, HEAT_FLOOR_C, HEAT_HALF_LIFE_H, HEAT_INTENSITY_MAX,
+  HEAT_REF_C, HEAT_TAU_MIN, HEAT_WINDOW_H, type HeatAdjustment,
+} from "./heat";
 import { computeHpi, enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
 import {
   calibrateRisk,
@@ -65,13 +69,13 @@ const MUSCLE_LABEL: Record<MuscleGroup, string> = {
 };
 
 /** Readiness, derived step by step from the athlete's own inputs. */
-export function deriveReadiness(log: TrainingLog, bio?: Biometrics): Derivation {
+export function deriveReadiness(log: TrainingLog, bio?: Biometrics, heat?: HeatAdjustment): Derivation {
   const fatigue = computeFatigue(log);
   const vals = ALL_MUSCLES.map((m) => fatigue.muscles[m]);
   const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   const endFat = enduranceFatigue(fatigue);
   const base = 100 - avg * MUSCLE_SLOPE - endFat * ENDURANCE_SLOPE;
-  const live = computeReadiness(fatigue, bio);
+  const live = computeReadiness(fatigue, bio, heat?.points ?? 0);
 
   const steps: DerivationStep[] = [
     {
@@ -116,15 +120,52 @@ export function deriveReadiness(log: TrainingLog, bio?: Biometrics): Derivation 
     steps.push({ label: "Wearable adjustment", math: "no signals → +0" });
   }
 
+  // ── THE HEAT PRIOR ────────────────────────────────────────────────────────
+  // Printed WHENEVER a sitting is in the window, including — especially — when
+  // the wearable suppressed it. A term that silently reads +0 is
+  // indistinguishable from a term that was never computed, and the suppression
+  // rule is the whole design of engines/heat.ts. If it does not appear here it
+  // cannot be audited anywhere.
+  if (heat && heat.sittings.length > 0) {
+    const sit = heat.sittings
+      .map((x) => `${f1(x.minutes)} min @ ${f1(x.tempC)}°C${x.assumedTemp ? " (assumed)" : ""} → ${f1(x.equivMin)}`)
+      .join(", ");
+    steps.push({
+      label: `Heat — sittings in the last ${HEAT_WINDOW_H} h`,
+      math: sit,
+      note: `intensity = clamp((T − ${HEAT_FLOOR_C}) / (${HEAT_REF_C} − ${HEAT_FLOOR_C}), 0, ${HEAT_INTENSITY_MAX}); minutes × intensity = equivalent minutes at ${HEAT_REF_C}°C`,
+    });
+    steps.push({
+      label: "Heat — dose",
+      math: `${HEAT_CREDIT_MAX} × (1 − e^(−${f1(heat.equivMin)} / ${HEAT_TAU_MIN})) = ${f2(heat.dose)}`,
+      note: "saturating: an hour is not twice a half hour",
+    });
+    steps.push({
+      label: "Heat — decay",
+      math: `0.5^(${f1(heat.hoursSince ?? 0)} / ${HEAT_HALF_LIFE_H}) = ${f2(heat.decay)}`,
+    });
+    steps.push({
+      label: "Heat adjustment",
+      math: heat.suppressed
+        ? `SUPPRESSED → +0${bio?.hrv.ts ? ` (wearable read ${bio.hrv.ts})` : " (fresh wearable reading)"}`
+        : `round(${f2(heat.dose)} × ${f2(heat.decay)}) = ${sign(heat.points)}`,
+      note: heat.suppressed
+        ? "a measurement beats a prior — the wearable already carries what the sauna did, so the prior stands down rather than stacking on it"
+        : `no fresh wearable reading, so the prior applies; capped at ${HEAT_CREDIT_MAX} — one fifth of the wearable's ±15`,
+    });
+  } else if (heat) {
+    steps.push({ label: "Heat adjustment", math: `no sitting in the last ${HEAT_WINDOW_H} h → +0` });
+  }
+
   steps.push({
     label: "Final score",
-    math: `clamp(round(${f1(base)} ${sign(live.bioAdj)}), ${READINESS_FLOOR}, ${READINESS_CEILING}) = ${live.score}`,
+    math: `clamp(round(${f1(base)} ${sign(live.bioAdj)} ${sign(live.heatAdj)}), ${READINESS_FLOOR}, ${READINESS_CEILING}) = ${live.score}`,
   });
 
   // WHERE THE MISSING POINTS WENT — the same split the athlete's ring draws,
   // printed here so the console and the card can be checked against each other
   // rather than trusted separately.
-  const split = readinessDeficit(log, bio);
+  const split = readinessDeficit(log, bio, heat?.points ?? 0);
   if (split.costs.length) {
     steps.push({
       label: "Deficit attribution (the athlete's ring)",
