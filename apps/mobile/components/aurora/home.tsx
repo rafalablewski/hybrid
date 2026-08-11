@@ -414,6 +414,11 @@ export default function AuroraHome() {
       onDone={() => setDoneOpen(true)}
       onRate={setRating}
       onDelete={async (s) => { await deleteSession(s.id); load(); }}
+      // In LOGBOOK mode the rail draws its own action pair on every day state,
+      // so the floor must not offer the same thing again — for one release both
+      // rendered, forty pixels apart, saying "Log a sport" twice. The PLAN rail
+      // has no pair of its own, so there the floor keeps the row.
+      logRow={!logbookMode}
     />
   );
 
@@ -937,6 +942,7 @@ export default function AuroraHome() {
               dayLabel={dayLabel}
               units={units}
               bw={bw}
+              onDelete={async (s) => { await deleteSession(s.id); load(); }}
               pad={CARD_PAD}
               rule={false}
               onOpen={(id) => router.push(`/session/${id}`)}

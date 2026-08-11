@@ -6,6 +6,7 @@ import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../..
 import { withAlpha } from "./kit";
 import { ArrowGlyph } from "./cta-label";
 import SwipeRow from "../swipe-row";
+import AActionPair from "./action-pair";
 import { useConfirm } from "./confirm";
 
 // ── AURORA Done floor (mobile) ──────────────────────────────────────────────
@@ -53,6 +54,7 @@ export default function DoneFloor({
   onDone,
   onRate,
   onDelete,
+  logRow = true,
 }: {
   /** every session logged on the VIEWED day, plan-fulfilling ones included. */
   rows: LoggedSession[];
@@ -80,6 +82,11 @@ export default function DoneFloor({
    *  opened it, and then you were in the session, which is the wrong place to
    *  decide it shouldn't exist. */
   onDelete?: (session: LoggedSession) => void;
+  /** Draw the "log a sport" row at the end of the list. False where the HOST
+   *  already offers that action — the logbook rail carries it in its own action
+   *  pair on every day state, and two identical offers on one card is the exact
+   *  duplication this floor's dashed tile was removed to end. */
+  logRow?: boolean;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -185,13 +192,18 @@ export default function DoneFloor({
             </SwipeRow>
           );
         })}
-        {isToday ? (
-          <Pressable onPress={onLog} accessibilityRole="button" accessibilityLabel={t(copy.logKey)} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.4) }}>
-              <Text style={{ fontSize: 17, color: C.ash }}>＋</Text>
-            </View>
-            <Text style={{ fontFamily: F.monoBold, fontSize: 12, color: txt(C, C.lime) }}>{t(copy.logKey)}</Text>
-          </Pressable>
+        {/* THE LOG ROW, and the dashed tile is finally gone. A dashed border is
+            a web affordance that appears nowhere in iOS, and the ＋ square read
+            as one more row in the list it sat at the end of. It is a neutral
+            capsule now — the same control AActionPair draws — so two offers of
+            the same thing can never look like different offers.
+
+            `logRow={false}` where the HOST already carries the action: the
+            logbook rail draws its own pair on every day state, and for one
+            release this row rendered underneath it saying the same words forty
+            pixels apart. One surface, one offer. */}
+        {isToday && logRow ? (
+          <AActionPair align="leading" actions={[{ label: t(copy.logKey), onPress: onLog }]} />
         ) : null}
       </View>
     </View>

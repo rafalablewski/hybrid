@@ -324,6 +324,31 @@ describe("presentation", () => {
     expect(alerts).toEqual([]);
   });
 
+  it("HARD — Today offers 'log a sport' ONCE per surface", () => {
+    // This shipped broken. The action pair landed on the logbook rail's EMPTY
+    // days while the done floor kept its own dashed +-tile, so an empty today
+    // drew two controls forty pixels apart saying "Log a sport" — and a LOGGED
+    // day got no pair at all, which left a past day with training on it no way
+    // to add the match it forgot. Three static invariants, because the failure
+    // was structural and a screenshot caught it a release later than a test
+    // would have:
+    const file = (needle: string) => FILES.find((f) => f.path.endsWith(needle));
+
+    // 1. The floor draws no dashed tile. A dashed border is a web affordance,
+    //    and the +-square read as one more row in the list it ended.
+    const floor = file("aurora/done-floor.tsx")!;
+    expect(floor.text).not.toMatch(/borderStyle:\s*"dashed"/);
+
+    // 2. The rail offers the pair in BOTH day states — logged and empty.
+    const rail = file("aurora/logbook-rail.tsx")!;
+    expect(rail.text.match(/<AActionPair/g) ?? []).toHaveLength(2);
+
+    // 3. And the screen suppresses the floor's own row wherever the rail
+    //    already carries one, so the two can never both render.
+    const home = file("aurora/home.tsx")!;
+    expect(home.text).toMatch(/logRow=\{!logbookMode\}/);
+  });
+
   it("HARD — the two week rails wear ONE separation device", () => {
     // The logbook rail and the plan week rail are the SAME object in two modes:
     // enrolling changes the card's fill, never its shape. Their surface used to

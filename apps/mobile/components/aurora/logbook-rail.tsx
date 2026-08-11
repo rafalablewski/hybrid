@@ -269,6 +269,12 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
   // then; the finishing clock that survived them has gone too (it named the
   // first workout of a day the figures beside it summed whole). The receipt is
   // its figures.
+  // The sport label names its target day whenever that day is not today, so a
+  // button pressed on Saturday's page cannot be read as logging into now.
+  const sportLabel = day.isToday
+    ? t("w.home.today.alsoTodayLogSport")
+    : t("w.home.logbook.sportOn").replace("{day}", day.weekdayShort);
+
   if (day.logged) {
     return (
       <View>
@@ -279,6 +285,19 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
           stamp={stamp}
         />
         {doneFloor}
+        {/* THE SAME PAIR A LOGGED DAY GETS. It shipped on EMPTY days only for a
+            release, which quietly broke the rule the whole arrangement exists
+            for: a day that already holds training is exactly when a hybrid
+            athlete logs the second thing, and a PAST logged day had no way to
+            add the match it forgot at all. Neither action is filled here — the
+            work is real, so the accent retires. */}
+        <AActionPair
+          align="leading"
+          actions={[
+            ...(day.isToday ? [{ label: t("w.home.today.alsoTodayLogFirst"), onPress: onLog }] : []),
+            ...(onLogSport ? [{ label: sportLabel, onPress: () => onLogSport(day) }] : []),
+          ]}
+        />
         <Pressable
           onPress={onHistory}
           accessibilityRole="button"
@@ -304,10 +323,6 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
   // PAST day offers the sport alone, named and dated to that day: you cannot
   // start a live session in a day that has already happened, but you can very
   // much have played on Saturday and forgotten to log it.
-  const sportLabel = day.isToday
-    ? t("w.home.today.alsoTodayLogSport")
-    : t("w.home.logbook.sportOn").replace("{day}", day.weekdayShort);
-
   return (
     <View>
       {!!stamp && (
@@ -323,10 +338,13 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
           ]}
         />
       </AEmptyDay>
-      {/* Today keeps its floor — the quick-log ghost row and the day's sessions
-          live there. A past day gets none: the block above already says nothing
-          was logged, so the floor could only repeat it in smaller type. */}
-      {day.isToday ? doneFloor : null}
+      {/* NO FLOOR ON AN EMPTY DAY, today included. A logbook day is `logged`
+          exactly when it holds sessions, so on this branch the floor has zero
+          rows by definition — all it can draw is its empty caption ("a match, a
+          run, a swim — it lands here"), which would be the third time this block
+          said the same thing: once in the description, once on the button, once
+          in the caption. The floor returns the moment the day holds something
+          to list. */}
     </View>
   );
 }
