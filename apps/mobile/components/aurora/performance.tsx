@@ -10,13 +10,13 @@ import {
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
   velocityProfiles, hpiRole, hpiBandKey, readinessRole, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
   readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
-  readinessFacts, KEPT_ARC_ALPHA,
+  readinessFacts, KEPT_ARC_ALPHA, heatAdjustment,
   localDayKey, INJURY_AREA_KEY,
   freshnessExplain, wearableExplain, wearableSourcePhrase,
   type CapabilityMovement, type FreshnessPillar, type ReadinessFact, type RingSegment, type SemanticRole,
   type WearableExplain,
 } from "@hybrid/core";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, combineReads } from "../../lib/queries";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
@@ -120,6 +120,9 @@ function Full({ top }: { top?: ReactNode }) {
   const { refreshing, failed } = combineReads(sessionsRead, signalsRead, macroRead, checkinsRead);
   const sessions = sessionsRead.data ?? [];
   const signals = signalsRead.data ?? [];
+  // Fetched by KIND rather than sliced out of `signals` — that stream is the
+  // newest rows of any kind, and the food log writes up to eight per meal.
+  const { data: heatSignals = [] } = useHeatSignalsQuery();
   const checkins = checkinsRead.data ?? [];
   const macro = macroRead.data?.macro ?? null;
   const currentWeek = macroRead.data?.currentWeek ?? 1;
@@ -154,17 +157,25 @@ function Full({ top }: { top?: ReactNode }) {
   );
   // ONE velocityProfiles pass, shared by the prescription and the exits.
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
-  const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined }), [log, bio, profiles, todayFeeling]);
+  // THE HEAT PRIOR. It is computed here rather than inside each engine because
+  // every figure on this block has to come from ONE reading of the day — the
+  // ring, the ledger, the facts and the prescription all take the same number,
+  // so they cannot tell four stories about one sauna. `heatAdjustment` also
+  // zeroes itself whenever `bio` is fresh, so passing the same `bio` the rest
+  // of the block reads is what keeps the prior from ever stacking on a
+  // measurement.
+  const heatAdj = useMemo(() => heatAdjustment(heatSignals, { bio }).points, [heatSignals, bio]);
+  const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined, heatAdj }), [log, bio, profiles, todayFeeling, heatAdj]);
   // The block's face, and the measured inputs behind its door. `readinessFacts`
   // carries only what the ledger's rows CAN'T — the limiting tissue's own
   // fatigue, the energy-system load, and a wearable nudge that has no row at
   // all when it gave points back.
   const verdictReadiness = useMemo(() => readinessVerdict(log, bio), [log, bio]);
-  const facts = useMemo(() => readinessFacts(log, bio), [log, bio]);
+  const facts = useMemo(() => readinessFacts(log, bio, heatAdj), [log, bio, heatAdj]);
   // The ring accounts for the whole 100: what today kept, and what each cause
   // took. `kept` IS the score the figure prints, so the arcs and the number can
   // never be two readings of the same day.
-  const deficit = useMemo(() => readinessDeficit(log, bio), [log, bio]);
+  const deficit = useMemo(() => readinessDeficit(log, bio, heatAdj), [log, bio, heatAdj]);
   const ringTicks = useMemo(() => readinessRingTicks(deficit), [deficit]);
   // The same runs the ticks are built from — the bar below the door draws these
   // directly, so it can't disagree with the arcs above it.

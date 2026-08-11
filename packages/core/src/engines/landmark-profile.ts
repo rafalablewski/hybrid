@@ -283,12 +283,20 @@ export function personalizeLandmarks(
   stimulus = clamp(stimulus, STIMULUS_BOUNDS[0], STIMULUS_BOUNDS[1]);
   recovery = clamp(recovery, RECOVERY_BOUNDS[0], RECOVERY_BOUNDS[1]);
 
-  const supplied = [exp, age, bw, sleep, stress, profile.nutrition, days, heat].filter((v) => v !== undefined && v !== null).length;
-  const personalized = supplied > 0;
+  // HEAT IS DELIBERATELY NOT IN THIS LIST. Confidence asks how much of the
+  // profile we actually know, and every other field here is one EVERY athlete
+  // has — a bodyweight, a sleep score, a training frequency. A sauna habit is
+  // not: an athlete who has never sat in one has nothing to supply, so counting
+  // it would cap them below full confidence forever for declining an optional
+  // practice, and would have quietly dropped every existing athlete from 1.0 to
+  // 0.9 the day this shipped. It moves the multiplier; it does not judge how
+  // well we know them.
+  const supplied = [exp, age, bw, sleep, stress, profile.nutrition, days].filter((v) => v !== undefined && v !== null).length;
+  const personalized = supplied > 0 || heat !== undefined;
   // Experience is worth more than any other single input, so a profile with
   // only experience already clears half-confidence.
   const weight = (exp ? 3 : 0) + supplied - (exp ? 1 : 0);
-  const confidence = personalized ? clamp(weight / 10, 0.15, 1) : 0;
+  const confidence = personalized ? clamp(weight / 9, 0.15, 1) : 0;
 
   factors.sort((a, b) => Math.abs(1 - b.multiplier) - Math.abs(1 - a.multiplier));
 

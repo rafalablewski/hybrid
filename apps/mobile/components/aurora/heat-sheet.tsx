@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import {
   HEAT_MINUTES_BOUNDS,
@@ -77,6 +77,20 @@ export function HeatSheet({
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
 
+  // The clock is re-read every time the sheet OPENS, not once when it mounts.
+  // This component stays alive behind Today for as long as the app is open, so
+  // a `useState(new Date())` default silently ages: open the sheet after supper
+  // and it would offer to record the sitting at whenever Today first rendered.
+  // That is the one field the decay in engines/heat.ts and the phase-4 pair
+  // matching both read, so a stale default is not cosmetic. Minutes and °C are
+  // deliberately NOT reset — a sauna habit is the same sauna, and re-offering
+  // last night's numbers is right.
+  useEffect(() => {
+    if (!visible) return;
+    setWhen(initialAt ?? new Date());
+    setMsg("");
+  }, [visible, initialAt]);
+
   const equiv = useMemo(() => minutes * heatIntensity(tempC), [minutes, tempC]);
   // Zero equivalent minutes is a real answer, not an error: below the floor the
   // room is warm rather than thermally stressful, and the sheet says so instead
@@ -118,7 +132,7 @@ export function HeatSheet({
       {LIQUID_GLASS_SUPPORTED ? (
         <GlassSegment
           options={MINUTE_PRESETS.map((m) => ({ id: String(m), label: `${m}` }))}
-          value={String(MINUTE_PRESETS.includes(minutes) ? minutes : MINUTE_PRESETS[0])}
+          value={String(minutes)}
           onPick={(v) => setMinutes(Number(v))}
           accent={C.amber}
         />
@@ -149,7 +163,7 @@ export function HeatSheet({
       {LIQUID_GLASS_SUPPORTED ? (
         <GlassSegment
           options={TEMP_PRESETS.map((v) => ({ id: String(v), label: `${v}°` }))}
-          value={String(TEMP_PRESETS.includes(tempC) ? tempC : HEAT_REF_C)}
+          value={String(tempC)}
           onPick={(v) => setTempC(Number(v))}
           accent={C.amber}
         />

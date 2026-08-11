@@ -132,24 +132,26 @@ type WhatIfState = {
   /** A simulated sitting: minutes, °C, and how long ago. Null = leave the
    *  athlete's real heat log alone (0 minutes is how you ask for "none"). */
   heatMinutes: number | null; heatTempC: number; heatHoursAgo: number;
+  /** Run the stack as if this athlete had no wearable at all. */
+  noWearable: boolean;
 };
 const WHATIF_OFF: WhatIfState = {
   loadPct: 100, hrv: null, restingHr: null, sleep: null,
-  heatMinutes: null, heatTempC: HEAT_REF_C, heatHoursAgo: 10,
+  heatMinutes: null, heatTempC: HEAT_REF_C, heatHoursAgo: 10, noWearable: false,
 };
 
 type Scenario = { id: string; name: string; whatIf: WhatIfState };
 
 /** Ready-made scenarios so comparison starts with one click. Biometric
  *  overrides are RELATIVE (pct of baseline) so they fit any athlete. */
-const SCENARIO_PRESETS: { name: string; loadPct: number; hrvPct?: number; sleepH?: number; heatMinutes?: number; heatTempC?: number }[] = [
+const SCENARIO_PRESETS: { name: string; loadPct: number; hrvPct?: number; sleepH?: number; heatMinutes?: number; heatTempC?: number; noWearable?: boolean }[] = [
   { name: "Crashed recovery", loadPct: 100, hrvPct: 65, sleepH: 5 },
   { name: "Eased week (50%)", loadPct: 50 },
   { name: "Overreached (150%)", loadPct: 150 },
   // Heat only ever shows on an athlete with NO fresh wearable — the prior
   // stands down for a measurement — so the preset that demonstrates it has to
   // be one, or the panel reads +0 and the slider looks broken.
-  { name: "No wearable, sauna last night", loadPct: 100, heatMinutes: 25, heatTempC: 90 },
+  { name: "No wearable, sauna last night", loadPct: 100, heatMinutes: 25, heatTempC: 90, noWearable: true },
 ];
 
 // Feeling accent → the app's semantic tokens (same mapping READINESS_FACE uses).
@@ -224,7 +226,7 @@ export default function EngineRoom() {
 
   const whatIfActive =
     whatIf.loadPct !== 100 || whatIf.hrv != null || whatIf.restingHr != null || whatIf.sleep != null ||
-    whatIf.heatMinutes != null;
+    whatIf.heatMinutes != null || whatIf.noWearable;
 
   // Frozen once per athlete: `heatAdjustment` decays against the clock, and a
   // console whose arithmetic drifts between two renders cannot be checked
@@ -249,6 +251,7 @@ export default function EngineRoom() {
             hrv: whatIf.hrv ?? undefined,
             restingHr: whatIf.restingHr ?? undefined,
             sleep: whatIf.sleep ?? undefined,
+            noWearable: whatIf.noWearable,
           })
         : bio,
     [whatIfActive, bio, whatIf],
@@ -284,7 +287,8 @@ export default function EngineRoom() {
     () =>
       scenarios.map((s) => {
         const active =
-          s.whatIf.loadPct !== 100 || s.whatIf.hrv != null || s.whatIf.restingHr != null || s.whatIf.sleep != null;
+          s.whatIf.loadPct !== 100 || s.whatIf.hrv != null || s.whatIf.restingHr != null ||
+          s.whatIf.sleep != null || s.whatIf.heatMinutes != null || s.whatIf.noWearable;
         const t = active
           ? computeEngineTrace(
               whatIfLog(log, s.whatIf.loadPct),
@@ -292,8 +296,16 @@ export default function EngineRoom() {
                 hrv: s.whatIf.hrv ?? undefined,
                 restingHr: s.whatIf.restingHr ?? undefined,
                 sleep: s.whatIf.sleep ?? undefined,
+                noWearable: s.whatIf.noWearable,
               }),
-              { weights, coeffs, spikeOnset },
+              {
+                weights, coeffs, spikeOnset, now,
+                heatSignals: whatIfHeat(heatSignals, {
+                  heatMinutes: s.whatIf.heatMinutes ?? undefined,
+                  heatTempC: s.whatIf.heatTempC,
+                  heatHoursAgo: s.whatIf.heatHoursAgo,
+                }, now),
+              },
             )
           : base;
         return { ...s, trace: t };
@@ -313,6 +325,7 @@ export default function EngineRoom() {
       restingHr: null,
       sleep: p.sleepH ?? null,
       ...(p.heatMinutes != null ? { heatMinutes: p.heatMinutes, heatTempC: p.heatTempC ?? HEAT_REF_C } : {}),
+      noWearable: !!p.noWearable,
     });
   };
 
@@ -554,6 +567,23 @@ export default function EngineRoom() {
             step={1}
             onChange={(v) => setWhatIf({ ...whatIf, heatHoursAgo: v })}
           />
+          {/* NOT a slider, because it is not a magnitude. The three overrides
+              above can only retune a reading; they cannot ask the question most
+              athletes are the answer to. It matters here specifically: the heat
+              prior stands down for ANY fresh wearable read, so on an athlete
+              who owns a watch there is otherwise no way to see that term do
+              anything at all. */}
+          <div style={{ display: "grid", gap: 6, alignContent: "start" }}>
+            <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }}>Wearable</Mono>
+            <Button
+              label={whatIf.noWearable ? "No wearable — simulating" : "Simulate no wearable"}
+              variant={whatIf.noWearable ? "fill" : "outline"}
+              onClick={() => setWhatIf({ ...whatIf, noWearable: !whatIf.noWearable })}
+            />
+            <Mono s={{ fontSize: fs.nano, lineHeight: 1.5 }}>
+              Drops the biometric term entirely, the way it drops for an athlete with no device.
+            </Mono>
+          </div>
           <Slider
             label="Resting HR today"
             disabled={!bio}

@@ -15,7 +15,9 @@ import {
 import { computeReadiness } from "./readiness";
 import { readinessDeficit } from "./readiness-deficit";
 import { computeFatigue } from "./fatigue";
-import { heatRecovery, personalizeLandmarks } from "./landmark-profile";
+import { heatRecovery, personalizeLandmarks, sanitizeVolumeProfile } from "./landmark-profile";
+import { measuredProfile, withMeasured, measuredFields } from "./landmark-context";
+import { whatIfBio, whatIfHeat } from "./engine-room";
 import type { Biometrics } from "./types";
 
 const HOUR = 3_600_000;
@@ -241,5 +243,72 @@ describe("the chronic channel", () => {
   it("does NOT stand down for a wearable — it is a four-week timescale", () => {
     // No bio anywhere in this call: the chronic channel never consults one.
     expect(personalizeLandmarks({ heat: 4 }).recovery).toBeCloseTo(1.04, 5);
+  });
+});
+
+/* ── REGRESSIONS THE REVIEW PASS FOUND ─────────────────────────────────────── */
+
+describe("heat reaches the volume model without being asked for", () => {
+  it("is DERIVED into the profile as a measured field", () => {
+    const m = measuredProfile({ heatSignals: [...sitting(20, 90, 12), ...sitting(20, 90, 36)] });
+    expect(m.heat).toBeGreaterThan(0);
+    expect(m.measured).toContain("heat");
+    expect(withMeasured({}, m).heat).toBe(m.heat);
+    expect(measuredFields({}, m).has("heat")).toBe(true);
+  });
+
+  it("says nothing when there is nothing to measure — an absence is not a finding", () => {
+    const m = measuredProfile({});
+    expect(m.heat).toBeUndefined();
+    expect(m.measured).not.toContain("heat");
+  });
+
+  it("can never be persisted as a typed field — it is always derived", () => {
+    expect(sanitizeVolumeProfile({ heat: 4, sleep: 3 })).toEqual({ sleep: 3 });
+  });
+});
+
+describe("landmark confidence is not taxed by an optional practice", () => {
+  const full = {
+    experience: "intermediate", ageYears: 30, bodyweightKg: 80,
+    sleep: 4, stress: 2, nutrition: "maintenance", daysPerWeek: 4,
+  } as const;
+
+  it("a fully-supplied profile still reads full confidence with no sauna", () => {
+    expect(personalizeLandmarks(full).confidence).toBe(1);
+  });
+
+  it("…and logging a sauna does not change that confidence either way", () => {
+    expect(personalizeLandmarks({ ...full, heat: 4 }).confidence)
+      .toBe(personalizeLandmarks(full).confidence);
+  });
+
+  it("heat alone still counts as personalized — the multiplier really moved", () => {
+    const only = personalizeLandmarks({ heat: 4 });
+    expect(only.personalized).toBe(true);
+    expect(only.recovery).toBeCloseTo(1.04, 5);
+  });
+});
+
+describe("the what-if can ask the question most athletes are the answer to", () => {
+  it("noWearable REMOVES the term rather than neutralising it", () => {
+    expect(whatIfBio(bio(), { noWearable: true })).toBeUndefined();
+    // Neutralising would leave `bio` defined, which is what every
+    // "has this athlete been measured" gate reads — including suppression.
+    expect(whatIfBio(bio(), {})).toBeDefined();
+  });
+
+  it("which is the only way to see the prior fire on an athlete who owns a watch", () => {
+    const rows = sitting(25, 90, 6);
+    expect(heatAdjustment(rows, { now: NOW, bio: bio() }).points).toBe(0);
+    expect(heatAdjustment(rows, { now: NOW, bio: whatIfBio(bio(), { noWearable: true }) }).points).toBeGreaterThan(0);
+  });
+
+  it("whatIfHeat leaves the real log alone unless asked, and 0 means none", () => {
+    const rows = sitting(25, 90, 6);
+    expect(whatIfHeat(rows, {}, NOW)).toBe(rows);
+    expect(whatIfHeat(rows, { heatMinutes: 0 }, NOW)).toEqual([]);
+    const sim = whatIfHeat(rows, { heatMinutes: 30, heatTempC: 100, heatHoursAgo: 2 }, NOW);
+    expect(heatSittings(sim)[0]).toMatchObject({ minutes: 30, tempC: 100 });
   });
 });

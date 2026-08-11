@@ -12,6 +12,7 @@ import {
   FUNNEL,
   personalTrainingLog,
   toBiometrics,
+  heatAdjustment,
   velocityProfiles,
   readinessRole,
   quickCheckinFeeling,
@@ -61,7 +62,7 @@ import {
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
@@ -277,6 +278,7 @@ export default function AuroraHome() {
   // treating a reading as fresh past its last day — the same defect the daily
   // check-in already guards this way.
   const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals, today]);
+  const { data: heatSignals = [] } = useHeatSignalsQuery();
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   // TODAY's readiness feeling (independent of the rail's selected day) → feeds
   // the prescription so the one-tap check-in mechanically scales today's load.
@@ -334,9 +336,13 @@ export default function AuroraHome() {
     () => decisiveFeeling(todayReads) ?? quickCheckinFeeling(todayCheckin),
     [todayReads, todayCheckin],
   );
+  // The heat prior, from the sittings the athlete typed. Zero whenever `bio`
+  // carries a fresh reading — the wearable already measures what the sauna did,
+  // so the prior stands down rather than stacking on it (engines/heat.ts).
+  const heatAdj = useMemo(() => heatAdjustment(heatSignals, { bio }).points, [heatSignals, bio]);
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined }),
-    [log, sessions, bio, prefExp, prefEquip, todayFeeling],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj }),
+    [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();

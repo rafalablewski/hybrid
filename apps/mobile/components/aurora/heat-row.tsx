@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import {
   HEAT_SESSION_MIN_EQUIV,
@@ -8,7 +8,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { fs, F, PressScale } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { fetchHeatSignals } from "../../lib/api";
+import { useHeatSignalsQuery, useRevalidate } from "../../lib/queries";
 import { ACard, RADIUS } from "./kit";
 import { HeatSheet } from "./heat-sheet";
 
@@ -35,12 +35,11 @@ export function HeatRow() {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const [open, setOpen] = useState(false);
-  const [rows, setRows] = useState<Awaited<ReturnType<typeof fetchHeatSignals>>>([]);
-
-  const load = useCallback(() => {
-    fetchHeatSignals().then(setRows).catch(() => {});
-  }, []);
-  useEffect(load, [load]);
+  // The SHARED cache entry, not a private fetch: today's readiness ring and the
+  // volume model read the same rows, so a sitting saved here has to invalidate
+  // the one thing they all read or the row updates and the score does not.
+  const { data: rows = [] } = useHeatSignalsQuery();
+  const revalidate = useRevalidate();
 
   // This calendar week's sittings, counted the way the engine counts them.
   const week = useMemo(() => {
@@ -85,7 +84,7 @@ export function HeatRow() {
         </ACard>
       </PressScale>
 
-      <HeatSheet visible={open} onClose={() => setOpen(false)} onLogged={load} />
+      <HeatSheet visible={open} onClose={() => setOpen(false)} onLogged={revalidate.heat} />
     </>
   );
 }

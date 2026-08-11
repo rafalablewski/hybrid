@@ -7,7 +7,7 @@ import {
   readReports, placeReads, QUICK_CHECKIN_METRIC,
   type AthleteVolumeProfile, type LoggedSession, type RecoveryReport,
 } from "@hybrid/core";
-import { useCheckinsQuery } from "./queries";
+import { useCheckinsQuery, useHeatSignalsQuery } from "./queries";
 import { useLoggerPrefs, setLoggerPref } from "./logger-prefs";
 import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
 import { useFitnessLevel } from "./use-fitness-level";
@@ -43,6 +43,9 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // Body & progress) rather than being asked for a second time here.
   const loggedHeightCm = useAthleteHeight();
   const { data: checkins = [] } = useCheckinsQuery();
+  // Heat is a MEASURED profile field — there is no form for it and there is not
+  // going to be one, because the athlete already told us by logging.
+  const { data: heatSignals = [] } = useHeatSignalsQuery();
   const [intake, setIntake] = useState<{ experience?: Experience; daysPerWeek?: number }>({});
   useEffect(() => {
     let alive = true;
@@ -83,7 +86,7 @@ export function useVolumeModel(sessions: LoggedSession[]) {
       }),
     [checkins, sessionEnds],
   );
-  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm }), [recovery, bodyweightPoints, loggedHeightCm]);
+  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, heatSignals }), [recovery, bodyweightPoints, loggedHeightCm, heatSignals]);
   const measuredKeys = useMemo(() => {
     const keys = measuredFields(prefs.volumeProfile, measured);
     // Body mass is measured too — it comes from the bodyweight log, not this form.

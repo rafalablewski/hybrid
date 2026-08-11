@@ -765,6 +765,16 @@ export interface WhatIf {
   heatMinutes?: number;
   heatTempC?: number;
   heatHoursAgo?: number;
+  /**
+   * Answer the stack as if this athlete had NO wearable at all.
+   *
+   * Not the same question as "what if their HRV were low", which is all the
+   * three overrides above can ask. Most athletes have no wearable, the
+   * biometric term drops out entirely after BIOMETRIC_FRESH_DAYS — and the heat
+   * prior only ever fires when it is absent, so without this there is no way to
+   * see that term do anything on an athlete who owns a watch.
+   */
+  noWearable?: boolean;
 }
 
 /** Scale the last `recentDays` of training by `loadPct`% (sets and minutes). */
@@ -787,6 +797,10 @@ export function whatIfLog(log: TrainingLog, loadPct = 100, recentDays = 7): Trai
 
 /** Override today's wearable readings (what-if) without moving the baselines. */
 export function whatIfBio(bio: Biometrics | undefined, w: WhatIf): Biometrics | undefined {
+  // Remove it entirely rather than neutralising it: a neutralised metric still
+  // makes `bio` defined, which is what every "has this athlete been measured"
+  // gate reads — including the heat prior's suppression rule.
+  if (w.noWearable) return undefined;
   if (!bio) return undefined;
   const set = (m: BiometricMetric, v?: number): BiometricMetric =>
     v == null ? m : { ...m, today: v };
