@@ -1836,7 +1836,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               </Pressable>
             );
           })}
-          <Pressable onPress={() => setCompPicker(false)} style={{ marginTop: 10, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center" }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.done")}</Text></Pressable>
+          <APill label={t("w.recovery.nutrition.done")} onPress={() => setCompPicker(false)} style={{ marginTop: 10 }} />
         </Sheet>
       </AuroraScreen>
     );
@@ -2025,9 +2025,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <IPlus size={16} color={txt(C, C.lime)} strokeWidth={2.2} />
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveToFoods")}</Text>
           </Pressable>
-          <Pressable onPress={() => logFood(hit)} accessibilityRole="button" style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16 }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.logThis")}</Text>
-          </Pressable>
+          <APill label={t("w.recovery.nutrition.logThis")} onPress={() => logFood(hit)} style={{ flex: 1 }} />
         </View>
         {renderPortionSheet()}
       </AuroraScreen>
@@ -2302,7 +2300,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <Pressable onPress={() => saveRecipeAsMeal(rc)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 14, paddingHorizontal: 12 }}><IPlus size={14} color={txt(C, C.lime)} strokeWidth={2.2} /><Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text></Pressable>
           <Pressable onPress={() => logLibraryRecipe(rc, recipeServes)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 14, paddingHorizontal: 12 }}><AuroraIcon name="check" size={14} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.logServing")}</Text></Pressable>
         </View>
-        <Pressable onPress={() => { setCookStep(0); setView("cook"); }} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", marginTop: 12 }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.startCooking")}</Text></Pressable>
+        <APill label={t("w.recovery.nutrition.startCooking")} onPress={() => { setCookStep(0); setView("cook"); }} style={{ marginTop: 12 }} />
       </CoverScreen>
     );
   }
@@ -2333,7 +2331,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             to a ghost exit rather than disappearing — cooking for the family
             and logging nothing is a real ending too. */}
         {cook.last ? (
-          <Pressable onPress={() => { setView("recipe"); void logLibraryRecipe(recipe, recipeServes); }} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", marginTop: 28 }}><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("w.recovery.nutrition.logServing")}</Text></Pressable>
+          <APill label={t("w.recovery.nutrition.logServing")} onPress={() => { setView("recipe"); void logLibraryRecipe(recipe, recipeServes); }} style={{ marginTop: 28 }} />
         ) : null}
         <View style={{ flexDirection: "row", gap: 12, marginTop: cook.last ? 12 : 28 }}>
           {cook.index > 0 ? <Pressable onPress={() => setCookStep((s) => s - 1)} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 16, paddingHorizontal: 24, alignItems: "center" }}><Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.nutrition.stepBack")}</Text></Pressable> : null}

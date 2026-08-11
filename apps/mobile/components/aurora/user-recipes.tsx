@@ -16,7 +16,7 @@ import {
 import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { ACard, RADIUS } from "./kit";
+import { APill, ACard, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { useListMotion } from "../../lib/list-motion";
@@ -466,16 +466,7 @@ export function UserRecipeEditor({
       {/* ACTIONS */}
       <View style={{ gap: space.sm, marginTop: space.xl }}>
         {onLog && recipe.ingredients.length > 0 ? (
-          <PressScale
-            onPress={() => onLog(1)}
-            accessibilityRole="button"
-            accessibilityLabel={t("w.recovery.nutrition.recipeLog")}
-            style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center" }}
-          >
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>
-              {t("w.recovery.nutrition.recipeLog")}
-            </Text>
-          </PressScale>
+          <APill label={t("w.recovery.nutrition.recipeLog")} onPress={() => onLog(1)} />
         ) : null}
         <PressScale
           onPress={saving ? () => {} : onSave}

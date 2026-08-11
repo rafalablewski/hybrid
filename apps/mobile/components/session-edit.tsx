@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { APill } from "./aurora/kit";
 import { ActivityIndicator, ScrollView, Text, TextInput, View } from "react-native";
 import {
   editableBlockFields,
@@ -204,13 +205,15 @@ export function SessionEditSheet({
               )}
             </ScrollView>
 
-            <Pressable
+            {/* The shared pill's commit state replaces the spinner swap — the idle
+                label holds the width, so the button cannot resize mid-save. */}
+            <APill
+              label={t("common.save")}
               onPress={() => void save()}
-              disabled={saving || !dirty}
-              style={{ marginTop: 16, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 15, alignItems: "center", opacity: saving || !dirty ? 0.45 : 1 }}
-            >
-              {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: 15, color: C.onAccent }}>{t("common.save")}</Text>}
-            </Pressable>
+              disabled={!dirty}
+              state={saving ? "saving" : "idle"}
+              style={{ marginTop: 16 }}
+            />
     </Sheet>
   );
 }

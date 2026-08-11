@@ -32,7 +32,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
-import { AuroraScreen, GUTTER, RADIUS } from "./kit";
+import { APill, AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
 
 const STORE_KEY = "hybrid.sport";
@@ -198,12 +198,10 @@ export default function AuroraSportPage() {
       dock={
         // The system's docked pill — the same shape the plan cover docks
         // (PlanDockPill); the container reserves the scroll clearance for it.
-        <Pressable
+        <APill
+          label={t("w.train.sport.logSession").replace("{sport}", name)}
           onPress={() => router.push(`/workout?source=sport&sport=${encodeURIComponent(name)}`)}
-          style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center" }}
-        >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.train.sport.logSession").replace("{sport}", name)}</Text>
-        </Pressable>
+        />
       }
     >
       {/* ── THE ONE FIGURE ── */}
@@ -412,9 +410,7 @@ export default function AuroraSportPage() {
               </View>
             ))}
 
-            <Pressable onPress={startTransfer} style={{ marginTop: space.lg, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.train.sportPage.startSession")}</Text>
-            </Pressable>
+            <APill label={t("w.train.sportPage.startSession")} onPress={startTransfer} style={{ marginTop: space.lg }} />
           </View>
 
           {/* ── WHY THESE LIFTS ── */}

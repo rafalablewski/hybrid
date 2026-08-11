@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { APill } from "./aurora/kit";
 import { View, Text, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -614,9 +615,7 @@ export function WorkoutWrapped({
               <View key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === Math.min(panel, keys.length - 1) ? C.lime : C.line }} />
             ))}
           </View>
-          <Pressable onPress={() => { setActive(0); setSheetOpen(true); }} style={{ backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 16, color: C.onAccent }}>↗ {t("summary.share")}</Text>
-          </Pressable>
+          <APill label={`↗ ${t("summary.share")}`} onPress={() => { setActive(0); setSheetOpen(true); }} />
         </View>
       )}
 
@@ -650,9 +649,7 @@ export function WorkoutWrapped({
                 <View key={i} style={{ width: i === activeIdx ? 20 : 7, height: 7, borderRadius: 4, backgroundColor: i === activeIdx ? C.lime : C.line }} />
               ))}
             </View>
-            <Pressable onPress={shareNow} style={{ backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 16, color: C.onAccent }}>↗ {t("summary.shareStory")}</Text>
-            </Pressable>
+            <APill label={`↗ ${t("summary.shareStory")}`} onPress={shareNow} />
       </Sheet>
     </View>
   );
