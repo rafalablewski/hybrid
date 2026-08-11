@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Today → Train, in SwiftUI — a HYBRID design study</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap");
+
+/* ── HYBRID Aurora tokens — the app's own palette, not a new one ──────────── */
+:root {
+  --ink:    #0c0d0c;
+  --ink2:   #141614;
+  --ink3:   #1b1e1a;
+  --line:   #2a2d2a;
+  --chalk:  #f3f4ef;
+  --mist:   #b6bab0;   /* study-only: body copy, a neutral biased green-grey */
+  --ash:    #8b8f86;
+  --lime:   #c6f84f;
+  --blue:   #6cb6bd;
+  --amber:  #d0cd94;
+  --terra:  #e58a5c;
+  --violet: #a08cd0;
+
+  --display: "Archivo", "Archivo Fallback", system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --glass: linear-gradient(157deg, rgba(255,255,255,.085), rgba(255,255,255,.022) 62%, rgba(255,255,255,.05));
+  --rim: rgba(255,255,255,.14);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--ink);
+  color: var(--chalk);
+  font-family: var(--display);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(70vw 46vh at 12% -8%, rgba(198,248,79,.075), transparent 62%),
+    radial-gradient(58vw 40vh at 92% 8%, rgba(60,120,126,.10), transparent 66%);
+}
+.wrap { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; padding: 0 20px 120px; }
+
+/* ── type ─────────────────────────────────────────────────────────────────── */
+.eyebrow {
+  font-family: var(--mono); font-size: 10px; font-weight: 700;
+  letter-spacing: .17em; text-transform: uppercase; color: var(--ash);
+}
+h1 {
+  font-weight: 900; font-size: clamp(38px, 7.2vw, 76px); line-height: .95;
+  letter-spacing: -.035em; margin: 14px 0 0; text-wrap: balance;
+}
+h1 .dot { color: var(--lime); }
+h2 { font-weight: 900; font-size: clamp(24px, 3.4vw, 33px); line-height: 1.08; letter-spacing: -.028em; margin: 0; text-wrap: balance; }
+h3 { font-weight: 800; font-size: 15px; letter-spacing: -.01em; margin: 0; }
+p { margin: 0; color: var(--mist); max-width: 62ch; }
+p + p { margin-top: 13px; }
+b, strong { color: var(--chalk); font-weight: 700; }
+a { color: var(--lime); }
+em { color: var(--chalk); font-style: normal; border-bottom: 1px solid rgba(198,248,79,.4); }
+code {
+  font-family: var(--mono); font-size: 11.5px; color: var(--blue);
+  background: rgba(108,182,189,.09); padding: 1px 5px; border-radius: 5px;
+  white-space: nowrap;
+}
+
+/* ── masthead ─────────────────────────────────────────────────────────────── */
+.masthead { padding: 88px 0 0; }
+.standfirst { font-size: clamp(16px, 2vw, 19px); line-height: 1.55; color: var(--mist); max-width: 54ch; margin-top: 26px; }
+.standfirst b { color: var(--chalk); }
+.facts { display: flex; flex-wrap: wrap; gap: 10px 34px; margin-top: 34px; padding-top: 22px; border-top: 1px solid var(--line); }
+.fact { display: grid; gap: 3px; }
+.fact .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ash); }
+.fact .v { font-family: var(--mono); font-size: 12.5px; color: var(--chalk); }
+
+/* ── section scaffolding ──────────────────────────────────────────────────── */
+.section { margin-top: 92px; }
+.rule-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+
+.idea { margin-top: 76px; scroll-margin-top: 24px; }
+.idea-head { display: flex; align-items: baseline; gap: 16px; }
+.idea-num { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--lime); letter-spacing: .06em; flex: none; }
+.principle {
+  font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--ash); margin-top: 12px;
+}
+.split { display: grid; gap: 40px; margin-top: 26px; align-items: start; }
+@media (min-width: 940px) {
+  .split { grid-template-columns: 393px 1fr; gap: 56px; }
+  .split.flip > .stage { order: 2; }
+}
+
+/* ── the delta block ──────────────────────────────────────────────────────── */
+.delta { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 16px; display: grid; gap: 11px; }
+.delta .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--ash); }
+.delta ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 9px; }
+.delta li { display: grid; grid-template-columns: 15px 1fr; gap: 10px; font-size: 13.5px; line-height: 1.5; color: var(--mist); }
+.delta li .m { font-family: var(--mono); font-size: 12px; color: var(--lime); }
+.delta li.cut .m { color: var(--terra); }
+.delta li code { white-space: normal; }
+
+.note {
+  margin-top: 20px; padding: 14px 16px; border-left: 2px solid rgba(198,248,79,.45);
+  background: rgba(198,248,79,.045); border-radius: 0 10px 10px 0;
+  font-size: 13px; line-height: 1.55; color: var(--mist);
+}
+.note .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: .15em; text-transform: uppercase; color: var(--lime); display: block; margin-bottom: 5px; }
+
+/* ── mockup stage ─────────────────────────────────────────────────────────── */
+.stage { display: grid; gap: 12px; justify-items: stretch; }
+.stage .cap { font-family: var(--mono); font-size: 9.5px; letter-spacing: .15em; text-transform: uppercase; color: var(--ash); }
+.frame {
+  background: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 34px;
+  padding: 18px 14px;
+  box-shadow: 0 40px 80px -50px #000;
+  position: relative; overflow: hidden;
+  max-width: 393px; width: 100%;
+}
+.frame::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(120% 60% at 20% -10%, rgba(198,248,79,.06), transparent 60%);
+}
+.frame.bare { border-radius: 22px; padding: 16px 14px; }
+
+/* app primitives inside mockups */
+.m-mono { font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; color: var(--ash); }
+.m-title { font-weight: 900; font-size: 20px; letter-spacing: -.03em; color: var(--chalk); }
+.m-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+
+/* the OLD card, rebuilt honestly */
+.old-card { background: var(--ink2); border: 1px solid var(--line); border-radius: 26px; padding: 18px; box-shadow: 0 8px 14px rgba(0,0,0,.18); }
+.old-hair { height: 1px; background: var(--line); margin: 15px -18px; }
+.week { display: flex; justify-content: space-between; margin-top: 14px; }
+.day { display: grid; justify-items: center; gap: 5px; flex: 1; }
+.day .wd { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--ash); }
+.day .n { font-weight: 700; font-size: 15px; color: var(--chalk); }
+.day.off .n { color: var(--ash); }
+.day .tick { font-family: var(--mono); font-size: 9px; color: rgba(243,244,239,.65); height: 11px; }
+.day .disc { width: 27px; height: 27px; border-radius: 50%; background: var(--lime); color: #101208; display: grid; place-items: center; font-weight: 900; font-size: 13px; }
+.pill-cta {
+  margin-top: 15px; background: var(--lime); color: #101208; border-radius: 999px;
+  padding: 12px; text-align: center; font-weight: 800; font-size: 16px;
+  box-shadow: 0 0 26px rgba(198,248,79,.28);
+}
+.dashed-row { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+.dashed-tile { width: 40px; height: 40px; border-radius: 12px; border: 1px dashed rgba(139,143,134,.45); display: grid; place-items: center; color: var(--ash); font-size: 17px; }
+.dashed-row .lbl { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--lime); }
+
+/* glass + concentric surfaces (the proposals) */
+.plate {
+  background: var(--glass);
+  border: 1px solid var(--rim);
+  border-radius: 28px;
+  padding: 20px;
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  backdrop-filter: blur(22px) saturate(140%);
+  position: relative;
+}
+.plate::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.09), transparent 34%);
+}
+.inset { background: rgba(255,255,255,.04); border-radius: 16px; padding: 12px; }
+.tile { border-radius: 10px; }
+
+/* the day rail */
+.rail-bleed { margin: 0 -14px; overflow-x: auto; scrollbar-width: none; }
+.rail-bleed::-webkit-scrollbar { display: none; }
+.rail { display: flex; gap: 8px; padding: 4px 14px; width: max-content; }
+.rday {
+  width: 46px; flex: none; display: grid; justify-items: center; gap: 7px;
+  padding: 9px 0 10px; border-radius: 20px; position: relative;
+}
+.rday .wd { font-family: var(--mono); font-size: 9px; letter-spacing: .1em; color: var(--ash); }
+.rday .n { font-weight: 800; font-size: 17px; letter-spacing: -.02em; color: var(--mist); font-variant-numeric: tabular-nums; }
+.rday .load { width: 20px; height: 3px; border-radius: 2px; background: rgba(243,244,239,.16); overflow: hidden; }
+.rday .load i { display: block; height: 100%; background: var(--mist); border-radius: 2px; }
+.rday.sel { background: var(--glass); border: 1px solid var(--rim); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); }
+.rday.sel .n { color: var(--chalk); }
+.rday.today .n { color: var(--lime); }
+.rday.today .load i { background: var(--lime); }
+.rday.faded { opacity: .42; }
+
+/* session row w/ symbol */
+.srow { display: flex; align-items: center; gap: 13px; padding: 9px 0; }
+.sym {
+  width: 38px; height: 38px; border-radius: 50%; flex: none;
+  display: grid; place-items: center;
+  background: rgba(108,182,189,.16);
+}
+.sym svg { width: 21px; height: 21px; }
+.srow .t { font-weight: 700; font-size: 15px; color: var(--chalk); letter-spacing: -.01em; }
+.srow .s { font-family: var(--mono); font-size: 11.5px; color: var(--ash); margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+/* hero figure */
+.hero-fig { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.hero-fig .n { font-weight: 900; font-size: 52px; line-height: .92; letter-spacing: -.045em; color: var(--chalk); font-variant-numeric: tabular-nums; }
+.hero-fig .u { font-family: var(--mono); font-size: 14px; color: var(--ash); }
+.sub-figs { font-family: var(--mono); font-size: 12.5px; color: var(--ash); margin-top: 9px; display: flex; gap: 18px; font-variant-numeric: tabular-nums; }
+
+/* rolling digits */
+.roll { display: inline-flex; overflow: hidden; height: .92em; align-items: flex-start; }
+.roll .col { display: flex; flex-direction: column; animation: rollcol 3.4s cubic-bezier(.32,.72,0,1) infinite; }
+.roll .col span { height: .92em; line-height: .92; }
+@keyframes rollcol { 0%,26% { transform: translateY(0); } 46%,72% { transform: translateY(-.92em); } 92%,100% { transform: translateY(-1.84em); } }
+@media (prefers-reduced-motion: reduce) { .roll .col { animation: none; } }
+
+/* the empty state */
+.unavailable { display: grid; justify-items: center; text-align: center; gap: 9px; padding: 22px 8px 6px; }
+.unavailable .glyph { color: rgba(139,143,134,.75); }
+.unavailable .h { font-weight: 800; font-size: 18px; letter-spacing: -.02em; color: var(--chalk); }
+.unavailable .d { font-size: 13.5px; color: var(--ash); max-width: 30ch; line-height: 1.5; }
+.cap-cta {
+  margin-top: 6px; background: var(--lime); color: #101208; border-radius: 999px;
+  padding: 11px 26px; font-weight: 800; font-size: 15.5px;
+}
+.quiet-link { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ash); margin-top: 12px; display: inline-flex; align-items: center; gap: 7px; }
+
+/* exit affordance (ringed = leaves) */
+.ring { width: 30px; height: 30px; border-radius: 50%; border: 1px solid rgba(139,143,134,.5); display: grid; place-items: center; color: var(--ash); font-size: 13px; flex: none; }
+
+/* nav / edge mockups */
+.bigtitle { font-weight: 900; font-size: 40px; letter-spacing: -.04em; line-height: 1; color: var(--chalk); }
+.navbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 12px; border-radius: 999px; background: var(--glass); border: 1px solid var(--rim);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+}
+.edge-fade { height: 26px; background: linear-gradient(var(--ink), rgba(12,13,12,0)); margin: 0 -14px -26px; position: relative; z-index: 2; }
+
+/* comparison chips */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.compare .c { border: 1px solid var(--line); border-radius: 16px; padding: 13px; display: grid; gap: 9px; justify-items: center; text-align: center; }
+.compare .c .lab { font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: var(--ash); }
+.compare .c.no { border-color: rgba(229,138,92,.35); }
+.emoji-tile { width: 40px; height: 40px; border-radius: 12px; background: rgba(60,120,126,.18); display: grid; place-items: center; font-size: 19px; }
+
+/* small surfaces (widgets) */
+.surfaces { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.surf {
+  border-radius: 20px; padding: 14px; background: var(--glass); border: 1px solid var(--rim);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); display: grid; gap: 8px; min-height: 118px; align-content: start;
+}
+.surf .k { font-family: var(--mono); font-size: 8.5px; letter-spacing: .15em; text-transform: uppercase; color: var(--ash); }
+.surf .big { font-weight: 900; font-size: 26px; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+
+/* ledger table */
+.ledger { width: 100%; border-collapse: collapse; margin-top: 22px; font-size: 13.5px; }
+.ledger th {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--ash); text-align: left; font-weight: 700; padding: 0 14px 10px 0; border-bottom: 1px solid var(--line);
+}
+.ledger td { padding: 12px 14px 12px 0; border-bottom: 1px solid rgba(42,45,42,.6); color: var(--mist); vertical-align: top; }
+.ledger td:first-child { color: var(--chalk); font-weight: 700; }
+.ledger .scroll { overflow-x: auto; }
+.tbl-wrap { overflow-x: auto; }
+
+/* phases */
+.phases { display: grid; gap: 14px; margin-top: 26px; }
+.phase { display: grid; grid-template-columns: 74px 1fr; gap: 18px; padding: 18px 0; border-top: 1px solid var(--line); align-items: start; }
+.phase .p { font-family: var(--mono); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--lime); }
+.phase .body h3 { margin-bottom: 6px; }
+.phase .body p { font-size: 13.5px; }
+
+footer { margin-top: 96px; padding-top: 22px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 12px 30px; }
+footer span { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; color: var(--ash); text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">HYBRID — mobile design study — 11 Aug 2026</div>
+  <h1>Today → Train,<br />rebuilt in SwiftUI<span class="dot">.</span></h1>
+  <p class="standfirst">
+    Seven proposals for the logbook card — the block that carries <b>Your training</b>, the week strip
+    and the day's receipt. Each one trades a hand-drawn React&nbsp;Native imitation for the control iOS
+    already ships, and each is measured against the same brief: <b>less drawing, more material; fewer
+    edges, more air; one number, one verb.</b>
+  </p>
+  <div class="facts">
+    <div class="fact"><span class="k">Surface</span><span class="v">apps/mobile — Today</span></div>
+    <div class="fact"><span class="k">Owns it</span><span class="v">logbook-rail.tsx</span></div>
+    <div class="fact"><span class="k">Native layer</span><span class="v">aurora/swiftui.tsx · @expo/ui 56</span></div>
+    <div class="fact"><span class="k">Floor</span><span class="v">iOS 26 · Liquid Glass</span></div>
+  </div>
+</header>
+
+<!-- ─────────────────────────────────────────────────────────── baseline ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Where it stands</h2>
+    <span class="eyebrow">the card today</span>
+  </div>
+
+  <div class="split">
+    <div class="stage">
+      <div class="cap">Build 8222 — today, nothing logged</div>
+      <div class="frame">
+        <div class="m-mono" style="margin-bottom:4px">Tuesday, 11 August</div>
+        <div class="m-title" style="font-size:34px;letter-spacing:-.04em">Today</div>
+        <div class="m-title" style="font-size:21px;margin:10px 0 12px">Train</div>
+
+        <div class="old-card">
+          <div class="m-row">
+            <span class="m-title">Your training</span>
+            <span class="m-mono">Last 7 days</span>
+          </div>
+          <div class="week">
+            <div class="day"><span class="wd">Wed</span><span class="n">5</span><span class="tick">✓</span></div>
+            <div class="day"><span class="wd">Thu</span><span class="n">6</span><span class="tick">✓</span></div>
+            <div class="day"><span class="wd">Fri</span><span class="n">7</span><span class="tick">✓</span></div>
+            <div class="day off"><span class="wd">Sat</span><span class="n">8</span><span class="tick"></span></div>
+            <div class="day"><span class="wd">Sun</span><span class="n">9</span><span class="tick">✓</span></div>
+            <div class="day"><span class="wd">Mon</span><span class="n">10</span><span class="tick">✓</span></div>
+            <div class="day"><span class="wd">Tue</span><span class="disc">11</span><span class="tick"></span></div>
+          </div>
+          <div class="old-hair"></div>
+          <div class="m-row">
+            <span class="m-title" style="font-size:18px">Nothing logged yet</span>
+            <span class="m-mono" style="letter-spacing:0;text-transform:none">Today</span>
+          </div>
+          <div style="font-family:var(--mono);font-size:12px;color:var(--ash);margin-top:5px;line-height:1.5">
+            Start a session, or quick-log a sport — it lands right here.
+          </div>
+          <div class="pill-cta">Log a session</div>
+          <div class="old-hair"></div>
+          <div style="font-family:var(--mono);font-size:11px;color:rgba(139,143,134,.7)">a match, a run, a swim — it lands here</div>
+          <div class="dashed-row"><span class="dashed-tile">＋</span><span class="lbl">Log a sport</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p>
+        The card is honest and it works. What it isn't, is <em>native</em>. Every element in it is drawn:
+        the border, the shadow, the three full-bleed hairlines, the seven flex chips, the dashed square,
+        the two competing pills. None of it is a control the system owns, so none of it inherits the
+        system's material, motion, or accessibility for free.
+      </p>
+      <p>
+        Count what the eye has to get past before it reaches a fact: <b>Today</b> → <b>Train</b> →
+        <b>Your training</b> → <b>Last 7 days</b> → <b>Nothing logged yet</b>. Five headings, and the
+        first four are all names for the same thing.
+      </p>
+
+      <div class="delta">
+        <span class="k">The specific charges</span>
+        <ul>
+          <li><span class="m">01</span><span>A drawn box <em>and</em> a shadow <em>and</em> a border <em>and</em> three hairlines — four separation devices where the system uses one.</span></li>
+          <li><span class="m">02</span><span>The week is a fixed Wed→Tue window that can't be scrolled, so the label has to say <code>LAST 7 DAYS</code> because the control can't show it.</span></li>
+          <li><span class="m">03</span><span>Two primary actions in one empty state: a full-bleed chartreuse pill and a dashed ＋ tile forty pixels below it.</span></li>
+          <li><span class="m">04</span><span>🎾 as content. Emoji don't tint, don't take weight, don't respond to Dynamic Type, and redraw themselves on every OS update.</span></li>
+          <li><span class="m">05</span><span>The tab bar smears "Train your way" into an unreadable ghost — a hand-rolled blur doing a job <code>scrollEdgeEffectStyle</code> does properly.</span></li>
+          <li><span class="m">06</span><span>Changing day remounts on <code>key={sel.dateKey}</code>. Values hard-cut. Nothing in the card is animated at all.</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── ideas ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Seven proposals</h2>
+    <span class="eyebrow">ranked into a build order at the end</span>
+  </div>
+
+  <!-- 01 ─────────────────────────────────────────────────────────────────── -->
+  <article class="idea" id="i1">
+    <div class="idea-head">
+      <span class="idea-num">01</span>
+      <h2>Dissolve the box. Keep the plane.</h2>
+    </div>
+    <div class="principle">Deference — one separation device, not four</div>
+
+    <div class="split">
+      <div class="stage">
+        <div class="cap">One plate, concentric radii, one seam</div>
+        <div class="frame">
+          <div class="plate">
+            <div class="m-row">
+              <span class="m-title">Your training</span>
+              <span class="ring">↗</span>
+            </div>
+            <div class="rail-bleed" style="margin:14px -20px 0">
+              <div class="rail" style="padding:2px 20px">
+                <div class="rday faded"><span class="wd">Mon</span><span class="n">3</span><span class="load"><i style="width:60%"></i></span></div>
+                <div class="rday"><span class="wd">Tue</span><span class="n">4</span><span class="load"><i style="width:0"></i></span></div>
+                <div class="rday"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:72%"></i></span></div>
+                <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:45%"></i></span></div>
+                <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:88%"></i></span></div>
+                <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"><i style="width:0"></i></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:0"></i></span></div>
+              </div>
+            </div>
+
+            <div style="height:1px;background:rgba(255,255,255,.09);margin:16px -20px"></div>
+
+            <div class="inset">
+              <div class="m-row">
+                <span style="font-weight:800;font-size:17px;letter-spacing:-.02em">Nothing logged yet</span>
+                <span class="m-mono" style="letter-spacing:0;text-transform:none">Today</span>
+              </div>
+              <div class="hero-fig" style="opacity:.35;margin-top:8px">
+                <span class="n" style="font-size:38px">0.00</span><span class="u">km</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="cap" style="color:var(--ash)">28 outer → 16 inner → 10 tile · each = parent − padding</div>
+      </div>
+
+      <div>
+        <p>
+          The border, the drop shadow and the solid <code>ink2</code> fill are three ways of saying
+          "this is a surface". Say it once, with the material the OS already renders:
+          <code>GlassSurface</code> is in the kit and this card doesn't use it.
+        </p>
+        <p>
+          Then fix the corners. iOS 26 made <b>concentricity</b> a rule rather than a taste: a nested
+          radius equals its parent's radius minus the padding between them, so every corner in the
+          stack shares one centre. Today the card is 28, the session tile inside it is 12, and they
+          are drawn on unrelated arcs — which is why the tile reads as pasted on rather than set in.
+        </p>
+        <p>
+          One seam survives: the line between <em>the week</em> and <em>the day</em>, because that is
+          a genuine change of subject. The other two hairlines separate things that were never
+          confusable, and they go.
+        </p>
+
+        <div class="delta">
+          <span class="k">The delta</span>
+          <ul>
+            <li class="cut"><span class="m">−</span><span><code>logbook-rail.tsx:91-102</code> — drop <code>borderWidth</code>, <code>borderColor</code>, <code>shadowOpacity</code>, <code>elevation</code>.</span></li>
+            <li><span class="m">+</span><span>Mount <code>&lt;GlassSurface radius={RADIUS.card} /&gt;</code> behind the content (already exported from <code>aurora/swiftui.tsx:88</code>).</span></li>
+            <li><span class="m">+</span><span>Add <code>RADIUS.concentric(parent, pad)</code> to <code>kit.tsx:36</code> and derive every nested radius from it.</span></li>
+            <li class="cut"><span class="m">−</span><span>Two of three hairlines: <code>logbook-rail.tsx:120</code> stays, <code>done-floor.tsx:86</code> becomes whitespace.</span></li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <span class="k">House rule kept</span>
+          "Stacked rows separate by whitespace, not a rule" is already in CLAUDE.md — this applies the
+          rule the card was written before.
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 02 ─────────────────────────────────────────────────────────────────── -->
+  <article class="idea" id="i2">
+    <div class="idea-head">
+      <span class="idea-num">02</span>
+      <h2>The week stops being seven boxes and becomes a rail you can scroll.</h2>
+    </div>
+    <div class="principle">The control shows its own extent — no label needed</div>
+
+    <div class="split flip">
+      <div class="stage">
+        <div class="cap">View-aligned rail · glass lens selection · load bars</div>
+        <div class="frame bare">
+          <div class="rail-bleed">
+            <div class="rail">
+              <div class="rday faded"><span class="wd">Thu</span><span class="n">30</span><span class="load"><i style="width:34%"></i></span></div>
+              <div class="rday faded"><span class="wd">Fri</span><span class="n">31</span><span class="load"><i style="width:0"></i></span></div>
+              <div class="rday"><span class="wd">Sat</span><span class="n">1</span><span class="load"><i style="width:66%"></i></span></div>
+              <div class="rday"><span class="wd">Sun</span><span class="n">2</span><span class="load"><i style="width:41%"></i></span></div>
+              <div class="rday"><span class="wd">Mon</span><span class="n">3</span><span class="load"><i style="width:60%"></i></span></div>
+              <div class="rday"><span class="wd">Tue</span><span class="n">4</span><span class="load"><i style="width:0"></i></span></div>
+              <div class="rday sel"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:96%"></i></span></div>
+              <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:45%"></i></span></div>
+              <div class="rday today"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:88%"></i></span></div>
+              <div class="rday faded"><span class="wd">Sat</span><span class="n">8</span><span class="load"><i style="width:0"></i></span></div>
+            </div>
+          </div>
+          <div style="height:1px;background:rgba(255,255,255,.08);margin:14px -14px"></div>
+          <div class="m-row">
+            <span style="font-weight:900;font-size:19px;letter-spacing:-.03em">Logged</span>
+            <span class="m-mono" style="letter-spacing:0;text-transform:none">Wed 5 Aug</span>
+          </div>
+          <div class="hero-fig"><span class="n">12.4</span><span class="u">km</span></div>
+          <div class="sub-figs"><span>96 min</span><span>1 042 kcal</span></div>
+        </div>
+        <div class="cap" style="color:var(--ash)">Full-bleed per the screen-slider rule — cards pass under the true edge</div>
+      </div>
+
+      <div>
+        <p>
+          Seven flexed chips can only ever show seven days, which is why the header has to carry a
+          <code>LAST 7 DAYS</code> caption explaining the control's own limits. Replace it with a
+          horizontal <code>ScrollView</code> under <code>scrollTargetBehavior(.viewAligned)</code>
+          and the caption evaporates — history is simply <em>there</em>, to the left, as far back as
+          the account goes. That frees the header's right slot for the exit into History.
+        </p>
+        <p>
+          The selection becomes the same <b>Liquid Glass lens</b> the app already ships in
+          <code>liquid-seg.tsx</code>: inside a <code>GlassEffectContainer</code>, tagged with
+          <code>glassEffectId</code>, so moving between days <em>flows</em> the lens rather than
+          repainting a chip. One selection material app-wide is the point — the segmented switcher at
+          the top of Today and the day picker below it should not be two different ideas of "chosen".
+        </p>
+        <p>
+          And the ✓ becomes a <b>load bar</b>. A tick says <em>something happened</em>; a bar the width
+          of the day's relative load says <em>how much</em>, in exactly the same pixels. Seven days of
+          bars is a training week at a glance — which is the whole reason the strip exists.
+        </p>
+
+        <div class="delta">
+          <span class="k">The delta</span>
+          <ul>
+            <li class="cut"><span class="m">−</span><span><code>logbook-rail.tsx:113-117</code> — the fixed <code>flexDirection:"row"</code> chip row and <code>DayChip</code>'s three-slot layout.</span></li>
+            <li><span class="m">+</span><span><code>GlassDayRail</code> in <code>aurora/swiftui.tsx</code>: <code>GlassEffectContainer</code> + <code>glassEffectId</code>, driven by the same <code>springs</code> token <code>liquid-seg</code> uses.</span></li>
+            <li><span class="m">+</span><span><code>logbookWeek()</code> in core widens to <code>logbookDays(range)</code> and returns a per-day <code>load</code> (0–1, from the same figures the receipt uses — through <code>deviceTrueSession</code>).</span></li>
+            <li class="cut"><span class="m">−</span><span>The <code>w.home.logbook.window</code> string. The control no longer needs a caption to describe itself.</span></li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <span class="k">House rule kept</span>
+          Screen-level rails run full-bleed: negative margins the width of AuroraScreen's 12dp gutter,
+          matching internal padding, so a resting day still lands on the content column.
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 03 ─────────────────────────────────────────────────────────────────── -->
+  <article class="idea" id="i3">
+    <div class="idea-head">
+      <span class="idea-num">03</span>
+      <h2>One verb. The second action moves into the system's own menu.</h2>
+    </div>
+    <div class="principle">ContentUnavailableView — Apple's grammar for an empty day</div>
+
+    <div class="split">
+      <div class="stage">
+        <div class="cap">Empty today — one symbol, one line, one action</div>
+        <div class="frame bare">
+          <div class="unavailable">
+            <span class="glyph">
+              <svg viewBox="0 0 24 24" width="42" height="42" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12h3l2.5-6 3.5 12 3-9 2 3h4" />
+              </svg>
+            </span>
+            <span class="h">No training logged</span>
+            <span class="d">Whatever you do today lands here — a lift, a run, a match.</span>
+            <span class="cap-cta">Start a session</span>
+            <span class="quiet-link">Log something else ⌄</span>
+          </div>
+        </div>
+        <div class="cap" style="color:var(--ash)">The ⌄ opens a native Menu: Log a sport · Quick start · Import from Watch</div>
+      </div>
+
+      <div>
+        <p>
+          The empty state currently asks twice. A glowing full-width chartreuse pill says
+          <b>Log a session</b>; forty pixels below, a dashed square and a lime word say
+          <b>Log a sport</b>. Two primaries is no primary — and the dashed square is a web-era
+          affordance that appears nowhere in iOS.
+        </p>
+        <p>
+          Apple shipped the exact component for this: <code>ContentUnavailableView</code> — symbol,
+          title, one explanatory line, one action. Adopt its <em>grammar</em> (the RN drawing can
+          stay ours) and the block loses a hairline, a caption, a dashed tile and roughly 90&nbsp;pt
+          of height.
+        </p>
+        <p>
+          The second action doesn't disappear, it descends one level. <code>GlassSelectMenu</code>
+          already exists in the kit — a text trigger that opens a real system menu. "Log something
+          else ⌄" holds <em>Log a sport</em>, <em>Quick start</em> and <em>Import from Watch</em>, and
+          those three stop competing with each other on the surface.
+        </p>
+
+        <div class="delta">
+          <span class="k">The delta</span>
+          <ul>
+            <li class="cut"><span class="m">−</span><span><code>done-floor.tsx:145-152</code> — the dashed ＋ tile and its lime label, wholesale.</span></li>
+            <li class="cut"><span class="m">−</span><span><code>w.home.today.alsoTodaySubEmpty</code> ("a match, a run, a swim") — the invitation is now the description line, said once.</span></li>
+            <li><span class="m">+</span><span><code>GlassSelectMenu</code> (<code>swiftui.tsx:322</code>) mounted as the secondary, with the RN text fallback it already ships off-iOS.</span></li>
+            <li><span class="m">+</span><span>An <code>AEmptyState</code> in <code>kit.tsx</code> — symbol / title / line / one action — so History, Nutrition and Messages stop inventing their own.</span></li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <span class="k">House rule kept</span>
+          The exit rule stands: no bordered box at the end of a thing. The menu trigger is bare mono
+          text with a chevron — it opens a sheet, it isn't an item.
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 04 ─────────────────────────────────────────────────────────────────── -->
+  <article class="idea" id="i4">
+    <div class="idea-head">
+      <span class="idea-num">04</span>
+      <h2>SF Symbols instead of emoji. Tint instead of tiles.</h2>
+    </div>
+    <div class="principle">A glyph that inherits weight, colour, and the OS</div>
+
+    <div class="split flip">
+      <div class="stage">
+        <div class="cap">The done row</div>
+        <div class="frame bare">
+          <div class="compare">
+            <div class="c no">
+              <span class="lab">Now</span>
+              <span class="emoji-tile">🎾</span>
+              <span class="lab" style="color:var(--terra)">emoji · squircle tile</span>
+            </div>
+            <div class="c">
+              <span class="lab">Proposed</span>
+              <span class="sym">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true">
+                  <circle cx="12" cy="12" r="8.4" />
+                  <path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round" />
+                </svg>
+              </span>
+              <span class="lab" style="color:var(--blue)">figure.tennis · tinted circle</span>
+            </div>
+          </div>
+
+          <div style="height:1px;background:rgba(255,255,255,.08);margin:16px -14px"></div>
+
+          <div class="m-mono">1 done — Mon 10 Aug</div>
+          <div class="srow">
+            <span class="sym">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.4" />
+                <path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span style="flex:1">
+              <span class="t" style="display:block">Tennis</span>
+              <span class="s">4.11 km – 81 min – 19:49 /km</span>
+            </span>
+          </div>
+          <div class="srow">
+            <span class="sym" style="background:rgba(198,248,79,.16)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+                <path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10" />
+              </svg>
+            </span>
+            <span style="flex:1">
+              <span class="t" style="display:block">Lower — Strength</span>
+              <span class="s">6 lifts – 14 sets – 4 820 kg</span>
+            </span>
+            <span class="m-mono" style="color:var(--lime)">Plan</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p>
+          <code>sessionIcon(s)</code> returns an emoji, and the row sets it at 18&nbsp;pt inside a
+          12&nbsp;pt-radius tinted square. Three problems, all structural: an emoji can't take the
+          row's colour (so the tile has to be tinted <em>around</em> it to carry meaning), it can't
+          take a weight or an optical size, and Apple redraws the whole set every couple of releases —
+          the app's icon language silently changes under it.
+        </p>
+        <p>
+          The kit already exports the <code>SFSymbol</code> type (<code>swiftui.tsx:69</code>) and uses
+          symbols for chrome — <code>arrow.left</code>, <code>ellipsis</code>, <code>timer</code> — but
+          never for content. Extend it: <code>figure.tennis</code>, <code>figure.run</code>,
+          <code>figure.pool.swim</code>, <code>dumbbell.fill</code>. Hierarchical rendering, one tint,
+          a circle instead of a squircle so the glyph reads as a <em>mark</em>, not a tile.
+        </p>
+        <p>
+          The payoff is off-screen as much as on: a symbol is the only glyph that survives into a
+          widget, a Live Activity, a Watch complication and a Spotlight result at the right weight —
+          see&nbsp;07.
+        </p>
+
+        <div class="delta">
+          <span class="k">The delta</span>
+          <ul>
+            <li><span class="m">+</span><span><code>sessionSymbol(s): SFSymbol</code> beside <code>sessionIcon</code> in core, so one map drives both and the emoji stays as the off-iOS fallback.</span></li>
+            <li><span class="m">+</span><span><code>GlassSymbolMark</code> in <code>swiftui.tsx</code> — symbol, tint, circle, optional <code>symbolEffect(.bounce)</code> when a session lands.</span></li>
+            <li class="cut"><span class="m">−</span><span><code>done-floor.tsx:116-118</code> — the 40×40 <code>RADIUS.inner</code> emoji tile.</span></li>
+            <li><span class="m">+</span><span>The row's meta line moves to the spaced en dash, per the no-middot rule.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 05 ─────────────────────────────────────────────────────────────────── -->
+  <article class="idea" id="i5">
+    <div class="idea-head">
+      <span class="idea-num">05</span>
+      <h2>Let the system own the top and the bottom of the screen.</h2>
+    </div>
+    <div class="principle">Chrome that condenses, edges that fade properly</div>
+
+    <div class="split">
+      <div class="stage">
+        <div class="cap">Scrolled — title condensed into the bar, soft edge below</div>
+        <div class="frame">
+          <div class="navbar">
+            <span style="width:30px;height:30px;border-radius:9px;background:rgba(198,248,79,.18);display:grid;place-items:center;font-family:var(--mono);font-size:11px;font-weight:700;color:var(--lime)">RA</span>
+            <span style="display:grid;justify-items:center;gap:1px">
+              <span style="font-weight:900;font-size:14px;letter-spacing:-.02em">Today</span>
+              <span class="m-mono" style="font-size:8px;color:var(--terra)">2-day streak</span>
+            </span>
+            <span class="ring" style="width:30px;height:30px">◔</span>
+          </div>
+
+          <div style="margin-top:16px">
+            <div class="rail-bleed">
+              <div class="rail">
+                <div class="rday faded"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:0"></i></span></div>
+                <div class="rday faded"><span class="wd">Wed</span><span class="n">12</span><span class="load"><i style="width:0"></i></span></div>
+              </div>
+            </div>
+            <div class="srow" style="margin-top:6px">
+              <span class="sym" style="background:rgba(198,248,79,.16)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10" /></svg>
+              </span>
+              <span style="flex:1"><span class="t" style="display:block">Push — Strength</span><span class="s">5 lifts – 12 sets</span></span>
+            </div>
+            <div class="srow">
+              <span class="sym"><svg viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 19l4-9 4 4 4-9" /></svg></span>
+              <span style="flex:1"><span class="t" style="display:block">Easy run</span><span class="s">6.20 km – 34 min</span></span>
+            </div>
+          </div>
+
+          <div class="edge-fade" style="margin-top:14px;transform:scaleY(-1)"></div>
+          <div style="height:26px"></div>
+          <div class="navbar" style="justify-content:space-around;padding:10px 14px">
+            <span class="m-mono" style="color:var(--lime);letter-spacing:.05em">Today</span>
+            <span class="m-mono" style="letter-spacing:.05em">Fuel</span>
+            <span class="m-mono" style="letter-spacing:.05em">Inbox</span>
+            <span class="m-mono" style="letter-spacing:.05em">You</span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p>
+          Look at the second screenshot's lower third: "Train your way" and the plan cards are
+          <em>smeared</em> — two layers of text ghosting through a hand-rolled blur while the tab bar
+          floats over them. That is a hard problem solved badly, and iOS&nbsp;26 solves it in one
+          modifier: <code>scrollEdgeEffectStyle(.soft)</code> gives the system's progressive fade at
+          the scroll edge, computed against whatever is actually passing under the bar.
+        </p>
+        <p>
+          At the top, the same trade. <b>Today</b> and the date sit as static text that simply scrolls
+          out of view, so the header keeps its full height forever. A real large title collapses into
+          the glass bar on scroll — the wordmark, the streak and the day condense into one 44&nbsp;pt
+          lockup, and the section gets back roughly <b>120&nbsp;pt</b> of first-screen space. On a
+          6.1&nbsp;inch phone that is the difference between the day's receipt being visible on load
+          and needing a scroll.
+        </p>
+        <p>
+          The Train/Analyse/Social switcher stays exactly where it is — it is already the right
+          control (<code>liquid-seg.tsx</code>), and it is the one piece of chrome that earns its
+          place above the fold.
+        </p>
+
+        <div class="delta">
+          <span class="k">The delta</span>
+          <ul>
+            <li><span class="m">+</span><span><code>AuroraScreen</code> (<code>kit.tsx:230</code>) grows a <code>largeTitle</code> slot that hands the title to the native header instead of rendering it in flow.</span></li>
+            <li><span class="m">+</span><span><code>scrollEdgeEffectStyle</code> on the Today scroller, gated behind <code>LIQUID_GLASS_RENDERED</code>.</span></li>
+            <li class="cut"><span class="m">−</span><span>The manual <code>auroraScrollClearance()</code> bottom padding, once the system owns the edge.</span></li>
+            <li><span class="m">+</span><span>Fold "Train your way" into the same rail idiom as 02 so both sliders under the fold behave identically.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 06 ─────────────────────────────────────────────────────────────────── -->
+  <article class="idea" id="i6">
+    <div class="idea-head">
+      <span class="idea-num">06</span>
+      <h2>The day is a value you scrub — and the numbers roll to meet you.</h2>
+    </div>
+    <div class="principle">Motion as continuity, not decoration</div>
+
+    <div class="split flip">
+      <div class="stage">
+        <div class="cap">Mid-scrub — the hero figure counting between days</div>
+        <div class="frame bare">
+          <div class="m-row">
+            <span style="font-weight:900;font-size:19px;letter-spacing:-.03em">Logged</span>
+            <span class="m-mono" style="letter-spacing:0;text-transform:none">Yesterday</span>
+          </div>
+          <div class="hero-fig">
+            <span class="n">
+              <span class="roll" aria-hidden="true"><span class="col"><span>4</span><span>7</span><span>1</span></span></span><span>.</span><span class="roll" aria-hidden="true"><span class="col"><span>1</span><span>8</span><span>2</span></span></span><span class="roll" aria-hidden="true"><span class="col"><span>1</span><span>4</span><span>0</span></span></span>
+            </span>
+            <span class="u">km</span>
+          </div>
+          <div class="sub-figs"><span>81 min</span><span>815 kcal</span></div>
+          <div style="height:1px;background:rgba(255,255,255,.08);margin:16px -14px"></div>
+          <div style="display:flex;align-items:center;gap:14px">
+            <span class="m-mono" style="flex:1">swipe the card to change day</span>
+            <span style="display:flex;gap:5px;align-items:center">
+              <span style="width:5px;height:5px;border-radius:50%;background:rgba(139,143,134,.4)"></span>
+              <span style="width:5px;height:5px;border-radius:50%;background:rgba(139,143,134,.4)"></span>
+              <span style="width:16px;height:5px;border-radius:3px;background:var(--lime)"></span>
+              <span style="width:5px;height:5px;border-radius:50%;background:rgba(139,143,134,.4)"></span>
+            </span>
+          </div>
+        </div>
+        <div class="cap" style="color:var(--ash)">Haptic detent per day · numbers use contentTransition(.numericText())</div>
+      </div>
+
+      <div>
+        <p>
+          Right now the day changes by tapping a chip, and the detail block remounts under a
+          <code>key={sel.dateKey}</code>. Every figure hard-cuts. Nothing tells you whether you moved
+          forward or back, and nothing connects the number that left with the number that arrived.
+        </p>
+        <p>
+          Make the day a <em>value</em>. Swipe anywhere on the card and the rail and the detail move
+          as one gesture, with a haptic detent per day — the same directness the app already commits
+          to in <code>GlassWheel</code>, where selection applies as the wheel settles rather than on a
+          confirm. Then let the figures do what SwiftUI figures do:
+          <code>contentTransition(.numericText())</code> rolls 4.11&nbsp;→&nbsp;12.40 digit by digit,
+          in the direction of travel.
+        </p>
+        <p>
+          This is the one place to spend motion. Everything else in these seven proposals gets
+          <em>quieter</em>; the number earns the exception because the number is what the card is for.
+          The backlog already asks for it — <code>mobile-stat-tile</code>, "so its figures can roll
+          too".
+        </p>
+
+        <div class="delta">
+          <span class="k">The delta</span>
+          <ul>
+            <li class="cut"><span class="m">−</span><span><code>logbook-rail.tsx:123</code> — the <code>key={sel.dateKey}</code> remount, which is what makes the change a cut.</span></li>
+            <li><span class="m">+</span><span><code>ARollingFigure</code> in the kit: native <code>contentTransition</code> on iOS, a Reanimated digit column elsewhere, one API.</span></li>
+            <li><span class="m">+</span><span>A pan gesture on the card mapped to the rail's index, with <code>haptic("selection")</code> per detent (<code>lib/haptics</code> exists).</span></li>
+            <li><span class="m">+</span><span>Honour <code>useReducedMotion()</code> — the rolls collapse to instant, exactly as <code>liquid-seg</code> already does.</span></li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <span class="k">Watch out</span>
+          Figures must keep coming through <code>deviceTrueSession()</code>. A rolling number computed
+          from display-rounded values would animate to a figure the device panel beside it contradicts.
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 07 ─────────────────────────────────────────────────────────────────── -->
+  <article class="idea" id="i7">
+    <div class="idea-head">
+      <span class="idea-num">07</span>
+      <h2>The card's best form may not be inside the app at all.</h2>
+    </div>
+    <div class="principle">One data shape, four surfaces</div>
+
+    <div class="split">
+      <div class="stage">
+        <div class="cap">The same receipt, rendered by the system</div>
+        <div class="surfaces">
+          <div class="surf">
+            <span class="k">Home screen — small</span>
+            <span class="big" style="color:var(--chalk)">4.11<span style="font-family:var(--mono);font-size:11px;color:var(--ash)"> km</span></span>
+            <span style="display:flex;gap:3px;align-items:flex-end;height:22px">
+              <i style="width:7px;height:60%;background:rgba(243,244,239,.3);border-radius:2px"></i>
+              <i style="width:7px;height:35%;background:rgba(243,244,239,.3);border-radius:2px"></i>
+              <i style="width:7px;height:80%;background:rgba(243,244,239,.3);border-radius:2px"></i>
+              <i style="width:7px;height:0%;background:rgba(243,244,239,.3);border-radius:2px"></i>
+              <i style="width:7px;height:52%;background:rgba(243,244,239,.3);border-radius:2px"></i>
+              <i style="width:7px;height:70%;background:var(--lime);border-radius:2px"></i>
+            </span>
+          </div>
+          <div class="surf">
+            <span class="k">Live Activity</span>
+            <span style="display:flex;align-items:center;gap:9px">
+              <span class="sym" style="width:28px;height:28px;background:rgba(198,248,79,.16)">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="var(--lime)" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10" /></svg>
+              </span>
+              <span><span style="font-weight:800;font-size:14px;display:block">Set 3 of 5</span><span class="k">rest 0:42</span></span>
+            </span>
+          </div>
+          <div class="surf">
+            <span class="k">Control Center</span>
+            <span style="display:grid;place-items:center;gap:6px;padding-top:6px">
+              <span style="width:44px;height:44px;border-radius:14px;background:var(--lime);display:grid;place-items:center;color:#101208;font-weight:900;font-size:19px">＋</span>
+              <span class="k" style="letter-spacing:.1em">Log a set</span>
+            </span>
+          </div>
+          <div class="surf">
+            <span class="k">Lock screen — inline</span>
+            <span class="m-mono" style="font-size:11px;color:var(--chalk)">2-DAY STREAK · TUE OPEN</span>
+            <span style="display:flex;gap:4px">
+              <i style="width:14px;height:4px;border-radius:2px;background:var(--mist)"></i>
+              <i style="width:14px;height:4px;border-radius:2px;background:var(--mist)"></i>
+              <i style="width:14px;height:4px;border-radius:2px;background:rgba(139,143,134,.3)"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p>
+          <code>@bacons/apple-targets</code> is already a dependency and nothing uses it. The logbook
+          card is the single best candidate in the app for extension, because it is <em>already</em>
+          the right shape: a week of load, one hero figure, one action. That is a small widget, an
+          accessory complication, a Live Activity and a Control Center control without inventing any
+          new data.
+        </p>
+        <p>
+          This is the strongest argument for 04. A widget can't render an emoji at the right weight
+          against a tinted Lock Screen, and it certainly can't render a React Native view — but
+          <code>logbookWeek()</code> is already pure core TypeScript, and an SF Symbol is the only
+          glyph that draws identically in SwiftUI, WidgetKit and the Watch.
+        </p>
+        <p>
+          It also fixes the app's weakest moment. Logging a set today means unlock → app → Today →
+          card → session. From the Lock Screen it is one press.
+        </p>
+
+        <div class="delta">
+          <span class="k">The delta</span>
+          <ul>
+            <li><span class="m">+</span><span>An <code>apple-targets</code> widget extension reading a shared App Group snapshot written after every save.</span></li>
+            <li><span class="m">+</span><span><code>logbookSnapshot(sessions)</code> in core — the one serialisable shape the widget, the Live Activity and the card all read.</span></li>
+            <li><span class="m">+</span><span>Four <code>capabilities.ts</code> entries, opening as <code>planned</code>; the widget goes <code>blocked</code> until the App Group is provisioned on the Apple account.</span></li>
+          </ul>
+        </div>
+
+        <div class="note">
+          <span class="k">Sequencing</span>
+          Native targets change the prebuild, so this must not ride in the same TestFlight build as
+          the card work — one variable per build, per the Expo-module rule that already governs this repo.
+        </div>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ────────────────────────────────────────────────────────────── ledger ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>What gets deleted</h2>
+    <span class="eyebrow">the honest measure of a redesign</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="ledger">
+      <thead>
+        <tr><th>Gone</th><th>Where</th><th>Replaced by</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Card border + shadow</td><td>logbook-rail.tsx:91–102</td><td>One glass plane — the material, not a drawing of one</td></tr>
+        <tr><td>Two of three hairlines</td><td>logbook-rail.tsx:120 · done-floor.tsx:86</td><td>Whitespace, per the existing cluster rule</td></tr>
+        <tr><td>The "LAST 7 DAYS" caption</td><td>w.home.logbook.window</td><td>A scrollable rail that shows its own extent</td></tr>
+        <tr><td>The ✓ marks</td><td>logbook-rail.tsx:166–168</td><td>Load bars — same pixels, real information</td></tr>
+        <tr><td>The dashed ＋ tile</td><td>done-floor.tsx:145–152</td><td>A system Menu behind one quiet trigger</td></tr>
+        <tr><td>The "a match, a run, a swim" line</td><td>alsoTodaySubEmpty</td><td>Said once, as the empty state's description</td></tr>
+        <tr><td>🎾 and the whole emoji set</td><td>core sessionIcon</td><td>SF Symbols, with emoji kept as the off-iOS floor</td></tr>
+        <tr><td>The day remount</td><td>logbook-rail.tsx:123</td><td>A scrub gesture and rolling figures</td></tr>
+        <tr><td>Two competing CTAs</td><td>logbook-rail.tsx:236 + done-floor.tsx:146</td><td>One verb</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:22px">
+    Nine deletions, four additions, and the section keeps every capability it has today. That ratio is
+    the point of the exercise — an iOS redesign that adds surfaces isn't one.
+  </p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── build ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Build order</h2>
+    <span class="eyebrow">three TestFlight builds</span>
+  </div>
+
+  <div class="phases">
+    <div class="phase">
+      <span class="p">Build 1</span>
+      <div class="body">
+        <h3>01 + 03 + 04 — the still frame</h3>
+        <p>
+          Pure JS, no native change, shippable over EAS Update. The card loses its box, the empty state
+          loses its second action, the rows lose their emoji. Nothing animates yet, and the section
+          already reads native — this is the build that proves the direction on a device before any
+          gesture work is paid for.
+        </p>
+      </div>
+    </div>
+    <div class="phase">
+      <span class="p">Build 2</span>
+      <div class="body">
+        <h3>02 + 06 — the rail and the roll</h3>
+        <p>
+          The week becomes a scrollable rail with the glass lens; the day becomes a scrub; the figures
+          roll. This build needs a device round for the <code>GlassEffectContainer</code> geometry —
+          the same verification loop <code>swiftui-kit</code> already documents — and it must land
+          <code>logbookDays(range)</code> in core with tests before any UI touches it.
+        </p>
+      </div>
+    </div>
+    <div class="phase">
+      <span class="p">Build 3</span>
+      <div class="body">
+        <h3>05 + 07 — the screen and the surfaces beyond it</h3>
+        <p>
+          The large title, the scroll edge effect, then the widget target. Both change native config,
+          so they ride their own prebuild. 07 opens <code>blocked</code> in the capabilities registry
+          until the App Group exists on the Apple Developer account.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:34px">
+    <span class="k">Two constraints that outrank all seven</span>
+    Every figure on this card must keep reading through <code>deviceTrueSession()</code> — a redesign
+    is exactly when a surface quietly starts drawing typed values again. And each proposal ships with
+    its <code>capabilities.ts</code> entry in the same change; the mobile card is now the golden
+    standard on its own, since the user-facing web client was retired in August.
+  </div>
+</section>
+
+<footer>
+  <span>HYBRID design study</span>
+  <span>Today → Train</span>
+  <span>11 Aug 2026</span>
+  <span>Set in Archivo &amp; JetBrains Mono — the app's own faces</span>
+</footer>
+
+</div>
+</body>
+</html>
