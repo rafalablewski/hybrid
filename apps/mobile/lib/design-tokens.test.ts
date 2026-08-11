@@ -399,6 +399,32 @@ describe("presentation", () => {
     expect(bad).toEqual([]);
   });
 
+  it("HARD — one component owns each native leaf", () => {
+    // The SwiftUI leaves are the app's most copyable objects: a screen that
+    // wants a glass circle can mount `GlassNavButton` itself, pick its own
+    // diameter and its own fallback, and look native while agreeing with
+    // nothing. That is exactly what the live logger did — a 34pt nav circle at
+    // chalk-6% whose comment claimed it was "the same control family as
+    // HeroNav's back circle" (HeroNav draws 40 in a 44 hit box from HERO.nav),
+    // and a 44pt dock satellite beside a 54pt summary orb that were the same
+    // button drawn twice in one file.
+    //
+    // So each leaf has exactly ONE owner, and the owner is the component that
+    // also draws the floor: the nav button is HeroNav's, the satellite is
+    // ASatellite's. A screen composes those, never the leaf.
+    const OWNER: Record<string, string> = {
+      GlassNavButton: "components/aurora/hero.tsx",
+      GlassSatellite: "components/aurora/satellite.tsx",
+    };
+    const bad: string[] = [];
+    for (const [leaf, owner] of Object.entries(OWNER)) {
+      for (const h of codeHits(new RegExp(`<${leaf}\\b`, "g"))) {
+        if (!h.startsWith(owner)) bad.push(`${h} — ${leaf} belongs to ${owner}`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
   it("HARD — a COVER pads itself; no native SafeAreaView inside a fullScreenModal", () => {
     // A cover (@hybrid/core COVER_SCREENS — on mobile the live logger, and
     // nothing else) is presented in its OWN view controller. A native
