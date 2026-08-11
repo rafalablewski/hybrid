@@ -236,6 +236,51 @@ export function shakeOffsets(dx: number = states.shakeDx, cycles: number = state
 }
 
 /**
+ * Style keys that describe an element's relationship to its PARENT rather than
+ * its own appearance.
+ *
+ * This exists because wrapping a component changes who those keys belong to. A
+ * commit button that shakes needs an outer node to carry the transform (the
+ * press primitive applies its own scale last and would clobber a merged one),
+ * and the moment that wrapper appears, a caller's `flex: 1` is being applied to
+ * the INNER node while the wrapper — the actual child of the caller's row —
+ * sizes to content and refuses to stretch.
+ *
+ * That is not a hypothetical: 11 of APill's callers pass `flex: 1` and about as
+ * many pass padding, so neither "all to the wrapper" nor "all to the inner" is
+ * right. The split is by MEANING — how do I sit in my parent (outer) versus
+ * what do I look like (inner).
+ *
+ * Width is outer with the rest: a percentage width resolved against a
+ * content-sized wrapper is circular. The inner node then stretches to fill,
+ * which is a no-op in the common case where the wrapper is content-sized.
+ */
+export const OUTER_BOX_KEYS = [
+  "flex", "flexGrow", "flexShrink", "flexBasis", "alignSelf",
+  "width", "minWidth", "maxWidth",
+  "margin", "marginTop", "marginBottom", "marginLeft", "marginRight",
+  "marginHorizontal", "marginVertical", "marginStart", "marginEnd",
+  "position", "top", "right", "bottom", "left", "start", "end", "zIndex",
+] as const;
+
+/**
+ * Split a flattened style into the part that belongs on a WRAPPER and the part
+ * that belongs on the thing inside it. Pure, so it can be tested without a
+ * renderer — the failure it guards against (a button that silently stops
+ * stretching) is invisible in a typecheck and easy to miss by eye.
+ */
+export function splitBoxStyle<T extends Record<string, unknown>>(
+  style: T | null | undefined,
+): { outer: Partial<T>; inner: Partial<T> } {
+  const outer: Record<string, unknown> = {};
+  const inner: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(style ?? {})) {
+    ((OUTER_BOX_KEYS as readonly string[]).includes(k) ? outer : inner)[k] = v;
+  }
+  return { outer: outer as Partial<T>, inner: inner as Partial<T> };
+}
+
+/**
  * SWIPE ACTIONS — the geometry and the release rule for a row you swipe to
  * reveal a destructive action on.
  *

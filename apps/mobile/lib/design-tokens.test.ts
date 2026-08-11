@@ -280,7 +280,16 @@ describe("loading", () => {
     // this ratchet bounds is the RAW ActivityIndicator: legitimate inside a
     // button while it saves, wrong as a stand-in for a list. Seven content-shaped
     // ones have moved; the rest are in-flight actions.
-    expectAtMost(hits(/<ActivityIndicator/g), 19, "content ActivityIndicator → <Loading />");
+    //
+    // 19 → 22, and the direction is deliberate rather than a concession. All
+    // four additions are the permitted kind — a spinner inside a button while
+    // it works — and each REPLACED a label that changed text mid-flight, which
+    // resized the button under the finger (audit §17). APill's commit state
+    // accounts for one; nutrition's three scan buttons moved the in-flight
+    // state into a fixed-size glyph slot so the word beside it can hold still.
+    // A raise here bought a layout fix in four places; a raise for a spinner
+    // standing in for a list still fails.
+    expectAtMost(hits(/<ActivityIndicator/g), 22, "content ActivityIndicator → <Loading />");
   });
 });
 

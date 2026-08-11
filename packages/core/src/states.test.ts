@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { states, shakeOffsets, durations } from "./motion";
+import { states, shakeOffsets, splitBoxStyle, durations } from "./motion";
 
 /**
  * §17's state-change vocabulary. The numbers are assertable; what matters more
@@ -64,5 +64,43 @@ describe("states", () => {
     // legible enough to be the context you are editing against.
     expect(states.editDim).toBeGreaterThan(0.4);
     expect(states.editDim).toBeLessThan(1);
+  });
+});
+
+describe("splitBoxStyle", () => {
+  it("sends parent-relationship keys out and appearance keys in", () => {
+    const { outer, inner } = splitBoxStyle({ flex: 1, paddingVertical: 12, marginTop: 16, backgroundColor: "#000" });
+    expect(outer).toEqual({ flex: 1, marginTop: 16 });
+    expect(inner).toEqual({ paddingVertical: 12, backgroundColor: "#000" });
+  });
+
+  it("keeps alignSelf out but alignItems in", () => {
+    // alignSelf is how I sit in my parent; alignItems is how my children sit
+    // in me. One swap here silently un-centres a button's contents.
+    const { outer, inner } = splitBoxStyle({ alignSelf: "stretch", alignItems: "center" });
+    expect(outer).toEqual({ alignSelf: "stretch" });
+    expect(inner).toEqual({ alignItems: "center" });
+  });
+
+  it("covers every margin spelling", () => {
+    const margins = { margin: 1, marginTop: 2, marginBottom: 3, marginLeft: 4, marginRight: 5, marginHorizontal: 6, marginVertical: 7 };
+    expect(splitBoxStyle(margins).inner).toEqual({});
+  });
+
+  it("sends width out — a percentage width against a content-sized wrapper is circular", () => {
+    expect(splitBoxStyle({ width: "100%" }).outer).toEqual({ width: "100%" });
+  });
+
+  it("survives null and empty", () => {
+    expect(splitBoxStyle(null)).toEqual({ outer: {}, inner: {} });
+    expect(splitBoxStyle(undefined)).toEqual({ outer: {}, inner: {} });
+    expect(splitBoxStyle({})).toEqual({ outer: {}, inner: {} });
+  });
+
+  it("loses nothing — every key lands on exactly one side", () => {
+    const style = { flex: 1, padding: 8, marginTop: 2, borderRadius: 4, position: "absolute", zIndex: 3, opacity: 0.5 };
+    const { outer, inner } = splitBoxStyle(style);
+    expect({ ...outer, ...inner }).toEqual(style);
+    expect(Object.keys(outer).length + Object.keys(inner).length).toBe(Object.keys(style).length);
   });
 });

@@ -124,12 +124,19 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
         }
         // THE END OF THE TRAVEL, once. Past `swipe.max` the rubber-band has
         // nothing left to give, and `rigid` is what says so — the map's "hard
-        // stop". Latched like the full-swipe arm above, or it would fire every
-        // frame the finger spends out there.
-        const atLimit = !crossed && Math.abs(raw) >= swipe.max;
-        if (atLimit !== limitRef.current) {
-          limitRef.current = atLimit;
-          if (atLimit) haptic.rigid();
+        // stop". Latched, or it would fire every frame the finger spends there.
+        //
+        // The latch covers the full-swipe zone too (`beyond`, not just the
+        // limit), because that zone lies FURTHER OUT than the stop: without it,
+        // dragging past the commit point and back would re-enter the limit from
+        // outside and tick a second time, reporting a stop the finger never hit.
+        // The tick itself still only fires for the stop — crossing into the
+        // commit zone is the `light` above, and a fast flick that clears both in
+        // one frame gets that one and not this.
+        const beyond = crossed || Math.abs(raw) >= swipe.max;
+        if (beyond !== limitRef.current) {
+          limitRef.current = beyond;
+          if (beyond && !crossed) haptic.rigid();
         }
       },
       onPanResponderRelease: (_, g) => {

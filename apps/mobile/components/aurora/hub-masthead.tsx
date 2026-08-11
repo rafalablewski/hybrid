@@ -92,9 +92,17 @@ export function HubMasthead({
         ) : null}
       </Animated.View>
 
-      {/* THE TITLE. transformOrigin has no RN equivalent, so the row is
-          left-aligned and scaled about its own left edge via alignSelf — the
-          title shrinks toward the margin rather than toward the centre. */}
+      {/* THE TITLE shrinks toward the MARGIN, not toward its own middle — it is
+          anchored to the left gutter, and a title that drifts right as it
+          collapses is a title that comes unstuck from the edge it belongs to.
+
+          This used to say transformOrigin had no RN equivalent and lean on
+          `alignSelf: "flex-start"` instead. That kept the box content-sized, so
+          the drift was small — but a scale still pivots about the CENTRE, so
+          the left edge crept in by half the width it lost, and the code did not
+          do what the comment beside it claimed. RN has had `transformOrigin`
+          since 0.76 (this app is on 0.85, and the feed menu already uses it),
+          so the anchor is now declared rather than approximated. */}
       <Animated.View
         style={{
           flexDirection: "row",
@@ -102,6 +110,7 @@ export function HubMasthead({
           gap: 12,
           marginTop: HUB_MASTHEAD.gap.meta,
           alignSelf: "flex-start",
+          transformOrigin: "left center",
           transform: [{ scale: titleScale }],
         }}
       >

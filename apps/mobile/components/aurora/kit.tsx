@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, useEntrance, HubDissolve, cardShadow, 
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -497,13 +497,17 @@ export function APill({
         : glassSoft
           ? "transparent"
           : palette.ink2;
-  const fg = outline
+  const restFg = outline
     ? color
       ? txt(palette, color)
       : palette.ash
     : variant === "soft"
       ? palette.chalk
       : palette.onAccent;
+  // A FAILED commit is drawn as a filled red pill whatever the variant was.
+  // Painting red under an outline pill's own foreground would have left ash on
+  // red — the failure state is the one place the label must not get quieter.
+  const fg = state === "error" ? palette.onAccent : restFg;
 
   // ── the commit state ──────────────────────────────────────────────────
   const reduced = useReducedMotion();
@@ -544,8 +548,13 @@ export function APill({
 
   const stateLabel = state === "saving" ? (savingLabel ?? label) : state === "saved" ? (savedLabel ?? label) : label;
 
+  // The caller's style is SPLIT (core `splitBoxStyle`): how-I-sit-in-my-parent
+  // goes on the shake wrapper, which is the node the caller's row actually
+  // sees; what-I-look-like stays on the pill. Without this the wrapper swallows
+  // `flex: 1` — 11 callers pass it — and the button quietly stops stretching.
+  const { outer, inner } = splitBoxStyle(StyleSheet.flatten(style) as Record<string, unknown>);
   return (
-    <Animated.View style={{ transform: [{ translateX: shake }] }}>
+    <Animated.View style={[{ transform: [{ translateX: shake }] }, outer as StyleProp<ViewStyle>]}>
     <PressScale
       onPress={onPress}
       // A button mid-commit must not accept a second one. This is the gate the
@@ -577,8 +586,11 @@ export function APill({
           borderWidth: variant === "soft" || outline ? 1 : 0,
           borderColor: outline && color ? withAlpha(color, 0.45) : palette.line,
           overflow: "hidden",
+          // Fill the wrapper, whatever the wrapper turned out to be. A no-op
+          // when it is content-sized, which is the common case.
+          alignSelf: "stretch",
         },
-        style,
+        inner as StyleProp<ViewStyle>,
       ]}
     >
       {glassSoft && <GlassSurface radius={RADIUS.pill} />}
@@ -1242,10 +1254,15 @@ export function AStepper({
     // float error and the figure starts reading 0.7500000000000001.
     const dp = String(step).split(".")[1]?.length ?? 0;
     const v = Math.min(max, Math.max(min, Number(next.toFixed(dp))));
-    // A press that CANNOT move answers differently from one that does: `rigid`
-    // is the hard stop, `selection` is the step. Answering both the same way
-    // (or the clamp not at all) is a control that cannot say it refused.
-    if (v === value) { haptic.rigid(); return; }
+    // No tick for a step that does nothing. This is reachable only if a value
+    // arrives off the step grid; at the limits the button is DISABLED, which is
+    // what UIStepper does and what `accessibilityState` should say, so there is
+    // no press to answer there. (An earlier cut fired `haptic.rigid()` here for
+    // §15's "value clamped at max" — unreachable behind the same `disabled`,
+    // and dead code claiming a behaviour is worse than no code. Rigid's live
+    // home is the swipe row's rubber-band limit, where the drag does continue
+    // past the stop.)
+    if (v === value) return;
     haptic.selection();
     onChange(v);
   };
@@ -1323,7 +1340,7 @@ export function ACheckMark({ on, size = 20, accent }: { on: boolean; size?: numb
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start();
-  }, [on, a, reduced, durations.dissolve]);
+  }, [on, a, reduced]);
   // The tick draws over the last third of the fill, so it lands ON a filled box.
   const tick = a.interpolate({ inputRange: [0, 0.66, 1], outputRange: [0, 0, 1] });
   return (
