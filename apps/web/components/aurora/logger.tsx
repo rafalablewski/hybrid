@@ -35,6 +35,7 @@ import { fs, space,
   liveSessionStats,
   livePrLifts,
   SHARED_ELEMENTS,
+  SATELLITE,
   needsBodyweight,
   unitToKg,
   defaultSessionTitle,
@@ -64,6 +65,8 @@ import { armSharedElement, sharedElementStyle } from "@/lib/shared-element";
 import { runStackTransition } from "@/lib/use-screen-transition";
 import Sheet from "./sheet";
 import { ArrowGlyph } from "./cta-label";
+import Satellite from "./satellite";
+import { HeroNav } from "./hero";
 import { useLang } from "@/lib/i18n";
 import { usePersona } from "@/lib/persona";
 import { track } from "@/lib/track";
@@ -75,17 +78,6 @@ import { haptic } from "@/lib/haptics";
 type LiveSet = StrengthSet & { done?: boolean };
 const REST_PRESETS = [60, 90, 120, 180] as const;
 
-/** The dock's glass satellites — the CSS twin of the mobile `GlassSatellite`,
- *  which on iOS 26 is a real SwiftUI button wearing interactive Liquid Glass.
- *  Same rim grammar the logger's chevron already uses: highlight above, shade
- *  below, a hair of body, and no drawn ring. */
-const satelliteGlass = {
-  borderRadius: 999,
-  border: "none",
-  background: "color-mix(in srgb, var(--color-chalk) 5%, transparent)",
-  boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 -1px 1px var(--inner-lo), inset 0 0 0 0.5px rgba(var(--text-rgb), 0.10)",
-  cursor: "pointer",
-} as const;
 /** A row in the options menu — one shape, so the moved preferences and the
  *  destructive row can't drift apart. */
 const menuRow = (color: string) => ({
@@ -102,8 +94,6 @@ const menuRow = (color: string) => ({
   cursor: "pointer",
   textAlign: "left" as const,
 });
-const satelliteOrb = { ...satelliteGlass, width: 44, height: 44, display: "grid", placeItems: "center", color: "var(--color-chalk)", flex: "none" } as const;
-const satellitePill = { ...satelliteGlass, height: 44, padding: "0 16px", fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "0.95rem", color: "var(--color-chalk)", flex: "none" } as const;
 
 type FinishData = {
   sessionId: string | null;
@@ -594,25 +584,19 @@ export default function AuroraLogger({
             accessory strip riding above the nav capsule. The flanks both take
             flex:1 so the clock stays optically centred. */}
         <div style={{ flex: 1, display: "flex", justifyContent: "flex-start" }}>
-          {/* The same control family as HeroNav's back circle, wearing the same
-              glass: no drawn ring or fill — a pane with a specular rim (the
-              mobile twin is a real SwiftUI glass button on iOS 26). */}
-          <button className="pressable"
-            onClick={leave}
-            aria-label={t("workout.minimize")}
-            title={t("workout.minimize")}
-            style={{
-              width: 34, height: 34, borderRadius: 999, display: "grid", placeItems: "center",
-              color: C("chalk"), background: "none", border: "none", cursor: "pointer",
-              WebkitBackdropFilter: "blur(3px) saturate(170%) brightness(1.06)",
-              backdropFilter: "blur(3px) saturate(170%) brightness(1.06)",
-              // The .liquid-glass rim grammar, theme-aware: highlight above,
-              // shade below, a hair of body — no drawn ring.
-              boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 -1px 1px var(--inner-lo), inset 0 0 0 0.5px rgba(var(--text-rgb), 0.08)",
-            }}
-          >
-            <AuroraIcon name="chevron-down" size={19} />
-          </button>
+          {/* IT IS HeroNav — the app's one navigation control, not a copy of it.
+              The old comment here claimed "the same control family as HeroNav's
+              back circle" while drawing 34px with a rim of its own against
+              HeroNav's 40 in a 44 hit box at HERO.alpha.navFill, and the mobile
+              twin drifted the same way in the same words. `takeover` is what
+              the logger IS — a cover — and it is what turns the mark into the
+              chevron-down that points at where the session goes; the label
+              override is because this one MINIMIZES where a dismiss closes. */}
+          {/* `onDark={false}` is what a screen on the FIELD ground passes here
+              — HeroScreen computes exactly that (`backdrop !== "field"`) for
+              every ordinary web screen, so the logger's button is lit like the
+              rest of them rather than like a cover's. */}
+          <HeroNav onClick={leave} label={t("workout.minimize")} mode="takeover" onDark={false} />
         </div>
         {/* WHERE YOU ARE, then how long you have been there. The clock was the
             largest type on the screen — which is the wrong claim: the set is
@@ -634,7 +618,10 @@ export default function AuroraLogger({
             tap is behind the ⋯. Pause is not here any more — it is in the dock
             with Finish, where the thumb is. */}
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-          <div style={{ display: "flex", alignItems: "center", borderRadius: 999, background: "color-mix(in srgb, var(--color-chalk) 5%, transparent)", boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 -1px 1px var(--inner-lo), inset 0 0 0 0.5px rgba(var(--text-rgb), 0.10)", padding: 3, gap: 2 }}>
+          {/* The capsule wears the SATELLITE face — the same material as the
+              buttons in the dock, so it is the same fill and the same ring
+              rather than a third recipe on one screen. */}
+          <div style={{ display: "flex", alignItems: "center", borderRadius: 999, background: `color-mix(in srgb, var(--color-chalk) ${SATELLITE.alpha.fill * 100}%, transparent)`, border: `1px solid color-mix(in srgb, var(--color-chalk) ${SATELLITE.alpha.stroke * 100}%, transparent)`, boxShadow: "inset 0 1.5px 0 var(--inner-hi), inset 0 -1px 1px var(--inner-lo)", padding: 3, gap: 2 }}>
             <button className="pressable"
               onClick={toggleRestArmed}
               aria-pressed={prefs.restTimer}
@@ -801,9 +788,10 @@ export default function AuroraLogger({
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
                 <span style={{ flex: 1, fontFamily: "var(--font-display)", fontWeight: 700, fontSize: fs.bodyLg, color: C("chalk") }}>{t("workout.finishConfirm")}</span>
-                <button className="pressable" onClick={() => setConfirmFinish(false)} style={satellitePill}>
-                  {t("workout.keepGoing")}
-                </button>
+                {/* Keep going is a satellite too — a word-only capsule beside
+                    the filled Finish, wearing the same rim as Pause and Finish
+                    rather than its own lighter fill. */}
+                <Satellite onClick={() => setConfirmFinish(false)} a11y={t("workout.keepGoing")} word={t("workout.keepGoing")} />
                 <button className="pressable"
                   onClick={() => { setConfirmFinish(false); void save(); }}
                   disabled={saving}
@@ -833,14 +821,12 @@ export default function AuroraLogger({
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: space.sm }}>
-                <button className="pressable"
+                <Satellite
                   onClick={handlePause}
-                  aria-label={paused ? t("workout.resume") : t("workout.pause")}
-                  title={paused ? t("workout.resume") : t("workout.pause")}
-                  style={{ ...satelliteOrb, color: paused ? C("amber") : C("chalk") }}
-                >
-                  <AuroraIcon name={paused ? "play" : "pause"} size={18} />
-                </button>
+                  a11y={paused ? t("workout.resume") : t("workout.pause")}
+                  fg={paused ? C("amber") : undefined}
+                  mark={<AuroraIcon name={paused ? "play" : "pause"} size={SATELLITE.glyph} />}
+                />
                 {/* THE ONE FILLED SURFACE ON THE SCREEN, and 56px tall — taller
                     than its satellites, not merely wider, because height is the
                     dimension a thumb hits without looking. */}
@@ -867,14 +853,11 @@ export default function AuroraLogger({
                 >
                   ✓ {t("workout.logSet")}
                 </button>
-                <button className="pressable"
+                <Satellite
                   onClick={() => setConfirmFinish(true)}
-                  aria-label={t("w.train.logger.finishWorkout")}
-                  title={t("w.train.logger.finishWorkout")}
-                  style={satelliteOrb}
-                >
-                  <AuroraIcon name="flag" size={18} />
-                </button>
+                  a11y={t("w.train.logger.finishWorkout")}
+                  mark={<AuroraIcon name="flag" size={SATELLITE.glyph} />}
+                />
               </div>
             </>
           )}
@@ -1072,7 +1055,8 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
 
       <div style={{ position: "relative" }}>
         {/* The one exit — where dismissal muscle memory expects it. */}
-        <FinishOrb glyph="✕" size={40} a11y={t("summary.doneToday")} onClick={onHome ?? onDone} />
+        {/* The one exit — the same satellite as everything else in this file. */}
+        <Satellite mark="✕" a11y={t("summary.doneToday")} onClick={onHome ?? onDone} />
 
         {/* THE TROPHY CHIP — where the record lift's PR badge LANDS
             (SHARED_ELEMENTS.prBadge): the badge that appeared on the exercise
@@ -1149,9 +1133,13 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
         {/* The floating pill cluster — hierarchy by material: lime fill for
             Share, glass for the two satellites, nothing else competing. */}
         <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginTop: 20 }}>
-          <FinishOrb
-            glyph="★"
-            label={t("summary.orbRoutine")}
+          {/* The same satellite the dock's Pause and Finish are, at the same
+              44: this cluster and that one are the same sentence (one filled
+              action, glass around it) and used to be drawn at two sizes by two
+              components in this one file. */}
+          <Satellite
+            mark="★"
+            caption={t("summary.orbRoutine")}
             a11y={t("summary.saveRoutine")}
             on={routineOpen}
             onClick={() => setRoutineOpen((v) => !v)}
@@ -1174,7 +1162,7 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
           >
             {sharing ? "…" : `↗︎ ${shareLabel}`}
           </button>
-          <FinishOrb glyph={<ArrowGlyph size={18} />} label={t("summary.orbAnalysis")} a11y={t("summary.seeAnalysis")} onClick={onDone} />
+          <Satellite mark={<ArrowGlyph size={SATELLITE.glyph} />} caption={t("summary.orbAnalysis")} a11y={t("summary.seeAnalysis")} onClick={onDone} />
         </div>
         {shareMsg && <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: fs.caption, color: accentText("lime"), marginTop: 8 }}>{shareMsg}</div>}
 
@@ -1183,61 +1171,6 @@ function Finish({ data, prior, units, onDone, onHome, onUpgrade }: { data: Finis
           <SaveRoutineCard startOpen blocks={blocks} defaultName={title} onUpgrade={onUpgrade ?? (() => router.push("/upgrade"))} />
         )}
       </div>
-    </div>
-  );
-}
-
-/** A floating glass satellite — the Liquid-Field secondary action. A translucent
- *  chalk-tinted circle (backdrop-blur glass) holding one glyph, with an optional
- *  micro label beneath. Secondary by material: the lime Share pill stays the
- *  only filled action on the finish screen. Mobile parity: SummaryOrb. */
-function FinishOrb({
-  glyph,
-  a11y,
-  onClick,
-  size = 54,
-  label,
-  on,
-}: {
-  glyph: React.ReactNode;
-  a11y: string;
-  onClick: () => void;
-  size?: number;
-  label?: string;
-  on?: boolean;
-}) {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: label ? Math.max(size, 62) : size, flex: "0 0 auto" }}>
-      <button className="pressable"
-        type="button"
-        onClick={onClick}
-        aria-label={a11y}
-        aria-pressed={on}
-        style={{
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          padding: 0,
-          display: "grid",
-          placeItems: "center",
-          background: `color-mix(in srgb, ${C("chalk")} ${on ? 16 : 8}%, transparent)`,
-          border: `1px solid color-mix(in srgb, ${C("chalk")} ${on ? 30 : 14}%, transparent)`,
-          backdropFilter: "blur(14px)",
-          WebkitBackdropFilter: "blur(14px)",
-          color: C("chalk"),
-          fontFamily: "var(--font-display)",
-          fontWeight: 700,
-          fontSize: Math.round(size * 0.34),
-          cursor: "pointer",
-        }}
-      >
-        {glyph}
-      </button>
-      {label != null && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: fs.nano, letterSpacing: ".12em", color: C("ash"), marginTop: 6, textTransform: "uppercase", whiteSpace: "nowrap" }}>
-          {label}
-        </div>
-      )}
     </div>
   );
 }

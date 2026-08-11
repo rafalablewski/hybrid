@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -96,6 +95,8 @@ import {
   springToRN,
   livePrLifts,
   SHARED_ELEMENTS,
+  HERO,
+  SATELLITE,
   type ReadinessFeeling,
 } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
@@ -139,8 +140,11 @@ import { AuroraIcon } from "../components/aurora/icons";
 import type { AuroraIconName } from "@hybrid/core";
 import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER } from "../components/aurora/kit";
-import { GlassNavButton, GlassSatellite, GlassSelectMenu, GlassSurface, GlassToolbarGroup, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED, type SFSymbol } from "../components/aurora/swiftui";
+import { GlassSelectMenu, GlassToolbarGroup, LIQUID_GLASS_RENDERED } from "../components/aurora/swiftui";
+import ASatellite from "../components/aurora/satellite";
+import { HeroNav } from "../components/aurora/hero";
 import { useReducedMotion } from "../lib/use-reduced-motion";
+import { coverInsets } from "../lib/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
@@ -300,7 +304,7 @@ const guestToLogged = (g: { title: string; startedAt?: string; savedAt: string; 
 
 export default function Workout() {
   const reducedMotion = useReducedMotion();
-  const C = useTheme().palette;
+  const { palette: C, scheme } = useTheme();
   const pa = usePremiumAccent();
   const aurora = useTemplate().template === "aurora";
   const R = auroraRadii(aurora);
@@ -1122,9 +1126,13 @@ export default function Workout() {
   const canLog = !!cursorSet && setIsLoggable(cursorSet);
   const queued = queuedSetCount(exercises.map((x) => ({ sets: x.kind === "strength" ? x.sets : undefined })));
   const insets = useSafeAreaInsets();
+  // THE LOGGER IS A COVER, so it stands in the WINDOW's insets — a native
+  // SafeAreaView inside a fullScreenModal never applies its top edge, which is
+  // how the header came to sit on the status bar. See lib/layout coverInsets.
+  const safe = coverInsets(insets);
   // The dock sits ON the bottom edge, so the home-indicator inset is the FLOOR
   // of its pad, never an addition to it — the same arithmetic a sheet uses.
-  const dockPad = Math.max(insets.bottom, 12);
+  const dockPad = Math.max(safe.bottom, 12);
 
   // The rest timer's readout: the live countdown while one is running, the
   // armed duration otherwise. One piece of state, and the capsule is a clock
@@ -1150,51 +1158,50 @@ export default function Workout() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
+    <View style={{ flex: 1, backgroundColor: C.ink }}>
       {/* Aurora's ambient blob field behind the logger — the live screen owns its
           own shell (sticky timer header), so it drops in the same backdrop the
-          rest of the Aurora app uses rather than wrapping in AuroraScreen. */}
+          rest of the Aurora app uses rather than wrapping in AuroraScreen.
+
+          OUTSIDE the padded box on purpose: the field is `absoluteFill`, and an
+          absolute child is laid out inside its parent's PADDING box, so putting
+          it under the safe-area pad would stop the wash at the status bar and
+          draw a seam across the top of the screen. */}
       {aurora && <AuroraField />}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+      {/* The safe-area pad is the SCREEN's, applied here rather than by a native
+          SafeAreaView — see `safe` above. */}
+      <View style={{ flex: 1, paddingTop: safe.top }}>
+      {/* THE HEADER stands where every other screen's nav rail stands: HERO.rail
+          measured from the safe area — a 44pt row, 4pt below the inset and 8pt
+          of breathing under it (the collapsed bar's own height) — and the
+          screen's own GUTTER at the sides, so the chevron sits on the same
+          column as the cards below it. A cover has no HeroNav to inherit that
+          constant from, so it keeps it by hand; the alternative is a header
+          measured on its own, a few points in from and above every back circle
+          in the app, on the screen an athlete looks at most. */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: HERO.rail.top + HERO.rail.height + HERO.rail.bottom, paddingHorizontal: GUTTER, paddingTop: HERO.rail.top, paddingBottom: HERO.rail.bottom, borderBottomWidth: 1, borderBottomColor: C.line }}>
         {/* MINIMIZE — a chevron pointing DOWN, at where the session goes: the
             accessory strip above the tab bar. The direction is the affordance,
             and it is the same direction as the drag that will eventually do the
             same job. The flanks both take flex:1 so the clock stays optically
             centred whatever the side content measures. */}
         <View style={{ flex: 1, alignItems: "flex-start" }}>
-          {/* The same control family as HeroNav's back circle, so it takes the
-              same native form: on iOS 26 a real SwiftUI glass button (the
-              34pt circle centred in a 44pt hit box — the negative margin keeps
-              it optically where the drawn circle sat); the drawn chalk-6%
-              circle stays the fallback. */}
-          {LIQUID_GLASS_RENDERED ? (
-            <View style={{ margin: -5 }}>
-              <GlassNavButton
-                onPress={minimize}
-                label={t("workout.minimize")}
-                glyph="chevron.down"
-                size={34}
-                hit={44}
-                glyphSize={15}
-                fg={C.chalk}
-              />
-            </View>
-          ) : (
-            <Pressable
-              onPress={minimize}
-              hitSlop={10}
-              accessibilityRole="button"
-              accessibilityLabel={t("workout.minimize")}
-              style={{
-                width: 34, height: 34, borderRadius: 17,
-                alignItems: "center", justifyContent: "center",
-                backgroundColor: withAlpha(C.chalk, 0.06),
-                borderWidth: 1, borderColor: withAlpha(C.chalk, 0.14),
-              }}
-            >
-              <AuroraIcon name="chevron-down" size={19} color={C.chalk} />
-            </Pressable>
-          )}
+          {/* IT IS HeroNav — the app's one navigation control, not a copy of it.
+              The old comment here claimed "the same control family as HeroNav's
+              back circle" while drawing 34pt at chalk-6% against HeroNav's 40pt
+              in a 44pt hit box at HERO.alpha.navFill: the claim was in the
+              prose and nowhere in the numbers, on the button that leaves the
+              most-used screen in the app. `takeover` is what the logger IS — a
+              cover — and it is what turns the mark into the chevron-down that
+              points at where the session goes; the label override is because
+              this one MINIMIZES (the session keeps running in the tab bar's
+              accessory strip) where every other dismiss closes. */}
+          <HeroNav
+            onPress={minimize}
+            label={t("workout.minimize")}
+            mode="takeover"
+            onDark={scheme === "dark"}
+          />
         </View>
         {/* WHERE YOU ARE, then how long you have been there. The clock used to
             be the largest type on the screen — 22pt black, centred — which is
@@ -1239,7 +1246,10 @@ export default function Workout() {
               fontFamily={F.mono}
             />
           ) : (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 2, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.chalk, 0.05), padding: 3 }}>
+            /* The capsule's floor wears the SATELLITE rim — it is the same
+               material as the buttons in the dock, so it is the same fill and
+               the same ring, not a third pair of alphas. */
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 2, borderRadius: 999, borderWidth: 1, borderColor: withAlpha(C.chalk, SATELLITE.alpha.stroke), backgroundColor: withAlpha(C.chalk, SATELLITE.alpha.fill), padding: 3 }}>
               <Pressable
                 onPress={toggleRestArmed}
                 hitSlop={6}
@@ -1293,14 +1303,18 @@ export default function Workout() {
             <LiveStat C={C} label={t("w.train.logger.liveExercises")} value={String(live.exercises)} />
             <LiveStat C={C} label={t("live.sets")} value={String(live.sets)} />
             <LiveStat C={C} label={t("w.train.logger.liveVolume")} value={fmtTonnage(live.volume, prefs.units)} />
+            {/* The PR cell is a CELL, not a fourth drawing: same component, an
+                accent and a mark. It shipped hand-rolled beside its three
+                siblings, which is how it came to be the only one whose figure
+                did not roll as the count changed. */}
             {live.prs + live.cardioPrs > 0 && (
-              <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: R.field, paddingVertical: 8, backgroundColor: `${C.lime}1f`, borderWidth: 1, borderColor: C.lime }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-                  <AuroraIcon name="trophy" size={fs.subtitle + 2} color={txt(C, C.lime)} />
-                  <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{live.prs + live.cardioPrs}</Text>
-                </View>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), letterSpacing: 0.9, marginTop: 2 }}>{live.prs + live.cardioPrs === 1 ? t("live.pr") : t("live.prs")}</Text>
-              </View>
+              <LiveStat
+                C={C}
+                accent={txt(C, C.lime)}
+                mark="trophy"
+                label={live.prs + live.cardioPrs === 1 ? t("live.pr") : t("live.prs")}
+                value={String(live.prs + live.cardioPrs)}
+              />
             )}
           </View>
         )}
@@ -1857,8 +1871,14 @@ export default function Workout() {
           }}
         >
           <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t("workout.addExercise")}</Text>
-          <View style={{ width: 32, height: 32, borderRadius: 999, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(C.chalk, 0.06), borderWidth: 1, borderColor: withAlpha(C.chalk, 0.14) }}>
-            <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>›</Text>
+          {/* The door's ring is the kit's ring: 32pt, a hairline in `line`, and
+              NO fill — what week-verdict's DoorRow and the rail tail already
+              draw. It shipped here as a filled chalk-6% plate, which is the
+              satellite's material on a mark that is not a satellite: a door
+              ring is a ring, and a filled one reads as a button sitting in a
+              row of text. */}
+          <View style={{ width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.line }}>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.ash }}>›</Text>
           </View>
         </Pressable>
 
@@ -1954,13 +1974,10 @@ export default function Workout() {
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
                 <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("workout.finishConfirm")}</Text>
-                <Pressable
-                  onPress={() => setConfirmFinish(false)}
-                  accessibilityRole="button"
-                  style={{ height: 44, paddingHorizontal: 16, justifyContent: "center", borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.chalk, 0.05) }}
-                >
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("workout.keepGoing")}</Text>
-                </Pressable>
+                {/* Keep going is a satellite too — a word-only capsule beside
+                    the filled Finish, the same rim as Pause and Finish above
+                    it rather than its own lighter fill inside a `line` ring. */}
+                <ASatellite onPress={() => setConfirmFinish(false)} a11y={t("workout.keepGoing")} word={t("workout.keepGoing")} />
                 <Pressable
                   onPress={() => { setConfirmFinish(false); void finish(); }}
                   disabled={saving}
@@ -1991,13 +2008,12 @@ export default function Workout() {
               </View>
 
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-                <DockSatellite
+                <ASatellite
                   onPress={togglePause}
                   glyph={paused ? "play.fill" : "pause.fill"}
                   mark={paused ? "play" : "pause"}
-                  label={paused ? t("workout.resume") : t("workout.pause")}
+                  a11y={paused ? t("workout.resume") : t("workout.pause")}
                   fg={paused ? txt(C, C.amber) : C.chalk}
-                  C={C}
                 />
                 {/* THE ONE FILLED SURFACE ON THE SCREEN. Deliberately not a
                     SwiftUI button: a full-width chartreuse CTA has no system
@@ -2030,13 +2046,11 @@ export default function Workout() {
                   <Text style={{ fontFamily: F.black, fontSize: fs.body, color: canLog ? C.onAccent : C.ash }}>✓</Text>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: canLog ? C.onAccent : C.ash }}>{t("workout.logSet")}</Text>
                 </Pressable>
-                <DockSatellite
+                <ASatellite
                   onPress={() => setConfirmFinish(true)}
                   glyph="flag.checkered"
                   mark="flag"
-                  label={t("w.train.logger.finishWorkout")}
-                  fg={C.chalk}
-                  C={C}
+                  a11y={t("w.train.logger.finishWorkout")}
                 />
               </View>
             </>
@@ -2044,6 +2058,7 @@ export default function Workout() {
         </View>
       )}
       </KeyboardAvoidingView>
+      </View>
 
       <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
 
@@ -2074,7 +2089,9 @@ export default function Workout() {
         </Pressable>
       </Sheet>
 
-      {/* Get-ready count-in — covers the screen on a fresh start until GO. */}
+      {/* Get-ready count-in — covers the screen on a fresh start until GO, and
+          the WHOLE screen: it sits outside the safe-area pad, so the count runs
+          under the status bar the way a takeover should. */}
       {countdown != null && (
         <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, letterSpacing: 3, marginBottom: 12 }}>
@@ -2085,7 +2102,7 @@ export default function Workout() {
           </Text>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -2297,6 +2314,11 @@ function Summary({
   };
   // The ★ satellite expands the save-as-routine composer beneath the cluster.
   const [routineOpen, setRoutineOpen] = useState(false);
+  // The summary is the SAME cover as the live screen, so it stands in the same
+  // window insets — a native SafeAreaView here dropped the top edge too, which
+  // put the ✕ that leaves the session on the status bar.
+  const insets = useSafeAreaInsets();
+  const safe = coverInsets(insets);
   const { prs, bests, cardioPrs, firstEver } = summary;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(summary.title);
@@ -2381,15 +2403,21 @@ function Summary({
   // analysis are glass satellites at its sides; exit is a glass ✕ up top.
   const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
+    <View style={{ flex: 1, backgroundColor: C.ink }}>
+      {/* Both backdrops sit OUTSIDE the safe-area pad — they are `absoluteFill`,
+          and an absolute child lays out inside its parent's padding box, so
+          padding above them would stop the field at the status bar. */}
       {aurora && <AuroraField />}
       <FinishField />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: 28, flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingTop: safe.top + 16, paddingBottom: safe.bottom + 28, flexGrow: 1 }}>
         {/* The one exit — where dismissal muscle memory expects it. Guests leave
-            to the welcome screen (there's no Today tab behind them). */}
-        <SummaryOrb
-          glyph="✕"
-          size={40}
+            to the welcome screen (there's no Today tab behind them). The same
+            satellite the dock's Pause and Finish are, at the same 44: this
+            cluster and that one are the same sentence (one filled action, glass
+            around it) and used to be drawn at two sizes by two components. */}
+        <ASatellite
+          mark="✕"
+          glyph="xmark"
           a11y={t("summary.doneToday")}
           onPress={() => router.replace(summary.guest ? "/welcome" : "/(tabs)")}
         />
@@ -2506,9 +2534,9 @@ function Summary({
             {/* The floating pill cluster — hierarchy by material: lime fill for
                 Share, glass for the two satellites, nothing else competing. */}
             <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 16 }}>
-              <SummaryOrb
-                glyph="★"
-                label={t("summary.orbRoutine")}
+              <ASatellite
+                mark="★"
+                caption={t("summary.orbRoutine")}
                 a11y={t("summary.saveRoutine")}
                 on={routineOpen}
                 onPress={() => setRoutineOpen((v) => !v)}
@@ -2527,9 +2555,9 @@ function Summary({
               >
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
               </Pressable>
-              <SummaryOrb
-                glyph={<ArrowGlyph size={19} color={C.chalk} />}
-                label={t("summary.orbAnalysis")}
+              <ASatellite
+                mark={<ArrowGlyph size={19} color={C.chalk} />}
+                caption={t("summary.orbAnalysis")}
                 a11y={t("summary.seeAnalysis")}
                 onPress={() => router.replace("/history")}
               />
@@ -2538,63 +2566,7 @@ function Summary({
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-/** A floating glass satellite — the Liquid-Field secondary action. A translucent
- *  chalk-tinted circle (a native SwiftUI glass surface when Liquid Glass is
- *  active) holding one glyph, with an optional micro label beneath. Secondary by
- *  material: the lime Share pill stays the only filled action on this screen. */
-function SummaryOrb({
-  glyph,
-  a11y,
-  onPress,
-  size = 54,
-  label,
-  on,
-}: {
-  /** A string renders in the orb's own Text; a node (e.g. ArrowGlyph, whose
-   *  SVG can't nest in Text) renders as-is, centred by the orb. */
-  glyph: ReactNode;
-  a11y: string;
-  onPress: () => void;
-  size?: number;
-  label?: string;
-  on?: boolean;
-}) {
-  const C = useTheme().palette;
-  const glass = LIQUID_GLASS_SUPPORTED;
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={a11y}
-      hitSlop={6}
-      style={{ alignItems: "center", width: label ? Math.max(size, 60) : size }}
-    >
-      <View
-        style={{
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          overflow: "hidden",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: glass ? "transparent" : withAlpha(C.chalk, on ? 0.16 : 0.08),
-          borderWidth: 1,
-          borderColor: withAlpha(C.chalk, on ? 0.3 : 0.14),
-        }}
-      >
-        {glass && <GlassSurface radius={size / 2} />}
-        {typeof glyph === "string" ? <Text style={{ fontFamily: F.bold, fontSize: Math.round(size * 0.36), color: C.chalk }}>{glyph}</Text> : glyph}
-      </View>
-      {label != null && (
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, marginTop: 6 }}>
-          {label.toUpperCase()}
-        </Text>
-      )}
-    </Pressable>
+    </View>
   );
 }
 
@@ -2917,62 +2889,32 @@ function blocksToExercises(blocks: SessionBlock[]): WExercise[] {
 
 // One live-scoreboard stat cell shown during the workout (parity with web).
 
-/**
- * A DOCK SATELLITE — the neutral glass button that orbits the primary.
- *
- * On iOS 26 this is a real SwiftUI `Button` wearing interactive Liquid Glass:
- * the material itself answers the press, which is worth most on exactly these
- * two controls, hit with a chalked thumb without looking. Everywhere else the
- * same 44pt circle is drawn in React Native over the kit's rim grammar, with
- * the SHARED vector mark — so the control reads the same whichever renderer
- * answers, and if the native layer never mounts it is still a button.
- */
-function DockSatellite({
-  onPress,
-  glyph,
-  mark,
-  label,
-  fg,
+function LiveStat({
   C,
+  label,
+  value,
+  accent,
+  mark,
 }: {
-  onPress: () => void;
-  glyph: SFSymbol;
-  mark: AuroraIconName;
-  label: string;
-  fg: string;
   C: Palette;
+  label: string;
+  value: string;
+  /** The cell's own colour, for the one cell that carries state (a PR). Every
+   *  other cell is chalk on ink2 — a scoreboard is a readout, not a ranking. */
+  accent?: string;
+  /** A mark beside the figure, same reason. */
+  mark?: AuroraIconName;
 }) {
-  if (LIQUID_GLASS_RENDERED) {
-    return <GlassSatellite onPress={onPress} label={label} glyph={glyph} fg={fg} size={44} glyphSize={17} />;
-  }
+  const on = accent != null;
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: 999,
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: withAlpha(C.chalk, 0.06),
-        borderWidth: 1,
-        borderColor: withAlpha(C.chalk, 0.14),
-      }}
-    >
-      <AuroraIcon name={mark} size={18} color={fg} />
-    </Pressable>
-  );
-}
-
-function LiveStat({ C, label, value }: { C: Palette; label: string; value: string }) {
-  return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingVertical: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", borderRadius: 12, paddingVertical: 8, backgroundColor: on ? withAlpha(accent, 0.12) : C.ink2, borderWidth: 1, borderColor: on ? accent : C.line }}>
       {/* Every figure here moves as sets are banked — the scoreboard IS the
           feedback for banking one — so each rolls to its new value. */}
-      <RollingNumber value={value} align="center" style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+        {mark ? <AuroraIcon name={mark} size={fs.subtitle + 2} color={accent ?? C.chalk} /> : null}
+        <RollingNumber value={value} align="center" style={{ fontFamily: F.black, fontSize: fs.subtitle, color: accent ?? C.chalk }} />
+      </View>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: accent ?? C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }

@@ -97,6 +97,10 @@ const ramp = (from: number, to: number) => `clamp(0, calc((${P} - ${from}) * ${(
 export function HeroNav({
   onClick,
   fromLabel,
+  /** Overrides the derived name for a screen whose exit is neither a pop nor a
+   *  close — the live logger MINIMIZES, and "Close" would promise the opposite.
+   *  The glyph stays the system's; this changes what the button is CALLED. */
+  label: labelOverride,
   mode = "page",
   material = "glass",
   onDark = true,
@@ -106,6 +110,7 @@ export function HeroNav({
   onClick: () => void;
   /** Names the ORIGIN, not the action. */
   fromLabel?: string;
+  label?: string;
   mode?: HeroMode;
   material?: "clear" | "glass";
   onDark?: boolean;
@@ -123,7 +128,7 @@ export function HeroNav({
     <button
       className="pressable"
       onClick={onClick}
-      aria-label={fromLabel && role === "pop" ? `← ${fromLabel}` : role === "dismiss" ? "Close" : "Back"}
+      aria-label={labelOverride ?? (fromLabel && role === "pop" ? `← ${fromLabel}` : role === "dismiss" ? "Close" : "Back")}
       style={{
         // 40pt circle in a 44pt hit target — Apple's minimum, and the identical
         // geometry the mobile twin renders.
