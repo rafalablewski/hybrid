@@ -37,22 +37,15 @@ const code = (p: string) =>
     .replace(/^\s*\/\/.*$/gm, "")
     .replace(/\/\*[\s\S]*?\*\//g, "");
 
-/** The six surfaces that render a hub head, both clients. */
+/** The surfaces that render a hub head. (The web twins were retired with the
+ *  web client — mobile is the product.) */
 const HUB_SCREENS = [
   "apps/mobile/components/aurora/home.tsx",
   "apps/mobile/components/aurora/performance.tsx",
   "apps/mobile/components/feed-view.tsx",
-  "apps/web/components/aurora/today.tsx",
-  "apps/web/components/aurora/performance.tsx",
-  "apps/web/components/social-feed.tsx",
 ];
 
-
-
-const HEAD_COMPONENTS = [
-  "apps/mobile/components/aurora/hub-masthead.tsx",
-  "apps/web/components/aurora/hub-masthead.tsx",
-];
+const HEAD_COMPONENTS = ["apps/mobile/components/aurora/hub-masthead.tsx"];
 
 describe("the hub masthead contract", () => {
   it("is built from named tokens, never hand-typed numbers", () => {
@@ -98,7 +91,7 @@ describe("the hub masthead contract", () => {
 });
 
 describe("the hub head guard — no screen may draw its own", () => {
-  it("renders the shared component on all six surfaces", () => {
+  it("renders the shared component on every hub surface", () => {
     for (const file of HUB_SCREENS) {
       expect(code(file), file).toContain("<HubMasthead");
       expect(code(file), file).toMatch(/import \{ HubMasthead \} from/);
@@ -143,26 +136,14 @@ describe("the hub head guard — no screen may draw its own", () => {
     }
   });
 
-  it("lets the head own the gap below it, on both clients", () => {
+  it("lets the head own the gap below it", () => {
     // The subtle one. The head emits HUB_MASTHEAD.gap.below, so the block that
-    // follows it must contribute NO top margin — RN does not collapse margins
-    // and CSS does, so a first block that kept its own would sit 16 lower on
-    // mobile than on web while both files "looked" the same.
-    for (const file of ["apps/mobile/components/aurora/home.tsx", "apps/web/components/aurora/today.tsx"]) {
-      expect(code(file), file).toContain('<GroupMark label={t("w.home.group.train")} mt={0} />');
-    }
-    // The feed's first block spaces DOWNWARD on both clients, not upward.
-    for (const file of ["apps/mobile/components/pr-attestation.tsx", "apps/web/components/pr-attestation.tsx"]) {
-      const inbox = code(file).split("Co-sign requests")[0]!.slice(-400);
-      expect(inbox, file).toContain("marginBottom: 16");
-      expect(inbox, file).not.toContain("marginTop: 16");
-    }
-  });
-
-  it("keeps the collapse floor in one place, not typed into the stylesheet", () => {
-    // The web twin publishes HUB_MASTHEAD.collapse.titleScale as a custom
-    // property; globals.css must read it rather than carry its own 0.24.
-    expect(code("apps/web/components/aurora/hub-masthead.tsx")).toContain("--hub-title-scale");
-    expect(read("apps/web/app/globals.css")).toContain("var(--hub-title-scale");
+    // follows it must contribute NO top margin — RN does not collapse margins,
+    // so a first block that kept its own would sit 16 lower than designed.
+    expect(code("apps/mobile/components/aurora/home.tsx")).toContain('<GroupMark label={t("w.home.group.train")} mt={0} />');
+    // The feed's first block spaces DOWNWARD, not upward.
+    const inbox = code("apps/mobile/components/pr-attestation.tsx").split("Co-sign requests")[0]!.slice(-400);
+    expect(inbox).toContain("marginBottom: 16");
+    expect(inbox).not.toContain("marginTop: 16");
   });
 });

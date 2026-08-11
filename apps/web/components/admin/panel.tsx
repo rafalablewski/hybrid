@@ -228,9 +228,6 @@ export default function AdminPanel() {
               </Mono>
             </div>
           )}
-          <button className="pressable" onClick={() => router.push("/app")} title={railCollapsed ? "Back to app" : undefined} style={navBtn(false)}>
-            {railCollapsed ? "←" : "← Back to app"}
-          </button>
           {!isMobile && (
             <button className="pressable"
               onClick={toggleCollapsed}
