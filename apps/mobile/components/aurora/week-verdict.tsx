@@ -78,6 +78,13 @@ import { leading, fs, F, PressScale, cardShadow, PressScale as Pressable, FIXED_
  * radius. The panel is now the card's own lower compartment, bled to its edges
  * and taking its bottom corners. At rest — nothing open — the named metric
  * still holds the tone, so the resting card is unchanged.
+ *
+ * The COLUMN DIVIDERS followed them out. Each column drew a hairline on its left
+ * edge, but the column is a rounded press target, so the hairline took the
+ * radius and curled at both ends — tiny brackets between the figures, and the
+ * divider had to be suppressed on both sides of whichever column was lit to stop
+ * it cutting into the wash. The columns separate by whitespace now; label over
+ * figure was always doing that work.
  */
 
 /** ONE PERIOD FOR THE SCREEN — core's TODAY_RANGE_STORE_KEY, which the
@@ -251,14 +258,15 @@ export default function AuroraWeekVerdict({
   // at that width the figures need a size down to stay on one line.
   const wide = v.figures.length > 3;
   const figSize = wide ? 17 : fs.heading;
-  const gutter = wide ? 9 : 12;
+  // The gap BETWEEN columns, not a padding inside one — see the row below, where
+  // it stopped being a divider's shoulder and became the whole separation.
+  const gutter = wide ? 8 : 12;
 
   // Named metric first — the sentence's subject shouldn't be the last column.
   const ordered = v.metric
     ? [...v.figures].sort((a, b) => (a.metric === v.metric ? -1 : b.metric === v.metric ? 1 : 0))
     : v.figures;
 
-  const openIndex = open ? ordered.findIndex((f) => f.metric === open) : -1;
   const detail: ActivityDetail | null = open ? summary.details[open] : null;
   const shown = detail
     ? (group ? detail.groups.find((g) => g.id === group)?.items ?? detail.items : detail.items)
@@ -339,7 +347,16 @@ export default function AuroraWeekVerdict({
 
         {/* THE RECEIPTS — the figures the sentence was drawn from. Each one is
             a button onto its own breakdown. */}
-        <View style={{ flexDirection: "row", marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
+        {/* The columns separate by WHITESPACE. They used to carry a vertical
+            hairline on each one's left edge, and because the column is also a
+            12dp-rounded press target, that hairline inherited the radius and
+            curled at both ends — four tiny bracket stubs floating between the
+            figures, reading as clipped boxes rather than as a rule. A divider
+            that cannot be drawn straight is a divider the layout does not need:
+            each column is already a mono uppercase label stacked over a large
+            figure, which groups it without help. Same reasoning that retired
+            the hairline under a GroupMark. */}
+        <View style={{ flexDirection: "row", gap: gutter, marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
           {ordered.map((f, i) => {
             const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
@@ -360,16 +377,17 @@ export default function AuroraWeekVerdict({
                 accessibilityState={{ expanded: isOpen }}
                 accessibilityLabel={`${t(verdictLabelKey(f.metric))} – ${fmt(f.metric, f.value)}`}
                 style={{
-                  flex: 1, paddingLeft: i === 0 ? 6 : gutter, paddingRight: 6, paddingTop: 4, paddingBottom: 6,
-                  marginLeft: i === 0 ? -6 : 0, marginTop: -4, borderRadius: 12,
+                  // Padding is the WASH's inset now, so it is symmetric: the lit
+                  // panel sits evenly around its own figure instead of being
+                  // shouldered left to clear a divider that no longer exists.
+                  // The first column pulls its inset back off the card's edge so
+                  // the labels still line up with everything above them.
+                  flex: 1, paddingHorizontal: 5, paddingTop: 4, paddingBottom: 6,
+                  marginLeft: i === 0 ? -5 : 0, marginTop: -4, borderRadius: 12,
                   // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
                   // here: at 9% it reads as the column being lit rather than as
                   // a second surface laid over the card.
                   backgroundColor: isOpen && col ? withAlpha(col, dir === "flat" ? 0.06 : 0.09) : "transparent",
-                  // The divider retires on BOTH sides of the open column — a
-                  // hairline butting into a lit panel reads as a crack in it.
-                  borderLeftWidth: i === 0 ? 0 : 1,
-                  borderLeftColor: isOpen || openIndex === i - 1 ? "transparent" : C.line,
                 }}
               >
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: col ?? C.ash }}>
