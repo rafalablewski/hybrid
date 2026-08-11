@@ -75,11 +75,22 @@ export const READINESS_CEILING = 98;
 /**
  * Readiness = inverse of current training load — local tissue fatigue plus the
  * energy-system load conditioning leaves behind — nudged by wearable
- * biometrics, clamped to 35..98.
+ * biometrics and, when there is no wearable to read, by the heat prior,
+ * clamped to 35..98.
  */
 export function computeReadiness(
   fatigue: Fatigue,
   bio?: Biometrics,
+  /**
+   * The heat prior's contribution (engines/heat.ts), 0..HEAT_CREDIT_MAX.
+   *
+   * Optional and additive, so every existing caller resolves unchanged and a
+   * surface that has not been wired to the signals yet scores exactly what it
+   * scored before. It is passed ALREADY SUPPRESSED — `heatAdjustment` zeroes
+   * itself when `bio` is fresh, so this term and the wearable term can never
+   * both claim the same night.
+   */
+  heatAdj = 0,
 ): Readiness {
   const vals = Object.values(fatigue.muscles);
   // Guard the empty-muscle-set edge: an empty average is NaN, which survives
@@ -87,8 +98,10 @@ export function computeReadiness(
   const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   const base = 100 - avg * MUSCLE_SLOPE - enduranceFatigue(fatigue) * ENDURANCE_SLOPE;
   const bioAdj = bio ? biometricAdjustment(bio) : 0;
+  const heat = Number.isFinite(heatAdj) ? heatAdj : 0;
   return {
-    score: Math.max(READINESS_FLOOR, Math.min(READINESS_CEILING, Math.round(base + bioAdj))),
+    score: Math.max(READINESS_FLOOR, Math.min(READINESS_CEILING, Math.round(base + bioAdj + heat))),
     bioAdj,
+    heatAdj: heat,
   };
 }

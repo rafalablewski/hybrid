@@ -11,7 +11,7 @@ import {
   type StatRange,
   type LoggedSession,
 } from "@hybrid/core";
-import { fetchSessions, fetchSignals, type CoreSignal } from "../lib/api";
+import { fetchSessions, fetchRecoverySignals, type CoreSignal } from "../lib/api";
 import { useBodyweightLookup } from "../lib/use-bodyweight";
 import { useToday } from "../lib/use-today";
 import { useTheme, txt } from "../lib/theme";
@@ -36,7 +36,7 @@ export default function Statistics() {
   const [signals, setSignals] = useState<CoreSignal[]>([]);
 
   const load = useCallback(() => {
-    Promise.all([fetchSessions(), fetchSignals()]).then(([s, sig]) => {
+    Promise.all([fetchSessions(), fetchRecoverySignals()]).then(([s, sig]) => {
       setSessions(s);
       setSignals(sig);
     });

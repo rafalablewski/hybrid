@@ -13,6 +13,7 @@ import {
 } from "../feel-timing";
 import { readPairCurve } from "../readiness-reads";
 import { RECOVERY_WINDOW_H } from "../feel-schedule";
+import { heatSittings, HEAT_SESSION_MIN_EQUIV, type HeatSignalRow } from "./heat";
 
 /**
  * MATCHING THE TWO READS BACK UP.
@@ -39,6 +40,12 @@ export interface PairOptions {
   now?: number;
   /** How far back to look, days. */
   days?: number;
+  /**
+   * The athlete's `sauna` / `saunaTemp` rows. Supplying them TAGS each pair
+   * with whether heat fell inside its gap; omitting them leaves `heat`
+   * undefined, so "not measured" stays distinguishable from "no heat".
+   */
+  heatSignals?: HeatSignalRow[];
 }
 
 /** One matched pair, with enough context to explain itself in the UI. */
@@ -48,6 +55,15 @@ export interface RecoveryPair {
   /** ISO of the session end the pair is measured from. */
   at: string;
   curve: RecoveryCurve;
+  /**
+   * True when a heat sitting fell BETWEEN the session end and the recovery
+   * read — i.e. this is a measurement of clearance with heat in the middle of
+   * it. Only sittings clearing HEAT_SESSION_MIN_EQUIV count: a token five
+   * minutes in a cool cabin would otherwise relabel a pair without having
+   * plausibly changed it. Undefined when no heat log was supplied at all,
+   * which is not the same as false.
+   */
+  heat?: boolean;
 }
 
 const endMs = (s: LoggedSession): number => {
@@ -70,6 +86,13 @@ export function pairReads(
   recovery: RecoveryReport[] = [],
   opts: PairOptions = {},
 ): RecoveryPair[] {
+  // Heat sittings that were big enough to plausibly matter, as timestamps.
+  const heatAt = opts.heatSignals
+    ? heatSittings(opts.heatSignals)
+        .filter((h) => h.equivMin >= HEAT_SESSION_MIN_EQUIV)
+        .map((h) => Date.parse(h.ts))
+        .filter((t) => Number.isFinite(t))
+    : null;
   const now = opts.now ?? Date.now();
   const since = now - (opts.days ?? 56) * 24 * HOUR_MS;
 
@@ -147,7 +170,15 @@ export function pairReads(
       const later = feelReading(r.spent!, lag);
       const curve = fromReads ? readPairCurve(immediate, later) : recoveryCurve(immediate, later);
       if (curve) {
-        out.push({ sessionId: s.id, sessionTitle: s.title, at: new Date(end).toISOString(), curve });
+        out.push({
+          sessionId: s.id,
+          sessionTitle: s.title,
+          at: new Date(end).toISOString(),
+          curve,
+          // The window the pair actually measures: from the session end to the
+          // recovery read. Heat outside it did not happen during this clearance.
+          ...(heatAt ? { heat: heatAt.some((t) => t > end && t <= r.at) } : {}),
+        });
       }
       break; // one recovery read per session — the first that qualifies
     }
@@ -167,4 +198,73 @@ export function athleteClearance(
 ): RecoveryIndex & { samples: RecoveryPair[] } {
   const samples = pairReads(sessions, recovery, opts);
   return { ...recoveryIndex(samples.map((p) => p.curve)), samples };
+}
+
+
+/* ── PHASE 4: REPLACING THE LITERATURE CONSTANT WITH A MEASUREMENT ─────────── */
+
+/** The athlete's own clearance, split by whether heat fell inside the gap. */
+export interface HeatClearance {
+  withHeat: RecoveryIndex;
+  withoutHeat: RecoveryIndex;
+  /**
+   * withHeat.index − withoutHeat.index. NEGATIVE means faster after heat, since
+   * the index is a ratio against the population decay curve and lower is better
+   * (CLEARANCE_FAST is 0.85). Zero when either side is short of evidence.
+   */
+  delta: number;
+  /** min of the two sides' confidence — a comparison is only as good as its
+   *  weaker half, and a strong reading against nothing is not a comparison. */
+  confidence: number;
+  withSamples: RecoveryPair[];
+  withoutSamples: RecoveryPair[];
+}
+
+/**
+ * DOES HEAT ACTUALLY HELP *THIS* ATHLETE?
+ *
+ * Every constant in engines/heat.ts is a prior drawn from published research on
+ * other people. This is the instrument that can replace it with a measurement,
+ * and it needs no new data collection: `pairReads` already matches an immediate
+ * post-session read to a later recovery read and is rigorous about what it
+ * throws away (a second session inside the gap contaminates the pair, so the
+ * pair is dropped). Tagging each surviving pair with whether heat fell inside
+ * its gap splits the athlete's own history in two.
+ *
+ * IT IS DELIBERATELY SLOW TO SPEAK. Both sides must clear MIN_RECOVERY_PAIRS
+ * independently, which in practice means four to six weeks — and it returns a
+ * flat, zero-confidence result until then rather than a direction it cannot
+ * support. That is the same standard the estimator it is built on already
+ * holds itself to: the clearance estimate is allowed to be slow to arrive; it
+ * is not allowed to be wrong.
+ *
+ * WHY A DIFFERENCE OF INDICES rather than a ratio of them: both sides are
+ * already ratios against the same population curve, so subtracting them leaves
+ * a number in the units the rest of the clearance model speaks (CLEARANCE_FAST
+ * / CLEARANCE_SLOW bracket 1.0 by ±0.15), and a caller can compare `delta`
+ * against that same band without a second scale to learn.
+ */
+export function saunaClearance(
+  sessions: LoggedSession[],
+  recovery: RecoveryReport[] = [],
+  heatSignals: HeatSignalRow[] = [],
+  opts: PairOptions = {},
+): HeatClearance {
+  const pairs = pairReads(sessions, recovery, { ...opts, heatSignals });
+  const withSamples = pairs.filter((p) => p.heat === true);
+  const withoutSamples = pairs.filter((p) => p.heat === false);
+  const withHeat = recoveryIndex(withSamples.map((p) => p.curve));
+  const withoutHeat = recoveryIndex(withoutSamples.map((p) => p.curve));
+  // Zero confidence on either side means there is no comparison to report —
+  // and a delta computed from a neutral placeholder would read as "heat does
+  // nothing", which is a claim, not an absence.
+  const confidence = Math.min(withHeat.confidence, withoutHeat.confidence);
+  return {
+    withHeat,
+    withoutHeat,
+    delta: confidence > 0 ? Math.round((withHeat.index - withoutHeat.index) * 1000) / 1000 : 0,
+    confidence,
+    withSamples,
+    withoutSamples,
+  };
 }

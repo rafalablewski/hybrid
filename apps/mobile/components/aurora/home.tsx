@@ -12,6 +12,7 @@ import {
   FUNNEL,
   personalTrainingLog,
   toBiometrics,
+  heatAdjustment,
   velocityProfiles,
   readinessRole,
   quickCheckinFeeling,
@@ -61,7 +62,8 @@ import {
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
+import { useRecoveryReports } from "../../lib/use-recovery-reports";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useRecoverySignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
@@ -105,6 +107,7 @@ import { AppHeader } from "./app-header";
 import { StreakMark } from "./streak-mark";
 import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
+import { HeatRow } from "./heat-row";
 // THE HUB's other two tabs — the same full screens their own routes render,
 // handed Today's header + pills through the `top` slot so the chrome above
 // them never changes as the athlete switches tab.
@@ -275,7 +278,14 @@ export default function AuroraHome() {
   // memo time, so without this an app left open across a day boundary keeps
   // treating a reading as fresh past its last day — the same defect the daily
   // check-in already guards this way.
-  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals, today]);
+  // BIOMETRICS READ THE RECOVERY STREAM, not the unfiltered one: the latter
+  // returns the newest rows of any kind, and a few days of logged meals can
+  // evict a week of wearable readings from it (see lib/api.ts).
+  const { data: recoverySignals = [] } = useRecoverySignalsQuery();
+  const bio = useMemo(() => toBiometrics(recoverySignals as unknown as Parameters<typeof toBiometrics>[0]), [recoverySignals, today]);
+  const { data: heatSignals = [] } = useHeatSignalsQuery();
+  // The same reports the volume model reads, for the heat clearance split.
+  const recoveryReports = useRecoveryReports(sessions);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   // TODAY's readiness feeling (independent of the rail's selected day) → feeds
   // the prescription so the one-tap check-in mechanically scales today's load.
@@ -333,9 +343,13 @@ export default function AuroraHome() {
     () => decisiveFeeling(todayReads) ?? quickCheckinFeeling(todayCheckin),
     [todayReads, todayCheckin],
   );
+  // The heat prior, from the sittings the athlete typed. Zero whenever `bio`
+  // carries a fresh reading — the wearable already measures what the sauna did,
+  // so the prior stands down rather than stacking on it (engines/heat.ts).
+  const heatAdj = useMemo(() => heatAdjustment(heatSignals, { bio }).points, [heatSignals, bio]);
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined }),
-    [log, sessions, bio, prefExp, prefEquip, todayFeeling],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj }),
+    [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj],
   );
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();
@@ -990,6 +1004,15 @@ export default function AuroraHome() {
             stay one object. Renders nothing when no protocol is open. Mirrors
             web today.tsx. */}
         <RtpPanel />
+
+        {/* HEAT — the sauna log, in the Recover cluster beside the check-in.
+            It sits HERE rather than only on the post-session summary because
+            most sittings do not follow a session: this is the back-dating
+            entry, and the row states the week so far so the chronic channel
+            (which is the better-evidenced one) is visible without opening
+            anything. The trailing glyph is a bare ＋ — it GROWS the log in
+            place, it does not go anywhere. */}
+        <HeatRow sessions={sessions} recovery={recoveryReports} />
 
         {/* ═════ GROUP: PROGRESS — where the LIFTING is going. Three named
             things, in the order the question is actually asked: the period's

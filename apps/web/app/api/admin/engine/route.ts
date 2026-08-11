@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   });
   if (!user) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const [{ log, bio, sessions, sessionCount }, calibration, outcomes] = await Promise.all([
+  const [{ log, bio, sessions, heatSignals, sessionCount }, calibration, outcomes] = await Promise.all([
     athleteInputs(userId),
     activeCalibration(),
     prisma.riskOutcome.findMany({
@@ -72,5 +72,5 @@ export async function GET(request: Request) {
     req: request,
   });
 
-  return NextResponse.json({ user, log, bio: bio ?? null, sessionCount, calibration, personal, effort });
+  return NextResponse.json({ user, log, bio: bio ?? null, heatSignals, sessionCount, calibration, personal, effort });
 }

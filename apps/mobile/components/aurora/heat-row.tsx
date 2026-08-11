@@ -1,0 +1,150 @@
+import { useMemo, useState } from "react";
+import { View, Text } from "react-native";
+import {
+  CLEARANCE_FAST,
+  CLEARANCE_SLOW,
+  HEAT_SESSION_MIN_EQUIV,
+  heatSittings,
+  saunaClearance,
+  space,
+  type LoggedSession,
+  type RecoveryReport,
+} from "@hybrid/core";
+import { useLang } from "../../lib/i18n";
+import { fs, F, PressScale } from "../../lib/ui";
+import { useTheme, txt } from "../../lib/theme";
+import { useHeatSignalsQuery, useRevalidate } from "../../lib/queries";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
+import { ACard, RADIUS } from "./kit";
+import { HeatSheet } from "./heat-sheet";
+
+/**
+ * THE HEAT ROW — Today's Recover cluster.
+ *
+ * WHAT IT PUTS ON THE FACE, and why it is this and not a count. A row that said
+ * only "Heat →" would be a button wearing a card; the week's own figure is the
+ * thing the athlete cannot get anywhere else, and it is the CHRONIC channel's
+ * input — sittings per week is exactly what the volume multiplier reads, so
+ * showing it here means the number that moves their MRV is visible without
+ * opening anything.
+ *
+ * Equivalent minutes rather than raw minutes, for the same reason the engine
+ * counts them: 30 minutes in a 55 °C cabin and 30 at 90 °C are not the same
+ * week, and a row that adds them together would be reporting a total the model
+ * does not use.
+ *
+ * THE GLYPH IS A BARE ＋, NOT A RINGED ARROW. House rule, and it is honest
+ * here: tapping this grows the log in place through a sheet — it does not open
+ * a destination. An arrow would promise a screen that does not exist.
+ */
+export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSession[]; recovery?: RecoveryReport[] } = {}) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  // The SHARED cache entry, not a private fetch: today's readiness ring and the
+  // volume model read the same rows, so a sitting saved here has to invalidate
+  // the one thing they all read or the row updates and the score does not.
+  const { data: rows = [] } = useHeatSignalsQuery();
+  const revalidate = useRevalidate();
+  // °C is stored; the DISPLAY unit follows the weight unit the athlete already
+  // set (lb → °F), so a pounds-and-Fahrenheit athlete is never shown Celsius.
+  const { units } = useLoggerPrefs();
+
+  // This calendar week's sittings, counted the way the engine counts them.
+  const week = useMemo(() => {
+    const now = Date.now();
+    const d = new Date(now);
+    const dow = (d.getDay() + 6) % 7; // Monday-first, matching the week rail
+    d.setHours(0, 0, 0, 0);
+    const start = d.getTime() - dow * 86_400_000;
+    const mine = heatSittings(rows).filter((x) => {
+      const ts = Date.parse(x.ts);
+      return ts >= start && ts <= now;
+    });
+    return {
+      count: mine.filter((x) => x.equivMin >= HEAT_SESSION_MIN_EQUIV).length,
+      equiv: Math.round(mine.reduce((a, x) => a + x.equivMin, 0)),
+    };
+  }, [rows]);
+
+  /**
+   * THE PAYOFF — the athlete's OWN measured answer, not the literature's.
+   *
+   * `saunaClearance` splits their clean recovery pairs by whether heat fell
+   * inside the gap. It returns zero confidence until BOTH sides clear the pair
+   * floor, which in practice is four to six weeks, and this block renders
+   * nothing at all until then rather than a direction it cannot support. That
+   * silence is the feature: the same standard the clearance estimator it is
+   * built on already holds itself to.
+   */
+  const clearance = useMemo(
+    () => (sessions.length ? saunaClearance(sessions, recovery, rows) : null),
+    [sessions, recovery, rows],
+  );
+  // The verdict reads off the DELTA, not either side's absolute index — the
+  // question is "does heat help ME", and an athlete who clears slowly overall
+  // can still clear meaningfully faster after a sauna. Reading the absolute
+  // would have called that "no difference". The band is the one the clearance
+  // model already uses in both directions (CLEARANCE_FAST/SLOW bracket 1.0 by
+  // the same +/-0.15), so there is no second scale to learn.
+  const MEANINGFUL = Math.min(1 - CLEARANCE_FAST, CLEARANCE_SLOW - 1);
+  const verdictKey = !clearance || clearance.confidence <= 0
+    ? null
+    : clearance.delta < -MEANINGFUL
+      ? "w.recovery.heat.clearFaster"
+      : clearance.delta > MEANINGFUL
+        ? "w.recovery.heat.clearSlower"
+        : "w.recovery.heat.clearSame";
+
+  const meta = week.count > 0
+    ? t("w.recovery.heat.rowMeta").replace("{n}", String(week.count)).replace("{m}", String(week.equiv))
+    : t("w.recovery.heat.rowEmpty");
+
+  return (
+    <>
+      <PressScale onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.recovery.heat.add")}>
+        <ACard style={{ paddingVertical: 13, paddingHorizontal: 16 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.heat.row")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{meta}</Text>
+            </View>
+            {/* Bare ＋ — it grows in place. No ring, because nothing opens. */}
+            <View
+              style={{
+                width: 30, height: 30, borderRadius: RADIUS.pill,
+                alignItems: "center", justifyContent: "center",
+              }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: txt(C, C.amber) }}>＋</Text>
+            </View>
+          </View>
+        </ACard>
+      </PressScale>
+
+      {/* Only once it can honestly say something. */}
+      {verdictKey && clearance && (
+        <ACard style={{ marginTop: 8, paddingVertical: 14, paddingHorizontal: 16 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+            {t("w.recovery.heat.clearTitle")}
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber) }}>{t("w.recovery.heat.clearWith")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: txt(C, C.amber) }}>{clearance.withHeat.index.toFixed(2)}</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.recovery.heat.clearWithout")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk }}>{clearance.withoutHeat.index.toFixed(2)}</Text>
+          </View>
+          <View style={{ height: 1, backgroundColor: C.line, marginVertical: 11 }} />
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 18 }}>
+            {t(verdictKey)}{" "}
+            {t("w.recovery.heat.clearPairs").replace("{n}", String(clearance.withSamples.length + clearance.withoutSamples.length))}
+          </Text>
+        </ACard>
+      )}
+
+      <HeatSheet visible={open} onClose={() => setOpen(false)} onLogged={revalidate.heat} weightUnit={units} />
+    </>
+  );
+}

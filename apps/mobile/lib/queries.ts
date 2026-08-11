@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, setExerciseCatalog } from "@hybrid/core";
-import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchFoodLogs } from "./api";
+import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchFoodLogs, fetchHeatSignals, fetchRecoverySignals } from "./api";
 
 // Shared query hooks for the mobile app — parity with the web data-layer. Keys
 // match conceptually so the same mutation→invalidate discipline applies. These
@@ -16,6 +16,8 @@ export const qk = {
   checkins: ["checkins"] as const,
   exercises: ["exercises"] as const,
   foodLogs: ["foodLogs"] as const,
+  heatSignals: ["signals", "heat"] as const,
+  recoverySignals: ["signals", "recovery"] as const,
 };
 
 /**
@@ -120,6 +122,29 @@ export function useMacrocycleQuery() {
   return useQuery({ queryKey: qk.macrocycle, queryFn: () => queryMacrocycle() });
 }
 
+/**
+ * The athlete's sauna rows, on their OWN cache entry.
+ *
+ * Deliberately not a slice of `useSignalsQuery`: that one reads the newest 500
+ * rows of ANY kind, and one logged food writes up to eight of them, so on a
+ * diligent nutrition logger the window can cover barely a fortnight. A recovery
+ * input must not be evictable by an unrelated one, so this fetches by kind.
+ */
+/**
+ * The recovery stream (HRV / resting HR / sleep / body mass), by kind.
+ *
+ * Everything that resolves `toBiometrics` reads THIS rather than the unfiltered
+ * `useSignalsQuery`, which returns the newest rows of any kind and can have a
+ * week of wearable readings evicted by a few days of logged meals.
+ */
+export function useRecoverySignalsQuery() {
+  return useQuery({ queryKey: qk.recoverySignals, queryFn: fetchRecoverySignals });
+}
+
+export function useHeatSignalsQuery() {
+  return useQuery({ queryKey: qk.heatSignals, queryFn: fetchHeatSignals });
+}
+
 /** The athlete's readiness check-ins, from the shared cache. */
 export function useCheckinsQuery() {
   return useQuery({ queryKey: qk.checkins, queryFn: () => queryCheckins() });
@@ -130,6 +155,7 @@ export function useCheckinsQuery() {
 // key), so a screen can mix the two freely at no cost.
 export const useSessionsRead = (opts?: { archived?: boolean }) => toRead(useSessionsQuery(opts));
 export const useSignalsRead = () => toRead(useSignalsQuery());
+export const useRecoverySignalsRead = () => toRead(useRecoverySignalsQuery());
 export const useMacrocycleRead = () => toRead(useMacrocycleQuery());
 export const useCheckinsRead = () => toRead(useCheckinsQuery());
 
@@ -203,8 +229,19 @@ export function useRevalidate() {
      *  A nutrition log also changed the diary ENTRIES Today's Fuel plate reads. */
     recovery: () => Promise.all([
       qc.invalidateQueries({ queryKey: qk.signals }),
+      qc.invalidateQueries({ queryKey: qk.recoverySignals }),
       qc.invalidateQueries({ queryKey: qk.foodLogs }),
     ]),
+    /**
+     * A logged (or deleted) sauna sitting.
+     *
+     * It has its own entry because it has its own cache key, and because the
+     * things it falsifies are not the nutrition ones: today's readiness ring
+     * and prescription both read the heat prior, and the volume model reads the
+     * four-week frequency. Without this the athlete would save a sitting, watch
+     * the row update, and see a readiness figure that still predates it.
+     */
+    heat: () => qc.invalidateQueries({ queryKey: qk.heatSignals }),
     /** Enrolling in or leaving a plan changed the season. */
     macrocycle: () => qc.invalidateQueries({ queryKey: qk.macrocycle }),
     /** A readiness face was saved — today's feeling drives the prescription. */

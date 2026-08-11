@@ -115,3 +115,25 @@ export function fmtHeight(cm: number, u: WeightUnit): string {
   const inch = totalIn % 12;
   return `${ft}'${inch}"`;
 }
+
+/* ── TEMPERATURE ──────────────────────────────────────────────────────────────
+ *
+ * Introduced for logged heat exposure (engines/heat.ts), where the athlete types
+ * how hot the sauna was. Canonical storage is ALWAYS °C — one stored scale, no
+ * ambiguous rows — and the display unit is DERIVED from the weight unit the
+ * athlete already set, exactly as `heightUnitFor` derives inches from pounds.
+ * A third preference to manage would be a third way to get it wrong.
+ */
+export type TempUnit = "c" | "f";
+
+export const tempUnitFor = (u: WeightUnit): TempUnit => (u === "lb" ? "f" : "c");
+
+export const cToTempUnit = (c: number, t: TempUnit): number => (t === "f" ? c * 9 / 5 + 32 : c);
+
+export const tempUnitToC = (v: number, t: TempUnit): number => (t === "f" ? (v - 32) * 5 / 9 : v);
+
+/** "90 °C" / "194 °F", rounded — a sauna dial is not a precision instrument. */
+export function fmtTemp(c: number, u: WeightUnit): string {
+  const t = tempUnitFor(u);
+  return `${Math.round(cToTempUnit(c, t))} °${t.toUpperCase()}`;
+}

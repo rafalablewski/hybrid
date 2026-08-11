@@ -1,5 +1,6 @@
 import type { BodyweightPoint } from "../bodyweight";
 import { isPlausibleHeightCm } from "../units";
+import { heatWeeklyFrequency, type HeatSignalRow } from "./heat";
 import type { RecoveryReport } from "./landmark-adapt";
 import type { AthleteVolumeProfile } from "./landmark-profile";
 
@@ -40,6 +41,14 @@ export interface MeasuredProfile {
    *  inferred from anything — it is the athlete's own measurement, read from
    *  where they already entered it so they never type it twice. */
   heightCm?: number;
+  /**
+   * Sauna sittings per week over four weeks, from the logged heat signals.
+   *
+   * ALWAYS measured, never typed — unlike sleep or height there is no form for
+   * it and there is not going to be one, because the log already holds the
+   * answer and the athlete would only be copying it back to us.
+   */
+  heat?: number;
   /** Which fields came from measurement — the UI marks these as not-typed. */
   measured: (keyof AthleteVolumeProfile)[];
 }
@@ -141,7 +150,16 @@ export function energyBalanceFromBodyweight(
 
 /** Everything the app can answer on the athlete's behalf, in one call. */
 export function measuredProfile(
-  opts: { checkins?: RecoveryReport[]; bodyweight?: BodyweightPoint[]; heightCm?: number | null; now?: number } = {},
+  opts: {
+    checkins?: RecoveryReport[];
+    bodyweight?: BodyweightPoint[];
+    heightCm?: number | null;
+    /** The athlete's `sauna` / `saunaTemp` rows. Heat is the purest measured
+     *  field on the profile: there is no form for it anywhere and there never
+     *  will be — the athlete has already told us by logging. */
+    heatSignals?: HeatSignalRow[];
+    now?: number;
+  } = {},
 ): MeasuredProfile {
   const out: MeasuredProfile = { measured: [] };
   const sleep = sleepFromCheckins(opts.checkins ?? [], { now: opts.now });
@@ -162,6 +180,13 @@ export function measuredProfile(
     out.heightCm = Math.round(opts.heightCm);
     out.measured.push("heightCm");
   }
+  // Only when there is something to measure. An athlete with no sauna rows has
+  // not told us they never go — they have told us nothing — and a fabricated 0
+  // would present an absence as a finding.
+  if (opts.heatSignals?.length) {
+    out.heat = heatWeeklyFrequency(opts.heatSignals, opts.now);
+    out.measured.push("heat");
+  }
   return out;
 }
 
@@ -174,6 +199,7 @@ export function withMeasured(stored: AthleteVolumeProfile, measured: MeasuredPro
   return {
     ...stored,
     sleep: stored.sleep ?? measured.sleep,
+    heat: measured.heat,
     nutrition: stored.nutrition ?? measured.nutrition,
     heightCm: stored.heightCm ?? measured.heightCm,
   };

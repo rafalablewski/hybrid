@@ -34,6 +34,11 @@ export type SignalKind =
   // composition / physiology
   | "bodyMass"
   | "bloodMarker"
+  // heat exposure — the ONE input no device will ever report, so both halves
+  // are typed: how long, and how hot. Two rows at an identical ts are one
+  // sitting (engines/heat.ts, heatSittings).
+  | "sauna"
+  | "saunaTemp"
   // nutrition — the four macros the engines read…
   | "energyIntake"
   | "protein"
@@ -84,6 +89,8 @@ const META: Record<SignalKind, { unit: string; better: SignalDirection }> = {
   barVelocity: { unit: "m/s", better: "high" },
   bodyMass: { unit: "kg", better: "high" },
   bloodMarker: { unit: "", better: "high" },
+  sauna: { unit: "min", better: "high" },
+  saunaTemp: { unit: "C", better: "high" },
   energyIntake: { unit: "kcal", better: "high" },
   protein: { unit: "g", better: "high" },
   carbs: { unit: "g", better: "high" },

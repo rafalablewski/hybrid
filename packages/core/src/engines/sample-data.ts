@@ -48,3 +48,19 @@ export const SAMPLE_BIOMETRICS: Biometrics = {
   sleep: { today: 7.2, baseline: 7.5, unit: "h", better: "high" },
   sleepScore: { today: 81, baseline: 78, unit: "", better: "high" },
 };
+
+/**
+ * A sample heat log — one sitting last night, so the Engine Room's heat panel
+ * has something to show before an operator picks a real athlete.
+ *
+ * A FUNCTION, not a constant, because the credit decays against the clock: a
+ * frozen ISO string would drift out of the 48-hour window a couple of days
+ * after it was written and the sample would quietly go blank.
+ */
+export function sampleHeatSignals(now: number = Date.now()): { kind: string; value: number; source: string; ts: string }[] {
+  const ts = new Date(now - 9.5 * 3_600_000).toISOString();
+  return [
+    { kind: "sauna", value: 22, source: "manual", ts },
+    { kind: "saunaTemp", value: 90, source: "manual", ts },
+  ];
+}

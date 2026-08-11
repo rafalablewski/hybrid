@@ -77,11 +77,18 @@ export interface AthleteVolumeProfile {
   nutrition?: "deficit" | "maintenance" | "surplus";
   /** Training sessions per week — frequency spreads the same weekly sets. */
   daysPerWeek?: number;
+  /**
+   * Sauna sittings per week, averaged over four weeks. DERIVED from the logged
+   * heat signals (`heatWeeklyFrequency`), never asked — the athlete has already
+   * told us by logging, and a profile question would be a worse copy of an
+   * answer we hold.
+   */
+  heat?: number;
 }
 
 /** One multiplier and why it applies — the audit trail behind the numbers. */
 export interface LandmarkFactor {
-  key: "experience" | "age" | "bodyweight" | "sleep" | "stress" | "nutrition" | "frequency" | "clearance";
+  key: "experience" | "age" | "bodyweight" | "sleep" | "stress" | "nutrition" | "frequency" | "clearance" | "heat";
   /** Which end of the band it moves. */
   affects: "stimulus" | "recovery" | "both";
   /** The multiplier applied, e.g. 0.88. */
@@ -118,6 +125,35 @@ export const SLEEP_RECOVERY = [1, 0.78, 0.86, 0.94, 1, 1.05];
 /** Stress 1–5 (5 = worst) → recovery multiplier (index 0 unused). */
 export const STRESS_RECOVERY = [1, 1.04, 1, 0.95, 0.88, 0.8];
 export const NUTRITION_RECOVERY = { deficit: 0.85, maintenance: 1, surplus: 1.05 } as const;
+
+/**
+ * Sauna sittings per week → recovery multiplier.
+ *
+ * The BEST-evidenced of heat's two channels, and still the most timid number in
+ * this file. Repeated heat exposure drives acclimation — plasma volume
+ * expansion of roughly 3–5% over 7–10 days, raised HSP70, better
+ * thermoregulation — and the Finnish cohort's dose-response strengthens at four
+ * or more sittings a week. What is DOCUMENTED is the adaptation; what is
+ * INFERRED is its transfer to how many hard sets a week you can absorb. So the
+ * ceiling is 4%, not 15%: the direction is defensible, the magnitude is a
+ * prior. It compounds with sleep, stress, nutrition, age and mass, and
+ * RECOVERY_BOUNDS clamps the product, so it cannot combine into anything absurd.
+ *
+ * Unlike the acute credit this does NOT stand down for a wearable — it operates
+ * on a four-week timescale, where there is no single night for the two terms to
+ * disagree about.
+ */
+export const HEAT_RECOVERY_TIERS: readonly { minPerWeek: number; multiplier: number }[] = [
+  { minPerWeek: 4, multiplier: 1.04 },
+  { minPerWeek: 2, multiplier: 1.02 },
+  { minPerWeek: 0, multiplier: 1 },
+];
+
+/** The multiplier a given weekly sitting frequency earns. */
+export function heatRecovery(perWeek: number): number {
+  if (!Number.isFinite(perWeek) || perWeek <= 0) return 1;
+  return HEAT_RECOVERY_TIERS.find((t) => perWeek >= t.minPerWeek)?.multiplier ?? 1;
+}
 
 /** Age below which there is no recovery penalty. */
 export const AGE_REF_YEARS = 30;
@@ -231,14 +267,32 @@ export function personalizeLandmarks(
     if (m !== 1) factors.push({ key: "frequency", affects: "recovery", multiplier: m, value: `${Math.round(days)}×/wk` });
   }
 
+  const heat = num(profile.heat);
+  if (heat !== undefined && heat > 0) {
+    const m = heatRecovery(heat);
+    recovery *= m;
+    if (m !== 1) {
+      const rounded = Math.round(heat * 10) / 10;
+      factors.push({ key: "heat", affects: "recovery", multiplier: m, value: `${rounded}×/wk sauna` });
+    }
+  }
+
   // Bound the compounded multipliers. Five mildly negative inputs must not
   // multiply into a ceiling nobody could train under, and the estimate should
   // never wander so far from the population table that it stops being sane.
   stimulus = clamp(stimulus, STIMULUS_BOUNDS[0], STIMULUS_BOUNDS[1]);
   recovery = clamp(recovery, RECOVERY_BOUNDS[0], RECOVERY_BOUNDS[1]);
 
+  // HEAT IS DELIBERATELY NOT IN THIS LIST. Confidence asks how much of the
+  // profile we actually know, and every other field here is one EVERY athlete
+  // has — a bodyweight, a sleep score, a training frequency. A sauna habit is
+  // not: an athlete who has never sat in one has nothing to supply, so counting
+  // it would cap them below full confidence forever for declining an optional
+  // practice, and would have quietly dropped every existing athlete from 1.0 to
+  // 0.9 the day this shipped. It moves the multiplier; it does not judge how
+  // well we know them.
   const supplied = [exp, age, bw, sleep, stress, profile.nutrition, days].filter((v) => v !== undefined && v !== null).length;
-  const personalized = supplied > 0;
+  const personalized = supplied > 0 || heat !== undefined;
   // Experience is worth more than any other single input, so a profile with
   // only experience already clears half-confidence.
   const weight = (exp ? 3 : 0) + supplied - (exp ? 1 : 0);

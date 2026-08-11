@@ -7,7 +7,8 @@ import {
   readReports, placeReads, QUICK_CHECKIN_METRIC,
   type AthleteVolumeProfile, type LoggedSession, type RecoveryReport,
 } from "@hybrid/core";
-import { useCheckinsQuery } from "./queries";
+import { useHeatSignalsQuery } from "./queries";
+import { useRecoveryReports } from "./use-recovery-reports";
 import { useLoggerPrefs, setLoggerPref } from "./logger-prefs";
 import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
 import { useFitnessLevel } from "./use-fitness-level";
@@ -42,7 +43,9 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // Height comes from the body log the athlete already filled in (Profile →
   // Body & progress) rather than being asked for a second time here.
   const loggedHeightCm = useAthleteHeight();
-  const { data: checkins = [] } = useCheckinsQuery();
+  // Heat is a MEASURED profile field — there is no form for it and there is not
+  // going to be one, because the athlete already told us by logging.
+  const { data: heatSignals = [] } = useHeatSignalsQuery();
   const [intake, setIntake] = useState<{ experience?: Experience; daysPerWeek?: number }>({});
   useEffect(() => {
     let alive = true;
@@ -59,31 +62,11 @@ export function useVolumeModel(sessions: LoggedSession[]) {
     return () => { alive = false; };
   }, []);
 
-  // The daily check-in on the engine's own terms: same 1–5 scales, no reinterpretation.
-  //
-  // …and a day is EVERY READ it carries, not one value. The card asks again once
-  // a session has drained, so a day can hold "wrecked at 09:30" and "good at
-  // 22:00" — which is precisely the pair `athleteClearance` needs to measure how
-  // fast this athlete drains a session, and which one stored value could never
-  // express. `readReports` gives the day the DECISIVE read (freshness, sleep and
-  // mood travel with it, answered once) and emits the others as timed reads of
-  // their own; the estimator then weights each DAY to 1 regardless of how many
-  // reads it holds. See core/readiness-reads.ts.
-  const sessionEnds = useMemo(
-    () => sessions.map((s) => Date.parse(s.completedAt ?? s.startedAt ?? "")).filter((t) => Number.isFinite(t)),
-    [sessions],
-  );
-  const recovery = useMemo<RecoveryReport[]>(
-    () =>
-      checkins.flatMap((c) => {
-        const day: RecoveryReport = { date: c.weekOf, soreness: c.soreness, sleep: c.sleep, energy: c.energy, mood: c.mood, loggedAt: c.createdAt ?? null };
-        const rows = (c.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
-        if (rows.length < 2) return [day];
-        return readReports(day, placeReads(rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) })), sessionEnds)) as RecoveryReport[];
-      }),
-    [checkins, sessionEnds],
-  );
-  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm }), [recovery, bodyweightPoints, loggedHeightCm]);
+  // The check-in history on the engine's own terms — shared with the heat
+  // clearance comparison via lib/use-recovery-reports.ts.
+  const recovery = useRecoveryReports(sessions);
+
+  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, heatSignals }), [recovery, bodyweightPoints, loggedHeightCm, heatSignals]);
   const measuredKeys = useMemo(() => {
     const keys = measuredFields(prefs.volumeProfile, measured);
     // Body mass is measured too — it comes from the bodyweight log, not this form.
