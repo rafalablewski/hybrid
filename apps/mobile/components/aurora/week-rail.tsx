@@ -193,17 +193,15 @@ export default function AuroraWeekRail({
 
   return (
     <View
+      // ONE separation device, and the SAME one the logbook rail uses. These
+      // two are the same object in two modes — enrolling changes the card's
+      // fill, never its shape — so the chrome cannot fork between them: a fill
+      // says "this is a surface" once, and the border, the shadow and the
+      // elevation that used to say it three more times are gone.
       style={{
         backgroundColor: C.ink2,
-        borderWidth: 1,
-        borderColor: C.line,
         borderRadius: RADIUS.card,
         padding: CARD_PAD,
-        shadowColor: "#000",
-        shadowOpacity: 0.18,
-        shadowRadius: 14,
-        shadowOffset: { width: 0, height: 8 },
-        elevation: 3,
       }}
     >
       {/* header: plan name + progress on one baseline row */}

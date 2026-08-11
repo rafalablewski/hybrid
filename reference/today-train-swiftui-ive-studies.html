@@ -284,7 +284,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 <div class="wrap">
 
 <header class="masthead">
-  <div class="eyebrow">HYBRID — mobile design study — rev. 5</div>
+  <div class="eyebrow">HYBRID — mobile design study — rev. 6</div>
   <h1>Today → Train,<br />the whole experience<span class="dot">.</span></h1>
   <p class="standfirst">
     The logbook card rebuilt on the <b>SwiftUI view set</b>, then drawn out across
@@ -346,7 +346,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 <section class="section">
   <div class="rule-head">
     <h2>Shipped</h2>
-    <span class="eyebrow">branch claude/swiftui-ive-design-redesign — typecheck, 3 268 tests, iOS bundle green</span>
+    <span class="eyebrow">branch claude/swiftui-ive-design-redesign — typecheck, 3 269 tests, iOS bundle green</span>
   </div>
 
   <p class="lede">
@@ -422,18 +422,42 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
         wrong place to decide it shouldn't exist.
       </p>
     </div>
+    <div class="s">
+      <span class="k">Shipped — and caught in the act</span>
+      <h3>Both rails, one chrome</h3>
+      <p>
+        Shedding the logbook card's border without touching the plan rail put the two on different
+        chrome inside a single change — they are the same object in two modes. Both carry the fill
+        alone now, held there by a <b>HARD test</b>, and <code>concentricRadius()</code> lands beside
+        them.
+      </p>
+    </div>
   </div>
 
   <div class="note">
     <span class="k">Still open — and why</span>
-    <b>Move 06's day pager and rolling figures</b>, and <b>move 05</b>. The pager is the one piece whose
-    honest form (<code>TabView</code> wrapping the day's content) puts a native view in charge of
-    CONTENT, and <code>contentTransition(.numericText)</code> has no faithful RN stand-in — a
-    crossfade pretending to be a digit roll is worse than none. Move 05 changes native configuration,
-    so it rides its own prebuild: one variable per build. The edge states (S3 loading, S8 in-progress,
-    S13 offline, S15 undo) need data the screen doesn't carry yet — a request phase, a live-session
-    handle, a queue depth, a restore endpoint — and inventing those shapes to fill a mockup would be
-    the wrong order.
+    <b>Move 06</b> and <b>move 05</b>, each for a reason found by trying rather than guessed at.
+    <br /><br />
+    <b>06's day pager collides with a shipped gesture.</b> A horizontal scrub on the card body and a
+    horizontal swipe-to-delete on the rows inside it are the same gesture meaning two different things
+    depending on where a finger lands. Move 04 is already in and is worth more, so the pager waits for
+    a form that doesn't overload it — the rail's tap still moves the day.
+    <b>06's rolling figures</b> need a <code>View</code> where a <code>Text</code> is, and the hero row
+    aligns on the text baseline: React&nbsp;Native gives a non-text view its bottom edge as its
+    baseline, so the unit beside the number would shift by roughly a descender. That is a visual
+    regression on the flagship figure, and it wants a device round rather than a guess at the metrics.
+    <br /><br />
+    <b>05's scroll edge effect isn't in the package.</b> Verified against
+    <code>node_modules</code>: <code>@expo/ui@56</code> exposes no <code>scrollEdgeEffect</code>
+    modifier, so it needs a Swift view of our own — and the condensing large title changes native
+    configuration, so both ride their own prebuild.
+    <br /><br />
+    <b>The loading state is already better than the mockup.</b> <code>home.tsx</code> holds a cold-start
+    branch that shows a skeleton precisely because it cannot yet tell an enrolled athlete from a
+    first-run one, so the plan appears with no chooser flash between. S3 proposed a rail skeleton that
+    would contradict it. The other edges — in-progress, offline, undo — need a live-session handle, a
+    queue depth and a restore endpoint the screen doesn't carry yet, and inventing those shapes to fill
+    a mockup would be the wrong order.
   </div>
 
   <div class="note grey">
@@ -1636,7 +1660,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 </section>
 
 <footer>
-  <span>HYBRID design study — rev. 5</span>
+  <span>HYBRID design study — rev. 6</span>
   <span>Today → Train</span>
   <span>18 states</span>
   <span>Set in Archivo &amp; JetBrains Mono — the app's own faces</span>
