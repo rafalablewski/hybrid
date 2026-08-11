@@ -9,7 +9,7 @@ import {
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
-import { GlassWheel, LIQUID_GLASS_RENDERED } from "./swiftui";
+import { GlassSegment, GlassWheel, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -147,6 +147,32 @@ export function RangeHead({ title, meta }: { title: string; meta: string }) {
  * movement is what makes it read as iOS rather than as five buttons. The Month
  * segment intercepts to its picker sheet; the pill only lands on it once a
  * month is actually in force (the index moves then).
+ *
+ * ── ON iOS 26 THE PRESETS ARE THE SYSTEM'S OWN SEGMENTED CONTROL ────────────
+ * Same fork as the Today hub switcher and the nutrition picker's source tabs:
+ * where an element maps to a real system control it goes native. Here that is
+ * a real SwiftUI `Picker` + `.pickerStyle(.segmented)` (GlassSegment) carrying
+ * the FOUR presets — Week / 7 days / 30 days / YTD.
+ *
+ * THE MONTH LEAVES THE TRACK, and it has to. A segmented Picker only reports a
+ * selection that CHANGED, so a segment that is already selected can never be
+ * tapped again — and the Month segment's whole job is to open its sheet on
+ * every tap, including the taps that come after a month is already in force.
+ * Inside the native control it would go dead the moment you used it: pick July,
+ * and August is unreachable. That is the one thing `LiquidSeg.intercept`
+ * expresses that the system control does not, so the month becomes its own
+ * trigger beside the track ("Jul ▾") and keeps opening the same sheet — which
+ * is where the system month WHEEL lives, so nothing shipped there is lost.
+ *
+ * While a month is in force NO segment is lit, which is honest rather than
+ * unfortunate: none of the four presets is the period, the trigger beside them
+ * is, and it says so in chalk. The block's head prints the month and its span
+ * directly above, so "which window am I in" is never carried by the pill alone.
+ *
+ * The trigger stays the app's OWN drawing — mono, the ▾, the same 11pt the
+ * segment labels used to take — because a word that opens a sheet is the app's
+ * inline-select idiom and has no system counterpart. Android, iOS < 26 and web
+ * keep the whole five-segment LiquidSeg below, intercept and all.
  */
 export function RangeFilter({
   range, sessions, onPick,
@@ -168,31 +194,73 @@ export function RangeFilter({
   const label = (s: (typeof segments)[number]) =>
     s.labelKey ? t(s.labelKey) : monthLabel(s.monthId ?? range.id, false);
 
+  const onMonth = range.kind === "month";
+  const monthSeg = segments.find((s) => s.isMonth);
+
   return (
     <>
-      <LiquidSeg
-        items={segments.map((s) => ({
-          key: s.id,
-          label: label(s),
-          intercept: s.id === MONTH_SEGMENT_ID ? () => setPicker(true) : undefined,
-          render: (on: boolean) => (
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              numberOfLines={1}
-              style={{
-                fontFamily: on ? F.monoBold : F.mono, fontSize: 11,
-                color: on ? C.chalk : C.ash, paddingHorizontal: 2,
-              }}
+      {LIQUID_GLASS_RENDERED ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 10 }}>
+          <View style={{ flex: 1 }}>
+            <GlassSegment
+              options={segments.filter((s) => !s.isMonth).map((s) => ({ id: s.id, label: label(s) }))}
+              // While a month is in force NOTHING matches a tag, so no segment
+              // is lit — see the note above. A preset's own id IS its segment
+              // id, so the rest needs no lookup.
+              value={onMonth ? "" : range.id}
+              onPick={onPick}
+            />
+          </View>
+          {monthSeg ? (
+            <Pressable
+              onPress={() => setPicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t("w.home.act.pickTitle")}
+              accessibilityState={{ selected: onMonth }}
+              // The native track is ~32pt, so the pad here is what carries the
+              // trigger to the 44dp floor rather than a minHeight fighting the
+              // row's alignment.
+              hitSlop={8}
+              style={{ paddingVertical: 8, paddingHorizontal: 4 }}
             >
-              {label(s)}{s.isMonth ? " ▾" : ""}
-            </Text>
-          ),
-        }))}
-        index={segIndex}
-        onSelect={(i) => onPick(segments[i]!.id)}
-        segHeight={30}
-        pad={3}
-        trackStyle={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, marginBottom: 10 }}
-      />
+              <Text
+                maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                numberOfLines={1}
+                style={{
+                  fontFamily: onMonth ? F.monoBold : F.mono, fontSize: 11,
+                  color: onMonth ? C.chalk : C.ash,
+                }}
+              >
+                {label(monthSeg)} ▾
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : (
+        <LiquidSeg
+          items={segments.map((s) => ({
+            key: s.id,
+            label: label(s),
+            intercept: s.id === MONTH_SEGMENT_ID ? () => setPicker(true) : undefined,
+            render: (on: boolean) => (
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                numberOfLines={1}
+                style={{
+                  fontFamily: on ? F.monoBold : F.mono, fontSize: 11,
+                  color: on ? C.chalk : C.ash, paddingHorizontal: 2,
+                }}
+              >
+                {label(s)}{s.isMonth ? " ▾" : ""}
+              </Text>
+            ),
+          }))}
+          index={segIndex}
+          onSelect={(i) => onPick(segments[i]!.id)}
+          segHeight={30}
+          pad={3}
+          trackStyle={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, marginBottom: 10 }}
+        />
+      )}
 
       {/* ── THE MONTH PICKER — preset rows, then the months: the system wheel
           where it renders (iOS 26), the grouped rows everywhere else. ──────── */}
