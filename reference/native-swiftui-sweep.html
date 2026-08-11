@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>HYBRID — native controls and motion</title>
+<title>HYBRID — shared components and native motion</title>
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap");
 
@@ -165,18 +165,19 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 <div class="wrap">
 
 <header class="masthead">
-  <div class="eyebrow">HYBRID — native controls &amp; motion — app-wide</div>
-  <h1>Buttons, pills,<br />and how things move<span class="dot">.</span></h1>
+  <div class="eyebrow">HYBRID — shared components &amp; native motion — app-wide</div>
+  <h1>One component,<br />eighty call sites<span class="dot">.</span></h1>
   <p class="standfirst">
-    Ten swaps, all of them <b>controls and transitions</b> — not surfaces. Rechecked against the
-    codebase before publishing, which changed two of them: the brand pill is <b>not</b> going native
-    (that was tried and reverted), and the number of hand-rolled pills is <b>49, not 80</b>.
+    The answer to "should these be native?" turned out to be <b>"these should be shared"</b>. Eighteen
+    hand-rolled CTAs are now on the app's own <code>APill</code> — which took the count from
+    <b>49 to 31</b> and the shared component from 61 call sites to <b>80</b>. Nine further swaps,
+    on motion and on controls the system genuinely owns, are drawn but not built.
   </p>
   <div class="facts">
-    <div class="fact"><span class="k">Hand-rolled pills</span><span class="v">49 — not 80</span></div>
-    <div class="fact"><span class="k">APill adoption</span><span class="v">61 sites already</span></div>
-    <div class="fact"><span class="k">Swaps</span><span class="v">9 proposed, 1 corrected</span></div>
-    <div class="fact"><span class="k">Verified against</span><span class="v">node_modules</span></div>
+    <div class="fact"><span class="k">Hand-rolled pills</span><span class="v">49 → 31</span></div>
+    <div class="fact"><span class="k">Shared pill</span><span class="v">61 → 80 sites</span></div>
+    <div class="fact"><span class="k">Built this pass</span><span class="v">18 migrations</span></div>
+    <div class="fact"><span class="k">Verified</span><span class="v">typecheck, 78 tests, iOS bundle</span></div>
   </div>
 </header>
 
@@ -262,11 +263,17 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
       </div>
     </div>
     <div class="note">
-      <span class="k">Started — the ratchet is in</span>
-      A test now pins the count at <b>49</b> and can only ever fall, so the drift is measurable instead
-      of anecdotal. The first migration is done: the sport sheet's Log button, which was the exact case
-      the commit state exists for — its label swapped to <code>…</code> mid-save and the button resized
-      under the finger still resting on it.
+      <span class="k">Built — 18 migrated, and it can only fall</span>
+      A ratchet test pins the count and tightens with every batch: <b>49 → 42 → 31</b>. Eighteen CTAs
+      moved onto the shared pill across seventeen files — the sport log, device import, Train's resume,
+      the barcode ask, both Wrapped shares, session-edit, sport-page's two, user-recipes, mfa-settings,
+      body-progress, the invite screen, the target sheet, the nutrition panel and four of Nutrition's
+      own. <b>Four of them were the spinner-swap bug</b>: session-edit, mfa-settings and body-progress
+      replaced their label with an <code>ActivityIndicator</code> mid-save, so the content resized under
+      a resting finger and VoiceOver got an unannounced spinner.<br /><br />
+      <b>Left on purpose:</b> 15 sites under 14px of padding, which would grow visibly against the
+      shared pill's 18 and want a device round, not a blind edit; and 5 that are fixed-width or carry a
+      glyph beside the label, which a string-label pill cannot hold.
     </div>
   </article>
 
@@ -586,6 +593,60 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
   </article>
 </section>
 
+<!-- ═══════════════════════════════════════════════════════ shared first ═ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Shared first, native second</h2>
+    <span class="eyebrow">the order that fell out of doing it</span>
+  </div>
+  <p class="lede">
+    I started this sweep looking for native replacements and found something duller and more useful: for
+    a control carrying brand paint, <b>the shared component beats both the hand-rolled copy and the
+    native one</b>. It already encodes decisions the call sites kept re-making badly — and the native
+    control cannot carry the brand, which is why <code>GlassPillButton</code> was reverted.
+  </p>
+  <p>
+    So the order is: <b>shared component where the app has an opinion</b> (the pill, the sheet, the
+    drawer, the stat tile); <b>native view where the system knows more than we do</b> (the timer, the
+    gauge, the chart, the slider, the list). The nine remaining swaps are all in that second category,
+    which is why none of them contradicts this pass.
+  </p>
+  <div class="ba">
+    <div class="side before">
+      <span class="cap"><i></i>What a call site used to decide for itself</span>
+      <div class="panel">
+        <div class="m-mono" style="text-transform:none;letter-spacing:0;line-height:1.9">
+          padding 8–16 &nbsp;–&nbsp; radius 10 / 14 / 16 / 999<br />
+          face mono / bold / black &nbsp;–&nbsp; hit target: unset<br />
+          disabled: opacity, sometimes &nbsp;–&nbsp; role: none<br />
+          saving: swap the label &nbsp;–&nbsp; width: changes
+        </div>
+      </div>
+      <span class="why">Seventeen files, each answering the same eight questions differently.</span>
+    </div>
+    <div class="side after">
+      <span class="cap"><i></i>What the shared pill already answered</span>
+      <div class="panel after">
+        <div class="m-mono" style="text-transform:none;letter-spacing:0;line-height:1.9;color:var(--mist)">
+          four variants, one geometry<br />
+          <code>soft</code> on real Liquid Glass<br />
+          role, label, disabled and <code>busy</code> to VoiceOver<br />
+          commit state that <b>holds its width</b>
+        </div>
+      </div>
+      <span class="why">One place to fix, and fixing it fixes eighty screens.</span>
+    </div>
+  </div>
+  <div class="note">
+    <span class="k">The same move, four more times</span>
+    Your backlog already names the rest of this shape: <code>drawer-collapse-merge</code> (percent-program's
+    Collapse into the kit's ADrawer), <code>admin-kit-merge</code>, <code>mobile-stat-tile</code> — a
+    shared tile so figures can roll in one place rather than nine — and
+    <code>design-system-unification-sweep</code>. Swap 10 below is <code>drawer-collapse-merge</code>
+    seen from the native side; done shared-first, it is the same job with a smaller blast radius.
+  </div>
+</section>
+
 <!-- ══════════════════════════════════════════════════════════════ ledger ═ -->
 <section class="section">
   <div class="rule-head">
@@ -602,10 +663,10 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
         <tr><td>Nav / satellite buttons</td><td>Native buttons</td><td><code>Button</code></td><td class="yes">already native</td></tr>
         <tr><td>Soft pill surface</td><td>Liquid Glass</td><td><code>GlassSurface</code></td><td class="yes">already native</td></tr>
         <tr><td>Sport date + duration</td><td>System calendar, stepper</td><td><code>DatePicker</code>, <code>Stepper</code></td><td class="yes">already native</td></tr>
-        <tr><td>Hand-rolled pills ×49</td><td>Own padding, radius, face</td><td><code>APill</code> — ours, deliberately</td><td class="yes">ratchet in, 1 migrated</td></tr>
+        <tr><td>Hand-rolled pills</td><td>49 → <b>31</b>, own geometry</td><td><code>APill</code> — shared, ours</td><td class="yes">18 migrated</td></tr>
         <tr><td>Button sizing</td><td>Padding pairs</td><td><code>controlSize</code></td><td class="no">swap 02</td></tr>
         <tr><td>Filter chips</td><td>Pressable + ternary</td><td><code>Toggle(.button)</code></td><td class="no">swap 03</td></tr>
-        <tr><td>Saving state</td><td>APill: solved. Elsewhere: "…"</td><td>adopt <code>APill</code></td><td class="no">part of swap 01</td></tr>
+        <tr><td>Saving state</td><td>Spinner swap, resizing</td><td><code>APill</code> commit state</td><td class="yes">4 fixed</td></tr>
         <tr><td>Icon + word</td><td>Two components</td><td><code>Label</code> + <code>labelStyle</code></td><td class="no">swap 05</td></tr>
         <tr><td>Action clusters</td><td>Loose buttons</td><td><code>ControlGroup</code></td><td class="no">swap 06</td></tr>
         <tr><td>Animation</td><td>JS drives each frame</td><td><code>withAnimation</code> + <code>useNativeState</code></td><td class="no">swap 07</td></tr>
@@ -618,10 +679,10 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 
   <div class="note warn">
     <span class="k">Status</span>
-    <b>Built: the swap-01 ratchet and its first migration.</b> A test pins the hand-rolled pill count
-    at 49 and can only fall; the sport sheet's Log button is on <code>APill</code>. Verified by
-    typecheck, 78 mobile tests and an iOS bundle export — <em>not yet seen on a device</em>.
-    <b>Swaps 02 through 10 are drawings.</b> The card glass is reverted, as you asked.
+    <b>Built: swap 01, eighteen migrations deep, with a ratchet at 31 that can only fall.</b> Verified
+    by typecheck, 78 mobile tests and an iOS bundle export — <em>and still not seen on a device</em>,
+    which is now the binding constraint on everything else here. <b>Swaps 02 through 10 remain
+    drawings.</b> The card glass is reverted, as you asked.
   </div>
 
   <div class="note">
@@ -643,9 +704,9 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 </section>
 
 <footer>
-  <span>HYBRID — native controls &amp; motion</span>
-  <span>10 swaps, 1 started</span>
-  <span>49 pills, ratcheted</span>
+  <span>HYBRID — shared components &amp; native motion</span>
+  <span>18 migrations built</span>
+  <span>49 → 31, ratcheted</span>
   <span>@expo/ui 56</span>
 </footer>
 
