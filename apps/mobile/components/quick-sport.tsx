@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView } from "react-native";
 import {
   olympicSport,
@@ -23,6 +23,7 @@ import { DeviceMark } from "./aurora/device-mark";
 import { DeviceImportSheet } from "./device-import";
 import { healthKitAvailability } from "../lib/healthkit";
 import { ArrowGlyph } from "./aurora/cta-label";
+import { NativeDateField, NativeStepper, LIQUID_GLASS_SUPPORTED } from "./aurora/swiftui";
 import Sheet from "./aurora/sheet";
 
 /**
@@ -37,7 +38,17 @@ import Sheet from "./aurora/sheet";
 const SHORT: Record<string, string> = { Running: "Run", Cycling: "Ride", Swimming: "Swim", Rowing: "Row", Walking: "Walk", Hiking: "Hike" };
 const shortSport = (name: string) => SHORT[name] ?? name;
 
-export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: LoggedSession[]; onSaved?: () => void; solid?: boolean }) {
+export default function QuickSportLog({ sessions = [], onSaved, date }: {
+  sessions?: LoggedSession[];
+  onSaved?: () => void;
+  solid?: boolean;
+  /** The day this log lands on, as a timestamp. Absent → now, which is what a
+   *  quick log always used to be. Present when the athlete opened this from a
+   *  day they had scrubbed to: a sport they played on Saturday belongs on
+   *  Saturday, and until the log could take a date the card had nothing to
+   *  offer on any day but today. */
+  date?: number | null;
+}) {
   const C = useTheme().palette;
   const { t } = useLang();
 
@@ -144,12 +155,12 @@ export default function QuickSportLog({ sessions = [], onSaved }: { sessions?: L
       </Sheet>
 
       {/* Log sheet — minutes (+ distance) and Log, for the chosen sport */}
-      <LogSheet sport={sheetSport} onClose={() => setSheetSport(null)} onSaved={() => { setSheetSport(null); onSaved?.(); }} />
+      <LogSheet sport={sheetSport} date={date} onClose={() => setSheetSport(null)} onSaved={() => { setSheetSport(null); onSaved?.(); }} />
     </>
   );
 }
 
-function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: () => void; onSaved: () => void }) {
+function LogSheet({ sport, date, onClose, onSaved }: { sport: string | null; date?: number | null; onClose: () => void; onSaved: () => void }) {
   const C = useTheme().palette;
   const { t } = useLang();
   const { session } = useSession();
@@ -158,6 +169,13 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
   const [distance, setDistance] = useState("");
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
+  // WHEN it happened. Seeded from the day the athlete was looking at (a scrubbed
+  // day arrives at local noon, so a timezone can't slide it into the day next
+  // door), then editable through the system's own calendar. Clamped at now: a
+  // logbook holds evidence, and there is none from the future.
+  const [when, setWhen] = useState<Date>(() => new Date(date ?? Date.now()));
+  useEffect(() => { if (sport) setWhen(new Date(date ?? Date.now())); }, [sport, date]);
+  const backdated = !!date && new Date(date).toDateString() !== new Date().toDateString();
 
   const name = sport ?? "";
   const meta = olympicSport(name);
@@ -173,8 +191,11 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
     const mins = parseFloat(minutes);
     if (!Number.isFinite(mins) && km == null) { setMsg(t("w.home.quickSport.needValue")); return; }
     setSaving(true); setMsg("");
-    const now = new Date().toISOString();
-    const payload = { title: name, startedAt: now, completedAt: now, blocks: [{ kind: "cardio" as const, name, discipline: cardioDiscipline(name), ...(km != null ? { distance: km } : {}), ...(Number.isFinite(mins) ? { minutes: mins } : {}) }] };
+    // The chosen moment, never `new Date()` — that stamp was the time the RECORD
+    // was typed presented as a property of the workout, which is exactly why a
+    // sport could only ever land on today.
+    const at = new Date(Math.min(when.getTime(), Date.now())).toISOString();
+    const payload = { title: name, startedAt: at, completedAt: at, blocks: [{ kind: "cardio" as const, name, discipline: cardioDiscipline(name), ...(km != null ? { distance: km } : {}), ...(Number.isFinite(mins) ? { minutes: mins } : {}) }] };
     const ok = guest ? (await saveGuestSession(payload), true) : await createSession(payload);
     if (!ok) await saveGuestSession(payload);
     setSaving(false);
@@ -192,7 +213,30 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
             <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{name}</Text>
             <Pressable onPress={close} hitSlop={10}><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text></Pressable>
           </View>
-          <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end", marginTop: 16 }}>
+
+          {/* WHEN — the system's own calendar (SwiftUI DatePicker, compact), so
+              a match played on Saturday can be recorded as Saturday's. Shown
+              whenever the log arrives from a scrubbed day, and on demand
+              otherwise; off-iOS the row states the day it will save to rather
+              than offering a control the platform can't draw natively. */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, marginTop: 14, paddingVertical: 4 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9 }}>{t("w.home.quickSport.when")}</Text>
+            {LIQUID_GLASS_SUPPORTED ? (
+              <NativeDateField
+                value={when}
+                onChange={setWhen}
+                latest={new Date()}
+                label={t("w.home.quickSport.when")}
+                tintColor={C.lime}
+              />
+            ) : (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: backdated ? txt(C, C.lime) : C.ash }}>
+                {when.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })}
+              </Text>
+            )}
+          </View>
+
+          <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end", marginTop: 10 }}>
             {tracksDist && (
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
@@ -207,6 +251,27 @@ function LogSheet({ sport, onClose, onSaved }: { sport: string | null; onClose: 
               <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{saving ? "…" : t("w.home.quickSport.log")}</Text>
             </Pressable>
           </View>
+          {/* Nudge the duration in fives — SwiftUI's own Stepper, which brings
+              repeat-on-hold, disabled ends and the adjustable VoiceOver trait
+              that a pair of hand-drawn ± buttons never gets. Additive: the field
+              above stays the exact-entry path and is the only one off-iOS, so
+              nothing depends on the native layer having rendered. */}
+          {LIQUID_GLASS_SUPPORTED && (
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, marginTop: 12 }}>
+              <NativeStepper
+                label={`${Number.isFinite(parseFloat(minutes)) ? parseFloat(minutes) : 0} min`}
+                value={Number.isFinite(parseFloat(minutes)) ? parseFloat(minutes) : 0}
+                step={5}
+                min={0}
+                max={600}
+                onChange={(v) => setMinutes(String(v))}
+                fontFamily={F.mono}
+                fontSize={13}
+                fg={C.ash}
+                tintColor={C.lime}
+              />
+            </View>
+          )}
           {(pace || msg) && (
             <Text accessibilityLiveRegion={msg ? "polite" : "none"} style={{ fontFamily: F.mono, fontSize: fs.caption, marginTop: 10, color: msg ? C.ash : txt(C, C.lime) }}>
               {msg || `${t("workout.pace")} ${pace}`}

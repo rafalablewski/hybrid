@@ -1,0 +1,1671 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Today → Train, in SwiftUI — a HYBRID design study</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap");
+
+/* ── HYBRID Aurora tokens — the app's own palette ─────────────────────────── */
+:root {
+  --ink:#0c0d0c; --ink2:#141614; --line:#2a2d2a;
+  --chalk:#f3f4ef; --mist:#b6bab0; --ash:#8b8f86;
+  --lime:#c6f84f; --blue:#6cb6bd; --amber:#d0cd94; --terra:#e58a5c; --violet:#a08cd0;
+  --display:"Archivo","Archivo Fallback",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --sheet:rgba(255,255,255,.055); --rim:rgba(255,255,255,.10);
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--ink); color:var(--chalk);
+  font-family:var(--display); font-size:15px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+body::before {
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(70vw 46vh at 12% -8%, rgba(198,248,79,.07), transparent 62%),
+    radial-gradient(58vw 40vh at 92% 6%, rgba(60,120,126,.09), transparent 66%);
+}
+.wrap { position:relative; z-index:1; max-width:1240px; margin:0 auto; padding:0 20px 120px; }
+
+/* ── type ─────────────────────────────────────────────────────────────────── */
+.eyebrow { font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.17em; text-transform:uppercase; color:var(--ash); }
+h1 { font-weight:900; font-size:clamp(38px,7vw,74px); line-height:.95; letter-spacing:-.035em; margin:14px 0 0; text-wrap:balance; }
+h1 .dot { color:var(--lime); }
+h2 { font-weight:900; font-size:clamp(23px,3.2vw,31px); line-height:1.08; letter-spacing:-.028em; margin:0; text-wrap:balance; }
+h3 { font-weight:800; font-size:15.5px; letter-spacing:-.015em; margin:0; }
+p { margin:0; color:var(--mist); max-width:64ch; }
+p + p { margin-top:13px; }
+b, strong { color:var(--chalk); font-weight:700; }
+em { color:var(--chalk); font-style:normal; border-bottom:1px solid rgba(198,248,79,.4); }
+code { font-family:var(--mono); font-size:11.5px; color:var(--blue); background:rgba(108,182,189,.09); padding:1px 5px; border-radius:5px; white-space:nowrap; }
+
+.masthead { padding:80px 0 0; }
+.standfirst { font-size:clamp(16px,1.9vw,19px); line-height:1.55; color:var(--mist); max-width:58ch; margin-top:26px; }
+.facts { display:flex; flex-wrap:wrap; gap:10px 34px; margin-top:34px; padding-top:22px; border-top:1px solid var(--line); }
+.fact { display:grid; gap:3px; }
+.fact .k { font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ash); }
+.fact .v { font-family:var(--mono); font-size:12.5px; color:var(--chalk); }
+
+.section { margin-top:88px; }
+.rule-head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:16px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.lede { margin-top:24px; }
+
+/* ── invariants ───────────────────────────────────────────────────────────── */
+.inv { display:grid; gap:16px; margin-top:26px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+.inv .i { border:1px solid var(--line); border-radius:18px; padding:18px; display:grid; gap:9px; align-content:start; }
+.inv .i .n { font-family:var(--mono); font-size:10px; letter-spacing:.14em; color:var(--lime); }
+.inv .i h3 { font-size:16px; }
+.inv .i p { font-size:13.5px; }
+
+/* ── chips ────────────────────────────────────────────────────────────────── */
+.chips { display:flex; flex-wrap:wrap; gap:6px; }
+.chip { font-family:var(--mono); font-size:9.5px; letter-spacing:.04em; color:var(--blue); background:rgba(108,182,189,.10); border:1px solid rgba(108,182,189,.24); padding:3px 7px; border-radius:6px; white-space:nowrap; }
+.chip.mod { color:var(--amber); background:rgba(208,205,148,.09); border-color:rgba(208,205,148,.22); }
+
+/* ── moves grid ───────────────────────────────────────────────────────────── */
+.moves { display:grid; gap:18px; margin-top:26px; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); }
+.move { border:1px solid var(--line); border-radius:20px; padding:20px; display:grid; gap:10px; align-content:start; }
+.move .top { display:flex; align-items:baseline; gap:11px; }
+.move .num { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--lime); flex:none; }
+.move h3 { font-size:17px; letter-spacing:-.02em; }
+.move .pr { font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--ash); }
+.move p { font-size:13.5px; }
+.move ul { margin:0; padding:0; list-style:none; display:grid; gap:7px; }
+.move li { display:grid; grid-template-columns:14px 1fr; gap:9px; font-size:12.5px; line-height:1.45; color:var(--mist); }
+.move li .m { font-family:var(--mono); font-size:11px; color:var(--lime); }
+.move li.cut .m { color:var(--terra); }
+
+.note { margin-top:20px; padding:14px 16px; border-left:2px solid rgba(198,248,79,.45); background:rgba(198,248,79,.045); border-radius:0 10px 10px 0; font-size:13px; line-height:1.55; color:var(--mist); }
+.note .k { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--lime); display:block; margin-bottom:5px; }
+.note.grey { border-left-color:rgba(139,143,134,.5); background:rgba(139,143,134,.06); }
+.note.grey .k { color:var(--ash); }
+
+/* ── phone frames ─────────────────────────────────────────────────────────── */
+.frame {
+  background:var(--ink); border:1px solid var(--line); border-radius:32px;
+  padding:15px 13px; box-shadow:0 40px 80px -50px #000;
+  position:relative; overflow:hidden; width:100%;
+}
+.frame::after { content:""; position:absolute; inset:0; pointer-events:none; background:radial-gradient(120% 55% at 20% -10%, rgba(198,248,79,.05), transparent 60%); }
+.frame > * { position:relative; z-index:1; }
+
+.m-mono { font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--ash); }
+.m-row { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+
+/* screen chrome */
+.navbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.avatar { width:30px; height:30px; border-radius:9px; background:rgba(198,248,79,.16); box-shadow:inset 0 0 0 1px rgba(198,248,79,.4); display:grid; place-items:center; font-family:var(--mono); font-size:10px; font-weight:700; color:var(--lime); }
+.wordmark { display:grid; justify-items:center; gap:1px; }
+.wordmark .w { font-weight:900; font-size:14px; letter-spacing:-.02em; }
+.wordmark .w i { color:var(--lime); font-style:normal; }
+.wordmark .s { font-family:var(--mono); font-size:7.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--terra); }
+.seg { display:flex; background:rgba(243,244,239,.07); border-radius:999px; padding:3px; margin-top:11px; }
+.seg span { flex:1; text-align:center; padding:5px 0; border-radius:999px; font-family:var(--mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--ash); }
+.seg span.on { background:rgba(243,244,239,.14); color:var(--chalk); }
+.datestamp { font-family:var(--mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash); margin-top:13px; }
+.bigtitle { font-weight:900; font-size:29px; letter-spacing:-.04em; line-height:1; color:var(--chalk); margin-top:4px; }
+.bigtitle.quiet { color:var(--mist); }
+.tabbar { display:flex; justify-content:space-around; align-items:center; margin-top:14px; padding:9px 8px 2px; border-top:1px solid rgba(255,255,255,.06); }
+.tabbar span { font-family:var(--mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ash); }
+.tabbar span.on { color:var(--lime); }
+
+/* the Section plate */
+.plate { background:var(--sheet); border:1px solid var(--rim); border-radius:22px; padding:16px; margin-top:13px; }
+.seam { height:1px; background:rgba(255,255,255,.075); margin:14px -16px; }
+.sec-head { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.sec-head .t { font-weight:900; font-size:18px; letter-spacing:-.03em; }
+.sec-foot { font-family:var(--mono); font-size:10px; color:var(--ash); margin-top:12px; padding-top:11px; border-top:1px solid rgba(255,255,255,.06); display:flex; justify-content:space-between; gap:10px; }
+
+/* day rail */
+.rail-bleed { margin:12px -16px 0; overflow-x:auto; scrollbar-width:none; }
+.rail-bleed::-webkit-scrollbar { display:none; }
+.rail { display:flex; gap:6px; padding:3px 16px; width:max-content; }
+.rday { width:40px; flex:none; display:grid; justify-items:center; gap:6px; padding:7px 0 8px; border-radius:16px; }
+.rday .wd { font-family:var(--mono); font-size:8px; letter-spacing:.1em; color:var(--ash); }
+.rday .n { font-weight:800; font-size:15px; letter-spacing:-.02em; color:var(--mist); font-variant-numeric:tabular-nums; }
+.rday .load { width:18px; height:3px; border-radius:2px; background:rgba(243,244,239,.15); overflow:hidden; }
+.rday .load i { display:block; height:100%; background:var(--mist); border-radius:2px; }
+.rday.sel { background:rgba(243,244,239,.10); box-shadow:inset 0 0 0 1px rgba(243,244,239,.18); }
+.rday.sel .n { color:var(--chalk); }
+.rday.today .n { color:var(--lime); }
+.rday.today .load i { background:var(--lime); }
+.rday.ahead .n { color:rgba(139,143,134,.6); }
+.rday.ahead .load { background:rgba(243,244,239,.06); }
+.rday.faded { opacity:.4; }
+
+/* THE EMPTY-DAY BLOCK — one grammar, four tenses */
+.empty { display:grid; justify-items:center; text-align:center; gap:7px; padding:14px 6px 2px; }
+.empty .glyph { color:rgba(139,143,134,.7); }
+.empty .h { font-weight:800; font-size:16.5px; letter-spacing:-.02em; color:var(--chalk); }
+.empty .d { font-size:12.5px; color:var(--ash); max-width:31ch; line-height:1.5; }
+.empty.past .h { color:var(--ash); }
+.empty.past .glyph { color:rgba(139,143,134,.5); }
+
+/* session rows */
+.srow { display:flex; align-items:center; gap:11px; padding:7px 0; }
+.sym { width:34px; height:34px; border-radius:50%; flex:none; display:grid; place-items:center; background:rgba(108,182,189,.16); }
+.sym.lime { background:rgba(198,248,79,.16); }
+.srow .t { font-weight:700; font-size:14px; color:var(--chalk); letter-spacing:-.01em; display:block; }
+.srow .s { font-family:var(--mono); font-size:10.5px; color:var(--ash); margin-top:2px; font-variant-numeric:tabular-nums; display:block; }
+.rowline { height:1px; background:rgba(255,255,255,.06); margin-left:45px; }
+.swiped { display:flex; align-items:stretch; border-radius:11px; overflow:hidden; }
+.swiped .content { flex:1; transform:translateX(-7px); }
+.swipe-act { width:52px; display:grid; place-items:center; font-family:var(--mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; }
+.swipe-act.edit { background:var(--blue); color:#06181a; }
+.swipe-act.del { background:var(--terra); color:#2a1005; }
+
+.tag { font-family:var(--mono); font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; padding:2px 6px; border-radius:5px; }
+.tag.plan { color:var(--lime); background:rgba(198,248,79,.13); }
+.tag.watch { color:var(--blue); background:rgba(108,182,189,.14); }
+.tag.pr { color:var(--amber); background:rgba(208,205,148,.14); }
+.tag.rate { color:var(--lime); }
+
+/* figures */
+.hero-fig { display:flex; align-items:baseline; gap:7px; margin-top:3px; }
+.hero-fig .n { font-weight:900; font-size:42px; line-height:.92; letter-spacing:-.045em; color:var(--chalk); font-variant-numeric:tabular-nums; }
+.hero-fig .u { font-family:var(--mono); font-size:12px; color:var(--ash); }
+.sub-figs { font-family:var(--mono); font-size:11px; color:var(--ash); margin-top:7px; display:flex; gap:14px; font-variant-numeric:tabular-nums; flex-wrap:wrap; }
+
+.roll { display:inline-flex; overflow:hidden; height:.92em; align-items:flex-start; }
+.roll .col { display:flex; flex-direction:column; animation:rollcol 3.6s cubic-bezier(.32,.72,0,1) infinite; }
+.roll .col span { height:.92em; line-height:.92; }
+@keyframes rollcol { 0%,26%{transform:translateY(0);} 46%,72%{transform:translateY(-.92em);} 92%,100%{transform:translateY(-1.84em);} }
+@media (prefers-reduced-motion:reduce) { .roll .col { animation:none; } }
+
+/* action pair */
+.pair { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; margin-top:13px; }
+.pair.start { justify-content:flex-start; }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:9px 16px; border-radius:999px; font-weight:800; font-size:13.5px; letter-spacing:-.01em; }
+.btn.prom { background:var(--lime); color:#101208; box-shadow:0 0 20px rgba(198,248,79,.2); }
+.btn.bord { background:rgba(243,244,239,.09); color:var(--chalk); box-shadow:inset 0 0 0 1px rgba(243,244,239,.14); }
+.btn.wide { width:100%; }
+.btn svg { flex:none; }
+
+.exit { display:flex; align-items:center; gap:9px; margin-top:13px; padding-top:12px; border-top:1px solid rgba(255,255,255,.07); }
+.exit .lbl { font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--ash); flex:1; }
+.ring { width:28px; height:28px; border-radius:50%; border:1px solid rgba(139,143,134,.5); display:grid; place-items:center; color:var(--ash); font-size:12px; flex:none; }
+
+/* special states */
+.skel { background:rgba(243,244,239,.07); border-radius:6px; display:block; }
+.bar { display:flex; align-items:center; gap:9px; padding:8px 11px; border-radius:12px; font-family:var(--mono); font-size:10px; letter-spacing:.06em; }
+.bar.offline { background:rgba(208,205,148,.11); color:var(--amber); box-shadow:inset 0 0 0 1px rgba(208,205,148,.22); }
+.bar.undo { background:rgba(243,244,239,.1); color:var(--chalk); box-shadow:inset 0 0 0 1px rgba(243,244,239,.14); justify-content:space-between; }
+.bar.undo b { color:var(--lime); font-family:var(--mono); }
+.live { display:flex; align-items:center; gap:7px; }
+.live i { width:7px; height:7px; border-radius:50%; background:var(--terra); display:block; }
+.prog { height:4px; border-radius:2px; background:rgba(243,244,239,.12); overflow:hidden; margin-top:9px; }
+.prog i { display:block; height:100%; background:var(--lime); border-radius:2px; }
+.presc { display:flex; align-items:center; gap:10px; padding:7px 0; }
+.presc .n { font-family:var(--mono); font-size:10px; color:var(--ash); width:15px; flex:none; }
+.presc .t { font-weight:600; font-size:13px; color:var(--mist); flex:1; }
+.presc .s { font-family:var(--mono); font-size:10.5px; color:var(--ash); font-variant-numeric:tabular-nums; }
+.pager { display:flex; align-items:center; justify-content:center; gap:5px; margin-top:11px; }
+.pager i { width:4px; height:4px; border-radius:50%; background:rgba(139,143,134,.35); display:block; }
+.pager i.on { width:15px; border-radius:3px; background:var(--lime); }
+
+/* the sheet */
+.sheet { border-radius:20px 20px 0 0; background:var(--ink2); box-shadow:inset 0 1px 0 rgba(255,255,255,.09); padding:13px 15px 18px; margin:13px -13px -15px; }
+.grab { width:32px; height:4px; border-radius:2px; background:rgba(243,244,239,.2); margin:0 auto 12px; }
+.formrow { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; }
+.formrow + .formrow { border-top:1px solid rgba(255,255,255,.06); }
+.formrow .l { font-size:13.5px; color:var(--chalk); font-weight:600; }
+.formrow .v { font-family:var(--mono); font-size:12px; color:var(--blue); display:inline-flex; align-items:center; gap:5px; }
+.formrow .v.step { background:rgba(243,244,239,.08); border-radius:8px; padding:3px 3px 3px 9px; color:var(--chalk); gap:9px; }
+.formrow .v.step b { color:var(--ash); font-weight:700; padding:0 4px; }
+
+/* the sport sheet — cards, as the app already draws them */
+.qs-import { display:flex; align-items:center; gap:10px; border-radius:16px; padding:11px 13px; background:rgba(198,248,79,.06); box-shadow:inset 0 0 0 1px rgba(198,248,79,.42); margin-top:12px; }
+.qs-import .t { font-weight:700; font-size:13.5px; color:var(--chalk); display:block; }
+.qs-import .s { font-family:var(--mono); font-size:9.5px; color:var(--ash); margin-top:2px; display:block; line-height:1.4; }
+.qs-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:10px; }
+.qs-card { border-radius:16px; padding:12px; background:rgba(255,255,255,.045); box-shadow:inset 0 0 0 1px rgba(255,255,255,.09); display:grid; gap:5px; justify-items:start; }
+.qs-card .t { font-weight:900; font-size:15.5px; letter-spacing:-.02em; color:var(--chalk); }
+.qs-card .k { font-family:var(--mono); font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash); }
+.qs-other { margin-top:9px; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:16px; padding:12px; background:rgba(255,255,255,.04); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); font-weight:700; font-size:13.5px; color:var(--chalk); }
+.qs-other b { color:var(--lime); font-weight:900; font-size:16px; }
+.dtoken { font-family:var(--mono); font-size:11.5px; color:var(--lime); background:rgba(198,248,79,.12); border-radius:8px; padding:4px 9px; display:inline-flex; align-items:center; gap:5px; }
+.stepper { display:inline-flex; align-items:stretch; border-radius:9px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(243,244,239,.16); }
+.stepper span { padding:5px 12px; font-family:var(--mono); font-size:13px; color:var(--chalk); }
+.stepper span + span { box-shadow:inset 1px 0 0 rgba(243,244,239,.16); }
+.imp-sec { font-family:var(--mono); font-size:8.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash); margin-top:13px; margin-bottom:1px; }
+.imp-row { display:flex; align-items:center; gap:11px; padding:8px 0; }
+.imp-row + .imp-row { border-top:1px solid rgba(255,255,255,.05); }
+.imp-row.dim { opacity:.42; }
+.tog { width:33px; height:19px; border-radius:999px; background:rgba(243,244,239,.16); position:relative; flex:none; }
+.tog.on { background:var(--lime); }
+.tog i { position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:var(--chalk); display:block; }
+.tog.on i { left:16px; background:#101208; }
+
+/* shipped strip */
+.shipped { display:grid; gap:12px; margin-top:24px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); }
+.shipped .s { border:1px solid rgba(198,248,79,.28); background:rgba(198,248,79,.04); border-radius:16px; padding:16px; display:grid; gap:7px; align-content:start; }
+.shipped .s .k { font-family:var(--mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--lime); }
+.shipped .s h3 { font-size:14.5px; }
+.shipped .s p { font-size:12.5px; }
+.shipped .s code { font-size:10.5px; }
+
+/* gallery */
+.acts { display:grid; gap:56px; margin-top:30px; }
+.act-head { display:flex; align-items:baseline; gap:13px; flex-wrap:wrap; padding-bottom:12px; border-bottom:1px solid var(--line); }
+.act-head .n { font-family:var(--mono); font-size:10.5px; color:var(--lime); letter-spacing:.12em; }
+.act-head h2 { font-size:21px; }
+.gallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(288px,1fr)); gap:32px 24px; margin-top:24px; }
+.screen { display:grid; gap:10px; align-content:start; }
+.screen .lab { display:flex; align-items:baseline; gap:8px; }
+.screen .lab .s { font-family:var(--mono); font-size:10px; color:var(--lime); letter-spacing:.08em; flex:none; }
+.screen .why { font-size:12.5px; line-height:1.55; color:var(--mist); }
+
+/* tables */
+.tbl-wrap { overflow-x:auto; }
+table.t { width:100%; border-collapse:collapse; margin-top:20px; font-size:13px; min-width:620px; }
+table.t th { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--ash); text-align:left; font-weight:700; padding:0 14px 10px 0; border-bottom:1px solid var(--line); }
+table.t td { padding:11px 14px 11px 0; border-bottom:1px solid rgba(42,45,42,.6); color:var(--mist); vertical-align:top; }
+table.t td:first-child { color:var(--chalk); font-weight:700; white-space:nowrap; }
+table.t .yes { color:var(--lime); font-family:var(--mono); font-size:11.5px; }
+table.t .no { color:rgba(139,143,134,.55); font-family:var(--mono); font-size:11.5px; }
+table.t code { white-space:nowrap; }
+table.t.copy td:first-child { font-family:var(--mono); font-size:11px; color:var(--blue); font-weight:400; }
+
+/* phases */
+.phases { display:grid; margin-top:24px; }
+.phase { display:grid; grid-template-columns:76px 1fr; gap:18px; padding:18px 0; border-top:1px solid var(--line); align-items:start; }
+.phase .p { font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--lime); }
+.phase .body h3 { margin-bottom:6px; }
+.phase .body p { font-size:13.5px; }
+
+footer { margin-top:92px; padding-top:22px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:12px 30px; }
+footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; color:var(--ash); text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">HYBRID — mobile design study — rev. 6</div>
+  <h1>Today → Train,<br />the whole experience<span class="dot">.</span></h1>
+  <p class="standfirst">
+    The logbook card rebuilt on the <b>SwiftUI view set</b>, then drawn out across
+    <b>eighteen states</b> — every kind of empty, every kind of logged, the calendar in both
+    directions, and the edges most redesigns never draw: loading, offline, failure, undo.
+    With the specifications an engineer can build from.
+  </p>
+  <div class="facts">
+    <div class="fact"><span class="k">Surface</span><span class="v">apps/mobile — Today</span></div>
+    <div class="fact"><span class="k">Owns it</span><span class="v">logbook-rail.tsx</span></div>
+    <div class="fact"><span class="k">Native layer</span><span class="v">@expo/ui 56 — 50 SwiftUI views</span></div>
+    <div class="fact"><span class="k">States drawn</span><span class="v">18</span></div>
+    <div class="fact"><span class="k">Shipped</span><span class="v">builds 1 &amp; 2 — 5 of 7 moves</span></div>
+  </div>
+</header>
+
+<!-- ────────────────────────────────────────────────────────── invariants ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Three invariants</h2>
+    <span class="eyebrow">true on all eighteen screens, or the screen is wrong</span>
+  </div>
+
+  <div class="inv">
+    <div class="i">
+      <span class="n">INVARIANT 1</span>
+      <h3>One empty grammar, four tenses.</h3>
+      <p>
+        Every day with nothing on it renders the <b>same block</b>: SF Symbol, the title
+        <b>"No training logged"</b>, one description line, then the actions. Not a bespoke text row on
+        one screen and a centred illustration on another — <em>one component, one string</em>, with only
+        the symbol, the description and the action changing by tense. It is the most repeated state in
+        the app and it currently has three different drawings.
+      </p>
+    </div>
+    <div class="i">
+      <span class="n">INVARIANT 2</span>
+      <h3>Log a sport exists wherever a sport could.</h3>
+      <p>
+        Present on <b>fifteen of eighteen</b> screens — including the first run, every past day, every
+        day that already holds training, and both failure states. Absent only from the future (nothing
+        has happened yet) and from the sheet that <em>is</em> it. Today's card offers it in exactly one
+        state.
+      </p>
+    </div>
+    <div class="i">
+      <span class="n">INVARIANT 3</span>
+      <h3>The accent is spent once, or not at all.</h3>
+      <p>
+        Chartreuse marks the <b>one</b> thing to do next. An open day spends it on Start a session; a
+        day that already holds training spends it nowhere and both actions go neutral. Never two lime
+        surfaces on one screen — the current card has three (pill, today-disc, sport label).
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────── shipped ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Shipped</h2>
+    <span class="eyebrow">branch claude/swiftui-ive-design-redesign — typecheck, 3 269 tests, iOS bundle green</span>
+  </div>
+
+  <p class="lede">
+    <b>Five of the seven moves are written.</b> Build&nbsp;1 is complete and Build&nbsp;2 is done
+    except for the day pager — the card has shed its chrome, the rail scrolls four weeks deep with a
+    load bar where the tick was, a mis-logged session can finally be deleted from the card, and the
+    two capabilities the study kept pointing at are live: <b>log a sport on a day that has already
+    passed</b>, and the first native SwiftUI <em>controls</em> the app has mounted.
+  </p>
+
+  <div class="shipped">
+    <div class="s">
+      <span class="k">Shipped — invariant 1</span>
+      <h3>One empty block, three tenses</h3>
+      <p>
+        <code>core/empty-day.ts</code> holds the tense logic (unit-tested — one title key in all three,
+        and a past day can never offer the live logger); <code>aurora/empty-day.tsx</code> draws it once.
+        The rail's two bespoke empty states are gone.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — invariants 2 &amp; 3</span>
+      <h3>A primary and a secondary</h3>
+      <p>
+        <code>aurora/action-pair.tsx</code>. The dashed ＋ tile is retired; <b>Log a sport now sits on
+        every empty day</b>, today's included. The hierarchy is a fill, so a day that already holds
+        training spends the accent nowhere.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — move 07</span>
+      <h3>Log a sport on a past day</h3>
+      <p>
+        <code>QuickSportLog</code> takes a date; the rail hands up the viewed day at local noon so no
+        timezone slides the record next door, and the save clamps at now. <b>The card grid and the
+        watch-import bar are untouched.</b>
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — native controls</span>
+      <h3>DatePicker and Stepper</h3>
+      <p>
+        <code>NativeDateField</code> and <code>NativeStepper</code> in <code>aurora/swiftui.tsx</code> —
+        real SwiftUI views, self-contained leaves, null off-iOS. A system date control is exactly where
+        native styling is <em>correct</em>.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — move 01</span>
+      <h3>One separation device</h3>
+      <p>
+        Border, shadow and elevation deleted; of three hairlines exactly one survives, the week/day
+        seam. The floor's rule became 22dp of air — its seam already carries a mono-caps count that
+        announces the change of subject.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — move 02</span>
+      <h3>The rail scrolls, four weeks deep</h3>
+      <p>
+        <code>LOGBOOK_SCROLL_WINDOW = 28</code>, fixed 44dp cells, parked on today at first layout only.
+        <code>LogbookDay</code> grew <code>loadMin</code> and <code>load</code>, device-true and
+        normalised against the heaviest day in view — the tick's pixels now spent on <em>how much</em>.
+        The <code>LAST 7 DAYS</code> caption is retired.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — move 04, in part</span>
+      <h3>Swipe a row to delete it</h3>
+      <p>
+        The shared <code>SwipeRow</code> gesture over <code>deleteSession</code>, confirmed by the app's
+        own sheet. Until now the only way to remove a mis-logged session was to open it — which is the
+        wrong place to decide it shouldn't exist.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — and caught in the act</span>
+      <h3>Both rails, one chrome</h3>
+      <p>
+        Shedding the logbook card's border without touching the plan rail put the two on different
+        chrome inside a single change — they are the same object in two modes. Both carry the fill
+        alone now, held there by a <b>HARD test</b>, and <code>concentricRadius()</code> lands beside
+        them.
+      </p>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="k">Still open — and why</span>
+    <b>Move 06</b> and <b>move 05</b>, each for a reason found by trying rather than guessed at.
+    <br /><br />
+    <b>06's day pager collides with a shipped gesture.</b> A horizontal scrub on the card body and a
+    horizontal swipe-to-delete on the rows inside it are the same gesture meaning two different things
+    depending on where a finger lands. Move 04 is already in and is worth more, so the pager waits for
+    a form that doesn't overload it — the rail's tap still moves the day.
+    <b>06's rolling figures</b> need a <code>View</code> where a <code>Text</code> is, and the hero row
+    aligns on the text baseline: React&nbsp;Native gives a non-text view its bottom edge as its
+    baseline, so the unit beside the number would shift by roughly a descender. That is a visual
+    regression on the flagship figure, and it wants a device round rather than a guess at the metrics.
+    <br /><br />
+    <b>05's scroll edge effect isn't in the package.</b> Verified against
+    <code>node_modules</code>: <code>@expo/ui@56</code> exposes no <code>scrollEdgeEffect</code>
+    modifier, so it needs a Swift view of our own — and the condensing large title changes native
+    configuration, so both ride their own prebuild.
+    <br /><br />
+    <b>The loading state is already better than the mockup.</b> <code>home.tsx</code> holds a cold-start
+    branch that shows a skeleton precisely because it cannot yet tell an enrolled athlete from a
+    first-run one, so the plan appears with no chooser flash between. S3 proposed a rail skeleton that
+    would contradict it. The other edges — in-progress, offline, undo — need a live-session handle, a
+    queue depth and a restore endpoint the screen doesn't carry yet, and inventing those shapes to fill
+    a mockup would be the wrong order.
+  </div>
+
+  <div class="note grey">
+    <span class="k">Deliberately not mounted</span>
+    <code>ContentUnavailableView</code>. Its <em>grammar</em> is what the empty block follows, but the
+    native view styles its own type — SF Pro in the middle of a card set in Archivo — and its props are
+    title / systemImage / description with no slot for the app's own buttons, so mounting it would split
+    one block across two renderers and lose the house face for nothing. Native rendering of the two
+    controls still needs a device round, as <code>swiftui-kit</code> already documents.
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── the view set ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Not the glass. The view set.</h2>
+    <span class="eyebrow">verified against node_modules</span>
+  </div>
+
+  <p class="lede">
+    Liquid Glass is a <em>material</em> — it changes how a surface looks, not what it knows. What is
+    worth inheriting is the view set, and the installed <code>@expo/ui@56</code> exposes nearly all of
+    it. These are real SwiftUI views rendered by the system, arriving with their own separators,
+    insets, selection behaviour, Dynamic Type response, VoiceOver semantics and — the part no
+    hand-drawn React&nbsp;Native view ever gets — their own <em>future</em>. When Apple revises the
+    list row in iOS 27, a <code>List</code> follows; a <code>View</code> with a
+    <code>borderRadius</code> does not. <b>The card currently uses none of them.</b>
+  </p>
+
+  <div class="plate" style="margin-top:24px; border-radius:20px; padding:20px">
+    <div class="m-mono" style="color:var(--blue)">Views these eighteen screens are built from</div>
+    <div class="chips" style="margin-top:10px">
+      <span class="chip">List</span><span class="chip">Section</span><span class="chip">ContentUnavailableView</span>
+      <span class="chip">Label</span><span class="chip">LabeledContent</span><span class="chip">SwipeActions</span>
+      <span class="chip">TabView</span><span class="chip">Gauge</span><span class="chip">ProgressView</span>
+      <span class="chip">Picker</span><span class="chip">Menu</span><span class="chip">DatePicker</span>
+      <span class="chip">Form</span><span class="chip">Stepper</span><span class="chip">TextField</span>
+      <span class="chip">BottomSheet</span><span class="chip">ConfirmationDialog</span><span class="chip">Alert</span>
+      <span class="chip">ShareLink</span><span class="chip">ScrollView</span><span class="chip">Chart</span>
+    </div>
+    <div class="seam" style="margin:16px -20px"></div>
+    <div class="m-mono" style="color:var(--amber)">Modifiers that carry the behaviour</div>
+    <div class="chips" style="margin-top:10px">
+      <span class="chip mod">contentTransition(.numericText)</span><span class="chip mod">scrollTargetBehavior</span>
+      <span class="chip mod">scrollTargetLayout</span><span class="chip mod">scrollPosition</span>
+      <span class="chip mod">matchedGeometryEffect</span><span class="chip mod">symbolEffect</span>
+      <span class="chip mod">listStyle(.insetGrouped)</span><span class="chip mod">listRowSeparator</span>
+      <span class="chip mod">monospacedDigit</span><span class="chip mod">redacted(.placeholder)</span>
+      <span class="chip mod">refreshable</span><span class="chip mod">tabViewStyle(.page)</span>
+      <span class="chip mod">badge</span><span class="chip mod">gaugeStyle</span>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="k">The one exception</span>
+    The Train/Analyse/Social switcher keeps its glass lens. It is a control that floats over moving
+    content — the single condition the material was designed for — and it already ships in
+    <code>liquid-seg.tsx</code>. Everywhere else, structure beats material.
+  </div>
+</section>
+
+<!-- ──────────────────────────────────────────────────────────── baseline ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Where it stands</h2>
+    <span class="eyebrow">the charges, in short</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="t">
+      <thead><tr><th>Charge</th><th>Evidence</th><th>Answered by</th></tr></thead>
+      <tbody>
+        <tr><td>Four separation devices</td><td>Border, shadow, fill and three hairlines on one card</td><td>01 — <code>Section</code></td></tr>
+        <tr><td>A control that can't show its extent</td><td>Seven fixed chips, so a caption must say <code>LAST 7 DAYS</code></td><td>02 — scrollable rail</td></tr>
+        <tr><td>Two actions, no hierarchy</td><td>A glowing pill and a dashed tile in two vocabularies</td><td>03 — prominent + bordered</td></tr>
+        <tr><td>Three drawings of one empty state</td><td>Bare text row, ash headline, dashed invitation</td><td>03 — one empty block</td></tr>
+        <tr><td>Emoji as content</td><td>🎾 can't tint, take weight, or answer Dynamic Type</td><td>04 — <code>Label</code> + SF Symbol</td></tr>
+        <tr><td>No way to fix a mistake</td><td>A mis-logged session can't be edited or deleted here</td><td>04 — <code>SwipeActions</code></td></tr>
+        <tr><td>Chrome fighting content</td><td>"Train your way" smeared under a hand-rolled tab-bar blur</td><td>05 — scroll edge effect</td></tr>
+        <tr><td>Day changes hard-cut</td><td><code>key={sel.dateKey}</code> remounts the whole detail</td><td>06 — <code>TabView</code> paging</td></tr>
+        <tr><td>The past is read-only</td><td>Quick log always saves at "now"; the rail ends today</td><td>07 — <code>DatePicker</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── moves ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Seven moves</h2>
+    <span class="eyebrow">each trades a drawing for a view</span>
+  </div>
+
+  <div class="moves">
+    <div class="move">
+      <div class="top"><span class="num">01</span><h3>The card becomes a Section</h3></div>
+      <span class="pr">List + Section + listStyle(.insetGrouped)</span>
+      <p>Border, shadow and fill are three ways of saying "surface". <code>Section</code> says it once and hands over row insets, separators, header and footer slots, selection and swipe actions. Nested radii go concentric: each equals its parent's minus the padding.</p>
+      <ul>
+        <li class="cut"><span class="m">−</span><span><code>logbook-rail.tsx:91-102</code> border, shadow, elevation</span></li>
+        <li><span class="m">+</span><span><code>ASection</code> in <code>kit.tsx</code>, RN plate as the off-iOS floor</span></li>
+        <li><span class="m">+</span><span><code>RADIUS.concentric(parent, pad)</code></span></li>
+      </ul>
+    </div>
+
+    <div class="move">
+      <div class="top"><span class="num">02</span><h3>The week scrolls, and ✓ becomes a Gauge</h3></div>
+      <span class="pr">ScrollView + scrollTargetBehavior + Gauge</span>
+      <p>Seven flexed chips can only show seven days, which is why a caption has to explain the control's limits. A view-aligned rail makes history simply <em>there</em>. A tick says something happened; a capacity gauge says how much, in the same pixels, and speaks its value to VoiceOver.</p>
+      <ul>
+        <li class="cut"><span class="m">−</span><span>The fixed chip row, and <code>w.home.logbook.window</code></span></li>
+        <li><span class="m">+</span><span><code>logbookDays(range)</code> in core with a per-day <code>load</code></span></li>
+        <li><span class="m">+</span><span><code>scrollPosition</code> binding shared with the pager</span></li>
+      </ul>
+    </div>
+
+    <div class="move">
+      <div class="top"><span class="num">03</span><h3>One empty block, and a real hierarchy</h3></div>
+      <span class="pr">ContentUnavailableView + two button styles</span>
+      <p>Every empty day renders the same component. Beneath it, <code>borderedProminent</code> and <code>bordered</code> on one baseline: <b>Log a sport keeps its place</b>, it just stops competing. Once the day holds training the accent retires and both go neutral — a fill change, not a layout change.</p>
+      <ul>
+        <li class="cut"><span class="m">−</span><span><code>done-floor.tsx:145-152</code> the dashed tile — the box, not the action</span></li>
+        <li><span class="m">+</span><span><code>AEmptyDay</code> — symbol, title, description, actions</span></li>
+        <li><span class="m">+</span><span><code>AActionPair</code> driven by one <code>state</code> prop</span></li>
+      </ul>
+    </div>
+
+    <div class="move">
+      <div class="top"><span class="num">04</span><h3>Rows become Labels, swipes come free</h3></div>
+      <span class="pr">Label + SwipeActions + symbolEffect</span>
+      <p>An emoji can't take the row's colour, weight or optical size, and Apple redraws the set without asking. A <code>Label</code> takes <code>systemImage</code> and title as one unit. <code>SwipeActions</code> then makes a mis-logged session fixable — which the card has never been able to do.</p>
+      <ul>
+        <li><span class="m">+</span><span><code>sessionSymbol(s): SFSymbol</code> in core, emoji as fallback</span></li>
+        <li><span class="m">+</span><span>Edit (blue) / Delete (terracotta, behind a <code>ConfirmationDialog</code>)</span></li>
+        <li class="cut"><span class="m">−</span><span><code>done-floor.tsx:116-118</code> the emoji tile</span></li>
+      </ul>
+    </div>
+
+    <div class="move">
+      <div class="top"><span class="num">05</span><h3>Give the screen edges back</h3></div>
+      <span class="pr">Condensing large title + scroll edge effect</span>
+      <p>"Train your way" is currently smeared into a ghost under a hand-rolled blur. The system's soft edge computes its fade against what is actually passing beneath. A title that condenses into the bar returns roughly 120&nbsp;pt of first screen.</p>
+      <ul>
+        <li><span class="m">+</span><span><code>largeTitle</code> slot on <code>AuroraScreen</code></span></li>
+        <li class="cut"><span class="m">−</span><span>Manual <code>auroraScrollClearance()</code> padding</span></li>
+      </ul>
+    </div>
+
+    <div class="move">
+      <div class="top"><span class="num">06</span><h3>The day is a page; figures roll</h3></div>
+      <span class="pr">TabView(.page) + contentTransition(.numericText)</span>
+      <p>Today the detail remounts on <code>key={sel.dateKey}</code> and every figure hard-cuts. A paged <code>TabView</code> bound to the rail through one <code>scrollPosition</code> makes them one value. Digits roll in the direction of travel, held still by <code>monospacedDigit</code>.</p>
+      <ul>
+        <li class="cut"><span class="m">−</span><span>The <code>key</code> remount at <code>logbook-rail.tsx:123</code></span></li>
+        <li><span class="m">+</span><span><code>ARollingFigure</code>, honouring <code>useReducedMotion()</code></span></li>
+        <li><span class="m">+</span><span>Haptic detent per page</span></li>
+      </ul>
+    </div>
+
+    <div class="move">
+      <div class="top"><span class="num">07</span><h3>Every past day becomes loggable</h3></div>
+      <span class="pr">DatePicker, defaulted to the viewed day</span>
+      <p>A quick log always saves at "now", so the card cannot answer the most ordinary request an athlete has: <em>I played on Saturday and forgot.</em> The sheet opens dated to the day you were looking at — the one date the app can be certain about.</p>
+      <ul>
+        <li class="cut"><span class="m">−</span><span>The <code>isToday</code> gate at <code>done-floor.tsx:145</code></span></li>
+        <li><span class="m">+</span><span>Native <code>DatePicker</code> + <code>Stepper</code> in <code>quick-sport.tsx</code>. <b>The card grid and the watch-import bar stay exactly as they are</b></span></li>
+        <li><span class="m">+</span><span><code>quickSport</code> takes a <code>date</code> → <code>startedAt</code></span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ──────────────────────────────────────────────── THE FULL EXPERIENCE ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>The full experience</h2>
+    <span class="eyebrow">eighteen states — five acts</span>
+  </div>
+
+  <p class="lede">
+    Ideas are cheap until they survive every state. What follows is the whole card: three kinds of
+    empty, five kinds of logged, both directions of the calendar, and the four edges most redesigns
+    never draw. Each screen names the SwiftUI views it is made of.
+  </p>
+
+  <div class="acts">
+
+    <!-- ═════════════════════════════ ACT I ═══════════════════════════════ -->
+    <div>
+      <div class="act-head">
+        <span class="n">ACT I</span><h2>Empty</h2>
+        <span class="eyebrow">one block, three tenses — invariant 1</span>
+      </div>
+
+      <div class="gallery">
+
+        <!-- S1 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday"><span class="wd">Wed</span><span class="n">5</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="empty">
+                <span class="glyph"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+                <span class="h">No training logged</span>
+                <span class="d">Your first session lands here. Anything counts — a lift, a run, a match.</span>
+              </div>
+              <div class="pair">
+                <span class="btn prom">Start a session</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S1</span><h3>First run — nothing has ever been logged</h3></div>
+          <p class="why">The rail exists from day one, empty and unashamed, so the calendar is never something that <em>appears</em> once you've earned it. Both actions are live immediately: a new user's first entry is far more often a sport they already played than a session they're about to start.</p>
+          <div class="chips"><span class="chip">ContentUnavailableView</span><span class="chip">Section</span><span class="chip">Button ×2</span><span class="chip">Label</span></div>
+        </div>
+
+        <!-- S2 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">2-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="ring">↗</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:72%"></i></span></div>
+                <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:45%"></i></span></div>
+                <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:88%"></i></span></div>
+                <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="empty">
+                <span class="glyph"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.5 2.5L16 9.5"/></svg></span>
+                <span class="h">No training logged</span>
+                <span class="d">Whatever you do today lands here — a lift, a run, a match.</span>
+              </div>
+              <div class="pair">
+                <span class="btn prom">Start a session</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+              <div class="sec-foot"><span>This week</span><span>4 sessions – 22.6 km</span></div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S2</span><h3>Today open, with a week behind it</h3></div>
+          <p class="why"><b>The same block as S1</b> — same symbol, same title, same buttons. Only the description changes tense. The week's context goes where SwiftUI puts context: the <code>Section</code>'s <b>footer</b>, which is quieter than a headline and can't be mistaken for one.</p>
+          <div class="chips"><span class="chip">ContentUnavailableView</span><span class="chip">Section footer</span><span class="chip">Gauge ×7</span></div>
+        </div>
+
+        <!-- S3 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:40%;background:rgba(243,244,239,.2)"></i></span></div>
+                <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:70%;background:rgba(243,244,239,.2)"></i></span></div>
+                <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:30%;background:rgba(243,244,239,.2)"></i></span></div>
+                <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"><i style="width:55%;background:rgba(243,244,239,.2)"></i></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:20%;background:rgba(243,244,239,.2)"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:64%;background:rgba(243,244,239,.2)"></i></span></div>
+                <div class="rday sel"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:44%;background:rgba(243,244,239,.2)"></i></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <span class="skel" style="width:52%;height:19px"></span>
+              <span class="skel" style="width:38%;height:38px;margin-top:11px"></span>
+              <span class="skel" style="width:64%;height:12px;margin-top:12px"></span>
+              <div style="display:flex;gap:11px;align-items:center;margin-top:16px">
+                <span class="skel" style="width:34px;height:34px;border-radius:50%"></span>
+                <span style="flex:1"><span class="skel" style="width:58%;height:13px"></span><span class="skel" style="width:40%;height:10px;margin-top:6px"></span></span>
+              </div>
+              <div class="pair"><span class="skel" style="width:130px;height:34px;border-radius:999px"></span><span class="skel" style="width:112px;height:34px;border-radius:999px"></span></div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S3</span><h3>Loading — the shape arrives before the data</h3></div>
+          <p class="why"><code>redacted(.placeholder)</code> renders the <em>real</em> view with its values greyed, so the layout never jumps when data lands. Today the card shows a spinner or nothing, then reflows. The rail keeps its geometry because its shape is known before its numbers are.</p>
+          <div class="chips"><span class="chip mod">redacted(.placeholder)</span><span class="chip mod">refreshable</span><span class="chip">Section</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════ ACT II ══════════════════════════════ -->
+    <div>
+      <div class="act-head">
+        <span class="n">ACT II</span><h2>Logged</h2>
+        <span class="eyebrow">the accent retires the moment the work is real — invariant 3</span>
+      </div>
+
+      <div class="gallery">
+
+        <!-- S4 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="ring">↗</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:72%"></i></span></div>
+                <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:45%"></i></span></div>
+                <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:88%"></i></span></div>
+                <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:41%"></i></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">All done for today</span><span class="m-mono" style="letter-spacing:0;text-transform:none">3-day streak</span></div>
+              <div class="hero-fig"><span class="n">6.20</span><span class="u">km</span></div>
+              <div class="sub-figs"><span>34 min</span><span>512 kcal</span></div>
+              <div style="margin-top:11px"><div class="m-mono">1 done today</div>
+                <div class="srow">
+                  <span class="sym"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 19l4-9 4 4 4-9"/></svg></span>
+                  <span style="flex:1"><span class="t">Easy run</span><span class="s">6.20 km – 34 min – 5:29 /km</span></span>
+                </div>
+              </div>
+              <div class="pair start">
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10"/></svg>Another session</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+              <div class="exit"><span class="lbl">View in history</span><span class="ring">→</span></div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S4</span><h3>One session logged</h3></div>
+          <p class="why">The chartreuse retires — nothing moved, only the fill. One figure at display size and the rest stand down, so there is a single focal point rather than three competing ones. <b>Log a sport is still here</b>: a lift in the morning and five-a-side at seven is an ordinary Tuesday.</p>
+          <div class="chips"><span class="chip">Section</span><span class="chip">Label</span><span class="chip">Button ×2</span><span class="chip mod">contentTransition</span></div>
+        </div>
+
+        <!-- S5 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="ring">↗</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:88%"></i></span></div>
+                <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:100%"></i></span></div>
+                <div class="rday ahead"><span class="wd">Wed</span><span class="n">12</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">All done for today</span><span class="m-mono" style="letter-spacing:0;text-transform:none">3-day streak</span></div>
+              <div class="hero-fig"><span class="n">4 820</span><span class="u">kg</span></div>
+              <div class="sub-figs"><span>108 min</span><span>1 240 kcal</span><span>2 sessions</span></div>
+              <div style="margin-top:11px"><div class="m-mono">2 done today</div>
+                <div class="swiped" style="margin-top:2px">
+                  <span class="content srow">
+                    <span class="sym lime"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10"/></svg></span>
+                    <span style="flex:1"><span class="t">Lower — Strength</span><span class="s">6 lifts – 14 sets – 4 820 kg</span></span>
+                  </span>
+                  <span class="swipe-act edit">Edit</span>
+                  <span class="swipe-act del">Delete</span>
+                </div>
+                <div class="rowline"></div>
+                <div class="srow">
+                  <span class="sym"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round"/></svg></span>
+                  <span style="flex:1"><span class="t">Tennis</span><span class="s">4.11 km – 81 min</span></span>
+                  <span class="tag rate">Rate</span>
+                </div>
+              </div>
+              <div class="pair start">
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10"/></svg>Another session</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+              <div class="exit"><span class="lbl">View in history</span><span class="ring">→</span></div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S5</span><h3>A hybrid day — two sessions, one unrated, one mid-swipe</h3></div>
+          <p class="why">The day this app exists for. The hero switches unit because <code>doneReceiptHero</code> picks what the day was <em>about</em> — tonnage today, not distance. The unrated sport carries its <b>Rate</b> ask on the row, since an unrated session counts for nothing in training load.</p>
+          <div class="chips"><span class="chip">SwipeActions</span><span class="chip">ConfirmationDialog</span><span class="chip">Label ×2</span><span class="chip mod">badge</span></div>
+        </div>
+
+        <!-- S6 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="tag watch">Apple Watch</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:83%"></i></span></div>
+                <div class="rday ahead"><span class="wd">Wed</span><span class="n">12</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">All done for today</span><span class="m-mono" style="letter-spacing:0;text-transform:none">3-day streak</span></div>
+              <div class="hero-fig"><span class="n">10.42</span><span class="u">km</span></div>
+              <div class="sub-figs"><span>52:18</span><span>5:01 /km</span><span>148 bpm avg</span></div>
+              <div style="margin-top:11px"><div class="m-mono">1 done today</div>
+                <div class="srow">
+                  <span class="sym"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 19l4-9 4 4 4-9"/></svg></span>
+                  <span style="flex:1"><span class="t">Tempo run</span><span class="s">10.42 km – 52:18 – 5:01 /km</span></span>
+                  <span class="tag watch">⌚</span>
+                </div>
+              </div>
+              <div class="sec-foot" style="border-top-color:rgba(108,182,189,.2)"><span style="color:var(--blue)">Measured, not typed</span><span>you logged 10 km – 52 min</span></div>
+              <div class="pair start">
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10"/></svg>Another session</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S6</span><h3>Matched to a watch — the device's figures win</h3></div>
+          <p class="why">When a session carries a recording, <b>the measured figures outrank the typed ones everywhere</b> — including the pace, computed from the watch's exact seconds, never from a display-rounded minute. The footer is the one sanctioned place the raw entry appears, as a comparison.</p>
+          <div class="chips"><span class="chip">LabeledContent</span><span class="chip">Label</span><span class="chip mod">monospacedDigit</span></div>
+        </div>
+
+        <!-- S7 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="tag pr">Best ever</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:100%"></i></span></div>
+                <div class="rday ahead"><span class="wd">Wed</span><span class="n">12</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">All done for today</span><span class="m-mono" style="letter-spacing:0;text-transform:none">3-day streak</span></div>
+              <div class="hero-fig"><span class="n">142.5</span><span class="u">kg</span></div>
+              <div class="sub-figs"><span>Back squat – 1 rep</span><span>+5.0 kg on your best</span></div>
+              <div style="margin-top:11px"><div class="m-mono">1 done today</div>
+                <div class="srow">
+                  <span class="sym lime"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--lime)" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10"/></svg></span>
+                  <span style="flex:1"><span class="t">Lower — Strength</span><span class="s">5 lifts – 16 sets – 1 PR</span></span>
+                  <span class="tag plan">Plan</span>
+                </div>
+              </div>
+              <div class="pair start">
+                <span class="btn bord">Share it</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S7</span><h3>A personal best in the day</h3></div>
+          <p class="why">The hero abandons volume for the number that actually happened, and the amber PR tag is the only place a third hue appears in the whole set. <code>ShareLink</code> is a native view, so sharing costs one line and gets the system sheet. <b>Log a sport holds its place even here</b> — the day isn't necessarily over.</p>
+          <div class="chips"><span class="chip">ShareLink</span><span class="chip mod">symbolEffect(.bounce)</span><span class="chip mod">badge</span></div>
+        </div>
+
+        <!-- S8 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="live"><i></i><span class="m-mono" style="color:var(--terra)">Live</span></span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:28%"></i></span></div>
+                <div class="rday ahead"><span class="wd">Wed</span><span class="n">12</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">Upper — Strength</span><span class="m-mono" style="letter-spacing:0;text-transform:none">32:14</span></div>
+              <div class="sub-figs" style="margin-top:6px"><span>Set 8 of 22</span><span>2 480 kg so far</span></div>
+              <div class="prog"><i style="width:36%"></i></div>
+              <div class="pair start">
+                <span class="btn prom">Resume session</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S8</span><h3>A session is running right now</h3></div>
+          <p class="why">A state the card has <b>no expression for today</b> — leave the logger and Today pretends nothing is happening. A <code>ProgressView</code> on the set count and a live clock make the card the way back in, and the accent returns because there genuinely is one thing to do next.</p>
+          <div class="chips"><span class="chip">ProgressView</span><span class="chip mod">contentTransition</span><span class="chip">Label</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════ ACT III ═════════════════════════════ -->
+    <div>
+      <div class="act-head">
+        <span class="n">ACT III</span><h2>The calendar, left and right</h2>
+        <span class="eyebrow">a logbook makes no promises — but it should let you fix the past</span>
+      </div>
+
+      <div class="gallery">
+
+        <!-- S9 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">← Monday, 10 August</div>
+            <div class="bigtitle">Yesterday</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="ring">↗</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:72%"></i></span></div>
+                <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:45%"></i></span></div>
+                <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:88%"></i></span></div>
+                <div class="rday"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday sel"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:100%"></i></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">Logged</span><span class="m-mono" style="letter-spacing:0;text-transform:none">Yesterday</span></div>
+              <div class="hero-fig"><span class="n"><span class="roll" aria-hidden="true"><span class="col"><span>4</span><span>7</span><span>1</span></span></span><span>.</span><span class="roll" aria-hidden="true"><span class="col"><span>1</span><span>8</span><span>2</span></span></span><span class="roll" aria-hidden="true"><span class="col"><span>1</span><span>4</span><span>0</span></span></span></span><span class="u">km</span></div>
+              <div class="sub-figs"><span>81 min</span><span>815 kcal</span></div>
+              <div style="margin-top:11px"><div class="m-mono">1 done — Mon 10 Aug</div>
+                <div class="srow">
+                  <span class="sym"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round"/></svg></span>
+                  <span style="flex:1"><span class="t">Tennis</span><span class="s">4.11 km – 81 min – 19:49 /km</span></span>
+                </div>
+              </div>
+              <div class="pair start">
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport on Monday</span>
+              </div>
+              <div class="exit"><span class="lbl">View in history</span><span class="ring">→</span></div>
+            </div>
+            <div class="pager"><i></i><i></i><i class="on"></i><i></i></div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S9</span><h3>← One page back — yesterday, logged</h3></div>
+          <p class="why">The title takes the day's own name and the figures roll rather than cut. The primary drops away — <b>you cannot start a live session in the past</b>, so offering to would be a lie. What remains names its target: <b>Log a sport on Monday</b>.</p>
+          <div class="chips"><span class="chip">TabView(.page)</span><span class="chip mod">numericText</span><span class="chip mod">matchedGeometryEffect</span></div>
+        </div>
+
+        <!-- S10 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">← Saturday, 8 August</div>
+            <div class="bigtitle quiet">Saturday</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="ring">↗</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Wed</span><span class="n">5</span><span class="load"><i style="width:72%"></i></span></div>
+                <div class="rday"><span class="wd">Thu</span><span class="n">6</span><span class="load"><i style="width:45%"></i></span></div>
+                <div class="rday"><span class="wd">Fri</span><span class="n">7</span><span class="load"><i style="width:88%"></i></span></div>
+                <div class="rday sel"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:100%"></i></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="empty past">
+                <span class="glyph"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 019.8 3.5a8.5 8.5 0 1010.7 10.7z"/></svg></span>
+                <span class="h">No training logged</span>
+                <span class="d">A rest day, or one that got away. You can still add it.</span>
+              </div>
+              <div class="pair">
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport on Saturday</span>
+              </div>
+            </div>
+            <div class="pager"><i class="on"></i><i></i><i></i><i></i></div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S10</span><h3>← Further back — a day with nothing on it</h3></div>
+          <p class="why"><b>The same block again</b>, third tense: same title, moon symbol, ash headline. Quiet and factual — a logbook makes no promises, so there is no "missed" and no terracotta. But the day is no longer inert, and this is the state an athlete actually visits.</p>
+          <div class="chips"><span class="chip">ContentUnavailableView</span><span class="chip">Button</span><span class="chip">DatePicker</span></div>
+        </div>
+
+        <!-- S11 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Wednesday, 12 August →</div>
+            <div class="bigtitle quiet">Tomorrow</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="ring">↗</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Sat</span><span class="n">8</span><span class="load"></span></div>
+                <div class="rday"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:100%"></i></span></div>
+                <div class="rday sel ahead"><span class="wd">Wed</span><span class="n">12</span><span class="load"></span></div>
+                <div class="rday ahead"><span class="wd">Thu</span><span class="n">13</span><span class="load"></span></div>
+                <div class="rday ahead faded"><span class="wd">Fri</span><span class="n">14</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="empty past">
+                <span class="glyph"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 9.5h17M8 3v3.4M16 3v3.4"/></svg></span>
+                <span class="h">Nothing planned</span>
+                <span class="d">Tomorrow is open. Plan it now, or just train and log it when it happens.</span>
+              </div>
+              <div class="pair">
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h11M4 18h7"/></svg>Plan tomorrow</span>
+              </div>
+            </div>
+            <div class="pager"><i></i><i></i><i></i><i class="on"></i></div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S11</span><h3>→ Forward — tomorrow, open</h3></div>
+          <p class="why">The rail runs seven days past today and stops. Ahead-days sit in a lower register — dimmer numerals, hollow gauges — because <b>a future day holds intent, not evidence</b>. The title changes to <em>Nothing planned</em>: this is the one empty that isn't about logging, so it doesn't borrow the logging words.</p>
+          <div class="chips"><span class="chip">ContentUnavailableView</span><span class="chip">Button</span></div>
+        </div>
+
+        <!-- S12 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Wednesday, 12 August →</div>
+            <div class="bigtitle quiet">Tomorrow</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="tag plan">Week 3 of 12</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:100%"></i></span></div>
+                <div class="rday sel ahead"><span class="wd">Wed</span><span class="n">12</span><span class="load"></span></div>
+                <div class="rday ahead"><span class="wd">Thu</span><span class="n">13</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">Push — Strength</span><span class="m-mono" style="letter-spacing:0;text-transform:none">~55 min</span></div>
+              <div style="margin-top:9px">
+                <div class="presc"><span class="n">1</span><span class="t">Bench Press</span><span class="s">4 × 6 @ 82.5 kg</span></div>
+                <div class="presc"><span class="n">2</span><span class="t">Overhead Press</span><span class="s">3 × 8 @ 45 kg</span></div>
+                <div class="presc"><span class="n">3</span><span class="t">Weighted Dip</span><span class="s">3 × 10</span></div>
+                <div class="presc"><span class="n">4</span><span class="t">KB Swing</span><span class="s">3 × 20</span></div>
+              </div>
+              <div class="pair start">
+                <span class="btn bord">Move this day</span>
+                <span class="btn bord">Preview</span>
+              </div>
+            </div>
+            <div class="pager"><i></i><i></i><i></i><i class="on"></i></div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S12</span><h3>→ Tomorrow, with a plan enrolled</h3></div>
+          <p class="why">The same page, filled instead of empty — <b>enrolling changes the card's fill, never its shape</b>, the rule the week rail was written to. No Start button: tomorrow's session starts tomorrow. Prescriptions are numbered because a program <em>is</em> a sequence — the one place numbering carries real information.</p>
+          <div class="chips"><span class="chip">List</span><span class="chip">Section header</span><span class="chip">LabeledContent ×4</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════ ACT IV ══════════════════════════════ -->
+    <div>
+      <div class="act-head">
+        <span class="n">ACT IV</span><h2>The edges</h2>
+        <span class="eyebrow">the states most redesigns never draw</span>
+      </div>
+
+      <div class="gallery">
+
+        <!-- S13 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="bar offline" style="margin-top:12px">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3 3l18 18M5 12.5a10 10 0 014.5-2.6M2 8.8A15 15 0 018 5.6M16 5.9a15 15 0 016 2.9M14.6 10.1a10 10 0 013.4 2.4M12 19h.01"/></svg>
+              <span style="flex:1">Offline — 1 session waiting to sync</span>
+            </div>
+            <div class="plate" style="margin-top:11px">
+              <div class="sec-head"><span class="t">Your training</span><span class="ring">↗</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:44%"></i></span></div>
+                <div class="rday ahead"><span class="wd">Wed</span><span class="n">12</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">All done for today</span><span class="m-mono" style="color:var(--amber);letter-spacing:0;text-transform:none">Not synced</span></div>
+              <div class="hero-fig"><span class="n">6.20</span><span class="u">km</span></div>
+              <div class="sub-figs"><span>34 min</span><span>512 kcal</span></div>
+              <div style="margin-top:11px"><div class="m-mono">1 done today</div>
+                <div class="srow">
+                  <span class="sym"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 19l4-9 4 4 4-9"/></svg></span>
+                  <span style="flex:1"><span class="t">Easy run</span><span class="s">6.20 km – 34 min</span></span>
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--amber)" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5l3 2"/></svg>
+                </div>
+              </div>
+              <div class="pair start">
+                <span class="btn bord">Another session</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S13</span><h3>Offline — logging still works</h3></div>
+          <p class="why">Everything stays usable and the figures stay real; only their <em>sync state</em> is qualified, on the row that owns it and in one bar. Amber, not terracotta — nothing has failed. <b>Log a sport is not disabled</b>: a gym basement with no signal is exactly when someone logs a session.</p>
+          <div class="chips"><span class="chip">Label</span><span class="chip mod">badge</span><span class="chip mod">symbolEffect(.pulse)</span></div>
+        </div>
+
+        <!-- S14 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span></div>
+              <div class="seam" style="margin-top:14px"></div>
+              <div class="empty">
+                <span class="glyph" style="color:rgba(229,138,92,.75)"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l9 16H3l9-16z"/><path d="M12 10v4M12 17h.01"/></svg></span>
+                <span class="h">Couldn't load your training</span>
+                <span class="d">Your sessions are safe. This is a connection problem, not a data one.</span>
+              </div>
+              <div class="pair">
+                <span class="btn bord">Try again</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S14</span><h3>The fetch failed</h3></div>
+          <p class="why">The same empty block a fourth time, in its failure tense — and the copy does the one job error copy has: <b>say what is and isn't lost</b>. Pull-to-refresh works too, via <code>refreshable</code>. <b>Log a sport survives even here</b>, because a local write doesn't need the read that failed.</p>
+          <div class="chips"><span class="chip">ContentUnavailableView</span><span class="chip mod">refreshable</span><span class="chip">Button ×2</span></div>
+        </div>
+
+        <!-- S15 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span><span class="s">3-day streak</span></span><span class="ring">◔</span></div>
+            <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+            <div class="datestamp">Tuesday, 11 August</div>
+            <div class="bigtitle">Today</div>
+            <div class="plate">
+              <div class="sec-head"><span class="t">Your training</span><span class="ring">↗</span></div>
+              <div class="rail-bleed"><div class="rail">
+                <div class="rday faded"><span class="wd">Sun</span><span class="n">9</span><span class="load"><i style="width:52%"></i></span></div>
+                <div class="rday"><span class="wd">Mon</span><span class="n">10</span><span class="load"><i style="width:74%"></i></span></div>
+                <div class="rday sel today"><span class="wd">Tue</span><span class="n">11</span><span class="load"><i style="width:41%"></i></span></div>
+                <div class="rday ahead"><span class="wd">Wed</span><span class="n">12</span><span class="load"></span></div>
+              </div></div>
+              <div class="seam"></div>
+              <div class="m-row"><span style="font-weight:900;font-size:18px;letter-spacing:-.03em">All done for today</span><span class="m-mono" style="letter-spacing:0;text-transform:none">3-day streak</span></div>
+              <div class="hero-fig"><span class="n">6.20</span><span class="u">km</span></div>
+              <div class="sub-figs"><span>34 min</span><span>512 kcal</span></div>
+              <div style="margin-top:11px"><div class="m-mono">1 done today</div>
+                <div class="srow">
+                  <span class="sym"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M6 19l4-9 4 4 4-9"/></svg></span>
+                  <span style="flex:1"><span class="t">Easy run</span><span class="s">6.20 km – 34 min</span></span>
+                </div>
+              </div>
+              <div class="bar undo" style="margin-top:12px"><span>Tennis deleted</span><b>UNDO</b></div>
+              <div class="pair start">
+                <span class="btn bord">Another session</span>
+                <span class="btn bord"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg>Log a sport</span>
+              </div>
+            </div>
+            <div class="tabbar"><span class="on">Today</span><span>Fuel</span><span>Inbox</span><span>You</span></div>
+          </div>
+          <div class="lab"><span class="s">S15</span><h3>After a delete — five seconds to change your mind</h3></div>
+          <p class="why">Deletion runs behind a <code>ConfirmationDialog</code> and then leaves an undo in place of the row it removed, so the correction lives where the mistake was. The hero and the gauges have already updated — the day is <b>honest immediately</b>, and reversible for a moment.</p>
+          <div class="chips"><span class="chip">ConfirmationDialog</span><span class="chip mod">contentTransition</span><span class="chip">Button</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════ ACT V ═══════════════════════════════ -->
+    <div>
+      <div class="act-head">
+        <span class="n">ACT V</span><h2>Logging a sport</h2>
+        <span class="eyebrow">cards, the watch, and the day it lands on</span>
+      </div>
+
+      <div class="gallery">
+
+        <!-- S16 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div style="opacity:.3">
+              <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+              <div class="datestamp">← Saturday, 8 August</div>
+            </div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div class="m-row">
+                <span style="font-weight:900;font-size:18px;letter-spacing:-.03em">Log a sport</span>
+                <span class="m-mono">Close</span>
+              </div>
+              <div style="font-family:var(--mono);font-size:10.5px;color:var(--ash);margin-top:5px">A run, a swim, a match — it still counts</div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px">
+                <span class="m-mono">When</span>
+                <span class="dtoken">Sat 8 Aug, 10:30 ⌄</span>
+              </div>
+
+              <div class="qs-import">
+                <span style="color:var(--lime)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="3.2"/><path d="M9 6.5l.5-3h5l.5 3M9 17.5l.5 3h5l.5-3"/></svg></span>
+                <span style="flex:1"><span class="t">Import from your watch</span><span class="s">Trained on your watch? Pull it in with every value it measured.</span></span>
+                <span style="color:var(--lime);font-size:13px">→</span>
+              </div>
+
+              <div class="qs-grid">
+                <div class="qs-card"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg><span class="t">Run</span><span class="k">Tap to log</span></div>
+                <div class="qs-card"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17" r="3.2"/><circle cx="18.5" cy="17" r="3.2"/><path d="M8 17l4-8h4M9 9h4"/></svg><span class="t">Ride</span><span class="k">Tap to log</span></div>
+                <div class="qs-card"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 15c2-2 3.4-2 5.4 0s3.4 2 5.4 0 3.4-2 5.4 0M3 10c2-2 3.4-2 5.4 0s3.4 2 5.4 0 3.4-2 5.4 0"/></svg><span class="t">Swim</span><span class="k">Tap to log</span></div>
+                <div class="qs-card"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round"/></svg><span class="t">Tennis</span><span class="k">Tap to log</span></div>
+              </div>
+              <div class="qs-other"><b>＋</b>Other sport</div>
+            </div>
+          </div>
+          <div class="lab"><span class="s">S16</span><h3>The sport sheet — cards, unchanged</h3></div>
+          <p class="why">
+            <b>This stays exactly as it is.</b> The one-tap card grid is the fastest path in the app —
+            back from a run, two taps and it is logged — and the watch import already sits above it,
+            where it belongs: if the training was recorded on the wrist there is nothing to type at all.
+            The only addition is the <b>When</b> row, which is what lets the whole sheet be reached from
+            a day that has already passed.
+          </p>
+          <div class="chips"><span class="chip">BottomSheet</span><span class="chip">DatePicker</span><span class="chip">Label</span><span class="chip">Button ×5</span></div>
+        </div>
+
+        <!-- S17 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div style="opacity:.3">
+              <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+              <div class="datestamp">← Saturday, 8 August</div>
+            </div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div style="display:flex;align-items:center;gap:11px">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round"/></svg></span>
+                <span style="flex:1;font-weight:900;font-size:19px;letter-spacing:-.03em">Tennis</span>
+                <span class="m-mono">Close</span>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px">
+                <span class="m-mono">When</span>
+                <span class="dtoken">Sat 8 Aug, 10:30 ⌄</span>
+              </div>
+
+              <div style="display:flex;gap:9px;align-items:flex-end;margin-top:12px">
+                <span style="flex:1"><span class="m-mono" style="display:block;margin-bottom:5px">Distance</span><span style="display:block;font-family:var(--mono);font-size:15px;color:var(--chalk);background:var(--ink);border-radius:10px;padding:10px 12px;box-shadow:inset 0 0 0 1px var(--line)">4.11</span></span>
+                <span style="flex:1"><span class="m-mono" style="display:block;margin-bottom:5px">Minutes</span><span style="display:block;font-family:var(--mono);font-size:15px;color:var(--chalk);background:var(--ink);border-radius:10px;padding:10px 12px;box-shadow:inset 0 0 0 1px var(--line)">90</span></span>
+                <span class="btn prom" style="box-shadow:none;padding:12px 18px">Log →</span>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px">
+                <span style="font-family:var(--mono);font-size:12px;color:var(--ash)">90 min</span>
+                <span class="stepper"><span>−</span><span>＋</span></span>
+              </div>
+
+              <div style="font-family:var(--mono);font-size:11.5px;color:var(--lime);margin-top:11px">Pace 21:54 /km</div>
+            </div>
+          </div>
+          <div class="lab"><span class="s">S17</span><h3>One sport — the figures, and the day</h3></div>
+          <p class="why">
+            The <code>DatePicker</code> is the control that makes a past day loggable at all: the save
+            used to stamp <code>new Date()</code>, which recorded <em>when the record was typed</em> as a
+            property of the workout. Beside the typed field, a <code>Stepper</code> nudges the duration
+            in fives — with repeat-on-hold, disabled ends and the adjustable VoiceOver trait that
+            hand-drawn ± buttons never get. Additive: the field stays the exact-entry path.
+          </p>
+          <div class="chips"><span class="chip">DatePicker</span><span class="chip">Stepper</span><span class="chip">TextField ×2</span><span class="chip mod">tint</span></div>
+        </div>
+
+        <!-- S18 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div style="opacity:.3">
+              <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+              <div class="datestamp">← Saturday, 8 August</div>
+            </div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div class="m-row">
+                <span style="font-weight:900;font-size:18px;letter-spacing:-.03em">Import from your device</span>
+                <span class="m-mono">Close</span>
+              </div>
+              <div style="font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:6px;line-height:1.5">Workouts your device recorded. Tap a row to leave it out.</div>
+
+              <div class="imp-sec">Adds a new session</div>
+              <div class="imp-row">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round"/></svg></span>
+                <span style="flex:1"><span class="t" style="font-weight:700;font-size:13.5px;display:block">Tennis</span><span class="s" style="font-family:var(--mono);font-size:10px;color:var(--ash);display:block;margin-top:2px">Sat 8 Aug – 90 min – 4.11 km</span></span>
+                <span class="tog on"><i></i></span>
+              </div>
+              <div class="imp-row">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 15c2-2 3.4-2 5.4 0s3.4 2 5.4 0 3.4-2 5.4 0M3 10c2-2 3.4-2 5.4 0s3.4 2 5.4 0 3.4-2 5.4 0"/></svg></span>
+                <span style="flex:1"><span class="t" style="font-weight:700;font-size:13.5px;display:block">Open water swim</span><span class="s" style="font-family:var(--mono);font-size:10px;color:var(--ash);display:block;margin-top:2px">Sat 8 Aug – 28 min – 1 200 m</span></span>
+                <span class="tog on"><i></i></span>
+              </div>
+
+              <div class="imp-sec">Joins what you logged</div>
+              <div class="imp-row">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg></span>
+                <span style="flex:1"><span class="t" style="font-weight:700;font-size:13.5px;display:block">Tempo run</span><span class="s" style="font-family:var(--mono);font-size:10px;color:var(--ash);display:block;margin-top:2px">Joins the Easy run you logged</span></span>
+                <span class="tog on"><i></i></span>
+              </div>
+
+              <div class="imp-sec">Already in your log</div>
+              <div class="imp-row dim">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17" r="3.2"/><circle cx="18.5" cy="17" r="3.2"/><path d="M8 17l4-8h4M9 9h4"/></svg></span>
+                <span style="flex:1"><span class="t" style="font-weight:700;font-size:13.5px;display:block">Commute ride</span><span class="s" style="font-family:var(--mono);font-size:10px;color:var(--ash);display:block;margin-top:2px">Fri 7 Aug – 22 min</span></span>
+                <span class="tog"><i></i></span>
+              </div>
+
+              <div class="btn prom wide" style="margin-top:14px;box-shadow:none">Import 3</div>
+            </div>
+          </div>
+          <div class="lab"><span class="s">S18</span><h3>Import from the watch — a List of Sections</h3></div>
+          <p class="why">
+            The strongest case in the app for native <code>List</code> + <code>Section</code> +
+            <code>Toggle</code>: three groups, one row each, every row excludable — the watch calls a
+            six-minute walk to the shop a workout and the athlete gets the final word. The grouping
+            <em>is</em> the explanation, so it needs no prose: <b>adds</b>, <b>joins what you typed</b>,
+            <b>already here</b>. It ends on the one question a recording cannot answer — how hard it felt.
+          </p>
+          <div class="chips"><span class="chip">List</span><span class="chip">Section ×3</span><span class="chip">Toggle ×4</span><span class="chip">Label</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────── state matrix ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Every state, checked</h2>
+    <span class="eyebrow">the invariants, verified row by row</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="t">
+      <thead><tr><th>State</th><th>Headline</th><th>Empty block</th><th>Primary</th><th>Log a sport</th><th>Edit / delete</th></tr></thead>
+      <tbody>
+        <tr><td>S1 first run</td><td>No training logged</td><td class="yes">tense 1</td><td class="yes">Start a session</td><td class="yes">bordered</td><td class="no">—</td></tr>
+        <tr><td>S2 today open</td><td>No training logged</td><td class="yes">tense 1</td><td class="yes">Start a session</td><td class="yes">bordered</td><td class="no">—</td></tr>
+        <tr><td>S3 loading</td><td>redacted</td><td class="no">placeholder</td><td class="no">redacted</td><td class="no">redacted</td><td class="no">—</td></tr>
+        <tr><td>S4 one session</td><td>All done for today</td><td class="no">—</td><td class="no">none — accent retires</td><td class="yes">bordered</td><td class="yes">swipe</td></tr>
+        <tr><td>S5 two sessions</td><td>All done for today</td><td class="no">—</td><td class="no">none</td><td class="yes">bordered</td><td class="yes">swipe</td></tr>
+        <tr><td>S6 watch-matched</td><td>All done for today</td><td class="no">—</td><td class="no">none</td><td class="yes">bordered</td><td class="yes">swipe</td></tr>
+        <tr><td>S7 personal best</td><td>All done for today</td><td class="no">—</td><td class="no">none — Share is neutral</td><td class="yes">bordered</td><td class="yes">swipe</td></tr>
+        <tr><td>S8 session running</td><td>Upper — Strength</td><td class="no">—</td><td class="yes">Resume session</td><td class="yes">bordered</td><td class="no">—</td></tr>
+        <tr><td>S9 past, logged</td><td>Logged</td><td class="no">—</td><td class="no">not offered</td><td class="yes">dated to that day</td><td class="yes">swipe</td></tr>
+        <tr><td>S10 past, empty</td><td>No training logged</td><td class="yes">tense 2</td><td class="no">not offered</td><td class="yes">dated to that day</td><td class="no">—</td></tr>
+        <tr><td>S11 ahead, open</td><td>Nothing planned</td><td class="yes">tense 3</td><td class="no">Plan tomorrow</td><td class="no">nothing to log yet</td><td class="no">—</td></tr>
+        <tr><td>S12 ahead, planned</td><td>Push — Strength</td><td class="no">—</td><td class="no">not offered</td><td class="no">nothing to log yet</td><td class="no">move the day</td></tr>
+        <tr><td>S13 offline</td><td>All done for today</td><td class="no">—</td><td class="no">none</td><td class="yes">bordered</td><td class="yes">swipe</td></tr>
+        <tr><td>S14 load failed</td><td>Couldn't load your training</td><td class="yes">tense 4</td><td class="no">Try again</td><td class="yes">bordered</td><td class="no">—</td></tr>
+        <tr><td>S15 after delete</td><td>All done for today</td><td class="no">—</td><td class="no">none</td><td class="yes">bordered</td><td class="yes">undo</td></tr>
+        <tr><td>S16 sport sheet</td><td>Log a sport</td><td class="no">—</td><td class="yes">the cards</td><td class="yes">this is it</td><td class="no">—</td></tr>
+        <tr><td>S17 one sport</td><td>Tennis</td><td class="no">—</td><td class="yes">Log →</td><td class="yes">dated, editable</td><td class="no">—</td></tr>
+        <tr><td>S18 device import</td><td>Import from your device</td><td class="no">—</td><td class="yes">Import 3</td><td class="yes">off the watch</td><td class="yes">per-row toggle</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:20px">
+    <b>Invariant 1</b> — one empty block, four tenses, five appearances, one title string.
+    <b>Invariant 2</b> — Log a sport in fifteen of eighteen, absent only where a sport cannot exist.
+    <b>Invariant 3</b> — never two accent surfaces on one screen; on nine of them the accent is spent
+    nowhere at all.
+  </p>
+</section>
+
+<!-- ────────────────────────────────────────────────────────── copy deck ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Copy deck</h2>
+    <span class="eyebrow">every string, with its key</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="t copy">
+      <thead><tr><th>Key</th><th>English</th><th>Used in</th></tr></thead>
+      <tbody>
+        <tr><td>logbook.empty.title</td><td>No training logged</td><td>S1, S2, S10 — the one title, three tenses</td></tr>
+        <tr><td>logbook.empty.firstRun</td><td>Your first session lands here. Anything counts — a lift, a run, a match.</td><td>S1</td></tr>
+        <tr><td>logbook.empty.today</td><td>Whatever you do today lands here — a lift, a run, a match.</td><td>S2</td></tr>
+        <tr><td>logbook.empty.past</td><td>A rest day, or one that got away. You can still add it.</td><td>S10</td></tr>
+        <tr><td>logbook.ahead.title</td><td>Nothing planned</td><td>S11 — deliberately not the logging title</td></tr>
+        <tr><td>logbook.ahead.body</td><td>Tomorrow is open. Plan it now, or just train and log it when it happens.</td><td>S11</td></tr>
+        <tr><td>logbook.error.title</td><td>Couldn't load your training</td><td>S14</td></tr>
+        <tr><td>logbook.error.body</td><td>Your sessions are safe. This is a connection problem, not a data one.</td><td>S14</td></tr>
+        <tr><td>logbook.cta.start</td><td>Start a session</td><td>S1, S2 — future tense, live</td></tr>
+        <tr><td>logbook.cta.another</td><td>Another session</td><td>S4–S7, S13, S15</td></tr>
+        <tr><td>logbook.cta.resume</td><td>Resume session</td><td>S8</td></tr>
+        <tr><td>logbook.cta.sport</td><td>Log a sport</td><td>eleven screens — past tense, already happened</td></tr>
+        <tr><td>logbook.cta.sportOn</td><td>Log a sport on {weekday}</td><td>S9, S10 — names its target day</td></tr>
+        <tr><td>logbook.cta.plan</td><td>Plan tomorrow</td><td>S11</td></tr>
+        <tr><td>logbook.cta.retry</td><td>Try again</td><td>S14</td></tr>
+        <tr><td>logbook.offline.bar</td><td>Offline — {n} session waiting to sync</td><td>S13</td></tr>
+        <tr><td>logbook.undo</td><td>{title} deleted — UNDO</td><td>S15</td></tr>
+        <tr><td>logbook.week.footer</td><td>This week — {n} sessions, {distance}</td><td>S2, as the Section footer</td></tr>
+        <tr><td>logbook.device.footer</td><td>Measured, not typed — you logged {typed}</td><td>S6</td></tr>
+        <tr><td>w.home.quickSport.when</td><td>When</td><td>S16, S17 — the DatePicker's label</td></tr>
+        <tr><td>device.import.cardTitle</td><td>Import from your watch</td><td>S16 — already shipped</td></tr>
+        <tr><td>device.import.adds / joins / already</td><td>Adds a new session / Joins the {title} you logged / Already in your log</td><td>S18 — the three Sections</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note grey">
+    <span class="k">Two copy rules the deck follows</span>
+    <b>Start</b> a session against <b>Log</b> a sport — the verbs differ because the tense does: one is
+    about to happen, one already did. And no separator middots anywhere: meta lines join on a spaced
+    en dash, per the house rule.
+  </div>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── spec ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Specification</h2>
+    <span class="eyebrow">what an engineer needs that a mockup doesn't say</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="t">
+      <thead><tr><th>Element</th><th>Type</th><th>Colour</th><th>Geometry</th><th>SwiftUI</th></tr></thead>
+      <tbody>
+        <tr><td>Section surface</td><td>—</td><td><code>ink2</code> @ .055</td><td>r 24, pad 18</td><td><code>Section</code> in <code>listStyle(.insetGrouped)</code></td></tr>
+        <tr><td>Section header</td><td>Archivo 900 / 19 / −.03em</td><td><code>chalk</code></td><td>baseline row, exit right</td><td><code>Section header</code></td></tr>
+        <tr><td>Section footer</td><td>Mono 10 / .13em / upper</td><td><code>ash</code></td><td>hairline above, 11 pad</td><td><code>Section footer</code></td></tr>
+        <tr><td>Day cell</td><td>Mono 8.5 + Archivo 800 / 16</td><td><code>ash</code> / <code>mist</code></td><td>43 × 62, r 18, gap 7</td><td><code>Button</code> in <code>ScrollView</code></td></tr>
+        <tr><td>Day selection</td><td>—</td><td>chalk @ .10 + 1px rim</td><td>fills the cell</td><td><code>matchedGeometryEffect</code></td></tr>
+        <tr><td>Load gauge</td><td>—</td><td><code>mist</code>; <code>lime</code> today</td><td>19 × 3, r 2</td><td><code>Gauge</code> <code>.accessoryLinearCapacity</code></td></tr>
+        <tr><td>Empty symbol</td><td>SF Symbol 36 pt</td><td><code>ash</code> @ .7 (.5 past)</td><td>centred, 14 pad above</td><td><code>ContentUnavailableView</code></td></tr>
+        <tr><td>Empty title</td><td>Archivo 800 / 17 / −.02em</td><td><code>chalk</code>; <code>ash</code> when past</td><td>—</td><td>same</td></tr>
+        <tr><td>Empty description</td><td>Archivo 400 / 13 / 1.5</td><td><code>ash</code></td><td>max 31 ch</td><td>same</td></tr>
+        <tr><td>Hero figure</td><td>Archivo 900 / 46 / −.045em</td><td><code>chalk</code></td><td>tabular, unit baseline-aligned</td><td><code>contentTransition(.numericText)</code></td></tr>
+        <tr><td>Sub figures</td><td>Mono 12</td><td><code>ash</code></td><td>gap 16, wraps</td><td><code>monospacedDigit</code></td></tr>
+        <tr><td>Session row</td><td>Archivo 700 / 14.5 + Mono 11</td><td><code>chalk</code> / <code>ash</code></td><td>36 circle, gap 12, 44 min height</td><td><code>Label</code> + <code>SwipeActions</code></td></tr>
+        <tr><td>Primary button</td><td>Archivo 800 / 14.5</td><td><code>lime</code> on <code>onAccent</code></td><td>capsule, 10 × 18, 44 tap</td><td><code>buttonStyle(.borderedProminent)</code></td></tr>
+        <tr><td>Secondary button</td><td>Archivo 800 / 14.5</td><td>chalk @ .09 + rim</td><td>capsule, 10 × 16, 44 tap</td><td><code>buttonStyle(.bordered)</code></td></tr>
+        <tr><td>Exit row</td><td>Mono 10 / .13em / upper</td><td><code>ash</code>, ringed glyph</td><td>hairline above, 28 ring</td><td><code>Button</code> — ring = it leaves</td></tr>
+        <tr><td>Sheet panel</td><td>—</td><td><code>ink2</code></td><td>r 22 top, pad <code>sheetPadBottom()</code></td><td><code>BottomSheet</code> + <code>Form</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note">
+    <span class="k">Motion budget</span>
+    Four animations in the whole card, and no more. The selection travels
+    (<code>matchedGeometryEffect</code>, SwiftUI default spring). The figures roll
+    (<code>numericText</code>, in the direction of travel). The day pages
+    (<code>tabViewStyle(.page)</code>, with a haptic detent). A symbol bounces once when a session
+    lands. Everything else is still — and all four collapse to instant under
+    <code>useReducedMotion()</code>.
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────────── a11y ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Accessibility</h2>
+    <span class="eyebrow">most of it arrives with the views</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="t">
+      <thead><tr><th>Concern</th><th>Now</th><th>After</th></tr></thead>
+      <tbody>
+        <tr><td>The week strip</td><td>Seven buttons reading "Wed 5 — logged"</td><td>Each <code>Gauge</code> speaks its value: "Wednesday 5, 72% of your heaviest day"</td></tr>
+        <tr><td>Session rows</td><td>Emoji read aloud as "tennis ball"</td><td><code>Label</code> reads the title; the symbol is decorative and hidden</td></tr>
+        <tr><td>Editing</td><td>No path without opening the session</td><td><code>SwipeActions</code> surface in the rotor automatically</td></tr>
+        <tr><td>Dynamic Type</td><td><code>FIXED_FONT_SCALE</code> pins several labels</td><td>Native views scale; only the hero figure stays capped, with <code>ViewThatFits</code> handling overflow</td></tr>
+        <tr><td>Reduce Motion</td><td>Nothing animates, so nothing to honour</td><td>All four animations collapse to instant, as <code>liquid-seg</code> already does</td></tr>
+        <tr><td>Colour alone</td><td>Lime disc is the only "today" cue</td><td>Today is lime <em>and</em> labelled; the empty state never relies on hue</td></tr>
+        <tr><td>Tap targets</td><td>Day chips are 40 × 50 with no slop</td><td>44 pt minimum on every control, gauges included</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ────────────────────────────────────────────────────────────── ledger ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>What gets deleted</h2>
+    <span class="eyebrow">the honest measure of a redesign</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="t">
+      <thead><tr><th>Gone</th><th>Where</th><th>Replaced by</th></tr></thead>
+      <tbody>
+        <tr><td>Card border + shadow</td><td>logbook-rail.tsx:91–102</td><td><code>Section</code> in an inset-grouped <code>List</code></td></tr>
+        <tr><td>Two of three hairlines</td><td>logbook-rail.tsx:120 – done-floor.tsx:86</td><td>Whitespace and the system's own separators</td></tr>
+        <tr><td>Three empty-state drawings</td><td>logbook-rail.tsx:231–235, 253–258</td><td>One <code>AEmptyDay</code>, four tenses</td></tr>
+        <tr><td>The "LAST 7 DAYS" caption</td><td>w.home.logbook.window</td><td>A rail that shows its own extent</td></tr>
+        <tr><td>The ✓ marks</td><td>logbook-rail.tsx:166–168</td><td><code>Gauge</code> — same pixels, real information, spoken</td></tr>
+        <tr><td>The dashed ＋ tile <span style="color:var(--ash);font-weight:400">(the box, not the action)</span></td><td>done-floor.tsx:145–152</td><td>A bordered <code>Button</code> on the primary's baseline</td></tr>
+        <tr><td>The "a match, a run, a swim" line</td><td>alsoTodaySubEmpty</td><td>Said once, in the description line</td></tr>
+        <tr><td>🎾 and the whole emoji set</td><td>core sessionIcon</td><td><code>Label</code> + SF Symbol, emoji as the off-iOS floor</td></tr>
+        <tr><td>The day remount</td><td>logbook-rail.tsx:123</td><td><code>TabView</code> paging + rolling figures</td></tr>
+        <tr><td>The isToday gate on logging</td><td>done-floor.tsx:145</td><td>A <code>DatePicker</code> — any past day is loggable</td></tr>
+        <tr><td>The save-time date stamp</td><td>quick-sport.tsx</td><td>A native <code>DatePicker</code> — the sport lands on the day it happened</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:22px">
+    Eleven deletions against six new shared components — and the section <b>gains</b> six things it
+    doesn't have today: a loading state, an offline state, a failure state, an in-progress state,
+    editing from the card, and the ability to log a day that has already passed. Every row above
+    removes a <em>drawing</em>, never an action.
+  </p>
+</section>
+
+<!-- ─────────────────────────────────────────────────────────────── build ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Build order</h2>
+    <span class="eyebrow">four builds, each shippable on its own</span>
+  </div>
+
+  <div class="phases">
+    <div class="phase">
+      <span class="p">Build 1</span>
+      <div class="body">
+        <h3>01 + 03 + 04 — the still frame <span style="color:var(--ash);font-weight:400">(S1, S2, S4, S5, S10)</span></h3>
+        <p>
+          Pure JS, shippable over EAS Update. The card becomes a <code>Section</code>; the empty block
+          lands as one component in all its tenses; the two actions resolve into a primary and a
+          secondary; rows become <code>Label</code>s with swipe actions. Nothing animates yet and the
+          section already reads native — this is the build that proves the direction on a device before
+          any gesture work is paid for.
+        </p>
+      </div>
+    </div>
+    <div class="phase">
+      <span class="p">Build 2</span>
+      <div class="body">
+        <h3>02 + 06 + 07 — the rail, the pager, the past <span style="color:var(--ash);font-weight:400">(S9, S11, S12, S16)</span></h3>
+        <p>
+          The week becomes a scrollable rail of gauges, the day becomes a <code>TabView</code> page, the
+          figures roll, and the sport sheet takes a date. Land <code>logbookDays(range)</code> in core
+          with tests before any UI touches it, and budget a device round for the paging/rail binding.
+          This is where the new capabilities arrive, so it is where <code>capabilities.ts</code> gains
+          its entries.
+        </p>
+      </div>
+    </div>
+    <div class="phase">
+      <span class="p">Build 3</span>
+      <div class="body">
+        <h3>The edges <span style="color:var(--ash);font-weight:400">(S3, S8, S13, S14, S15)</span></h3>
+        <p>
+          Loading, in-progress, offline, failure, undo. Unglamorous, and the highest-value build in the
+          set: four of these five states have <b>no expression at all</b> in the card today, which means
+          the app currently answers a failed fetch and a rest day with the same blank space.
+        </p>
+      </div>
+    </div>
+    <div class="phase">
+      <span class="p">Build 4</span>
+      <div class="body">
+        <h3>05 — the screen around it</h3>
+        <p>
+          The condensing large title and the scroll edge effect change native configuration, so they
+          ride their own prebuild rather than sharing a build with the card work. One variable per
+          build, per the Expo-module rule that already governs this repo.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:34px">
+    <span class="k">Two constraints that outrank all seven moves</span>
+    Every figure on this card must keep reading through <code>deviceTrueSession()</code> — a redesign
+    is exactly when a surface quietly starts drawing typed values again, and S6 is the screen that
+    proves it. And each move ships with its <code>capabilities.ts</code> entry in the same change; the
+    mobile card is the golden standard on its own now, since the user-facing web client was retired in
+    August.
+  </div>
+</section>
+
+<footer>
+  <span>HYBRID design study — rev. 6</span>
+  <span>Today → Train</span>
+  <span>18 states</span>
+  <span>Set in Archivo &amp; JetBrains Mono — the app's own faces</span>
+</footer>
+
+</div>
+</body>
+</html>
