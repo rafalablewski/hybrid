@@ -117,7 +117,7 @@ export default function AuroraBuilder() {
           <Animated.View
             key={x.uid}
             onLayout={blockDrag.onRowLayout("", i)}
-            style={lifted ? { transform: [{ translateY: blockDrag.dragY }], zIndex: 20, elevation: 8, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } } : undefined}
+            style={blockDrag.rowStyle("", i)}
           >
             <BlockCard
               b={x}
@@ -449,7 +449,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
           <Animated.View
             key={i}
             onLayout={setDrag.onRowLayout("", i)}
-            style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
+            style={setDrag.rowStyle("", i)}
           >
           <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => builder.removeSet(b.uid, i)} background={C.ink2}>
             <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>

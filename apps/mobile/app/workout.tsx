@@ -384,19 +384,15 @@ export default function Workout() {
   const [paused, setPaused] = useState(false);
   const pausedAt = useRef(0);
 
-  // Hold-and-drag reorder of exercise cards (the grip handle). We track each
-  // card's measured position (onLayout) and translate ONLY the lifted card with
-  // the finger; on release we drop it at the nearest card's slot. Refs (not
-  // state) drive the live gesture so per-second timer re-renders don't disturb
-  // it; dragUid is state only to restyle the lifted card.
-  const [dragUid, setDragUid] = useState<string | null>(null);
-  const dragY = useRef(new Animated.Value(0)).current;
-  const layouts = useRef<Record<string, { y: number; height: number }>>({});
-  const dragUidRef = useRef<string | null>(null);
-  const dragFrom = useRef(-1);
-  const dragTo = useRef(-1);
-  const exercisesRef = useRef<WExercise[]>([]);
-  exercisesRef.current = exercises;
+  // Hold-and-drag reorder of exercise cards (the grip handle) — on the SHARED
+  // mechanic (lib/use-drag-reorder.ts), not the private copy it used to be.
+  // That copy predated the hook and was a near line-for-line duplicate of it
+  // (the same nearest-centre drop, the same pickup/commit haptics), so it
+  // silently missed both upgrades the hook has since received: the animated
+  // commit, so the app's LARGEST reorder was the one still teleporting its
+  // neighbours into their new slots, and the pickup lift. One group ("") — the
+  // exercise list is a single list.
+  const exDrag = useDragReorder((_g, from, to) => moveExerciseTo(from, to));
 
   const startedAt = useRef(new Date());
   const prior = useRef<LoggedSession[]>([]);
@@ -871,51 +867,6 @@ export default function Workout() {
     setRestNow(0);
     restFired.current = false;
   };
-  // --- Drag-to-reorder exercise cards (grip handle) ---
-  const beginDrag = (u: string) => {
-    const i = exercisesRef.current.findIndex((x) => x.uid === u);
-    if (i < 0) return;
-    dragUidRef.current = u;
-    dragFrom.current = i;
-    dragTo.current = i;
-    dragY.setValue(0);
-    setDragUid(u);
-    haptic.medium();
-  };
-  const moveDrag = (dy: number) => {
-    dragY.setValue(dy);
-    const u = dragUidRef.current;
-    const L = u ? layouts.current[u] : undefined;
-    if (!u || !L) return;
-    // Drop next to whichever card's centre is closest to the lifted card's —
-    // robust across variable card heights and the gaps (margins) between them.
-    const center = L.y + L.height / 2 + dy;
-    let to = dragFrom.current;
-    let best = Infinity;
-    exercisesRef.current.forEach((x, k) => {
-      const Lk = layouts.current[x.uid];
-      if (!Lk) return;
-      const dist = Math.abs(Lk.y + Lk.height / 2 - center);
-      if (dist < best) {
-        best = dist;
-        to = k;
-      }
-    });
-    dragTo.current = to;
-  };
-  const endDrag = () => {
-    const { current: from } = dragFrom;
-    const { current: to } = dragTo;
-    if (from >= 0 && to >= 0 && from !== to) {
-      moveExerciseTo(from, to);
-      haptic.selection();
-    }
-    dragUidRef.current = null;
-    dragFrom.current = -1;
-    dragTo.current = -1;
-    dragY.setValue(0);
-    setDragUid(null);
-  };
   // Drag-to-reorder SET ROWS (grip on each row), grouped per exercise — a drag
   // never crosses into another exercise's ledger.
   const setDrag = useDragReorder(
@@ -1386,19 +1337,12 @@ export default function Workout() {
         })()}
 
         {exercises.map((x, xi) => {
-          const dragging = dragUid === x.uid;
+          const dragging = exDrag.dragKey === exDrag.key("", xi);
           return (
           <Animated.View
             key={x.uid}
-            onLayout={(e) => {
-              const { y, height } = e.nativeEvent.layout;
-              layouts.current[x.uid] = { y, height };
-            }}
-            style={
-              dragging
-                ? { transform: [{ translateY: dragY }], zIndex: 20, elevation: 8, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } }
-                : undefined
-            }
+            onLayout={exDrag.onRowLayout("", xi)}
+            style={exDrag.rowStyle("", xi)}
           >
           {/* Press-and-hold anywhere on a strength card opens its exercise
               sheet (user-picked entry, review round 3). A bare long-press
@@ -1413,7 +1357,7 @@ export default function Workout() {
           >
           <ACard style={cardStack}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 10 }}>
-              <DragHandle onStart={() => beginDrag(x.uid)} onMove={moveDrag} onEnd={endDrag} color={dragging ? C.chalk : C.ash} />
+              <DragHandle onStart={() => exDrag.begin("", xi, exercises.length)} onMove={exDrag.move} onEnd={exDrag.end} color={dragging ? C.chalk : C.ash} />
               {/* The lift's IMPLEMENT, tinted by modality — it carries both
                   what the old mono "STRENGTH" word said (via the tint) and the
                   gear it takes (via the drawing), and becomes the hand-drawn
@@ -1504,7 +1448,7 @@ export default function Workout() {
                       <Animated.View
                         key={s.uid ?? i}
                         onLayout={setDrag.onRowLayout(x.uid, i)}
-                        style={lifted ? { transform: [{ translateY: setDrag.dragY }], zIndex: 20, elevation: 6 } : undefined}
+                        style={setDrag.rowStyle(x.uid, i)}
                       >
                       <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, i)} background="transparent">
                         {focus === "active" ? (
