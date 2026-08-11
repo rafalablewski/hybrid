@@ -324,6 +324,25 @@ describe("presentation", () => {
     expect(alerts).toEqual([]);
   });
 
+  it("HARD — the two week rails wear ONE separation device", () => {
+    // The logbook rail and the plan week rail are the SAME object in two modes:
+    // enrolling changes the card's fill, never its shape. Their surface used to
+    // be said four times over — a fill AND a 1px border AND a drop shadow AND
+    // three inner hairlines — and the two were free to drift, which they did.
+    // The fill says it once now. HARD, not a ratchet: a border or a shadow
+    // reappearing on either one immediately puts the two rails on different
+    // chrome, which is the drift this exists to stop.
+    const rails = FILES.filter((f) => /aurora\/(logbook-rail|week-rail)\.tsx$/.test(f.path));
+    expect(rails).toHaveLength(2);
+    const offences: string[] = [];
+    for (const { path, text } of rails) {
+      text.split("\n").forEach((line, i) => {
+        if (/\b(shadowOpacity|shadowRadius|elevation)\s*:/.test(line)) offences.push(`${path}:${i + 1} — a drop shadow`);
+      });
+    }
+    expect(offences).toEqual([]);
+  });
+
   it("HARD — every bottom sheet is THE Sheet", () => {
     // Eleven surfaces hand-rolled `<Modal animationType="slide">` with their own
     // scrim, panel, radius, drag-handle glyph and safe-area padding — the

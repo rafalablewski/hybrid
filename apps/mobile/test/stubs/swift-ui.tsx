@@ -25,6 +25,9 @@ export const Button = Box;
 export const RoundedRectangle = Box;
 export const GlassEffectContainer = Box;
 export const Namespace = Box;
+export const DatePicker = Box;
+export const Stepper = Box;
+export const ContentUnavailableView = Box;
 
 /* modifiers — chainable no-ops */
 const modifier = () => ({});
@@ -36,6 +39,7 @@ export const buttonBorderShape = modifier;
 export const buttonStyle = modifier;
 export const clipShape = modifier;
 export const contentShape = modifier;
+export const datePickerStyle = modifier;
 export const disabled = modifier;
 export const font = modifier;
 export const foregroundColor = modifier;

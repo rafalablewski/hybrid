@@ -59,7 +59,7 @@ import {
   type LogbookDay,
 } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
-import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, type Assignment } from "../../lib/api";
+import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -196,6 +196,10 @@ export default function AuroraHome() {
   // TIER-2 glance strip modals: Quick Log (sport carousel) + Done today (a
   // pop-up list of everything logged today, with a link to the full calendar).
   const [quickOpen, setQuickOpen] = useState(false);
+  // Which day a quick sport log lands on. Null = now, which is every opener
+  // except the logbook rail's empty PAST day — that one hands over the day it
+  // is showing, so "I played on Saturday and forgot" finally has somewhere to go.
+  const [quickDay, setQuickDay] = useState<number | null>(null);
   const [doneOpen, setDoneOpen] = useState(false);
   // The session whose rating sheet is up — a row on the done floor that nobody
   // ever answered "how hard was that" for. Null when the sheet is closed.
@@ -409,6 +413,7 @@ export default function AuroraHome() {
       onLog={() => setQuickOpen(true)}
       onDone={() => setDoneOpen(true)}
       onRate={setRating}
+      onDelete={async (s) => { await deleteSession(s.id); load(); }}
     />
   );
 
@@ -758,6 +763,13 @@ export default function AuroraHome() {
             <AuroraLogbookRail
               sessions={sessions}
               onLog={() => router.push("/workout?source=empty")}
+              onLogSport={(d) => {
+                // Local NOON of the viewed day, so no timezone can slide the
+                // record into the day next door. Today logs at "now" as before.
+                if (d.isToday) setQuickDay(null);
+                else { const at = new Date(d.ts); at.setHours(12, 0, 0, 0); setQuickDay(at.getTime()); }
+                setQuickOpen(true);
+              }}
               onNavigate={(screen) => { if (screen === "history") router.push("/history"); }}
               onSelectDay={setRailDay}
               doneFloor={doneFloor}
@@ -1148,9 +1160,9 @@ export default function AuroraHome() {
       {hubDock}
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
-      <Sheet visible={quickOpen} onClose={() => setQuickOpen(false)} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
+      <Sheet visible={quickOpen} onClose={() => { setQuickOpen(false); setQuickDay(null); }} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
         <View style={{ marginTop: 16 }}>
-          <QuickSportLog sessions={sessions} onSaved={() => { load(); setQuickOpen(false); }} solid />
+          <QuickSportLog sessions={sessions} date={quickDay} onSaved={() => { load(); setQuickOpen(false); setQuickDay(null); }} solid />
         </View>
       </Sheet>
 

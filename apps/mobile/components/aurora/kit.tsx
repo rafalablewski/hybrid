@@ -36,6 +36,24 @@ import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
 export const RADIUS = { mark: 3, inner: 12, field: 16, card: 28, pill: 999 } as const;
 
 /**
+ * CONCENTRIC RADIUS — a nested corner that shares its parent's centre.
+ *
+ * iOS 26 made this a rule rather than a taste: a child inset by `pad` inside a
+ * container of radius `parent` is only truly concentric at `parent - pad`. Draw
+ * it at some other value and the two arcs run on different centres — which is
+ * why a 12dp tile inside a 28dp card reads as pasted on rather than set in,
+ * even though nobody can say why.
+ *
+ * It applies to a block INSET ON ALL SIDES by the padding — a panel inside a
+ * card, a row group inside a sheet. It does NOT apply to a 40dp glyph tile that
+ * happens to sit near an edge: that one is a mark, and marks take `RADIUS.inner`.
+ * Clamped at `mark` so a deep pad can't hand back a negative or a hairline
+ * corner that reads as a mistake.
+ */
+export const concentricRadius = (parent: number, pad: number): number =>
+  Math.max(RADIUS.mark, Math.round(parent - pad));
+
+/**
  * THE CARD'S INNER PADDING — one number for the whole app.
  *
  * ACard is built on it, and so is every full-width card a screen hand-rolls

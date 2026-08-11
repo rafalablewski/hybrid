@@ -5,6 +5,8 @@ import { useLang } from "../../lib/i18n";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { withAlpha } from "./kit";
 import { ArrowGlyph } from "./cta-label";
+import SwipeRow from "../swipe-row";
+import { useConfirm } from "./confirm";
 
 // ── AURORA Done floor (mobile) ──────────────────────────────────────────────
 // What was ACTUALLY logged on the viewed day — one row per session — as the
@@ -50,6 +52,7 @@ export default function DoneFloor({
   onLog,
   onDone,
   onRate,
+  onDelete,
 }: {
   /** every session logged on the VIEWED day, plan-fulfilling ones included. */
   rows: LoggedSession[];
@@ -71,9 +74,16 @@ export default function DoneFloor({
   /** Opens the rating sheet for a session nobody has rated. Omitted where the
    *  host can't present a sheet — the rows then simply don't offer it. */
   onRate?: (session: LoggedSession) => void;
+  /** Delete the session behind a row. Present → the row swipes; absent → it
+   *  doesn't, and the floor is exactly what it was. Until this existed the only
+   *  way to remove a mis-logged session was not from this card at all: you
+   *  opened it, and then you were in the session, which is the wrong place to
+   *  decide it shouldn't exist. */
+  onDelete?: (session: LoggedSession) => void;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const { confirm } = useConfirm();
   const quiet = withAlpha(C.ash, 0.6);
   // caption + log-label state machine lives in core so the web twin can't drift
   const copy = alsoTodayCopy({ doneCount: rows.length, isToday });
@@ -83,7 +93,12 @@ export default function DoneFloor({
 
   return (
     <View>
-      {rule && <View style={{ height: 1, backgroundColor: C.line, marginHorizontal: -pad, marginTop: 16, marginBottom: 14 }} />}
+      {/* Whitespace, not a rule. The seam's LABEL is the separation — the count
+          in mono caps already announces a change of subject, and a hairline
+          under it made this the third horizontal line in one card. The `rule`
+          prop still governs whether the floor is separated at all, it just
+          spends the gap on air now. */}
+      {rule && <View style={{ height: 22 }} />}
 
       {/* THE SEAM. A count is a label, so it sets in mono uppercase and taps
           through to the sheet; an empty day is a sentence, so it stays in
@@ -109,9 +124,16 @@ export default function DoneFloor({
           // nothing about it: the rating is on the summary, and a row that
           // reported its own state twice would be louder than the training.
           const ask = onRate && !isRated(s);
-          return (
+          // A destructive action gets a question, and the question is the APP's
+          // — the confirm sheet, never Alert.alert (the design-token test bans
+          // system alerts outright, and it is right to: a user who has learned
+          // this app's sheet gesture should not meet an OS modal at exactly the
+          // moment they most need to feel oriented). The swipe itself IS the
+          // system's, though: the standard short-swipe-opens / full-swipe-commits
+          // gesture, so a deletable row here behaves like every other one in iOS.
+          const row = (
             // Two targets, one row: the row opens the session, the word rates it.
-            <View key={s.id} style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Pressable onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
                 <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, 0.16) }}>
                   <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
@@ -140,6 +162,27 @@ export default function DoneFloor({
                 </Pressable>
               ) : null}
             </View>
+          );
+
+          if (!onDelete) return <View key={s.id}>{row}</View>;
+          return (
+            <SwipeRow
+              key={s.id}
+              label={t("common.delete")}
+              background="transparent"
+              marginBottom={0}
+              onDelete={async () => {
+                const ok = await confirm({
+                  title: t("w.home.today.deleteTitle"),
+                  message: t("w.home.today.deleteBody").replace("{title}", s.title),
+                  confirmLabel: t("common.delete"),
+                  destructive: true,
+                });
+                if (ok) onDelete(s);
+              }}
+            >
+              {row}
+            </SwipeRow>
           );
         })}
         {isToday ? (
