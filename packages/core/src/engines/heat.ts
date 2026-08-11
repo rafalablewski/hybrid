@@ -30,20 +30,24 @@ import type { Biometrics } from "./types";
  * the one recovery input that will never graduate out of that tier, which is
  * why the suppression rule is a permanent shape rather than a stopgap.
  *
- * ── WHY TEMPERATURE IS HALF THE INPUT ──────────────────────────────────────
+ * ── WHY TEMPERATURE AND MODALITY ARE BOTH INPUTS ───────────────────────────
  * Duration alone is not the dose. Twenty minutes at 90 °C and twenty minutes in
  * a 55 °C infrared cabin are not the same stimulus, and a model that reads only
  * the clock scores them identically. `heatIntensity` converts minutes into
  * EQUIVALENT MINUTES at a stated reference, and everything downstream — the
- * saturating curve, the cap, the decay — is unchanged and now takes an honest
- * input.
+ * saturating curve, the cap, the decay — is unchanged and takes an honest input.
  *
- * WHAT AIR TEMPERATURE CANNOT SEE: humidity. A steam room at 45 °C and 100%
- * humidity blocks evaporative cooling and produces real thermal strain, and
- * this model scores it zero; infrared is under-read for a related reason. Both
- * are honest limitations of reading one number, and neither is worth papering
- * over with an invented humidity term — the fix, if it is ever needed, is a
- * protocol tag on the entry (`source: "sauna:infrared"`), not a fudge factor.
+ * And neither is duration-and-temperature: air temperature is only a PROXY for
+ * thermal strain, and the proxy has a different constant in each modality. One
+ * ramp calibrated on dry sauna scored a 45 °C steam room at exactly zero,
+ * because 45 °C is the dry floor. So each protocol carries its own pair — see
+ * HEAT_PROTOCOLS below, which is where that argument is made in full.
+ *
+ * WHAT THIS STILL CANNOT SEE: humidity, as a measured quantity. A steam room at
+ * 60% and one at 100% are different doses and the model reads the modality you
+ * picked, not the air you were in. Three calibrated ramps is better than one and
+ * is not the same as solved, and a humidity term fitted to nothing would be
+ * false precision wearing a curve.
  *
  * ── NO NEGATIVE TERM ───────────────────────────────────────────────────────
  * The overdose case is real and unmeasurable from a typed duration, and the
