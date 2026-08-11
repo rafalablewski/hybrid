@@ -11,7 +11,7 @@ import {
 import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { RADIUS } from "./kit";
+import { APill, RADIUS } from "./kit";
 import Sheet from "./sheet";
 
 /**
@@ -126,16 +126,7 @@ export default function TargetSheet({
       </PressScale>
 
       <View style={{ gap: space.sm, marginTop: space.xxl }}>
-        <PressScale
-          onPress={save}
-          accessibilityRole="button"
-          accessibilityLabel={t("w.recovery.nutrition.tg.save")}
-          style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center" }}
-        >
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>
-            {t("w.recovery.nutrition.tg.save")}
-          </Text>
-        </PressScale>
+        <APill label={t("w.recovery.nutrition.tg.save")} onPress={save} />
         {hasOverride(override) ? (
           <PressScale
             onPress={() => { onSave(null); onClose(); }}

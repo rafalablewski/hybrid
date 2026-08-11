@@ -18,7 +18,7 @@ import { track } from "../../lib/track";
 import { leading, fs, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
+import { APill, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import type { AuroraIconName } from "@hybrid/core";
@@ -85,9 +85,7 @@ export default function AuroraTrain() {
           </View>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{draft.title || "Session"}</Text>
           <View style={{ marginTop: 2 }}><MetaLine parts={[`${draft.exercises.length} ${t("workout.exercises")}`, t("train.inProgress")]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
-          <PressScale onPress={() => start("empty")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>▶  {t("train.resume")}</Text>
-          </PressScale>
+          <APill label={`▶  ${t("train.resume")}`} onPress={() => start("empty")} style={{ marginTop: 12 }} />
         </ACard>
       )}
 

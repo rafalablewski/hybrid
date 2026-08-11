@@ -4,7 +4,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { RADIUS } from "./kit";
+import { APill, RADIUS } from "./kit";
 import Sheet from "./sheet";
 
 /**
@@ -71,16 +71,7 @@ export default function BarcodeScanSheet({
               : t("w.recovery.nutrition.scan.deniedCamera")}
           </Text>
           {permission.canAskAgain ? (
-            <PressScale
-              onPress={requestPermission}
-              accessibilityRole="button"
-              accessibilityLabel={t("w.recovery.nutrition.scan.allow")}
-              style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center" }}
-            >
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>
-                {t("w.recovery.nutrition.scan.allow")}
-              </Text>
-            </PressScale>
+            <APill label={t("w.recovery.nutrition.scan.allow")} onPress={requestPermission} />
           ) : null}
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...mono, lineHeight: leading(fs.nano, "relaxed") }}>
             {t("w.recovery.nutrition.scan.typeInstead")}

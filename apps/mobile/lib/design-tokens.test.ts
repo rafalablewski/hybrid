@@ -339,7 +339,7 @@ describe("presentation", () => {
     // legitimately not pills (today's chartreuse day-disc). It may only ever
     // fall.
     const found = hits(/backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*(?:999|RADIUS\.pill|1[0-9]\b|2[0-9]\b)|borderRadius:\s*(?:999|RADIUS\.pill|1[0-9]\b|2[0-9]\b)[^\n]*backgroundColor:\s*(?:C|palette)\.lime/g);
-    expectAtMost(found, 49, "hand-rolled lime pill → <APill />");
+    expectAtMost(found, 42, "hand-rolled lime pill → <APill />");
   });
 
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {

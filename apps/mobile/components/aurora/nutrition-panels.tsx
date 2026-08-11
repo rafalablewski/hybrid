@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SC
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
-import { ACard, AHeading, RADIUS } from "./kit";
+import { APill, ACard, AHeading, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { Glyph } from "./nutrition-kit";
 import { withAlpha } from "./field";
@@ -195,7 +195,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
     </Pressable>
   );
   const primary = (label: string, onPress: () => void) => (
-    <Pressable onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, alignItems: "center", marginTop: 6 }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.subtitle, color: C.onAccent }}>{label}</Text></Pressable>
+    <APill label={label} onPress={onPress} style={{ marginTop: 6 }} />
   );
   return (
     <View style={{ marginTop: 16 }}>
