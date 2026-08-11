@@ -18,7 +18,7 @@ import { useLang } from "../lib/i18n";
 import { fs, space, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
-import { RADIUS } from "./aurora/kit";
+import { APill } from "./aurora/kit";
 import { DeviceMark } from "./aurora/device-mark";
 import { DeviceImportSheet } from "./device-import";
 import { healthKitAvailability } from "../lib/healthkit";
@@ -247,9 +247,14 @@ function LogSheet({ sport, date, onClose, onSaved }: { sport: string | null; dat
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 6 }}>Minutes</Text>
               <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} autoFocus={!tracksDist} style={field} />
             </View>
-            <Pressable onPress={save} disabled={saving} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 20, opacity: saving ? 0.5 : 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{saving ? "…" : t("w.home.quickSport.log")}</Text>
-            </Pressable>
+            {/* The shared pill, not a hand-rolled one. This call site was the
+                exact pattern APill's commit state exists for: the label swapped
+                to "…" while saving, and "Log →" and "…" are different widths, so
+                the button resized under the finger still resting on it. APill
+                lays the idle label out invisibly to HOLD the width and cross-fades
+                the state on top, so it cannot resize. (capabilities
+                `cta-pill-convergence`.) */}
+            <APill label={t("w.home.quickSport.log")} onPress={save} state={saving ? "saving" : "idle"} />
           </View>
           {/* Nudge the duration in fives — SwiftUI's own Stepper, which brings
               repeat-on-hold, disabled ends and the adjustable VoiceOver trait

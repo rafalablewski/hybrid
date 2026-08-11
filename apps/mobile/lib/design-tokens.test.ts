@@ -324,6 +324,24 @@ describe("presentation", () => {
     expect(alerts).toEqual([]);
   });
 
+  it("RATCHET — bespoke chartreuse pills give way to APill", () => {
+    // capabilities `cta-pill-convergence`: ~35 hand-rolled `backgroundColor:
+    // lime` Pressables that never went through APill, each picking its own
+    // padding (8-16), radius (14/16/999) and face (mono/bold/black). Pure
+    // design-system drift — and NOT an argument for a native button: the brand
+    // CTA deliberately stays the app's own drawing (a `.glassProminent`
+    // GlassPillButton wore these once and was reverted; see `swiftui-kit`).
+    // APill already owns the hard parts — four variants, the `soft` one on real
+    // Liquid Glass, and a commit state that holds its width so a button cannot
+    // resize under a finger mid-save. The work is adoption, not replacement.
+    //
+    // A ratchet rather than a HARD rule, because a handful of these are
+    // legitimately not pills (today's chartreuse day-disc). It may only ever
+    // fall.
+    const found = hits(/backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*(?:999|RADIUS\.pill|1[0-9]\b|2[0-9]\b)|borderRadius:\s*(?:999|RADIUS\.pill|1[0-9]\b|2[0-9]\b)[^\n]*backgroundColor:\s*(?:C|palette)\.lime/g);
+    expectAtMost(found, 49, "hand-rolled lime pill → <APill />");
+  });
+
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {
     // This shipped broken. The action pair landed on the logbook rail's EMPTY
     // days while the done floor kept its own dashed +-tile, so an empty today
