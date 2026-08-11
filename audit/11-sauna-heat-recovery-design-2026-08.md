@@ -1,12 +1,19 @@
-# Sauna as a recovery input — design exploration
+# Sauna as a recovery input — design and build record
 
-**Status:** proposal, nothing built. Registered in `capabilities.ts` as
-`heat-recovery` (planned).
+**Status:** BUILT. All four phases plus the prerequisite. Registered in
+`capabilities.ts` as `heat-recovery` and `heat-clearance` (both shipped);
+`signals-read-window-crowding`, the defect found while scoping this, is shipped
+too. Rendered as `design/sauna-heat-recovery-spec.html`.
 **Date:** August 2026.
 
-There is currently no way to record a sauna in HYBRID — not as a session, not as
-a signal, not as a check-in field. `grep -ri sauna` over the whole repo returns
-nothing. This document works out what it would take, what it should be allowed
+The document below is kept in the tense it was written in — it is the reasoning
+that produced the design, and rewriting it after the fact would destroy the
+record of *why* each choice was made. What changed during the build is noted in
+the capabilities entries.
+
+When this was written there was no way to record a sauna in HYBRID — not as a
+session, not as a signal, not as a check-in field; `grep -ri sauna` over the
+whole repo returned nothing. This document works out what it would take, what it should be allowed
 to move, and what it must never touch.
 
 **No device will ever measure this.** A watch does not know you sat in a sauna,
