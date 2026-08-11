@@ -59,7 +59,7 @@ import {
   type LogbookDay,
 } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
-import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, type Assignment } from "../../lib/api";
+import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -413,6 +413,7 @@ export default function AuroraHome() {
       onLog={() => setQuickOpen(true)}
       onDone={() => setDoneOpen(true)}
       onRate={setRating}
+      onDelete={async (s) => { await deleteSession(s.id); load(); }}
     />
   );
 

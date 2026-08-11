@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { logbookWeek, mergeDoneReceipts, LOGBOOK_WINDOW } from "./logbook-week";
+import { logbookWeek, mergeDoneReceipts, LOGBOOK_WINDOW, LOGBOOK_SCROLL_WINDOW } from "./logbook-week";
 import type { LoggedSession } from "./engines/session";
 import type { DoneReceipt } from "./done-receipt";
 
@@ -14,6 +14,56 @@ const sess = (id: string, startedAt: string): LoggedSession => ({
   startedAt,
   blocks: [{ kind: "strength", name: "Back Squat", sets: [{ weightKg: 100, reps: 5 }] }],
 } as unknown as LoggedSession);
+
+// A cardio session with an explicit duration, for the load bars.
+const cardio = (id: string, startedAt: string, minutes: number): LoggedSession => ({
+  id,
+  title: `Run ${id}`,
+  startedAt,
+  blocks: [{ kind: "cardio", name: "Running", discipline: "run", minutes }],
+} as unknown as LoggedSession);
+
+describe("logbookWeek — the day's load", () => {
+  it("sums a day's trained minutes and normalises against the heaviest day in view", () => {
+    const wk = logbookWeek(
+      [
+        cardio("a", at(2026, 6, 17), 30),
+        cardio("b", at(2026, 6, 18), 60),
+        cardio("c", at(2026, 6, 18, 18), 30), // same day, second session
+      ],
+      { now: NOW },
+    );
+    const byKey = Object.fromEntries(wk.days.map((d) => [d.dateKey, d]));
+    expect(byKey["2026-07-18"]!.loadMin).toBe(90); // the day sums
+    expect(byKey["2026-07-18"]!.load).toBe(1); // and it is the peak
+    expect(byKey["2026-07-17"]!.loadMin).toBe(30);
+    expect(byKey["2026-07-17"]!.load).toBeCloseTo(1 / 3, 5);
+  });
+
+  it("leaves an untrained day at zero", () => {
+    const wk = logbookWeek([cardio("a", at(2026, 6, 18), 45)], { now: NOW });
+    expect(wk.days.find((d) => d.dateKey === "2026-07-16")!.load).toBe(0);
+    expect(wk.days.find((d) => d.dateKey === "2026-07-16")!.loadMin).toBe(0);
+  });
+
+  it("gives a trained day with no trustworthy duration a visible floor, never zero", () => {
+    // A strength log with no clock: 'trained' and 'trained for zero minutes'
+    // are different facts, and only one of them is true.
+    const wk = logbookWeek([sess("s", at(2026, 6, 18))], { now: NOW });
+    const day = wk.days.find((d) => d.dateKey === "2026-07-18")!;
+    expect(day.logged).toBe(true);
+    expect(day.loadMin).toBe(0);
+    expect(day.load).toBeGreaterThan(0);
+  });
+
+  it("scales to the scroll window without changing the day shape", () => {
+    const wk = logbookWeek([], { now: NOW, windowDays: LOGBOOK_SCROLL_WINDOW });
+    expect(wk.days).toHaveLength(28);
+    expect(wk.days[27]!.isToday).toBe(true);
+    expect(wk.todayIndex).toBe(27);
+    expect(wk.days.every((d) => d.load === 0)).toBe(true);
+  });
+});
 
 describe("logbookWeek", () => {
   it("returns a trailing 7-day window ending today, oldest first", () => {

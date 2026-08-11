@@ -1,6 +1,6 @@
 import { localDayKey, localMidnightMs, addLocalDays } from "./day-key";
 import type { LoggedSession } from "./engines/session";
-import type { DoneReceipt } from "./done-receipt";
+import { doneReceipt, type DoneReceipt } from "./done-receipt";
 
 // ============================================================
 //  Logbook week — the plan-less athlete's week rail ("The Constant").
@@ -23,6 +23,14 @@ const MONTH = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "O
 /** Days the logbook rail shows at once — the trailing window ending today. */
 export const LOGBOOK_WINDOW = 7;
 
+/** How far back a SCROLLABLE rail reaches. Seven fixed chips could only ever
+ *  show seven days, which is why the header had to carry a "Last 7 days"
+ *  caption explaining the control's own limits; a rail that scrolls shows its
+ *  own extent, so the caption goes and the window can be as deep as the data.
+ *  Four weeks is one mesocycle — far enough to see a pattern, near enough that
+ *  building every day up front stays free. */
+export const LOGBOOK_SCROLL_WINDOW = 28;
+
 /** One calendar day of the logbook rail. Field names match ScheduledDay so the
  *  Today screen can scope its day-following cards (Also-today / feeling) to a
  *  lifted day from EITHER rail without caring which one it came from. */
@@ -41,6 +49,19 @@ export interface LogbookDay {
   sessionIds: string[];
   /** ≥1 session logged on this day. */
   logged: boolean;
+  /** Trained minutes on this day, summed across its sessions and read through
+   *  the DEVICE's recording wherever there is one (doneReceipt is device-true
+   *  by default) — so a watch-measured 52:18 counts as 52, not as the 50 that
+   *  was typed. */
+  loadMin: number;
+  /** `loadMin` as a fraction of the window's HEAVIEST day, 0–1. This is what a
+   *  day cell draws instead of a ✓. A tick says something happened; a bar the
+   *  width of the day's relative load says how much, in the same pixels — and
+   *  seven of them are a training week at a glance, which is the only reason
+   *  the strip exists. Relative rather than absolute because there is no honest
+   *  universal ceiling for "a hard day": it is whatever this athlete's hardest
+   *  day in view actually was. */
+  load: number;
 }
 
 export interface LogbookWeekResult {
@@ -62,6 +83,8 @@ export function logbookWeek(
 
   // Sessions grouped by their LOCAL day key, preserving logged order.
   const byDate = new Map<string, string[]>();
+  // Trained minutes per local day, device-true (see LogbookDay.loadMin).
+  const minsByDate = new Map<string, number>();
   for (const s of sessions) {
     const ts = Date.parse(s.startedAt);
     if (!Number.isFinite(ts)) continue;
@@ -69,6 +92,8 @@ export function logbookWeek(
     const ids = byDate.get(k);
     if (ids) ids.push(s.id);
     else byDate.set(k, [s.id]);
+    const mins = doneReceipt(s).durationMin;
+    if (mins != null && mins > 0) minsByDate.set(k, (minsByDate.get(k) ?? 0) + mins);
   }
 
   const todayMidnight = localMidnightMs(now);
@@ -89,7 +114,18 @@ export function logbookWeek(
       isToday: dateKey === todayKey,
       sessionIds,
       logged: sessionIds.length > 0,
+      loadMin: Math.round(minsByDate.get(dateKey) ?? 0),
+      load: 0, // normalised below, once the window's heaviest day is known
     });
+  }
+
+  // Normalise against the heaviest day IN VIEW. A day that holds sessions but
+  // no trustworthy duration (a strength log with no clock) still gets a visible
+  // floor, because "trained" and "trained for zero minutes" are different facts
+  // and only one of them is true.
+  const peak = days.reduce((m, d) => Math.max(m, d.loadMin), 0);
+  for (const d of days) {
+    d.load = d.loadMin > 0 && peak > 0 ? Math.min(1, d.loadMin / peak) : d.logged ? 0.18 : 0;
   }
 
   return {

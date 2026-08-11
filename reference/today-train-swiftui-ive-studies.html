@@ -284,7 +284,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 <div class="wrap">
 
 <header class="masthead">
-  <div class="eyebrow">HYBRID — mobile design study — rev. 4</div>
+  <div class="eyebrow">HYBRID — mobile design study — rev. 5</div>
   <h1>Today → Train,<br />the whole experience<span class="dot">.</span></h1>
   <p class="standfirst">
     The logbook card rebuilt on the <b>SwiftUI view set</b>, then drawn out across
@@ -297,7 +297,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
     <div class="fact"><span class="k">Owns it</span><span class="v">logbook-rail.tsx</span></div>
     <div class="fact"><span class="k">Native layer</span><span class="v">@expo/ui 56 — 50 SwiftUI views</span></div>
     <div class="fact"><span class="k">States drawn</span><span class="v">18</span></div>
-    <div class="fact"><span class="k">Shipped</span><span class="v">build 1, partial</span></div>
+    <div class="fact"><span class="k">Shipped</span><span class="v">builds 1 &amp; 2 — 5 of 7 moves</span></div>
   </div>
 </header>
 
@@ -346,14 +346,15 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 <section class="section">
   <div class="rule-head">
     <h2>Shipped</h2>
-    <span class="eyebrow">branch claude/swiftui-ive-design-redesign — typecheck, 3 264 tests, iOS bundle green</span>
+    <span class="eyebrow">branch claude/swiftui-ive-design-redesign — typecheck, 3 268 tests, iOS bundle green</span>
   </div>
 
   <p class="lede">
-    Four of these moves are no longer proposals. The still-frame slice of Build&nbsp;1 is written,
-    along with the first <b>native SwiftUI controls</b> the app has mounted that are controls rather
-    than materials — and the capability the whole study kept pointing at: a sport can now be logged on
-    a day that has already passed.
+    <b>Five of the seven moves are written.</b> Build&nbsp;1 is complete and Build&nbsp;2 is done
+    except for the day pager — the card has shed its chrome, the rail scrolls four weeks deep with a
+    load bar where the tick was, a mis-logged session can finally be deleted from the card, and the
+    two capabilities the study kept pointing at are live: <b>log a sport on a day that has already
+    passed</b>, and the first native SwiftUI <em>controls</em> the app has mounted.
   </p>
 
   <div class="shipped">
@@ -393,6 +394,46 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
         native styling is <em>correct</em>.
       </p>
     </div>
+    <div class="s">
+      <span class="k">Shipped — move 01</span>
+      <h3>One separation device</h3>
+      <p>
+        Border, shadow and elevation deleted; of three hairlines exactly one survives, the week/day
+        seam. The floor's rule became 22dp of air — its seam already carries a mono-caps count that
+        announces the change of subject.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — move 02</span>
+      <h3>The rail scrolls, four weeks deep</h3>
+      <p>
+        <code>LOGBOOK_SCROLL_WINDOW = 28</code>, fixed 44dp cells, parked on today at first layout only.
+        <code>LogbookDay</code> grew <code>loadMin</code> and <code>load</code>, device-true and
+        normalised against the heaviest day in view — the tick's pixels now spent on <em>how much</em>.
+        The <code>LAST 7 DAYS</code> caption is retired.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — move 04, in part</span>
+      <h3>Swipe a row to delete it</h3>
+      <p>
+        The shared <code>SwipeRow</code> gesture over <code>deleteSession</code>, confirmed by the app's
+        own sheet. Until now the only way to remove a mis-logged session was to open it — which is the
+        wrong place to decide it shouldn't exist.
+      </p>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="k">Still open — and why</span>
+    <b>Move 06's day pager and rolling figures</b>, and <b>move 05</b>. The pager is the one piece whose
+    honest form (<code>TabView</code> wrapping the day's content) puts a native view in charge of
+    CONTENT, and <code>contentTransition(.numericText)</code> has no faithful RN stand-in — a
+    crossfade pretending to be a digit roll is worse than none. Move 05 changes native configuration,
+    so it rides its own prebuild: one variable per build. The edge states (S3 loading, S8 in-progress,
+    S13 offline, S15 undo) need data the screen doesn't carry yet — a request phase, a live-session
+    handle, a queue depth, a restore endpoint — and inventing those shapes to fill a mockup would be
+    the wrong order.
   </div>
 
   <div class="note grey">
@@ -1595,7 +1636,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 </section>
 
 <footer>
-  <span>HYBRID design study — rev. 4</span>
+  <span>HYBRID design study — rev. 5</span>
   <span>Today → Train</span>
   <span>18 states</span>
   <span>Set in Archivo &amp; JetBrains Mono — the app's own faces</span>
