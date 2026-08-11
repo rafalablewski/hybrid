@@ -14,12 +14,11 @@ import {
 } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
-import { CtaLabel } from "./cta-label";
 import AEmptyDay from "./empty-day";
 import AActionPair from "./action-pair";
-import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
+import ReceiptBlock from "./receipt-block";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 
@@ -45,7 +44,6 @@ export default function AuroraLogbookRail({
   sessions,
   onLog,
   onLogSport,
-  onNavigate,
   onSelectDay,
   doneFloor,
 }: {
@@ -56,7 +54,6 @@ export default function AuroraLogbookRail({
    *  included — a sport is a different job from the structured logger, not an
    *  overflow item, and a day that has already passed can still hold one. */
   onLogSport?: (day: LogbookDay) => void;
-  onNavigate?: (screen: string) => void;
   /** Fires when the athlete taps a day chip, so the caller can scope the rest
    *  of the screen (Also-today / feeling cards) to the viewed day. Mirrors the
    *  plan week rail's prop. */
@@ -117,9 +114,10 @@ export default function AuroraLogbookRail({
         padding: CARD_PAD,
       }}
     >
-      {/* header: the log's name, and the exit into History where the window
-          caption used to sit. The caption is gone with the fixed row — see the
-          window comment above. */}
+      {/* header: the log's name, and nothing else. The window caption went with
+          the fixed row (see the window comment above), and the exit into
+          History that briefly replaced it went with the card's exit entirely —
+          this screen has one door into the log, and it is not up here. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
           {t("w.home.logbook.title")}
@@ -159,7 +157,6 @@ export default function AuroraLogbookRail({
         doneFloor={doneFloor}
         onLog={onLog}
         onLogSport={onLogSport}
-        onHistory={() => onNavigate?.("history")}
         t={t}
       />
     </View>
@@ -233,7 +230,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
   );
 }
 
-function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, onLog, onLogSport, onHistory, t }: {
+function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, onLog, onLogSport, t }: {
   C: Pal;
   day: LogbookDay;
   receipt: ReturnType<typeof mergeDoneReceipts>;
@@ -247,7 +244,6 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
   doneFloor?: ReactNode;
   onLog: () => void;
   onLogSport?: (day: LogbookDay) => void;
-  onHistory: () => void;
   t: (k: string) => string;
 }) {
   // The corner stamp — how far this day sits from now, never a second copy of
@@ -291,6 +287,18 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
             athlete logs the second thing, and a PAST logged day had no way to
             add the match it forgot at all. Neither action is filled here — the
             work is real, so the accent retires. */}
+        {/* AND THE CARD ENDS ON THE ACTION. A "View in history →" used to trail
+            this row — first as a line of its own indented to the ✓'s gutter,
+            then riding this baseline at the far edge, where it did not fit. The
+            measure said so: a 187px pill and a 133px label do not share 311px,
+            so the row wrapped and the exit was orphaned again one line down.
+            The collision was the symptom; the redundancy was the cause. This
+            screen ALREADY carries a door into History — the door row after the
+            retrospective, glyph, name and all ("one exit point after all the
+            breakdowns", the rule wave 3 established) — so the day card was a
+            second door to the same room, 400px above the first and drawn in a
+            different vocabulary. The day card states the day and offers the
+            next thing to do. Leaving is the screen's job. */}
         <AActionPair
           align="leading"
           actions={[
@@ -298,13 +306,6 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
             ...(onLogSport ? [{ label: sportLabel, onPress: () => onLogSport(day) }] : []),
           ]}
         />
-        <Pressable
-          onPress={onHistory}
-          accessibilityRole="button"
-          style={{ marginTop: 18, paddingLeft: RECEIPT_GUTTER }}
-        >
-          <CtaLabel label={`${t("w.home.rail.viewHistory")} →`} color={C.ash} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase" }} />
-        </Pressable>
       </View>
     );
   }

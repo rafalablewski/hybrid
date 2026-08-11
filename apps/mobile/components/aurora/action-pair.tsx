@@ -32,6 +32,14 @@ export type PairAction = {
   a11y?: string;
 };
 
+// NO TRAILING SLOT. One shipped here for a day: the day card's "View in
+// history" exit rode this row's far edge, to spare the card a line of its own.
+// It didn't fit — a 187px pill and a 133px label do not share a 311px measure,
+// so the row wrapped and handed the exit back the orphan line the slot existed
+// to remove. The exit is gone now (the Today screen already carries ONE door
+// into History, in the door-row anatomy, after the retrospective), and this
+// component is back to the one job it is named for. If a row ever genuinely
+// needs a trailing element, measure the two labels at 320pt first.
 export default function AActionPair({ actions, align = "center" }: {
   actions: PairAction[];
   /** Centred under an empty block; leading under a receipt, where the column
