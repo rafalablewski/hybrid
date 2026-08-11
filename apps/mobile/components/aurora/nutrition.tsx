@@ -58,7 +58,6 @@ import {
   sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
   recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
-  PICKER_SOURCES, pickerSourceLabelKey,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -84,7 +83,7 @@ import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, F
 import { useListMotion } from "../../lib/list-motion";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
-import { GlassSegment, GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
+import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
 import { HubMasthead } from "./hub-masthead";
 import { CoverScreen, type CoverScreenApi } from "../plan-hero";
@@ -101,7 +100,7 @@ import NutritionTrends from "./nutrition-trends";
 import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
-  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap,
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap, PICKER_EDGE,
   IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
@@ -1497,8 +1496,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           LIQUID_GLASS_RENDERED ? (
             <GlassSelectMenu
               label={partLabel(mealType)}
-              fontFamily={F.black}
-              fontSize={19}
+              // THE HERO SYSTEM'S INLINE TITLE, not a hand-rolled one. Both
+              // branches of this switcher drew Archivo BLACK at 19 — a face and
+              // a size that appear on no other screen head in the app, so the
+              // picker's title sat 3pt above every title it pushes from. The
+              // rank owns the type (reference/hero-system.md §2).
+              fontFamily={F.bold}
+              fontSize={HERO_INLINE_TITLE.size}
               labelColor={C.chalk}
               a11yLabel={t("w.recovery.nutrition.chooseMeal")}
               options={partList.map((p) => ({ id: p.key, label: p.label }))}
@@ -1509,7 +1513,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             />
           ) : (
             <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
+              <Text
+                maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                numberOfLines={1}
+                style={{ fontFamily: F.bold, fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: C.chalk }}
+              >
+                {partLabel(mealType)}
+              </Text>
+              <IChevDown size={16} color={C.chalk} />
             </Pressable>
           ),
           () => setView("home"),
@@ -1571,24 +1582,16 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         {answer.kind === "resting" ? (
           /* AT REST — all four sources, switchable, with the box gone. */
           <>
-            <View style={{ marginTop: 16 }}>
-              {/* The four sources as the SYSTEM segmented control where it
-                  renders (iOS 26) — the counts stay on the underline form,
-                  which every other platform keeps: a native segment carries
-                  labels only, and the list itself is the count. */}
-              {LIQUID_GLASS_RENDERED ? (
-                <GlassSegment
-                  options={PICKER_SOURCES.map((key) => ({ id: key, label: t(pickerSourceLabelKey(key)) }))}
-                  value={foodTab}
-                  onPick={setFoodTab}
-                />
-              ) : (
-                <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
-              )}
+            <View style={{ marginTop: space.lg }}>
+              {/* ONE form, every platform. The iOS fork that put the system
+                  segmented control here is gone — see SourceLine's header for
+                  why (it re-introduced the filled track this screen deletes,
+                  and it dropped the counts on the one platform we ship). */}
+              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
             </View>
             {foodTab === "meals" ? (
               meals.length === 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
               ) : meals.map((m) => (
                 <FoodRow
                   key={m.id} C={C}
@@ -1600,7 +1603,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 />
               ))
             ) : foods.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
             ) : foodTab === "recent" && usuals.length ? (
               /* THE HOUR. The app knows the clock and the meal, so Recent
                  opens on what this athlete actually eats around now — and
@@ -1610,11 +1613,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                  A cold start has no habit, so `usuals` is empty and the list
                  stays exactly as it was — no empty state, nothing claimed. */
               <>
-                <ASection title={t("w.recovery.nutrition.pick.usualHour")} meta={clockLabel} />
+                <ASection title={t("w.recovery.nutrition.pick.usualHour")} meta={clockLabel} style={{ paddingHorizontal: PICKER_EDGE }} />
                 {usuals.map((u) => recentRow(u.item))}
                 {restOfRecent.length ? (
                   <>
-                    <ASection title={t("w.recovery.nutrition.pick.everythingElse")} />
+                    <ASection title={t("w.recovery.nutrition.pick.everythingElse")} style={{ paddingHorizontal: PICKER_EDGE }} />
                     {restOfRecent.map(recentRow)}
                   </>
                 ) : null}
@@ -1630,6 +1633,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <ASection
               title={t("w.recovery.nutrition.pick.understood")}
               meta={answer.kind === "macros" ? t("w.recovery.nutrition.pick.quickAdd") : t("w.recovery.nutrition.pick.allSources")}
+              style={{ paddingHorizontal: PICKER_EDGE }}
             />
             <Understood
               answer={answer}
@@ -1641,11 +1645,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
             {remoteQuery ? (
               <>
-                <ASection title={t("w.recovery.nutrition.pick.database")} meta={t("w.recovery.nutrition.pick.databaseMeta")} />
+                <ASection title={t("w.recovery.nutrition.pick.database")} meta={t("w.recovery.nutrition.pick.databaseMeta")} style={{ paddingHorizontal: PICKER_EDGE }} />
                 {searching ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6 }}>{t("w.recovery.nutrition.searching")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE }}>{t("w.recovery.nutrition.searching")}</Text>
                 ) : foodResults.length === 0 ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6, lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
                 ) : foodResults.map((food, i) => (
                   <FoodRow
                     key={`${food.id || food.code}-${i}`} C={C}
@@ -2411,8 +2415,16 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 <Pressable onPress={() => shiftDiaryDay(1)} disabled={heroIsToday} accessibilityLabel={t("w.recovery.nutrition.nextDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><IChevRight size={16} color={heroIsToday ? C.line : C.chalk} /></Pressable>
               </View>
               <View style={{ marginTop: 16 }}>
-                {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
-                <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
+                {/* One over-target threshold for BOTH the ring and the number (1.05).
+                    OVER IS SAND, NOT RED. `red is kept strictly for risk`
+                    (theme/palette.ts), and 100 kcal past today's target is not a
+                    risk — it is the same statement the picker's rows and its day
+                    header already make in sand. Red here also made the hub and
+                    the picker disagree about the colour of one fact. (The label
+                    panel below keeps red: a saturated-fat or salt figure past a
+                    WHO/EFSA reference is a different claim from "you ate more
+                    than you planned to.") */}
+                <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.amber : C.lime} track={C.line}>
                   <View style={{ alignItems: "center" }}>
                     {/* THE NUMBER YOU CAME FOR, and the one that moves most: it
                         changes every time food is logged, so it rolls rather
@@ -2421,7 +2433,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                     <RollingNumber
                       value={String(Math.round(targets.kcal - heroDay.kcal))}
                       align="center"
-                      style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}
+                      // The picker's day header now draws this same figure, so
+                      // the two land on ONE spec: the `fs.stat` rung and
+                      // `tracking.display`, in place of a hand-set 44/-1 that
+                      // existed nowhere else.
+                      style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: tracking.display, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.amber) : C.chalk }}
                     />
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(heroDay.kcal)} / {targets.kcal}</Text>
                   </View>

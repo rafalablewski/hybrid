@@ -12,7 +12,26 @@ import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SC
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
+import { AMeter } from "./kit";
+import { RollingNumber } from "./rolling-number";
 import SwipeRow from "../swipe-row";
+
+/**
+ * THE PICKER'S LEFT EDGE — one number, every block that sits on the screen.
+ *
+ * The picker had three: the gap header indented 4, the rows and doors 6, and
+ * the two empty-state lines 0. Stacked vertically that is three optical left
+ * edges in one column, which is exactly the misalignment the eye reads as
+ * "unfinished" without being able to name it. The field is the ONE exception
+ * and legitimately so: it is a container, so its own 16 is interior padding
+ * rather than a competing edge.
+ */
+export const PICKER_EDGE = space.xs;
+
+/** The three macros, told apart by COLOUR — the same three the hub's hero uses
+ *  (teal / sand / violet). They are FILLS (a meter track), so they take the raw
+ *  palette accent; `txt()` is for the same accent set as type. */
+export const MACRO_FILL = { protein: "blue", carbs: "amber", fat: "violet" } as const;
 
 /**
  * THE NUTRITION KIT (mobile) — the vocabulary every Nutrition screen draws in.
@@ -174,16 +193,43 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
  * THE DAY GAP — what the day still owes, at the top of the picker.
  *
  * Nobody opens this screen to search; they open it because the day is short of
- * something. So the picker says what, in the Builder's One Number vocabulary: a
- * display-weight mono figure, a quiet sentence under it, and the macros as thin
- * meters. It reads through the SAME arithmetic the hub's ring does
- * (core/nutrition-gap.ts) so the two can never disagree about whether you are
- * over, and it renders NOTHING when there is no target yet — a header reading
- * "2 000 left" against a number nobody set would be a confident wrong number.
+ * something. So the picker says what. It reads through the SAME arithmetic the
+ * hub's ring does (core/nutrition-gap.ts) so the two can never disagree about
+ * whether you are over, and it renders NOTHING when there is no target yet — a
+ * header reading "2 000 left" against a number nobody set would be a confident
+ * wrong number.
+ *
+ * ── IT SPEAKS THE HUB'S VOCABULARY, BECAUSE IT IS THE HUB'S NUMBER ──────────
+ * This block and the hub's ring show the SAME day's figures one screen apart,
+ * and they were drawn by two people who never met: the hub set its figure in
+ * Archivo Black and chalk, this one in mono-bold and CHARTREUSE; the hub gave
+ * each macro its own accent (teal / sand / violet), this one painted all three
+ * chartreuse; the hub's over-state went red, this one's sand. Agreeing on the
+ * arithmetic and disagreeing on every visual is worse than disagreeing on both,
+ * because it reads as two different quantities. So:
+ *
+ *   - the figure takes the hub's display face on the `fs.stat` rung, in CHALK.
+ *     Chartreuse is the app's one "go" colour — it is the ⊕ on every row of
+ *     this very screen — and the largest thing on the page wearing the action
+ *     colour while doing nothing is the loudest wrong signal here.
+ *   - it ROLLS (like the hub's), because this is the one screen where the
+ *     number visibly moves: log a food and the gap closes under your thumb.
+ *   - OVER is SAND, never red, on both screens. `red is kept strictly for risk`
+ *     (theme/palette.ts) and 100 kcal past a target is not a risk — it is the
+ *     same statement FoodRow already makes in sand on the rows below.
+ *   - the day's ENERGY gets a meter of its own. The old block stated "0 of 2325
+ *     logged" under a hero that had just said 2325, so the one thing it never
+ *     showed was the PROPORTION — which is the whole reason the hub draws a
+ *     ring. Flat, this is that ring.
+ *   - every track is the shared `AMeter` (6dp, RADIUS.mark). The hand-rolled
+ *     3dp/radius-2 bar here was the sixth spelling of one object.
+ *   - a macro past its own target no longer turns SAND. It said nothing on the
+ *     one macro it could ever apply to visibly — carbs are drawn in sand — and
+ *     the hub, which is the standard for these figures, flags over on the
+ *     ENERGY alone. A full track is what "past it" looks like.
  *
  * This is the picker's own header, not the sticky HUD that was removed
  * (nutrition-hud): it sits where the decision is being made and scrolls with it.
- * Web twin: aurora/nutrition-kit.tsx DayGap.
  */
 export function DayGap({ C, gap }: {
   C: ReturnType<typeof useTheme>["palette"]; gap: NutritionGap;
@@ -195,41 +241,46 @@ export function DayGap({ C, gap }: {
   // calmly (it is inside the 5 % tolerance). Reading the word off the tolerance
   // flag printed "50 kcal left" at 2 050 logged.
   const isOver = left < 0;
-  const tone = gap.kcal.over ? txt(C, C.amber) : txt(C, C.lime);
+  const tone = gap.kcal.over ? txt(C, C.amber) : C.chalk;
   const macros = gap.macros.filter((m) => m.figure.want != null);
   return (
-    <View style={{ paddingHorizontal: 4, paddingTop: 4, paddingBottom: 18 }}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+    <View style={{ paddingHorizontal: PICKER_EDGE, paddingBottom: space.xl }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+        <RollingNumber
+          value={String(Math.abs(left))}
+          style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: tracking.display, color: tone }}
+        />
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 44, letterSpacing: tracking.display, lineHeight: 46, color: tone }}
+          style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
         >
-          {Math.abs(left)}
-        </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
           {t(isOver ? "w.recovery.nutrition.pick.kcalOver" : "w.recovery.nutrition.pick.kcalLeft")}
         </Text>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8 }}>
-        {t("w.recovery.nutrition.pick.ofTarget")
+      {/* THE DAY'S ENERGY, as a proportion. The ledger line is the meter's own
+          readout rather than a sentence floating above it — one object, not
+          two. `AMeter` draws the readout row above the track, which keeps the
+          reading order the block always had (figure → ledger → fill). */}
+      <AMeter
+        pct={gap.kcal.pct}
+        color={gap.kcal.over ? C.amber : C.lime}
+        value={t("w.recovery.nutrition.pick.ofTarget")
           .replace("{a}", String(Math.round(gap.kcal.have)))
           .replace("{b}", String(Math.round(gap.kcal.want ?? 0)))}
-      </Text>
+      />
       {macros.length ? (
-        <View style={{ flexDirection: "row", gap: 16, marginTop: 18 }}>
+        // `space.sm` and not `space.lg`: AMeter carries its own `space.ms` top
+        // margin, so the gap the eye sees between the energy track and the
+        // macro labels is the sum.
+        <View style={{ flexDirection: "row", gap: space.lg, marginTop: space.sm }}>
           {macros.map((m) => (
             <View key={m.key} style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6, marginBottom: 6 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
-                  {t(`w.recovery.nutrition.${m.key}`)}
-                </Text>
-                <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: C.chalk }}>
-                  {Math.round(m.figure.have)}/{Math.round(m.figure.want ?? 0)}
-                </Text>
-              </View>
-              <View style={{ height: 3, borderRadius: 2, backgroundColor: C.line, overflow: "hidden" }}>
-                <View style={{ width: `${m.figure.pct}%`, height: "100%", borderRadius: 2, backgroundColor: m.figure.over ? txt(C, C.amber) : txt(C, C.lime) }} />
-              </View>
+              <AMeter
+                label={t(`w.recovery.nutrition.${m.key}`)}
+                value={`${Math.round(m.figure.have)}/${Math.round(m.figure.want ?? 0)}`}
+                pct={m.figure.pct}
+                color={C[MACRO_FILL[m.key]]}
+              />
             </View>
           ))}
         </View>
@@ -249,7 +300,27 @@ export function DayGap({ C, gap }: {
  *
  * Selection is carried by weight and a rule instead. No border, no radius, no
  * fill, no accent. The counts are the Explore section head's mono meta, moved
- * onto the label they describe. Web twin: aurora/nutrition-kit.tsx SourceLine.
+ * onto the label they describe.
+ *
+ * ── AND IT IS THE ONLY FORM, INCLUDING ON iOS ──────────────────────────────
+ * The picker used to swap this for the SYSTEM segmented control (SwiftUI
+ * `Picker` + `.pickerStyle(.segmented)`) wherever Liquid Glass renders, on the
+ * argument that a native segment is what iOS users know. Three things were
+ * wrong with that, and they are visible in one screenshot:
+ *
+ *   1. It brought back the filled, radiused track this component was written to
+ *      delete — a grey slab in SF Pro, the only bordered box on a screen whose
+ *      whole design is type on the ground, sitting directly under the app's own
+ *      field and above the app's own rows.
+ *   2. It DROPPED THE COUNTS. The parent computes `sourceCounts` and iOS threw
+ *      them away, so the one platform the product actually ships on could not
+ *      see that Favorites held nine and Meals none until it tapped each.
+ *   3. A native segment is equal-width, so the four labels were squeezed to fit
+ *      the longest — and equal-width is the wrong shape anyway: these are four
+ *      different questions, not four states of one.
+ *
+ * The system control is still right where it IS the object (the hub's
+ * three-way view switch, `today-tabs`); it was never right for a source line.
  */
 export function SourceLine({ C, value, counts, onChange }: {
   C: ReturnType<typeof useTheme>["palette"];
@@ -261,7 +332,7 @@ export function SourceLine({ C, value, counts, onChange }: {
   return (
     <View
       accessibilityRole="tablist"
-      style={{ flexDirection: "row", gap: 18, borderBottomWidth: 1, borderBottomColor: C.line, paddingHorizontal: 2 }}
+      style={{ flexDirection: "row", gap: 18, borderBottomWidth: 1, borderBottomColor: C.line, paddingHorizontal: PICKER_EDGE }}
     >
       {PICKER_SOURCES.map((key) => {
         const on = key === value;
@@ -318,7 +389,7 @@ export function PickerDoor({ C, title, icon, onPress, last }: {
       accessibilityLabel={title}
       style={{
         flexDirection: "row", alignItems: "center", gap: 16,
-        paddingVertical: 14, paddingHorizontal: 6,
+        paddingVertical: 14, paddingHorizontal: PICKER_EDGE,
         borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line,
       }}
     >
@@ -345,7 +416,7 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
 }) {
   const { t } = useLang();
   const body = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 12, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 12, paddingHorizontal: PICKER_EDGE, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }}>
       <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
       <Pressable onPress={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
