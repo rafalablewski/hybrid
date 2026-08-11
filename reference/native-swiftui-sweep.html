@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HYBRID — native controls and motion</title>
+<style>
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap");
+
+:root {
+  --ink:#0c0d0c; --ink2:#141614; --ink3:#1b1e1a; --line:#2a2d2a;
+  --chalk:#f3f4ef; --mist:#b6bab0; --ash:#8b8f86;
+  --lime:#c6f84f; --blue:#6cb6bd; --amber:#d0cd94; --terra:#e58a5c; --violet:#a08cd0;
+  --display:"Archivo","Archivo Fallback",system-ui,-apple-system,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--ink); color:var(--chalk);
+  font-family:var(--display); font-size:15px; line-height:1.6;
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+}
+body::before {
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:radial-gradient(68vw 42vh at 10% -6%, rgba(198,248,79,.06), transparent 62%),
+             radial-gradient(56vw 38vh at 94% 6%, rgba(60,120,126,.07), transparent 66%);
+}
+.wrap { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:0 20px 110px; }
+
+.eyebrow { font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.17em; text-transform:uppercase; color:var(--ash); }
+h1 { font-weight:900; font-size:clamp(36px,6.6vw,70px); line-height:.96; letter-spacing:-.035em; margin:14px 0 0; text-wrap:balance; }
+h1 .dot { color:var(--lime); }
+h2 { font-weight:900; font-size:clamp(22px,3vw,30px); line-height:1.1; letter-spacing:-.028em; margin:0; text-wrap:balance; }
+h3 { font-weight:800; font-size:16px; letter-spacing:-.018em; margin:0; }
+p { margin:0; color:var(--mist); max-width:66ch; }
+p + p { margin-top:12px; }
+b, strong { color:var(--chalk); font-weight:700; }
+em { color:var(--chalk); font-style:normal; }
+code { font-family:var(--mono); font-size:11.5px; color:var(--blue); background:rgba(108,182,189,.1); padding:1px 5px; border-radius:5px; white-space:nowrap; }
+
+.masthead { padding:76px 0 0; }
+.standfirst { font-size:clamp(16px,1.9vw,19px); line-height:1.55; color:var(--mist); max-width:58ch; margin-top:24px; }
+.facts { display:flex; flex-wrap:wrap; gap:10px 32px; margin-top:32px; padding-top:20px; border-top:1px solid var(--line); }
+.fact { display:grid; gap:3px; }
+.fact .k { font-family:var(--mono); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--ash); }
+.fact .v { font-family:var(--mono); font-size:12.5px; color:var(--chalk); }
+
+.section { margin-top:86px; }
+.rule-head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-bottom:15px; border-bottom:1px solid var(--line); flex-wrap:wrap; }
+.lede { margin-top:22px; }
+
+.swap { margin-top:46px; }
+.swap-head { display:flex; align-items:baseline; gap:13px; flex-wrap:wrap; }
+.swap-head .n { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--lime); flex:none; }
+.swap .via { font-family:var(--mono); font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--ash); margin-top:9px; }
+.swap p { font-size:13.5px; margin-top:11px; }
+
+.ba { display:grid; gap:12px; margin-top:20px; }
+@media (min-width:820px) { .ba { grid-template-columns:1fr 1fr; gap:18px; } }
+.side { display:grid; gap:9px; align-content:start; }
+.side .cap { font-family:var(--mono); font-size:9px; letter-spacing:.15em; text-transform:uppercase; display:flex; align-items:center; gap:7px; }
+.side.before .cap { color:var(--terra); }
+.side.after .cap { color:var(--lime); }
+.side .cap i { width:6px; height:6px; border-radius:50%; display:block; }
+.side.before .cap i { background:var(--terra); }
+.side.after .cap i { background:var(--lime); }
+.side .why { font-family:var(--mono); font-size:10.5px; line-height:1.5; color:var(--ash); }
+
+/* the demo panel — a solid surface, deliberately: no glass in this document */
+.panel {
+  border-radius:20px; padding:18px; min-height:148px;
+  display:flex; flex-direction:column; justify-content:center; gap:12px;
+  background:var(--ink2); border:1px solid var(--line);
+}
+.panel.after { background:var(--ink3); border-color:rgba(243,244,239,.12); }
+
+.m-mono { font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase; color:var(--ash); }
+.m-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.stack { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.stack.mid { justify-content:center; }
+
+/* ── pills ──────────────────────────────────────────────────────────────── */
+.pill { display:inline-flex; align-items:center; justify-content:center; gap:7px; font-weight:800; letter-spacing:-.01em; }
+.pill.prom { background:var(--lime); color:#101208; }
+.pill.bord { background:rgba(243,244,239,.1); color:var(--chalk); box-shadow:inset 0 0 0 1px rgba(243,244,239,.16); }
+.pill.less { color:var(--lime); background:none; }
+/* the five hand-picked geometries the app actually ships */
+.p-a { padding:13px 20px; border-radius:999px; font-size:16px; box-shadow:0 0 24px rgba(198,248,79,.26); }
+.p-b { padding:12px 18px; border-radius:14px; font-size:15px; }
+.p-c { padding:9px 16px; border-radius:999px; font-size:13px; }
+.p-d { padding:8px 14px; border-radius:10px; font-size:12px; }
+.p-e { padding:15px; border-radius:999px; font-size:17px; width:100%; }
+/* the one control, sized by controlSize */
+.cs-mini { padding:5px 11px; border-radius:999px; font-size:11px; }
+.cs-small { padding:7px 14px; border-radius:999px; font-size:12.5px; }
+.cs-reg { padding:10px 18px; border-radius:999px; font-size:14.5px; }
+.cs-large { padding:13px 22px; border-radius:999px; font-size:16px; }
+
+/* chips */
+.chip { display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:999px; font-family:var(--mono); font-size:11px; color:var(--ash); box-shadow:inset 0 0 0 1px rgba(243,244,239,.14); }
+.chip.on { background:var(--lime); color:#101208; box-shadow:none; font-weight:700; }
+.chip.onn { background:rgba(198,248,79,.16); color:var(--lime); box-shadow:inset 0 0 0 1px rgba(198,248,79,.4); }
+
+/* control group */
+.cgroup { display:inline-flex; border-radius:12px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(243,244,239,.16); }
+.cgroup span { padding:9px 15px; font-family:var(--mono); font-size:11.5px; color:var(--chalk); }
+.cgroup span + span { box-shadow:inset 1px 0 0 rgba(243,244,239,.16); }
+
+/* disclosure */
+.disc { border-radius:12px; background:rgba(243,244,239,.05); padding:11px 13px; }
+.disc .hd { display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:13.5px; }
+.disc .bd { font-family:var(--mono); font-size:10.5px; color:var(--ash); margin-top:8px; line-height:1.6; }
+
+/* rolling number */
+.roll { display:inline-flex; overflow:hidden; height:.92em; align-items:flex-start; vertical-align:bottom; }
+.roll .col { display:flex; flex-direction:column; animation:rollcol 3.4s cubic-bezier(.32,.72,0,1) infinite; }
+.roll .col span { height:.92em; line-height:.92; }
+@keyframes rollcol { 0%,26%{transform:translateY(0);} 46%,72%{transform:translateY(-.92em);} 92%,100%{transform:translateY(-1.84em);} }
+.fig { font-weight:900; font-size:34px; letter-spacing:-.04em; font-variant-numeric:tabular-nums; color:var(--chalk); }
+@media (prefers-reduced-motion:reduce) { .roll .col, .bounce, .pulse, .shimmer { animation:none !important; } }
+
+/* symbol effects */
+.symbox { width:44px; height:44px; border-radius:50%; background:rgba(198,248,79,.16); display:grid; place-items:center; }
+.bounce { animation:bnc 2.4s cubic-bezier(.32,.72,0,1) infinite; }
+@keyframes bnc { 0%,72%,100%{transform:translateY(0) scale(1);} 78%{transform:translateY(-5px) scale(1.1);} 86%{transform:translateY(0) scale(1);} }
+.pulse { animation:pls 2s ease-in-out infinite; }
+@keyframes pls { 0%,100%{opacity:1;} 50%{opacity:.42;} }
+
+/* motion lanes */
+.lane { display:grid; gap:6px; }
+.lane .tr { height:26px; border-radius:8px; background:rgba(243,244,239,.05); position:relative; overflow:hidden; }
+.lane .tr b { position:absolute; top:5px; left:5px; width:34px; height:16px; border-radius:5px; background:var(--lime); }
+.lane .tr.js b { animation:jsmove 2.6s linear infinite; background:var(--terra); }
+.lane .tr.ui b { animation:uimove 2.6s cubic-bezier(.32,.72,0,1) infinite; }
+@keyframes jsmove { 0%{left:5px;} 8%{left:5px;} 16%{left:30px;} 22%{left:34px;} 34%{left:70px;} 46%{left:96px;} 52%{left:99px;} 66%{left:140px;} 80%{left:175px;} 100%{left:calc(100% - 39px);} }
+@keyframes uimove { 0%{left:5px;} 100%{left:calc(100% - 39px);} }
+.lane .lbl { font-family:var(--mono); font-size:9px; letter-spacing:.06em; }
+
+/* popover */
+.pop { position:relative; }
+.pop .bubble { border-radius:12px; background:var(--ink); box-shadow:0 8px 26px rgba(0,0,0,.6), inset 0 0 0 1px rgba(243,244,239,.14); padding:11px 13px; font-size:12px; color:var(--mist); line-height:1.5; }
+.sheetish { border-radius:16px 16px 0 0; background:var(--ink); box-shadow:inset 0 1px 0 rgba(243,244,239,.12); padding:14px; margin:0 -18px -18px; }
+
+/* tables */
+.tbl-wrap { overflow-x:auto; }
+table.t { width:100%; border-collapse:collapse; margin-top:18px; font-size:13px; min-width:640px; }
+table.t th { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--ash); text-align:left; font-weight:700; padding:0 14px 10px 0; border-bottom:1px solid var(--line); }
+table.t td { padding:11px 14px 11px 0; border-bottom:1px solid rgba(42,45,42,.6); color:var(--mist); vertical-align:top; }
+table.t td:first-child { color:var(--chalk); font-weight:700; white-space:nowrap; }
+table.t .yes { color:var(--lime); font-family:var(--mono); font-size:11.5px; }
+table.t .no { color:rgba(139,143,134,.55); font-family:var(--mono); font-size:11.5px; }
+
+.note { margin-top:20px; padding:14px 16px; border-left:2px solid rgba(198,248,79,.45); background:rgba(198,248,79,.05); border-radius:0 10px 10px 0; font-size:13px; line-height:1.55; color:var(--mist); }
+.note .k { font-family:var(--mono); font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--lime); display:block; margin-bottom:5px; }
+.note.warn { border-left-color:rgba(229,138,92,.5); background:rgba(229,138,92,.05); }
+.note.warn .k { color:var(--terra); }
+.note.grey { border-left-color:rgba(139,143,134,.5); background:rgba(139,143,134,.06); }
+.note.grey .k { color:var(--ash); }
+
+footer { margin-top:88px; padding-top:20px; border-top:1px solid var(--line); display:flex; flex-wrap:wrap; gap:12px 28px; }
+footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; color:var(--ash); text-transform:uppercase; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">HYBRID — native controls &amp; motion — app-wide</div>
+  <h1>Buttons, pills,<br />and how things move<span class="dot">.</span></h1>
+  <p class="standfirst">
+    Ten swaps, all of them <b>controls and transitions</b> — not surfaces. The app paints
+    <b>eighty</b> chartreuse pills by hand, in five different geometries, and animates every one of them
+    across the JavaScript bridge. SwiftUI has one button and one animation transaction.
+  </p>
+  <div class="facts">
+    <div class="fact"><span class="k">Hand-painted pills</span><span class="v">80 sites</span></div>
+    <div class="fact"><span class="k">Distinct geometries</span><span class="v">5</span></div>
+    <div class="fact"><span class="k">Swaps</span><span class="v">10 — all proposals</span></div>
+    <div class="fact"><span class="k">Verified against</span><span class="v">node_modules</span></div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════ changes ═ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Two things removed</h2>
+    <span class="eyebrow">on your call</span>
+  </div>
+  <div class="note warn" style="margin-top:22px">
+    <span class="k">Reverted and dropped</span>
+    <b>The glass on the card is gone</b> — I reverted it from the branch, so the rails keep their solid
+    <code>ink2</code> panel. <b>The fused logger toolbar is dropped</b> from this document entirely.
+    Neither idea appears below, and nothing in this pass touches a surface: every swap here is a
+    control you press or a transition you watch.
+  </div>
+  <p class="lede">
+    Which is the sharper brief anyway. A material is a look. A button knows how big a thumb is, what a
+    long press means, how to be read aloud, how to look disabled and how to bounce when it lands — and
+    an animation that runs inside a SwiftUI transaction never negotiates with JavaScript to draw a
+    frame.
+  </p>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ buttons ═ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Buttons and pills</h2>
+    <span class="eyebrow">six swaps</span>
+  </div>
+
+  <!-- 01 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">01</span><h3>Eighty painted pills become one Button</h3></div>
+    <div class="via">Button + buttonStyle('borderedProminent') + tint(lime) + buttonBorderShape('capsule')</div>
+    <p>
+      A grep for a chartreuse fill returns <b>eighty sites</b>. Each one picks its own padding, radius,
+      font size and glow, so the app ships at least five different primary buttons depending on which
+      screen you are on — and your own backlog already carries this as
+      <code>cta-pill-convergence</code>.
+    </p>
+    <p>
+      A SwiftUI <code>Button</code> takes the brand colour as a <code>tint</code> and draws everything
+      else itself: the pressed state, the disabled state, the hit target, the capsule, the label
+      truncation, the VoiceOver trait. <b>The brand keeps the colour and gives up the geometry</b> —
+      which is the half it was getting wrong eighty times over.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — five geometries, one job</span>
+        <div class="panel">
+          <div class="stack mid"><span class="pill prom p-a">Log a session</span></div>
+          <div class="stack mid"><span class="pill prom p-b">Save</span><span class="pill prom p-c">Log →</span></div>
+          <div class="stack mid"><span class="pill prom p-d">Import 3</span></div>
+          <div class="stack mid"><span class="pill prom p-e">Finish workout</span></div>
+        </div>
+        <span class="why">Radii 999, 14, 999, 10, 999. Font 16, 15, 13, 12, 17. One of them glows.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — one control, one tint</span>
+        <div class="panel after">
+          <div class="stack mid"><span class="pill prom cs-large">Log a session</span></div>
+          <div class="stack mid"><span class="pill prom cs-reg">Save</span><span class="pill prom cs-reg">Log</span></div>
+          <div class="stack mid"><span class="pill prom cs-small">Import 3</span></div>
+          <div class="stack mid"><span class="pill prom cs-large" style="width:100%">Finish workout</span></div>
+        </div>
+        <span class="why">One capsule, one tint, four <code>controlSize</code> values. Nothing hand-set.</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 02 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">02</span><h3>Size becomes a word, not a padding pair</h3></div>
+    <div class="via">controlSize('mini' | 'small' | 'regular' | 'large' | 'extraLarge')</div>
+    <p>
+      Every button in the app declares its size as two numbers and a font size, chosen by eye at the
+      call site. <code>controlSize</code> names it instead — and the named sizes stay in proportion to
+      each other, and to the user's Dynamic Type setting, which hand-set padding cannot do.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — <code>paddingVertical: 13, paddingHorizontal: 20</code></span>
+        <div class="panel">
+          <div class="stack"><span class="pill bord p-d">8 / 14</span><span class="pill bord p-c">9 / 16</span><span class="pill bord p-b">12 / 18</span></div>
+          <div class="m-mono">three call sites, three opinions</div>
+        </div>
+        <span class="why">At the largest accessibility size, all three overflow differently.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — a size that has a name</span>
+        <div class="panel after">
+          <div class="stack">
+            <span class="pill bord cs-mini">mini</span><span class="pill bord cs-small">small</span>
+            <span class="pill bord cs-reg">regular</span><span class="pill bord cs-large">large</span>
+          </div>
+          <div class="m-mono" style="color:var(--lime)">one ramp, and it scales with the user</div>
+        </div>
+        <span class="why">The ramp is the system's, so it stays proportional at every type size.</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 03 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">03</span><h3>Filter chips become Toggles that look like pills</h3></div>
+    <div class="via">Toggle + toggleStyle('button')</div>
+    <p>
+      Every chip row in the app — muscle filters, sport categories, date ranges — is a
+      <code>Pressable</code> holding its own boolean and swapping two hand-written styles. A
+      <code>Toggle</code> with the <b>button</b> style is exactly that control, and it announces itself
+      as a toggle: VoiceOver says "selected", the state survives Dynamic Type, and the on state is drawn
+      by the system rather than by a ternary at the call site.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — a Pressable with a ternary</span>
+        <div class="panel">
+          <div class="stack"><span class="chip on">Legs</span><span class="chip">Push</span><span class="chip">Pull</span><span class="chip">Core</span></div>
+          <div class="m-mono">reads to VoiceOver as a button, every time</div>
+        </div>
+        <span class="why">Nothing tells a screen reader that "Legs" is currently on.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — a real toggle</span>
+        <div class="panel after">
+          <div class="stack"><span class="chip onn">Legs</span><span class="chip">Push</span><span class="chip">Pull</span><span class="chip">Core</span></div>
+          <div class="m-mono" style="color:var(--lime)">"Legs, selected" — and the tint is the state</div>
+        </div>
+        <span class="why">One prop is the truth; the drawing follows from it.</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 04 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">04</span><h3>A button that is saving says so with a spinner, not an ellipsis</h3></div>
+    <div class="via">ProgressView + controlSize, inside the Button's label</div>
+    <p>
+      The save buttons swap their word for <code>…</code> while a request is in flight. It is a static
+      string: nothing about it says the app is still working rather than stuck, and it is the moment a
+      user is most likely to press again.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — the label becomes "…"</span>
+        <div class="panel">
+          <div class="stack mid"><span class="pill prom cs-reg" style="opacity:.5">…</span></div>
+          <div class="m-mono" style="text-align:center">is it working, or has it hung?</div>
+        </div>
+        <span class="why">Three dots, not moving. The word that was there is gone.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — the label keeps its word</span>
+        <div class="panel after">
+          <div class="stack mid">
+            <span class="pill prom cs-reg" style="opacity:.85">
+              <span class="pulse" style="display:inline-block;width:12px;height:12px;border-radius:50%;border:2px solid rgba(16,18,8,.35);border-top-color:#101208"></span>
+              Saving
+            </span>
+          </div>
+          <div class="m-mono" style="text-align:center;color:var(--lime)">alive, and still named</div>
+        </div>
+        <span class="why">Disabled by the system while it spins, so a second press is impossible.</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 05 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">05</span><h3>An icon-and-word button stops being two components</h3></div>
+    <div class="via">Label + labelStyle('automatic' | 'iconOnly' | 'titleAndIcon')</div>
+    <p>
+      Today a glyph beside a word is a <code>View</code> with a <code>Text</code> and an
+      <code>Image</code>, aligned by hand, and a narrow screen either wraps it or clips it. A
+      <code>Label</code> is one unit: the system aligns the glyph to the text's baseline, keeps the
+      optical spacing at every size, and <code>labelStyle</code> lets one component drop to
+      <b>icon only</b> where space is tight instead of a second component existing for that case.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — hand-aligned pairs</span>
+        <div class="panel">
+          <div class="stack"><span class="pill bord cs-reg">⌚ Import</span><span class="pill bord cs-reg">＋ Add</span></div>
+          <div class="stack"><span class="pill bord cs-small">⌚</span><span class="pill bord cs-small">＋</span></div>
+          <div class="m-mono">the tight variant is a second component</div>
+        </div>
+        <span class="why">Two components to keep in step, and they drift.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — one Label, two styles</span>
+        <div class="panel after">
+          <div class="stack">
+            <span class="pill bord cs-reg"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="3.2"/><path d="M9 6.5l.5-3h5l.5 3M9 17.5l.5 3h5l.5-3" stroke-linecap="round"/></svg>Import</span>
+            <span class="pill bord cs-reg"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Add</span>
+          </div>
+          <div class="m-mono" style="color:var(--lime)">labelStyle('iconOnly') — same component, no word</div>
+        </div>
+        <span class="why">The accessible name survives even when the word is hidden.</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 06 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">06</span><h3>A row of sibling actions becomes a ControlGroup</h3></div>
+    <div class="via">ControlGroup — for actions that belong together but are not a selection</div>
+    <p>
+      A <code>Picker</code> is for choosing one of several. A <code>ControlGroup</code> is for actions
+      that simply belong together — Skip, Move, Start on a plan day; Edit, Duplicate, Delete on a
+      routine. The app draws those as loose buttons with a gap, so nothing says they are one cluster,
+      and each carries its own border.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — three loose buttons</span>
+        <div class="panel">
+          <div class="stack mid"><span class="pill bord cs-small">Skip</span><span class="pill bord cs-small">Move</span><span class="pill bord cs-small">Start</span></div>
+          <div class="m-mono" style="text-align:center">three borders, one idea</div>
+        </div>
+        <span class="why">Rebuilt per screen, with a different gap each time.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — one cluster</span>
+        <div class="panel after">
+          <div class="stack mid"><span class="cgroup"><span>Skip</span><span>Move</span><span>Start</span></span></div>
+          <div class="m-mono" style="text-align:center;color:var(--lime)">one border, one group, one focus stop</div>
+        </div>
+        <span class="why">VoiceOver treats it as a group; the divider rules are the system's.</span>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ═════════════════════════════════════════════════════════════ movement ═ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Transitions</h2>
+    <span class="eyebrow">four swaps — where the frames are drawn</span>
+  </div>
+
+  <p class="lede">
+    Every animation in the app is JavaScript telling the native side where things are, sixty times a
+    second, over a bridge that is also carrying everything else. SwiftUI's model is the opposite: you
+    hand it a target value inside a transaction, and it animates <em>itself</em> there on the UI thread.
+    Nothing crosses per frame, so nothing can stutter because a fetch resolved mid-gesture.
+  </p>
+
+  <!-- 07 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">07</span><h3>Animation moves onto the UI thread</h3></div>
+    <div class="via">withAnimation(Animation.spring) + useNativeState — worklets, no per-frame bridge traffic</div>
+    <p>
+      <code>withAnimation</code> takes a worklet that mutates <code>useNativeState</code> values, and
+      runs it inside a real SwiftUI animation transaction. The JavaScript side names the destination
+      once; the system draws every frame between here and there. It is the same physics the app already
+      encodes in its <code>springs</code> tokens — response and damping fraction — so the motion
+      language does not change, only who is drawing it.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — JS drives every frame</span>
+        <div class="panel">
+          <div class="lane">
+            <span class="lbl" style="color:var(--terra)">bridge — competing with a fetch</span>
+            <div class="tr js"><b></b></div>
+          </div>
+          <div class="m-mono">a dropped frame is a visible stutter</div>
+        </div>
+        <span class="why">Fine at rest. Not fine while the screen is also loading.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — the system draws it</span>
+        <div class="panel after">
+          <div class="lane">
+            <span class="lbl" style="color:var(--lime)">UI thread — one value, one transaction</span>
+            <div class="tr ui"><b></b></div>
+          </div>
+          <div class="m-mono" style="color:var(--lime)">smooth under load, because load is elsewhere</div>
+        </div>
+        <span class="why">Interruptible mid-flight and still resolves correctly.</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 08 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">08</span><h3>Numbers roll instead of cutting</h3></div>
+    <div class="via">contentTransition('numericText') + monospacedDigit</div>
+    <p>
+      Every figure in the app hard-cuts when it changes — the day's distance, the set count, the
+      tonnage, the macros. <code>numericText</code> rolls the digits that actually changed, in the
+      direction of travel, and <code>monospacedDigit</code> holds the column still while it happens so
+      nothing beside it shifts.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — the value replaces itself</span>
+        <div class="panel">
+          <div class="stack mid"><span class="fig">12.40</span><span class="m-mono">km</span></div>
+          <div class="m-mono" style="text-align:center">4.11 → 12.40, in one frame</div>
+        </div>
+        <span class="why">Nothing connects the number that left to the one that arrived.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — digit by digit</span>
+        <div class="panel after">
+          <div class="stack mid">
+            <span class="fig"><span class="roll"><span class="col"><span>1</span><span>7</span><span>4</span></span></span><span class="roll"><span class="col"><span>2</span><span>9</span><span>1</span></span></span>.<span class="roll"><span class="col"><span>4</span><span>2</span><span>1</span></span></span><span class="roll"><span class="col"><span>0</span><span>5</span><span>1</span></span></span></span>
+            <span class="m-mono">km</span>
+          </div>
+          <div class="m-mono" style="text-align:center;color:var(--lime)">only the digits that changed move</div>
+        </div>
+        <span class="why">Collapses to instant under Reduce Motion, automatically.</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 09 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">09</span><h3>Glyphs react — the state change happens on the mark itself</h3></div>
+    <div class="via">symbolEffect — bounce, pulse, breathe, wiggle, rotate, variableColor, drawOn</div>
+    <p>
+      Eleven effects ship with the modifier, and they are the cheapest feedback in the system: a session
+      lands and the mark <b>bounces</b>; a set is syncing and it <b>pulses</b>; a rest timer is armed and
+      it <b>breathes</b>; a wrong entry <b>wiggles</b>. Today these moments are silent, or they are a
+      toast that covers content to say something the glyph could have said in place.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — a toast over the content</span>
+        <div class="panel">
+          <div class="stack mid"><span class="symbox"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="var(--lime)" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10"/></svg></span></div>
+          <div style="border-radius:999px;background:rgba(243,244,239,.12);padding:8px 14px;font-size:12px;text-align:center">Session saved</div>
+        </div>
+        <span class="why">A banner arrives, covers a row, and leaves.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — the mark answers</span>
+        <div class="panel after">
+          <div class="stack mid" style="gap:16px">
+            <span class="symbox bounce"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="var(--lime)" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M4 9v6M7 7.5v9M17 7.5v9M20 9v6M7 12h10"/></svg></span>
+            <span class="symbox pulse" style="background:rgba(208,205,148,.16)"><svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="var(--amber)" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5v5l3 2"/></svg></span>
+          </div>
+          <div class="m-mono" style="text-align:center;color:var(--lime)">bounce = landed &nbsp; pulse = syncing</div>
+        </div>
+        <span class="why">Feedback where the thing is, covering nothing.</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 10 -->
+  <article class="swap">
+    <div class="swap-head"><span class="n">10</span><h3>Expanding a section stops being a measured height</h3></div>
+    <div class="via">DisclosureGroup — replaces the hand-animated Collapse in percent-program</div>
+    <p>
+      Expanding anything in the app means measuring the content, animating a height to that number, and
+      clipping. It janks on first open because the measurement lands a frame late, and it fights Dynamic
+      Type because the measured number is now wrong. A <code>DisclosureGroup</code> owns its own
+      disclosure state, its chevron rotation and its expansion — and it never needs to know the height,
+      because the system laid the content out.
+    </p>
+    <div class="ba">
+      <div class="side before">
+        <span class="cap"><i></i>Before — measure, then animate to a number</span>
+        <div class="panel">
+          <div class="disc"><div class="hd"><span>Week 3 — Push</span><span class="m-mono">▾</span></div>
+            <div class="bd">onLayout → setHeight(214) → Animated.timing…</div></div>
+          <div class="m-mono">first open is a frame behind</div>
+        </div>
+        <span class="why">And the stored height is wrong at the next type size.</span>
+      </div>
+      <div class="side after">
+        <span class="cap"><i></i>After — the system expands it</span>
+        <div class="panel after">
+          <div class="disc"><div class="hd"><span>Week 3 — Push</span><span class="m-mono" style="color:var(--lime)">⌄</span></div>
+            <div class="bd">Bench Press — 4 × 6 @ 82.5 kg<br />Overhead Press — 3 × 8 @ 45 kg<br />KB Swing — 3 × 20</div></div>
+          <div class="m-mono" style="color:var(--lime)">no measurement, no clip, no stored number</div>
+        </div>
+        <span class="why">Also gives the row the expandable trait for free.</span>
+      </div>
+    </div>
+  </article>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════ ledger ═ -->
+<section class="section">
+  <div class="rule-head">
+    <h2>The ledger</h2>
+    <span class="eyebrow">controls and motion only</span>
+  </div>
+  <div class="tbl-wrap">
+    <table class="t">
+      <thead><tr><th>Element</th><th>Today</th><th>SwiftUI</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td>Toggles</td><td>iOS switch, lime track</td><td><code>Switch</code></td><td class="yes">already native</td></tr>
+        <tr><td>Overflow menus</td><td>System menu</td><td><code>Menu</code></td><td class="yes">already native</td></tr>
+        <tr><td>Hub switcher</td><td>Native lens</td><td><code>Picker</code></td><td class="yes">already native</td></tr>
+        <tr><td>Nav / satellite buttons</td><td>Native buttons</td><td><code>Button</code></td><td class="yes">already native</td></tr>
+        <tr><td>Sport date + duration</td><td>System calendar, stepper</td><td><code>DatePicker</code>, <code>Stepper</code></td><td class="yes">already native</td></tr>
+        <tr><td>Primary pills ×80</td><td>Hand-painted, 5 geometries</td><td><code>Button</code> + <code>tint</code></td><td class="no">swap 01</td></tr>
+        <tr><td>Button sizing</td><td>Padding pairs</td><td><code>controlSize</code></td><td class="no">swap 02</td></tr>
+        <tr><td>Filter chips</td><td>Pressable + ternary</td><td><code>Toggle(.button)</code></td><td class="no">swap 03</td></tr>
+        <tr><td>Saving state</td><td>Label becomes "…"</td><td><code>ProgressView</code> in the label</td><td class="no">swap 04</td></tr>
+        <tr><td>Icon + word</td><td>Two components</td><td><code>Label</code> + <code>labelStyle</code></td><td class="no">swap 05</td></tr>
+        <tr><td>Action clusters</td><td>Loose buttons</td><td><code>ControlGroup</code></td><td class="no">swap 06</td></tr>
+        <tr><td>Animation</td><td>JS drives each frame</td><td><code>withAnimation</code> + <code>useNativeState</code></td><td class="no">swap 07</td></tr>
+        <tr><td>Changing numbers</td><td>Hard cut</td><td><code>contentTransition</code></td><td class="no">swap 08</td></tr>
+        <tr><td>Glyph feedback</td><td>Toast, or silence</td><td><code>symbolEffect</code></td><td class="no">swap 09</td></tr>
+        <tr><td>Expand / collapse</td><td>Measured height</td><td><code>DisclosureGroup</code></td><td class="no">swap 10</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="note warn">
+    <span class="k">Status</span>
+    <b>All ten are drawings. Nothing here is built.</b> The card glass I did build has been reverted at
+    your request, so the branch currently carries no visual change at all. I would rather this document
+    be honest about that than have another build come back looking like nothing happened.
+  </div>
+
+  <div class="note">
+    <span class="k">If you want an order</span>
+    <b>01 and 02 together</b> — one <code>APill</code> rewritten onto a native <code>Button</code>, then
+    the eighty call sites migrated behind it. It is the largest single consistency win in the app and it
+    is mechanical once the component lands. Then <b>08</b>, which is the one people notice: the figures
+    on Today, the logger and the summary all stop cutting. Then <b>09</b> and <b>03</b>, small and
+    high-frequency. <b>07</b> is the deepest change and wants its own build — it moves where frames are
+    drawn, so it should not travel with anything else.
+  </div>
+
+  <div class="note grey">
+    <span class="k">Two things that stay ours, deliberately</span>
+    The <b>confirm sheet</b> — a HARD rule bans system alerts, and it is right. And the <b>brand fill
+    itself</b>: <code>tint</code> hands SwiftUI the colour, not the decision. Chartreuse still marks the
+    one thing to do next, and no button style gets to overrule that.
+  </div>
+</section>
+
+<footer>
+  <span>HYBRID — native controls &amp; motion</span>
+  <span>10 swaps, 0 built</span>
+  <span>80 pills, 5 geometries</span>
+  <span>@expo/ui 56</span>
+</footer>
+
+</div>
+</body>
+</html>
