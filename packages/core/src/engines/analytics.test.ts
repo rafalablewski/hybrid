@@ -90,6 +90,21 @@ describe("training analytics hub", () => {
     const rows = exerciseTable(sessions, "8w", NOW);
     expect(rows.every((r) => r.sessions > 0)).toBe(true);
   });
+
+  it("the last-used prefilter drops nothing a period pass would have kept", () => {
+    // A movement last touched before the cutoff is skipped before its dashboard
+    // pass runs (that is the cost fix) — but the ROWS must be identical to what
+    // the sessions>0 filter alone produced. Ancient history exercises the skip.
+    const withAncient: LoggedSession[] = [
+      ...sessions,
+      { id: "z", title: "Legacy", startedAt: daysAgo(400), blocks: [{ kind: "strength", name: "Zercher Squat", sets: [{ load: "80", reps: "5" }] }] },
+    ];
+    const bounded = exerciseTable(withAncient, "8w", NOW);
+    expect(bounded.find((r) => r.name === "Zercher Squat")).toBeUndefined();
+    expect(bounded.map((r) => r.name).sort()).toEqual(exerciseTable(sessions, "8w", NOW).map((r) => r.name).sort());
+    // On "all" the cutoff is -Infinity: nothing is skipped, the ancient row is real.
+    expect(exerciseTable(withAncient, "all", NOW).find((r) => r.name === "Zercher Squat")).toBeDefined();
+  });
 });
 
 describe("volumeTrendReading — a held Trends band", () => {

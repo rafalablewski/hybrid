@@ -36,7 +36,15 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
    *  Non-destructive by contract: the row settles back home after it runs. */
   leading?: { label: string; onAction: () => void; color?: string };
   /** Row surface colour — must match the host card so the covered actions
-   *  can't bleed through (defaults to the live logger's card token). */
+   *  can't bleed through.
+   *
+   *  Pass "transparent" when the row sits on a surface it must NOT repaint.
+   *  That is safe because the actions below fade with the drag rather than
+   *  sitting there at rest: an opaque content layer used to be the only thing
+   *  hiding them. It matters most on Aurora, where the host card is GLASS —
+   *  painting the row `card` there dropped an opaque panel inside the
+   *  translucent card, which is the card-inside-a-card the live logger's
+   *  active set was drawing while its own code said "no inner card". */
   background?: string;
   /** Corner radius of the revealed actions — match the wrapped row. */
   radius?: number;
@@ -132,16 +140,28 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
     }),
   ).current;
 
+  // The actions fade in with the drag, so a transparent row can't reveal them
+  // at rest. 1px of travel is enough to show them; the row itself carries the
+  // motion from there.
+  const actionOpacity = tx.interpolate({ inputRange: [-1, 0, 1], outputRange: [1, 0, 1] });
+
   const action = (col: string, text: string, onPress: () => void, edge: "left" | "right") => (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
+    <Animated.View
+      pointerEvents="box-none"
       style={{
         position: "absolute",
         ...(edge === "left" ? { left: 0 } : { right: 0 }),
         top: 0,
         bottom: 0,
+        opacity: actionOpacity,
+      }}
+    >
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={{
         width: swipe.action,
+        height: "100%",
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: col,
@@ -152,6 +172,7 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
           channel (which is tuned to sit on ink). */}
       <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{text}</Text>
     </Pressable>
+    </Animated.View>
   );
 
   return (

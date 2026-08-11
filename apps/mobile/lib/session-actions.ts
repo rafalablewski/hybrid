@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { archiveSession, deleteSession } from "./api";
+import { haptic } from "./haptics";
 import { useRevalidate } from "./queries";
 import { useLang } from "./i18n";
 import { useConfirm } from "../components/aurora/confirm";
@@ -23,7 +24,12 @@ export function useSessionActions() {
     const ok = await archiveSession(id, archived);
     setBusyId(null);
     if (ok) void revalidate.sessions();
-    else void notify(t("common.error"), archived ? t("history.archiveError") : t("history.restoreError"));
+    else {
+      // A failed save must be FELT as well as read — the error knock is the
+      // one haptic the audit found firing nowhere (§15).
+      haptic.error();
+      void notify(t("common.error"), archived ? t("history.archiveError") : t("history.restoreError"));
+    }
     return ok;
   };
 
@@ -41,7 +47,10 @@ export function useSessionActions() {
     if (deleted) {
       void revalidate.sessions();
       onDeleted?.();
-    } else void notify(t("common.error"), t("history.deleteError"));
+    } else {
+      haptic.error();
+      void notify(t("common.error"), t("history.deleteError"));
+    }
   };
 
   return { archive, confirmDelete, busyId };

@@ -35,7 +35,7 @@ import type {
   UserPageResponse,
   UserPageTabId,
 } from "@hybrid/core";
-import { F, Loading, PressScale as Pressable } from "../../lib/ui";
+import { F, Loading, LoadSwap, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ASection, cardStack } from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -480,9 +480,8 @@ function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab:
         {side("followers", t("w.user.followers"))}
         {side("following", t("w.user.following"))}
       </View>
-      {!people ? (
-        <Loading />
-      ) : people.length === 0 ? (
+      <LoadSwap loading={!people}>
+        {() => !people ? null : people.length === 0 ? (
         <Empty title={t(tab === "followers" ? "w.user.noFollowers" : "w.user.noFollowing")} />
       ) : (
         <>
@@ -502,6 +501,7 @@ function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab:
           {cursor ? <LoadMore label={t("w.user.loadMorePeople")} busy={more} busyLabel={t("w.user.loading")} onLoad={loadMore} /> : null}
         </>
       )}
+      </LoadSwap>
     </View>
   );
 }

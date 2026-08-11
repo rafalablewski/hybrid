@@ -11,7 +11,7 @@ import {
   type FeedItemView,
   type Relation,
 } from "@hybrid/core";
-import { F, fs, leading, Loading, PressScale as Pressable } from "../lib/ui";
+import { F, fs, leading, LoadSwap, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -94,7 +94,7 @@ export default function PostScreen() {
     const err = q.data?.error === "private" ? t("feed.session.private") : q.isError || q.data?.error ? t("feed.post.missing") : null;
     return (
       <AuroraScreen hero={hero} backLabel={t("feed.post.back")}>
-        {err ? <Empty title={err} /> : <Loading />}
+        <LoadSwap loading={!err}>{() => <Empty title={err ?? ""} />}</LoadSwap>
       </AuroraScreen>
     );
   }
@@ -146,15 +146,17 @@ export default function PostScreen() {
       {item.body ? <Text style={{ fontFamily: F.reg, color: C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 12 }}>{item.body}</Text> : null}
 
       <View style={{ marginTop: 12 }}>
-        {session ? (
-          // The whole workout: the figures, the records, then the ledger.
-          <FeedWorkout session={session} units={units} prs={item.detail?.prs ?? []} />
-        ) : q.isLoading ? (
-          <Loading />
-        ) : headline ? (
-          // A status post has no workout behind it — its headline IS the post.
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: C.chalk }}>{headline}</Text>
-        ) : null}
+        <LoadSwap loading={!session && q.isLoading}>
+          {() =>
+            session ? (
+              // The whole workout: the figures, the records, then the ledger.
+              <FeedWorkout session={session} units={units} prs={item.detail?.prs ?? []} />
+            ) : headline ? (
+              // A status post has no workout behind it — its headline IS the post.
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: C.chalk }}>{headline}</Text>
+            ) : null
+          }
+        </LoadSwap>
       </View>
 
       <FeedActions item={item} headline={headline || item.title} onKudos={cheer} onComments={() => setFocusBox((n) => n + 1)} />

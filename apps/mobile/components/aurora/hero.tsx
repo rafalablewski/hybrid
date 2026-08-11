@@ -78,6 +78,12 @@ export function HeroNav({
   /** Names the ORIGIN, not the action: "Olympic Weightlifting", not "Back".
    *  A hero must answer "where did I come from" without animation. */
   fromLabel,
+  /** Overrides the derived name for a screen whose exit is neither a pop nor a
+   *  close. The live logger MINIMIZES — the session keeps running in the tab
+   *  bar's accessory strip — and "Close" would promise the opposite. The GLYPH
+   *  is still the system's (chevron-down, the direction the session goes), so
+   *  this changes what the button is CALLED, never what it looks like. */
+  label: labelOverride,
   mode = "page",
   material = "glass",
   onDark = true,
@@ -86,6 +92,7 @@ export function HeroNav({
 }: {
   onPress: () => void;
   fromLabel?: string;
+  label?: string;
   mode?: HeroMode;
   material?: "clear" | "glass";
   /** Whether the button sits on a dark ground (every cover and takeover does). */
@@ -105,7 +112,7 @@ export function HeroNav({
   // goes back there. A presented detour DISMISSES — there is no stack under it
   // — so it announces the close instead. On the const, not at one call site,
   // so the native glass button and the fallback circle cannot disagree.
-  const label = fromLabel && role === "pop" ? `← ${fromLabel}` : t(role === "dismiss" ? "common.close" : "common.back");
+  const label = labelOverride ?? (fromLabel && role === "pop" ? `← ${fromLabel}` : t(role === "dismiss" ? "common.close" : "common.back"));
   const inset = (HERO.nav.hit - HERO.nav.size) / 2;
   // Where Liquid Glass actually renders (iOS 26+), the button IS SwiftUI — a
   // native interactive glass circle, no drawn ring, no fill, no JS press

@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, Loading } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, Loading, LoadSwap } from "../../lib/ui";
 import { claimCoachInvite } from "../../lib/api";
 
 // Claim landing for a coach invite (QR / link / deep-link). Claims immediately
@@ -52,9 +52,8 @@ export default function InviteClaim() {
         {state === "done" ? "You're connected ✓" : "Your coach invited you"}
       </Text>
 
-      {!ready ? (
-        <Loading />
-      ) : !session ? (
+      <LoadSwap loading={!ready}>
+        {() => !ready ? null : !session ? (
         <>
           <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", marginTop: 12, lineHeight: leading(fs.bodyLg) }}>
             Create your free account or sign in to connect. Use the email your coach invited and you&apos;ll be linked automatically.
@@ -73,6 +72,7 @@ export default function InviteClaim() {
       ) : (
         <Loading />
       )}
+      </LoadSwap>
     </View>
   );
 }

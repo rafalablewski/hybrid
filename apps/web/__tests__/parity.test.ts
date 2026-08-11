@@ -180,3 +180,48 @@ describe("a sheet's bottom pad", () => {
     expect(scale).toMatch(/sheetPadBottom = \(insetBottom = 0\) => Math\.max\(/);
   });
 });
+
+describe("the stat tile", () => {
+  // ONE stat tile per client, and the two agree about which figures MOVE.
+  //
+  // Web has had a single `Stat` since it was written, so teaching it to roll
+  // reached thirty-one screens in one edit. Mobile drew the same anatomy —
+  // mono label over a big figure — by hand on every screen, so the same change
+  // would have been thirty-one edits and would have drifted again on the next
+  // one. Until `AStat` existed there was nothing to sweep onto, which is why
+  // the audit could only record the gap rather than close it.
+  const webUi = readFileSync(join(APP_ROOT, "lib", "ui.tsx"), "utf8");
+  const kit = readFileSync(join(REPO_ROOT, "apps", "mobile", "components", "aurora", "kit.tsx"), "utf8");
+
+  it("exists on both clients", () => {
+    expect(webUi, "web lost its shared Stat").toMatch(/export function Stat\(/);
+    expect(kit, "mobile has no AStat — the tiles have nothing to sweep onto").toMatch(/export function AStat\(/);
+  });
+
+  it("rolls a FIGURE and renders a composed node verbatim, on both", () => {
+    // The rule that keeps the clients agreeing about which values travel: a
+    // bare string/number is a figure and rolls; a caller-composed tree (a unit,
+    // an icon) is rendered as given, because rolling an arbitrary tree is
+    // nonsense. Written twice, so it is asserted twice.
+    for (const [name, src] of [["web Stat", webUi], ["mobile AStat", kit]] as const) {
+      const body = src.slice(src.indexOf(name === "web Stat" ? "export function Stat(" : "export function AStat("));
+      expect(body.slice(0, 2000), `${name} must gate the roll on the value's TYPE`)
+        .toMatch(/typeof value === "string" \|\| typeof value === "number"/);
+      expect(body.slice(0, 2000), `${name} must render the figure through RollingNumber`)
+        .toMatch(/RollingNumber/);
+    }
+  });
+
+  it("tones the sub-line from the SHARED rule, not a hand-rolled one", () => {
+    // A tile that coloured a drop green on one client and red on the other
+    // would be worse than no colour at all, so the rule lives in core
+    // (`statSubTone`) and both clients read it. Asserting the shared CALL
+    // rather than the old inline `sub.startsWith("−")` is the point: the
+    // inline version is exactly what drifted, and it is what painted a date
+    // in the "good" accent on web.
+    for (const [name, src] of [["web Stat", webUi], ["mobile AStat", kit]] as const) {
+      expect(src, `${name} must tone its sub through core statSubTone`).toMatch(/statSubTone\(/);
+      expect(src, `${name} is hand-rolling the sign rule again`).not.toMatch(/sub\.startsWith\(/);
+    }
+  });
+});

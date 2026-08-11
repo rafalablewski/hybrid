@@ -14,7 +14,7 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack, ASection } from "../aurora/kit";
@@ -154,82 +154,87 @@ export default function AdminAgents() {
     setDraft((d) => (d ? { ...d, [key]: value } : d));
   }
 
-  if (agents === null) return <Loading />;
-
   return (
-    <View>
-      {unavailable && (
-        <Banner tone="amber" title="Agents aren't persisted yet">
-          The AgentConfig table doesn't exist yet — run reference/sql-agents.sql in Supabase to make agents persist. You
-          can still preview the role presets below.
-        </Banner>
-      )}
+    <LoadSwap loading={agents === null}>
+      {() => {
+        if (agents === null) return null;
+        return (
+          <View>
+            {unavailable && (
+              <Banner tone="amber" title="Agents aren't persisted yet">
+                The AgentConfig table doesn't exist yet — run reference/sql-agents.sql in Supabase to make agents persist. You
+                can still preview the role presets below.
+              </Banner>
+            )}
 
-      <ErrorNote error={err} onDismiss={() => setErr(null)} />
+            <ErrorNote error={err} onDismiss={() => setErr(null)} />
 
-      <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
-        Define your executive team. Edits to a KPI, responsibility, or guardrail rewrite the agent's live system prompt —
-        shown in the preview as you edit. The runtime executes these server-side (needs ANTHROPIC_API_KEY).
-      </Mono>
+            <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
+              Define your executive team. Edits to a KPI, responsibility, or guardrail rewrite the agent's live system prompt —
+              shown in the preview as you edit. The runtime executes these server-side (needs ANTHROPIC_API_KEY).
+            </Mono>
 
-      {/* ---- create row ---- */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 16 }}>
-        {presets.map((p) => (
-          <PillBtn key={p.key} label={`+ ${p.role}`} outline color={palette.chalk} disabled={busy} onPress={() => createFrom(p.key)} />
-        ))}
-        <PillBtn label="+ Custom" outline color={palette.ash} disabled={busy} onPress={() => createFrom()} />
-      </View>
+            {/* ---- create row ---- */}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginBottom: 16 }}>
+              {presets.map((p) => (
+                <PillBtn key={p.key} label={`+ ${p.role}`} outline color={palette.chalk} disabled={busy} onPress={() => createFrom(p.key)} />
+              ))}
+              <PillBtn label="+ Custom" outline color={palette.ash} disabled={busy} onPress={() => createFrom()} />
+            </View>
 
-      {/* ---- roster ---- */}
-      {agents.length === 0 ? (
-        <ACard style={cardStack}>
-          <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 16 }}>
-            No agents yet — create one from a preset above.
-          </Mono>
-        </ACard>
-      ) : (
-        agents.map((a) => (
-          <Pressable key={a.id} onPress={() => setSelectedId(a.id === selectedId ? null : a.id)}>
-            <ACard
-              accent={STATUS_COLOR(palette)[a.status]} style={[cardStack, selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined]}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm }}>
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
-                    {a.name}
-                  </Text>
-                  <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>
-                    <Chip color={STATUS_COLOR(palette)[a.status]}>{a.status}</Chip>
-                    <Chip color={a.authority === "executive" ? palette.violet : palette.ash}>{a.role}</Chip>
-                  </View>
-                  <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
-                    {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
-                  </Mono>
-                </View>
-                <Toggle
-                  on={a.status === "active"}
-                  disabled={busy}
-                  onToggle={() => patch(a.id, { status: a.status === "active" ? "paused" : "active" })}
-                />
-              </View>
-            </ACard>
-          </Pressable>
-        ))
-      )}
+            {/* ---- roster ---- */}
+            {agents.length === 0 ? (
+              <ACard style={cardStack}>
+                <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 16 }}>
+                  No agents yet — create one from a preset above.
+                </Mono>
+              </ACard>
+            ) : (
+              agents.map((a) => (
+                <Pressable key={a.id} onPress={() => setSelectedId(a.id === selectedId ? null : a.id)}>
+                  <ACard
+                    accent={STATUS_COLOR(palette)[a.status]} style={[cardStack, selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined]}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm }}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
+                          {a.name}
+                        </Text>
+                        <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>
+                          <Chip color={STATUS_COLOR(palette)[a.status]}>{a.status}</Chip>
+                          <Chip color={a.authority === "executive" ? palette.violet : palette.ash}>{a.role}</Chip>
+                        </View>
+                        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6 }}>
+                          {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
+                        </Mono>
+                      </View>
+                      <Toggle
+                        on={a.status === "active"}
+                        disabled={busy}
+                        onToggle={() => patch(a.id, { status: a.status === "active" ? "paused" : "active" })}
+                      />
+                    </View>
+                  </ACard>
+                </Pressable>
+              ))
+            )}
 
-      {/* ---- editor ---- */}
-      {draft && (
-        <Editor
-          draft={draft}
-          agents={agents}
-          dirty={dirty}
-          busy={busy}
-          set={set}
-          onSave={save}
-          onDelete={() => remove(draft.id)}
-          onError={setErr}
-        />
-      )}
-    </View>
+            {/* ---- editor ---- */}
+            {draft && (
+              <Editor
+                draft={draft}
+                agents={agents}
+                dirty={dirty}
+                busy={busy}
+                set={set}
+                onSave={save}
+                onDelete={() => remove(draft.id)}
+                onError={setErr}
+              />
+            )}
+          </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 

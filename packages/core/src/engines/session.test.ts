@@ -122,6 +122,26 @@ describe("block summaries", () => {
       "100×5, 110×3",
     );
   });
+
+  // The logger's "last time" reference used to read "–×5, –×5, –×5" above a set
+  // of pull-ups, because load×reps is only true of an externally loaded lift.
+  it("blockSummary reads a bodyweight lift as its reps, not as dashes", () => {
+    expect(
+      blockSummary({ kind: "strength", name: "Pull-Up", sets: [{ load: "", reps: "5" }, { load: "", reps: "5" }, { load: "", reps: "4" }] }),
+    ).toBe("5, 5, 4");
+    expect(blockSummary({ kind: "strength", name: "Pull-Up", sets: [{ load: "", reps: "" }] })).toBe("–");
+  });
+
+  it("blockSummary counts a hold in seconds and a carry in metres", () => {
+    expect(blockSummary({ kind: "strength", name: "Plank", sets: [{ load: "", reps: "60" }] })).toBe("60 s");
+    expect(blockSummary({ kind: "strength", name: "Farmer Carry", sets: [{ load: "40", reps: "30" }] })).toBe("40×30");
+  });
+
+  it("blockSummary shows what went on the belt, or came off it", () => {
+    expect(blockSummary({ kind: "strength", name: "Weighted Pull-Up", sets: [{ load: "20", reps: "5" }] })).toBe("+20×5");
+    // Belt off for the last set — it is a plain pull-up again, so it reads as reps.
+    expect(blockSummary({ kind: "strength", name: "Weighted Pull-Up", sets: [{ load: "", reps: "8" }] })).toBe("8");
+  });
   it("cardioSummary shows distance and the derived pace for a run", () => {
     expect(cardioSummary({ kind: "cardio", name: "Run", distance: 8, minutes: 50, rpe: 6 }, { rpe: true })).toBe(
       "8 km, 50 min, 6:15 /km, RPE 6",

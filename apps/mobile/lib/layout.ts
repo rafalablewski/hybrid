@@ -57,6 +57,32 @@ export const sheetInsetBottom = (screenInsetBottom: number) => {
   return windowInset == null ? screenInsetBottom : Math.min(screenInsetBottom, windowInset);
 };
 
+/**
+ * THE SAFE-AREA INSETS A FULL-SCREEN COVER STANDS IN.
+ *
+ * A cover (`presentation: "fullScreenModal"` — @hybrid/core COVER_SCREENS, which
+ * on mobile is the live logger and nothing else) is presented in its OWN view
+ * controller, outside the tree the provider measured. The native `SafeAreaView`
+ * mounted inside it never applies its top edge: the logger's header drew its
+ * clock and its glass capsule ACROSS the status bar, and not for a frame — for
+ * the whole session. Seeding `initialWindowMetrics` on the provider fixed what
+ * the HOOK reports (the dock's bottom pad has been right ever since); the native
+ * view has no such seed, so a cover pads itself from the hook instead.
+ *
+ * TOP takes the LARGER of the two. The window's inset is the status bar the
+ * cover has to clear, and a screen's own reading can only be bigger than it (an
+ * in-call bar, a rotation the launch metrics predate) — never smaller. A zero
+ * there is the bug, not a measurement.
+ *
+ * BOTTOM is the window's, for the same reason `sheetInsetBottom` takes the
+ * smaller of the two: a cover COVERS the tab bar, so the only thing under it is
+ * the home indicator, never a screen inset with the bar folded into it.
+ */
+export const coverInsets = (screen: { top: number; bottom: number }) => {
+  const w = initialWindowMetrics?.insets;
+  return w ? { top: Math.max(screen.top, w.top), bottom: w.bottom } : screen;
+};
+
 /** Bottom clearance a scrollable Aurora screen must reserve for the system tab
  *  bar, given the device's bottom safe-area inset.
  *

@@ -18,6 +18,8 @@ import {
   loadBaseline,
   doneReceipt,
   sessionCelebration,
+  springs,
+  springToRN,
   isFullAccess,
   volumeByMuscle,
   sessionFunFact,
@@ -300,7 +302,7 @@ export function WorkoutWrapped({
   const spin = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!cel) return;
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, friction: 5, tension: 120, delay: 150 }).start();
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, ...springToRN(springs.pop), delay: 150 }).start();
     Animated.timing(burst, { toValue: 1, duration: 900, delay: 200, useNativeDriver: true }).start();
     const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 16000, easing: Easing.linear, useNativeDriver: true }));
     loop.start();

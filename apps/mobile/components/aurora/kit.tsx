@@ -9,11 +9,12 @@ import { fs, space, leading, tracking, F, serifIf, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, GlassSegment, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { LiquidSeg } from "./liquid-seg";
+import { RollingNumber } from "./rolling-number";
 import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
 
 /**
@@ -1010,6 +1011,79 @@ export function AHeading({ children, style }: { children: ReactNode; style?: Tex
     >
       {children}
     </Text>
+  );
+}
+
+/**
+ * THE STAT TILE — a mono label over one big figure, with an optional sub-line.
+ *
+ * The mobile twin of web's `Stat` (lib/ui.tsx), and it exists for the same
+ * reason web's does: this anatomy is drawn on screen after screen, and every
+ * hand-drawn copy is a chance for the type to drift. Web has had one component
+ * for thirty-one tiles; mobile drew each by hand, so when the figures were
+ * taught to ROLL (motion-audit-followups) web's thirty-one all rolled at once
+ * and mobile's kept swapping. That was a real parity break — the audit named it
+ * as one of only two items not fixed everywhere — and it could not be closed by
+ * a sweep, because there was nothing to sweep ONTO. This is that thing.
+ *
+ * A FIGURE rolls to its new value; anything else renders as given. `value` is a
+ * ReactNode because a few callers compose a unit or an icon into it, and
+ * rolling an arbitrary tree would be nonsense — the same rule web's takes, so
+ * the two clients agree about which figures move.
+ *
+ * `solid` passes through to ACard: a column of stats is a data-dense read
+ * surface, and ACard's own note says translucency costs contrast there.
+ */
+export function AStat({
+  label,
+  value,
+  sub,
+  c,
+  solid,
+  style,
+}: {
+  label: string;
+  /** A string/number ROLLS; a composed node renders verbatim. */
+  value: ReactNode;
+  /** Small line under the figure. A leading − or ↓ reads as a loss (red). */
+  sub?: string;
+  /** Figure colour. Defaults to chalk — pass an accent only when the figure
+   *  itself carries state, never for decoration. */
+  c?: string;
+  solid?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette } = useTheme();
+  // ONLY a sign-led sub carries a tone (core `statSubTone`) — a caption, a
+  // date or a denominator is neutral, not a win.
+  const tone = statSubTone(sub);
+  return (
+    <ACard solid={solid} style={style}>
+      <Text
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: palette.ash }}
+      >
+        {label}
+      </Text>
+      <View style={{ marginTop: 6, marginBottom: 2, flexDirection: "row" }}>
+        {typeof value === "string" || typeof value === "number" ? (
+          <RollingNumber
+            value={String(value)}
+            style={{ fontFamily: F.black, fontSize: fs.hero, color: txt(palette, c ?? palette.chalk), lineHeight: leading(fs.hero, "tight") }}
+          />
+        ) : (
+          value
+        )}
+      </View>
+      {sub ? (
+        <Text
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
+          style={{ fontFamily: F.mono, fontSize: fs.caption, color: tone === "flat" ? palette.ash : txt(palette, tone === "down" ? palette.red : palette.lime) }}
+        >
+          {sub}
+        </Text>
+      ) : null}
+    </ACard>
   );
 }
 

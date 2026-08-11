@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -12,7 +12,8 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, Loading, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, LoadSwap, PressScale as Pressable } from "../../lib/ui";
+import { haptic } from "../../lib/haptics";
 import { ACard, APill, GUTTER, RADIUS, CARD_PAD } from "./kit";
 import { HeroScreen, HeroAccessory } from "./hero";
 import FetchError from "./fetch-error";
@@ -199,17 +200,24 @@ export default function AuroraHistory() {
   // Loading / error / empty all render as the FlatList's empty component (its
   // data is [] in each of those states), so the header (title + toggle) stays.
   // Pre-hydration (saved view not yet read) also shows the loader.
-  const empty = loading || !hydrated ? (
-    <Loading />
-  ) : q.isError ? (
-    // A real fetch failure — distinct from a genuine empty history, so an
-    // offline / 500 load never masquerades as "no sessions yet".
-    <FetchError onRetry={() => q.refetch()} style={{ marginTop: 16 }} />
-  ) : (
-    <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("history.emptyHint")}</Text>
-    </ACard>
+  // The placeholder HANDS OVER to whichever of the three outcomes lands, so an
+  // empty history and a failed fetch both arrive where the skeleton was rather
+  // than replacing it.
+  const empty = (
+    <LoadSwap loading={loading || !hydrated}>
+      {() =>
+        q.isError ? (
+          // A real fetch failure — distinct from a genuine empty history, so an
+          // offline / 500 load never masquerades as "no sessions yet".
+          <FetchError onRetry={() => q.refetch()} style={{ marginTop: 16 }} />
+        ) : (
+          <ACard style={{ marginTop: 16, alignItems: "center", paddingVertical: 32 }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{showArchived ? t("w.analyze.hist.noArchived") : t("w.analyze.hist.noSessions")}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, textAlign: "center" }}>{showArchived ? t("w.analyze.hist.archivedEmpty") : t("history.emptyHint")}</Text>
+          </ACard>
+        )
+      }
+    </LoadSwap>
   );
 
   return (
@@ -254,7 +262,15 @@ export default function AuroraHistory() {
  *  Animated + PanResponder (no gesture-handler dep — matches the live logger's
  *  SwipeRow). Only claims clearly-horizontal drags, so vertical scroll still
  *  works; a tap when open closes the reveal (the card itself doesn't open
- *  anything — archived breakdowns aren't served by the detail route). */
+ *  anything — archived breakdowns aren't served by the detail route).
+ *
+ *  The PHYSICS are the shared swipe rules from @hybrid/core, same as SwipeRow:
+ *  release decides on the velocity PROJECTION rather than displacement (a fast
+ *  flick that travelled 35px still opens), travel rubber-bands past the action
+ *  width, and the settle rides `springs.slide` — this card was the last swipe
+ *  surface deciding by displacement on a spring nothing guarded. The geometry
+ *  (88pt tiles, several of them) stays this card's own: unlike SwipeRow it can
+ *  reveal more than one action, so its open position is not `swipe.action`. */
 function SwipeCard({ C, busy, actions, children }: {
   C: Palette;
   busy: boolean;
@@ -266,8 +282,9 @@ function SwipeCard({ C, busy, actions, children }: {
   const tx = useRef(new Animated.Value(0)).current;
   const openRef = useRef(false);
   const animate = (open: boolean) => {
+    if (open !== openRef.current) haptic.light();
     openRef.current = open;
-    Animated.spring(tx, { toValue: open ? -revealRef.current : 0, useNativeDriver: true, bounciness: 0, speed: 20 }).start();
+    Animated.spring(tx, { toValue: open ? -revealRef.current : 0, useNativeDriver: true, ...springToRN(springs.slide) }).start();
   };
   // The PanResponder is created once, so its callbacks would close over the
   // first render's values. Read `reveal` + `animate` through refs (kept current
@@ -281,9 +298,15 @@ function SwipeCard({ C, busy, actions, children }: {
       onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
       onPanResponderMove: (_, g) => {
         const base = openRef.current ? -revealRef.current : 0;
-        tx.setValue(Math.max(-revealRef.current, Math.min(0, base + g.dx)));
+        tx.setValue(Math.min(0, rubberBand(base + g.dx, revealRef.current)));
       },
-      onPanResponderRelease: (_, g) => animateRef.current(openRef.current ? g.dx < 60 : g.dx < -60),
+      onPanResponderRelease: (_, g) => {
+        const base = openRef.current ? -revealRef.current : 0;
+        // g.vx is px/ms; the shared rule is in px/s.
+        const p = projectSwipe(base + g.dx, g.vx * 1000);
+        animateRef.current(p < -revealRef.current * swipe.openAt);
+      },
+      onPanResponderTerminate: () => animateRef.current(openRef.current),
     }),
   ).current;
   return (
