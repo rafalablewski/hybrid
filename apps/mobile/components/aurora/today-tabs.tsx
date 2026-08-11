@@ -1,11 +1,8 @@
-import { View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { HUB_GLYPHS, TODAY_TABS, type HubGlyphName, type TodayTabId } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
-import { haptic } from "../../lib/haptics";
 import { LiquidSeg } from "./liquid-seg";
-import { GlassSegment, LIQUID_GLASS_RENDERED } from "./swiftui";
 
 /** One Today-hub mark, drawn as a true vector at the same 72×72 stroke box and
  *  weight as AuroraSvgIcon, so the pills sit in the app's one monoline icon
@@ -32,44 +29,33 @@ export function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: 
  * header, above the calendar, and it is the first thing on the screen after
  * the brand — so it has to read as "where am I".
  *
- * ── ON iOS 26 IT IS THE SYSTEM'S OWN CONTROL ────────────────────────────────
- * Where the material renders, this is a real SwiftUI `Picker` +
- * `.pickerStyle(.segmented)` (GlassSegment), exactly like the nutrition
- * picker's source tabs — the same fork, for the same reason: where an element
- * maps to a real system control it goes native, and a three-way switcher at
- * the top of a screen is the most literal segmented control in the product.
+ * IT IS THE APP'S OWN CONTROL, on every platform: the shared LiquidSeg
+ * (aurora/liquid-seg.tsx) with its GLYPHS — a NEUTRAL near-solid pill at rest
+ * that inflates into a clear glass lens on touch, scrubs under a drag, and
+ * flies glassy on a tap. Web (apps/web/components/aurora/today-tabs.tsx) keeps
+ * its CSS twin.
  *
- * The native segment carries WORDS. That reverses the glyph-only rule BELOW
- * it, and only there: the app's own track is drawn by us, so three labels of
- * three different lengths had to be replaced by marks of matched weight to
- * read as one set. The system control is the platform's own answer to that
- * problem — it lays the three words out on exact thirds and centres each in
- * its own segment — so inside it the words are no longer the thing that breaks
- * the alignment, and a word says "where am I" faster than a mark you have to
- * learn. The three marks are NOT redrawn as SF Symbols to keep it glyph-only:
- * all three were purpose-built to be unlike the system's (the bento is
- * deliberately not the plain 2×2 that means "all apps", and the kit has no
- * chart glyph at all), and substituting them would also draw the same three
- * marks two ways — the exact drift `HubGlyph` exists to prevent, since the
- * floating dock keeps drawing them.
+ * ON iOS 26 THIS WAS BRIEFLY THE SYSTEM'S SEGMENTED `Picker` (GlassSegment),
+ * on the reasoning that a three-way switcher at the top of a screen is the
+ * most literal segmented control in the product. On device it landed ON the
+ * date beneath it: the native host takes its RN height from the SwiftUI
+ * content once, at mount — and this control mounts before `useLang` has its
+ * labels AND remounts on every selection, because picking a tab swaps the whole
+ * screen tree. See swiftui.tsx where GlassSegment was for the full account. The
+ * remount is also exactly what `flightKey` below exists for, so the native form
+ * was giving up the pill's flight to gain a layout it could not hold.
  *
- * NO TINT is passed, so the selection stays the system's NEUTRAL — the same
- * decision the LiquidSeg below already carries (a near-solid neutral pill,
- * chosen over the old chartreuse fill in the user-approved Liquid Glass
- * preview). A hub tab goes nowhere the accent needs to point.
+ * THE MARKS, not words, are what the app's own track carries: three labels of
+ * three different lengths do not read as one set, so they were replaced by
+ * marks of matched weight. They are NOT SF Symbols — all three were
+ * purpose-built to be unlike the system's (the bento is deliberately not the
+ * plain 2×2 that means "all apps", and the kit has no chart glyph at all), and
+ * substituting them would draw the same three marks two ways, the exact drift
+ * `HubGlyph` exists to prevent since the floating dock keeps drawing them. The
+ * words stay as each segment's accessible name.
  *
- * KNOWN COST, to be judged on device: the hub swaps the whole screen tree on
- * selection, so this control REMOUNTS mid-move. LiquidSeg answers that with
- * its `flightKey` flight memory and the lens stays in the air; a native Picker
- * has no such seam to reach through, so its indicator SNAPS to the new segment
- * instead of sliding. The content dissolve and the still chrome are unchanged.
- *
- * ── EVERYWHERE ELSE ─────────────────────────────────────────────────────────
- * Android and iOS < 26 keep the shared LiquidSeg (aurora/liquid-seg.tsx) with
- * its GLYPHS: a NEUTRAL near-solid pill at rest that inflates into a clear
- * glass lens on touch, scrubs under a drag, and flies glassy on a tap. Web
- * (apps/web/components/aurora/today-tabs.tsx) keeps its CSS twin — SwiftUI is
- * iOS-only by construction, the standing parity constraint of `swiftui-kit`.
+ * The selection pill is NEUTRAL, not the brand chartreuse (the user-approved
+ * Liquid Glass preview): a hub tab goes nowhere the accent needs to point.
  *
  * There is no second row. The Performance tab briefly had its own chip rail
  * for Performance / Volume / Trends; those three are now ONE page, so the
@@ -78,26 +64,6 @@ export function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: 
 export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (id: TodayTabId) => void }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-
-  if (LIQUID_GLASS_RENDERED) {
-    return (
-      // The track's own `marginTop` lives in `trackStyle` below, which the
-      // native branch never sees — the Host sizes to the native control, so
-      // the gap under the profile header is carried here instead.
-      <View style={{ marginTop: 16 }}>
-        <GlassSegment
-          options={TODAY_TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey) }))}
-          value={value}
-          onPick={(id) => {
-            // The selection haptic the LiquidSeg fires on commit — SwiftUI
-            // owns the tap, so the app still has to say the tab changed.
-            if (id !== value) haptic.selection();
-            onChange(id);
-          }}
-        />
-      </View>
-    );
-  }
 
   return (
     <LiquidSeg

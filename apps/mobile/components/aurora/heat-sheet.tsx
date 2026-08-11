@@ -20,7 +20,7 @@ import { deleteHeat, logHeat } from "../../lib/api";
 import { useHeatSignalsQuery } from "../../lib/queries";
 import Sheet from "./sheet";
 import { RADIUS } from "./kit";
-import { GlassSegment, NativeDateField, NativeStepper, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { NativeDateField, NativeStepper, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 
 /**
  * LOG HEAT — the sauna sheet.
@@ -168,50 +168,32 @@ export function HeatSheet({
           First, because it decides what the temperature below it MEANS: 45 °C
           is nothing in a dry sauna and a full dose in a steam room. */}
       <Text style={{ ...label, marginBottom: 8 }}>{t("w.recovery.heat.kind")}</Text>
-      {LIQUID_GLASS_SUPPORTED ? (
-        <GlassSegment
-          options={HEAT_PROTOCOL_LIST.map((p) => ({ id: p, label: t(`w.recovery.heat.protocol.${p}`) }))}
-          value={protocol}
-          onPick={pickProtocol}
-          accent={C.amber}
-        />
-      ) : (
-        <View style={{ flexDirection: "row", gap: 7 }}>
-          {HEAT_PROTOCOL_LIST.map((p) => {
-            const on = p === protocol;
-            return (
-              <Pressable
-                key={p}
-                onPress={() => pickProtocol(p)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: on }}
-                style={{
-                  flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: RADIUS.pill,
-                  backgroundColor: on ? C.amber : "transparent",
-                  borderWidth: on ? 0 : 1, borderColor: C.line,
-                }}
-              >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.onAccent : C.ash }}>
-                  {t(`w.recovery.heat.protocol.${p}`)}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      )}
+      <View style={{ flexDirection: "row", gap: 7 }}>
+        {HEAT_PROTOCOL_LIST.map((p) => {
+          const on = p === protocol;
+          return (
+            <Pressable
+              key={p}
+              onPress={() => pickProtocol(p)}
+              accessibilityRole="button"
+              accessibilityState={{ selected: on }}
+              style={{
+                flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: RADIUS.pill,
+                backgroundColor: on ? C.amber : "transparent",
+                borderWidth: on ? 0 : 1, borderColor: C.line,
+              }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.onAccent : C.ash }}>
+                {t(`w.recovery.heat.protocol.${p}`)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
       {/* ── HOW LONG ─────────────────────────────────────────────────────── */}
       <Text style={{ ...label, marginTop: 18, marginBottom: 8 }}>{t("w.recovery.heat.howLong")}</Text>
-      {LIQUID_GLASS_SUPPORTED ? (
-        <GlassSegment
-          options={MINUTE_PRESETS.map((m) => ({ id: String(m), label: `${m}` }))}
-          value={String(minutes)}
-          onPick={(v) => setMinutes(Number(v))}
-          accent={C.amber}
-        />
-      ) : (
-        <PresetRow C={C} values={MINUTE_PRESETS} value={minutes} onPick={setMinutes} suffix="" />
-      )}
+      <PresetRow C={C} values={MINUTE_PRESETS} value={minutes} onPick={setMinutes} suffix="" />
       <View style={{ ...rowBox, marginTop: 10 }}>
         {LIQUID_GLASS_SUPPORTED ? (
           <NativeStepper
@@ -233,16 +215,7 @@ export function HeatSheet({
 
       {/* ── HOW HOT ──────────────────────────────────────────────────────── */}
       <Text style={{ ...label, marginTop: 18, marginBottom: 8 }}>{t("w.recovery.heat.howHot")}</Text>
-      {LIQUID_GLASS_SUPPORTED ? (
-        <GlassSegment
-          options={TEMP_PRESETS[protocol].map((v) => ({ id: String(v), label: `${v}°` }))}
-          value={String(tempC)}
-          onPick={(v) => setTempC(Number(v))}
-          accent={C.amber}
-        />
-      ) : (
-        <PresetRow C={C} values={TEMP_PRESETS[protocol]} value={tempC} onPick={setTempC} suffix="°" />
-      )}
+      <PresetRow C={C} values={TEMP_PRESETS[protocol]} value={tempC} onPick={setTempC} suffix="°" />
       <View style={{ ...rowBox, marginTop: 10 }}>
         {LIQUID_GLASS_SUPPORTED ? (
           <NativeStepper
