@@ -1,0 +1,647 @@
+<title>The tick, the gutter, and the exit hanging off it</title>
+
+<style>
+  /* AURORA tokens, verbatim from packages/core/src/theme/palette.ts. The app is
+     dark-only (the light theme was deleted whole in Aug 2026), so this study is
+     dark-only too — every colour is painted explicitly, nothing is inherited
+     from the host. Archivo + JetBrains Mono can't be fetched here; the stacks
+     name them first and fall back to the nearest system faces. Read the EDGES. */
+  :root {
+    --page:#070806; --ink:#0c0d0c; --ink2:#141614; --sunk:#101210;
+    --line:#242724; --line2:#33372f;
+    --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
+    --lime:#c6f84f; --blue:#6cb6bd; --red:#e58a5c; --on-accent:#0c0d0c;
+    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --guide-content: transparent;
+    --guide-dead: transparent;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--page); color: var(--chalk); font-family: var(--sans);
+    -webkit-font-smoothing: antialiased; line-height: 1.6; margin: 0;
+  }
+  ::selection { background: var(--lime); color: var(--on-accent); }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; border-radius: 4px; }
+
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 54px 22px 120px; }
+
+  /* ── page head ──────────────────────────────────────────────────────── */
+  .kick { font: 600 11px/1 var(--mono); letter-spacing: .24em; text-transform: uppercase; color: var(--ash2); }
+  h1 {
+    font-size: clamp(30px, 4.6vw, 46px); font-weight: 800; letter-spacing: -.038em;
+    line-height: 1.02; margin: 16px 0 0; text-wrap: balance; max-width: 20ch;
+  }
+  .lede { color: var(--ash); font-size: 15.5px; max-width: 74ch; margin: 18px 0 0; }
+  .lede b { color: var(--chalk); font-weight: 600; }
+  .lede em { color: var(--lime); font-style: normal; font-weight: 600; }
+
+  h2 {
+    font-size: clamp(21px, 2.6vw, 27px); font-weight: 800; letter-spacing: -.03em;
+    margin: 0; text-wrap: balance;
+  }
+  h3 { font-size: 15.5px; font-weight: 700; letter-spacing: -.015em; margin: 0; }
+
+  section { margin: 74px 0 0; }
+  .sechead {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 18px;
+    border-bottom: 1px solid var(--line); padding-bottom: 13px; flex-wrap: wrap;
+  }
+  .sechead .n { font: 600 11px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--ash2); }
+  .note { color: var(--ash); font-size: 14px; max-width: 80ch; margin: 20px 0 0; }
+  .note b { color: var(--chalk); font-weight: 600; }
+  .note code, code.inline {
+    font: 500 12.5px/1 var(--mono); color: var(--blue);
+    background: var(--ink); border: 1px solid var(--line); border-radius: 5px; padding: 2px 5px;
+  }
+
+  /* ── the diagnosis ledger ───────────────────────────────────────────── */
+  .diag { margin: 30px 0 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(272px, 1fr)); gap: 26px 34px; }
+  .find { display: flex; flex-direction: column; gap: 8px; }
+  .find .m {
+    font: 600 26px/1 var(--mono); letter-spacing: -.03em; color: var(--lime);
+    font-variant-numeric: tabular-nums;
+  }
+  .find .m small { font-size: 12px; letter-spacing: .1em; color: var(--ash2); margin-left: 7px; text-transform: uppercase; }
+  .find p { margin: 0; color: var(--ash); font-size: 13.5px; }
+  .find p i { color: var(--chalk); font-style: normal; font-weight: 600; }
+
+  /* ── tools ──────────────────────────────────────────────────────────── */
+  .tools {
+    margin: 38px 0 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    padding: 15px 0; display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  }
+  .tools label { display: inline-flex; align-items: center; gap: 11px; cursor: pointer; font: 600 10.5px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash); }
+  .tools input {
+    appearance: none; width: 34px; height: 20px; border-radius: 999px; background: var(--line);
+    border: 1px solid var(--line2); position: relative; cursor: pointer; flex: none; margin: 0;
+  }
+  .tools input::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+    border-radius: 999px; background: var(--ash); transition: transform .15s ease, background .15s ease;
+  }
+  .tools input:checked { background: color-mix(in srgb, var(--lime) 28%, var(--line)); border-color: color-mix(in srgb, var(--lime) 45%, var(--line2)); }
+  .tools input:checked::after { transform: translateX(14px); background: var(--lime); }
+  .tools p { color: var(--ash2); font-size: 12.5px; margin: 0; }
+  .tools p b { color: var(--ash); font-weight: 600; }
+  @media (prefers-reduced-motion: reduce) { .tools input::after { transition: none; } }
+  body:has(#guides:checked) .mock { --guide-content: rgba(198,248,79,.42); --guide-dead: rgba(229,138,92,.5); }
+
+  /* ── the comparison stage ───────────────────────────────────────────── */
+  .stage { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 40px 34px; margin: 34px 0 0; align-items: start; }
+  .panel { display: flex; flex-direction: column; gap: 15px; min-width: 0; }
+  .panel > .cap { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .panel > .cap b { font: 600 10.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; flex: none; }
+  .panel.was > .cap b { color: var(--red); }
+  .panel.now > .cap b { color: var(--lime); }
+  .panel > .cap span { color: var(--ash2); font: 500 11.5px/1.5 var(--mono); }
+
+  /* the mock card — real dp values: 20dp padding, 22 radius, ink2 fill */
+  .mock {
+    background: var(--ink2); border-radius: 22px; padding: 20px;
+    position: relative; overflow: hidden; max-width: 351px; width: 100%;
+    font-size: 13px;
+  }
+  /* alignment guides: the card's content edge (20) and the dead legacy indent (51) */
+  .mock::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 3;
+    background:
+      linear-gradient(to right, transparent 19px, var(--guide-content) 19px, var(--guide-content) 20px, transparent 20px),
+      linear-gradient(to right, transparent 50px, var(--guide-dead) 50px, var(--guide-dead) 51px, transparent 51px);
+  }
+  .mock.clean::before { background: linear-gradient(to right, transparent 19px, var(--guide-content) 19px, var(--guide-content) 20px, transparent 20px); }
+
+  .m-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .m-head .t { font-size: 21px; font-weight: 800; letter-spacing: -.024em; color: var(--chalk); line-height: 1.15; }
+  .m-head .meta { font: 500 12px/1 var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--ash); }
+
+  .m-week { display: flex; gap: 6px; margin: 14px -20px 0; padding: 6px 20px 5px; overflow: hidden; }
+  .m-day { width: 44px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .m-day .wd { font: 500 10px/1 var(--mono); letter-spacing: .09em; text-transform: uppercase; color: var(--ash); }
+  .m-day .num { height: 28px; display: grid; place-items: center; font-size: 15px; font-weight: 700; color: var(--ash); }
+  .m-day.on .num { color: var(--chalk); }
+  .m-day.today .num { width: 28px; background: var(--lime); color: var(--on-accent); border-radius: 999px; font-weight: 800; font-size: 14px; }
+  .m-day.sel .num { width: 28px; border: 1px solid rgba(243,244,239,.3); border-radius: 999px; color: var(--chalk); }
+  .m-day .bar { width: 20px; height: 3px; border-radius: 2px; background: rgba(243,244,239,.12); overflow: hidden; }
+  .m-day .bar i { display: block; height: 100%; border-radius: 2px; background: rgba(243,244,239,.7); }
+  .m-day.today .bar i { background: var(--lime); }
+
+  .m-rule { height: 1px; background: var(--line); margin: 16px -20px; }
+
+  /* the receipt */
+  .m-receipt { display: flex; align-items: flex-start; }
+  .m-gutter { width: 31px; flex: none; font-size: 19px; font-weight: 800; line-height: 24px; color: var(--lime); }
+  .m-body { flex: 1; min-width: 0; }
+  .m-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .m-title h4 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -.026em; line-height: 24px; color: var(--chalk); }
+  .m-title span { font: 500 11px/1 var(--mono); color: var(--ash); }
+  .m-hero { display: flex; align-items: baseline; gap: 7px; margin: 14px 0 0; }
+  .m-hero b { font-size: 42px; font-weight: 800; letter-spacing: -.045em; line-height: 44px; color: var(--chalk); font-variant-numeric: tabular-nums; }
+  .m-hero i { font-size: 16px; font-weight: 700; font-style: normal; color: var(--ash); }
+  .m-rest { display: flex; gap: 18px; margin: 12px 0 0; font: 500 12.5px/1.3 var(--mono); color: var(--ash); font-variant-numeric: tabular-nums; }
+
+  /* the done floor */
+  .m-seam { display: flex; align-items: center; gap: 10px; margin: 22px 0 0; }
+  .m-seam span { flex: 1; font: 500 10px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ash); }
+  .m-seam .arw { color: rgba(139,143,134,.6); font-size: 13px; }
+  .m-row { display: flex; align-items: center; gap: 12px; margin: 8px 0 0; }
+  .m-row .ico { width: 40px; height: 40px; flex: none; border-radius: 12px; display: grid; place-items: center; font-size: 18px; background: rgba(108,182,189,.16); }
+  .m-row .nm { font-size: 15px; font-weight: 700; color: var(--chalk); line-height: 1.25; }
+  .m-row .mt { font: 500 12px/1.4 var(--mono); color: var(--ash); }
+
+  /* the action row */
+  .m-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 9px; margin: 14px 0 0; }
+  .m-pill {
+    display: inline-flex; align-items: center; padding: 11px 17px; border-radius: 999px;
+    background: rgba(243,244,239,.09); border: 1px solid rgba(243,244,239,.15);
+    font-size: 15px; font-weight: 800; letter-spacing: -.013em; color: var(--chalk);
+  }
+  .m-exit { font: 500 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ash); white-space: nowrap; }
+  .m-exit.right { margin-left: auto; }
+  .m-exit.alone { display: block; margin-top: 18px; }
+  .m-exit.indent { padding-left: 31px; }
+  .m-exit.head { text-transform: uppercase; }
+
+  /* callouts pinned under a mock */
+  .marks { display: flex; flex-direction: column; gap: 9px; margin: 2px 0 0; }
+  .mark { display: flex; gap: 11px; align-items: baseline; font-size: 13px; color: var(--ash); }
+  .mark b { flex: none; width: 15px; height: 15px; border-radius: 999px; display: grid; place-items: center; font: 600 9px/1 var(--mono); }
+  .was .mark b { background: rgba(229,138,92,.16); color: var(--red); }
+  .now .mark b { background: rgba(198,248,79,.14); color: var(--lime); }
+  .mark i { color: var(--chalk); font-style: normal; font-weight: 600; }
+
+  /* ── the option set ─────────────────────────────────────────────────── */
+  .opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 34px 30px; margin: 32px 0 0; align-items: start; }
+  .opt { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .opt .oh { display: flex; align-items: baseline; gap: 10px; }
+  .opt .oh b { font: 600 10.5px/1 var(--mono); letter-spacing: .14em; color: var(--ash2); flex: none; }
+  .opt.picked .oh b { color: var(--lime); }
+  .opt .verdict {
+    font: 600 10px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ash2); border: 1px solid var(--line2); border-radius: 999px; padding: 5px 9px;
+    align-self: flex-start;
+  }
+  .opt.picked .verdict { color: var(--on-accent); background: var(--lime); border-color: var(--lime); }
+  .opt ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+  .opt li { font-size: 13px; color: var(--ash); display: flex; gap: 9px; align-items: baseline; }
+  .opt li::before { content: "+"; font: 600 12px/1.5 var(--mono); color: var(--lime); flex: none; }
+  .opt li.con::before { content: "−"; color: var(--red); }
+  .opt li i { color: var(--chalk); font-style: normal; font-weight: 600; }
+  /* the option mocks are cropped to the region that changes */
+  .crop { background: var(--ink2); border-radius: 18px; padding: 20px; position: relative; overflow: hidden; }
+  .crop.tall { min-height: 172px; }
+
+  /* ── ledger table ───────────────────────────────────────────────────── */
+  .scroll { overflow-x: auto; margin: 30px 0 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 13.5px; }
+  th, td { text-align: left; padding: 12px 16px 12px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font: 600 10px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--ash2); padding-bottom: 11px; }
+  td { color: var(--ash); }
+  td b, td strong { color: var(--chalk); font-weight: 600; }
+  td.file { font: 500 12.5px/1.5 var(--mono); color: var(--blue); white-space: nowrap; }
+  td .add { color: var(--lime); }
+  td .del { color: var(--red); }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ── rules audit ────────────────────────────────────────────────────── */
+  .rules { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px 30px; margin: 30px 0 0; }
+  .rule { display: grid; grid-template-columns: 18px 1fr; gap: 12px; align-items: start; }
+  .rule .tick { color: var(--lime); font-size: 14px; line-height: 1.5; }
+  .rule h4 { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--chalk); }
+  .rule p { margin: 4px 0 0; font-size: 12.5px; color: var(--ash); }
+
+  footer { margin: 84px 0 0; border-top: 1px solid var(--line); padding-top: 18px; display: flex; justify-content: space-between; gap: 18px; flex-wrap: wrap; }
+  footer p { margin: 0; font: 500 11px/1.6 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--ash2); }
+</style>
+
+<div class="wrap">
+
+  <p class="kick">Design study – Today / Your training</p>
+  <h1>The tick, the gutter, and the exit hanging off it</h1>
+  <p class="lede">
+    Three changes to the finished-day card, and only one of them is the tick.
+    Removing the <b>✓</b> collapses the 31px column it sat in, which is what
+    actually moves the card: every line now starts on the card's own content
+    edge, so there is <em>one left edge</em> instead of two. The
+    <b>View in history</b> exit was indented to that column — with the column
+    gone it needed a home, and the home it gets is the card's last baseline,
+    beside the action pill rather than orphaned under it.
+  </p>
+
+  <!-- ══ 1. diagnosis ══════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>What was actually wrong</h2>
+      <span class="n">Measured, not felt</span>
+    </div>
+
+    <div class="diag">
+      <div class="find">
+        <div class="m">3<small>× one fact</small></div>
+        <p>The day chip is marked trained, the headline reads <i>Logged</i>, and
+          the figures are a receipt for work that plainly happened. The ✓ was the
+          loudest of the three and the only one carrying no information.</p>
+      </div>
+      <div class="find">
+        <div class="m">31<small>px dead column</small></div>
+        <p>The gutter existed to hold the glyph, so the receipt sat at 51 while
+          the seam, the session row and the pill beneath it sat at <i>20</i>.
+          The card alternated between two edges, and drew nothing at either to
+          say which one it meant.</p>
+      </div>
+      <div class="find">
+        <div class="m">1<small>stray accent</small></div>
+        <p>Chartreuse is the app's <i>act now</i> colour. On a finished day the
+          only thing left to do is log another sport, and the ✓ was spending the
+          accent on a state instead.</p>
+      </div>
+      <div class="find">
+        <div class="m">2<small>rails, 2 exits</small></div>
+        <p>The same six words were drawn twice: the logbook rail gave the exit
+          18px of margin, the plan rail gave it a hairline, 16px of padding and
+          put it <i>above</i> the catch-up list. Both indented 31px.</p>
+      </div>
+    </div>
+
+    <div class="tools">
+      <label for="guides"><input type="checkbox" id="guides" checked> Alignment guides</label>
+      <p><b>Chartreuse</b> = the card's content edge (20px). <b>Terracotta</b> = the legacy 31px indent, which nothing lands on after this change.</p>
+    </div>
+  </section>
+
+  <!-- ══ 2. before / after ═════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>The card, before and after</h2>
+      <span class="n">Logbook rail – a logged past day</span>
+    </div>
+    <p class="note">
+      Both mocks are built at the app's real values: 20dp card padding, the 22
+      radius, the one full-bleed hairline between the week and the day. Nothing
+      about the data changes — same receipt, same figures, same row.
+    </p>
+
+    <div class="stage">
+      <div class="panel was">
+        <div class="cap"><b>Before</b><span>Shipped through Aug 2026</span></div>
+
+        <div class="mock">
+          <div class="m-head"><div class="t">Your training</div></div>
+          <div class="m-week">
+            <div class="m-day"><span class="wd">Tue</span><span class="num">4</span><span class="bar"><i style="width:34%"></i></span></div>
+            <div class="m-day on"><span class="wd">Wed</span><span class="num">5</span><span class="bar"><i style="width:92%"></i></span></div>
+            <div class="m-day on"><span class="wd">Thu</span><span class="num">6</span><span class="bar"><i style="width:48%"></i></span></div>
+            <div class="m-day on"><span class="wd">Fri</span><span class="num">7</span><span class="bar"><i style="width:56%"></i></span></div>
+            <div class="m-day"><span class="wd">Sat</span><span class="num">8</span><span class="bar"></span></div>
+            <div class="m-day on"><span class="wd">Sun</span><span class="num">9</span><span class="bar"><i style="width:88%"></i></span></div>
+            <div class="m-day sel"><span class="wd">Mon</span><span class="num">10</span><span class="bar"><i style="width:62%"></i></span></div>
+            <div class="m-day today"><span class="wd">Tue</span><span class="num">11</span><span class="bar"></span></div>
+          </div>
+          <div class="m-rule"></div>
+
+          <div class="m-receipt">
+            <div class="m-gutter">✓</div>
+            <div class="m-body">
+              <div class="m-title"><h4>Logged</h4><span>Yesterday</span></div>
+              <div class="m-hero"><b>4.11</b><i>km</i></div>
+              <div class="m-rest"><span>81 min</span><span>815 kcal</span></div>
+            </div>
+          </div>
+
+          <div class="m-seam"><span>1 done Mon 10 Aug</span><span class="arw">→</span></div>
+          <div class="m-row">
+            <div class="ico">🎾</div>
+            <div>
+              <div class="nm">Tennis</div>
+              <div class="mt">4.11 km – 81 min – 19:49 /km</div>
+            </div>
+          </div>
+
+          <div class="m-actions"><span class="m-pill">Log a sport on Mon</span></div>
+          <div class="m-exit alone indent">View in history →</div>
+        </div>
+
+        <div class="marks">
+          <div class="mark"><b>1</b><span>The receipt hangs off <i>51px</i> — but the seam, the tennis row and the pill below it start at <i>20</i>. The card alternates edges down its own length.</span></div>
+          <div class="mark"><b>2</b><span>Then the exit jumps <i>back</i> to 51, to align with a glyph five rows above it that is 12px wide.</span></div>
+          <div class="mark"><b>3</b><span>The card's last three lines read control, gap, grey label — an afterthought shape.</span></div>
+        </div>
+      </div>
+
+      <div class="panel now">
+        <div class="cap"><b>After</b><span>This change</span></div>
+
+        <div class="mock clean">
+          <div class="m-head"><div class="t">Your training</div></div>
+          <div class="m-week">
+            <div class="m-day"><span class="wd">Tue</span><span class="num">4</span><span class="bar"><i style="width:34%"></i></span></div>
+            <div class="m-day on"><span class="wd">Wed</span><span class="num">5</span><span class="bar"><i style="width:92%"></i></span></div>
+            <div class="m-day on"><span class="wd">Thu</span><span class="num">6</span><span class="bar"><i style="width:48%"></i></span></div>
+            <div class="m-day on"><span class="wd">Fri</span><span class="num">7</span><span class="bar"><i style="width:56%"></i></span></div>
+            <div class="m-day"><span class="wd">Sat</span><span class="num">8</span><span class="bar"></span></div>
+            <div class="m-day on"><span class="wd">Sun</span><span class="num">9</span><span class="bar"><i style="width:88%"></i></span></div>
+            <div class="m-day sel"><span class="wd">Mon</span><span class="num">10</span><span class="bar"><i style="width:62%"></i></span></div>
+            <div class="m-day today"><span class="wd">Tue</span><span class="num">11</span><span class="bar"></span></div>
+          </div>
+          <div class="m-rule"></div>
+
+          <div class="m-body">
+            <div class="m-title"><h4>Logged</h4><span>Yesterday</span></div>
+            <div class="m-hero"><b>4.11</b><i>km</i></div>
+            <div class="m-rest"><span>81 min</span><span>815 kcal</span></div>
+          </div>
+
+          <div class="m-seam"><span>1 done Mon 10 Aug</span><span class="arw">→</span></div>
+          <div class="m-row">
+            <div class="ico">🎾</div>
+            <div>
+              <div class="nm">Tennis</div>
+              <div class="mt">4.11 km – 81 min – 19:49 /km</div>
+            </div>
+          </div>
+
+          <div class="m-actions">
+            <span class="m-pill">Log a sport on Mon</span>
+            <span class="m-exit right">View in history →</span>
+          </div>
+        </div>
+
+        <div class="marks">
+          <div class="mark"><b>1</b><span>One left edge. The headline, the 4.11, the seam and the tennis row all start at the card's own 20px.</span></div>
+          <div class="mark"><b>2</b><span>The exit rides the pill's baseline at the far edge — <i>one line shorter</i>, and unmistakably not part of the receipt.</span></div>
+          <div class="mark"><b>3</b><span>The only chartreuse left in the card is today's date disc, which is the one thing that is genuinely <i>now</i>.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 3. the exit ═══════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>Where the exit goes</h2>
+      <span class="n">Three homes, one shipped</span>
+    </div>
+    <p class="note">
+      The house rule is explicit on the <b>form</b>: an exit is never a bordered
+      box, and a ring means it leaves. It is quieter on the <b>place</b> — an
+      exit lives at the end of the thing it exits. All three of these obey the
+      form. They differ on what "the end" means, and on whether the two rails can
+      wear the same answer: the plan rail's header slot is already occupied by
+      <code class="inline">DAY 3 / 84</code>, and its finished day offers no
+      actions at all.
+    </p>
+
+    <div class="opts">
+
+      <!-- A -->
+      <div class="opt">
+        <div class="oh"><b>A</b><h3>The header's right slot</h3></div>
+        <div class="crop tall">
+          <div class="m-head">
+            <div class="t">Your training</div>
+            <div class="meta" style="color:var(--ash)">History →</div>
+          </div>
+          <div class="m-week" style="margin-top:14px">
+            <div class="m-day on"><span class="wd">Sun</span><span class="num">9</span><span class="bar"><i style="width:88%"></i></span></div>
+            <div class="m-day sel"><span class="wd">Mon</span><span class="num">10</span><span class="bar"><i style="width:62%"></i></span></div>
+            <div class="m-day today"><span class="wd">Tue</span><span class="num">11</span><span class="bar"></span></div>
+          </div>
+        </div>
+        <ul>
+          <li>Most discoverable — it sits above the fold, in the slot iOS trained everyone to read as <i>See All</i>.</li>
+          <li>Card-level, so it exists on <i>every</i> day state; today an empty day has no route to History at all.</li>
+          <li class="con">The plan rail can't copy it: that slot already carries the day count, and three items in one header row breaks at 375pt.</li>
+          <li class="con">Reads as the week strip's "see all", which the house rule pushes out of the head and onto the end of the thing.</li>
+        </ul>
+      </div>
+
+      <!-- B -->
+      <div class="opt picked">
+        <div class="oh"><b>B</b><h3>The card's last baseline</h3></div>
+        <div class="crop tall">
+          <div class="m-title"><h4 style="font-size:19px">Logged</h4><span>Yesterday</span></div>
+          <div class="m-hero"><b style="font-size:34px;line-height:36px">4.11</b><i>km</i></div>
+          <div class="m-actions">
+            <span class="m-pill">Log a sport on Mon</span>
+            <span class="m-exit right">View in history →</span>
+          </div>
+        </div>
+        <span class="verdict">Shipped</span>
+        <ul>
+          <li>Costs the card <i>no line at all</i> on a logged day — it shares the baseline the action pill already occupies.</li>
+          <li>Both rails wear it unchanged; with no actions to sit beside, it simply holds the row alone.</li>
+          <li>The far edge is the argument: on the content edge, under the figures, an exit reads as one more line <i>of</i> the receipt — which is exactly how it failed before.</li>
+          <li class="con">Only appears on days that have something logged. An empty day still reaches History through the app's own navigation.</li>
+        </ul>
+      </div>
+
+      <!-- C -->
+      <div class="opt">
+        <div class="oh"><b>C</b><h3>A door row at the foot</h3></div>
+        <div class="crop tall">
+          <div class="m-actions" style="margin-top:0"><span class="m-pill">Log a sport on Mon</span></div>
+          <div style="display:flex;align-items:center;gap:12px;margin-top:20px">
+            <span style="width:32px;height:32px;flex:none;border-radius:999px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--ash);font-size:13px">↗</span>
+            <span style="flex:1">
+              <span style="display:block;font-size:14px;font-weight:700;color:var(--chalk)">Your history</span>
+              <span style="display:block;font:500 10px/1.5 var(--mono);color:var(--ash)">Every session, by date</span>
+            </span>
+            <span style="color:var(--ash);font-size:15px">›</span>
+          </div>
+        </div>
+        <ul>
+          <li>The house component for it — <code class="inline">DoorRow</code>, ringed glyph, already used by the verdict card.</li>
+          <li>Names the destination properly instead of describing the act of leaving.</li>
+          <li class="con">Adds a 32px ring and a two-line row directly under the CTA — heavy for a card that just got quieter, and it puts a second ring on the Today screen.</li>
+          <li class="con">Makes the exit the card's loudest closing note, above an action it should sit below.</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="note">
+      <b>Switching is one line per rail.</b> The exit is a single component
+      (<code class="inline">aurora/history-exit.tsx</code>) passed through
+      <code class="inline">AActionPair</code>'s new <code class="inline">trailing</code>
+      slot — moving to A means rendering it in the header row instead, C means
+      swapping it for <code class="inline">DoorRow</code>. Say the word and it
+      moves; nothing else in this change depends on which of the three wins.
+    </p>
+  </section>
+
+  <!-- ══ 4. the other rail ═════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>And the enrolled rail, which had it worse</h2>
+      <span class="n">Plan week rail – a finished plan day</span>
+    </div>
+    <p class="note">
+      The two rails are the same object in two modes — enrolling changes the
+      card's fill, never its shape — so the exit could not be fixed on one and
+      left on the other. In plan mode it was worse: a <b>second hairline</b> in a
+      card whose whole separation budget is one, and it sat <b>above</b> the
+      catch-up list, offering a way out with sessions still to read underneath.
+    </p>
+
+    <div class="stage">
+      <div class="panel was">
+        <div class="cap"><b>Before</b><span>Hairline, 16px, 31px indent</span></div>
+        <div class="mock">
+          <div class="m-head"><div class="t">Hybrid Base</div><div class="meta">Day 3 / 84</div></div>
+          <div class="m-rule" style="margin-top:14px"></div>
+          <div class="m-receipt">
+            <div class="m-gutter">✓</div>
+            <div class="m-body">
+              <div class="m-title"><h4>All done for today</h4><span>6-day streak</span></div>
+              <div class="m-hero"><b>7,240</b><i>kg</i></div>
+              <div class="m-rest"><span>68 min</span><span>24 sets</span></div>
+            </div>
+          </div>
+          <div class="m-rule" style="margin-top:16px;margin-bottom:16px"></div>
+          <div class="m-exit indent" style="display:block">View in history →</div>
+          <div class="m-seam" style="margin-top:22px"><span>Moved onto today</span></div>
+          <div class="m-row">
+            <div class="ico" style="background:rgba(198,248,79,.16)">🏋️</div>
+            <div><div class="nm">Lower + Engine</div><div class="mt">Moved from Sun 9 Aug</div></div>
+          </div>
+        </div>
+        <div class="marks">
+          <div class="mark"><b>1</b><span>Two hairlines in a card allowed one.</span></div>
+          <div class="mark"><b>2</b><span>The way out, drawn <i>mid-card</i>, above work still to be read.</span></div>
+        </div>
+      </div>
+
+      <div class="panel now">
+        <div class="cap"><b>After</b><span>Same component as the logbook rail</span></div>
+        <div class="mock clean">
+          <div class="m-head"><div class="t">Hybrid Base</div><div class="meta">Day 3 / 84</div></div>
+          <div class="m-rule" style="margin-top:14px"></div>
+          <div class="m-body">
+            <div class="m-title"><h4>All done for today</h4><span>6-day streak</span></div>
+            <div class="m-hero"><b>7,240</b><i>kg</i></div>
+            <div class="m-rest"><span>68 min</span><span>24 sets</span></div>
+          </div>
+          <div class="m-seam"><span>Moved onto today</span></div>
+          <div class="m-row">
+            <div class="ico" style="background:rgba(198,248,79,.16)">🏋️</div>
+            <div><div class="nm">Lower + Engine</div><div class="mt">Moved from Sun 9 Aug</div></div>
+          </div>
+          <div class="m-actions"><span class="m-exit right">View in history →</span></div>
+        </div>
+        <div class="marks">
+          <div class="mark"><b>1</b><span>One hairline, where it earns its place: week above, day below.</span></div>
+          <div class="mark"><b>2</b><span>The exit is genuinely <i>last</i> — after the catch-up list, not through it.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 5. the ledger ═════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>The change, file by file</h2>
+      <span class="n">Mobile only – the web client is retired</span>
+    </div>
+
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr><th>File</th><th>What changed</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="file">aurora/receipt-block.tsx</td>
+            <td><span class="del">−</span> the ✓ and its gutter column, <span class="del">−</span> the exported <b>RECEIPT_GUTTER</b> constant (deleted rather than defaulted, so nothing can re-indent to a column that isn't drawn). The block is now one plain column.</td>
+          </tr>
+          <tr>
+            <td class="file">aurora/history-exit.tsx</td>
+            <td><span class="add">NEW</span> the exit as one component — mono caps in ash, no fill, no border, no ring. Its touch target comes from <b>hitSlop</b>, not padding, so it clears the 44dp floor without breaking the baseline it shares.</td>
+          </tr>
+          <tr>
+            <td class="file">aurora/action-pair.tsx</td>
+            <td><span class="add">+</span> a <b>trailing</b> slot pinned with <code class="inline">marginLeft: auto</code> — so the way out rides the same row as the way in, and stays on the last line's far end when the pills wrap.</td>
+          </tr>
+          <tr>
+            <td class="file">aurora/logbook-rail.tsx</td>
+            <td><span class="del">−</span> the hand-rolled exit and its 31px indent. The logged day's action pair now carries it.</td>
+          </tr>
+          <tr>
+            <td class="file">aurora/week-rail.tsx</td>
+            <td><span class="del">−</span> the same hand-rolled exit, its hairline and its 16px of padding; the exit moves <b>below</b> the catch-up list so it is genuinely the card's last line.</td>
+          </tr>
+          <tr>
+            <td class="file">core/capabilities.ts</td>
+            <td>The <b>receipt-hero-gutter</b> entry records the removal and why — the registry has to describe the card that ships, not the one that shipped in July.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">
+      <b>Checks:</b> mobile typecheck clean; 78 mobile tests pass, including the
+      design-token ratchets — the two <code class="inline">letterSpacing: 1.2</code>
+      literals collapse to one <code class="inline">tracking.caps</code> token, and
+      the raw <code class="inline">fontSize: 11</code> becomes <code class="inline">fs.micro</code>.
+      3,193 core tests pass. No engine, no data, no API touched: this is layout
+      and one deleted glyph.
+    </p>
+  </section>
+
+  <!-- ══ 6. rules audit ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>Held against the house rules</h2>
+      <span class="n">CLAUDE.md</span>
+    </div>
+
+    <div class="rules">
+      <div class="rule"><span class="tick">✓</span><div>
+        <h4>An exit is never a bordered box</h4>
+        <p>No fill, no border, no radius, no shadow — and no ring, because a ring belongs to a rail tail or a door row, not to a quiet label at a card's foot.</p>
+      </div></div>
+      <div class="rule"><span class="tick">✓</span><div>
+        <h4>Use the shared component, never a local copy</h4>
+        <p>Two hand-rolled exits with two different arrangements became one. That drift was the whole reason the rule exists.</p>
+      </div></div>
+      <div class="rule"><span class="tick">✓</span><div>
+        <h4>The two rails wear one separation device</h4>
+        <p>The plan rail's second hairline is gone. One card, one fill, one rule — enforced by a HARD test.</p>
+      </div></div>
+      <div class="rule"><span class="tick">✓</span><div>
+        <h4>No decorative marker before a label</h4>
+        <p>The ✓ was a status glyph rather than decoration, which is why it was allowed — but it stated a fact the headline and the chip already carried.</p>
+      </div></div>
+      <div class="rule"><span class="tick">✓</span><div>
+        <h4>Never a middot as a separator</h4>
+        <p>The receipt's figures are separated by a flex gap; the session row's meta line uses a spaced en dash.</p>
+      </div></div>
+      <div class="rule"><span class="tick">✓</span><div>
+        <h4>Keep the capabilities registry current</h4>
+        <p>Updated in the same change, with the reasoning, not just the outcome.</p>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- ══ 7. untouched ══════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>What deliberately did not change</h2>
+      <span class="n">Scope</span>
+    </div>
+    <p class="note">
+      The week strip, the load bars and today's chartreuse disc are untouched.
+      The receipt still picks <b>one</b> hero figure by the same priority the
+      History rows use. The seam still opens the day's sheet, and it keeps its
+      own arrow — that arrow and the History exit point at two different places
+      (this day's sessions, and every day), which is defensible, but two outward
+      arrows within 60px of each other is the next thing worth looking at. Say
+      so and it becomes its own study.
+    </p>
+  </section>
+
+  <footer>
+    <p>HYBRID – Aug 2026</p>
+    <p>Mobile – apps/mobile/components/aurora</p>
+  </footer>
+</div>

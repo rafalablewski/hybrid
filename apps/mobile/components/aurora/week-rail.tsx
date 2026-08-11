@@ -20,7 +20,9 @@ import { useLang } from "../../lib/i18n";
 import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
-import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
+import AActionPair from "./action-pair";
+import HistoryExit from "./history-exit";
+import ReceiptBlock from "./receipt-block";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -423,14 +425,15 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
           stamp={stamp}
         />
         {doneFloor}
-        <Pressable
-          onPress={onHistory}
-          accessibilityRole="button"
-          style={{ borderTopWidth: 1, borderTopColor: C.line, marginTop: 16, paddingTop: 16, paddingLeft: RECEIPT_GUTTER }}
-        >
-          <CtaLabel label={`${t("w.home.rail.viewHistory")} →`} color={C.ash} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase" }} />
-        </Pressable>
         {catchUp}
+        {/* THE EXIT IS LAST, and it is the same one the logbook rail wears
+            (aurora/history-exit.tsx). It used to sit ABOVE the catch-up list
+            behind its own hairline and a 31px indent — a way out drawn in the
+            middle of the card, with sessions still to read underneath it, on an
+            edge borrowed from the ✓ that no longer exists. The hairline went
+            with it: this card already carries exactly one, between the week and
+            the day, and whitespace separates everything stacked below. */}
+        <AActionPair align="leading" actions={[]} trailing={<HistoryExit onPress={onHistory} />} />
       </View>
     );
   }

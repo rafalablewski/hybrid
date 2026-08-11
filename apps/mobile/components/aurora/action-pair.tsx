@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -32,15 +33,23 @@ export type PairAction = {
   a11y?: string;
 };
 
-export default function AActionPair({ actions, align = "center" }: {
+export default function AActionPair({ actions, align = "center", trailing }: {
   actions: PairAction[];
   /** Centred under an empty block; leading under a receipt, where the column
    *  edge is already established by the figures above. */
   align?: "center" | "leading";
+  /** THE WAY OUT, on the same baseline as the way in. A card's exit (History,
+   *  a fuller list) is not an action and never wears a capsule, but it does
+   *  belong on the card's LAST line — so it rides this row, pinned to the far
+   *  edge, instead of costing a line of its own underneath. With no actions at
+   *  all the row is still drawn for it (the plan rail's finished day offers
+   *  nothing to do, and still has to be leavable). Pairs with `align="leading"`;
+   *  a centred pair has no far edge to pin to. */
+  trailing?: ReactNode;
 }) {
   const { palette: C } = useTheme();
   const live = actions.filter(Boolean);
-  if (live.length === 0) return null;
+  if (live.length === 0 && !trailing) return null;
 
   return (
     <View
@@ -80,6 +89,11 @@ export default function AActionPair({ actions, align = "center" }: {
           </Text>
         </Pressable>
       ))}
+      {/* `marginLeft: auto` rather than space-between, so a single action still
+          sits on the leading edge and the exit still lands on the trailing one
+          — and when the pills wrap, the exit stays on the last line's far end
+          instead of stranding itself above them. */}
+      {trailing ? <View style={{ marginLeft: "auto" }}>{trailing}</View> : null}
     </View>
   );
 }

@@ -14,12 +14,12 @@ import {
 } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
-import { CtaLabel } from "./cta-label";
 import AEmptyDay from "./empty-day";
 import AActionPair from "./action-pair";
-import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
+import HistoryExit from "./history-exit";
+import ReceiptBlock from "./receipt-block";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 
@@ -291,20 +291,18 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
             athlete logs the second thing, and a PAST logged day had no way to
             add the match it forgot at all. Neither action is filled here — the
             work is real, so the accent retires. */}
+        {/* …and the way out rides that same baseline (aurora/history-exit.tsx).
+            It used to be a line of its own below the pill, indented 31px to the
+            ✓'s gutter — so the card's last three lines were a control, a gap,
+            and a grey label hanging off a column that no longer exists. */}
         <AActionPair
           align="leading"
           actions={[
             ...(day.isToday ? [{ label: t("w.home.today.alsoTodayLogFirst"), onPress: onLog }] : []),
             ...(onLogSport ? [{ label: sportLabel, onPress: () => onLogSport(day) }] : []),
           ]}
+          trailing={<HistoryExit onPress={onHistory} />}
         />
-        <Pressable
-          onPress={onHistory}
-          accessibilityRole="button"
-          style={{ marginTop: 18, paddingLeft: RECEIPT_GUTTER }}
-        >
-          <CtaLabel label={`${t("w.home.rail.viewHistory")} →`} color={C.ash} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase" }} />
-        </Pressable>
       </View>
     );
   }
