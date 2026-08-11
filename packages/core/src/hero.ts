@@ -97,6 +97,16 @@ export const HERO = {
    *  spatial constant — the reason a push never moves the back button. */
   rail: { height: 44, top: 4, /** rail + top + bottom breathing = the collapsed bar */ bottom: 8 },
 
+  /** The safe-top a PRESENTED screen stands in for.
+   *
+   *  `railTop` is measured from the safe area because on a full-screen push the
+   *  thing above the rail is the status bar. A presented card has no status bar
+   *  to clear — its inset is 0 — so the rail would sit 4pt from the card's own
+   *  rounded top edge, which is not breathing room, it is a collision. This is
+   *  the inset that card stands in with instead: enough that the nav circle
+   *  clears the corner radius, and nowhere near a status bar's worth. */
+  presentedTop: 12,
+
   /** Side gutters. `edge` is the screen gutter every client uses (12 — dropped
    *  from 16 in the density pass: wider content, less dead space at the edges);
    *  `hero` is the hero's own inset — 2pt wider so a display title's optical
@@ -183,11 +193,11 @@ export const HERO_TAKEOVER_INK = "#0a0b09";
  *
  * This existed as the bare literal `#0e0f0d` at seven sites before it had a
  * name, which made it indistinguishable from a theme-token BUG: the same literal
- * was also being used on ordinary themed screens, where it does not flip under
- * Kyoto Hour and strands a control at the wrong end of the value scale. Naming
- * it separates the two cases — on a takeover, fixed-dark is the intent (a
- * printed object does not change colour because the room did); anywhere else,
- * this constant is the wrong tool and `palette.ink2` is the right one.
+ * was also being used on ordinary themed screens, where a hardcoded surface
+ * strands a control off the palette. Naming it separates the two cases — on a
+ * takeover, fixed-dark is the intent (a printed object does not change colour
+ * because the room did); anywhere else, this constant is the wrong tool and
+ * `palette.ink2` is the right one.
  */
 export const HERO_TAKEOVER_RAISED = "#0e0f0d";
 
@@ -450,25 +460,37 @@ export function heroLight(level: "container" | "item"): HeroLight {
  * never scrolls away — on `title` rank the old header scrolled off, which meant
  * "back" existed only at the top of the page.
  *
- * MATERIAL is the one thing that varies, and it varies with what is behind it,
- * not with which screen it is on:
- *  - over the plain field → `clear`: no fill, chalk glyph. A chip floating on an
- *    empty page is noise.
- *  - over art, or once content has scrolled under the rail → `glass`: Liquid
- *    Glass where supported, white-12% + blur as the fallback, hairline at 18%.
- * The transition between the two is a cross-fade on the same circle, so the
- * control's SHAPE is never in motion.
+ * MATERIAL: glass, always. On iOS 26 the button IS a native SwiftUI Liquid
+ * Glass button (interactive — the material itself answers the touch; no drawn
+ * ring, no fill); elsewhere the white-12% + blur fallback with the hairline at
+ * 18%. There used to be a `clear` state over the plain field (bare glyph, on
+ * the theory that a chip floating on an empty page is noise) — retired on the
+ * first device round of the native build: one control, one material, every
+ * screen, so the circle the thumb learns on a cover is the identical object on
+ * a field screen, and nothing cross-fades. The signature keeps the backdrop
+ * and scroll inputs so a future material split has somewhere to live without
+ * touching every caller.
  */
-export function heroNavMaterial(backdrop: HeroBackdrop, barred: boolean): "clear" | "glass" {
-  if (backdrop === "field") return barred ? "glass" : "clear";
+export function heroNavMaterial(_backdrop: HeroBackdrop, _barred: boolean): "clear" | "glass" {
   return "glass";
 }
 
 /** What the nav button DOES, which decides its glyph. A page pops (chevron); a
  *  takeover dismisses (chevron-down is Apple's dismiss for a presented
- *  full-screen, and it is the honest signal that there is no stack under it). */
-export function heroNavAction(mode: HeroMode): { role: "pop" | "dismiss"; glyph: AuroraIconName } {
-  return mode === "takeover" ? { role: "dismiss", glyph: "chevron-down" } : { role: "pop", glyph: "back" };
+ *  full-screen, and it is the honest signal that there is no stack under it).
+ *
+ *  `presented` says the screen arrived as a DETOUR (motion.ts `isDetour` — a
+ *  self-contained task rather than a place), which dismisses for the same
+ *  reason a takeover does: there is no stack beneath it to go back UP. A back
+ *  chevron on a card modal points at a parent the gesture doesn't reach, and it
+ *  is exactly the confusion the modality split was made to end. */
+export function heroNavAction(
+  mode: HeroMode,
+  presented = false,
+): { role: "pop" | "dismiss"; glyph: AuroraIconName } {
+  return mode === "takeover" || presented
+    ? { role: "dismiss", glyph: "chevron-down" }
+    : { role: "pop", glyph: "back" };
 }
 
 /* ── 8. TRANSITIONS — the one family ─────────────────────────────────────── */

@@ -28,18 +28,14 @@ const code = (p: string) =>
     .replace(/\/\*[\s\S]*?\*\//g, "")
     .replace(/^\s*\/\/.*$/gm, "");
 
-/** Every surface that wears the header: the two tab roots, both clients. */
+/** Every surface that wears the header: the two tab roots. (The web twins
+ *  were retired with the web client — mobile is the product.) */
 const TAB_ROOTS = [
   "apps/mobile/components/aurora/home.tsx",
   "apps/mobile/components/aurora/nutrition.tsx",
-  "apps/web/components/aurora/today.tsx",
-  "apps/web/components/aurora/nutrition.tsx",
 ];
 
-const HEADER_COMPONENTS = [
-  "apps/mobile/components/aurora/app-header.tsx",
-  "apps/web/components/aurora/app-header.tsx",
-];
+const HEADER_COMPONENTS = ["apps/mobile/components/aurora/app-header.tsx"];
 
 describe("the app header contract", () => {
   it("is built from named tokens, never hand-typed numbers", () => {
@@ -80,7 +76,7 @@ describe("the app header contract", () => {
 });
 
 describe("the app header guard — no screen may draw its own", () => {
-  it("renders the shared component on every tab root, both clients", () => {
+  it("renders the shared component on every tab root", () => {
     for (const file of TAB_ROOTS) {
       expect(code(file), file).toContain("<AppHeader");
       expect(code(file), file).toMatch(/import \{ AppHeader \} from/);
@@ -123,20 +119,16 @@ describe("the app header guard — no screen may draw its own", () => {
     for (const file of HEADER_COMPONENTS) {
       expect(code(file), file).toContain("<AuroraSideMenu");
     }
-    for (const file of ["apps/mobile/components/aurora/home.tsx", "apps/web/components/aurora/today.tsx"]) {
-      expect(code(file), file).not.toContain("<AuroraSideMenu");
-    }
+    expect(code("apps/mobile/components/aurora/home.tsx")).not.toContain("<AuroraSideMenu");
   });
 
   it("lets the hub rows off the hub go somewhere real", () => {
     // `onHubTab` is optional now: on Nutrition there is no hub control on
     // screen to switch, so the three rows route to the standalone screens
     // instead of silently doing nothing.
-    for (const file of ["apps/mobile/components/aurora/side-menu.tsx", "apps/web/components/aurora/side-menu.tsx"]) {
-      const src = code(file);
-      expect(src, file).toMatch(/onHubTab\?:/);
-      expect(src, file).toMatch(/activeHub\?:/);
-      expect(src, file).toContain('"dashboard" ? "today"');
-    }
+    const src = code("apps/mobile/components/aurora/side-menu.tsx");
+    expect(src).toMatch(/onHubTab\?:/);
+    expect(src).toMatch(/activeHub\?:/);
+    expect(src).toContain('"dashboard" ? "today"');
   });
 });

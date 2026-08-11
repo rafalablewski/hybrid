@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -72,72 +72,78 @@ export default function AdminFlags() {
     load();
   }
 
-  if (flags === null && !failed) return <Loading />;
-  if (failed) return <ErrorNote error="Couldn't load feature flags. Pull to retry." />;
-
   return (
-    <View>
-      {unavailable ? (
-        <Banner tone="amber" title="Overrides not persisted yet">
-          The FeatureFlag table doesn&apos;t exist yet — run reference/sql-feature-flags.sql in Supabase to make toggles
-          persist. Until then the app runs on the registry defaults below.
-        </Banner>
-      ) : null}
+    <LoadSwap loading={flags === null && !failed}>
+      {() => {
+        if (flags === null && !failed) return null;
+        if (failed) return <ErrorNote error="Couldn't load feature flags. Pull to retry." />;
 
-      {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
+        return (
+          <View>
+            {unavailable ? (
+              <Banner tone="amber" title="Overrides not persisted yet">
+                The FeatureFlag table doesn&apos;t exist yet — run reference/sql-feature-flags.sql in Supabase to make toggles
+                persist. Until then the app runs on the registry defaults below.
+              </Banner>
+            ) : null}
 
-      <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
-        {flags ? `${flags.length} flags` : "…"} – toggles take effect on the next client load — no deploy.
-      </Mono>
+            {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
 
-      {flags?.map((f) => (
-        <ACard key={f.key} accent={f.enabled ? palette.lime : palette.ash} style={cardStack}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 4 }}>
-            <Chip color={f.enabled ? palette.lime : palette.ash}>{f.enabled ? "on" : "off"}</Chip>
-            {f.overridden ? <Chip color={palette.amber}>overridden</Chip> : <Chip color={palette.ash}>default</Chip>}
-            <Chip color={palette.ash}>{f.audience}</Chip>
-          </View>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>{f.label}</Text>
-          <Mono color={palette.ash} style={{ marginTop: 2, lineHeight: 18 }}>{f.description}</Mono>
-          <Mono color={palette.ash} style={{ marginTop: 6, fontSize: fs.micro }}>
-            {f.key} – default {f.defaultEnabled ? "on" : "off"}
-            {f.updatedByEmail ? ` – last by ${f.updatedByEmail}` : ""}
-          </Mono>
+            <Mono color={palette.ash} style={{ marginBottom: 16, lineHeight: 18 }}>
+              {flags ? `${flags.length} flags` : "…"} – toggles take effect on the next client load — no deploy.
+            </Mono>
 
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginTop: 10, marginBottom: 6 }}>Audience</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
-            {AUDIENCES.map((a) => (
-              <PillBtn
-                key={a}
-                label={a}
-                color={palette.blue}
-                outline={f.audience !== a}
-                disabled={busy === f.key}
-                onPress={() => upsert(f.key, { enabled: f.enabled, audience: a })}
-              />
+            {flags?.map((f) => (
+              <ACard key={f.key} accent={f.enabled ? palette.lime : palette.ash} style={cardStack}>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 4 }}>
+                  <Chip color={f.enabled ? palette.lime : palette.ash}>{f.enabled ? "on" : "off"}</Chip>
+                  {f.overridden ? <Chip color={palette.amber}>overridden</Chip> : <Chip color={palette.ash}>default</Chip>}
+                  <Chip color={palette.ash}>{f.audience}</Chip>
+                </View>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>{f.label}</Text>
+                <Mono color={palette.ash} style={{ marginTop: 2, lineHeight: 18 }}>{f.description}</Mono>
+                <Mono color={palette.ash} style={{ marginTop: 6, fontSize: fs.micro }}>
+                  {f.key} – default {f.defaultEnabled ? "on" : "off"}
+                  {f.updatedByEmail ? ` – last by ${f.updatedByEmail}` : ""}
+                </Mono>
+
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: palette.ash, marginTop: 10, marginBottom: 6 }}>Audience</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
+                  {AUDIENCES.map((a) => (
+                    <PillBtn
+                      key={a}
+                      label={a}
+                      color={palette.blue}
+                      outline={f.audience !== a}
+                      disabled={busy === f.key}
+                      onPress={() => upsert(f.key, { enabled: f.enabled, audience: a })}
+                    />
+                  ))}
+                </View>
+
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
+                  <PillBtn
+                    label={f.enabled ? "Turn off" : "Turn on"}
+                    color={f.enabled ? palette.ash : palette.lime}
+                    outline={f.enabled}
+                    disabled={busy === f.key}
+                    onPress={() => upsert(f.key, { enabled: !f.enabled, audience: f.audience })}
+                  />
+                  {f.overridden ? (
+                    <PillBtn label="↺ Reset to default" outline color={palette.ash} disabled={busy === f.key} onPress={() => reset(f.key)} />
+                  ) : null}
+                </View>
+              </ACard>
             ))}
-          </View>
 
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
-            <PillBtn
-              label={f.enabled ? "Turn off" : "Turn on"}
-              color={f.enabled ? palette.ash : palette.lime}
-              outline={f.enabled}
-              disabled={busy === f.key}
-              onPress={() => upsert(f.key, { enabled: !f.enabled, audience: f.audience })}
-            />
-            {f.overridden ? (
-              <PillBtn label="↺ Reset to default" outline color={palette.ash} disabled={busy === f.key} onPress={() => reset(f.key)} />
+            {flags && flags.length === 0 ? (
+              <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 24 }}>
+                No flags in the registry.
+              </Mono>
             ) : null}
           </View>
-        </ACard>
-      ))}
-
-      {flags && flags.length === 0 ? (
-        <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 24 }}>
-          No flags in the registry.
-        </Mono>
-      ) : null}
-    </View>
+        );
+      }}
+    </LoadSwap>
   );
 }

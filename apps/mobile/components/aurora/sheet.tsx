@@ -79,6 +79,7 @@ import { F } from "../../lib/ui";
 export default function Sheet({
   visible,
   onClose,
+  onClosed,
   title,
   sub,
   children,
@@ -88,6 +89,12 @@ export default function Sheet({
 }: {
   visible: boolean;
   onClose: () => void;
+  /** Fired when the exit has FINISHED and the panel has unmounted — for a sheet
+   *  that is hosted by a route and must pop it. Popping on `onClose` instead
+   *  would tear the route down under the panel mid-flight, which is the same
+   *  defect the web sheet had when it unmounted on a 160ms timer racing its own
+   *  transition. */
+  onClosed?: () => void;
   title?: string;
   /** A node, not just a string, so callers can inline an AuroraIcon (e.g. the
    *  Done sheet's flame beside the streak count) — it renders inside the sub
@@ -114,6 +121,10 @@ export default function Sheet({
   const [render, setRender] = useState(visible);
   const recede = useSheetRecede();
   const reduced = useReducedMotion();
+  // Held in a ref so the exit effect (which must not re-run when a caller passes
+  // a fresh closure) always calls the LATEST one.
+  const onClosedRef = useRef(onClosed);
+  onClosedRef.current = onClosed;
 
   // The panel is ALWAYS the full `large` height, translated down to its stop —
   // that is what gives every sheet somewhere to grow into. `panelH` is
@@ -195,6 +206,7 @@ export default function Sheet({
         // stay mounted would leave nothing to re-report it on the next open.
         setHeaderH(null);
         setContentH(null);
+        onClosedRef.current?.();
       });
     }
     return undefined;

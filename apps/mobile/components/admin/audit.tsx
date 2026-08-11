@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Chip, Loading, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, Mono, Chip, LoadSwap, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Input, PillBtn, Banner } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -78,8 +78,12 @@ export default function AdminAudit() {
 
       {err ? <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={palette.red} style={{ fontSize: fs.caption, marginBottom: 12 }}>{err}</Mono></View> : null}
 
-      {loading && !data ? <Loading /> : null}
-
+      {/* The placeholder was a SIBLING of the list rather than a branch of it,
+          so the log appeared beside a spinner that then vanished. One swap
+          now holds both the empty state and the entries. */}
+      <LoadSwap loading={loading && !data}>
+        {() => (
+          <>
       {data && data.entries.length === 0 ? (
         <Mono color={palette.ash} style={{ fontSize: fs.body, textAlign: "center", paddingVertical: 30 }}>No audit events recorded yet.</Mono>
       ) : null}
@@ -113,6 +117,9 @@ export default function AdminAudit() {
           </ACard>
         );
       })}
+          </>
+        )}
+      </LoadSwap>
 
       {data && data.pages > 1 ? (
         <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: space.ms, marginTop: 12 }}>

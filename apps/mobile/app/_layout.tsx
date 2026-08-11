@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View, Animated, StyleSheet } from "react-native";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
 import {
   useFonts,
   Archivo_400Regular,
@@ -11,7 +11,7 @@ import {
   Archivo_900Black,
 } from "@expo-google-fonts/archivo";
 import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
-import { springs, springDurationMs } from "@hybrid/core";
+import { springs, springDurationMs, MODAL_SCREENS, COVER_SCREENS } from "@hybrid/core";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
 import { TemplateProvider } from "../lib/template";
@@ -21,10 +21,34 @@ import { C } from "../lib/ui";
 import { startIap } from "../lib/iap";
 import { supabase } from "../lib/supabase";
 import { ErrorBoundary } from "../components/error-boundary";
+import { ToastHost } from "../components/aurora/toast";
 import { NavScrollProvider } from "../lib/nav-scroll";
 import { SheetRecedeProvider, useRecedeStyle, useRecedeDim } from "../lib/sheet-recede";
 import { SharedElementProvider } from "../lib/shared-element";
 import { ConfirmProvider } from "../components/aurora/confirm";
+/**
+ * The DETOURS that exist as routes on this client, from the shared list in
+ * @hybrid/core. `timer` is web's id for the interval timer — mobile's file is
+ * `interval-timer.tsx`, which is in the list under its own name — so it is the
+ * one entry with no route here, and expo-router would throw on a Stack.Screen
+ * naming a file that does not exist. Derived from the shared list rather than
+ * retyped, so adding a detour in core reaches BOTH clients.
+ */
+const MOBILE_DETOURS = MODAL_SCREENS.filter((r) => r !== "timer");
+
+/**
+ * The MODES that exist as routes on this client.
+ *
+ * `log` is dropped, and it is the one exclusion in this file that is not merely
+ * a naming difference: on WEB `log` IS the live logger, while on mobile `log`
+ * is the Train LAUNCHER tab (app/(tabs)/log.tsx) and the live logger is
+ * `workout`. Declaring a Stack.Screen for it would name a route that is inside
+ * the tab group, and treating the launcher as a mode would be wrong anyway —
+ * it is a place, not a stopwatch. @hybrid/core COVER_SCREENS documents the
+ * collision at the source; this is the client half of it.
+ */
+const MOBILE_COVERS = COVER_SCREENS.filter((r) => r !== "log");
+
 // The bottom nav is the SYSTEM tab bar now (app/(tabs)/_layout.tsx uses
 // expo-router native tabs), so there is no app-rendered bar to mount here.
 // The Classic template keeps its floating command orb, which used to be
@@ -32,8 +56,9 @@ import { ConfirmProvider } from "../components/aurora/confirm";
 // the orb moves up here beside the navigator.
 
 // Inner shell so it can read the theme (the provider sits above it): drives the
-// status-bar style + the navigator background. In Aurora it also renders the
-// global floating pill nav over every screen (self-gating).
+// status-bar style + the navigator background so the whole app follows
+// light/dark (system by default, overridable in Settings). In Aurora it also
+// renders the global floating pill nav over every screen (self-gating).
 function Shell() {
   const { palette } = useTheme();
   // The presenting surface that scales back while a sheet is up. Everything the
@@ -94,14 +119,55 @@ function Shell() {
             Everything else inherits the interactive pop, which on iOS is the
             OS's own gesture: genuinely finger-tracked, interruptible, and
             parallaxed — better than anything hand-rolled. */}
-        <Stack.Screen name="workout" options={{ gestureEnabled: false }} />
+        {/* THE ONE MODE. Entering the live logger takes the tab bar away, turns
+            the back-swipe off and makes the app a stopwatch with a keyboard —
+            and it used to arrive as `slide_from_right`, the identical motion to
+            opening Settings. `fullScreenModal` + a rise from the bottom edge is
+            the third spatial claim the system was missing: not "deeper" (a
+            push) and not "a detour you'll come back from" (a present), but
+            "the app is something else now". Which screens are modes is
+            @hybrid/core `isCover`, the same list `screenTransition` reads, so
+            the presentation and the motion cannot disagree.
+
+            `gestureEnabled: false` stays and now agrees with the presentation:
+            a cover is left deliberately — by finishing or by abandoning —
+            never by brushing the edge of the screen. */}
+        {MOBILE_COVERS.map((route) => (
+          <Stack.Screen
+            key={route}
+            name={route}
+            options={{ presentation: "fullScreenModal", animation: "slide_from_bottom", animationDuration: springDurationMs(springs.zoom), gestureEnabled: false }}
+          />
+        ))}
         <Stack.Screen name="login" options={{ gestureEnabled: false }} />
         <Stack.Screen name="welcome" options={{ gestureEnabled: false }} />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
-        {/* Upgrade is a slide-up BOTTOM SHEET — a transparent modal so the screen
-            behind stays visible through the scrim (the component animates the
-            panel up itself). */}
-        <Stack.Screen name="upgrade" options={{ presentation: "transparentModal", animation: "fade", contentStyle: { backgroundColor: "transparent" } }} />
+        {/* THE DETOURS. `presentation: "modal"` is a real iOS card modal: the
+            screen behind recedes and stays visibly there, and the card is
+            dismissed by dragging DOWN from anywhere on it. Which routes get it
+            is not decided here — @hybrid/core `MODAL_SCREENS` decides, and the
+            web shell reads the same list, so a detour cannot be a detour on one
+            client and a drill-down on the other.
+
+            Before this, `presentation:` appeared exactly ONCE in the whole app
+            (upgrade), so Settings, the editors and the check-in all inherited
+            `slide_from_right` — the same motion as opening a session's
+            breakdown. A right-slide claims "deeper in the same tree"; a modal
+            claims "a detour, and you will come back", and the two exit by
+            different gestures. Teaching one motion for both taught the wrong
+            exit for half the app.
+
+            Depth is untouched: a session, a plan, an exercise page still push,
+            because a destination is not a detour however deep it sits. */}
+        {MOBILE_DETOURS.map((route) => (
+          <Stack.Screen key={route} name={route} options={{ presentation: "modal" }} />
+        ))}
+        {/* Upgrade is the shared SHEET now (components/aurora/upgrade.tsx renders
+            <Sheet>), so the route itself must be a transparent, un-animated pane
+            for the sheet to present over: the panel's travel, its scrim, the
+            parent's recede and the drag are all the Sheet's, and a second
+            animation from the navigator would fight all four. */}
+        <Stack.Screen name="upgrade" options={{ presentation: "transparentModal", animation: "none", contentStyle: { backgroundColor: "transparent" } }} />
       </Stack>
       {/* The brightness drop, drawn as a wash rather than a `filter` — RN's
           filter support is uneven across platforms. pointerEvents none so it
@@ -110,6 +176,9 @@ function Shell() {
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: dim }]} />
       ) : null}
       </Animated.View>
+      {/* Outside the receding plane: an outcome chip must not scale away with
+          the screen a sheet is presenting over. */}
+      <ToastHost />
     </NavScrollProvider>
   );
 }
@@ -128,7 +197,15 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <SafeAreaProvider>
+      {/* SEEDED with the window's metrics at launch. Without this the provider
+          starts every consumer at a ZERO inset and only corrects after its own
+          view lays out — and a screen presented as a native `fullScreenModal`
+          (the logger, and every other cover) lives in its own view controller,
+          outside that measurement, so it can keep the zero. That is how the
+          live logger came to draw its clock and its Finish across the status
+          bar. `initialWindowMetrics` is synchronous and correct from the first
+          frame, which is the only frame a cover gets. */}
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <QueryProvider>
           <ThemeProvider>
             <TemplateProvider>

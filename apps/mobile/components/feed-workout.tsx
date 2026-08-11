@@ -48,7 +48,9 @@ function setTag(type: FeedWorkoutSet["type"]): { key: string; tone: string } | n
  *  set rather than the card's single row of three. */
 export function StatGrid({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
   const C = useTheme().palette;
-  const { t } = useLang();
+  // `lang`, not the device's locale: without it the tonnage groups its digits
+  // against the handset, so 5360 reads "5.360" under an English interface.
+  const { t, lang } = useLang();
   if (!stats.length) return null;
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", rowGap: 10, borderTopWidth: 1, borderTopColor: C.line, marginTop: 10, paddingTop: 10 }}>
@@ -56,7 +58,7 @@ export function StatGrid({ stats, units }: { stats: FeedStat[]; units: WeightUni
         <View key={s.key} style={{ width: "33.33%", minWidth: 0, paddingRight: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             {s.device ? <WatchGlyph color={C.ash} /> : null}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "600", color: s.key === "hr" ? txt(C, colors.blue) : C.chalk }}>{feedStatText(s, units)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "600", color: s.key === "hr" ? txt(C, colors.blue) : C.chalk }}>{feedStatText(s, units, lang)}</Text>
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash, marginTop: 2 }}>{t(FEED_STAT_LABEL_KEY[s.key]).toUpperCase()}</Text>
         </View>

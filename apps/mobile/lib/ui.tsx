@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, springs, springDurationMs, springToRN, durations } from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, springs, springDurationMs, springToRN, durations, skeleton } from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -198,7 +198,7 @@ export function HubDissolve({ active, children, onLayout }: { active: boolean; c
   );
 }
 
-// Static palette — kept for back-compat with screens that still reference
+// Static dark palette — kept for back-compat with screens that still reference
 // C.* directly. New code should prefer useTheme().
 export const C = colors;
 
@@ -387,20 +387,24 @@ export function useScreenBottomPad(): number {
  * that reads as a jump rather than an arrival, and it costs the user the sense
  * that anything was ever going to appear there.
  *
- * The pulse is an opacity breath on the shared `durations`, and it stops under
- * Reduce Motion — a placeholder that animates is a nicety; a placeholder that
- * reserves space is the actual job, and that part never depends on motion.
+ * The pulse is an opacity breath on the SHARED @hybrid/core `skeleton` token —
+ * the same numbers globals.css generates its .skeleton class from, so the two
+ * clients cannot breathe at different rates (they matched at 1.4s by
+ * coincidence, not by construction). It stops under Reduce Motion: a
+ * placeholder that animates is a nicety; a placeholder that reserves space is
+ * the actual job, and that part never depends on motion.
  */
 export function Skeleton({ width = "100%", height = 14, radius = 8, style }: { width?: number | `${number}%`; height?: number; radius?: number; style?: ViewStyle }) {
   const { palette } = useTheme();
   const reduced = useReducedMotion();
-  const pulse = useRef(new Animated.Value(0.55)).current;
+  const pulse = useRef(new Animated.Value(skeleton.bright)).current;
   useEffect(() => {
-    if (reduced) { pulse.setValue(0.45); return; }
+    if (reduced) { pulse.setValue(skeleton.still); return; }
+    const half = skeleton.pulseMs / 2;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 0.25, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.6, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: skeleton.dim, duration: half, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: skeleton.bright, duration: half, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
       ]),
     );
     loop.start();
@@ -431,6 +435,96 @@ export function Loading() {
       <Skeleton width="62%" height={16} />
       <Skeleton height={12} />
       <Skeleton width="84%" height={12} />
+    </View>
+  );
+}
+
+/**
+ * The HAND-OVER from a placeholder to the thing it was holding space for.
+ *
+ * Skeleton → content was a SWAP on both clients: one frame of placeholder, the
+ * next a fully-formed screen. Here the two states are stacked in the same box
+ * and cross-fade over `durations.crossfade`, so the content arrives WHERE the
+ * placeholder was rather than replacing it.
+ *
+ * The placeholder outlives the flag by one crossfade on purpose: unmounting it
+ * the moment the data lands would leave nothing to fade out, which is the exact
+ * swap this replaces. Under Reduce Motion the substitution is the shorter
+ * `durations.reduced` dissolve — never an instant cut, or the arrival loses its
+ * only signal. Web twin: components/aurora/skeleton.tsx `LoadSwap`.
+ */
+export function LoadSwap({
+  loading,
+  placeholder,
+  children,
+  fill,
+  style,
+}: {
+  loading: boolean;
+  /** What holds the space. Give it the geometry of the real thing. */
+  placeholder?: ReactNode;
+  /**
+   * The content. Pass a FUNCTION where the body would crash without its data —
+   * which is almost everywhere, because the shape these loading states are
+   * written in is `if (!data) return <Loading />` and everything after that
+   * guard dereferences `data`. Children only render when the data has landed,
+   * so a function is never called while loading; an eagerly-built node would
+   * still have been evaluated.
+   *
+   * That laziness is what lets a body stay where it is. The alternative — the
+   * reason this adoption stalled — was moving every body into a child
+   * component so it could take the data as a prop, which for these screens
+   * would mean threading their derived values and mutation handlers through as
+   * props too.
+   */
+  children: ReactNode | (() => ReactNode);
+  /**
+   * The content fills the swap rather than sizing to itself — for a screen
+   * whose body is a virtualized list that needs a height to scroll in. Without
+   * it the content sits in a plain wrapper that sizes to its children, so a
+   * `flex: 1` list inside would collapse the moment it moved in here.
+   */
+  fill?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const reduced = useReducedMotion();
+  const ms = reduced ? durations.reduced : durations.crossfade;
+  const [held, setHeld] = useState(loading);
+  const inOpacity = useRef(new Animated.Value(loading ? 0 : 1)).current;
+  const phOpacity = useRef(new Animated.Value(loading ? 1 : 0)).current;
+
+  useEffect(() => {
+    if (loading) {
+      setHeld(true);
+      inOpacity.setValue(0);
+      phOpacity.setValue(1);
+      return undefined;
+    }
+    Animated.parallel([
+      Animated.timing(inOpacity, { toValue: 1, duration: ms, useNativeDriver: true }),
+      Animated.timing(phOpacity, { toValue: 0, duration: ms, useNativeDriver: true }),
+    ]).start(({ finished }) => { if (finished) setHeld(false); });
+    return undefined;
+  }, [loading, ms, inOpacity, phOpacity]);
+
+  return (
+    <View style={style}>
+      {/* The content is laid out normally and the placeholder floats OVER it:
+          the box is the content's own size the moment it exists, so the
+          hand-over is a fade and not also a resize. */}
+      {!loading && (
+        <Animated.View style={fill ? { opacity: inOpacity, flex: 1 } : { opacity: inOpacity }}>
+          {typeof children === "function" ? children() : children}
+        </Animated.View>
+      )}
+      {held && (
+        <Animated.View
+          pointerEvents="none"
+          style={[loading ? null : StyleSheet.absoluteFill, { opacity: phOpacity }]}
+        >
+          {placeholder ?? <Loading />}
+        </Animated.View>
+      )}
     </View>
   );
 }
@@ -520,9 +614,9 @@ export function Chip({
   tone?: "soft" | "outline";
 }) {
   const { palette } = useTheme();
-  // Default (no color) = the PRIMARY accent: tint from the theme fill and text
-  // via the brand key so txt() maps it to the accent-text tone. An explicit
-  // color keeps its own hue.
+  // Default (no color) = the theme's PRIMARY accent: tint from the theme fill
+  // (pine on light, chartreuse on dark) and text via the brand key so txt() maps
+  // it to the theme's accent-text tone. An explicit color keeps its own hue.
   const key = color ?? C.lime;
   const fill = color ?? palette.lime;
   return (

@@ -20,6 +20,7 @@ import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import { LegalLinks } from "../legal-links";
 import { LinearGradient } from "expo-linear-gradient";
+import { useListMotion } from "../../lib/list-motion";
 
 const LANGUAGES: { id: Lang; label: string }[] = [
   { id: "en", label: "English" },
@@ -45,6 +46,8 @@ const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "r
  * account logic (useAccountSettings) so web ↔ mobile stay in lockstep.
  */
 export default function AuroraSettings() {
+  // Survivors of a filter MOVE to their new positions; only arrivals fade.
+  const refilter = useListMotion();
   const { palette: C } = useTheme();
   const router = useRouter();
   const { t, lang, setLang } = useLang();
@@ -424,7 +427,7 @@ export default function AuroraSettings() {
 
       {/* Search */}
       <View style={{ marginTop: 20 }}>
-        <ASearch value={query} onChange={setQuery} placeholder={t("w.account.settings.search")} />
+        <ASearch value={query} onChange={(v: string) => refilter(() => setQuery(v))} placeholder={t("w.account.settings.search")} />
       </View>
 
       {query ? (

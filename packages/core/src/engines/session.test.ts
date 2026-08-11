@@ -32,6 +32,8 @@ import {
   setTypeBadge,
   warmupRamp,
   defaultSessionTitle,
+  isAutoSessionTitle,
+  sessionTitleText,
   blockBestE1rm,
   moveItem,
   moveItemTo,
@@ -72,6 +74,37 @@ describe("defaultSessionTitle", () => {
     for (let h = 0; h < 24; h++) expect(defaultSessionTitle(at(h)).length).toBeGreaterThan(0);
     expect(defaultSessionTitle()).toBeTruthy(); // default arg = now
   });
+
+  it("knows its own output — every hour of the day round-trips", () => {
+    // The generator and the recogniser share one table precisely so this holds.
+    // If a sixth time-of-day is ever added to one and not the other, every such
+    // session silently starts looking athlete-named and the feed goes back to
+    // headlining the clock.
+    for (let h = 0; h < 24; h++) expect(isAutoSessionTitle(defaultSessionTitle(at(h))), String(h)).toBe(true);
+    expect(isAutoSessionTitle("Lower — W4D2")).toBe(false);
+    expect(isAutoSessionTitle("  afternoon workout ")).toBe(true); // case + padding
+    expect(isAutoSessionTitle("")).toBe(true);
+    expect(isAutoSessionTitle(undefined)).toBe(true);
+  });
+
+  it("translates a clock-written title on the way OUT, and leaves the athlete's own words alone", () => {
+    // defaultSessionTitle produces STORED data and stays English — a title
+    // already written to thousands of rows cannot become a key retroactively.
+    // So the translation happens at render time, which is what makes it work on
+    // every row already in the database.
+    const t = (k: string) => ({ "session.title.afternoon": "Trening po południu", "session.title.morning": "Trening rano" })[k] ?? k;
+    expect(sessionTitleText("Afternoon workout", t)).toBe("Trening po południu");
+    expect(sessionTitleText("Morning workout", t)).toBe("Trening rano");
+    // A name the athlete chose is never run through a dictionary.
+    expect(sessionTitleText("Lower — W4D2", t)).toBe("Lower — W4D2");
+    expect(sessionTitleText("", t)).toBe("");
+    expect(sessionTitleText(null, t)).toBe("");
+    // Every hour resolves to a key the caller can translate, not to the key
+    // string itself leaking to screen.
+    for (let h = 0; h < 24; h++) {
+      expect(sessionTitleText(defaultSessionTitle(at(h)), (k) => k)).toMatch(/^session\.title\./);
+    }
+  });
 });
 
 describe("block summaries", () => {
@@ -88,6 +121,26 @@ describe("block summaries", () => {
     expect(blockSummary({ kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "5" }, { load: "110", reps: "3" }] })).toBe(
       "100×5, 110×3",
     );
+  });
+
+  // The logger's "last time" reference used to read "–×5, –×5, –×5" above a set
+  // of pull-ups, because load×reps is only true of an externally loaded lift.
+  it("blockSummary reads a bodyweight lift as its reps, not as dashes", () => {
+    expect(
+      blockSummary({ kind: "strength", name: "Pull-Up", sets: [{ load: "", reps: "5" }, { load: "", reps: "5" }, { load: "", reps: "4" }] }),
+    ).toBe("5, 5, 4");
+    expect(blockSummary({ kind: "strength", name: "Pull-Up", sets: [{ load: "", reps: "" }] })).toBe("–");
+  });
+
+  it("blockSummary counts a hold in seconds and a carry in metres", () => {
+    expect(blockSummary({ kind: "strength", name: "Plank", sets: [{ load: "", reps: "60" }] })).toBe("60 s");
+    expect(blockSummary({ kind: "strength", name: "Farmer Carry", sets: [{ load: "40", reps: "30" }] })).toBe("40×30");
+  });
+
+  it("blockSummary shows what went on the belt, or came off it", () => {
+    expect(blockSummary({ kind: "strength", name: "Weighted Pull-Up", sets: [{ load: "20", reps: "5" }] })).toBe("+20×5");
+    // Belt off for the last set — it is a plain pull-up again, so it reads as reps.
+    expect(blockSummary({ kind: "strength", name: "Weighted Pull-Up", sets: [{ load: "", reps: "8" }] })).toBe("8");
   });
   it("cardioSummary shows distance and the derived pace for a run", () => {
     expect(cardioSummary({ kind: "cardio", name: "Run", distance: 8, minutes: 50, rpe: 6 }, { rpe: true })).toBe(

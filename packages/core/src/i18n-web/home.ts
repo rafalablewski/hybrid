@@ -251,7 +251,14 @@ export const web_home = {
     "w.home.act.recordsTitle": "Records",
     // ENDURANCE — the section's opener. Scoped w.home.endw.* so it can never
     // be mistaken for the w.home.end.* lane strings.
-    "w.home.endw.empty": "No endurance logged in this period.",
+    // TWO WORDS, and both of them new. "No endurance logged in this period"
+    // borrowed all six: the section headline above already says "Endurance",
+    // and "in this period" is the span printed on the same row. The empty state
+    // also drops the CARD around it — a card carries a thing, and an empty
+    // period carries none (same rule as the bordered-box exit). It keeps its
+    // PLACE, which is what the block's never-disappear doctrine actually asked
+    // for; it just stops drawing chrome around a null.
+    "w.home.endw.empty": "Nothing logged",
     // The opener's SENTENCE. It says what the verdict card cannot — how many
     // sports, and which carried them — because the figures it used to print
     // (distance especially, which only these groups ever carry) were that
@@ -332,7 +339,15 @@ export const web_home = {
     // pace, and the block's head cannot be true of all three at once. The old
     // labels named the chart ("Pace trend") or repeated the footer ("Volume –
     // 8 weeks" over "8 weeks"), and the figure's own scope went unsaid.
+    // ONE WINDOW PER LANE. `scopeAll` is now the LANE HEAD's right slot — said
+    // once, above the rail — and every tile label is just its metric. The three
+    // compound strings below keep their wording and their translations, but
+    // they are no longer visible labels: they are the ACCESSIBLE names, where
+    // metric-plus-scope is still exactly right to hear.
     "w.home.end.scopeAll": "All time",
+    "w.home.end.mDistance": "Distance",
+    "w.home.end.mPace": "Pace",
+    "w.home.end.mZones": "Zones",
     "w.home.end.volumeWeek": "Volume – this week",
     "w.home.end.paceLatest": "Pace – latest week",
     "w.home.end.zonesAll": "Zones – all time",
@@ -390,6 +405,12 @@ export const web_home = {
     "feed.prCount": "{n} PRs this session",
     "feed.e1rm": "e1RM {v}",
     "feed.firstEver": "first time trained",
+    "feed.firstShort": "First",
+    "session.title.lateNight": "Late night session",
+    "session.title.morning": "Morning session",
+    "session.title.afternoon": "Afternoon session",
+    "session.title.evening": "Evening session",
+    "session.title.night": "Night session",
     "feed.deviceMeasured": "Measured by the athlete's device",
     "feed.match": "Match",
     "feed.matchDone": "Added",
@@ -421,6 +442,7 @@ export const web_home = {
     "feed.menu.reportAuthor": "Report {h}",
     "feed.menu.reported": "Reported",
     "feed.menu.followed": "Following",
+    "feed.menu.unfollowed": "Unfollowed",
     "feed.menu.blocked": "Blocked",
     "feed.menu.block": "Block {h}",
     "feed.menu.delete": "Delete post",
@@ -740,7 +762,7 @@ export const web_home = {
     "w.home.cockpit.calibrate": "Log a session to calibrate your route",
     "w.home.cockpit.perfTwin": "Performance State",
     "w.home.cockpit.limiter": "limiter",
-    "w.home.cockpit.twinEmpty": "Your HPI, readiness and tissue load build from real training — log a session.",
+    "w.home.cockpit.twinEmpty": "Your freshness, readiness and tissue load build from real training — log a session.",
     "w.home.cockpit.sportSC": "Sport S&C",
     "w.home.cockpit.sport": "Sport",
     "w.home.cockpit.sportEmpty": "Pick your sport — the engine ranks the strength & conditioning that transfers.",
@@ -937,7 +959,7 @@ export const web_home = {
     "w.home.cockpit.tease.todayRoute.kicker": "Today's route",
     "w.home.cockpit.tease.todayRoute.blurb": "A velocity-aware daily prescription tuned to your readiness.",
     "w.home.cockpit.tease.perfTwin.kicker": "Performance State",
-    "w.home.cockpit.tease.perfTwin.blurb": "Your HPI, its pillars and limiter — the live model of your training.",
+    "w.home.cockpit.tease.perfTwin.blurb": "Your freshness score, its pillars and limiter — the live model of your training.",
     "w.home.cockpit.tease.sportSC.kicker": "Sport S&C",
     "w.home.cockpit.tease.sportSC.blurb": "The strength & conditioning that transfers to your sport, ranked.",
     "w.home.cockpit.tease.velocity.kicker": "Velocity & technique",
@@ -1407,7 +1429,7 @@ export const web_home = {
     "w.home.act.empty": "Nic nie zapisano w tym okresie.",
     "w.home.act.hint": "Otwórz liczbę, żeby zobaczyć sesje za nią",
     "w.home.act.recordsTitle": "Rekordy",
-    "w.home.endw.empty": "Brak wytrzymałości w tym okresie.",
+    "w.home.endw.empty": "Nic nie zapisano",
     "w.home.endw.leadOne": "Wszystko to {s}.",
     "w.home.endw.leadMost": "{n} sportów, głównie {s}.",
     "w.home.endw.leadLed": "{n} sportów, na czele {s}.",
@@ -1464,6 +1486,9 @@ export const web_home = {
     "w.home.end.orderRecent": "Najnowsze",
     "w.home.end.orderLongest": "Najdłuższe",
     "w.home.end.scopeAll": "Cała historia",
+    "w.home.end.mDistance": "Dystans",
+    "w.home.end.mPace": "Tempo",
+    "w.home.end.mZones": "Strefy",
     "w.home.end.volumeWeek": "Objętość – ten tydzień",
     "w.home.end.paceLatest": "Tempo – ostatni tydzień",
     "w.home.end.zonesAll": "Strefy – cała historia",
@@ -1516,6 +1541,12 @@ export const web_home = {
     "feed.prCount": "{n} rekordy w tym treningu",
     "feed.e1rm": "e1RM {v}",
     "feed.firstEver": "pierwszy raz w treningu",
+    "feed.firstShort": "Pierwszy raz",
+    "session.title.lateNight": "Trening w nocy",
+    "session.title.morning": "Trening rano",
+    "session.title.afternoon": "Trening po południu",
+    "session.title.evening": "Trening wieczorem",
+    "session.title.night": "Trening nocą",
     "feed.deviceMeasured": "Zmierzone przez urządzenie zawodnika",
     "feed.match": "Powtórz",
     "feed.matchDone": "Dodano",
@@ -1545,6 +1576,7 @@ export const web_home = {
     "feed.menu.reportAuthor": "Zgłoś {h}",
     "feed.menu.reported": "Zgłoszono",
     "feed.menu.followed": "Obserwujesz",
+    "feed.menu.unfollowed": "Przestano obserwować",
     "feed.menu.blocked": "Zablokowano",
     "feed.menu.block": "Zablokuj {h}",
     "feed.menu.delete": "Usuń wpis",
@@ -1848,7 +1880,7 @@ export const web_home = {
     "w.home.cockpit.calibrate": "Zapisz sesję, aby skalibrować swoją trasę",
     "w.home.cockpit.perfTwin": "Stan formy",
     "w.home.cockpit.limiter": "ogranicznik",
-    "w.home.cockpit.twinEmpty": "Twoje HPI, gotowość i obciążenie tkanek budują się z prawdziwych treningów — zapisz sesję.",
+    "w.home.cockpit.twinEmpty": "Twoja świeżość, gotowość i obciążenie tkanek budują się z prawdziwych treningów — zapisz sesję.",
     "w.home.cockpit.sportSC": "Sport S&C",
     "w.home.cockpit.sport": "Sport",
     "w.home.cockpit.sportEmpty": "Wybierz swój sport — silnik ułoży ranking treningu siły i kondycji, który się przekłada.",
@@ -2029,7 +2061,7 @@ export const web_home = {
     "w.home.cockpit.tease.todayRoute.kicker": "Trasa na dziś",
     "w.home.cockpit.tease.todayRoute.blurb": "Dzienna recepta świadoma prędkości, dostrojona do Twojej gotowości.",
     "w.home.cockpit.tease.perfTwin.kicker": "Stan formy",
-    "w.home.cockpit.tease.perfTwin.blurb": "Twoje HPI, jego filary i ogranicznik — model Twojego treningu na żywo.",
+    "w.home.cockpit.tease.perfTwin.blurb": "Twoja świeżość, jej filary i ogranicznik — model Twojego treningu na żywo.",
     "w.home.cockpit.tease.sportSC.kicker": "Sport S&C",
     "w.home.cockpit.tease.sportSC.blurb": "Trening siły i kondycji, który przekłada się na Twój sport, w rankingu.",
     "w.home.cockpit.tease.velocity.kicker": "Prędkość i technika",
@@ -2487,7 +2519,7 @@ export const web_home = {
     "w.home.act.empty": "In diesem Zeitraum nichts geloggt.",
     "w.home.act.hint": "Öffne eine Zahl für die Sessions dahinter",
     "w.home.act.recordsTitle": "Rekorde",
-    "w.home.endw.empty": "Keine Ausdauer in diesem Zeitraum erfasst.",
+    "w.home.endw.empty": "Nichts erfasst",
     "w.home.endw.leadOne": "Alles davon war {s}.",
     "w.home.endw.leadMost": "{n} Sportarten, überwiegend {s}.",
     "w.home.endw.leadLed": "{n} Sportarten, angeführt von {s}.",
@@ -2544,6 +2576,9 @@ export const web_home = {
     "w.home.end.orderRecent": "Zuletzt",
     "w.home.end.orderLongest": "Längste",
     "w.home.end.scopeAll": "Gesamt",
+    "w.home.end.mDistance": "Distanz",
+    "w.home.end.mPace": "Tempo",
+    "w.home.end.mZones": "Zonen",
     "w.home.end.volumeWeek": "Umfang – diese Woche",
     "w.home.end.paceLatest": "Tempo – letzte Woche",
     "w.home.end.zonesAll": "Zonen – gesamt",
@@ -2596,6 +2631,12 @@ export const web_home = {
     "feed.prCount": "{n} Rekorde in dieser Einheit",
     "feed.e1rm": "e1RM {v}",
     "feed.firstEver": "zum ersten Mal trainiert",
+    "feed.firstShort": "Erstmals",
+    "session.title.lateNight": "Einheit spätnachts",
+    "session.title.morning": "Einheit am Morgen",
+    "session.title.afternoon": "Einheit am Nachmittag",
+    "session.title.evening": "Einheit am Abend",
+    "session.title.night": "Einheit in der Nacht",
     "feed.deviceMeasured": "Vom Gerät der Athletin oder des Athleten gemessen",
     "feed.match": "Übernehmen",
     "feed.matchDone": "Hinzugefügt",
@@ -2625,6 +2666,7 @@ export const web_home = {
     "feed.menu.reportAuthor": "{h} melden",
     "feed.menu.reported": "Gemeldet",
     "feed.menu.followed": "Folgst du",
+    "feed.menu.unfollowed": "Entfolgt",
     "feed.menu.blocked": "Blockiert",
     "feed.menu.block": "{h} blockieren",
     "feed.menu.delete": "Beitrag löschen",
@@ -2928,7 +2970,7 @@ export const web_home = {
     "w.home.cockpit.calibrate": "Protokolliere eine Einheit, um deine Route zu kalibrieren",
     "w.home.cockpit.perfTwin": "Leistungszustand",
     "w.home.cockpit.limiter": "Limiter",
-    "w.home.cockpit.twinEmpty": "Dein HPI, deine Bereitschaft und Gewebelast bauen sich aus echtem Training auf — protokolliere eine Einheit.",
+    "w.home.cockpit.twinEmpty": "Deine Frische, Bereitschaft und Gewebelast bauen sich aus echtem Training auf — protokolliere eine Einheit.",
     "w.home.cockpit.sportSC": "Sport S&C",
     "w.home.cockpit.sport": "Sport",
     "w.home.cockpit.sportEmpty": "Wähle deinen Sport — die Engine priorisiert das Kraft- & Konditionstraining, das sich überträgt.",
@@ -3109,7 +3151,7 @@ export const web_home = {
     "w.home.cockpit.tease.todayRoute.kicker": "Route von heute",
     "w.home.cockpit.tease.todayRoute.blurb": "Eine geschwindigkeitsbewusste Tagesvorgabe, abgestimmt auf deine Bereitschaft.",
     "w.home.cockpit.tease.perfTwin.kicker": "Leistungszustand",
-    "w.home.cockpit.tease.perfTwin.blurb": "Dein HPI, seine Säulen und sein Limiter — das Live-Modell deines Trainings.",
+    "w.home.cockpit.tease.perfTwin.blurb": "Deine Frische, ihre Säulen und ihr Limiter — das Live-Modell deines Trainings.",
     "w.home.cockpit.tease.sportSC.kicker": "Sport S&C",
     "w.home.cockpit.tease.sportSC.blurb": "Das Kraft- & Konditionstraining, das sich auf deinen Sport überträgt, priorisiert.",
     "w.home.cockpit.tease.velocity.kicker": "Geschwindigkeit & Technik",

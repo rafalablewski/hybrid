@@ -17,6 +17,8 @@ import {
   totalVolume,
   athleteId,
   userPagePath,
+  springs,
+  springToRN,
   type BadgeAccent,
   type LoggedSession,
   type Achievement,
@@ -664,7 +666,7 @@ function HighlightGrid({
         setDragKey(slots[di]!.key);
         getTr(slots[di]!.key).setValue({ x: g.dx, y: g.dy });
         scale.setValue(1);
-        Animated.spring(scale, { toValue: 1.06, useNativeDriver: true, friction: 6 }).start();
+        Animated.spring(scale, { toValue: 1.06, useNativeDriver: true, ...springToRN(springs.press) }).start();
       },
       onPanResponderMove: (_e, g) => {
         const d = drag.current; if (!d) return;

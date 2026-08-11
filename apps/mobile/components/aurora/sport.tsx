@@ -7,6 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, RADIUS } from "./kit";
+import { useListMotion } from "../../lib/list-motion";
 
 /**
  * AURORA Sport — the INDEX (mobile twin of apps/web/components/aurora/sport.tsx).
@@ -19,6 +20,8 @@ import { AuroraScreen, RADIUS } from "./kit";
  * have an address without 65 rows on one screen.
  */
 export default function AuroraSport() {
+  // Survivors of a filter MOVE to their new positions; only arrivals fade.
+  const refilter = useListMotion();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
@@ -82,7 +85,7 @@ export default function AuroraSport() {
 
       <TextInput
         value={query}
-        onChangeText={setQuery}
+        onChangeText={(v) => refilter(() => setQuery(v))}
         placeholder={t("w.train.sportPage.searchSports")}
         placeholderTextColor={C.ash}
         accessibilityLabel={t("w.train.sportPage.searchSports")}

@@ -2,7 +2,8 @@
 
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
-import { colors, ROLE_COLOR, type AccentKey, type SemanticRole, fs, space } from "@hybrid/core";
+import { colors, ROLE_COLOR, statSubTone, type AccentKey, type SemanticRole, fs, space } from "@hybrid/core";
+import RollingNumber from "@/components/aurora/rolling-number";
 
 // Re-export the shared scale so screens import sizing from one place:
 //   import { fs, space } from "@/lib/ui"  →  fontSize: fs.body, gap: space.lg
@@ -475,14 +476,28 @@ export function Stat({
           color: txt(c),
           lineHeight: 1.1,
           margin: "6px 0 2px",
+          display: "flex",
         }}
       >
-        {value}
+        {/* A FIGURE rolls to its new value; anything else is rendered as given.
+            `value` is a ReactNode because a few callers compose a unit or an
+            icon into it, and rolling an arbitrary tree would be nonsense — but
+            the overwhelming majority pass a formatted number, and this is the
+            one place all thirty-one stat tiles pass through. */}
+        {typeof value === "string" || typeof value === "number"
+          ? <RollingNumber value={String(value)} />
+          : value}
       </div>
       {sub && (
+        // ONLY a sign-led sub carries a tone (core `statSubTone`). This used to
+        // paint every non-negative sub in the "good" accent, which meant a sub
+        // that was not a delta got congratulated — `sub={dateStr}` rendered a
+        // DATE in chartreuse, as did "not enough data" and "ARR $1.2M". The
+        // minus-marked thresholds the admin panels rely on ("−below 40") are
+        // sign-led already, so they still read as failing.
         <Mono
           s={{ fontSize: fs.caption }}
-          c={sub.startsWith("−") || sub.startsWith("↓") ? RED : LIME}
+          c={{ down: RED, up: LIME, flat: ASH }[statSubTone(sub)]}
         >
           {sub}
         </Mono>

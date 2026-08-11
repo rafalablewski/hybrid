@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fs, space, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { Loading } from "../aurora/skeleton";
 
 type Org = { id: string; name: string; createdAt: string; teams: number; members: number };
 type Link = { id: string; status: string; createdAt: string; coach: string; client: string; notes: number };
@@ -113,7 +114,7 @@ function Td({ children, right, label }: { children: React.ReactNode; right?: boo
 }
 
 function Empty({ data, cols, label }: { data: unknown[] | null; cols: number; label: string }) {
-  if (data === null) return <tr><td colSpan={cols} style={{ ...mono, fontSize: fs.bodyLg, color: ASH, textAlign: "center", padding: 32 }}>Loading…</td></tr>;
+  if (data === null) return <tr><td colSpan={cols} style={{ padding: "8px 0" }}><Loading /></td></tr>;
   if (data.length === 0) return <tr><td colSpan={cols} style={{ ...mono, fontSize: fs.bodyLg, color: ASH, textAlign: "center", padding: 32 }}>{label}</td></tr>;
   return null;
 }

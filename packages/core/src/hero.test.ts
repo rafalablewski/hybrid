@@ -203,8 +203,8 @@ describe("the navigation button", () => {
     expect(HERO.radius.nav).toBe(999);
   });
 
-  it("changes material with what is behind it, not with which screen it is on", () => {
-    expect(heroNavMaterial("field", false)).toBe("clear");
+  it("wears glass on every ground — one control, one material", () => {
+    expect(heroNavMaterial("field", false)).toBe("glass");
     expect(heroNavMaterial("field", true)).toBe("glass");
     expect(heroNavMaterial("art", false)).toBe("glass");
     expect(heroNavMaterial("story", false)).toBe("glass");
@@ -213,6 +213,13 @@ describe("the navigation button", () => {
   it("pops on a page and dismisses on a takeover", () => {
     expect(heroNavAction("page")).toEqual({ role: "pop", glyph: "back" });
     expect(heroNavAction("takeover")).toEqual({ role: "dismiss", glyph: "chevron-down" });
+  });
+
+  it("dismisses a PRESENTED page — there is no stack under a detour", () => {
+    // A card modal wearing a back chevron points at a parent the dismiss
+    // gesture doesn't reach; the glyph has to agree with how the screen arrived.
+    expect(heroNavAction("page", true)).toEqual({ role: "dismiss", glyph: "chevron-down" });
+    expect(heroNavAction("page", false)).toEqual({ role: "pop", glyph: "back" });
   });
 });
 

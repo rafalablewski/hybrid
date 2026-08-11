@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import {
   HERO,
   HERO_INK,
@@ -21,6 +21,7 @@ import {
   heroRailPin,
   heroSnapTarget,
   heroTitleType,
+  isDetour,
   type HeroBackdrop as HeroBackdropKind,
   type HeroGeometry,
   type HeroMode,
@@ -35,7 +36,7 @@ import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
 import { AuroraField, withAlpha } from "./field";
 import { AuroraIcon } from "./icons";
-import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { GlassNavButton, LIQUID_GLASS_RENDERED } from "./swiftui";
 
 /**
  * THE HERO SYSTEM — mobile.
@@ -56,39 +57,92 @@ import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 
 /* ── HeroNav — the one navigation control, everywhere, forever ───────────── */
 
+/**
+ * Is the screen being drawn a presented DETOUR?
+ *
+ * Read from the ROUTE against the shared list in @hybrid/core rather than
+ * passed down, for the same reason the presentation itself is declared from
+ * that list in app/_layout.tsx: the two would otherwise be set in different
+ * files and drift, and a card modal wearing a back chevron is precisely the
+ * confusion the split was made to end. One list decides how the screen arrives
+ * AND how its nav button says to leave.
+ */
+function usePresented(): boolean {
+  const path = usePathname();
+  return isDetour(path.replace(/^\/+/, ""));
+}
+
 export function HeroNav({
   onPress,
   /** Names the ORIGIN, not the action: "Olympic Weightlifting", not "Back".
    *  A hero must answer "where did I come from" without animation. */
   fromLabel,
+  /** Overrides the derived name for a screen whose exit is neither a pop nor a
+   *  close. The live logger MINIMIZES — the session keeps running in the tab
+   *  bar's accessory strip — and "Close" would promise the opposite. The GLYPH
+   *  is still the system's (chevron-down, the direction the session goes), so
+   *  this changes what the button is CALLED, never what it looks like. */
+  label: labelOverride,
   mode = "page",
   material = "glass",
   onDark = true,
+  presented,
   style,
 }: {
   onPress: () => void;
   fromLabel?: string;
+  label?: string;
   mode?: HeroMode;
   material?: "clear" | "glass";
   /** Whether the button sits on a dark ground (every cover and takeover does). */
   onDark?: boolean;
+  /** The screen arrived as a presented DETOUR, so the button dismisses rather
+   *  than pops. Resolved from the route by HeroScreen — see `usePresented`. */
+  presented?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const { role, glyph } = heroNavAction(mode);
+  const routePresented = usePresented();
+  const { role, glyph } = heroNavAction(mode, presented ?? routePresented);
   const fg = onDark ? "#fff" : C.chalk;
   const glass = material === "glass";
-  // Liquid Glass where the platform has it; the white-12% + blur fallback
-  // otherwise. Same circle either way — only the material differs, and it
-  // differs with what is BEHIND the button, never with which screen it is on.
-  const native = glass && LIQUID_GLASS_SUPPORTED;
+  // `fromLabel` names the ORIGIN, and prefixing it with ← claims the button
+  // goes back there. A presented detour DISMISSES — there is no stack under it
+  // — so it announces the close instead. On the const, not at one call site,
+  // so the native glass button and the fallback circle cannot disagree.
+  const label = labelOverride ?? (fromLabel && role === "pop" ? `← ${fromLabel}` : t(role === "dismiss" ? "common.close" : "common.back"));
   const inset = (HERO.nav.hit - HERO.nav.size) / 2;
+  // Where Liquid Glass actually renders (iOS 26+), the button IS SwiftUI — a
+  // native interactive glass circle, no drawn ring, no fill, no JS press
+  // animation; the material answers the touch itself. `clear` stays the same
+  // native button with the glass stripped, so the field screens' clear↔glass
+  // cross-fade never swaps renderers mid-scroll.
+  if (LIQUID_GLASS_RENDERED) {
+    return (
+      <View style={[{ marginLeft: -inset }, style]}>
+        <GlassNavButton
+          onPress={onPress}
+          label={label}
+          glyph={glyph === "chevron-down" ? "chevron.down" : "arrow.left"}
+          material={material}
+          size={HERO.nav.size}
+          hit={HERO.nav.hit}
+          glyphSize={HERO.nav.glyph}
+          fg={fg}
+        />
+      </View>
+    );
+  }
+  // The fallback circle — Android, web-parity styling, iOS < 26 (where the
+  // native module exists but the material doesn't render): white-12% + blur,
+  // hairline ring, same geometry. It differs with what is BEHIND the button,
+  // never with which screen it is on.
   return (
     <PressScale
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={fromLabel ? `← ${fromLabel}` : t(role === "dismiss" ? "common.close" : "common.back")}
+      accessibilityLabel={label}
       hitSlop={8}
       style={[{ width: HERO.nav.hit, height: HERO.nav.hit, alignItems: "center", justifyContent: "center", marginLeft: -inset }, style]}
     >
@@ -100,13 +154,12 @@ export function HeroNav({
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
-          backgroundColor: glass && !native ? withAlpha(onDark ? "#ffffff" : C.ink2, HERO.alpha.navFill) : "transparent",
+          backgroundColor: glass ? withAlpha(onDark ? "#ffffff" : C.ink2, HERO.alpha.navFill) : "transparent",
           borderWidth: glass ? HERO.nav.stroke : 0,
           borderColor: withAlpha(onDark ? "#ffffff" : C.chalk, HERO.alpha.navStroke),
         }}
       >
-        {native && <GlassSurface radius={HERO.radius.nav} />}
-        {glass && !native && <BlurView intensity={22} tint={onDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />}
+        {glass && <BlurView intensity={22} tint={onDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />}
         <AuroraIcon name={glyph} size={HERO.nav.glyph} color={fg} />
       </View>
     </PressScale>
@@ -459,7 +512,12 @@ export function HeroScreen({
   const insets = useSafeAreaInsets();
   const mode = hero.mode ?? "page";
   const accent = hero.accent ?? C.lime;
-  const geom = heroGeometry(hero.rank, insets.top, mode);
+  // A PRESENTED detour is a card, not a full screen: it reports no top inset
+  // because there is no status bar over it, which would put the rail 4pt from
+  // the card's own rounded top edge. `presentedTop` is the inset it stands in
+  // with — see @hybrid/core HERO.
+  const safeTop = usePresented() ? Math.max(insets.top, HERO.presentedTop) : insets.top;
+  const geom = heroGeometry(hero.rank, safeTop, mode);
   const backdrop = heroBackdrop(hero.rank, mode, !!hero.glyph || !!hero.artPaths?.length);
   const onDark = true;
   const dark = backdrop !== "field";
@@ -662,7 +720,7 @@ export function HeroScreen({
               artOpacity={artOpacity}
               artShift={artShift}
               scrimOpacity={scrimOpacity}
-              safeTop={insets.top}
+              safeTop={safeTop}
             />
 
             {/* THE RAIL — the system's spatial constant. It counter-translates

@@ -91,25 +91,32 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
   const { prefs, recovery, measuredKeys, levelEstimate, experience, profile, resolved } = useVolumeModel(sessions);
   const lm = resolved.landmarks;
 
-  // THE DRAWER, and the sheet the provenance is dispatched to. `deep` is the
-  // one flag the expensive passes read: a Performance page that only wants the
-  // week's shape pays for the week's shape, and everything heavier is bought
-  // the moment the athlete opens the detail. Once opened the detail STAYS
-  // MOUNTED — unmounting it on close would give the collapse nothing to
-  // collapse, and the passes are already paid for.
+  // THE DRAWER, and the sheet the provenance is dispatched to. Once opened the
+  // detail STAYS MOUNTED — unmounting it on close would give the collapse
+  // nothing to collapse, and the passes are already paid for.
   const [drawer, setDrawer] = useState(false);
   const [everOpen, setEverOpen] = useState(false);
   const [source, setSource] = useState(false);
-  const deep = !compact || everOpen;
+  // Has the provenance sheet ever been opened? The replay below is bought on
+  // that tap and kept — the sheet's content has to survive its own closing
+  // animation, exactly as `everOpen` keeps the drawer's.
+  const [everSource, setEverSource] = useState(false);
+  const openSource = () => { setEverSource(true); setSource(true); };
 
   // HAS THE CEILING SETTLED? The same resolver re-run at every week of the
   // athlete's own history — a screen-level computation, deliberately memoised
   // apart from `resolved` because it costs one resolve per replayed week.
+  //
+  // NOT UNTIL THE SHEET IS OPENED. This used to be gated on the DETAIL being
+  // open, which spared the compact card on Performance and did nothing for the
+  // screen: standing alone, one landmark resolve per week of the athlete's
+  // history ran at mount to draw four rows behind a collapsed disclosure inside
+  // a sheet nobody had asked for. `replay` has exactly one reader — SourceBody,
+  // inside that sheet — so the tap that reveals it is the honest place to buy
+  // it, on the screen and in the card alike (audit/10, render cost). Mirrors web.
   const replay = useMemo(
     () =>
-      // Not until the detail is open: one landmark resolve per week of the
-      // athlete's history, for rows a closed drawer never renders.
-      prefs.adaptiveLandmarks && deep
+      prefs.adaptiveLandmarks && everSource
         ? testedMuscles(
             replayLandmarks(sessions, recovery, {
               profile,
@@ -119,7 +126,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
             }),
           )
         : [],
-    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery, deep],
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery, everSource],
   );
 
   const block = useMemo(() => resolveBlock(prefs.volumeBlock), [prefs.volumeBlock]);
@@ -137,20 +144,30 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
   );
   const summary = useMemo(() => volumeSummary(rows), [rows]);
   const ranked = useMemo(() => sortByUrgency(rows), [rows]);
-  // EIGHT-WEEK HISTORY, per muscle. This is the chart Trends used to hang off a
-  // second set of muscle chips — the same weeklyMuscleSets() engine, over the
-  // same muscles, drawn twice on two screens. It belongs on the row that names
-  // the muscle: "18 sets" and "and it has been climbing for a month" are one
+  const [open, setOpen] = useState<MuscleGroup | null>(null);
+  // WHICH MUSCLE'S EIGHT WEEKS ARE PAID FOR — the one whose row is open, held
+  // through the collapse. Only one row is open at a time, and the chart lives
+  // inside that row's drawer, so computing all seven was six passes nobody
+  // could see plus a seventh nobody had asked for (audit/10, render cost: the
+  // ×7 line). Bought on the tap that reveals it instead.
+  //
+  // HELD, for the same reason `lastZone` holds its band one scope down: reading
+  // `open` straight would empty the chart the instant the row is dismissed, and
+  // the drawer would shut on nothing. Mirrors web.
+  const charted = useRef<MuscleGroup | null>(null);
+  if (open) charted.current = open;
+  const chartFor = charted.current;
+  // EIGHT-WEEK HISTORY. This is the chart Trends used to hang off a second set
+  // of muscle chips — the same weeklyMuscleSets() engine, over the same
+  // muscles, drawn twice on two screens. It belongs on the row that names the
+  // muscle: "18 sets" and "and it has been climbing for a month" are one
   // thought, and the athlete no longer picks a muscle in two places.
   const history = useMemo(() => {
     const out = {} as Record<MuscleGroup, number[]>;
-    // Seven eight-week passes for rows a closed drawer never renders.
-    if (!deep) return out;
-    for (const r of rows) out[r.muscle] = weeklyMuscleSets(sessions, r.muscle, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
+    if (chartFor) out[chartFor] = weeklyMuscleSets(sessions, chartFor, 8, Date.now(), prefs.countWarmupsInVolume, prefs.fractionalVolume);
     return out;
-  }, [rows, sessions, deep, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
+  }, [chartFor, sessions, prefs.countWarmupsInVolume, prefs.fractionalVolume]);
 
-  const [open, setOpen] = useState<MuscleGroup | null>(null);
   const [picked, setPicked] = useState<MuscleGroup | null>(null);
   // Which landmark band is spotlighted across the list, and the row whose scale
   // was tapped (that row carries the definition, next to the finger).
@@ -202,7 +219,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
       )}
 
       {/* ── WHOSE NUMBERS THESE ARE — a door, not a seventh card ────────────── */}
-      <SourceDoor flat={flat} onOpen={() => { haptic.selection(); setSource(true); }} />
+      <SourceDoor flat={flat} onOpen={() => { haptic.selection(); openSource(); }} />
     </>
   );
 

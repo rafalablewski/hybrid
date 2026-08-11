@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 import { adminGet } from "../../lib/admin-api";
-import { fs, space, Mono, Kicker, Loading } from "../../lib/ui";
+import { fs, space, Mono, Kicker, LoadSwap } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Stat, ErrorNote } from "./_kit";
 import { ACard, cardStack, AMeter } from "../aurora/kit";
@@ -37,100 +37,105 @@ export default function AdminOverview() {
   }, []);
 
   if (err) return <ErrorNote error="Failed to load platform analytics." />;
-  if (!s) return <Loading />;
-
-  const roleColor: Record<string, string> = {
-    ADMIN: palette.amber,
-    COACH: palette.violet,
-    CLIENT: palette.lime,
-  };
-
   return (
-    <View>
-      <Row2>
-        <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} color={palette.lime} />
-        <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" color={palette.lime} />
-      </Row2>
-      <Row2>
-        <Stat label="Sessions logged" value={s.sessions.toLocaleString()} />
-        <Stat label="Active coaches" value={s.coaches.toLocaleString()} color={palette.violet} />
-      </Row2>
-      <Row2>
-        <Stat label="Organizations" value={s.orgs.toLocaleString()} color={palette.blue} />
-        <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} color={palette.violet} />
-      </Row2>
-      <Row2>
-        <Stat label="Avg sessions / user" value={s.totalUsers ? (s.sessions / s.totalUsers).toFixed(1) : "0"} />
-        <Stat label="30d activation" value={s.totalUsers ? `${Math.round((s.mau / s.totalUsers) * 100)}%` : "0%"} color={palette.lime} />
-      </Row2>
+    <LoadSwap loading={!s}>
+      {() => {
+        if (!s) return null;
+        const roleColor: Record<string, string> = {
+          ADMIN: palette.amber,
+          COACH: palette.violet,
+          CLIENT: palette.lime,
+        };
 
-      {/* Growth — the web line chart's underlying numbers as paired bar rows. */}
-      <ACard style={cardStack}>
-        <Kicker color={palette.lime}>Growth</Kicker>
-        <Mono color={palette.ash} style={{ marginTop: 2, marginBottom: 10 }}>Last 12 weeks – signups vs sessions</Mono>
-        <View style={{ flexDirection: "row", gap: space.md, marginBottom: 8 }}>
-          <Legend color={palette.lime} label="signups" />
-          <Legend color={palette.blue} label="sessions" />
-        </View>
-        {(() => {
-          const max = Math.max(1, ...s.growth.map((g) => Math.max(g.signups, g.sessions)));
-          return s.growth.map((g) => (
-            <View key={g.week} style={{ marginBottom: 8 }}>
-              <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 3 }}>{g.week}</Mono>
-              <AMeter value={String(g.signups)} pct={((g.signups) / ((max) || 1)) * 100} color={palette.lime} />
-              <AMeter value={String(g.sessions)} pct={((g.sessions) / ((max) || 1)) * 100} color={palette.blue} />
-            </View>
-          ));
-        })()}
-      </ACard>
+        return (
+          <View>
+            <Row2>
+              <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} color={palette.lime} />
+              <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" color={palette.lime} />
+            </Row2>
+            <Row2>
+              <Stat label="Sessions logged" value={s.sessions.toLocaleString()} />
+              <Stat label="Active coaches" value={s.coaches.toLocaleString()} color={palette.violet} />
+            </Row2>
+            <Row2>
+              <Stat label="Organizations" value={s.orgs.toLocaleString()} color={palette.blue} />
+              <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} color={palette.violet} />
+            </Row2>
+            <Row2>
+              <Stat label="Avg sessions / user" value={s.totalUsers ? (s.sessions / s.totalUsers).toFixed(1) : "0"} />
+              <Stat label="30d activation" value={s.totalUsers ? `${Math.round((s.mau / s.totalUsers) * 100)}%` : "0%"} color={palette.lime} />
+            </Row2>
 
-      {s.planPopularity.length > 0 && (
-        <ACard style={cardStack}>
-          <Kicker color={palette.lime}>Plans enrolled – by goal</Kicker>
-          <View style={{ marginTop: 10 }}>
-            {(() => {
-              const max = Math.max(1, ...s.planPopularity.map((p) => p.n));
-              return s.planPopularity.map((p) => (
-                <View key={p.goal} style={{ marginBottom: 8 }}>
-                  <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                    <Mono color={palette.chalk} style={{ fontSize: fs.caption }}>{p.goal}</Mono>
-                    <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{p.n}</Mono>
+            {/* Growth — the web line chart's underlying numbers as paired bar rows. */}
+            <ACard style={cardStack}>
+              <Kicker color={palette.lime}>Growth</Kicker>
+              <Mono color={palette.ash} style={{ marginTop: 2, marginBottom: 10 }}>Last 12 weeks – signups vs sessions</Mono>
+              <View style={{ flexDirection: "row", gap: space.md, marginBottom: 8 }}>
+                <Legend color={palette.lime} label="signups" />
+                <Legend color={palette.blue} label="sessions" />
+              </View>
+              {(() => {
+                const max = Math.max(1, ...s.growth.map((g) => Math.max(g.signups, g.sessions)));
+                return s.growth.map((g) => (
+                  <View key={g.week} style={{ marginBottom: 8 }}>
+                    <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 3 }}>{g.week}</Mono>
+                    <AMeter value={String(g.signups)} pct={((g.signups) / ((max) || 1)) * 100} color={palette.lime} />
+                    <AMeter value={String(g.sessions)} pct={((g.sessions) / ((max) || 1)) * 100} color={palette.blue} />
                   </View>
-                  <AMeter value={String(p.n)} pct={((p.n) / ((max) || 1)) * 100} color={palette.lime} />
-                </View>
-              ));
-            })()}
-          </View>
-        </ACard>
-      )}
+                ));
+              })()}
+            </ACard>
 
-      <Row2>
-        <ACard style={[cardStack, { flex: 1 }]}>
-          <Kicker color={palette.amber}>Roles – user base</Kicker>
-          <View style={{ marginTop: 8 }}>
-            {s.roleSplit.length === 0 && <Mono style={{ fontSize: fs.body }}>No users yet.</Mono>}
-            {s.roleSplit.map((r) => (
-              <View key={r.role} style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-                <Mono color={roleColor[r.role] ?? palette.chalk} style={{ fontSize: fs.body }}>{r.role}</Mono>
-                <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{r.n}</Mono>
-              </View>
-            ))}
+            {s.planPopularity.length > 0 && (
+              <ACard style={cardStack}>
+                <Kicker color={palette.lime}>Plans enrolled – by goal</Kicker>
+                <View style={{ marginTop: 10 }}>
+                  {(() => {
+                    const max = Math.max(1, ...s.planPopularity.map((p) => p.n));
+                    return s.planPopularity.map((p) => (
+                      <View key={p.goal} style={{ marginBottom: 8 }}>
+                        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                          <Mono color={palette.chalk} style={{ fontSize: fs.caption }}>{p.goal}</Mono>
+                          <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{p.n}</Mono>
+                        </View>
+                        <AMeter value={String(p.n)} pct={((p.n) / ((max) || 1)) * 100} color={palette.lime} />
+                      </View>
+                    ));
+                  })()}
+                </View>
+              </ACard>
+            )}
+
+            <Row2>
+              <ACard style={[cardStack, { flex: 1 }]}>
+                <Kicker color={palette.amber}>Roles – user base</Kicker>
+                <View style={{ marginTop: 8 }}>
+                  {s.roleSplit.length === 0 && <Mono style={{ fontSize: fs.body }}>No users yet.</Mono>}
+                  {s.roleSplit.map((r) => (
+                    <View key={r.role} style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                      <Mono color={roleColor[r.role] ?? palette.chalk} style={{ fontSize: fs.body }}>{r.role}</Mono>
+                      <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{r.n}</Mono>
+                    </View>
+                  ))}
+                </View>
+              </ACard>
+              <ACard style={[cardStack, { flex: 1 }]}>
+                <Kicker color={palette.blue}>Languages – by locale</Kicker>
+                <View style={{ marginTop: 8 }}>
+                  {s.langSplit.length === 0 && <Mono style={{ fontSize: fs.body }}>—</Mono>}
+                  {s.langSplit.map((l) => (
+                    <View key={l.lang} style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
+                      <Mono color={palette.chalk} style={{ fontSize: fs.body }}>{l.lang.toUpperCase()}</Mono>
+                      <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{l.n}</Mono>
+                    </View>
+                  ))}
+                </View>
+              </ACard>
+            </Row2>
           </View>
-        </ACard>
-        <ACard style={[cardStack, { flex: 1 }]}>
-          <Kicker color={palette.blue}>Languages – by locale</Kicker>
-          <View style={{ marginTop: 8 }}>
-            {s.langSplit.length === 0 && <Mono style={{ fontSize: fs.body }}>—</Mono>}
-            {s.langSplit.map((l) => (
-              <View key={l.lang} style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 6 }}>
-                <Mono color={palette.chalk} style={{ fontSize: fs.body }}>{l.lang.toUpperCase()}</Mono>
-                <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{l.n}</Mono>
-              </View>
-            ))}
-          </View>
-        </ACard>
-      </Row2>
-    </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 

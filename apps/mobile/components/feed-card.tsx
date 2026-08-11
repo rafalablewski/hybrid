@@ -1,18 +1,22 @@
-import { useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { View, Text, type TextStyle } from "react-native";
-import Svg, { Circle, Path, Rect } from "react-native-svg";
+import Svg, { Path, Rect } from "react-native-svg";
 import {
-  FEED_STAT_LABEL_KEY,
-  feedDeltaText,
+  FEED_ROW_PAD,
   feedFigureText,
-  cardPrLines,
+  cardLead,
+  cardQualifier,
+  cardRecords,
   cardSetLines,
+  feedHeadlineEarnsLead,
   feedHeadlineText,
   feedSharePayload,
-  feedStatText,
+  feedStatParts,
   feedSubjectKey,
   feedTierChip,
   isFeedSaved,
+  type CardLead,
+  type CardRecords,
   type FeedDetail,
   type FeedItemView,
   type FeedStat,
@@ -26,7 +30,7 @@ import { useLang } from "../lib/i18n";
 import { runShare, toggleSavedPost, useFeedSaved } from "../lib/feed-actions";
 import { Avatar } from "./social-kit";
 import { GUTTER, RADIUS } from "./aurora/kit";
-import FeedMenu, { feedMenuFor, type FeedMenuAnchor } from "./feed-menu";
+import { FeedContextMenu, FeedMenuTrigger } from "./feed-menu";
 
 /**
  * THE FEED ROW (mobile) — twin of apps/web/components/feed-card.tsx. Both
@@ -103,18 +107,6 @@ function ShareOut({ color }: { color: string }) {
   );
 }
 
-/** The overflow ⋯. Filled dots, not stroked rings, which at this size read as
- *  three tiny doughnuts. */
-function More({ color }: { color: string }) {
-  return (
-    <Svg width={17} height={17} viewBox="0 0 16 16">
-      <Circle cx={3.2} cy={8} r={1.35} fill={color} />
-      <Circle cx={8} cy={8} r={1.35} fill={color} />
-      <Circle cx={12.8} cy={8} r={1.35} fill={color} />
-    </Svg>
-  );
-}
-
 /** A mono uppercase chip. `tone` is a brand accent constant; undefined = ash. */
 export function Chip({ children, tone }: { children: ReactNode; tone?: string }) {
   const C = useTheme().palette;
@@ -130,22 +122,71 @@ export function Chip({ children, tone }: { children: ReactNode; tone?: string })
   );
 }
 
-function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
+/**
+ * THE FOOTER — the session's aggregates, and the card's provenance.
+ *
+ * It used to be three equal columns, each stacking a value over an uppercase
+ * label: a data TABLE, arguing with the content above it for the same
+ * attention, and giving tonnage no unit at all. A session's aggregates are a
+ * footnote to the record, so they read as one quiet line.
+ *
+ * NO SEPARATOR CHARACTER. The house rule prefers real layout to a joined
+ * string, and here it is available: the figure is chalk and its unit is ash, so
+ * a gap alone divides "50 MIN" from "5,360 KG" without a dash between them.
+ *
+ * The HR figure is no longer drawn in teal. On a card whose one accent is
+ * already spent on the improvement, a single coloured number in the footer is
+ * the only colour left and reads as emphasis it hasn't earned — the opened post
+ * keeps the channel, where the figure has room to mean something.
+ *
+ * The TIER CHIP lives here now rather than on a record line: provenance
+ * qualifies the whole post, not one lift inside it. So the footer draws
+ * whenever there are stats OR a tier — a shared PR post has no aggregates and
+ * must still be able to say how the claim was corroborated.
+ */
+function FooterLine({ stats, tier, units }: { stats: FeedStat[]; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+  const C = useTheme().palette;
+  const { t, lang } = useLang();
+  const chip = feedTierChip(tier);
+  if (!stats.length && !chip) return null;
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 12, rowGap: 6, borderTopWidth: 1, borderTopColor: C.line, marginTop: 10, paddingTop: 9 }}>
+      {stats.map((s) => {
+        const p = feedStatParts(s, units, lang);
+        return (
+          <View key={s.key} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            {p.device ? <WatchGlyph color={C.ash} /> : null}
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", color: C.chalk }}>
+              {p.value}
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "400", letterSpacing: tracking.caps, color: C.ash }}>
+                {` ${(p.unit ?? t(p.unitKey!)).toUpperCase()}`}
+              </Text>
+            </Text>
+          </View>
+        );
+      })}
+      {chip ? (
+        // ASH, not the accent. The accent is the "go" colour and it is spent on
+        // the improvement; provenance is a fact about the claim, not a score.
+        <View style={{ marginLeft: "auto" }}>
+          <Chip>{`${chip.short} ${t(chip.labelKey)}`}</Chip>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+/** ZONE C's one qualifier — a delta in the accent or a short ash FIRST, never
+ *  both and never two slots. Core decides which (`cardQualifier`). */
+function Qualifier({ of }: { of: { deltaPct?: number; firstEver?: boolean } }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  if (!stats.length) return null;
+  const q = cardQualifier(of);
+  if (!q) return null;
   return (
-    <View style={{ flexDirection: "row", borderTopWidth: 1, borderTopColor: C.line, marginTop: 8, paddingTop: 8 }}>
-      {stats.map((s) => (
-        <View key={s.key} style={{ flex: 1, minWidth: 0 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            {s.device ? <WatchGlyph color={C.ash} /> : null}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "600", color: s.key === "hr" ? txt(C, colors.blue) : C.chalk }}>{feedStatText(s, units)}</Text>
-          </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash, marginTop: 2 }}>{t(FEED_STAT_LABEL_KEY[s.key]).toUpperCase()}</Text>
-        </View>
-      ))}
-    </View>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", letterSpacing: q.kind === "first" ? tracking.caps : undefined, color: q.kind === "delta" ? txt(C, colors.lime) : C.ash }}>
+      {q.kind === "delta" ? q.text : t(q.labelKey).toUpperCase()}
+    </Text>
   );
 }
 
@@ -154,18 +195,24 @@ function StatRow({ stats, units }: { stats: FeedStat[]; units: WeightUnit }) {
  *
  * A record used to be a card of its own that named the heaviest lift and
  * reduced the others to "3 PRs this session". They are lines on the workout
- * now: the first two carry their own figure and their delta, and anything past
- * that is a count that opens (the post has all of them). The tier chip sits on
- * the LOUDEST line, because provenance belongs to the claim.
+ * now — and the LOUDEST of them has since been promoted again, out of this list
+ * and up into the hero figure (core `cardRecords`). What is left here is the
+ * runner-up, and past that a count that opens (the post has all of them).
+ *
+ * THREE TREATMENTS ON THE LINE, not six: the lift, its figure, and ONE
+ * qualifier at the far edge. The tier chip left for the footer (provenance
+ * belongs to the post, not to one lift in it) and "first time trained" — a
+ * lowercase sentence doing a badge's job — collapsed into the same slot as the
+ * delta, which it can never collide with.
  */
-function PrLines({ prs, tier, units }: { prs: NonNullable<FeedDetail["prs"]>; tier?: FeedDetail["tier"]; units: WeightUnit }) {
+function PrLines({ records, units }: { records: CardRecords; units: WeightUnit }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const chip = feedTierChip(tier);
-  const shown = cardPrLines(prs);
-  const rest = prs.length - shown.length;
+  const shown = records.lines;
+  const rest = records.rest;
+  const total = records.shown.length + rest;
   return (
-    <View style={{ marginTop: 6 }}>
+    <View style={{ marginTop: 8 }}>
       {shown.map((pr, i) => {
         const fig = feedFigureText(pr.topLoadKg, units);
         return (
@@ -175,17 +222,11 @@ function PrLines({ prs, tier, units }: { prs: NonNullable<FeedDetail["prs"]>; ti
               {fig.value}
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{` ${fig.unit}`}</Text>
             </Text>
-            {pr.deltaPct != null ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, colors.lime) }}>{feedDeltaText(pr.deltaPct)}</Text> : null}
-            {pr.firstEver ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("feed.firstEver")}</Text> : null}
-            {i === 0 && chip ? (
-              <View style={{ marginLeft: "auto" }}>
-                <Chip tone={colors.lime}>{`${chip.short} ${t(chip.labelKey)}`}</Chip>
-              </View>
-            ) : null}
+            <View style={{ marginLeft: "auto" }}><Qualifier of={pr} /></View>
           </View>
         );
       })}
-      {rest > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("feed.prCount").replace("{n}", String(prs.length))}</Text> : null}
+      {rest > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("feed.prCount").replace("{n}", String(total))}</Text> : null}
     </View>
   );
 }
@@ -214,38 +255,45 @@ function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units
   );
 }
 
-function Figure({ detail, units }: { detail: FeedDetail; units: WeightUnit }) {
+/**
+ * ZONE C — THE ONE BIG NUMBER. Core decides whether a card gets one and where
+ * it comes from (`cardLead`); this only draws it. A record-setting SESSION now
+ * reaches this treatment, which it never could while the gate read
+ * `archetype === "stat"` — see the note on `cardLead`.
+ */
+function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
   const C = useTheme().palette;
   const { t } = useLang();
-  const tier = feedTierChip(detail.tier);
-  const fig = detail.figureKg != null && detail.figureKg > 0 ? feedFigureText(detail.figureKg, units) : null;
-  const e1 = detail.e1rmKg != null ? feedFigureText(detail.e1rmKg, units) : null;
-  const deltaLine = [
-    e1 ? t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`) : null,
-    detail.deltaPct != null ? feedDeltaText(detail.deltaPct) : null,
-  ].filter(Boolean).join(" ");
+  const fig = lead.figureKg != null && lead.figureKg > 0 ? feedFigureText(lead.figureKg, units) : null;
+  const e1 = lead.e1rmKg != null ? feedFigureText(lead.e1rmKg, units) : null;
   return (
     <>
-      {fig || tier ? (
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-          {fig ? (
-            <>
-              <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: tracking.display, color: C.chalk }}>{fig.value}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: C.ash }}>{fig.unit}</Text>
-            </>
-          ) : null}
-          {/* Provenance sits on the FIGURE's line, never beside the name. */}
-          {tier ? (
-            <View style={{ marginLeft: "auto" }}>
-              <Chip tone={colors.lime}>{`${tier.short} ${t(tier.labelKey)}`}</Chip>
-            </View>
-          ) : null}
+      {/* THE LIFT, as the figure's own label. On a session the headline no
+          longer names anything (feedHeadlineEarnsLead), so without this the
+          card would open on a bare "210" with nothing saying what was lifted.
+          A shared-PR post's headline already says it and passes label: null —
+          the same lift twice in one card is the noise this whole pass removes. */}
+      {lead.label ? (
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash, marginTop: 9 }}>
+          {lead.label.toUpperCase()}
+        </Text>
+      ) : null}
+      {fig ? (
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4 }}>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: tracking.display, color: C.chalk }}>{fig.value}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: C.ash }}>{fig.unit}</Text>
+          {/* THE ONE QUALIFIER, at the far edge of the figure's own line. The
+              tier chip used to hold this slot and has gone to the footer:
+              provenance qualifies the post, an improvement qualifies THIS
+              number. */}
+          <View style={{ marginLeft: "auto" }}><Qualifier of={lead} /></View>
         </View>
       ) : null}
-      {deltaLine || detail.firstEver ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: detail.deltaPct != null ? txt(C, colors.lime) : C.ash, marginTop: 4 }}>
-          {deltaLine}
-          {detail.firstEver ? <Text style={{ color: C.ash }}>{deltaLine ? " — " : ""}{t("feed.firstEver")}</Text> : null}
+      {/* The honest second number, and only that — the delta left for the slot
+          above rather than sharing this line with an estimate. */}
+      {e1 ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
+          {t("feed.e1rm").replace("{v}", `${e1.value} ${e1.unit}`)}
         </Text>
       ) : null}
     </>
@@ -293,19 +341,25 @@ export function FeedActions({
   // so the glyph fills on the press frame (lib/feed-actions.ts).
   const saved = isFeedSaved(useFeedSaved(), feedSubjectKey(item));
   return (
+  // FOUR GLYPHS, ONE VISUAL CLASS. Kudos and comment used to wear their names
+  // while save and share stood bare, so the row read as two labelled buttons
+  // plus two unexplained marks. The words are gone and a COUNT takes their
+  // place — but only when there is one, because "0" beside a bolt is worse than
+  // silence. The labels themselves move to the accessibility layer, where they
+  // were missing entirely: the visible text had been doing that job.
   <View style={{ flexDirection: "row", alignItems: "center", gap: 18, marginTop: 10 }}>
-    <Pressable onPress={onKudos}>
+    <Pressable onPress={onKudos} hitSlop={8} accessibilityRole="button" accessibilityState={{ selected: item.kudosedByMe }} accessibilityLabel={t("feed.kudos")}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <Bolt color={item.kudosedByMe ? txt(C, colors.lime) : C.ash} filled={item.kudosedByMe} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: item.kudosedByMe ? txt(C, colors.lime) : C.ash }}>
-          {item.kudos > 0 ? String(item.kudos) : t("feed.kudos")}
-        </Text>
+        {item.kudos > 0 ? (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: item.kudosedByMe ? txt(C, colors.lime) : C.ash }}>{item.kudos}</Text>
+        ) : null}
       </View>
     </Pressable>
-    <Pressable onPress={onComments}>
+    <Pressable onPress={onComments} hitSlop={8} accessibilityRole="button" accessibilityLabel={t("w.social.comment")}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
         <Bubble color={C.ash} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{item.comments > 0 ? String(item.comments) : t("w.social.comment")}</Text>
+        {item.comments > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{item.comments}</Text> : null}
       </View>
     </Pressable>
 
@@ -352,27 +406,26 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const d = item.detail;
   const moment = d?.moment ?? "p2";
 
-  // The overflow menu (zone A, right). The two PRIVATE verbs live in
-  // FeedActions, which the post screen renders too.
-  const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: !!onDelete });
-  // The menu is a card anchored to the ⋯, and it renders in its own native
-  // window (a Modal) because a card drawn inline would be clipped by the
-  // FlatList — so the glyph's WINDOW rect has to be measured and handed over.
-  // `menu` holds that rect; null is closed.
-  const moreRef = useRef<View>(null);
-  const [menu, setMenu] = useState<FeedMenuAnchor | null>(null);
-  const openMenu = () => {
-    moreRef.current?.measureInWindow((x, y, w, h) => setMenu({ x, y, w, h }));
-  };
-
+  // The headline is still COMPOSED for every card — the share payload and the
+  // opened post both need it. What changed is whether ZONE B draws it: core
+  // answers that (feedHeadlineEarnsLead), so an auto "Afternoon workout" stops
+  // being the largest type on twenty consecutive rows.
   const headline = feedHeadlineText(item, t);
-  const setLines = cardSetLines(d?.sets, cardPrLines(d?.prs));
+  const leadsWithHeadline = feedHeadlineEarnsLead(item);
+  const lead = cardLead(d);
+  const records = cardRecords(d);
+  const setLines = cardSetLines(d?.sets, records.shown);
 
   // The app's TITLE face (the twin of web's --font-heading): Archivo. A post's
   // headline is a heading, so it draws in the same face as every other heading
   // in the product.
+  //
+  // ONE loud thing per card. A p0 that carries a hero figure sets its headline
+  // at the ordinary title rung: the number is the moment, and a display-weight
+  // heading above a 46pt figure is two heroes arguing. A p0 with no figure —
+  // some future archetype that leads with words — still gets the big rung.
   const headlineStyle: TextStyle =
-    moment === "p0"
+    moment === "p0" && !lead
       ? { fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking.display }
       : { fontFamily: F.bold, fontSize: fs.title, lineHeight: leading(fs.title, "snug") };
 
@@ -383,8 +436,18 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const reason = item.reason ? t(item.reason.key) : null;
   const handle = item.author.handle ? `@${item.author.handle}` : null;
 
-  return (
-    <View style={{ marginHorizontal: -GUTTER, paddingHorizontal: GUTTER, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
+  // The row's body, separated from its full-bleed frame so the long-press
+  // context menu can wrap CONTENT of the row's true width: the frame keeps the
+  // negative margin and the divider (a preview snapshot should not carry the
+  // stream's hairline), the body keeps the gutter padding.
+  //
+  // The VERTICAL pad is a function of the row's MOMENT (core FEED_ROW_PAD): a
+  // p0 opens up, a p2 tightens, and the difference between them is the ranking
+  // expressed as rhythm rather than as order. It belongs to the BODY rather
+  // than the frame, so the lifted preview carries the same rhythm as the row it
+  // was lifted from. Both clients read the same map.
+  const body = (
+    <View style={{ paddingHorizontal: GUTTER, paddingVertical: FEED_ROW_PAD[moment] }}>
       {/* "Why you're seeing this" — a kicker over the row, because it is the
           feed explaining ITSELF, not a fact about the athlete. */}
       {reason ? (
@@ -416,21 +479,23 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
             </Text>
           ) : null}
         </View>
-        {/* ZONE A, right — the overflow menu. This corner used to hold a bare ×
+        {/* ZONE A, right — the overflow menu (trigger + menu in one, the
+            system's glass menu on iOS 26). This corner used to hold a bare ×
             on your own posts: an unlabelled destructive control, and nothing at
             all on everyone else's, so the stream had no answer to "I don't want
             to see this". Delete now lives INSIDE the menu, labelled and
-            explained. Drawn only when the menu would have rows (core decides —
-            my own session/PR row has nothing to offer). */}
-        {menuRows.length > 0 ? (
-          // collapsable={false} keeps this View in the native tree — RN prunes
-          // layout-only Views on Android, and a pruned view cannot be measured.
-          <View ref={moreRef} collapsable={false}>
-            <Pressable onPress={openMenu} hitSlop={10} accessibilityRole="button" accessibilityLabel={t("feed.menu.title")}>
-              <More color={C.ash} />
-            </Pressable>
-          </View>
-        ) : null}
+            explained. Renders nothing when the menu would have no rows (core
+            decides — my own session/PR row has nothing to offer). */}
+        <FeedMenuTrigger
+          handle={item.author.handle}
+          authorId={item.author.id}
+          mine={item.mine}
+          subjectType={item.subjectType}
+          subjectId={item.subjectId}
+          relation={item.relation}
+          onDelete={onDelete}
+          onAuthorChanged={onAuthorChanged}
+        />
       </View>
 
       {/* ZONES B–E are ONE target: the post opens to the whole workout behind
@@ -438,16 +503,24 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
           below stays outside it, so a kudos is never an accidental open.
           noScale — a timeline row is not a button that should shrink. */}
       <Zones onPress={onOpen}>
-        {/* ZONE B — headline */}
-        {headline ? <Text style={{ ...headlineStyle, color: C.chalk, marginTop: 8 }}>{headline}</Text> : null}
+        {/* ZONE B — the headline, drawn only when it earns the card's loudest
+            line. A title the CLOCK wrote is not a headline (core decides). */}
+        {leadsWithHeadline && headline ? <Text style={{ ...headlineStyle, color: C.chalk, marginTop: 8 }}>{headline}</Text> : null}
 
-        {/* ZONE C — figures */}
-        {d?.archetype === "stat" ? <Figure detail={d} units={units} /> : null}
-        {d?.prs && d.prs.length > 0 ? <PrLines prs={d.prs} tier={d.tier} units={units} /> : null}
+        {/* ZONE C — figures. The hero first: a shared PR's own number, or the
+            loudest record a session set. */}
+        {lead ? <Figure lead={lead} units={units} /> : null}
+        {/* …then the runner-up records, without the one the hero took. The tier
+            chip goes with whichever of the two is drawing the loudest claim. */}
+        {records.lines.length > 0 || records.rest > 0 ? (
+          <PrLines records={records} units={units} />
+        ) : null}
         {/* The lifts the records above already named are dropped from the top
             sets — the same lift twice in one card is noise (core cardSetLines). */}
         {setLines.length > 0 ? <TopSets sets={setLines} units={units} /> : null}
-        {d?.stats && d.stats.length > 0 ? <StatRow stats={d.stats} units={units} /> : null}
+        {/* The footer draws for a tier alone, so a shared PR post with no
+            aggregates can still say how its claim was corroborated. */}
+        <FooterLine stats={d?.stats ?? []} tier={d?.tier} units={units} />
 
         {/* ZONE E — words */}
         {/* RN has no inherited font: a Text with no fontFamily draws in the
@@ -466,10 +539,17 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
       <FeedActions item={item} headline={headline || item.title} onKudos={onKudos} onComments={onComments} />
 
       {children}
+    </View>
+  );
 
-      <FeedMenu
-        anchor={menu}
-        onClose={() => setMenu(null)}
+  return (
+    <View style={{ marginHorizontal: -GUTTER, borderBottomWidth: 1, borderBottomColor: C.line }}>
+      {/* LONG-PRESS PREVIEW (the context-menu-previews trial, feed card only):
+          hold the row and it lifts off the receding screen with the same menu
+          the ⋯ opens riding under it — the system's ContextMenu on iOS 26,
+          plain content everywhere else. The ⋯ stays the accessible door on
+          every platform; this is additive. */}
+      <FeedContextMenu
         handle={item.author.handle}
         authorId={item.author.id}
         mine={item.mine}
@@ -478,7 +558,9 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
         relation={item.relation}
         onDelete={onDelete}
         onAuthorChanged={onAuthorChanged}
-      />
+      >
+        {body}
+      </FeedContextMenu>
     </View>
   );
 }

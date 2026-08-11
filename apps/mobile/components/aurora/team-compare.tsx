@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView, ActivityIndicator } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import { fetchTeamCompare, type TeamCompareResponse, type TeamCompareAthlete } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, Loading } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, Loading, LoadSwap } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
@@ -60,83 +60,85 @@ export default function AuroraTeamCompare() {
   );
   const max = Math.max(...ranked.map((a) => a[metric] as number), 1);
 
-  const body = () => {
-    if (loading) {
-      return (
-        <Loading />
-      );
-    }
-    if (athletes.length === 0) {
-      return (
-        <ACard style={{ marginTop: space.md }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.compare.emptyTitle")}</Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.compare.emptyBody")}</Text>
-        </ACard>
-      );
-    }
-    return (
-      <>
-        {/* lift selector — a rail, so a long lift list never wraps into a wall */}
-        <Text style={kicker(C)}>{t("w.teams.compare.exercise")}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
-          {lifts.map((l) => (
-            <AChip key={l} label={l} selected={lift === l} accent={txt(C, C.lime)} onPress={() => setLift(l)} />
-          ))}
-        </ScrollView>
+  // The placeholder hands over to whatever lands — the empty state or the
+  // real thing. `body` was already a function, which is exactly the shape
+  // LoadSwap's lazy children want, so nothing here had to move.
+  const body = () => (
+    <LoadSwap loading={loading}>
+      {() => {
+        if (athletes.length === 0) {
+          return (
+            <ACard style={{ marginTop: space.md }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.compare.emptyTitle")}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8, lineHeight: leading(fs.body) }}>{t("w.teams.compare.emptyBody")}</Text>
+            </ACard>
+          );
+        }
+        return (
+          <>
+            {/* lift selector — a rail, so a long lift list never wraps into a wall */}
+            <Text style={kicker(C)}>{t("w.teams.compare.exercise")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
+              {lifts.map((l) => (
+                <AChip key={l} label={l} selected={lift === l} accent={txt(C, C.lime)} onPress={() => setLift(l)} />
+              ))}
+            </ScrollView>
 
-        <Text style={[kicker(C), { marginTop: space.md }]}>{t("w.teams.compare.metric")}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
-          {METRICS.map((m) => (
-            <AChip
-              key={m.key}
-              label={t(m.label)}
-              selected={metric === m.key}
-              accent={txt(C, (C[m.color as keyof Palette] as string) ?? C.chalk)}
-              onPress={() => setMetric(m.key)}
-            />
-          ))}
-        </ScrollView>
+            <Text style={[kicker(C), { marginTop: space.md }]}>{t("w.teams.compare.metric")}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: space.xs, paddingRight: space.md }}>
+              {METRICS.map((m) => (
+                <AChip
+                  key={m.key}
+                  label={t(m.label)}
+                  selected={metric === m.key}
+                  accent={txt(C, (C[m.color as keyof Palette] as string) ?? C.chalk)}
+                  onPress={() => setMetric(m.key)}
+                />
+              ))}
+            </ScrollView>
 
-        {/* ranked comparison on the chosen metric */}
-        <ACard style={{ marginTop: space.md }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: accent }}>{t("w.teams.compare.teamComparison")}</Text>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 2 }}>{data?.lift ?? lift}</Text>
-          {ranked.map((a) => {
-            const v = a[metric] as number;
-            return (
-              <View key={a.linkId} style={{ marginTop: 12 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.ms }}>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{v || "—"}{v && meta.unit ? ` ${meta.unit}` : ""}</Text>
+            {/* ranked comparison on the chosen metric */}
+            <ACard style={{ marginTop: space.md }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: accent }}>{t("w.teams.compare.teamComparison")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 2 }}>{data?.lift ?? lift}</Text>
+              {ranked.map((a) => {
+                const v = a[metric] as number;
+                return (
+                  <View key={a.linkId} style={{ marginTop: 12 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.ms }}>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{v || "—"}{v && meta.unit ? ` ${meta.unit}` : ""}</Text>
+                    </View>
+                    <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden", marginTop: 6 }}>
+                      <View style={{ width: `${Math.max(2, Math.round((v / max) * 100))}%`, height: "100%", backgroundColor: accent }} />
+                    </View>
+                  </View>
+                );
+              })}
+            </ACard>
+
+            {/* per-athlete detail — the web table's columns, stacked to fit a phone */}
+            <ACard style={{ marginTop: space.md }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.compare.thAthlete")}</Text>
+              {ranked.map((a, i) => (
+                <View key={a.linkId} style={{ paddingTop: 12, marginTop: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>
+                    <Cell C={C} label="e1RM" value={a.e1rm ? `${a.e1rm} kg` : "—"} />
+                    <Cell C={C} label={t("w.teams.compare.thVel1rm")} value={a.estVel1rm ? `${a.estVel1rm} kg` : "—"} />
+                    <Cell C={C} label={t("w.teams.compare.thBarSpeed")} value={a.bestVel ? `${a.bestVel} m/s` : "—"} />
+                    <Cell C={C} label={t("w.teams.compare.thVolume")} value={`${a.volume.toLocaleString()} kg`} />
+                    <Cell C={C} label={t("w.teams.compare.thReps")} value={String(a.reps)} />
+                    <Cell C={C} label={t("w.teams.compare.thSessions")} value={String(a.sessions)} />
+                  </View>
                 </View>
-                <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink, overflow: "hidden", marginTop: 6 }}>
-                  <View style={{ width: `${Math.max(2, Math.round((v / max) * 100))}%`, height: "100%", backgroundColor: accent }} />
-                </View>
-              </View>
-            );
-          })}
-        </ACard>
-
-        {/* per-athlete detail — the web table's columns, stacked to fit a phone */}
-        <ACard style={{ marginTop: space.md }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.teams.compare.thAthlete")}</Text>
-          {ranked.map((a, i) => (
-            <View key={a.linkId} style={{ paddingTop: 12, marginTop: 12, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{a.name}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 8 }}>
-                <Cell C={C} label="e1RM" value={a.e1rm ? `${a.e1rm} kg` : "—"} />
-                <Cell C={C} label={t("w.teams.compare.thVel1rm")} value={a.estVel1rm ? `${a.estVel1rm} kg` : "—"} />
-                <Cell C={C} label={t("w.teams.compare.thBarSpeed")} value={a.bestVel ? `${a.bestVel} m/s` : "—"} />
-                <Cell C={C} label={t("w.teams.compare.thVolume")} value={`${a.volume.toLocaleString()} kg`} />
-                <Cell C={C} label={t("w.teams.compare.thReps")} value={String(a.reps)} />
-                <Cell C={C} label={t("w.teams.compare.thSessions")} value={String(a.sessions)} />
-              </View>
-            </View>
-          ))}
-        </ACard>
-      </>
-    );
-  };
+              ))}
+            </ACard>
+          </>
+        );
+      }}
+    </LoadSwap>
+  );
 
   return (
     <AuroraScreen hero={{ rank: "title", title: t("nav.teamcompare") }}>

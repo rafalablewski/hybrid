@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { fs, space, LINE, LIME, CHALK, ASH, RED, AMBER, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { Loading } from "../aurora/skeleton";
 
 type Sys = {
   versions: { core: string; node: string; nextPublicAppVersion: string | null };
@@ -20,7 +21,7 @@ export default function AdminSystem() {
   }, []);
 
   if (err) return <Card style={{ textAlign: "center", padding: 60 }}><Mono>Failed to load system status.</Mono></Card>;
-  if (!s) return <Card style={{ textAlign: "center", padding: 60 }}><Mono>Loading…</Mono></Card>;
+  if (!s) return <Card><Loading /></Card>;
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: space.lg }}>

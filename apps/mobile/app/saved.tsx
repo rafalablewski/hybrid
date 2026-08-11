@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { View, Text, FlatList, RefreshControl } from "react-native";
 import { router } from "expo-router";
 import { FEED_SAVED_PAGE, feedPostPath, orderBySaved, seedPerson, userPagePath, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
-import { Loading, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
+import { LoadSwap, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
 import { AuroraScreen, GUTTER } from "../components/aurora/kit";
 import type { HeroScrollProps } from "../components/aurora/hero";
 import { useTheme } from "../lib/theme";
@@ -15,6 +15,7 @@ import { Empty, SButton } from "../components/social-kit";
 import { useConfirm } from "../components/aurora/confirm";
 import FeedCard from "../components/feed-card";
 import { Comments } from "../components/feed-comments";
+import { usePersonSource } from "../lib/shared-element";
 
 /**
  * SAVED — the shelf behind the feed's bookmark (mobile). Twin of
@@ -40,6 +41,8 @@ import { Comments } from "../components/feed-comments";
  * that reverses.
  */
 export default function SavedScreen() {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const C = useTheme().palette;
   const { t } = useLang();
   const { confirm } = useConfirm();
@@ -99,7 +102,7 @@ export default function SavedScreen() {
     <FeedCard
       item={item}
       units={units}
-      onOpenProfile={(h) => { if (h) { seedPerson(item.author); router.push(userPagePath(h)); } }}
+      onOpenProfile={(h) => { if (h) { armPerson(h); seedPerson(item.author); router.push(userPagePath(h)); } }}
       onKudos={() => cheer(item)}
       onComments={() => setOpen(open === item.id ? null : item.id)}
       // A saved row opens the same post screen the feed's rows open.
@@ -151,14 +154,12 @@ export default function SavedScreen() {
           ListHeaderComponent={header}
           ListFooterComponent={footer}
           ListEmptyComponent={
-            items === null ? (
-              <Loading />
-            ) : (
-              // The empty state TEACHES the gesture — this screen is reached
-              // from a glyph, and an empty shelf that doesn't say what fills it
-              // is a dead end.
-              <Empty title={t("feed.savedEmpty")} sub={t("feed.savedEmptySub")} />
-            )
+            // The empty state TEACHES the gesture — this screen is reached
+            // from a glyph, and an empty shelf that doesn't say what fills it
+            // is a dead end.
+            <LoadSwap loading={items === null}>
+              {() => <Empty title={t("feed.savedEmpty")} sub={t("feed.savedEmptySub")} />}
+            </LoadSwap>
           }
           contentContainerStyle={[scrollProps.contentContainerStyle, { paddingHorizontal: GUTTER, paddingBottom: padBottom }]}
           keyboardShouldPersistTaps="handled"

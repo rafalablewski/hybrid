@@ -1,23 +1,35 @@
-import { useId } from "react";
+import { useEffect, useId, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { Platform, View, StyleSheet } from "react-native";
 import {
+  Button,
+  ContextMenu,
+  Divider,
   GlassEffectContainer,
   HStack,
   Host,
+  Image as SwiftImage,
+  Menu,
   Namespace,
   Picker,
+  RNHostView,
   RoundedRectangle,
   Spacer,
   Text as SwiftText,
 } from "@expo/ui/swift-ui";
 import {
   Animation,
+  accessibilityLabel,
   animation,
+  buttonStyle,
+  contentShape,
+  font,
+  foregroundColor,
   frame,
   glassEffect,
   glassEffectId,
   padding,
   pickerStyle,
+  shapes,
   tag,
   tint,
 } from "@expo/ui/swift-ui/modifiers";
@@ -41,13 +53,30 @@ import { RADIUS, withAlpha } from "./kit";
  * Composition rule: a SwiftUI subtree must live entirely inside a `<Host>`, so
  * we only use SwiftUI for self-contained leaves (segment, button) and for a
  * glass BACKDROP that sits behind ordinary RN content (GlassSurface). RN
- * children are never placed inside a Host.
+ * children are never placed inside a Host — with ONE contained, watchdogged
+ * exception (`GlassContextMenu` below), which documents why it is allowed.
  */
 
 /** True only where SwiftUI exists — the kit's single gate for the native
  *  treatment. (Liquid Glass itself needs iOS 26+; on older iOS the native
  *  module degrades and the RN floor below stays visible.) */
 export const LIQUID_GLASS_SUPPORTED = Platform.OS === "ios";
+
+/** An SF Symbol name, taken from the native Image's own prop rather than from
+ *  `sf-symbols-typescript` directly — that package is @expo/ui's dependency,
+ *  not ours, and deriving the union keeps the two in step through an SDK bump
+ *  without adding a package the Expo alignment test would have to police. */
+export type SFSymbol = NonNullable<ComponentProps<typeof SwiftImage>["systemName"]>;
+
+/** Where the material actually RENDERS — Liquid Glass is an iOS 26 material,
+ *  and below 26 `glassEffect` is a no-op: only whatever RN floor sits under it
+ *  shows. Surfaces that layer glass over their own floor can ignore the
+ *  distinction; a control that hands its WHOLE rendering to SwiftUI (the nav
+ *  button) must not, or pre-26 phones would get a bare native button with no
+ *  material at all. Those callers gate on this and keep their full RN
+ *  treatment below 26. */
+export const LIQUID_GLASS_RENDERED =
+  LIQUID_GLASS_SUPPORTED && (parseInt(String(Platform.Version), 10) || 0) >= 26;
 
 /**
  * Liquid Glass surface — a native SwiftUI `glassEffect` rounded rectangle that
@@ -77,6 +106,480 @@ export function GlassSurface({ radius = RADIUS.card, tintColor }: { radius?: num
         />
       </Host>
     </View>
+  );
+}
+
+/**
+ * THE NAV BUTTON'S NATIVE FORM — a real SwiftUI `Button` wearing real Liquid
+ * Glass, interactive: the material itself answers the touch (the specular
+ * shimmer, the press bounce), which no RN scale transform over a static
+ * backdrop can do. This is a self-contained LEAF per the composition rule
+ * above — like `GlassSegment`'s Picker, the tap is handled by SwiftUI, so it
+ * mounts ONLY where the material is known to render (`LIQUID_GLASS_RENDERED`);
+ * everywhere else the caller keeps its whole RN button, glyph and all.
+ *
+ * The glyph is the platform's (an SF Symbol): a native control wears native
+ * type. `arrow.left` / `chevron.down` are the same drawings as the kit's
+ * `back` / `chevron-down` marks, so the RN fallback and the native form read
+ * as one control.
+ */
+export function GlassNavButton({
+  onPress,
+  label,
+  glyph,
+  material = "glass",
+  size,
+  hit,
+  glyphSize,
+  fg,
+}: {
+  onPress: () => void;
+  /** The full accessibility phrase ("← Olympic Weightlifting", "Back"). */
+  label: string;
+  glyph: "arrow.left" | "chevron.down";
+  /** `clear` keeps the BUTTON but strips the material (glass variant
+   *  `identity`), so the field screens' clear↔glass cross-fade changes only
+   *  the material — never the renderer, never the glyph. */
+  material?: "clear" | "glass";
+  /** The visual circle. */
+  size: number;
+  /** The hit target the circle sits centred in. */
+  hit: number;
+  glyphSize: number;
+  fg: string;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host style={{ width: hit, height: hit }}>
+      <Button onPress={onPress} modifiers={[buttonStyle("plain"), accessibilityLabel(label)]}>
+        <SwiftImage
+          systemName={glyph}
+          size={glyphSize}
+          color={fg}
+          modifiers={[
+            // Chain order is the construction: centre the glyph in the visual
+            // circle, glass THAT circle, then pad the frame out to the hit
+            // target and make the whole frame tappable.
+            frame({ width: size, height: size }),
+            glassEffect({
+              glass: { variant: material === "glass" ? "regular" : "identity", interactive: true },
+              shape: "circle",
+            }),
+            frame({ width: hit, height: hit }),
+            contentShape(shapes.circle()),
+          ]}
+        />
+      </Button>
+    </Host>
+  );
+}
+
+/**
+ * THE OVERFLOW MENU'S NATIVE FORM — a SwiftUI `Menu`: tap the glyph and the
+ * system presents its own menu, which on iOS 26 is Liquid Glass zoom-morphing
+ * out of the anchor. Another self-contained LEAF (trigger and items are one
+ * native view; selection is handled by SwiftUI, like `GlassSegment`'s Picker),
+ * so it mounts only where the material renders — the RN card fallback keeps
+ * every other platform.
+ *
+ * A system menu DISMISSES on select — it cannot hold a row open to tag it
+ * "Followed ✓" the way the RN card did — so callers report outcomes with a
+ * toast instead. Rows carry no icons: the RN card and the web twin are
+ * label-only, and the mark set must not fork by renderer.
+ */
+export function GlassMenuButton({
+  items,
+  onSelect,
+  label,
+  glyphColor,
+  size = 34,
+}: {
+  items: { key: string; label: string; destructive?: boolean }[];
+  onSelect: (key: string) => void;
+  /** The trigger's accessibility name ("Post options"). */
+  label: string;
+  glyphColor: string;
+  /** The square hit box the ⋯ sits in. */
+  size?: number;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host style={{ width: size, height: size }}>
+      <Menu
+        label={
+          <SwiftImage
+            systemName="ellipsis"
+            size={15}
+            color={glyphColor}
+            modifiers={[frame({ width: size, height: size }), contentShape(shapes.rectangle())]}
+          />
+        }
+        modifiers={[accessibilityLabel(label)]}
+      >
+        {items.map((it) => (
+          <Button key={it.key} label={it.label} role={it.destructive ? "destructive" : "default"} onPress={() => onSelect(it.key)} />
+        ))}
+      </Menu>
+    </Host>
+  );
+}
+
+/*
+ * NOT HERE, ON PURPOSE: a native form for the brand CTA pill (Log set, the
+ * primary `APill`). The goal is native SwiftUI CONTROLS, not the glass skin —
+ * and a full-width chartreuse CTA has no system counterpart: `.glassProminent`
+ * would restyle the brand's one "go" surface, not nativize a control. Filled
+ * pills stay the app's own drawing on every platform. (A `GlassPillButton`
+ * shipped briefly and was reverted on that direction — see capabilities
+ * `swiftui-kit`, device round 2.)
+ *
+ * The line moves the moment a control stops wearing brand paint, which is
+ * exactly what happened to Finish: off the chartreuse fill and onto the glass,
+ * it is a neutral control with nothing brand-shaped left in it. See
+ * `GlassSatellite` below.
+ */
+
+/**
+ * A SATELLITE — a neutral glass button that orbits a filled primary, as a
+ * circle when its glyph speaks for itself (`pause.fill`) and as a labelled
+ * capsule when it must not be guessed at.
+ *
+ * This is NOT the reverted `GlassPillButton`: that revert protected the brand's
+ * one "go" surface, and a satellite is the opposite of that surface — it is
+ * precisely the neutral control `.glass` exists for, the same call the kit
+ * already makes for the `soft` `APill`. Interactive glass matters most here,
+ * on the two controls a chalked hand hits without looking: the material itself
+ * answers the press.
+ *
+ * Construction is `GlassNavButton`'s, with the shape opened up — size the
+ * content, glass THAT shape, then make the whole frame tappable. Like every
+ * leaf in this file it mounts only where the material renders; the caller
+ * keeps its whole RN drawing everywhere else.
+ */
+export function GlassSatellite({
+  onPress,
+  label,
+  glyph,
+  word,
+  fontFamily,
+  fontSize = 15,
+  fg,
+  size = 44,
+  glyphSize = 16,
+}: {
+  onPress: () => void;
+  /** The full accessibility phrase — the only name a bare circle has. */
+  label: string;
+  /** An SF Symbol: `pause.fill`, `play.fill`, `flag.checkered`. */
+  glyph: SFSymbol;
+  /** Present → a labelled capsule. Absent → a circle. */
+  word?: string;
+  fontFamily?: string;
+  fontSize?: number;
+  fg: string;
+  /** The circle's diameter, and the capsule's height. */
+  size?: number;
+  glyphSize?: number;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  const capsule = !!word;
+  return (
+    <Host matchContents={capsule ? true : undefined} style={capsule ? undefined : { width: size, height: size }}>
+      <Button onPress={onPress} modifiers={[buttonStyle("plain"), accessibilityLabel(label)]}>
+        <HStack
+          spacing={7}
+          modifiers={[
+            // Chain order is the construction, exactly as in GlassNavButton:
+            // size the content, glass THAT shape, then make the whole frame
+            // tappable. A circle sizes both axes; a capsule sizes its height
+            // and lets the word decide the width.
+            capsule ? padding({ horizontal: 17 }) : padding({ all: 0 }),
+            capsule ? frame({ height: size }) : frame({ width: size, height: size }),
+            glassEffect({
+              glass: { variant: "regular", interactive: true },
+              shape: capsule ? "capsule" : "circle",
+            }),
+            contentShape(capsule ? shapes.capsule() : shapes.circle()),
+          ]}
+        >
+          <SwiftImage systemName={glyph} size={glyphSize} color={fg} />
+          {word ? (
+            <SwiftText modifiers={[font({ family: fontFamily ?? "", size: fontSize }), foregroundColor(fg)]}>{word}</SwiftText>
+          ) : null}
+        </HStack>
+      </Button>
+    </Host>
+  );
+}
+
+/**
+ * A SELECT that answers from a MENU — the system Menu with an inline Picker
+ * (the radio group with the checkmark), plus optional extra action rows behind
+ * a divider (the meal chooser's "Add a meal part"). The TRIGGER is the value
+ * itself as text — the app's inline-select idiom ("Breakfast ⌄", "⏱ 90s") —
+ * drawn by SwiftUI in the caller's own face so the head reads unchanged.
+ */
+export function GlassSelectMenu<T extends string>({
+  label,
+  fontFamily,
+  fontSize,
+  labelColor,
+  a11yLabel,
+  options,
+  value,
+  onPick,
+  extras,
+  onExtra,
+}: {
+  /** The trigger's text — usually the selected value's own label. */
+  label: string;
+  fontFamily: string;
+  fontSize: number;
+  labelColor: string;
+  a11yLabel: string;
+  options: { id: T; label: string }[];
+  value: T;
+  onPick: (v: T) => void;
+  /** Action rows appended after a divider — things that are not a selection. */
+  extras?: { key: string; label: string; destructive?: boolean }[];
+  onExtra?: (key: string) => void;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host matchContents>
+      <Menu
+        label={
+          <HStack spacing={6} modifiers={[contentShape(shapes.rectangle())]}>
+            <SwiftText modifiers={[font({ family: fontFamily, size: fontSize }), foregroundColor(labelColor)]}>{label}</SwiftText>
+            <SwiftImage systemName="chevron.down" size={Math.round(fontSize * 0.8)} color={labelColor} />
+          </HStack>
+        }
+        modifiers={[accessibilityLabel(a11yLabel)]}
+      >
+        <Picker selection={value} onSelectionChange={(v) => onPick(v as T)}>
+          {options.map((o) => (
+            <SwiftText key={o.id} modifiers={[tag(o.id)]}>
+              {o.label}
+            </SwiftText>
+          ))}
+        </Picker>
+        {extras?.length ? <Divider /> : null}
+        {extras?.map((e) => (
+          <Button key={e.key} label={e.label} role={e.destructive ? "destructive" : "default"} onPress={() => onExtra?.(e.key)} />
+        ))}
+      </Menu>
+    </Host>
+  );
+}
+
+/**
+ * THE TOOLBAR CAPSULE — two native leaves sharing ONE lozenge of glass, which
+ * is what the `⋯` in Apple Music actually is: not a glyph with a circle drawn
+ * round it, but a real button inside a `GlassEffectContainer` next to the
+ * button it belongs with.
+ *
+ * The pieces already existed separately and drifted apart: `GlassMenuButton`
+ * drew a menu, `GlassSelectMenu` drew a picker trigger, and `GlassPillRow`
+ * knew how to FUSE capsules — but only as decoration, `pointerEvents="none"`
+ * with React Native taking the taps. This is those three joined up, and it is
+ * a stricter reading of the composition rule than what it replaces: today the
+ * logger's timer chip and its `⋯` are two separate `Host`s standing next to
+ * each other pretending to be a group.
+ *
+ * The LEFT slot is a toggle you flip in the moment (the rest timer: armed or
+ * not, counting when it counts). The RIGHT slot is the menu holding everything
+ * that must not be one tap — including the toggle's own value, as an inline
+ * picker, because a duration is a preference and a preference belongs one
+ * level in.
+ */
+export function GlassToolbarGroup<T extends string>({
+  toggleGlyph,
+  toggleReadout,
+  toggleColor,
+  toggleLabel,
+  onToggle,
+  menuLabel,
+  options,
+  value,
+  onPick,
+  actions,
+  onAction,
+  glyphColor,
+  fontFamily,
+  height = 34,
+}: {
+  /** An SF Symbol for the left slot — `timer` / `timer.slash`. */
+  toggleGlyph: SFSymbol;
+  /** The value read out beside the glyph while it is on (a duration, a
+   *  countdown). Absent when off — the mark alone carries the state. */
+  toggleReadout?: string;
+  toggleColor: string;
+  toggleLabel: string;
+  onToggle: () => void;
+  /** The `⋯`'s accessibility name. */
+  menuLabel: string;
+  /** The inline picker — the toggle's own value, one level in. */
+  options: { id: T; label: string }[];
+  value: T;
+  onPick: (v: T) => void;
+  /** Rows after the divider: things that are not a selection. */
+  actions?: { key: string; label: string; destructive?: boolean }[];
+  onAction?: (key: string) => void;
+  glyphColor: string;
+  fontFamily: string;
+  height?: number;
+}) {
+  const ns = useId();
+  if (!LIQUID_GLASS_RENDERED) return null;
+  const radius = height / 2;
+  return (
+    <Host matchContents>
+      <Namespace id={ns}>
+        {/* `spacing` is the blend distance: at 2pt the two capsules are inside
+            each other's threshold, so the system fuses them into one lozenge
+            and flows the glass between them as either changes width — which is
+            what the readout appearing and disappearing does. */}
+        <GlassEffectContainer spacing={2}>
+          <HStack spacing={2}>
+            <Button onPress={onToggle} modifiers={[buttonStyle("plain"), accessibilityLabel(toggleLabel)]}>
+              <HStack
+                spacing={5}
+                modifiers={[
+                  padding({ horizontal: 11 }),
+                  frame({ height }),
+                  glassEffect({ glass: { variant: "regular", interactive: true }, shape: "capsule" }),
+                  glassEffectId(`toolbar-toggle`, ns),
+                  contentShape(shapes.capsule()),
+                ]}
+              >
+                <SwiftImage systemName={toggleGlyph} size={14} color={toggleColor} />
+                {toggleReadout ? (
+                  <SwiftText modifiers={[font({ family: fontFamily, size: 11 }), foregroundColor(toggleColor)]}>{toggleReadout}</SwiftText>
+                ) : null}
+              </HStack>
+            </Button>
+
+            <Menu
+              label={
+                <SwiftImage
+                  systemName="ellipsis"
+                  size={15}
+                  color={glyphColor}
+                  modifiers={[
+                    padding({ horizontal: 11 }),
+                    frame({ height }),
+                    glassEffect({ glass: { variant: "regular", interactive: true }, shape: "capsule" }),
+                    glassEffectId(`toolbar-menu`, ns),
+                    contentShape(shapes.capsule()),
+                  ]}
+                />
+              }
+              modifiers={[accessibilityLabel(menuLabel)]}
+            >
+              <Picker selection={value} onSelectionChange={(v) => onPick(v as T)}>
+                {options.map((o) => (
+                  <SwiftText key={o.id} modifiers={[tag(o.id)]}>
+                    {o.label}
+                  </SwiftText>
+                ))}
+              </Picker>
+              {actions?.length ? <Divider /> : null}
+              {actions?.map((a) => (
+                <Button key={a.key} label={a.label} role={a.destructive ? "destructive" : "default"} onPress={() => onAction?.(a.key)} />
+              ))}
+            </Menu>
+          </HStack>
+        </GlassEffectContainer>
+      </Namespace>
+    </Host>
+  );
+}
+
+/**
+ * LONG-PRESS PREVIEW — the system ContextMenu around ordinary RN content, and
+ * THE ONE SANCTIONED EXCEPTION to the composition rule above.
+ *
+ * `ContextMenu.Trigger` requires the pressed content to live inside the native
+ * host, so the RN children here ride in an `RNHostView` (RN-inside-SwiftUI).
+ * Everywhere else the rule "RN children are never placed inside a Host" stands,
+ * because its reason stands: if the native layer fails, whatever it was
+ * carrying vanishes — and here that would be CONTENT, not a control. This
+ * component is allowed to exist only because it CONTAINS that risk itself:
+ *
+ *  - a WATCHDOG: the RN child reports its first layout; if none arrives within
+ *    the window, the native wrapper is declared dead and the children remount
+ *    as plain RN. The failure case costs a beat of blank, never the content.
+ *    A false positive merely loses the long-press — also safe.
+ *  - the TRIAL SURFACE is one card type (the feed card), per the
+ *    capabilities plan (`context-menu-previews`), until an iOS 26 device build
+ *    proves the seam — scroll arbitration, nested Hosts, press-through.
+ *
+ * No custom Preview element: the system's default preview IS the pressed view
+ * lifting off the receding screen, which is exactly the treatment wanted.
+ */
+export function GlassContextMenu({
+  items,
+  onSelect,
+  children,
+}: {
+  items: { key: string; label: string; destructive?: boolean }[];
+  onSelect: (key: string) => void;
+  children: ReactNode;
+}) {
+  const alive = useRef(false);
+  const [dead, setDead] = useState(false);
+  useEffect(() => {
+    if (!LIQUID_GLASS_RENDERED) return;
+    const t = setTimeout(() => { if (!alive.current) setDead(true); }, 1200);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (!LIQUID_GLASS_RENDERED || dead || items.length === 0) return <>{children}</>;
+  return (
+    <Host matchContents={{ vertical: true }} style={{ width: "100%" }}>
+      <ContextMenu>
+        <ContextMenu.Trigger>
+          <RNHostView matchContents>
+            <View onLayout={() => { alive.current = true; }}>{children}</View>
+          </RNHostView>
+        </ContextMenu.Trigger>
+        <ContextMenu.Items>
+          {items.map((it) => (
+            <Button key={it.key} label={it.label} role={it.destructive ? "destructive" : "default"} onPress={() => onSelect(it.key)} />
+          ))}
+        </ContextMenu.Items>
+      </ContextMenu>
+    </Host>
+  );
+}
+
+/**
+ * THE WHEEL — SwiftUI `Picker` + `.pickerStyle(.wheel)`: the system's detented
+ * spin with its glass selection band, for choosing one value from a short
+ * dynamic list (the date filter's months). Selection applies as the wheel
+ * settles — the surface behind it updates live, which is the same
+ * direct-manipulation contract the sheet's own drag keeps.
+ */
+export function GlassWheel<T extends string>({
+  options,
+  value,
+  onPick,
+}: {
+  options: { id: T; label: string }[];
+  value: T;
+  onPick: (v: T) => void;
+}) {
+  if (!LIQUID_GLASS_RENDERED) return null;
+  return (
+    <Host matchContents={{ vertical: true }} style={{ width: "100%" }}>
+      <Picker selection={value} onSelectionChange={(v) => onPick(v as T)} modifiers={[pickerStyle("wheel")]}>
+        {options.map((o) => (
+          <SwiftText key={o.id} modifiers={[tag(o.id)]}>
+            {o.label}
+          </SwiftText>
+        ))}
+      </Picker>
+    </Host>
   );
 }
 

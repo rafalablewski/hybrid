@@ -87,11 +87,22 @@ export function setType(s: RoleDrop): SetType {
  * whose set shapes differ, share one source of truth and can't drift.
  */
 export function cycleSetType<T extends RoleDrop>(s: T): T {
-  const next = SET_TYPE_ORDER[(SET_TYPE_ORDER.indexOf(setType(s)) + 1) % SET_TYPE_ORDER.length];
+  return setTypeTo(s, SET_TYPE_ORDER[(SET_TYPE_ORDER.indexOf(setType(s)) + 1) % SET_TYPE_ORDER.length]!);
+}
+
+/**
+ * Set a set's type OUTRIGHT, rather than stepping to the next one.
+ *
+ * Cycling is what a badge with no menu behind it has to do — tap four times to
+ * reach the fourth state, and nothing on screen says what the other three are.
+ * Once the control is a picker (the system Menu on iOS, one panel elsewhere)
+ * the type is chosen, not advanced, and both clients need the same answer.
+ */
+export function setTypeTo<T extends RoleDrop>(s: T, type: SetType): T {
   return {
     ...s,
-    role: next === "warmup" ? "warmup" : next === "cooldown" ? "cooldown" : undefined,
-    drop: next === "drop" ? true : undefined,
+    role: type === "warmup" ? "warmup" : type === "cooldown" ? "cooldown" : undefined,
+    drop: type === "drop" ? true : undefined,
   };
 }
 
@@ -156,13 +167,67 @@ export function warmupRamp(workingKg: number): WarmupStep[] {
  * real name is only entered when saving a routine (or the optional finish-screen
  * rename). Returns plain English; this is stored data, not a translated label.
  */
+/**
+ * Every title the clock can write, in clock order. ONE table, because the
+ * generator and the "did a human type this?" test below have to agree forever:
+ * a sixth time-of-day added to one and not the other would quietly make every
+ * such session look athlete-named, and the feed would go back to headlining
+ * "Afternoon workout" over twenty rows.
+ */
+const AUTO_TITLES: readonly { before: number; title: string; key: string }[] = [
+  { before: 5, title: "Late night workout", key: "session.title.lateNight" },
+  { before: 12, title: "Morning workout", key: "session.title.morning" },
+  { before: 17, title: "Afternoon workout", key: "session.title.afternoon" },
+  { before: 21, title: "Evening workout", key: "session.title.evening" },
+  { before: 24, title: "Night workout", key: "session.title.night" },
+];
+
 export function defaultSessionTitle(date: Date = new Date()): string {
   const h = date.getHours();
-  if (h < 5) return "Late night workout";
-  if (h < 12) return "Morning workout";
-  if (h < 17) return "Afternoon workout";
-  if (h < 21) return "Evening workout";
-  return "Night workout";
+  return (AUTO_TITLES.find((a) => h < a.before) ?? AUTO_TITLES[AUTO_TITLES.length - 1]!).title;
+}
+
+/**
+ * Did the CLOCK write this title, or did the athlete?
+ *
+ * The feed needs the answer to decide whether a session's title is worth the
+ * card's loudest line: a name someone chose ("Lower — W4D2") is information,
+ * and "Afternoon workout" is the time of day rendered at heading size, the same
+ * on every post in the stream (see feed-card.ts `feedHeadlineEarnsLead`).
+ *
+ * A missing title counts as auto — an absent name is not a name the athlete
+ * chose either.
+ */
+export function isAutoSessionTitle(title: string | null | undefined): boolean {
+  if (!title?.trim()) return true;
+  const t = title.trim().toLowerCase();
+  return AUTO_TITLES.some((a) => a.title.toLowerCase() === t);
+}
+
+/**
+ * A SESSION'S TITLE, IN THE READER'S LANGUAGE.
+ *
+ * `defaultSessionTitle` returns plain English and always will: it produces
+ * STORED data, and a title already written to thousands of rows cannot be
+ * retroactively turned into a translation key without rewriting them. So the
+ * translation happens on the way OUT instead — a stored title that the clock
+ * wrote is recognised here and resolved through the reader's `t()`, and a title
+ * the athlete chose is returned untouched, because nobody's own words should be
+ * run through a dictionary.
+ *
+ * That is why this works on every row already in the database, including ones
+ * logged years before the keys existed.
+ *
+ * Surfaces that show a session's name (History, the opened post, the finish
+ * summary) call this rather than printing `session.title` directly — otherwise
+ * a Polish athlete's history reads "Afternoon workout" down the page in an
+ * otherwise translated app.
+ */
+export function sessionTitleText(title: string | null | undefined, t: (key: string) => string): string {
+  const trimmed = title?.trim();
+  if (!trimmed) return "";
+  const auto = AUTO_TITLES.find((a) => a.title.toLowerCase() === trimmed.toLowerCase());
+  return auto ? t(auto.key) : trimmed;
 }
 
 export interface StrengthBlock {
@@ -561,9 +626,43 @@ export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean 
   return parts.filter(Boolean).join(", ");
 }
 
+/**
+ * The set line for a STRENGTH block, in the lift's own terms.
+ *
+ * The generic `load × reps` is only true of an externally loaded lift. A
+ * bodyweight lift carries no load at all, so it used to degrade to a row of
+ * dashes — which is exactly what the logger's "last time" reference printed
+ * above a set of pull-ups: `–×5, –×5, –×5`. The one line that exists to give
+ * the athlete something to beat said nothing.
+ *
+ * So read the lift's own load mode and measure: a bodyweight lift IS its reps
+ * (or its seconds, or its metres), a bodyweight-plus lift shows what went on
+ * the belt, and an assisted one shows what came off.
+ */
+export function strengthSetsSummary(b: StrengthBlock): string {
+  const ex = gymExercise(b.name);
+  const mode = ex?.loadMode ?? "external";
+  const suffix = ex?.measure === "time" ? " s" : ex?.measure === "distance" ? " m" : "";
+  const bare = (s: StrengthSet) => (s.reps ? `${s.reps}${suffix}` : "–");
+  return b.sets
+    .map((s) => {
+      switch (mode) {
+        case "bodyweight":
+          return bare(s);
+        case "bodyweight-plus":
+          return s.load ? `+${s.load}×${s.reps || "–"}` : bare(s);
+        case "assisted":
+          return s.load ? `−${s.load}×${s.reps || "–"}` : bare(s);
+        default:
+          return `${s.load || "–"}×${s.reps || "–"}`;
+      }
+    })
+    .join(", ");
+}
+
 /** One-line summary of any block. */
 export function blockSummary(b: SessionBlock): string {
-  if (isStrength(b)) return b.sets.map((s) => `${s.load || "–"}×${s.reps || "–"}`).join(", ");
+  if (isStrength(b)) return strengthSetsSummary(b);
   if (isCardio(b)) return cardioSummary(b);
   return conditioningSummary(b);
 }

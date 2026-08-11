@@ -92,6 +92,20 @@ export interface EnduranceLane {
    *  lane says which bucket each point came from — reading `weeks[i]` beside a
    *  trend point dates it by a different series. */
   paceTrendWeeks: string[];
+  /**
+   * Mean seconds-per-km across the WHOLE history — the pace tile's resting
+   * figure, and the last of the lane's figures to join the one window.
+   *
+   * The tile used to print the LATEST week's pace, which made it the third
+   * distinct window in a rail of five cards (all-time totals, this week's
+   * volume, the latest week's pace). A rail is a comparison instrument; four
+   * windows across five tiles is an invitation the cards can't honour. Every
+   * figure in a lane now answers for the same period, so they reconcile against
+   * each other: 2.94 km in 2h 27min IS 5:00 /100m.
+   *
+   * Null when the discipline has no paced volume — same rule as `weekPace`.
+   */
+  paceAllTime: number | null;
   last: LaneEffort | null;
 }
 
@@ -106,6 +120,34 @@ const isCardio = (b: { kind: string }): b is CardioBlock => b.kind === "cardio";
 function weekPace(w: WeekMileage): number | null {
   if (w.km <= 0 || w.seconds <= 0) return null;
   return w.seconds / w.km;
+}
+
+/**
+ * The lane's whole-history pace, summed here rather than divided out of
+ * `runTotals`.
+ *
+ * Those totals are DISPLAY values — `roundKm` distance and whole minutes — and
+ * a rate derived from them drifts against the device panel and against
+ * `weekPace` above, which already divides the exact seconds. Same rule, same
+ * reason (device-truth.ts): an effort the watch recorded as 7:52 must not print
+ * 8:00 because the card beside it rounded to the minute.
+ *
+ * Only PACED volume counts — an effort with distance but no duration (or the
+ * reverse) contributes to neither side, so the mean is over the efforts that
+ * actually have a pace, exactly like the weekly buckets.
+ */
+function allTimePace(sessions: LoggedSession[]): number | null {
+  let km = 0;
+  let seconds = 0;
+  for (const s of sessions)
+    for (const b of s.blocks) {
+      if (!isCardio(b)) continue;
+      const sec = cardioSeconds(b);
+      if (!b.distance || b.distance <= 0 || sec == null || sec <= 0) continue;
+      km += b.distance;
+      seconds += sec;
+    }
+  return km > 0 && seconds > 0 ? seconds / km : null;
 }
 
 /** The most recent cardio effort in an already-narrowed discipline slice. */
@@ -174,6 +216,7 @@ export function enduranceLanes(
       zones: paceEffortSplit(slice),
       paceTrend: paced.map((p) => p.secPerKm),
       paceTrendWeeks: paced.map((p) => p.weekStart),
+      paceAllTime: allTimePace(slice),
       last: lastEffort(slice),
     };
   });
@@ -307,12 +350,20 @@ export function paceTrendPoints(trend: number[]): number[] {
 /* ── HOLDING A LANE'S CHART ──────────────────────────────────────────────── */
 
 /**
- * One week of a lane's volume strip, held.
+ * One week of a lane's distance strip, held.
  *
- * The tile's resting figure is THIS WEEK's km, so the held figure is the same
- * quantity for another week — the label above it swaps from the scope to the
- * week, and the number underneath answers for that week instead. The unit stays
- * km on every discipline, exactly as the resting tile prints it.
+ * THE HELD READOUT NOW LANDS IN THE FOOT, not the label. The label is the
+ * tile's METRIC ("Distance") and the lane's head owns the window, so swapping
+ * the label for a week would break the metric slot the instant a thumb landed —
+ * the tile would change grammar under the finger, which is the fault the whole
+ * rewrite was fixing. The week goes where a chart's window already goes (the
+ * Tile's `foot`), and only the FIGURE answers for it.
+ *
+ * That does make the held figure a different scope from the resting one — a
+ * week out of the strip, against the lane's all-time distance. That is fine and
+ * deliberate: a hold is a transient interrogation of the chart, it names its own
+ * week beneath the number, and it resolves the moment the finger lifts. The unit
+ * stays km on every discipline, exactly as the resting tile prints it.
  */
 export function laneVolumeReading(lane: EnduranceLane, index: number): ChartReading | null {
   const w = lane.weeks[index];
@@ -330,7 +381,9 @@ export function laneVolumeReading(lane: EnduranceLane, index: number): ChartRead
 
 /** One point of a lane's pace trend, held — in the discipline's own reading
  *  (a pace for a runner, a speed for a cyclist), dated by the trend's OWN
- *  alignment rather than by the volume strip's index. */
+ *  alignment rather than by the distance strip's index. Like the distance
+ *  reading, it answers in the FOOT beside the chart's window and leaves the
+ *  metric label alone; the resting figure is the lane's all-time pace. */
 export function lanePaceReading(lane: EnduranceLane, index: number): ChartReading | null {
   const sec = lane.paceTrend[index];
   if (sec == null) return null;

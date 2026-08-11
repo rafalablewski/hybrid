@@ -2,17 +2,20 @@ import { useEffect, useState } from "react";
 import { View, Text, ScrollView, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { LEADERBOARD_METRICS, seedPerson, userPagePath, type LeaderboardMetric } from "@hybrid/core";
-import { Loading, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
+import { LoadSwap, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { getLeaderboard } from "../lib/social-api";
 import { Avatar, Empty } from "../components/social-kit";
 import { useNavScrollProps } from "../lib/nav-scroll";
+import { usePersonSource } from "../lib/shared-element";
 
 const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default function LeaderboardScreen() {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const C = useTheme().palette;
   const { t } = useLang();
   const router = useRouter();
@@ -24,7 +27,7 @@ export default function LeaderboardScreen() {
   const navScroll = useNavScrollProps();
 
   const renderRow = ({ item: r }: { item: any }) => (
-    <Pressable onPress={() => { if (!r.isMe && r.handle) { seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
+    <Pressable onPress={() => { if (!r.isMe && r.handle) { armPerson(r.handle); seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
       <Text style={{ width: 28, textAlign: "center", fontFamily: F.bold, fontWeight: "800", color: r.rank <= 3 ? C.amber : C.ash, fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</Text>
       <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
       <View style={{ flex: 1 }}>
@@ -45,7 +48,10 @@ export default function LeaderboardScreen() {
           {LEADERBOARD_METRICS.map((m) => <AChip key={m.key} label={m.label} selected={metric === m.key} onPress={() => setMetric(m.key as LeaderboardMetric)} />)}
         </ScrollView>
       </View>
-      {!board ? <Loading /> : board.length <= 1 ? (
+      {/* The board's flex:1 has to survive the hand-over, or the list loses its
+          height while the placeholder fades — so the swap carries it. */}
+      <LoadSwap loading={!board} fill style={{ flex: 1 }}>
+        {() => !board ? null : board.length <= 1 ? (
         <View style={{ paddingHorizontal: 18 }}>
           <Empty title={t("w.social.noFriends")} sub={t("w.social.noFriendsSub")} />
         </View>
@@ -63,6 +69,7 @@ export default function LeaderboardScreen() {
           />
         </ACard>
       )}
+      </LoadSwap>
     </AuroraScreen>
   );
 }

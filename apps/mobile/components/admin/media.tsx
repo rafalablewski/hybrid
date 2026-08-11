@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Image, Share } from "react-native";
 import { sketchBrief, sketchCoverage } from "@hybrid/core";
-import { fs, space, Mono, Chip, Loading, F } from "../../lib/ui";
+import { fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -98,104 +98,110 @@ export default function AdminMedia() {
     void notify("Public URL", a.url);
   }
 
-  if (list === null && !failed) return <Loading />;
-  if (failed) return <ErrorNote error="Couldn't load the media library. Pull to retry." />;
-  // The sketch backlog is computed from the shipped catalog, so it stands even
-  // when the media table/bucket isn't initialized yet.
-  if (unavailable)
-    return (
-      <View>
-        <SketchCoverage />
-        <Banner tone="amber" title="Media library not initialized">
-          The MediaAsset table + media bucket don&apos;t exist yet. Run reference/sql-media-library.sql in the Supabase SQL
-          Editor, then reload.
-        </Banner>
-      </View>
-    );
-
-  const statusColor = (s: Status) => (s === "published" ? palette.lime : s === "archived" ? palette.amber : palette.ash);
-
   return (
-    <View>
-      <SketchCoverage />
-      <Mono color={palette.ash} style={{ marginBottom: 6, lineHeight: 18 }}>
-        {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} – public CDN URLs
-      </Mono>
-      <Banner tone="amber" title="Uploading is web-only">
-        Add new clips/images from the web admin console — mobile uploads aren&apos;t in v1. You can manage, edit, and
-        delete existing assets here.
-      </Banner>
-
-      {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
-
-      {list?.map((a) => (
-        <ACard key={a.id} accent={statusColor(a.status)} style={cardStack}>
-          {a.kind === "image" ? (
-            <Image
-              source={{ uri: a.url }}
-              style={{ width: "100%", height: 150, borderRadius: 10, marginBottom: 10, backgroundColor: palette.ink2 }}
-              resizeMode="cover"
-            />
-          ) : null}
-
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
-            <Chip color={statusColor(a.status)}>{a.status}</Chip>
-            <Chip color={palette.ash}>{a.kind}</Chip>
-            {a.sizeBytes ? <Chip color={palette.ash}>{fmtSize(a.sizeBytes)}</Chip> : null}
-          </View>
-
-          {edit === a.id ? (
+    <LoadSwap loading={list === null && !failed}>
+      {() => {
+        if (list === null && !failed) return null;
+        if (failed) return <ErrorNote error="Couldn't load the media library. Pull to retry." />;
+        // The sketch backlog is computed from the shipped catalog, so it stands even
+        // when the media table/bucket isn't initialized yet.
+        if (unavailable)
+          return (
             <View>
-              <Input label="Title" value={form.title} onChangeText={(t) => setForm({ ...form, title: t })} placeholder="Title" />
-              <Input label="Alt / caption" value={form.alt} onChangeText={(t) => setForm({ ...form, alt: t })} placeholder="Alt / caption" />
-              <Input label="Tags (comma-separated)" value={form.tags} onChangeText={(t) => setForm({ ...form, tags: t })} placeholder="tags, comma-separated" />
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
-                <PillBtn
-                  label="Save"
-                  disabled={busy}
-                  onPress={() =>
-                    patch(a.id, {
-                      title: form.title,
-                      alt: form.alt || null,
-                      tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
-                    })
-                  }
-                />
-                <PillBtn label="Cancel" outline color={palette.ash} disabled={busy} onPress={() => setEdit(null)} />
-              </View>
+              <SketchCoverage />
+              <Banner tone="amber" title="Media library not initialized">
+                The MediaAsset table + media bucket don&apos;t exist yet. Run reference/sql-media-library.sql in the Supabase SQL
+                Editor, then reload.
+              </Banner>
             </View>
-          ) : (
-            <>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.title}</Text>
-              {a.tags.length > 0 ? (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 6 }}>
-                  {a.tags.map((t) => <Chip key={t} color={palette.ash}>{t}</Chip>)}
-                </View>
-              ) : null}
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
-                <PillBtn label="Show URL" outline color={palette.ash} onPress={() => showUrl(a)} />
-                <PillBtn label="Edit" outline color={palette.ash} disabled={busy} onPress={() => openEdit(a)} />
-                {a.status !== "published" ? (
-                  <PillBtn label="Publish" outline disabled={busy} onPress={() => patch(a.id, { status: "published" })} />
-                ) : (
-                  <PillBtn label="Unpublish" outline color={palette.ash} disabled={busy} onPress={() => patch(a.id, { status: "draft" })} />
-                )}
-                {a.status !== "archived" ? (
-                  <PillBtn label="Archive" outline color={palette.amber} disabled={busy} onPress={() => patch(a.id, { status: "archived" })} />
-                ) : null}
-                <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(a)} />
-              </View>
-            </>
-          )}
-        </ACard>
-      ))}
+          );
 
-      {list && list.length === 0 ? (
-        <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 24 }}>
-          No media yet. Upload a demo clip or image from the web console to start the library.
-        </Mono>
-      ) : null}
-    </View>
+        const statusColor = (s: Status) => (s === "published" ? palette.lime : s === "archived" ? palette.amber : palette.ash);
+
+        return (
+          <View>
+            <SketchCoverage />
+            <Mono color={palette.ash} style={{ marginBottom: 6, lineHeight: 18 }}>
+              {list ? `${list.length} asset${list.length === 1 ? "" : "s"}` : "…"} – public CDN URLs
+            </Mono>
+            <Banner tone="amber" title="Uploading is web-only">
+              Add new clips/images from the web admin console — mobile uploads aren&apos;t in v1. You can manage, edit, and
+              delete existing assets here.
+            </Banner>
+
+            {err ? <ErrorNote error={err} onDismiss={() => setErr(null)} /> : null}
+
+            {list?.map((a) => (
+              <ACard key={a.id} accent={statusColor(a.status)} style={cardStack}>
+                {a.kind === "image" ? (
+                  <Image
+                    source={{ uri: a.url }}
+                    style={{ width: "100%", height: 150, borderRadius: 10, marginBottom: 10, backgroundColor: palette.ink2 }}
+                    resizeMode="cover"
+                  />
+                ) : null}
+
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginBottom: 6 }}>
+                  <Chip color={statusColor(a.status)}>{a.status}</Chip>
+                  <Chip color={palette.ash}>{a.kind}</Chip>
+                  {a.sizeBytes ? <Chip color={palette.ash}>{fmtSize(a.sizeBytes)}</Chip> : null}
+                </View>
+
+                {edit === a.id ? (
+                  <View>
+                    <Input label="Title" value={form.title} onChangeText={(t) => setForm({ ...form, title: t })} placeholder="Title" />
+                    <Input label="Alt / caption" value={form.alt} onChangeText={(t) => setForm({ ...form, alt: t })} placeholder="Alt / caption" />
+                    <Input label="Tags (comma-separated)" value={form.tags} onChangeText={(t) => setForm({ ...form, tags: t })} placeholder="tags, comma-separated" />
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
+                      <PillBtn
+                        label="Save"
+                        disabled={busy}
+                        onPress={() =>
+                          patch(a.id, {
+                            title: form.title,
+                            alt: form.alt || null,
+                            tags: form.tags.split(",").map((t) => t.trim()).filter(Boolean),
+                          })
+                        }
+                      />
+                      <PillBtn label="Cancel" outline color={palette.ash} disabled={busy} onPress={() => setEdit(null)} />
+                    </View>
+                  </View>
+                ) : (
+                  <>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.title}</Text>
+                    {a.tags.length > 0 ? (
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 6 }}>
+                        {a.tags.map((t) => <Chip key={t} color={palette.ash}>{t}</Chip>)}
+                      </View>
+                    ) : null}
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 12 }}>
+                      <PillBtn label="Show URL" outline color={palette.ash} onPress={() => showUrl(a)} />
+                      <PillBtn label="Edit" outline color={palette.ash} disabled={busy} onPress={() => openEdit(a)} />
+                      {a.status !== "published" ? (
+                        <PillBtn label="Publish" outline disabled={busy} onPress={() => patch(a.id, { status: "published" })} />
+                      ) : (
+                        <PillBtn label="Unpublish" outline color={palette.ash} disabled={busy} onPress={() => patch(a.id, { status: "draft" })} />
+                      )}
+                      {a.status !== "archived" ? (
+                        <PillBtn label="Archive" outline color={palette.amber} disabled={busy} onPress={() => patch(a.id, { status: "archived" })} />
+                      ) : null}
+                      <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(a)} />
+                    </View>
+                  </>
+                )}
+              </ACard>
+            ))}
+
+            {list && list.length === 0 ? (
+              <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 24 }}>
+                No media yet. Upload a demo clip or image from the web console to start the library.
+              </Mono>
+            ) : null}
+          </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 

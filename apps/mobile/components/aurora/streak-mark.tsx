@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Text } from "react-native";
+import { Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { STREAK_MARK, STREAK_ARIA_KEY, STREAK_SUFFIX_KEY, STREAK_DESTINATION, streak, type StreakRung } from "@hybrid/core";
 import { NAV_HREF } from "../../lib/nav-href";
@@ -8,6 +8,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
+import { RollingNumber } from "./rolling-number";
 
 /**
  * THE STREAK MARK — mobile.
@@ -49,6 +50,13 @@ export function StreakMark({
 
   const type = STREAK_MARK[rung];
   const tone = txt(C, C.red);
+  const markType = {
+    fontFamily: F.mono,
+    fontSize: type.size,
+    letterSpacing: type.tracking,
+    textTransform: type.caps ? "uppercase" : "none",
+    color: tone,
+  } as const;
   return (
     <Pressable
       onPress={() => { onDismiss?.(); router.push(NAV_HREF[STREAK_DESTINATION]!); }}
@@ -58,22 +66,20 @@ export function StreakMark({
       style={{ flexDirection: "row", alignItems: "center", gap: type.gap }}
     >
       <AuroraIcon name="flame" size={type.icon} color={tone} />
-      {/* one line, always: PL/DE carry longer words ("-dniowa seria",
+      {/* The COUNT rolls to its new value when a session extends the run —
+          this is the number the mark exists to celebrate, so it moves like
+          every other figure in the app (core numericDiff; the suffix is prose
+          and never travels). One wrapper so the row's gap separates the flame
+          from the text, never the count from its "-day streak" suffix. One
+          line, always: PL/DE carry longer words ("-dniowa seria",
           "-Tage-Serie") and a wrapped mark would grow whatever it sits in —
           the header's row most of all. */}
-      <Text
-        maxFontSizeMultiplier={FIXED_FONT_SCALE}
-        numberOfLines={1}
-        style={{
-          fontFamily: F.mono,
-          fontSize: type.size,
-          letterSpacing: type.tracking,
-          textTransform: type.caps ? "uppercase" : "none",
-          color: tone,
-        }}
-      >
-        {days}{t(STREAK_SUFFIX_KEY)}
-      </Text>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <RollingNumber value={String(days)} style={markType} />
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={markType}>
+          {t(STREAK_SUFFIX_KEY)}
+        </Text>
+      </View>
     </Pressable>
   );
 }

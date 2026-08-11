@@ -1,16 +1,22 @@
 # HYBRID — agent guide
 
-Hybrid-athlete training app. Monorepo: one shared core, a Next.js web app, an
-Expo mobile app, one backend, one Supabase/Postgres database.
+Hybrid-athlete training app. **The product is the MOBILE app.** Monorepo: one
+shared core, an Expo mobile app, a Next.js deployment that hosts the backend +
+the admin panel (the user-facing web client was retired in Aug 2026), one
+Supabase/Postgres database.
 
 ## Structure
 - `packages/core` — shared TS: brand tokens, engines (fatigue/readiness/
   progression/periodization/prescription), plan library, sport engine, session
-  helpers, **and the capabilities registry**. Imported by BOTH clients.
-- `apps/web` — Next.js (App Router, Tailwind v4) → Vercel. Also hosts the
-  backend (`app/api/*`) that BOTH clients call.
-- `apps/mobile` — Expo / React Native (expo-router) → App Store. Calls the same
-  `/api` on Vercel with a Supabase Bearer token.
+  helpers, **and the capabilities registry**.
+- `apps/web` — Next.js (App Router) → Vercel. Hosts the backend (`app/api/*`)
+  that the mobile app and the admin panel call, plus the ONLY remaining web
+  surfaces: `/admin` (the operator panel), an admin-only `/login`,
+  `/auth/callback`, `/privacy` + `/terms`, the `/invite/[token]` landing, and a
+  minimal root page. There is NO user-facing web app — do not add user screens
+  here (see the mobile-first rule below).
+- `apps/mobile` — Expo / React Native (expo-router) → App Store. The product.
+  Calls `/api` on Vercel with a Supabase Bearer token.
 - `prisma/schema.prisma` — the data model (Supabase Postgres).
 - `reference/` — the prototypes + build brief (the spec).
 
@@ -60,16 +66,18 @@ with it. `apps/mobile/lib/expo-alignment.test.ts` enforces this (and gates the
 TestFlight workflow); non-Expo packages may diverge, but only via that file's
 `DELIBERATE` map, with the reason written down.
 
-## RULE: web ↔ mobile parity (always)
-This is ONE product on two clients. Whatever ships for **web must also ship for
-mobile**, and whatever ships for **mobile must also ship for web** — features,
-screens, visual treatments (e.g. Liquid Glass), nav, and behaviour. Put shared
-logic in `packages/core` so both clients consume the same source of truth.
-
-When you add or change something on one client, implement the equivalent on the
-other in the SAME change. If you genuinely can't reach parity in that change
-(e.g. a native-only constraint), record the gap explicitly in `capabilities.ts`
-(as `planned`/`blocked` with `blockedBy`) so the missing side is never lost.
+## RULE: mobile-first — the web client is RETIRED (always)
+The old rule here was web↔mobile parity. It is retired along with the web
+client: **user-facing features ship on MOBILE, and only on mobile.** Do not add
+user screens, user flows, or user-facing pages to `apps/web` — its only UI
+surfaces are the admin panel (+ its login), the legal pages, and the two
+public landings (root, invite). Product logic still belongs in `packages/core`
+(the engines serve the API, the admin panel, and the mobile app alike), and
+API work still lives in `apps/web/app/api/*` — serving both remaining callers.
+Admin capabilities remain two-sided: the web `/admin` panel and the mobile
+admin console both exist, so keep those two in step when you touch admin
+features. Old design-rule prose below may still cite retired web files as
+provenance — the mobile twin is the live golden standard in every such case.
 
 ## RULE: the device's recording is the source of truth (always)
 When a session is matched to an Apple Watch (or other device) recording, the

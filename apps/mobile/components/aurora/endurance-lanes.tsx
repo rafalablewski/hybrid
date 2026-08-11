@@ -208,16 +208,28 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
   const zones = zonePercents(lane.zones);
   return (
     <View style={{ marginTop: 16 }}>
-      {/* Identity and NOTHING else. The head used to carry "8 efforts" (which
-          the summary tile below restates verbatim) and then, after that went,
-          the lane's "See all ›". Both are gone: a header NAMES the lane, the
-          rail owns the figures, and the rail's own tail card owns the exit.
-          Three lanes down Today meant three lime links stacked on one screen,
-          each pointing somewhere different, none of them where the thumb
-          actually is when the cards run out. Mirrors web. */}
-      <View style={{ flexDirection: "row", alignItems: "center", marginHorizontal: 2, marginBottom: 8 }}>
+      {/* IDENTITY LEFT, THE LANE'S WINDOW RIGHT — the Explore SectionHead
+          grammar, and the head's one concession since it was cut back to the
+          name alone.
+
+          It used to carry "8 efforts" (which the tile below restated verbatim)
+          and then a "See all ›" that competed with the rail's own tail. Neither
+          objection applies to a SCOPE: it is not a figure any tile prints, and
+          it is not a second exit. It is the one fact that makes the five
+          figures underneath commensurable — and printing it here is what buys
+          every tile below a one-word label. The rail used to spend three
+          compound labels per lane saying it card by card, and still ended up
+          with four different windows in five cards. Mirrors web. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>
           {DISCIPLINE_META[lane.discipline].emoji} {t(lane.labelKey)}
+        </Text>
+        <Text
+          numberOfLines={1}
+          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}
+        >
+          {t("w.home.end.scopeAll")}
         </Text>
       </View>
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 12dp
@@ -230,8 +242,8 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         style={{ marginHorizontal: -GUTTER }}
         contentContainerStyle={{ gap: 8, paddingHorizontal: GUTTER, paddingVertical: 2 }}
       >
-        <SummaryTile lane={lane} />
-        <VolumeTile lane={lane} />
+        <EffortsTile lane={lane} />
+        <DistanceTile lane={lane} />
         {lane.paceTrend.length > 1 && <TrendTile lane={lane} />}
         {zones.any && <ZoneTile lane={lane} />}
         {lane.last && <LastTile lane={lane} />}
@@ -253,18 +265,21 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
 }
 
 /**
- * One rail tile — the cluster's shared skeleton, and the place the SCOPE RULE
- * is enforced rather than merely documented:
+ * One rail tile — the cluster's shared skeleton, and the place the THREE-SLOT
+ * RULE is enforced rather than merely documented:
  *
- *   label  → the metric AND the scope of the FIGURE this tile prints
- *   foot   → the window of the CHART, with `footRight` for a delta
+ *   lane head → the scope of every FIGURE in the lane, said ONCE (see Lane)
+ *   label     → the METRIC, one word
+ *   foot      → the window of the CHART, with `footRight` for a delta
  *
- * Both slots are the Tile's own, so a caller cannot put the window in the label
- * (as VolumeTile did — "Volume – 8 weeks" over a footer reading "8 weeks",
- * twice in one 178dp tile, while the figure between them was THIS WEEK'S km and
- * said so nowhere). The old free `right` slot on the name row is gone with it;
- * its only consumer was the pace delta, which is a fact about the chart's
- * window and belongs beside it.
+ * The middle slot used to carry metric AND figure-scope together, because there
+ * was nowhere else for the scope to go — so a rail printed "Volume – this
+ * week", "Pace – latest week" and "Zones – all time", three compounds per lane,
+ * three lanes deep. Worse, those three scopes were REAL: the tiles were
+ * measuring four different windows, and a rail is a comparison instrument. The
+ * labels were the section apologising in advance for cards that could not be
+ * read across. Giving the lane one window retires the apology and the compound
+ * with it.
  *
  * `foot` is OPTIONAL and stays empty when the chart already shows its window: a
  * bar strip draws one countable bar per week, so "8 weeks" under eight bars is
@@ -277,12 +292,26 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
  * `bind` makes the WHOLE TILE the target of its own held chart. The strip
  * inside is 24dp tall — a fair chart and an unfair touch target — so the press
  * lands anywhere on the card while the fraction is still measured against the
- * drawing (the hook's `plotRef`). Holding swaps the LABEL for the week and the
- * FIGURE for that week's value, which is the stock-app reading and costs the
- * tile no extra row: nothing moves, because nothing was added.
+ * drawing (the hook's `plotRef`). Holding swaps the FIGURE for that week's
+ * value and names the week in the FOOT — never in the label, which is the
+ * metric and must not change under a thumb. A tile whose foot is empty at rest
+ * still RESERVES it (`foot=""`), so filling it shifts nothing.
  */
-function Tile({ w, label, foot, footRight, bind, children }: {
-  w: number; label: string; foot?: string; footRight?: React.ReactNode; bind?: ScrubBind; children: React.ReactNode;
+function Tile({ w, label, a11y, foot, footRight, bind, children }: {
+  w: number;
+  label: string;
+  /** What a screen reader hears INSTEAD of the one-word label. The visible
+   *  label sheds the scope because the lane head carries it; a listener has no
+   *  head in view, so the long metric-plus-scope string (the very wording the
+   *  labels used to show, translations and all) is announced here. */
+  a11y?: string;
+  /** `""` RESERVES the row without printing anything — a chart that answers on
+   *  hold needs somewhere to put the week that isn't the label, and a row that
+   *  appears on touch would move the chart under the finger. */
+  foot?: string;
+  footRight?: React.ReactNode;
+  bind?: ScrubBind;
+  children: React.ReactNode;
 }) {
   const { palette: C } = useTheme();
   return (
@@ -297,12 +326,13 @@ function Tile({ w, label, foot, footRight, bind, children }: {
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
         numberOfLines={1}
+        accessibilityLabel={a11y}
         style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}
       >
         {label}
       </Text>
       {children}
-      {(foot || footRight) && (
+      {(foot !== undefined || footRight) && (
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{foot ?? ""}</Text>
           {footRight}
@@ -312,60 +342,89 @@ function Tile({ w, label, foot, footRight, bind, children }: {
   );
 }
 
-function MetaRow({ l, r, strong }: { l: string; r: string; strong?: boolean }) {
+/** Two INDEPENDENT facts on one row — not a key and its value.
+ *
+ *  `strong` went with the summary tile's `KM` / `TIME` keys: it existed to lift
+ *  a value out of the ash its label sat in, and there are no labels here any
+ *  more. LastTile is the sole consumer now, and there both cells are facts
+ *  (distance and pace, then when and how long), so both read as ash. */
+function MetaRow({ l, r }: { l: string; r: string }) {
   const { palette: C } = useTheme();
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{l}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: strong ? C.chalk : C.ash }}>{r}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{r}</Text>
     </View>
   );
 }
 
-function SummaryTile({ lane }: { lane: EnduranceLane }) {
+/**
+ * EFFORTS — the count, and the time it took.
+ *
+ * It used to be the "all time" tile, carrying three metrics under a label that
+ * named none of them, which is the only reason it needed the `KM` / `TIME` row
+ * keys: with the label spent on the scope, nothing else could say what the two
+ * numbers were. The label is the metric now and the scope is on the lane head,
+ * so the keys have nothing left to do — `2h 27min` is self-evidently a duration
+ * and nothing else in the app is spelled that way.
+ *
+ * DISTANCE MOVED OUT, to DistanceTile. Under one window this tile's km and that
+ * tile's figure are the same number, and the bars belong to the one that owns
+ * the metric. Losing it also settles the tile's grammar: it opened as
+ * figure-plus-unit and then switched to a right-flushed key-value table, two
+ * reading directions in the narrowest card on the screen. Size carries the
+ * hierarchy now, which is what should have been carrying it.
+ */
+function EffortsTile({ lane }: { lane: EnduranceLane }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   return (
-    <Tile w={126} label={t("w.home.end.scopeAll")}>
-      {/* The figure carries "efforts" as its UNIT — the same shape the Other
-          sports tile uses — because the label is now saying the scope. The
-          header above the rail used to print this same count. */}
+    <Tile w={126} label={t("endurance.efforts")}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk }}>{lane.efforts}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{t("endurance.efforts").toLowerCase()}</Text>
       </View>
       <View style={{ gap: 3, marginTop: "auto" }}>
-        <MetaRow l="KM" r={String(lane.distanceKm)} strong />
-        {/* TIME, not "H": the figure is hours AND minutes now, so the row's
-            label names the quantity rather than repeating the unit inside it. */}
-        <MetaRow l="TIME" r={formatDuration(lane.minutes, durationUnits(t))} strong />
+        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk }}>
+          {formatDuration(lane.minutes, durationUnits(t))}
+        </Text>
       </View>
     </Tile>
   );
 }
 
-function VolumeTile({ lane }: { lane: EnduranceLane }) {
+/**
+ * DISTANCE — the lane's whole-history kilometres, over the eight weeks that
+ * produced the most recent of them.
+ *
+ * The figure used to be THIS WEEK's km, which is what made the rail
+ * incomparable: a total two cards to the left, a week here, a single week's
+ * pace two cards to the right. It reads the lane's own distance now, the same
+ * number the Efforts tile used to print as `KM`, in the tile that owns the
+ * metric and draws its history.
+ *
+ * HELD, the FIGURE answers for one week and the FOOT names which. The label
+ * stays "Distance": it is the metric, and a metric that changes under a thumb
+ * is the fault this rewrite exists to fix. The foot is reserved but empty at
+ * rest — the strip DRAWS its window as eight countable bars, so a caption
+ * naming the count would be the axis set in prose, but the row has to be there
+ * or filling it on hold would move the chart.
+ */
+function DistanceTile({ lane }: { lane: EnduranceLane }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  // The tile skeleton (wave 2): label row → this week's km as the FIGURE →
-  // the shared HistoryStrip as the chart. The old 46px one-off bar block is
-  // retired for the cluster's one chart language.
-  //
-  // NO "8 weeks" FOOTER. The strip DRAWS its window: eight discrete bars, one
-  // per week, countable at a glance — so a caption naming the count is the
-  // chart's own axis set in words. It goes where the window is NOT visible
-  // (TrendTile, whose line has no per-week marks to count), and nowhere else.
-  //
-  // HELD, the same two slots answer for another week: the label says which, the
-  // figure says how much. The strip's eight bars were the whole point of the
-  // tile and the only thing on it that named no numbers.
   const scrub = useChartScrub(lane.weeks.length, "band");
   const read = scrub.index >= 0 ? laneVolumeReading(lane, scrub.index) : null;
   return (
-    <Tile w={178} label={read ? weekLabel(t, read.weekStart) : t("w.home.end.volumeWeek")} bind={scrub.bind}>
+    <Tile
+      w={178}
+      label={t("w.home.end.mDistance")}
+      a11y={t("w.home.end.volumeWeek")}
+      bind={scrub.bind}
+      foot={read ? weekLabel(t, read.weekStart) : ""}
+    >
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: read?.best ? txt(C, C.lime) : C.chalk }}>
-          {read ? read.value : lane.thisWeek.km}
+          {read ? read.value : lane.distanceKm}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? read.unit : "km"}</Text>
       </View>
@@ -399,17 +458,25 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
   return (
     <Tile
       w={176}
-      label={read ? weekLabel(t, read.weekStart) : t("w.home.end.paceLatest")}
+      label={t("w.home.end.mPace")}
+      a11y={t("w.home.end.paceLatest")}
       bind={scrub.bind}
-      foot={t("w.home.end.window8")}
+      // The foot is the CHART's slot: its window at rest, the held week when a
+      // finger is down. The delta rides beside it because a delta is a fact
+      // about the window, not about the lane's all-time figure above.
+      foot={read ? weekLabel(t, read.weekStart) : t("w.home.end.window8")}
       footRight={delta ? (
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, delta.faster ? C.lime : C.red) }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </Text>
       ) : undefined}
     >
+      {/* The lane's ALL-TIME pace at rest — the last figure to join the one
+          window. It used to print the newest trend point, which made this the
+          third distinct scope in a rail of five cards. Held, it answers for the
+          scrubbed week and the foot says which. */}
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: read?.best ? txt(C, C.lime) : C.chalk }}>
-        {read ? `${read.value} ${read.unit}` : formatDisciplinePace(lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
+        {read ? `${read.value} ${read.unit}` : formatDisciplinePace(lane.paceAllTime ?? lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
       </Text>
       <View ref={scrub.plotRef} style={{ marginTop: "auto" }}>
         <Svg width={TREND_W} height={TREND_H}>
@@ -450,7 +517,7 @@ function ZoneTile({ lane }: { lane: EnduranceLane }) {
   // rail-width tile apart the moment "Steady" becomes "Stałe"/"Gleichmäßig".
   // Stacked, it survives any language and the percentages align in a column.
   return (
-    <Tile w={152} label={t("w.home.end.zonesAll")}>
+    <Tile w={152} label={t("w.home.end.mZones")} a11y={t("w.home.end.zonesAll")}>
       <View style={{ flexDirection: "row", gap: 2, height: 8, marginTop: "auto" }}>
         {([[z.easy, C.lime], [z.moderate, C.amber], [z.hard, C.red]] as [number, string][]).map(
           ([pct, c]) => pct > 0 && <View key={c} style={{ flex: pct, backgroundColor: c, borderRadius: 2 }} />,

@@ -10,7 +10,7 @@ import {
   type BenchmarkMetric,
 } from "@hybrid/core";
 import { adminGet } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Kicker, Chip, Loading, F } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { FilterGroup, Stat, ErrorNote } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -126,60 +126,65 @@ function DataNet() {
   }, []);
 
   if (err) return <ErrorNote error="Failed to load the data network." />;
-  if (!d) return <Loading />;
-
   return (
-    <View>
-      <ACard accent={palette.violet} style={cardStack}>
-        <Kicker color={palette.violet}>Data network – benchmarking intelligence</Kicker>
-        <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 6 }}>
-          The flywheel: every consented athlete sharpens the cohort norms and (with labeled outcomes) the injury
-          calibration. De-identified — only cohorts with ≥ {K_ANON} athletes are released.
-        </Mono>
-      </ACard>
+    <LoadSwap loading={!d}>
+      {() => {
+        if (!d) return null;
+        return (
+          <View>
+            <ACard accent={palette.violet} style={cardStack}>
+              <Kicker color={palette.violet}>Data network – benchmarking intelligence</Kicker>
+              <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 6 }}>
+                The flywheel: every consented athlete sharpens the cohort norms and (with labeled outcomes) the injury
+                calibration. De-identified — only cohorts with ≥ {K_ANON} athletes are released.
+              </Mono>
+            </ACard>
 
-      <View style={{ flexDirection: "row", gap: space.md }}>
-        <View style={{ flex: 1 }}><Stat label="Athletes" value={d.stats.athletes} color={palette.lime} /></View>
-        <View style={{ flex: 1 }}><Stat label="Observations" value={d.stats.observations} color={palette.blue} /></View>
-      </View>
-      <View style={{ flexDirection: "row", gap: space.md }}>
-        <View style={{ flex: 1 }}><Stat label="Cohorts" value={d.stats.cohorts} /></View>
-        <View style={{ flex: 1 }}><Stat label={`Releasable (≥${K_ANON})`} value={d.stats.releasableCohorts} color={palette.violet} /></View>
-      </View>
+            <View style={{ flexDirection: "row", gap: space.md }}>
+              <View style={{ flex: 1 }}><Stat label="Athletes" value={d.stats.athletes} color={palette.lime} /></View>
+              <View style={{ flex: 1 }}><Stat label="Observations" value={d.stats.observations} color={palette.blue} /></View>
+            </View>
+            <View style={{ flexDirection: "row", gap: space.md }}>
+              <View style={{ flex: 1 }}><Stat label="Cohorts" value={d.stats.cohorts} /></View>
+              <View style={{ flex: 1 }}><Stat label={`Releasable (≥${K_ANON})`} value={d.stats.releasableCohorts} color={palette.violet} /></View>
+            </View>
 
-      <ACard accent={d.calibration.n > 0 ? palette.lime : palette.ash} style={cardStack}>
-        <Kicker color={palette.blue}>Injury calibration</Kicker>
-        <Mono color={palette.chalk} style={{ fontSize: fs.body, marginTop: 4 }}>
-          model {d.calibration.version} – {d.calibration.n > 0 ? `refit on ${d.calibration.n} outcomes` : "synthetic prior"}
-        </Mono>
-        <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2, lineHeight: leading(fs.micro) }}>
-          labels: {d.calibration.positives} injured – {d.calibration.negatives} healthy – σ(a + b·score): a=
-          {d.calibration.coeffs.intercept.toFixed(2)}, b={d.calibration.coeffs.slope.toFixed(2)}
-        </Mono>
-      </ACard>
+            <ACard accent={d.calibration.n > 0 ? palette.lime : palette.ash} style={cardStack}>
+              <Kicker color={palette.blue}>Injury calibration</Kicker>
+              <Mono color={palette.chalk} style={{ fontSize: fs.body, marginTop: 4 }}>
+                model {d.calibration.version} – {d.calibration.n > 0 ? `refit on ${d.calibration.n} outcomes` : "synthetic prior"}
+              </Mono>
+              <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2, lineHeight: leading(fs.micro) }}>
+                labels: {d.calibration.positives} injured – {d.calibration.negatives} healthy – σ(a + b·score): a=
+                {d.calibration.coeffs.intercept.toFixed(2)}, b={d.calibration.coeffs.slope.toFixed(2)}
+              </Mono>
+            </ACard>
 
-      <ACard style={cardStack}>
-        <Kicker>Cohort norms (released)</Kicker>
-        {d.norms.length === 0 ? (
-          <Mono color={palette.ash} style={{ fontSize: fs.body, marginTop: 10, lineHeight: leading(fs.body) }}>
-            No cohort has reached {K_ANON} consented athletes yet — aggregates are suppressed until then.
-          </Mono>
-        ) : (
-          <View style={{ marginTop: 10 }}>
-            {d.norms.map((nrm) => (
-              <View key={nrm.cohortKey} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: palette.line }}>
-                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-                  <Mono color={palette.chalk} style={{ fontSize: fs.caption, flex: 1 }}>{nrm.sport} – {nrm.sex} – {nrm.ageBand}</Mono>
-                  <Chip color={palette.blue}>{METRIC_LABEL[nrm.metric]}</Chip>
-                </View>
-                <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
-                  n={nrm.n} – mean {nrm.mean} – sd {nrm.sd} – P10 {nrm.p10} – P50 {nrm.p50} – P90 {nrm.p90}
+            <ACard style={cardStack}>
+              <Kicker>Cohort norms (released)</Kicker>
+              {d.norms.length === 0 ? (
+                <Mono color={palette.ash} style={{ fontSize: fs.body, marginTop: 10, lineHeight: leading(fs.body) }}>
+                  No cohort has reached {K_ANON} consented athletes yet — aggregates are suppressed until then.
                 </Mono>
-              </View>
-            ))}
+              ) : (
+                <View style={{ marginTop: 10 }}>
+                  {d.norms.map((nrm) => (
+                    <View key={nrm.cohortKey} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: palette.line }}>
+                      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
+                        <Mono color={palette.chalk} style={{ fontSize: fs.caption, flex: 1 }}>{nrm.sport} – {nrm.sex} – {nrm.ageBand}</Mono>
+                        <Chip color={palette.blue}>{METRIC_LABEL[nrm.metric]}</Chip>
+                      </View>
+                      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>
+                        n={nrm.n} – mean {nrm.mean} – sd {nrm.sd} – P10 {nrm.p10} – P50 {nrm.p50} – P90 {nrm.p90}
+                      </Mono>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </ACard>
           </View>
-        )}
-      </ACard>
-    </View>
+        );
+      }}
+    </LoadSwap>
   );
 }

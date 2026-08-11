@@ -28,7 +28,7 @@ export default function NotFound() {
         The page you’re looking for doesn’t exist or has moved.
       </p>
       <Link
-        href="/app"
+        href="/"
         style={{
           padding: "11px 20px",
           borderRadius: 12,
@@ -40,7 +40,7 @@ export default function NotFound() {
           marginTop: 6,
         }}
       >
-        Back to app
+        Home
       </Link>
     </div>
   );

@@ -1,9 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator, Linking, Animated, Easing, StyleSheet, ScrollView } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { FUNNEL, FULL_BENEFITS, sheetPadBottom } from "@hybrid/core";
-import { sheetInsetBottom } from "../../lib/layout";
+import { FUNNEL, FULL_BENEFITS } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull, restorePurchases, fetchFullPrice } from "../../lib/iap";
@@ -11,9 +9,10 @@ import { LegalLinks } from "../legal-links";
 import { supabase } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
+import Sheet from "./sheet";
 
 // The Full toolkit, sold as one concise sheet (matches the web upgrade sheet).
 // Benefits come from the shared @hybrid/core FULL_BENEFITS so the paywall and
@@ -21,17 +20,33 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 const BENEFITS = FULL_BENEFITS.map((b) => ({ t: b.title, d: b.desc }));
 
 /**
- * AURORA Upgrade — a slide-up BOTTOM SHEET paywall (presented as a transparent
- * modal so the screen behind shows through the scrim). Reuses the same Stripe
- * Checkout / Apple IAP flow + funnel tracking. Mirrors the web upgrade sheet.
+ * AURORA Upgrade — the Full paywall, in the SHARED Sheet (aurora/sheet.tsx).
+ *
+ * It used to hand-roll its own: a raw RN Modal route drawing its own scrim at
+ * motion.scrimFlat, its own panel on a 340ms cubic, and its own 40x4 grab
+ * handle bound to nothing. Bypassing the shared component cost it everything
+ * the component does — the parent's recede (so the paywall floated over a flat
+ * picture instead of over a screen that was visibly still there), the scrim
+ * coordination that lets the dim drop to 0.28 because the recede does the
+ * separating, the reference counting, drag-to-dismiss, and the elongation. The
+ * web twin (components/aurora/upgrade.tsx) had been on the shared Sheet the
+ * whole time, so this was also the last place the two paywalls disagreed.
+ *
+ * It is still a ROUTE (`router.push("/upgrade")` is called from a dozen entry
+ * points and from the funnel), so the route is a transparent, un-animated pane
+ * and this owns the presentation: `onClosed` pops it only once the panel has
+ * finished leaving, never on the request to close — popping earlier would tear
+ * the route down under a panel still in flight.
  */
 export default function AuroraUpgrade() {
   const { palette: C } = useTheme();
   const pa = usePremiumAccent();
   const router = useRouter();
   const { t } = useLang();
-  const insets = useSafeAreaInsets();
   const paid = useSession().entitlement === "paid";
+  // The Sheet owns the panel; this owns only whether it is up. Closing sets it
+  // false and the route is popped from `onClosed`, after the exit has run.
+  const [open, setOpen] = useState(true);
 
   const [busy, setBusy] = useState(false);
   const [restoring, setRestoring] = useState(false);
@@ -45,20 +60,9 @@ export default function AuroraUpgrade() {
     return () => { active = false; };
   }, []);
 
-  // Slide-up entrance: 1 = off-screen (down), 0 = resting (up). The scrim fades
-  // in with it, and a dismiss slides it back down before popping the modal.
-  const slide = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    track(FUNNEL.upgradePageView, { client: "mobile" });
-    Animated.timing(slide, { toValue: 0, duration: 340, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-  }, [slide]);
+  useEffect(() => { track(FUNNEL.upgradePageView, { client: "mobile" }); }, []);
 
-  const close = () => {
-    Animated.timing(slide, { toValue: 1, duration: 240, easing: Easing.in(Easing.cubic), useNativeDriver: true }).start(() => router.back());
-  };
-
-  const translateY = slide.interpolate({ inputRange: [0, 1], outputRange: [0, 720] });
-  const scrimOpacity = slide.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] });
+  const close = () => setOpen(false);
 
   const subscribe = async () => {
     if (busy) return;
@@ -106,77 +110,59 @@ export default function AuroraUpgrade() {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* scrim — tap to dismiss; the screen behind stays visible through it */}
-      <Pressable onPress={close} style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={t("w.account.upgrade.maybe-later")}>
-        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: scrimOpacity }]} />
+    // No scrim, no panel, no handle and no pad here: they are the Sheet's, and
+    // every one of them was a second, drifting copy before. The body goes
+    // straight into the Sheet's own scroller — the same flow the web twin uses,
+    // so the CTA sits at the end of the read on both clients.
+    <Sheet visible={open} onClose={close} onClosed={() => router.back()}>
+      {/* badge */}
+      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
+      </View>
+
+      <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
+
+      {/* benefits */}
+      <View style={{ marginTop: 16 }}>
+        {BENEFITS.map((b, i) => (
+          <View key={b.t} style={{ flexDirection: "row", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+            <Text style={{ fontSize: 15, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.t}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {/* price */}
+      <View style={{ alignItems: "center", marginTop: 16 }}>
+        <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.5, color: C.chalk }}>
+          {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
+        </Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: 0.9 }}>{t("w.account.upgrade.trial-note")}</Text>
+      </View>
+
+      {!!error && (
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
+      )}
+
+      {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}
+      <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
+        {busy ? <ActivityIndicator color={pa.ink} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.account.upgrade.start-trial")}</Text>}
       </Pressable>
-
-      {/* the sheet */}
-      <Animated.View
-        style={{
-          position: "absolute", left: 0, right: 0, bottom: 0,
-          backgroundColor: C.ink2, borderTopLeftRadius: 28, borderTopRightRadius: 28,
-          borderWidth: 1, borderColor: C.line, maxHeight: "90%",
-          // The shared sheet pad (@hybrid/core), not a third hand-picked number.
-          paddingHorizontal: 20, paddingTop: 12, paddingBottom: sheetPadBottom(sheetInsetBottom(insets.bottom)),
-          transform: [{ translateY }],
-          shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: -8 }, elevation: 24,
-        }}
-      >
-        <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
-
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* badge */}
-          <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
-          </View>
-
-          <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
-
-          {/* benefits */}
-          <View style={{ marginTop: 16 }}>
-            {BENEFITS.map((b, i) => (
-              <View key={b.t} style={{ flexDirection: "row", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                <Text style={{ fontSize: 15, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.t}</Text>
-                  <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          {/* price */}
-          <View style={{ alignItems: "center", marginTop: 16 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.5, color: C.chalk }}>
-              {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
-            </Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: 0.9 }}>{t("w.account.upgrade.trial-note")}</Text>
-          </View>
-
-          {!!error && (
-            <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
-          )}
-        </ScrollView>
-
-        {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}
-        <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
-          {busy ? <ActivityIndicator color={pa.ink} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.account.upgrade.start-trial")}</Text>}
+      {/* Restore Purchases — required by Apple for auto-renewable subscriptions */}
+      {iapAvailable() && (
+        <Pressable onPress={restore} disabled={restoring} accessibilityRole="button" accessibilityLabel={t("w.account.upgrade.restore")} style={{ alignItems: "center", paddingVertical: 10, marginTop: 4 }}>
+          {restoring ? <ActivityIndicator color={C.ash} /> : <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.upgrade.restore")}</Text>}
         </Pressable>
-        {/* Restore Purchases — required by Apple for auto-renewable subscriptions */}
-        {iapAvailable() && (
-          <Pressable onPress={restore} disabled={restoring} accessibilityRole="button" accessibilityLabel={t("w.account.upgrade.restore")} style={{ alignItems: "center", paddingVertical: 10, marginTop: 4 }}>
-            {restoring ? <ActivityIndicator color={C.ash} /> : <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.upgrade.restore")}</Text>}
-          </Pressable>
-        )}
-        <Pressable onPress={close} style={{ alignItems: "center", paddingVertical: 12 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.account.upgrade.maybe-later")}</Text>
-        </Pressable>
-        {/* Terms + Privacy — App Store requires both on the subscription screen */}
-        <LegalLinks />
-      </Animated.View>
-    </View>
+      )}
+      <Pressable onPress={close} style={{ alignItems: "center", paddingVertical: 12 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.account.upgrade.maybe-later")}</Text>
+      </Pressable>
+      {/* Terms + Privacy — App Store requires both on the subscription screen */}
+      <LegalLinks />
+    </Sheet>
   );
 }

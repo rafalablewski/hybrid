@@ -1,7 +1,18 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { SHARED_ELEMENTS, springs, springToCss, springDurationMs, durations, easings } from "@hybrid/core";
+import {
+  SHARED_ELEMENTS,
+  motion,
+  screenAnimation,
+  skeleton,
+  springs,
+  springToCss,
+  springDurationMs,
+  durations,
+  easings,
+  type ScreenTransition,
+} from "@hybrid/core";
 
 /**
  * The spring curves in globals.css are GENERATED from packages/core/src/motion.ts
@@ -37,17 +48,79 @@ describe("globals.css motion tokens", () => {
     expect(css).toContain(`--e-exit: ${easings.exit};`);
     expect(css).toContain(`--d-fast: ${durations.fast}ms;`);
     expect(css).toContain(`--d-dissolve: ${durations.dissolve}ms;`);
+    expect(css).toContain(`--d-collapse: ${durations.collapse}ms;`);
+    expect(css).toContain(`--d-crossfade: ${durations.crossfade}ms;`);
     expect(css).toContain(`--d-reduced: ${durations.reduced}ms;`);
   });
 
+  it("breathes the skeleton at the SHARED rate, not its own", () => {
+    // The two clients pulsed at 1.4s each by coincidence rather than by
+    // construction — mobile hard-coded 700ms halves, this stylesheet hard-coded
+    // 1.4s, and nothing connected them. Both read @hybrid/core `skeleton` now.
+    expect(css).toContain(`--skel-pulse: ${skeleton.pulseMs}ms;`);
+    expect(css).toContain(`--skel-dim: ${skeleton.dim};`);
+    expect(css).toContain(`--skel-bright: ${skeleton.bright};`);
+    expect(css).toContain(`--skel-still: ${skeleton.still};`);
+    // …and the class must READ them rather than restating the numbers.
+    expect(css).toMatch(/\.skeleton \{[^}]*var\(--skel-pulse\)/);
+  });
+
   it("defines every keyframe screenAnimation() can name", () => {
-    for (const name of [
-      "motionSlideInRight", "motionSlideInLeft", "motionSlideOutLeft", "motionSlideOutRight",
-      "motionPushIn", "motionPushOut", "motionPopIn", "motionPopOut",
-      "motionDissolveIn", "motionDissolveOut",
-    ]) {
+    // Enumerated from the FUNCTION rather than from a hand-written list, so a
+    // new transition kind cannot ship naming a keyframe nobody wrote. (The list
+    // was hand-written and went stale the moment `present`/`dismiss` were
+    // added — the guard named four keyframes that no longer existed and missed
+    // the four that had replaced them.)
+    const kinds: ScreenTransition[] = [
+      { kind: "sibling", dir: 1 },
+      { kind: "sibling", dir: -1 },
+      { kind: "push", dir: 0 },
+      { kind: "pop", dir: 0 },
+      { kind: "present", dir: 0 },
+      { kind: "dismiss", dir: 0 },
+      { kind: "cover", dir: 0 },
+      { kind: "uncover", dir: 0 },
+      { kind: "replace", dir: 0 },
+    ];
+    const names = new Set<string>();
+    for (const t of kinds) {
+      for (const role of ["enter", "exit"] as const) {
+        names.add(screenAnimation(t, role).name);
+        names.add(screenAnimation(t, role, true).name);
+      }
+    }
+    for (const name of names) {
       expect(css, `missing @keyframes ${name}`).toContain(`@keyframes ${name}`);
     }
+  });
+
+  it("selects a rule for every transition kind", () => {
+    for (const kind of ["sibling", "push", "pop", "present", "dismiss", "cover", "uncover", "replace"]) {
+      expect(css, `no CSS selects data-nav-kind="${kind}"`).toContain(`html[data-nav-kind="${kind}"]`);
+    }
+  });
+
+  it("recedes a presented parent by exactly motion.recedeScale", () => {
+    // The presented SCREEN and the presented PANEL are the same event; a screen
+    // that recedes to .94 while a sheet recedes to .92 is two answers to one
+    // question. (It was .94 here for as long as the keyframe existed.)
+    const at = css.indexOf("@keyframes motionRecedeBack");
+    const block = css.slice(at, css.indexOf("}", css.indexOf("to", at)));
+    expect(block).toContain(`scale(${String(motion.recedeScale).replace(/^0/, "")})`);
+    expect(block).toContain(`brightness(${String(motion.recedeBrightness).replace(/^0/, "")})`);
+  });
+
+  it("blurs the app out of focus under a COVER, further back than a sheet", () => {
+    // A sheet's parent is coming back in a moment; a covered screen is not, so
+    // it goes further away, darker, and OUT OF FOCUS — the blur is what says
+    // "not for you right now" where a recede alone only says "behind".
+    const at = css.indexOf("@keyframes motionFocusOut");
+    const block = css.slice(at, css.indexOf("}", css.indexOf("to", at)));
+    expect(block).toContain(`scale(${String(motion.coverScale).replace(/^0/, "")})`);
+    expect(block).toContain(`brightness(${String(motion.coverBrightness).replace(/^0/, "")})`);
+    expect(block).toContain(`blur(${motion.coverBlur}px)`);
+    expect(motion.coverScale).toBeLessThan(motion.recedeScale);
+    expect(motion.coverBrightness).toBeLessThan(motion.recedeBrightness);
   });
 
   it("SUBSTITUTES a dissolve under Reduce Motion rather than zeroing it", () => {

@@ -31,7 +31,7 @@ const out = await build({
 const mod = await import(
   "data:text/javascript;base64," + Buffer.from(out.outputFiles[0].text).toString("base64")
 );
-const { springs, easings, durations, springToCss, springDurationMs } = mod;
+const { springs, easings, durations, skeleton, springToCss, springDurationMs } = mod;
 
 const START = "/* ─ GENERATED: motion tokens — node apps/web/scripts/gen-motion-css.mjs ─ */";
 const END = "/* ─ END GENERATED ─ */";
@@ -50,8 +50,15 @@ lines.push(`  --e-fade: ${easings.fade};`);
 lines.push(`  --e-exit: ${easings.exit};`);
 lines.push(`  --d-fast: ${durations.fast}ms;`);
 lines.push(`  --d-dissolve: ${durations.dissolve}ms;`);
+lines.push(`  --d-collapse: ${durations.collapse}ms;`);
+lines.push(`  --d-crossfade: ${durations.crossfade}ms;`);
 lines.push("  /* the Reduce Motion cross-dissolve SUBSTITUTION — never zero */");
 lines.push(`  --d-reduced: ${durations.reduced}ms;`);
+lines.push("  /* the skeleton breath — one rate for both clients */");
+lines.push(`  --skel-pulse: ${skeleton.pulseMs}ms;`);
+lines.push(`  --skel-dim: ${skeleton.dim};`);
+lines.push(`  --skel-bright: ${skeleton.bright};`);
+lines.push(`  --skel-still: ${skeleton.still};`);
 lines.push("}", END);
 const block = lines.join("\n");
 

@@ -20,6 +20,10 @@ import {
   navRootRank,
   screenTransition,
   screenAnimation,
+  isDetour,
+  isCover,
+  MODAL_SCREENS,
+  COVER_SCREENS,
   NAV_ROOT_ORDER,
 } from "./motion";
 
@@ -73,10 +77,23 @@ describe("springs", () => {
     // The rule from the motion spec: nothing over 450ms. The zoom is the
     // longest and earns it by moving the largest distance. This test caught the
     // first cut of these tokens at 521ms (slide) and 641ms (zoom).
+    //
+    // `pop` is the one sanctioned exception — the audit's grid reserves the
+    // tier past the ceiling for CELEBRATION only, and the finish card is the
+    // only celebration. It gets its own ceiling below rather than a free pass.
     for (const [name, s] of Object.entries(springs)) {
+      if (name === "pop") continue;
       expect(springDurationMs(s), `${name} settles too slowly`).toBeLessThanOrEqual(450);
     }
     expect(springDurationMs(springs.zoom)).toBeGreaterThan(springDurationMs(springs.slide));
+  });
+
+  it("holds the celebration pop to the celebration tier, not forever", () => {
+    // Past the ordinary ceiling by design (a win is allowed to take its time),
+    // but still bounded: the PR reveal's own keyframes sit at ~800ms and the
+    // pop must not out-linger the confetti it introduces.
+    expect(springDurationMs(springs.pop)).toBeGreaterThan(450);
+    expect(springDurationMs(springs.pop)).toBeLessThanOrEqual(700);
   });
 });
 
@@ -133,12 +150,21 @@ describe("screenTransition", () => {
     expect(screenTransition("nutrition", "today")).toEqual({ kind: "sibling", dir: -1 });
     expect(screenTransition("today", "profile")).toEqual({ kind: "sibling", dir: 1 });
     expect(screenTransition("profile", "nutrition")).toEqual({ kind: "sibling", dir: -1 });
+    // Messages took More's capsule slot; the motion order has to follow the bar
+    // (it once didn't, and Today ⇄ Messages drilled down instead of sliding).
+    expect(screenTransition("today", "messages")).toEqual({ kind: "sibling", dir: 1 });
+    expect(screenTransition("messages", "nutrition")).toEqual({ kind: "sibling", dir: -1 });
+    expect(NAV_ROOT_ORDER.indexOf("more" as never)).toBe(-1);
   });
 
   it("resolves client-specific ids onto their nav root", () => {
     expect(navRootRank("log")).toBe(NAV_ROOT_ORDER.indexOf("train"));
     expect(navRootRank("you")).toBe(NAV_ROOT_ORDER.indexOf("profile"));
-    expect(screenTransition("today", "log")).toEqual({ kind: "sibling", dir: 1 });
+    // `you` and not `log` demonstrates the aliasing now: `log` still ranks as
+    // the train root (mobile's log tab IS that root), but it is also WEB's live
+    // logger, so the mode-change test claims it before the sibling test is
+    // reached. See the "modality" block for the collision in full.
+    expect(screenTransition("today", "you")).toEqual({ kind: "sibling", dir: 1 });
   });
 
   it("pushes into a detail screen and pops back out", () => {
@@ -156,7 +182,7 @@ describe("screenTransition", () => {
   });
 
   it("crossfades between two unrelated leaves rather than inventing a direction", () => {
-    expect(screenTransition("plans", "builder")).toEqual({ kind: "replace", dir: 0 });
+    expect(screenTransition("plans", "exercises")).toEqual({ kind: "replace", dir: 0 });
   });
 
   it("honours an explicit back-navigation", () => {
@@ -165,6 +191,81 @@ describe("screenTransition", () => {
 
   it("is a no-op onto itself", () => {
     expect(screenTransition("today", "today")).toEqual({ kind: "replace", dir: 0 });
+  });
+});
+
+describe("modality", () => {
+  it("presents a DETOUR and dismisses it, from anywhere", () => {
+    // The app used to have one spatial gesture for two relationships: Settings
+    // and a session's breakdown both arrived from the right.
+    expect(screenTransition("today", "settings")).toEqual({ kind: "present", dir: 0 });
+    expect(screenTransition("settings", "today")).toEqual({ kind: "dismiss", dir: 0 });
+    // …and from a leaf, not just from a root.
+    expect(screenTransition("plans", "builder")).toEqual({ kind: "present", dir: 0 });
+    expect(screenTransition("builder", "plans")).toEqual({ kind: "dismiss", dir: 0 });
+  });
+
+  it("presents on a FORWARD history move as well as on a tap", () => {
+    // Presentation is a property of the DESTINATION, not of the direction
+    // travelled. If `back` could turn it into a pop, Forward and Back would stop
+    // being inverses of each other on exactly the screens that need it most.
+    expect(screenTransition("today", "settings", true)).toEqual({ kind: "present", dir: 0 });
+    expect(screenTransition("settings", "today", true)).toEqual({ kind: "dismiss", dir: 0 });
+  });
+
+  it("does not present a detour over a detour", () => {
+    expect(screenTransition("settings", "logger-settings")).toEqual({ kind: "replace", dir: 0 });
+  });
+
+  it("keeps DEPTH a push — a destination is not a detour however deep", () => {
+    for (const deep of ["plans", "history", "exercise", "coaches"]) {
+      expect(isDetour(deep), `${deep} should be depth, not a detour`).toBe(false);
+    }
+    for (const task of MODAL_SCREENS) expect(isDetour(task)).toBe(true);
+  });
+
+  it("covers a MODE CHANGE, and uncovers when it ends", () => {
+    // Entering the live logger takes the tab bar away, turns the back-swipe off
+    // and makes the app a stopwatch. It used to arrive as the same right-slide
+    // as opening Settings.
+    expect(screenTransition("today", "workout")).toEqual({ kind: "cover", dir: 0 });
+    expect(screenTransition("workout", "today")).toEqual({ kind: "uncover", dir: 0 });
+  });
+
+  it("lets a mode change outrank every other reading of the move", () => {
+    // From a SIBLING root, from a detour, and travelling backwards through
+    // history: none of them turn entering a mode into something else.
+    expect(screenTransition("nutrition", "workout").kind).toBe("cover");
+    expect(screenTransition("settings", "workout").kind).toBe("cover");
+    expect(screenTransition("today", "workout", true).kind).toBe("cover");
+    expect(screenTransition("workout", "today", true).kind).toBe("uncover");
+  });
+
+  it("keeps `log` a cover — and states why mobile must not ask about ITS routes", () => {
+    // The one id in motion.ts that means different things on the two clients:
+    // WEB's `log` is the live logger; MOBILE's `log` is the Train launcher TAB
+    // and its live logger is `workout`. Both are listed because a mode has to
+    // be a mode on both clients — which is exactly why mobile reaches this set
+    // through an explicit route list (app/_layout.tsx MOBILE_COVERS) and never
+    // by testing a pathname, where `/log` would wrongly read as a mode.
+    expect(isCover("log")).toBe(true);
+    expect(isCover("workout")).toBe(true);
+    expect(COVER_SCREENS.filter((r) => r !== "log")).toEqual(["workout"]);
+  });
+
+  it("keeps a mode change out of the detour and depth sets", () => {
+    // A mode is not a detour (you do not "finish and come back" from a workout
+    // the way you finish editing a profile) and not depth.
+    for (const mode of COVER_SCREENS) expect(isDetour(mode)).toBe(false);
+    expect(isCover("settings")).toBe(false);
+    expect(isCover("plans")).toBe(false);
+  });
+
+  it("names the same detour on BOTH clients", () => {
+    // The two clients name the interval timer differently, and a detour that is
+    // only a detour on one client is the drift this file exists to prevent.
+    expect(isDetour("timer")).toBe(true);          // web
+    expect(isDetour("interval-timer")).toBe(true); // mobile
   });
 });
 
@@ -189,9 +290,35 @@ describe("screenAnimation", () => {
   });
 
   it("leaves faster than it arrives", () => {
-    const t = screenTransition("today", "plans");
-    expect(screenAnimation(t, "exit").durationMs).toBeLessThan(screenAnimation(t, "enter").durationMs);
-    expect(screenAnimation(t, "exit").easing).toBe(easings.exit);
+    // The DETOUR is where this rule lives: the task leaves on the accelerating
+    // exit curve while the parent it uncovers comes back on the sheet spring.
+    const t = screenTransition("today", "settings");
+    expect(screenAnimation(t, "enter").name).toBe("motionPresentIn");
+    const back = screenTransition("settings", "today");
+    expect(screenAnimation(back, "exit").durationMs).toBeLessThan(screenAnimation(t, "enter").durationMs);
+    expect(screenAnimation(back, "exit").easing).toBe(easings.exit);
+  });
+
+  it("makes the drill-down travel horizontally, like the native stack does", () => {
+    // The push was a rise over a receding parent on web and a slide_from_right
+    // on mobile, so the shared token that exists to keep them honest described
+    // a motion only one client performed.
+    const push = screenTransition("today", "plans");
+    const pop = screenTransition("plans", "today");
+    expect(screenAnimation(push, "enter").name).toBe("motionSlideInRight");
+    expect(screenAnimation(push, "exit").name).toBe("motionSlideOutLeft");
+    expect(screenAnimation(pop, "enter").name).toBe("motionSlideInLeft");
+    expect(screenAnimation(pop, "exit").name).toBe("motionSlideOutRight");
+  });
+
+  it("makes dismissal the exact inverse of presentation", () => {
+    const present = screenTransition("today", "settings");
+    const dismiss = screenTransition("settings", "today");
+    // The parent recedes on the way in and returns on the way out, on the SAME
+    // spring — receding and returning are one physical gesture with the panel.
+    expect(screenAnimation(present, "exit").name).toBe("motionRecedeBack");
+    expect(screenAnimation(dismiss, "enter").name).toBe("motionRecedeForward");
+    expect(screenAnimation(present, "exit").durationMs).toBe(screenAnimation(dismiss, "enter").durationMs);
   });
 });
 

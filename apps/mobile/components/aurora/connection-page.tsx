@@ -10,6 +10,7 @@ import {
   syncHealthKit,
 } from "../../lib/healthkit";
 import { useLang } from "../../lib/i18n";
+import { haptic } from "../../lib/haptics";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ASub, RADIUS, withAlpha } from "./kit";
@@ -155,6 +156,7 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
     const r = await connectHealthKit();
     setBusy(false);
     if (!r.ok) {
+      haptic.error();
       setNote("error");
       return;
     }
@@ -168,6 +170,8 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
     const r = await syncHealthKit();
     setBusy(false);
     if (!r.ok) {
+      // A failed sync is the audit's own example of the error knock (§15).
+      haptic.error();
       setNote("sync-failed");
       return;
     }

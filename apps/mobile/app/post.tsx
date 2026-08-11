@@ -11,7 +11,7 @@ import {
   type FeedItemView,
   type Relation,
 } from "@hybrid/core";
-import { F, fs, leading, Loading, PressScale as Pressable } from "../lib/ui";
+import { F, fs, leading, LoadSwap, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -21,7 +21,8 @@ import { Avatar, Empty } from "../components/social-kit";
 import { Comments } from "../components/feed-comments";
 import { FeedActions } from "../components/feed-card";
 import { FeedWorkout } from "../components/feed-workout";
-import FeedMenu, { feedMenuFor, type FeedMenuAnchor } from "../components/feed-menu";
+import { FeedMenuTrigger } from "../components/feed-menu";
+import { usePersonSource } from "../lib/shared-element";
 
 /**
  * THE POST (mobile) — twin of apps/web/components/feed-post.tsx.
@@ -45,6 +46,8 @@ import FeedMenu, { feedMenuFor, type FeedMenuAnchor } from "../components/feed-m
  *     actions still live in History and the post keeps a quiet door to them.
  */
 export default function PostScreen() {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const C = useTheme().palette;
   const { t } = useLang();
   const units = useLoggerPrefs().units;
@@ -52,7 +55,6 @@ export default function PostScreen() {
   // Either shape resolves: two params (what `feedPostPath` writes) or the one
   // `type:id` key kudos, comments and saves already use.
   const ref = parseFeedSubjectKey(typeof params.key === "string" ? params.key : `${params.type ?? ""}:${params.id ?? ""}`);
-  const [menu, setMenu] = useState<FeedMenuAnchor | null>(null);
   // The comment button has nothing to expand here — the thread is already open
   // below — so it puts the cursor in the box instead.
   const [focusBox, setFocusBox] = useState(0);
@@ -92,14 +94,13 @@ export default function PostScreen() {
     const err = q.data?.error === "private" ? t("feed.session.private") : q.isError || q.data?.error ? t("feed.post.missing") : null;
     return (
       <AuroraScreen hero={hero} backLabel={t("feed.post.back")}>
-        {err ? <Empty title={err} /> : <Loading />}
+        <LoadSwap loading={!err}>{() => <Empty title={err ?? ""} />}</LoadSwap>
       </AuroraScreen>
     );
   }
 
   const headline = feedHeadlineText(item, t);
   const session = q.data?.session;
-  const menuRows = feedMenuFor({ mine: item.mine, subjectType: item.subjectType, canDelete: false });
   const handle = item.author.handle ? `@${item.author.handle}` : null;
 
   return (
@@ -108,7 +109,7 @@ export default function PostScreen() {
           screen of its own the post is the only thing here, so the person
           leads it. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-        <Pressable onPress={() => { if (item.author.handle) { seedPerson(item.author); router.push(userPagePath(item.author.handle)); } }}>
+        <Pressable onPress={() => { if (item.author.handle) { armPerson(item.author.handle); seedPerson(item.author); router.push(userPagePath(item.author.handle)); } }}>
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={44} />
         </Pressable>
         {/* ONE line — avatar, name, handle, time — exactly as the row reads it
@@ -127,9 +128,17 @@ export default function PostScreen() {
             </Text>
           ) : null}
         </View>
-        {menuRows.length > 0 ? (
-          <MoreButton onOpen={setMenu} label={t("feed.menu.title")} color={C.ash} />
-        ) : null}
+        {/* The overflow menu — trigger + menu in one, the system's glass menu
+            on iOS 26. Renders nothing when core says there are no rows. */}
+        <FeedMenuTrigger
+          handle={item.author.handle}
+          authorId={item.author.id}
+          mine={item.mine}
+          subjectType={item.subjectType}
+          subjectId={item.subjectId}
+          relation={item.relation}
+          onAuthorChanged={authorChanged}
+        />
       </View>
 
       {/* The caption the athlete wrote FOR the feed. The private post-workout
@@ -137,15 +146,17 @@ export default function PostScreen() {
       {item.body ? <Text style={{ fontFamily: F.reg, color: C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 12 }}>{item.body}</Text> : null}
 
       <View style={{ marginTop: 12 }}>
-        {session ? (
-          // The whole workout: the figures, the records, then the ledger.
-          <FeedWorkout session={session} units={units} prs={item.detail?.prs ?? []} />
-        ) : q.isLoading ? (
-          <Loading />
-        ) : headline ? (
-          // A status post has no workout behind it — its headline IS the post.
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: C.chalk }}>{headline}</Text>
-        ) : null}
+        <LoadSwap loading={!session && q.isLoading}>
+          {() =>
+            session ? (
+              // The whole workout: the figures, the records, then the ledger.
+              <FeedWorkout session={session} units={units} prs={item.detail?.prs ?? []} />
+            ) : headline ? (
+              // A status post has no workout behind it — its headline IS the post.
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, lineHeight: leading(fs.title, "snug"), color: C.chalk }}>{headline}</Text>
+            ) : null
+          }
+        </LoadSwap>
       </View>
 
       <FeedActions item={item} headline={headline || item.title} onKudos={cheer} onComments={() => setFocusBox((n) => n + 1)} />
@@ -159,38 +170,6 @@ export default function PostScreen() {
       ) : null}
 
       <Comments item={item} focusSignal={focusBox} onCount={(n) => setLive((x) => (x ? { ...x, comments: n } : x))} />
-
-      <FeedMenu
-        anchor={menu}
-        onClose={() => setMenu(null)}
-        handle={item.author.handle}
-        authorId={item.author.id}
-        mine={item.mine}
-        subjectType={item.subjectType}
-        subjectId={item.subjectId}
-        relation={item.relation}
-        onAuthorChanged={authorChanged}
-      />
     </AuroraScreen>
-  );
-}
-
-/** The ⋯. The menu renders in its own native window, so the glyph's WINDOW rect
- *  has to be measured and handed over (same as the feed row's). */
-function MoreButton({ onOpen, label, color }: { onOpen: (a: FeedMenuAnchor) => void; label: string; color: string }) {
-  const [node, setNode] = useState<View | null>(null);
-  return (
-    // collapsable={false} keeps this View in the native tree — RN prunes
-    // layout-only Views on Android, and a pruned view cannot be measured.
-    <View ref={setNode} collapsable={false}>
-      <Pressable
-        onPress={() => node?.measureInWindow((x, y, w, h) => onOpen({ x, y, w, h }))}
-        hitSlop={10}
-        accessibilityRole="button"
-        accessibilityLabel={label}
-      >
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color, paddingHorizontal: 4 }}>⋯</Text>
-      </Pressable>
-    </View>
   );
 }

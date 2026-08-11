@@ -924,7 +924,7 @@ export function goalCoverView(goal: {
  *  It differs from the two below it on purpose, or the levels would be
  *  indistinguishable: "Plans" owns no discipline, so instead of inventing a
  *  brand colour it washes in the THEME's own primary (the client passes
- *  `palette.lime` — chartreuse on Aurora, pine on Kyoto Hour) at a SOFTER mix
+ *  `palette.lime`, the Aurora chartreuse) at a SOFTER mix
  *  than a goal cover, because the container must not out-shout the nineteen
  *  accents it holds. `◈` is its glyph: the same geometric family as the goal
  *  marks, and not one of them. */

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Kicker, Loading, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, Mono, Kicker, Loading, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Stat, ErrorNote, FilterGroup, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -154,95 +154,101 @@ function tabLabel(t: (typeof TABS)[number], data: Overview | null): string {
 function Command({ data, err }: { data: Overview | null; err: string | null }) {
   const { palette } = useTheme();
   if (err) return <ErrorNote error={err} />;
-  if (!data) return <Loading />;
-  const { stats, agents, trend, recent, upcoming } = data;
-
   return (
-    <View>
-      <Row2>
-        <Stat label="Active agents" value={stats.agents.active} sub={`${stats.agents.total} total – ${stats.agents.paused} paused`} color={palette.lime} />
-        <Stat label="Runs today" value={stats.runs.today} sub={`${stats.runs.week} this week`} />
-      </Row2>
-      <Row2>
-        <Stat
-          label="Success rate 7d"
-          value={stats.runs.successRate == null ? "—" : `${stats.runs.successRate}%`}
-          color={stats.runs.successRate != null && stats.runs.successRate < 80 ? palette.amber : palette.lime}
-        />
-        <Stat label="Cost 7d" value={fmtUsd(stats.cost.week)} sub={`${fmtUsd(stats.cost.today)} today – ${fmtTok(stats.tokens.week)} tok`} />
-      </Row2>
-      <Row2>
-        <Stat label="Scheduled" value={stats.schedules.enabled} sub={`${stats.schedules.total} total`} color={palette.violet} />
-        {stats.attention > 0 ? (
-          <Stat label="Needs attention" value={stats.attention} sub="see Inbox" color={palette.red} />
-        ) : (
-          <Stat label="Pending approvals" value={stats.pendingApprovals} color={stats.pendingApprovals > 0 ? palette.amber : palette.ash} />
-        )}
-      </Row2>
+    <LoadSwap loading={!data}>
+      {() => {
+        if (!data) return null;
+        const { stats, agents, trend, recent, upcoming } = data;
 
-      {/* org chart as a status list */}
-      <ACard style={cardStack}>
-        <Kicker color={palette.amber}>Org chart – the executive team</Kicker>
-        <View style={{ marginTop: 10 }}>
-          <OrgChart agents={agents} />
-        </View>
-      </ACard>
-
-      {/* 7-day activity as bar rows (recharts is web-only) */}
-      <ACard style={cardStack}>
-        <Kicker color={palette.amber}>Activity – runs – last 7 days</Kicker>
-        <View style={{ flexDirection: "row", gap: space.md, marginTop: 8, marginBottom: 6 }}>
-          <Legend color={palette.lime} label="ok" />
-          <Legend color={palette.red} label="error" />
-        </View>
-        {(() => {
-          const max = Math.max(1, ...trend.map((d) => d.ok + d.error));
-          return trend.map((d) => (
-            <View key={d.day} style={{ marginBottom: 8 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{d.day}</Mono>
-                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{d.ok + d.error}</Mono>
-              </View>
-              <StackBar ok={d.ok} error={d.error} max={max} />
-            </View>
-          ));
-        })()}
-      </ACard>
-
-      {/* recent activity feed */}
-      <ACard style={cardStack}>
-        <Kicker color={palette.amber}>Recent activity – latest runs</Kicker>
-        <View style={{ marginTop: 8 }}>
-          {recent.length === 0 ? (
-            <Mono color={palette.ash}>No runs yet.</Mono>
-          ) : (
-            recent.map((r) => (
-              <FeedRow key={r.id} dot={r.status === "ok" ? palette.lime : palette.red} title={`${r.agentName} – ${r.agentRole}`} body={r.task} right={ago(r.createdAt)} />
-            ))
-          )}
-        </View>
-      </ACard>
-
-      {/* upcoming scheduled work */}
-      <ACard style={cardStack}>
-        <Kicker color={palette.amber}>Upcoming work – next scheduled runs</Kicker>
-        <View style={{ marginTop: 8 }}>
-          {upcoming.length === 0 ? (
-            <Mono color={palette.ash}>Nothing scheduled.</Mono>
-          ) : (
-            upcoming.map((u) => (
-              <FeedRow
-                key={u.id}
-                title={`${u.agentName} – ${u.cadence}`}
-                body={u.task}
-                right={u.status === "active" ? until(u.nextRunAt) : "paused"}
-                rightColor={u.status === "active" ? palette.blue : palette.amber}
+        return (
+          <View>
+            <Row2>
+              <Stat label="Active agents" value={stats.agents.active} sub={`${stats.agents.total} total – ${stats.agents.paused} paused`} color={palette.lime} />
+              <Stat label="Runs today" value={stats.runs.today} sub={`${stats.runs.week} this week`} />
+            </Row2>
+            <Row2>
+              <Stat
+                label="Success rate 7d"
+                value={stats.runs.successRate == null ? "—" : `${stats.runs.successRate}%`}
+                color={stats.runs.successRate != null && stats.runs.successRate < 80 ? palette.amber : palette.lime}
               />
-            ))
-          )}
-        </View>
-      </ACard>
-    </View>
+              <Stat label="Cost 7d" value={fmtUsd(stats.cost.week)} sub={`${fmtUsd(stats.cost.today)} today – ${fmtTok(stats.tokens.week)} tok`} />
+            </Row2>
+            <Row2>
+              <Stat label="Scheduled" value={stats.schedules.enabled} sub={`${stats.schedules.total} total`} color={palette.violet} />
+              {stats.attention > 0 ? (
+                <Stat label="Needs attention" value={stats.attention} sub="see Inbox" color={palette.red} />
+              ) : (
+                <Stat label="Pending approvals" value={stats.pendingApprovals} color={stats.pendingApprovals > 0 ? palette.amber : palette.ash} />
+              )}
+            </Row2>
+
+            {/* org chart as a status list */}
+            <ACard style={cardStack}>
+              <Kicker color={palette.amber}>Org chart – the executive team</Kicker>
+              <View style={{ marginTop: 10 }}>
+                <OrgChart agents={agents} />
+              </View>
+            </ACard>
+
+            {/* 7-day activity as bar rows (recharts is web-only) */}
+            <ACard style={cardStack}>
+              <Kicker color={palette.amber}>Activity – runs – last 7 days</Kicker>
+              <View style={{ flexDirection: "row", gap: space.md, marginTop: 8, marginBottom: 6 }}>
+                <Legend color={palette.lime} label="ok" />
+                <Legend color={palette.red} label="error" />
+              </View>
+              {(() => {
+                const max = Math.max(1, ...trend.map((d) => d.ok + d.error));
+                return trend.map((d) => (
+                  <View key={d.day} style={{ marginBottom: 8 }}>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                      <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{d.day}</Mono>
+                      <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{d.ok + d.error}</Mono>
+                    </View>
+                    <StackBar ok={d.ok} error={d.error} max={max} />
+                  </View>
+                ));
+              })()}
+            </ACard>
+
+            {/* recent activity feed */}
+            <ACard style={cardStack}>
+              <Kicker color={palette.amber}>Recent activity – latest runs</Kicker>
+              <View style={{ marginTop: 8 }}>
+                {recent.length === 0 ? (
+                  <Mono color={palette.ash}>No runs yet.</Mono>
+                ) : (
+                  recent.map((r) => (
+                    <FeedRow key={r.id} dot={r.status === "ok" ? palette.lime : palette.red} title={`${r.agentName} – ${r.agentRole}`} body={r.task} right={ago(r.createdAt)} />
+                  ))
+                )}
+              </View>
+            </ACard>
+
+            {/* upcoming scheduled work */}
+            <ACard style={cardStack}>
+              <Kicker color={palette.amber}>Upcoming work – next scheduled runs</Kicker>
+              <View style={{ marginTop: 8 }}>
+                {upcoming.length === 0 ? (
+                  <Mono color={palette.ash}>Nothing scheduled.</Mono>
+                ) : (
+                  upcoming.map((u) => (
+                    <FeedRow
+                      key={u.id}
+                      title={`${u.agentName} – ${u.cadence}`}
+                      body={u.task}
+                      right={u.status === "active" ? until(u.nextRunAt) : "paused"}
+                      rightColor={u.status === "active" ? palette.blue : palette.amber}
+                    />
+                  ))
+                )}
+              </View>
+            </ACard>
+          </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 
@@ -308,12 +314,18 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
 
 function Scorecards({ data, onChange }: { data: Overview | null; onChange: () => void }) {
   const { palette } = useTheme();
-  if (!data) return <Loading />;
-  if (data.scorecards.length === 0) return <Mono color={palette.ash}>No agents yet — create your team in "AI agents".</Mono>;
   return (
-    <View>
-      {data.scorecards.map((s) => <ScorecardCard key={s.id} s={s} onChange={onChange} />)}
-    </View>
+    <LoadSwap loading={!data}>
+      {() => {
+        if (!data) return null;
+        if (data.scorecards.length === 0) return <Mono color={palette.ash}>No agents yet — create your team in "AI agents".</Mono>;
+        return (
+          <View>
+            {data.scorecards.map((s) => <ScorecardCard key={s.id} s={s} onChange={onChange} />)}
+          </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 
@@ -434,36 +446,42 @@ function Approvals({ onChange }: { onChange: () => void }) {
     onChange();
   }
 
-  if (items === null) return <Loading />;
-  if (items.length === 0)
-    return (
-      <ACard style={cardStack}>
-        <Mono color={palette.lime} style={{ textAlign: "center", paddingVertical: 24 }}>✓ No runs awaiting approval.</Mono>
-      </ACard>
-    );
-
   return (
-    <View>
-      <Mono color={palette.ash} style={{ marginBottom: 10 }}>
-        {items.length} run(s) held for a second operator. You can't approve your own request.
-      </Mono>
-      <ErrorNote error={err} onDismiss={() => setErr(null)} />
-      {items.map((a) => (
-        <ACard key={a.id} accent={palette.amber} style={cardStack}>
-          <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.agentName}</Text>
-            <Chip color={palette.ash}>{a.runtime}</Chip>
-            {a.estimateUsd > 0 && <Chip color={palette.violet}>est ${a.estimateUsd.toFixed(2)}</Chip>}
+    <LoadSwap loading={items === null}>
+      {() => {
+        if (items === null) return null;
+        if (items.length === 0)
+          return (
+            <ACard style={cardStack}>
+              <Mono color={palette.lime} style={{ textAlign: "center", paddingVertical: 24 }}>✓ No runs awaiting approval.</Mono>
+            </ACard>
+          );
+
+        return (
+          <View>
+            <Mono color={palette.ash} style={{ marginBottom: 10 }}>
+              {items.length} run(s) held for a second operator. You can't approve your own request.
+            </Mono>
+            <ErrorNote error={err} onDismiss={() => setErr(null)} />
+            {items.map((a) => (
+              <ACard key={a.id} accent={palette.amber} style={cardStack}>
+                <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.agentName}</Text>
+                  <Chip color={palette.ash}>{a.runtime}</Chip>
+                  {a.estimateUsd > 0 && <Chip color={palette.violet}>est ${a.estimateUsd.toFixed(2)}</Chip>}
+                </View>
+                <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 4 }}>{a.task}</Mono>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
+                <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
+                  <PillBtn label="Approve & run" disabled={busy === a.id} onPress={() => decide(a.id, "approve")} />
+                  <PillBtn label="Deny" outline color={palette.ash} disabled={busy === a.id} onPress={() => decide(a.id, "deny")} />
+                </View>
+              </ACard>
+            ))}
           </View>
-          <Mono color={palette.ash} style={{ fontSize: fs.caption, marginTop: 4 }}>{a.task}</Mono>
-          <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 4 }}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
-          <View style={{ flexDirection: "row", gap: space.sm, marginTop: 10 }}>
-            <PillBtn label="Approve & run" disabled={busy === a.id} onPress={() => decide(a.id, "approve")} />
-            <PillBtn label="Deny" outline color={palette.ash} disabled={busy === a.id} onPress={() => decide(a.id, "deny")} />
-          </View>
-        </ACard>
-      ))}
-    </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 
@@ -498,60 +516,66 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
   const unread = list.filter((n) => !n.read).length;
   const sevColor = (s: string) => (s === "error" ? palette.red : s === "info" ? palette.blue : palette.amber);
 
-  if (notifs === null) return <Loading />;
-  if (list.length === 0 && brokenSchedules.length === 0)
-    return (
-      <ACard style={cardStack}>
-        <Mono color={palette.lime} style={{ textAlign: "center", paddingVertical: 24 }}>✓ All clear — nothing needs attention.</Mono>
-      </ACard>
-    );
-
   return (
-    <View>
-      {list.length > 0 && (
-        <ACard accent={palette.red} style={cardStack}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <Kicker color={palette.amber}>Notifications – {unread} unread</Kicker>
-            {unread > 0 && <PillBtn label="Mark all read" outline color={palette.ash} disabled={busy} onPress={() => markRead()} />}
-          </View>
-          {list.map((n) => (
-            <View key={n.id} style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line, opacity: n.read ? 0.5 : 1 }}>
-              <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sevColor(n.severity), marginTop: 5 }} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{n.title}</Text>
-                {n.body && <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={2}>{n.body}</Mono>}
-              </View>
-              <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{ago(n.createdAt)}</Mono>
-              {!n.read && (
-                <Pressable onPress={() => markRead(n.id)} disabled={busy} hitSlop={8}>
-                  <Mono color={palette.ash} style={{ fontSize: fs.bodyLg }}>✕</Mono>
-                </Pressable>
-              )}
-            </View>
-          ))}
-        </ACard>
-      )}
-      {brokenSchedules.length > 0 && (
-        <ACard accent={palette.amber} style={cardStack}>
-          <Kicker color={palette.amber}>Schedules that can't fire – the agent isn't active</Kicker>
-          <View style={{ marginTop: 8 }}>
-            {brokenSchedules.map((b) => (
-              <View key={b.id} style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line }}>
-                <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: palette.amber, marginTop: 5 }} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{b.agentName}</Text>
-                    <Chip color={palette.violet}>{b.cadence}</Chip>
-                    <Chip color={palette.amber}>{b.reason}</Chip>
-                  </View>
-                  <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={1}>{b.task}</Mono>
+    <LoadSwap loading={notifs === null}>
+      {() => {
+        if (notifs === null) return null;
+        if (list.length === 0 && brokenSchedules.length === 0)
+          return (
+            <ACard style={cardStack}>
+              <Mono color={palette.lime} style={{ textAlign: "center", paddingVertical: 24 }}>✓ All clear — nothing needs attention.</Mono>
+            </ACard>
+          );
+
+        return (
+          <View>
+            {list.length > 0 && (
+              <ACard accent={palette.red} style={cardStack}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <Kicker color={palette.amber}>Notifications – {unread} unread</Kicker>
+                  {unread > 0 && <PillBtn label="Mark all read" outline color={palette.ash} disabled={busy} onPress={() => markRead()} />}
                 </View>
-              </View>
-            ))}
+                {list.map((n) => (
+                  <View key={n.id} style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line, opacity: n.read ? 0.5 : 1 }}>
+                    <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: sevColor(n.severity), marginTop: 5 }} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{n.title}</Text>
+                      {n.body && <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={2}>{n.body}</Mono>}
+                    </View>
+                    <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{ago(n.createdAt)}</Mono>
+                    {!n.read && (
+                      <Pressable onPress={() => markRead(n.id)} disabled={busy} hitSlop={8}>
+                        <Mono color={palette.ash} style={{ fontSize: fs.bodyLg }}>✕</Mono>
+                      </Pressable>
+                    )}
+                  </View>
+                ))}
+              </ACard>
+            )}
+            {brokenSchedules.length > 0 && (
+              <ACard accent={palette.amber} style={cardStack}>
+                <Kicker color={palette.amber}>Schedules that can't fire – the agent isn't active</Kicker>
+                <View style={{ marginTop: 8 }}>
+                  {brokenSchedules.map((b) => (
+                    <View key={b.id} style={{ flexDirection: "row", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: palette.line }}>
+                      <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: palette.amber, marginTop: 5 }} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
+                          <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{b.agentName}</Text>
+                          <Chip color={palette.violet}>{b.cadence}</Chip>
+                          <Chip color={palette.amber}>{b.reason}</Chip>
+                        </View>
+                        <Mono color={palette.ash} style={{ fontSize: fs.micro }} numberOfLines={1}>{b.task}</Mono>
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </ACard>
+            )}
           </View>
-        </ACard>
-      )}
-    </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 
@@ -622,46 +646,51 @@ function CostTab() {
   }
 
   if (error) return <ErrorNote error={error} />;
-  if (!d) return <Loading />;
-
   return (
-    <View>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
-        <Kicker color={palette.amber}>Monthly cost – real agent spend</Kicker>
-        <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
-      </View>
-      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV export is web-only.</Mono>
-      {[d.current, d.previous].map((m, i) => (
-        <ACard key={m.month} style={cardStack}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <Kicker color={i === 0 ? palette.amber : palette.ash}>{m.month}{i === 0 ? " – MTD" : ""}</Kicker>
+    <LoadSwap loading={!d}>
+      {() => {
+        if (!d) return null;
+        return (
+          <View>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <Kicker color={palette.amber}>Monthly cost – real agent spend</Kicker>
+              <PillBtn label={busy ? "Sending…" : "Send to Slack"} outline color={palette.chalk} disabled={busy} onPress={send} />
+            </View>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV export is web-only.</Mono>
+            {[d.current, d.previous].map((m, i) => (
+              <ACard key={m.month} style={cardStack}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Kicker color={i === 0 ? palette.amber : palette.ash}>{m.month}{i === 0 ? " – MTD" : ""}</Kicker>
+                </View>
+                <Text style={{ fontFamily: F.black, fontSize: fs.display, color: palette.chalk, marginVertical: 4 }}>{fmtUsd(m.total)}</Text>
+                <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{m.runs} runs</Mono>
+                <View style={{ marginTop: 8 }}>
+                  {m.perAgent.length === 0 ? (
+                    <Mono color={palette.ash} style={{ fontSize: fs.micro }}>No spend this month.</Mono>
+                  ) : (
+                    (() => {
+                      const max = Math.max(1, ...m.perAgent.map((p) => p.cost));
+                      return m.perAgent.slice(0, 8).map((p) => (
+                        <View key={p.name} style={{ marginBottom: 6 }}>
+                          <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                            <Mono color={palette.ash} style={{ fontSize: fs.micro, flex: 1 }} numberOfLines={1}>{p.name}</Mono>
+                            <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{fmtUsd(p.cost)} – {p.runs}r</Mono>
+                          </View>
+                          <View style={{ height: 6, borderRadius: 3, backgroundColor: palette.line, overflow: "hidden", marginTop: 2 }}>
+                            <View style={{ width: `${Math.max(3, Math.round((p.cost / max) * 100))}%`, height: "100%", backgroundColor: palette.violet, borderRadius: 3 }} />
+                          </View>
+                        </View>
+                      ));
+                    })()
+                  )}
+                </View>
+              </ACard>
+            ))}
+            {sent && <Mono color={palette.lime} style={{ fontSize: fs.micro, marginTop: 4 }}>{sent}</Mono>}
           </View>
-          <Text style={{ fontFamily: F.black, fontSize: fs.display, color: palette.chalk, marginVertical: 4 }}>{fmtUsd(m.total)}</Text>
-          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{m.runs} runs</Mono>
-          <View style={{ marginTop: 8 }}>
-            {m.perAgent.length === 0 ? (
-              <Mono color={palette.ash} style={{ fontSize: fs.micro }}>No spend this month.</Mono>
-            ) : (
-              (() => {
-                const max = Math.max(1, ...m.perAgent.map((p) => p.cost));
-                return m.perAgent.slice(0, 8).map((p) => (
-                  <View key={p.name} style={{ marginBottom: 6 }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                      <Mono color={palette.ash} style={{ fontSize: fs.micro, flex: 1 }} numberOfLines={1}>{p.name}</Mono>
-                      <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{fmtUsd(p.cost)} – {p.runs}r</Mono>
-                    </View>
-                    <View style={{ height: 6, borderRadius: 3, backgroundColor: palette.line, overflow: "hidden", marginTop: 2 }}>
-                      <View style={{ width: `${Math.max(3, Math.round((p.cost / max) * 100))}%`, height: "100%", backgroundColor: palette.violet, borderRadius: 3 }} />
-                    </View>
-                  </View>
-                ));
-              })()
-            )}
-          </View>
-        </ACard>
-      ))}
-      {sent && <Mono color={palette.lime} style={{ fontSize: fs.micro, marginTop: 4 }}>{sent}</Mono>}
-    </View>
+        );
+      }}
+    </LoadSwap>
   );
 }
 
@@ -713,9 +742,8 @@ function Reports() {
       <FilterGroup options={FILTERS.map((f) => ({ value: f, label: f }))} value={filter} onChange={(v) => setFilter(v as (typeof FILTERS)[number])} />
       <Mono color={palette.ash} style={{ fontSize: fs.micro, marginBottom: 8 }}>CSV / PDF export is web-only.</Mono>
 
-      {runs === null ? (
-        <Loading />
-      ) : runs.length === 0 ? (
+      <LoadSwap loading={runs === null}>
+        {() => runs === null ? null : runs.length === 0 ? (
         <ACard style={cardStack}>
           <Mono color={palette.ash} style={{ textAlign: "center", paddingVertical: 20 }}>
             No runs yet{filter !== "all" ? ` with status "${filter}"` : ""}.
@@ -756,6 +784,7 @@ function Reports() {
           );
         })
       )}
+      </LoadSwap>
     </View>
   );
 }

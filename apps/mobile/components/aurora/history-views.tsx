@@ -23,6 +23,7 @@ import {
   type WeightUnit,
   type BodyweightLookup,
   type StatRange,
+  sessionTitleText,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
@@ -88,7 +89,7 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
         <Text style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C.ash }}> {unitOf(h, t)}</Text>
       </Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
-        {[s.title, ...headlineMeta(h, t)].join(" – ")}
+        {[sessionTitleText(s.title, t), ...headlineMeta(h, t)].join(" – ")}
         {prs > 0 && (
           <>
             {" – "}
@@ -273,7 +274,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
                 // celebration reveal owns the motion there) the arm simply
                 // expires and the ordinary push carries the change.
                 onPress={() => {
-                  armTitle(SHARED_ELEMENTS.sessionHero, titleRefs.current[s.id] ?? null, s.title, titleStyle);
+                  armTitle(SHARED_ELEMENTS.sessionHero, titleRefs.current[s.id] ?? null, sessionTitleText(s.title, t), titleStyle);
                   ctx.onOpen(s.id);
                 }}
                 style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: C.line }}
@@ -283,7 +284,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
                   <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, fontWeight: "700" }}>{Number(key.slice(8, 10))}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} ref={(r) => { titleRefs.current[s.id] = r; }} numberOfLines={1} style={titleStyle}>{s.title}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} ref={(r) => { titleRefs.current[s.id] = r; }} numberOfLines={1} style={titleStyle}>{sessionTitleText(s.title, t)}</Text>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 1 }}>
                     {[`${h.value} ${unitOf(h, t)}`, ...headlineMeta(h, t)].join(" – ")}
                   </Text>

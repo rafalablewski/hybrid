@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { Animated, Easing, View, Text, type TextStyle } from "react-native";
-import { springs, springDurationMs, durations } from "@hybrid/core";
+import { springs, springDurationMs, durations, SHARED_ELEMENTS } from "@hybrid/core";
 import { useReducedMotion } from "./use-reduced-motion";
 import { FIXED_FONT_SCALE } from "./ui";
 
@@ -50,16 +50,22 @@ type Rect = { x: number; y: number; width: number; height: number };
 type Armed = {
   name: string;
   rect: Rect;
-  text: string;
-  style: TextStyle;
   at: number;
+  /** TEXT flight: a string re-drawn at the destination's type style. */
+  text?: string;
+  style?: TextStyle;
+  /** NODE flight: a rendered surface — the goal/plan cover, which is the same
+   *  recipe at two sizes and so cannot be described by a string. Rendered at the
+   *  DESTINATION's size and scaled down to the source's, exactly as the text
+   *  flight is, so it is crisp where the eye ends up. */
+  node?: ReactNode;
 };
 
-type Flight = Armed & { to: Rect; toStyle: TextStyle };
+type Flight = Armed & { to: Rect; toStyle?: TextStyle };
 
 type Ctx = {
   arm: (a: Omit<Armed, "at">) => void;
-  claim: (name: string, to: Rect, toStyle: TextStyle) => boolean;
+  claim: (name: string, to: Rect, toStyle?: TextStyle) => boolean;
   /** Names currently mid-flight — the destination hides its own text for these. */
   flying: string | null;
 };
@@ -77,7 +83,7 @@ export function SharedElementProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const claim = useCallback(
-    (name: string, to: Rect, toStyle: TextStyle) => {
+    (name: string, to: Rect, toStyle?: TextStyle) => {
       const a = armedRef.current;
       armedRef.current = null;
       if (!a || a.name !== name) return false;
@@ -116,21 +122,30 @@ export function SharedElementProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Centre-to-centre everywhere: RN scales about the centre and has no
+// transform-origin, so measuring centres removes the origin correction.
+const centre = (r: Rect) => ({ x: r.x + r.width / 2, y: r.y + r.height / 2 });
+
 function FlyingClone({ flight, progress }: { flight: Flight; progress: Animated.Value }) {
+  if (flight.node) return <FlyingSurface flight={flight} progress={progress} />;
+  return <FlyingText flight={flight} progress={progress} />;
+}
+
+/**
+ * A STRING in flight. Rendered at the DESTINATION's size and scaled DOWN to the
+ * source's, so the type is crisp where the eye ends up rather than where it
+ * started, and the destination hides its own copy until this lands.
+ */
+function FlyingText({ flight, progress }: { flight: Flight; progress: Animated.Value }) {
   const { rect, to, text, toStyle } = flight;
-  const fromSize = Number(flight.style.fontSize ?? 16);
-  const toSize = Number(toStyle.fontSize ?? 16);
+  const fromSize = Number(flight.style?.fontSize ?? 16);
+  const toSize = Number(toStyle?.fontSize ?? 16);
   const startScale = toSize > 0 ? fromSize / toSize : 1;
+  const from = centre(rect);
+  const dest = centre(to);
 
-  // Centre-to-centre: RN scales about the centre and has no transform-origin,
-  // so measuring centres removes the origin correction entirely.
-  const fromCx = rect.x + rect.width / 2;
-  const fromCy = rect.y + rect.height / 2;
-  const toCx = to.x + to.width / 2;
-  const toCy = to.y + to.height / 2;
-
-  const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [fromCx - toCx, 0] });
-  const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [fromCy - toCy, 0] });
+  const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [from.x - dest.x, 0] });
+  const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [from.y - dest.y, 0] });
   const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [startScale, 1] });
 
   return (
@@ -152,6 +167,54 @@ function FlyingClone({ flight, progress }: { flight: Flight; progress: Animated.
   );
 }
 
+/**
+ * A SURFACE in flight — a cover tile growing into the same cover at screen
+ * scale.
+ *
+ * The opposite convention to the text flight, and deliberately: it renders the
+ * SOURCE's own drawing at the SOURCE's size and scales it UP. Rendering a tile's
+ * layout at poster size would keep its 96pt glyph and its 16pt title at those
+ * sizes inside a box twice as big — the composition would be wrong for the
+ * whole flight. Scaling the tile grows every part of it together, which is what
+ * "the same object, seen closer" actually looks like. Crispness, the reason the
+ * text flight goes the other way, matters far less to a gradient and a glyph,
+ * and the real cover is underneath the whole time.
+ *
+ * So the destination is NOT hidden here. The clone flies OVER it and dissolves
+ * on arrival onto the poster it has become, which also means a dropped frame or
+ * a mismeasurement leaves the real cover on screen rather than a hole.
+ */
+function FlyingSurface({ flight, progress }: { flight: Flight; progress: Animated.Value }) {
+  const { rect, to, node } = flight;
+  const from = centre(rect);
+  const dest = centre(to);
+  const endScale = rect.width > 0 ? to.width / rect.width : 1;
+
+  const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, dest.x - from.x] });
+  const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [0, dest.y - from.y] });
+  const scale = progress.interpolate({ inputRange: [0, 1], outputRange: [1, endScale] });
+  // Held opaque until the last stretch, then handed to the real cover.
+  const opacity = progress.interpolate({ inputRange: [0, 0.72, 1], outputRange: [1, 1, 0] });
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={{
+        position: "absolute",
+        left: rect.x,
+        top: rect.y,
+        width: rect.width,
+        height: rect.height,
+        opacity,
+        transform: [{ translateX }, { translateY }, { scale }],
+        zIndex: 9999,
+      }}
+    >
+      {node}
+    </Animated.View>
+  );
+}
+
 /** Arm a source before navigating. No-op outside the provider. */
 export function useSharedElementSource() {
   const ctx = useContext(SharedCtx);
@@ -168,6 +231,110 @@ export function useSharedElementSource() {
     },
     [ctx],
   );
+}
+
+/**
+ * Arm a SURFACE source — a cover tile that opens into the same cover at screen
+ * scale. The caller passes what the DESTINATION looks like (`render`), not what
+ * the source looks like, for the same reason the text flight re-draws at the
+ * destination's type style: the clone should be crisp where the eye ends up.
+ * That is only sound because the two ends are the same recipe from core, which
+ * is the whole reason this pair was chosen.
+ */
+export function useSharedSurfaceSource() {
+  const ctx = useContext(SharedCtx);
+  return useCallback(
+    (name: string, node: View | null, render: ReactNode) => {
+      if (!ctx || !node) return;
+      (node as unknown as { measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void })
+        .measureInWindow?.((x, y, width, height) => {
+          if (!width || !height) return;
+          ctx.arm({ name, rect: { x, y, width, height }, node: render });
+        });
+    },
+    [ctx],
+  );
+}
+
+/* ── The person registry ─────────────────────────────────────────────────
+ * Every Avatar drawn as a potential SOURCE puts its node and its face here
+ * under the person's handle, so a door only has to say WHO it is opening.
+ *
+ * A registry rather than a ref per row for the same reason the web twin uses an
+ * attribute: half the doors to a person's page are callbacks fired from deep
+ * inside a post card (`onOpenProfile={(h) => …}`) with nothing to thread a ref
+ * through, and the ones that could thread one would each need a component
+ * extracted to hold it.
+ *
+ * Registered on mount and REMOVED on unmount, so a scrolled-away row cannot arm
+ * a stale node. Two avatars for the same person on one screen is possible (a
+ * feed with two of their posts) and the last mounted wins — they are the same
+ * face, so the flight is right either way; only its start position differs.
+ */
+const people = new Map<string, { node: View | null; face: ReactNode }>();
+
+/** Register this avatar as the arm-able source for `handle`. */
+export function registerPerson(handle: string, node: View | null, face: ReactNode): () => void {
+  people.set(handle, { node, face });
+  return () => { if (people.get(handle)?.node === node) people.delete(handle); };
+}
+
+/**
+ * Arm the avatar of a named person as the source of the next navigation.
+ * Measured HERE rather than at registration: the list has almost certainly
+ * scrolled since the row mounted, and a flight that starts where the face used
+ * to be is worse than no flight.
+ */
+export function usePersonSource() {
+  const ctx = useContext(SharedCtx);
+  return useCallback((handle: string | null | undefined) => {
+    if (!ctx || !handle) return;
+    const entry = people.get(handle);
+    const node = entry?.node as unknown as {
+      measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
+    } | null;
+    if (!node?.measureInWindow) return;
+    node.measureInWindow((x, y, width, height) => {
+      if (!width || !height) return;
+      ctx.arm({ name: SHARED_ELEMENTS.personAvatar, rect: { x, y, width, height }, node: entry!.face });
+    });
+  }, [ctx]);
+}
+
+/**
+ * Destination side for a SURFACE. Attach `ref` to the box the tile grows into
+ * and nothing else: the clone flies OVER the real cover and dissolves onto it,
+ * so unlike the text target there is no hiding to undo, and every failure case
+ * — no provider, a failed measurement, a stale arm — simply leaves the cover
+ * on screen where it already was.
+ */
+export function useSharedSurfaceTarget(name: string) {
+  const ctx = useContext(SharedCtx);
+  const ref = useRef<View | null>(null);
+  const claimed = useRef(false);
+
+  useEffect(() => {
+    if (!ctx || claimed.current) return;
+    claimed.current = true;
+    const node = ref.current as unknown as {
+      measureInWindow?: (cb: (x: number, y: number, w: number, h: number) => void) => void;
+    } | null;
+    if (!node?.measureInWindow) return;
+    const id = requestAnimationFrame(() => {
+      node.measureInWindow!((x, y, width, height) => {
+        if (!width || !height) return;
+        // No `setHidden` here, unlike the text target: the surface clone flies
+        // OVER the real cover and dissolves onto it, so hiding the destination
+        // would leave a hole for the whole flight — and a dropped claim leaves
+        // the real cover exactly where it already was.
+        ctx.claim(name, { x, y, width, height });
+      });
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx, name]);
+
+  return { ref };
 }
 
 /**

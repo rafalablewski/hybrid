@@ -7,6 +7,161 @@ a file and line. Nothing is asserted from a screenshot or from the capabilities
 register — where the register disagrees with the code, the code wins and the
 register is marked stale.
 
+> **STATUS — the audit has been actioned. This document is the original finding
+> and is deliberately left as written; it is a record of what was true when it
+> was taken, not a description of the app today.** All twenty items on §20's
+> "worst transitions" list have shipped, plus the two follow-ups they opened.
+> See `motion-audit-followups` in `packages/core/src/capabilities.ts` for what
+> each fix actually was — that entry, not this file, is the current state.
+>
+> Where a finding below reads as present-tense fact, add "as of August 2026,
+> before the fix". The scores in §21 are the pre-fix scores.
+>
+> **All twenty-two are now fixed everywhere, and §20's second list — the
+> "most confusing navigation decisions" — is closed with them.** Most fixes
+> live in one shared place — the Sheet, the SwipeRow, the shell's history, a
+> list in core — so every site gets them by construction. The rest were swept
+> in a third pass: the face flies at all twenty doors to a person's page,
+> filtering travels on twelve surfaces, and web's stat tiles roll at the
+> source, which reached thirty-one screens in one change.
+>
+> The two that were honestly still open — `loading-crossfade-adoption` and
+> `mobile-stat-tile` — closed in **wave 4**, and both closed differently than
+> this document predicted. The crossfade was scoped here as forty-five body
+> moves; it needed none, because `LoadSwap` already rendered its children only
+> once the data had landed, so making children LAZY turned that into an
+> enforceable contract and let every body stay in its own scope. And the stat
+> tile's blocker was never the count: it was that mobile had nothing to sweep
+> ONTO. `shared-elements-remaining` still covers the pairs that were never in
+> the twenty — the chart being the interesting one.
+
+### The twenty, and where each went
+
+| # | Finding | Where it was fixed |
+|---|---|---|
+| 1 | Browser Back exits the app (N1) | Wave 1 — `setScreen` pushes; popstate applies the direction the browser travelled |
+| 2 | Sheet grab handle bound to nothing (F1) | Wave 1 — pan on the panel, release by velocity projection in core |
+| 3 | Every list deletion teleports (§11) | Wave 1 (set rows) → Wave 3 — SwipeRow closes its own gap, so every host gets it |
+| 4 | 448 mobile taps with no feedback (M1) | Wave 1 — `PressScale` swept across 83 files |
+| 5 | 571 web buttons with no press state (M1) | Wave 1 — 574 buttons across 104 files |
+| 6 | Session card → detail, hard cut (§3) | Wave 1 — `SHARED_ELEMENTS.sessionHero` |
+| 7 | Plan cover → plan, hard cut (§3) | Wave 2 — `SHARED_ELEMENTS.planCover`; mobile's FLIP learned to fly a surface |
+| 8 | Mobile sheet running a cubic (F3) | Wave 1 — `springToRN(springs.sheet)` |
+| 9 | The hub lens at 629ms (T1) | Wave 1 — `springs.lens`, in the token set so the guard sees it |
+| 10 | Settings pushing like a drill-down (N3) | Wave 2 — core `MODAL_SCREENS`; `presentation: "modal"` |
+| 11 | Editors pushing like drill-downs (N3) | Wave 2 — same list |
+| 12 | Web sheet unmount racing itself (F4) | Wave 1 — `transitionend`, timeout as fallback only |
+| 13 | Swipe actions ignoring velocity (G1) | Wave 1 — core `projectSwipe` |
+| 14 | Reorder commit with no travel (§11) | Wave 2 — animated inside `useDragReorder` |
+| 15 | Spinner → fully-formed screen (§12) | Wave 1 (mobile `Skeleton`) → Wave 3 — web's twin, admin included |
+| 16 | Skeleton → content as a swap (§12) | Wave 2 — `LoadSwap`, `durations.crossfade` → Wave 4 — lazy children, ~33 sites across 29 files |
+| 17 | Numbers swapping, not rolling (§13) | Wave 2 — core `numericDiff` + `RollingNumber` → Wave 3 — web's 31 stat tiles + the calorie ring → Wave 4 — mobile's `AStat` |
+| 18 | No full-swipe-to-delete (G2) | Wave 1 — commit at `swipe.fullAt` |
+| 19 | Paywall bypassing the shared sheet (F5) | Wave 2 — it is the shared `Sheet` |
+| 20 | Filter replacing the list wholesale (§11) | Wave 2 (Exercises) → Wave 3 — twelve surfaces |
+
+### The two follow-ups the twenty opened
+
+| Finding | Where it went |
+|---|---|
+| No full-screen-cover vocabulary — entering the live logger looks like opening Settings (§2) | Wave 3 — core `COVER_SCREENS`; `fullScreenModal` + focus blur, and web's chrome leaves with the mode |
+| The remaining shared-element pairs (§3) | Wave 3 — `SHARED_ELEMENTS.personAvatar`, at all twenty doors to a person's page |
+
+### §20's second list — the most confusing navigation decisions
+
+Waves 1–3 closed thirteen of these as a by-product of the "worst transitions"
+work (they are the same findings seen from the user's side rather than the
+frame's). **Wave 4** closed the remainder, and closed the two honest gaps above
+with them.
+
+| # | Decision | Where it went |
+|---|---|---|
+| 4 | Detail screens inside the tab on mobile, on top of it on web (N5) | Wave 4 — the web pill bar stands only on a nav root (`navRootRank`), so a push covers it exactly as it hides mobile's native bar |
+| 5 | Tab-switch motion differs between clients (§8) | Wave 4 — closed as a DECISION, not a build: web has no system bar to inherit and the alternative is a hard cut, so the slide stays and `nav-parity-gap` records it as deliberate |
+| 6 | The search slot beside the tab bar is reserved and empty (§4) | Wave 4 — closed as a decision: the slot is deliberately spent on the Train action (`role="search"` detaches the circle), so a future search does not live there. Cross-app search is now its own `global-search` item |
+| 8 | Two swipe-row implementations with four constants (G5) | Wave 1 (SwipeRow) → Wave 4 — History's SwipeCard, the last surface deciding on displacement, takes core's `projectSwipe` + rubber-band + `springs.slide` on both clients |
+| 14 | Six hand-rolled springs beside a four-token system (F7) | Wave 1 (the lens) → Wave 4 — `springs.pop` is the celebration token, the one spring allowed past the 450ms ceiling and given its own guard |
+| 17 | Error haptics fire nowhere (§15) | Wave 4 — `toast()` gains an error kind that knocks from inside the host, wired to the save/sync failure paths |
+| 18 | Two loading languages across clients (§12) | Wave 4 — see item 16 above |
+| 20 | The register describing a haptics state that no longer holds (H1) | Wave 1 — one gate per client by construction; the register corrected in the same change |
+
+Items 1, 2, 3, 7, 9, 10, 11, 12, 13, 15, 16 and 19 were already closed by the
+waves above (N1, N3, N4, F2, F6, H2, H3, §2's cover vocabulary, §3's pairs, and
+`durations.fast` ceasing to do double duty once push-exit and sheet-exit were
+separated).
+
+**One stale claim of the audit's own, found in wave 4 and worth recording:**
+`NAV_ROOT_ORDER` still ranked the retired More tab and had never ranked
+Messages after it took More's slot — so Today ⇄ Messages, two roots sitting
+beside each other in the capsule, resolved as a *drill-down* on web while the
+native bar swapped them as siblings. Not on either list; it fell out of fixing
+N5.
+
+Two more findings outside both lists were closed on the way, because the fixes
+turned out to be the same fix: **N4** (the recede-and-rise push was defined in
+shared tokens and performed by one client) — web's push is the horizontal
+travel now and recede-and-rise belongs to modality, which is what §2's table
+recommended; and the `motionPushOut` keyframe's scale, which was `.94` against
+`motion.recedeScale`'s `.92`, so a presented *screen* and a presented *panel*
+receded by different amounts. Both are guarded.
+
+### §20's third list — the biggest opportunities for delight
+
+Shipped: **2** (sessionHero), **3** (planCover), **4** (sheet drag with the
+scrim and recede tracking the finger), **5** (detents, and later the
+one-drag elongation), **6** (`RollingNumber` — every rest clock, weight and
+stat tile that goes through a shared component), **7** (wave 4 — the PR badge
+flies, and the badge itself had to be built first: there was none), **9**
+(press feedback, ~1,100 sites), **10** (full-swipe-to-delete), **11**
+(full-screen cover + focus blur), **13** (personAvatar, at all twenty doors),
+**14** (list insert/delete), **17** (wave 4 — the streak rolls), **18** (wave 4
+— the readiness face morphs; every path normalised to one command signature so
+it can interpolate at all), **19** (wave 4 — calendar day → detail, the app's
+first same-screen shared element).
+
+Open, and each its own item: **1** the accessory → logger expansion (the Music
+mini-player moment), **8** chart expansion with persisting axes — a data change
+rather than a motion one, which is why it is the interesting one, **12** the
+rest timer as a Live Activity, **15** interactive back on web (needs the
+shell's screen chain extracted so two can coexist mid-drag), **16**
+pull-to-refresh that reveals, **20** the nav lens → FAB merge (idiom proven at
+bundle level; needs a device).
+
+### Corrections to the audit as written
+
+Five claims in this document did not survive contact with the code, and are
+left in place below rather than edited out:
+
+- **§12's count of 43 spinner sites** was right at the time and is no longer the
+  right *measure*. 18 `ActivityIndicator` render sites remain on mobile and
+  every one is an in-flight ACTION — `busy ? <spinner/> : "Save"`, an export, a
+  purchase, the AI coach thinking — which §12 itself says is what a spinner is
+  for. The number that mattered was arriving-CONTENT sites, and those are on the
+  skeleton. (Counting `grep ActivityIndicator` gives 37, but more than half of
+  those are import lines; the audit's own 43 was measured the same way and was
+  therefore also high.)
+- **§13's "every stat tile and the macro rings"** understated how cheap the web
+  half would be (one shared `Stat`, thirty-one screens) and understated the
+  mobile half, which needs a primitive that does not exist.
+- **The haptics register** claimed all sites were user-gated; four were not.
+  Fixed in wave 1, noted in `screen-transitions-wave3`.
+- **"Forty-five mobile loading states, each needing its body moved into a
+  child"** (the status note's own scoping of §12's remainder) was wrong twice
+  over, and the error is instructive: the count of *convertible* sites was ~33,
+  and none of them needed a body move. The prescription assumed `LoadSwap` had
+  to receive the content as a prop; it already rendered its children only once
+  the data had landed, so making children LAZY made that an enforceable
+  contract and let every body stay in its own scope. **Scoping a fix from the
+  call sites rather than from the primitive is what made this look expensive
+  for three waves.**
+- **§13's mobile sweep was measured, and it is much larger than "thirty-one
+  edits"** — 28 private look-alike components and ~50 inline sites across 29
+  files, ~85 call sites. Three structural things block a blind sweep (a
+  `color`/`c`/`accent` prop split, ~11 figures drawn through `serifIf` that
+  would change on the light theme, and a figure-beside-label row that is a
+  different layout rather than a variant), so `mobile-stat-tile` now carries a
+  measurement instead of a guess.
+
 ---
 
 ## 0. The honest opening

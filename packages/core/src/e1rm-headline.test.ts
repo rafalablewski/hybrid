@@ -40,13 +40,8 @@ const GUARDED = ["blockBestE1rm", "bestE1rmByLift", "bestE1rmMap"] as const;
 const REVIEWED: Record<string, string> = {
   // Feeds liftStanding, whose cohort norms are expressed in e1RM per kg of
   // bodyweight — a raw top load can't be compared against them.
-  "apps/web/components/aurora/workout-wrapped.tsx":
-    "topE1rm → liftStanding (benchmark norms are e1RM-based)",
   "apps/mobile/components/workout-wrapped.tsx":
     "topE1rm → liftStanding (benchmark norms are e1RM-based)",
-  // Only picks WHICH lift to chart; the chart itself is titled "<lift> – e1RM".
-  "apps/web/components/session-detail.tsx":
-    "picks the lift for the explicitly-labelled e1RM trend chart",
 
   // The post now headlines topLoad; e1rm is still written ALONGSIDE it so the
   // estimate isn't lost and rows stay readable by anything expecting the old

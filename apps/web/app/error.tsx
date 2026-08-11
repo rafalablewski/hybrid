@@ -86,7 +86,7 @@ export default function Error({
           Try again
         </button>
         <a
-          href="/app"
+          href="/"
           style={{
             padding: "11px 20px",
             borderRadius: 12,
@@ -97,7 +97,7 @@ export default function Error({
             textDecoration: "none",
           }}
         >
-          Back to app
+          Home
         </a>
       </div>
     </div>

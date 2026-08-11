@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { COVER_SCREENS } from "@hybrid/core";
 
 /**
  * THE DESIGN-TOKEN RATCHET.
@@ -62,6 +63,30 @@ function lineAt(site: string): string {
   const path = site.slice(0, site.lastIndexOf(":"));
   const line = Number(site.slice(site.lastIndexOf(":") + 1));
   return (FILES.find((f) => f.path === path)?.text ?? "").split("\n")[line - 1] ?? "";
+}
+
+/**
+ * `hits`, blind to comments — for the rules whose pattern is a piece of SYNTAX
+ * rather than a word, so a file that DESCRIBES what it no longer does is not
+ * failed for the description.
+ *
+ * This is not hypothetical tidiness: the sheet rule below went red on
+ * `upgrade.tsx` for its own header comment — "It used to hand-roll its own: a
+ * raw <Modal> route" — three lines above the `import Sheet from "./sheet"` that
+ * proves the rule is satisfied. The house style documents what a file was
+ * migrated off, so a guard that greps raw source will keep meeting the thing it
+ * forbids, spelled out in prose, in exactly the files that were fixed first.
+ *
+ * Deliberately NOT folded into `hits` itself: most callers there are ratchets
+ * with exact ceilings, and silently lowering their counts would spend debt
+ * headroom nobody agreed to spend. This is opt-in, per rule.
+ *
+ * Line-granular, matching `hits`: a comment-ONLY line is the whole of the false
+ * positive. A trailing comment after real code keeps its line, which is right —
+ * that line still holds code.
+ */
+function codeHits(pattern: RegExp): string[] {
+  return hits(pattern).filter((h) => !/^\s*(?:\/\/|\/?\*)/.test(lineAt(h)));
 }
 
 /** A ratchet: report the overage with the offending sites, so a failure tells
@@ -313,8 +338,12 @@ describe("presentation", () => {
     //     with vertical detents, so there is no panel here for its drag,
     //     detents or velocity release to act on. It must be a Modal so it draws
     //     over the native tab bar, which no in-tree view can.
+    //
+    // `codeHits`, not `hits`: a `<Modal` inside a comment is prose, not a
+    // presentation, and the files most likely to describe one are the very
+    // files that were converted off it.
     const EXEMPT = ["components/aurora/sheet.tsx", "components/tour.tsx", "components/feed-menu.tsx", "components/aurora/side-menu.tsx"];
-    const raw = hits(/<Modal\b/g).filter((h) => !EXEMPT.some((f) => h.startsWith(f)));
+    const raw = codeHits(/<Modal\b/g).filter((h) => !EXEMPT.some((f) => h.startsWith(f)));
     expect(raw).toEqual([]);
   });
 
@@ -324,7 +353,10 @@ describe("presentation", () => {
     // suite green. `animationType="slide"` is the tell — it is what all eleven
     // converted surfaces used, and what neither a fading overlay nor an anchored
     // card has any use for. Sheet drives its own animation, so it never sets it.
-    const sliding = hits(/animationType=["{']?["']?slide/g).filter(
+    // Comment-blind for the same reason as its sibling above — this rule's own
+    // explanation quotes the attribute it forbids, and a source file explaining
+    // the same thing would fail for saying so.
+    const sliding = codeHits(/animationType=["{']?["']?slide/g).filter(
       (h) => !h.startsWith("components/aurora/sheet.tsx"),
     );
     expect(sliding).toEqual([]);
@@ -362,6 +394,59 @@ describe("presentation", () => {
         }
         i = gt + 1;
       }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("HARD — one component owns each native leaf", () => {
+    // The SwiftUI leaves are the app's most copyable objects: a screen that
+    // wants a glass circle can mount `GlassNavButton` itself, pick its own
+    // diameter and its own fallback, and look native while agreeing with
+    // nothing. That is exactly what the live logger did — a 34pt nav circle at
+    // chalk-6% whose comment claimed it was "the same control family as
+    // HeroNav's back circle" (HeroNav draws 40 in a 44 hit box from HERO.nav),
+    // and a 44pt dock satellite beside a 54pt summary orb that were the same
+    // button drawn twice in one file.
+    //
+    // So each leaf has exactly ONE owner, and the owner is the component that
+    // also draws the floor: the nav button is HeroNav's, the satellite is
+    // ASatellite's. A screen composes those, never the leaf.
+    const OWNER: Record<string, string> = {
+      GlassNavButton: "components/aurora/hero.tsx",
+      GlassSatellite: "components/aurora/satellite.tsx",
+    };
+    const bad: string[] = [];
+    for (const [leaf, owner] of Object.entries(OWNER)) {
+      for (const h of codeHits(new RegExp(`<${leaf}\\b`, "g"))) {
+        if (!h.startsWith(owner)) bad.push(`${h} — ${leaf} belongs to ${owner}`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("HARD — a COVER pads itself; no native SafeAreaView inside a fullScreenModal", () => {
+    // A cover (@hybrid/core COVER_SCREENS — on mobile the live logger, and
+    // nothing else) is presented in its OWN view controller. A native
+    // SafeAreaView mounted in there never applies its top edge, whatever the
+    // provider was seeded with, so the logger shipped a whole TestFlight build
+    // with its header across the status bar: the lift's name and the clock on
+    // the carrier row, the chevron in the notch band. The seed fixed the HOOK
+    // (which is why the dock's bottom pad was right in the same build) and
+    // nothing else, which is exactly what made the remaining half easy to miss.
+    //
+    // So a cover reads the hook and pads itself — lib/layout `coverInsets`. The
+    // route list comes from core rather than a filename typed here, for the
+    // reason the layout takes it from there too: a mode is a mode on both
+    // clients, and `log` means different things on each.
+    const covers = COVER_SCREENS.filter((r) => r !== "log").map((r) => `app/${r}.tsx`);
+    expect(covers.length).toBeGreaterThan(0);
+    const bad: string[] = [];
+    for (const path of covers) {
+      const file = FILES.find((f) => f.path === path);
+      expect(file, `${path} — a cover route with no source file`).toBeTruthy();
+      file!.text.split("\n").forEach((line, i) => {
+        if (/<SafeAreaView\b/.test(line)) bad.push(`${path}:${i + 1}`);
+      });
     }
     expect(bad).toEqual([]);
   });

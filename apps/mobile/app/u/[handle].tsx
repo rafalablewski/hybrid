@@ -35,7 +35,7 @@ import type {
   UserPageResponse,
   UserPageTabId,
 } from "@hybrid/core";
-import { F, Loading, PressScale as Pressable } from "../../lib/ui";
+import { F, Loading, LoadSwap, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ASection, cardStack } from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -48,6 +48,7 @@ import {
 import { Avatar, Empty, SButton, Stars, levelInk } from "../../components/social-kit";
 import FeedCard from "../../components/feed-card";
 import { Comments } from "../../components/feed-comments";
+import { usePersonSource } from "../../lib/shared-element";
 
 /**
  * THE INDIVIDUAL USER PAGE (mobile) — twin of apps/web/components/user-page.tsx.
@@ -155,7 +156,7 @@ export default function UserScreen() {
       <AuroraScreen hero={hero}>
         {seed ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} />
+            <Avatar url={seed.avatarUrl} name={seed.displayName} handle={seed.handle} size={84} shared />
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.title }}>{name}</Text>
               <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.caption }}>@{seed.handle}</Text>
@@ -182,7 +183,7 @@ export default function UserScreen() {
     >
       {/* ── WHO ── the person, at the size a page allows. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-        <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} />
+        <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={84} shared />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.title }}>
             {name}{p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}
@@ -434,6 +435,8 @@ function ListEnd({ text }: { text: string }) {
  *  own: a row opens the person, and acting on a person happens on their page,
  *  where the one button lives. */
 function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab: (t: PeopleTab) => void }) {
+  // The face travels into the page this opens — see lib/shared-element.
+  const armPerson = usePersonSource();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const [people, setPeople] = useState<PersonCard[] | null>(null);
@@ -477,16 +480,15 @@ function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab:
         {side("followers", t("w.user.followers"))}
         {side("following", t("w.user.following"))}
       </View>
-      {!people ? (
-        <Loading />
-      ) : people.length === 0 ? (
+      <LoadSwap loading={!people}>
+        {() => !people ? null : people.length === 0 ? (
         <Empty title={t(tab === "followers" ? "w.user.noFollowers" : "w.user.noFollowing")} />
       ) : (
         <>
           {people.map((c: PersonCard) => (
             <Pressable
               key={c.userId}
-              onPress={() => router.push(userPagePath(c.handle))}
+              onPress={() => { armPerson(c.handle); router.push(userPagePath(c.handle)); }}
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}
             >
               <Avatar url={c.avatarUrl} name={c.displayName} handle={c.handle} size={38} />
@@ -499,6 +501,7 @@ function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab:
           {cursor ? <LoadMore label={t("w.user.loadMorePeople")} busy={more} busyLabel={t("w.user.loading")} onLoad={loadMore} /> : null}
         </>
       )}
+      </LoadSwap>
     </View>
   );
 }
