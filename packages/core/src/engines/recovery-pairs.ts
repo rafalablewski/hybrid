@@ -11,7 +11,8 @@ import {
   type RecoveryCurve,
   type RecoveryIndex,
 } from "../feel-timing";
-import { readPairCurve } from "../readiness-reads";
+import { readPairCurve, readReports, placeReads } from "../readiness-reads";
+import { QUICK_CHECKIN_METRIC } from "../checkin-flow";
 import { RECOVERY_WINDOW_H } from "../feel-schedule";
 import { heatSittings, HEAT_SESSION_MIN_EQUIV, type HeatSignalRow } from "./heat";
 
@@ -36,6 +37,71 @@ import { heatSittings, HEAT_SESSION_MIN_EQUIV, type HeatSignalRow } from "./heat
 
 const HOUR_MS = 3_600_000;
 
+/* ── THE INPUT SIDE: CHECK-IN ROWS → RECOVERY REPORTS ──────────────────────── */
+
+/** A stored check-in, as either client or server holds it. */
+export interface CheckinRow {
+  /** The day the check-in covers. Legacy column name. */
+  weekOf: string;
+  /** The `soreness` column AS STORED, which is FRESHNESS — see RecoveryReport. */
+  soreness?: number | null;
+  sleep?: number | null;
+  energy?: number | null;
+  mood?: number | null;
+  createdAt?: string | null;
+  /** Every readiness answer the day carries (CheckinRead). */
+  reads?: { metric?: string | null; value: number; loggedAt: string }[] | null;
+}
+
+/**
+ * A DAY IS EVERY READ IT CARRIES, NOT ONE VALUE.
+ *
+ * The readiness card asks again once a session has drained, so a day can hold
+ * "wrecked at 09:30" and "good at 22:00" — which is precisely the pair
+ * `athleteClearance` and `saunaClearance` need, and which one stored value could
+ * never express. `readReports` gives the day its DECISIVE read (freshness, sleep
+ * and mood travel with it, answered once) and emits the others as timed reads of
+ * their own.
+ *
+ * This lives in core rather than in a client hook because BOTH sides need it:
+ * the phone renders the athlete's own clearance split, and the admin Engine Room
+ * has to be able to check that figure against the same inputs. Writing the
+ * mapping twice is how the two would come to disagree about one athlete.
+ *
+ * WHAT `sessionEnds` ACTUALLY DOES, since it is easy to assume more: it can only
+ * FILTER. `placeReads` works out each answer's lag, context and reading, and
+ * `readReports` then emits just { date, energy, loggedAt } — so the session
+ * clock cannot change what a surviving read looks like, only drop one whose
+ * reading the curve refuses to give. Pass it when you have it; a caller without
+ * a session list is not silently getting different reports for the reads that
+ * survive. (Guarded by a test, because the opposite is the natural assumption.)
+ */
+export function recoveryReports(checkins: CheckinRow[], sessionEnds: number[] = []): RecoveryReport[] {
+  return checkins.flatMap((c) => {
+    const day: RecoveryReport = {
+      date: c.weekOf,
+      soreness: c.soreness,
+      sleep: c.sleep,
+      energy: c.energy,
+      mood: c.mood,
+      loggedAt: c.createdAt ?? null,
+    };
+    const rows = (c.reads ?? []).filter((r) => (r.metric ?? QUICK_CHECKIN_METRIC) === QUICK_CHECKIN_METRIC);
+    if (rows.length < 2) return [day];
+    return readReports(
+      day,
+      placeReads(rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) })), sessionEnds),
+    ) as RecoveryReport[];
+  });
+}
+
+/** Session end instants, the shape `recoveryReports` wants them in. */
+export function sessionEndTimes(sessions: ClearanceSession[]): number[] {
+  return sessions
+    .map((s) => Date.parse(s.completedAt ?? s.startedAt ?? ""))
+    .filter((t) => Number.isFinite(t));
+}
+
 export interface PairOptions {
   now?: number;
   /** How far back to look, days. */
@@ -47,6 +113,21 @@ export interface PairOptions {
    */
   heatSignals?: HeatSignalRow[];
 }
+
+/**
+ * ALL A PAIR NEEDS FROM A SESSION — stated as a type rather than left implicit.
+ *
+ * A `LoggedSession` satisfies this, so every existing caller is unchanged. It
+ * exists because the admin console has to send sessions over the wire to compute
+ * the clearance split, and shipping thirty sessions' worth of BLOCKS for six
+ * fields would be a support-read carrying far more of an athlete's training than
+ * the question needs. Naming the requirement makes the minimal projection
+ * type-checked rather than hopeful.
+ */
+export type ClearanceSession = Pick<
+  LoggedSession,
+  "id" | "title" | "startedAt" | "completedAt" | "fatigue" | "feelLoggedAt"
+>;
 
 /** One matched pair, with enough context to explain itself in the UI. */
 export interface RecoveryPair {
@@ -66,7 +147,7 @@ export interface RecoveryPair {
   heat?: boolean;
 }
 
-const endMs = (s: LoggedSession): number => {
+const endMs = (s: ClearanceSession): number => {
   const end = s.completedAt ? Date.parse(s.completedAt) : NaN;
   if (Number.isFinite(end)) return end;
   const start = Date.parse(s.startedAt);
@@ -82,7 +163,7 @@ const endMs = (s: LoggedSession): number => {
  * measured twice rather than two instruments compared.
  */
 export function pairReads(
-  sessions: LoggedSession[],
+  sessions: ClearanceSession[],
   recovery: RecoveryReport[] = [],
   opts: PairOptions = {},
 ): RecoveryPair[] {
@@ -192,7 +273,7 @@ export function pairReads(
  * Neutral with zero confidence until at least two clean pairs exist.
  */
 export function athleteClearance(
-  sessions: LoggedSession[],
+  sessions: ClearanceSession[],
   recovery: RecoveryReport[] = [],
   opts: PairOptions = {},
 ): RecoveryIndex & { samples: RecoveryPair[] } {
@@ -245,7 +326,7 @@ export interface HeatClearance {
  * against that same band without a second scale to learn.
  */
 export function saunaClearance(
-  sessions: LoggedSession[],
+  sessions: ClearanceSession[],
   recovery: RecoveryReport[] = [],
   heatSignals: HeatSignalRow[] = [],
   opts: PairOptions = {},

@@ -35,6 +35,10 @@ import {
   heatAdjustment,
   heatIntensity,
   sampleHeatSignals,
+  saunaClearance,
+  CLEARANCE_FAST,
+  CLEARANCE_SLOW,
+  MIN_RECOVERY_PAIRS,
   whatIfHeat,
   HEAT_CREDIT_MAX,
   HEAT_PROTOCOLS,
@@ -70,9 +74,12 @@ import {
   readinessRingSegments,
   KEPT_ARC_ALPHA,
   type Derivation,
+  type ClearanceSession,
   type HeatAdjustment,
+  type HeatClearance,
   type HeatProtocol,
   type HeatSignalRow,
+  type RecoveryReport,
   type MuscleGroup,
   type Personalization,
   type EffortModel,
@@ -104,6 +111,11 @@ type Feed = {
   /** The athlete's `sauna` / `saunaTemp` rows, queried on their own so an
    *  unrelated stream can't evict them (see lib/athlete-state.ts). */
   heatSignals?: HeatSignalRow[];
+  /** Their check-in history, every read each day carries — the input side of a
+   *  recovery pair. */
+  recovery?: RecoveryReport[];
+  /** Only the six fields a pair reads. See ClearanceSession. */
+  clearanceSessions?: ClearanceSession[];
   sessionCount: number;
   calibration: { coeffs: CalibrationCoeffs; version: string; n: number };
   personal?: Personalization;
@@ -278,6 +290,16 @@ export default function EngineRoom() {
     [simHeatSignals, now, simBio],
   );
   const readinessDeriv = useMemo(() => deriveReadiness(simLog, simBio, simHeat), [simLog, simBio, simHeat]);
+
+  // DOES HEAT HELP *THIS* ATHLETE — measured, not assumed. Deliberately computed
+  // from the REAL inputs rather than the simulated ones: a what-if scales
+  // training load and retunes today's wearable, neither of which can
+  // retroactively change what an athlete reported after a session six weeks ago.
+  // Feeding it `simLog` would let a slider appear to move a measurement.
+  const clearance = useMemo(
+    () => (feed?.clearanceSessions ? saunaClearance(feed.clearanceSessions, feed.recovery ?? [], heatSignals, { now }) : null),
+    [feed, heatSignals, now],
+  );
   const hpiDeriv = useMemo(() => deriveHpi(simLog, simBio, weights), [simLog, simBio, weights]);
   const tissueDeriv = useMemo(
     () => deriveTissueRisk(simLog, tissue, simBio, coeffs, spikeOnset),
@@ -497,6 +519,9 @@ export default function EngineRoom() {
            computed" are different facts, and this is the only surface where
            that distinction can be checked. */}
       <HeatPanel heat={t.heat} whatIfActive={whatIfActive} />
+
+      {/* ---- HEAT, MEASURED RATHER THAN ASSUMED ---- */}
+      {clearance && <ClearancePanel clearance={clearance} />}
 
       {/* ---- why these numbers: step-by-step derivations ---- */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 380px), 1fr))", gap: space.lg }}>
@@ -1308,6 +1333,66 @@ function HeatPanel({ heat, whatIfActive }: { heat: HeatAdjustment; whatIfActive:
               counts, and it is marked — a stated assumption can be argued with, an invisible one cannot.
             </Mono>
           )}
+        </>
+      )}
+    </Card>
+  );
+}
+
+/**
+ * DOES HEAT HELP THIS ATHLETE — the console's view of the measurement.
+ *
+ * The one panel here that is allowed to say NOTHING, and it says nothing loudly
+ * rather than quietly: below the pair floor it prints how many pairs each side
+ * actually has, because "not enough evidence yet" and "measured, no difference"
+ * are conclusions an operator must never confuse. A blank space would let them.
+ *
+ * It reads the REAL inputs, not the what-if's. A slider that scales recent
+ * training cannot retroactively change what an athlete reported after a session
+ * six weeks ago, so letting the simulation touch this would let an operator
+ * appear to move a measurement.
+ */
+function ClearancePanel({ clearance }: { clearance: HeatClearance }) {
+  const { withHeat, withoutHeat, delta, confidence } = clearance;
+  const ready = confidence > 0;
+  const meaningful = Math.min(1 - CLEARANCE_FAST, CLEARANCE_SLOW - 1);
+  const verdict = !ready ? null : delta < -meaningful ? "faster after heat" : delta > meaningful ? "no faster after heat" : "no difference either way";
+  const tone = !ready ? ASH : delta < -meaningful ? LIME : delta > meaningful ? RED : ASH;
+  return (
+    <Card style={{ borderLeft: `3px solid ${ready ? tone : LINE}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.sm, flexWrap: "wrap" }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ready ? AMBER : ASH}>
+          Heat clearance – measured, not assumed
+        </Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
+          {clearance.withSamples.length} with – {clearance.withoutSamples.length} without – floor {MIN_RECOVERY_PAIRS} each
+        </Mono>
+      </div>
+
+      {!ready ? (
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+          NOT ENOUGH EVIDENCE YET — this is not &ldquo;no effect&rdquo;. Both sides must clear{" "}
+          {MIN_RECOVERY_PAIRS} clean pairs independently, and a pair only survives when nothing
+          else happened inside its gap, so a heavy training week produces none at all. Four to six
+          weeks of sittings and check-ins is the usual wait.
+        </Mono>
+      ) : (
+        <>
+          <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginTop: 10, flexWrap: "wrap" }}>
+            <span style={{ ...disp, fontSize: 34, lineHeight: 1, color: txt(tone) }}>
+              {delta > 0 ? "+" : ""}{delta.toFixed(2)}
+            </span>
+            <Mono s={{ fontSize: fs.caption, lineHeight: 1.5 }}>
+              {verdict} — lower is better, since both sides are ratios against the same population
+              decay curve. Read against the SAME &plusmn;{meaningful.toFixed(2)} band CLEARANCE_FAST
+              and CLEARANCE_SLOW already bracket 1.0 with.
+            </Mono>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: `4px ${space.lg}px`, marginTop: 12 }}>
+            <HeatFig label="after heat" value={withHeat.index.toFixed(3)} />
+            <HeatFig label="without" value={withoutHeat.index.toFixed(3)} />
+            <HeatFig label="confidence" value={confidence.toFixed(2)} />
+          </div>
         </>
       )}
     </Card>

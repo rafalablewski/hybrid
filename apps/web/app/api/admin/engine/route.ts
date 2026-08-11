@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   });
   if (!user) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  const [{ log, bio, sessions, heatSignals, sessionCount }, calibration, outcomes] = await Promise.all([
+  const [{ log, bio, sessions, heatSignals, recovery, sessionCount }, calibration, outcomes] = await Promise.all([
     athleteInputs(userId),
     activeCalibration(),
     prisma.riskOutcome.findMany({
@@ -72,5 +72,13 @@ export async function GET(request: Request) {
     req: request,
   });
 
-  return NextResponse.json({ user, log, bio: bio ?? null, heatSignals, sessionCount, calibration, personal, effort });
+  // ONLY what a recovery pair reads. The console computes the clearance split
+  // client-side like every other engine here, but an admin support-read has no
+  // business shipping thirty sessions of BLOCKS to answer a six-field question.
+  const clearanceSessions = sessions.map((s) => ({
+    id: s.id, title: s.title, startedAt: s.startedAt, completedAt: s.completedAt,
+    fatigue: s.fatigue ?? null, feelLoggedAt: s.feelLoggedAt ?? null,
+  }));
+
+  return NextResponse.json({ user, log, bio: bio ?? null, heatSignals, recovery, clearanceSessions, sessionCount, calibration, personal, effort });
 }
