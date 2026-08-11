@@ -5,6 +5,7 @@ import {
   HEAT_REF_C,
   HEAT_TEMP_BOUNDS,
   heatIntensity,
+  heatSittings,
   fmtTemp,
   space,
   type WeightUnit,
@@ -13,7 +14,8 @@ import { useLang } from "../../lib/i18n";
 import { fs, F, leading } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { haptic } from "../../lib/haptics";
-import { logHeat } from "../../lib/api";
+import { deleteHeat, logHeat } from "../../lib/api";
+import { useHeatSignalsQuery } from "../../lib/queries";
 import Sheet from "./sheet";
 import { RADIUS } from "./kit";
 import { GlassSegment, NativeDateField, NativeStepper, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -90,6 +92,21 @@ export function HeatSheet({
     setWhen(initialAt ?? new Date());
     setMsg("");
   }, [visible, initialAt]);
+
+  const { data: heatRows = [] } = useHeatSignalsQuery();
+  const [removing, setRemoving] = useState<string | null>(null);
+  // The three most recent sittings, so a mis-tap is correctable here rather
+  // than nowhere. More than three would turn a log sheet into a history screen.
+  const recent = useMemo(() => heatSittings(heatRows).slice(0, 3), [heatRows]);
+
+  const remove = async (ids: string[]) => {
+    if (!ids.length) return;
+    setRemoving(ids[0]!);
+    const ok = await deleteHeat(ids);
+    setRemoving(null);
+    if (ok) onLogged?.();
+    else setMsg(t("w.recovery.heat.failed"));
+  };
 
   const equiv = useMemo(() => minutes * heatIntensity(tempC), [minutes, tempC]);
   // Zero equivalent minutes is a real answer, not an error: below the floor the
@@ -237,6 +254,39 @@ export function HeatSheet({
           {saving ? "…" : t("w.recovery.heat.save").toUpperCase()}
         </Text>
       </Pressable>
+
+      {/* ── UNDO A MIS-TAP ───────────────────────────────────────────────
+          Both rows a sitting wrote, removed together. Without this the only
+          way to correct a fat-fingered 90-minute entry would be to log a
+          second one on top of it, and the engine would happily sum them. */}
+      {recent.length > 0 && (
+        <View style={{ marginTop: 20 }}>
+          <Text style={{ ...label, marginBottom: 8 }}>{t("w.recovery.heat.recent")}</Text>
+          {recent.map((x) => (
+            <View key={x.ts} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
+                {new Date(x.ts).toLocaleDateString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
+                  {x.minutes} {t("w.recovery.heat.min")} – {fmtTemp(x.tempC, weightUnit)}
+                </Text>
+                <Pressable
+                  onPress={() => remove(x.ids)}
+                  disabled={!x.ids.length || removing === x.ts}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel={t("w.recovery.heat.remove")}
+                >
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), opacity: x.ids.length ? 1 : 0.35 }}>
+                    {removing === x.ts ? "…" : "×"}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
 
       {!!msg && (
         <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10, lineHeight: leading(fs.caption) }}>

@@ -1,14 +1,20 @@
 import { useMemo, useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
 import {
+  CLEARANCE_FAST,
+  CLEARANCE_SLOW,
   HEAT_SESSION_MIN_EQUIV,
   heatSittings,
+  saunaClearance,
   space,
+  type LoggedSession,
+  type RecoveryReport,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { fs, F, PressScale } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useHeatSignalsQuery, useRevalidate } from "../../lib/queries";
+import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { ACard, RADIUS } from "./kit";
 import { HeatSheet } from "./heat-sheet";
 
@@ -31,7 +37,7 @@ import { HeatSheet } from "./heat-sheet";
  * here: tapping this grows the log in place through a sheet — it does not open
  * a destination. An arrow would promise a screen that does not exist.
  */
-export function HeatRow() {
+export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSession[]; recovery?: RecoveryReport[] } = {}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const [open, setOpen] = useState(false);
@@ -40,6 +46,9 @@ export function HeatRow() {
   // the one thing they all read or the row updates and the score does not.
   const { data: rows = [] } = useHeatSignalsQuery();
   const revalidate = useRevalidate();
+  // °C is stored; the DISPLAY unit follows the weight unit the athlete already
+  // set (lb → °F), so a pounds-and-Fahrenheit athlete is never shown Celsius.
+  const { units } = useLoggerPrefs();
 
   // This calendar week's sittings, counted the way the engine counts them.
   const week = useMemo(() => {
@@ -57,6 +66,35 @@ export function HeatRow() {
       equiv: Math.round(mine.reduce((a, x) => a + x.equivMin, 0)),
     };
   }, [rows]);
+
+  /**
+   * THE PAYOFF — the athlete's OWN measured answer, not the literature's.
+   *
+   * `saunaClearance` splits their clean recovery pairs by whether heat fell
+   * inside the gap. It returns zero confidence until BOTH sides clear the pair
+   * floor, which in practice is four to six weeks, and this block renders
+   * nothing at all until then rather than a direction it cannot support. That
+   * silence is the feature: the same standard the clearance estimator it is
+   * built on already holds itself to.
+   */
+  const clearance = useMemo(
+    () => (sessions.length ? saunaClearance(sessions, recovery, rows) : null),
+    [sessions, recovery, rows],
+  );
+  // The verdict reads off the DELTA, not either side's absolute index — the
+  // question is "does heat help ME", and an athlete who clears slowly overall
+  // can still clear meaningfully faster after a sauna. Reading the absolute
+  // would have called that "no difference". The band is the one the clearance
+  // model already uses in both directions (CLEARANCE_FAST/SLOW bracket 1.0 by
+  // the same +/-0.15), so there is no second scale to learn.
+  const MEANINGFUL = Math.min(1 - CLEARANCE_FAST, CLEARANCE_SLOW - 1);
+  const verdictKey = !clearance || clearance.confidence <= 0
+    ? null
+    : clearance.delta < -MEANINGFUL
+      ? "w.recovery.heat.clearFaster"
+      : clearance.delta > MEANINGFUL
+        ? "w.recovery.heat.clearSlower"
+        : "w.recovery.heat.clearSame";
 
   const meta = week.count > 0
     ? t("w.recovery.heat.rowMeta").replace("{n}", String(week.count)).replace("{m}", String(week.equiv))
@@ -84,7 +122,29 @@ export function HeatRow() {
         </ACard>
       </PressScale>
 
-      <HeatSheet visible={open} onClose={() => setOpen(false)} onLogged={revalidate.heat} />
+      {/* Only once it can honestly say something. */}
+      {verdictKey && clearance && (
+        <ACard style={{ marginTop: 8, paddingVertical: 14, paddingHorizontal: 16 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+            {t("w.recovery.heat.clearTitle")}
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber) }}>{t("w.recovery.heat.clearWith")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: txt(C, C.amber) }}>{clearance.withHeat.index.toFixed(2)}</Text>
+          </View>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.recovery.heat.clearWithout")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk }}>{clearance.withoutHeat.index.toFixed(2)}</Text>
+          </View>
+          <View style={{ height: 1, backgroundColor: C.line, marginVertical: 11 }} />
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 18 }}>
+            {t(verdictKey)}{" "}
+            {t("w.recovery.heat.clearPairs").replace("{n}", String(clearance.withSamples.length + clearance.withoutSamples.length))}
+          </Text>
+        </ACard>
+      )}
+
+      <HeatSheet visible={open} onClose={() => setOpen(false)} onLogged={revalidate.heat} weightUnit={units} />
     </>
   );
 }

@@ -62,7 +62,8 @@ import {
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
+import { useRecoveryReports } from "../../lib/use-recovery-reports";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useRecoverySignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
@@ -277,8 +278,14 @@ export default function AuroraHome() {
   // memo time, so without this an app left open across a day boundary keeps
   // treating a reading as fresh past its last day — the same defect the daily
   // check-in already guards this way.
-  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals, today]);
+  // BIOMETRICS READ THE RECOVERY STREAM, not the unfiltered one: the latter
+  // returns the newest rows of any kind, and a few days of logged meals can
+  // evict a week of wearable readings from it (see lib/api.ts).
+  const { data: recoverySignals = [] } = useRecoverySignalsQuery();
+  const bio = useMemo(() => toBiometrics(recoverySignals as unknown as Parameters<typeof toBiometrics>[0]), [recoverySignals, today]);
   const { data: heatSignals = [] } = useHeatSignalsQuery();
+  // The same reports the volume model reads, for the heat clearance split.
+  const recoveryReports = useRecoveryReports(sessions);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   // TODAY's readiness feeling (independent of the rail's selected day) → feeds
   // the prescription so the one-tap check-in mechanically scales today's load.
@@ -999,7 +1006,7 @@ export default function AuroraHome() {
             (which is the better-evidenced one) is visible without opening
             anything. The trailing glyph is a bare ＋ — it GROWS the log in
             place, it does not go anywhere. */}
-        <HeatRow />
+        <HeatRow sessions={sessions} recovery={recoveryReports} />
 
         {/* ═════ GROUP: PROGRESS — where the LIFTING is going. Three named
             things, in the order the question is actually asked: the period's

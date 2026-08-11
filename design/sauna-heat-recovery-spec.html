@@ -283,16 +283,16 @@ pre.code .k{color:var(--teal)}
 <div class="wrap">
 
 <header class="mast">
-  <p class="kicker">HYBRID &#160;/&#160; Recovery system &#160;/&#160; Specification &amp; build record</p>
+  <p class="kicker">HYBRID &#160;/&#160; Recovery system &#160;/&#160; Specification & build record</p>
   <h1>Heat as a<br><em>recovery input</em></h1>
   <div class="rule"></div>
   <p class="lede">Sauna is the most common recovery practice HYBRID cannot see, and the only
   one no device will ever report. It is two typed numbers &#8212; minutes, and how hot it was. This
   is the complete specification for making those two numbers count: what they are allowed to
   move, how the arithmetic works, how an athlete records them, and the order it was built in.
-  Phases 1&ndash;3 and the chronic channel are <em>built</em>; the measurement layer in &#167;5 is
-  waiting on data, not on code.</p>
-  <div style="margin:30px 0 26px"><span class="badge" style="color:var(--lime);border-color:rgba(198,248,79,.32);background:rgba(198,248,79,.10)">Built &#8212; engine, admin and mobile</span></div>
+  Every phase is <em>built</em>; the measurement layer in &#167;5 waits only on the athlete's own
+  data, not on code.</p>
+  <div style="margin:30px 0 26px"><span class="badge" style="color:var(--lime);border-color:rgba(198,248,79,.32);background:rgba(198,248,79,.10)">Built &#8212; all four phases</span></div>
   <div class="meta">
     <div><b>Capability</b><span>heat-recovery &#8212; shipped</span></div>
     <div><b>Branch</b><span>claude/sauna-recovery-enhancement-o1lqgt</span></div>
@@ -1103,15 +1103,16 @@ heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <spa
   <div class="col">
     <h2>Four phases, in this order</h2>
     <p>The order is not arbitrary. Phase&#160;1 is what makes phase&#160;4 possible, and phase&#160;4 is the
-    version worth having. <strong style="color:var(--lime)">Phases 1&ndash;3 and the chronic
-    multiplier are built</strong> &#8212; the engine, all nine Engine Room touch points, the mobile
-    sheet and the Today row, in EN, PL and DE. Phase&#160;4 is blocked on data rather than on code:
-    the sittings start accumulating now.</p>
+    version worth having. <strong style="color:var(--lime)">All four phases and the
+    prerequisite are built</strong> &#8212; the engine, all nine Engine Room touch points, the mobile
+    sheet, the Today row, the post-session entry and the measurement layer, in EN, PL and DE.
+    Phase&#160;4 now waits only on the athlete's own data: it stays silent until both sides of the
+    comparison clear the pair floor, which is four to six weeks of sittings and check-ins.</p>
   </div>
 
   <div class="phases">
     <div class="phase">
-      <span class="idx">FIRST</span>
+      <span class="idx" style="color:var(--lime)">FIRST &#10003;</span>
       <div>
         <h4>Unblock the stream</h4>
         <p>Fix &#167;9 before adding a kind to it. Nothing downstream is trustworthy until the
@@ -1181,7 +1182,7 @@ heatSittings(signals) &#8594; [{ minutes: <span class="k">22</span>, tempC: <spa
     </div>
 
     <div class="phase">
-      <span class="idx">PHASE 4</span>
+      <span class="idx" style="color:var(--lime)">PHASE 4 &#10003;</span>
       <div>
         <h4>Replace the priors with the athlete&#8217;s own numbers</h4>
         <p>The measurement layer. Needs four to six weeks of phase-1 data before it says

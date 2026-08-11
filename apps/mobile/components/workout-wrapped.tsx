@@ -64,6 +64,7 @@ import { AuroraIcon } from "./aurora/icons";
 import { HeroEyebrow, HeroNav } from "./aurora/hero";
 import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
+import { HeatSheet } from "./aurora/heat-sheet";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
@@ -145,6 +146,7 @@ export function WorkoutWrapped({
 
   const [panel, setPanel] = useState(0);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [heatOpen, setHeatOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
   const [cohort, setCohort] = useState<{ sport: string; sex: "M" | "F"; age: number } | null>(null);
@@ -471,6 +473,30 @@ export function WorkoutWrapped({
             baseline={feelBaseline}
             eyebrow={eyebrow}
           />
+
+          {/* HEAT — the PRIMARY entry, and it lives here for a reason the
+              Today row cannot match: this is the only moment where the gap
+              from the session end is known exactly, which is what the decay in
+              engines/heat.ts and the phase-4 pair matching both read. Passing
+              the session's own end as the default means a sauna logged on the
+              way home is dated to the sauna, not to the tap. */}
+          <Pressable
+            onPress={() => setHeatOpen(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t("w.recovery.heat.afterSession")}
+            style={{
+              marginTop: 22, alignSelf: "stretch", flexDirection: "row", alignItems: "center",
+              justifyContent: "space-between", gap: 12,
+              borderWidth: 1, borderColor: `${C.amber}55`, backgroundColor: `${C.amber}0d`,
+              borderRadius: 20, paddingVertical: 13, paddingHorizontal: 16,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.chalk }}>{t("w.recovery.heat.afterSession")}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: 12, color: C.ash, marginTop: 3 }}>{t("w.recovery.heat.afterSessionSub")}</Text>
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: 16, color: txt(C, C.amber) }}>&#8594;</Text>
+          </Pressable>
         </Panel>
 
         {/* ── PREMIUM ── */}
@@ -619,6 +645,19 @@ export function WorkoutWrapped({
           </Pressable>
         </View>
       )}
+
+      {/* ── HEAT SHEET ──
+          Defaulted to the session's own end, so a sauna taken straight after
+          is dated to the sauna rather than to whenever this screen was tapped.
+          Invalidates the shared heat cache on save so Today's ring and the
+          volume model both see it. */}
+      <HeatSheet
+        visible={heatOpen}
+        onClose={() => setHeatOpen(false)}
+        onLogged={revalidate.heat}
+        weightUnit={units}
+        initialAt={session.completedAt ? new Date(session.completedAt) : undefined}
+      />
 
       {/* ── DEVICE MATCH SHEET ── */}
       <DeviceMatchSheet

@@ -995,6 +995,29 @@ export async function fetchSignals(): Promise<CoreSignal[]> {
   }
 }
 
+/**
+ * The RECOVERY stream, fetched by kind.
+ *
+ * `fetchSignals()` above asks for everything and gets the 500 newest rows of
+ * any kind — which is the right shape for the Nutrition screen (those rows ARE
+ * the majority) and the wrong one for `toBiometrics`, because a logged meal
+ * writes up to eight rows and an athlete who logs their food can push a week-old
+ * HRV reading out of the window entirely. The wearable term then keeps printing,
+ * quietly computed against fewer baseline samples than it asks for.
+ *
+ * So the surfaces that resolve BIOMETRICS ask for the four kinds they read.
+ */
+export async function fetchRecoverySignals(): Promise<CoreSignal[]> {
+  try {
+    const data = await fetchJson<{ signals?: { id?: string; userId: string; kind: string; value: number; unit: string; source: string; ts: string }[] }>(
+      `/api/signals?kind=hrv,restingHr,sleep,sleepScore,bodyMass`,
+    );
+    return (data.signals ?? []).map((s) => ({ athleteId: s.userId, kind: s.kind, value: s.value, unit: s.unit, source: s.source, ts: s.ts, id: s.id }));
+  } catch {
+    return [];
+  }
+}
+
 export async function createSignal(kind: string, value: number, unit?: string, source = "manual"): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/signals`, {

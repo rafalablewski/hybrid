@@ -16,9 +16,20 @@ export async function GET(request: Request) {
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const url = new URL(request.url);
-  const kind = url.searchParams.get("kind");
+  // `kind` accepts a COMMA-SEPARATED LIST, and that is the fix for a real
+  // starvation bug rather than a convenience. This route returns the 500 newest
+  // rows of ANY kind, and one logged food writes up to eight of them
+  // (energyIntake/protein/carbs/fat plus the satFat/sugar/fiber/salt panel) —
+  // so on a diligent nutrition logger the unfiltered window covers barely a
+  // fortnight, and priorBaseline() was reading an athlete's HRV baseline out of
+  // whatever had not yet been evicted by their lunch. A caller that knows which
+  // stream it needs can now ask for it and never compete with an unrelated one.
+  const kinds = (url.searchParams.get("kind") ?? "")
+    .split(",")
+    .map((k) => k.trim())
+    .filter((k) => KINDS.includes(k as SignalKind));
   const signals = await prisma.signal.findMany({
-    where: { userId: user.id, ...(kind ? { kind } : {}) },
+    where: { userId: user.id, ...(kinds.length ? { kind: { in: kinds } } : {}) },
     orderBy: { ts: "desc" },
     take: 500,
   });

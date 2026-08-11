@@ -16,7 +16,7 @@ import {
   type CapabilityMovement, type FreshnessPillar, type ReadinessFact, type RingSegment, type SemanticRole,
   type WearableExplain,
 } from "@hybrid/core";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, combineReads } from "../../lib/queries";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
@@ -149,7 +149,11 @@ function Full({ top }: { top?: ReactNode }) {
   // memo time, so without this an app left open across a day boundary keeps
   // treating a reading as fresh past its last day — the same defect the daily
   // check-in already guards this way.
-  const bio = useMemo(() => toBiometrics(signals as unknown as Parameters<typeof toBiometrics>[0]), [signals, today]);
+  // BIOMETRICS READ THE RECOVERY STREAM, not the unfiltered one: the latter
+  // returns the newest rows of any kind, and a few days of logged meals can
+  // evict a week of wearable readings from it (see lib/api.ts).
+  const { data: recoverySignals = [] } = useRecoverySignalsQuery();
+  const bio = useMemo(() => toBiometrics(recoverySignals as unknown as Parameters<typeof toBiometrics>[0]), [recoverySignals, today]);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   const todayFeeling = useMemo(
     () => quickCheckinFeeling(checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null),
@@ -776,7 +780,8 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
   // memo time, so without this an app left open across a day boundary keeps
   // treating a reading as fresh past its last day — the same defect the daily
   // check-in already guards this way.
-  const bio = useMemo(() => toBiometrics((signalsRead.data ?? []) as unknown as Parameters<typeof toBiometrics>[0]), [signalsRead.data, today]);
+  const recoveryRead = useRecoverySignalsRead();
+  const bio = useMemo(() => toBiometrics((recoveryRead.data ?? []) as unknown as Parameters<typeof toBiometrics>[0]), [recoveryRead.data, today]);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   const hasData = sessionsRead.ready && sessions.length > 0;

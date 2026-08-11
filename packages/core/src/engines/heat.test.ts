@@ -18,6 +18,7 @@ import { computeFatigue } from "./fatigue";
 import { heatRecovery, personalizeLandmarks, sanitizeVolumeProfile } from "./landmark-profile";
 import { measuredProfile, withMeasured, measuredFields } from "./landmark-context";
 import { whatIfBio, whatIfHeat } from "./engine-room";
+import { pairReads, saunaClearance } from "./recovery-pairs";
 import type { Biometrics } from "./types";
 
 const HOUR = 3_600_000;
@@ -310,5 +311,99 @@ describe("the what-if can ask the question most athletes are the answer to", () 
     expect(whatIfHeat(rows, { heatMinutes: 0 }, NOW)).toEqual([]);
     const sim = whatIfHeat(rows, { heatMinutes: 30, heatTempC: 100, heatHoursAgo: 2 }, NOW);
     expect(heatSittings(sim)[0]).toMatchObject({ minutes: 30, tempC: 100 });
+  });
+});
+
+/* ── PHASE 4: THE MEASUREMENT THAT REPLACES THE PRIOR ──────────────────────── */
+
+describe("saunaClearance — does heat help THIS athlete?", () => {
+  const DAY = 86_400_000;
+  const T0 = Date.parse("2026-08-01T18:00:00.000Z");
+
+  /**
+   * One clean pair: a session that drained, then a recovery read the next
+   * morning, with an optional sauna in between.
+   *
+   * `freshness` is the CHECK-IN COLUMN'S OWN SENSE — 5 = muscles feel fresh —
+   * because that is what the column stores and what `sorenessFromCheckin`
+   * flips on read. Getting that backwards is exactly how the volume estimator
+   * once shipped inverted, so the fixture speaks the column's language rather
+   * than a convenient one: HIGHER freshness = less residual = faster clearance
+   * = a LOWER index.
+   */
+  const day = (i: number, freshness: number, heat: boolean) => {
+    const end = T0 + i * DAY;
+    return {
+      session: {
+        id: `s${i}`, title: "Lower", startedAt: new Date(end - 3_600_000).toISOString(),
+        completedAt: new Date(end).toISOString(), blocks: [],
+        fatigue: 4, feelLoggedAt: new Date(end + 10 * 60_000).toISOString(),
+      },
+      read: { date: new Date(end + 13 * 3_600_000).toISOString(), loggedAt: new Date(end + 13 * 3_600_000).toISOString(), soreness: freshness, energy: freshness },
+      heat: heat ? sittingAt(end + 3_600_000, 25, 90) : [],
+    };
+  };
+  const sittingAt = (ms: number, minutes: number, tempC: number): HeatSignalRow[] => {
+    const ts = new Date(ms).toISOString();
+    return [
+      { id: `hm${ms}`, kind: "sauna", value: minutes, source: "manual", ts },
+      { id: `ht${ms}`, kind: "saunaTemp", value: tempC, source: "manual", ts },
+    ];
+  };
+  const build = (spec: { freshness: number; heat: boolean }[]) => {
+    const days = spec.map((x, i) => day(i * 2, x.freshness, x.heat));
+    return {
+      sessions: days.map((d) => d.session) as never,
+      recovery: days.map((d) => d.read) as never,
+      heatSignals: days.flatMap((d) => d.heat),
+      now: T0 + spec.length * 2 * DAY + DAY,
+    };
+  };
+
+  it("says nothing at all until BOTH sides clear the pair floor", () => {
+    const b = build([{ freshness: 5, heat: true }, { freshness: 2, heat: false }, { freshness: 2, heat: false }]);
+    const c = saunaClearance(b.sessions, b.recovery, b.heatSignals, { now: b.now });
+    expect(c.withSamples.length).toBeLessThan(2);
+    expect(c.confidence).toBe(0);
+    // Not a direction it cannot support — a flat nothing.
+    expect(c.delta).toBe(0);
+  });
+
+  it("tags a pair by whether heat fell INSIDE its gap, not merely nearby", () => {
+    const b = build([{ freshness: 3, heat: true }, { freshness: 3, heat: false }]);
+    const pairs = pairReads(b.sessions, b.recovery, { now: b.now, heatSignals: b.heatSignals });
+    expect(pairs.filter((p) => p.heat === true)).toHaveLength(1);
+    expect(pairs.filter((p) => p.heat === false)).toHaveLength(1);
+  });
+
+  it("leaves `heat` UNDEFINED when no heat log was supplied — absent is not false", () => {
+    const b = build([{ freshness: 3, heat: false }, { freshness: 3, heat: false }]);
+    for (const p of pairReads(b.sessions, b.recovery, { now: b.now })) {
+      expect(p.heat).toBeUndefined();
+    }
+  });
+
+  it("ignores a token sitting that could not plausibly have changed anything", () => {
+    const b = build([{ freshness: 3, heat: false }, { freshness: 3, heat: false }]);
+    const end = Date.parse(b.sessions[0]!.completedAt!);
+    // 5 min at 50 °C = 0.7 equivalent minutes, under HEAT_SESSION_MIN_EQUIV.
+    const token = sittingAt(end + 3_600_000, 5, 50);
+    const pairs = pairReads(b.sessions, b.recovery, { now: b.now, heatSignals: token });
+    expect(pairs.every((p) => p.heat === false)).toBe(true);
+  });
+
+  it("reports a direction once both sides have evidence", () => {
+    const b = build([
+      { freshness: 5, heat: true }, { freshness: 5, heat: true }, { freshness: 5, heat: true },
+      { freshness: 2, heat: false }, { freshness: 2, heat: false }, { freshness: 2, heat: false },
+    ]);
+    const c = saunaClearance(b.sessions, b.recovery, b.heatSignals, { now: b.now });
+    expect(c.withSamples.length).toBeGreaterThanOrEqual(2);
+    expect(c.withoutSamples.length).toBeGreaterThanOrEqual(2);
+    expect(c.confidence).toBeGreaterThan(0);
+    // The heat group reported FRESH (5) the next morning and the other group
+    // reported sore (2), so the heat group cleared more of the same session —
+    // a lower ratio against the population curve, so a negative delta.
+    expect(c.delta).toBeLessThan(0);
   });
 });
