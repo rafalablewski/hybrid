@@ -1,44 +1,21 @@
 import { useMemo } from "react";
-import {
-  readReports, placeReads, QUICK_CHECKIN_METRIC,
-  type LoggedSession, type RecoveryReport,
-} from "@hybrid/core";
+import { recoveryReports, sessionEndTimes, type LoggedSession, type RecoveryReport } from "@hybrid/core";
 import { useCheckinsQuery } from "./queries";
 
 /**
  * THE CHECK-IN HISTORY ON THE ENGINE'S OWN TERMS.
  *
- * Extracted from `use-volume-model` because a second consumer arrived (the heat
- * clearance comparison) and the mapping is not trivial enough to write twice:
- * a day is EVERY READ it carries, not one value. The card asks again once a
- * session has drained, so a day can hold "wrecked at 09:30" and "good at
- * 22:00" — which is precisely the pair `athleteClearance` and `saunaClearance`
- * need, and which one stored value could never express. `readReports` gives the
- * day its DECISIVE read (freshness, sleep and mood travel with it, answered
- * once) and emits the others as timed reads of their own.
+ * The mapping itself moved to core (`recoveryReports`) once the admin Engine
+ * Room needed the same thing: a day is EVERY READ it carries, not one value,
+ * and the console has to be able to check an athlete's clearance split against
+ * the identical inputs their phone used. Writing it twice is how the two would
+ * come to disagree about one athlete.
  *
- * Duplicating that would have been the drift, not the abstraction.
+ * What is left here is the hook part — the cache read — which is all a hook
+ * should ever have been.
  */
 export function useRecoveryReports(sessions: LoggedSession[]): RecoveryReport[] {
   const { data: checkins = [] } = useCheckinsQuery();
-  const sessionEnds = useMemo(
-    () => sessions.map((s) => Date.parse(s.completedAt ?? s.startedAt ?? "")).filter((t) => Number.isFinite(t)),
-    [sessions],
-  );
-  return useMemo(
-    () =>
-      checkins.flatMap((c) => {
-        const day: RecoveryReport = {
-          date: c.weekOf, soreness: c.soreness, sleep: c.sleep,
-          energy: c.energy, mood: c.mood, loggedAt: c.createdAt ?? null,
-        };
-        const rows = (c.reads ?? []).filter((r) => r.metric === QUICK_CHECKIN_METRIC);
-        if (rows.length < 2) return [day];
-        return readReports(
-          day,
-          placeReads(rows.map((r) => ({ value: r.value, at: Date.parse(r.loggedAt) })), sessionEnds),
-        ) as RecoveryReport[];
-      }),
-    [checkins, sessionEnds],
-  );
+  const ends = useMemo(() => sessionEndTimes(sessions), [sessions]);
+  return useMemo(() => recoveryReports(checkins, ends), [checkins, ends]);
 }

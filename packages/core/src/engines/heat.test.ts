@@ -22,7 +22,7 @@ import { computeFatigue } from "./fatigue";
 import { heatRecovery, personalizeLandmarks, sanitizeVolumeProfile } from "./landmark-profile";
 import { measuredProfile, withMeasured, measuredFields } from "./landmark-context";
 import { whatIfBio, whatIfHeat } from "./engine-room";
-import { pairReads, saunaClearance } from "./recovery-pairs";
+import { pairReads, recoveryReports, saunaClearance } from "./recovery-pairs";
 import type { LoggedSession } from "./session";
 import type { RecoveryReport } from "./landmark-adapt";
 import type { Biometrics } from "./types";
@@ -487,5 +487,92 @@ describe("the protocol rides in `source`, so nothing needs migrating", () => {
     expect(h.sittings[0]!.protocol).toBe("steam");
     expect(h.points).toBeGreaterThan(0);
     expect(heatAdjustment(sitting(20, 45, 4, "sauna"), { now: NOW }).points).toBe(0);
+  });
+});
+
+/* ── ONE MAPPING, SO THE PHONE AND THE CONSOLE CANNOT DISAGREE ─────────────── */
+
+describe("recoveryReports — the check-in history on the engine's own terms", () => {
+  const DAY_ISO = "2026-08-01T00:00:00.000Z";
+
+  it("keeps a single-read day as ONE report carrying its own answers", () => {
+    const out = recoveryReports([
+      { weekOf: DAY_ISO, soreness: 4, sleep: 3, energy: 4, mood: 3, createdAt: DAY_ISO,
+        reads: [{ metric: "energy", value: 4, loggedAt: DAY_ISO }] },
+    ]);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({ soreness: 4, sleep: 3, mood: 3 });
+  });
+
+  it("SPLITS a day that holds two reads — which is the whole instrument", () => {
+    // "wrecked at 09:30" and "good at 22:00" is the pair a clearance is measured
+    // from, and one stored value could never express it.
+    const out = recoveryReports([
+      { weekOf: DAY_ISO, soreness: 2, sleep: 3, energy: 2, mood: 3, createdAt: DAY_ISO,
+        reads: [
+          { metric: "energy", value: 2, loggedAt: "2026-08-01T09:30:00.000Z" },
+          { metric: "energy", value: 4, loggedAt: "2026-08-01T22:00:00.000Z" },
+        ] },
+    ]);
+    expect(out.length).toBeGreaterThan(1);
+    // The day keeps freshness/sleep/mood; the timed reads carry the energy.
+    expect(out[0]!.soreness).toBe(2);
+    expect(out.slice(1).map((r) => r.energy)).toEqual([2, 4]);
+  });
+
+  it("ignores reads for other metrics", () => {
+    const out = recoveryReports([
+      { weekOf: DAY_ISO, energy: 3, createdAt: DAY_ISO,
+        reads: [
+          { metric: "mood", value: 5, loggedAt: "2026-08-01T09:00:00.000Z" },
+          { metric: "mood", value: 1, loggedAt: "2026-08-01T21:00:00.000Z" },
+        ] },
+    ]);
+    expect(out).toHaveLength(1);
+  });
+
+  it("survives a day with no reads at all — the pre-migration shape", () => {
+    expect(recoveryReports([{ weekOf: DAY_ISO, energy: 3, createdAt: DAY_ISO }])).toHaveLength(1);
+    expect(recoveryReports([{ weekOf: DAY_ISO, energy: 3, createdAt: DAY_ISO, reads: null }])).toHaveLength(1);
+  });
+
+  it("gives the SAME reports to a client and a server holding the same rows", () => {
+    // The reason this lives in core at all: the athlete's phone and the admin
+    // console must compute one athlete's clearance from identical inputs, and a
+    // mapping written twice is how they would come to disagree.
+    const rows = [
+      { weekOf: DAY_ISO, soreness: 2, sleep: 3, energy: 2, mood: 3, createdAt: DAY_ISO,
+        reads: [
+          { metric: "energy", value: 2, loggedAt: "2026-08-01T09:30:00.000Z" },
+          { metric: "energy", value: 4, loggedAt: "2026-08-01T22:00:00.000Z" },
+        ] },
+    ];
+    const ends = [Date.parse("2026-08-01T08:00:00.000Z")];
+    expect(recoveryReports(rows, ends)).toEqual(recoveryReports(rows, ends));
+  });
+
+  it("is not re-shaped by session context — `sessionEnds` only ever FILTERS", () => {
+    // Verified rather than assumed, because it is easy to believe otherwise:
+    // placeReads computes a lag, a context and a reading for every answer, and
+    // readReports then emits only { date, energy, loggedAt }. So the session
+    // clock cannot change what a surviving read LOOKS like — it can only drop
+    // one whose reading feelReading refuses to give. Callers that have the
+    // session list should still pass it (the drop is real), but a caller
+    // without one gets the same reports for every read that survives.
+    const rows = [
+      { weekOf: DAY_ISO, energy: 3, createdAt: DAY_ISO,
+        reads: [
+          { metric: "energy", value: 2, loggedAt: "2026-08-01T09:30:00.000Z" },
+          { metric: "energy", value: 4, loggedAt: "2026-08-01T22:00:00.000Z" },
+        ] },
+    ];
+    expect(recoveryReports(rows, [Date.parse("2026-08-01T08:00:00.000Z")]))
+      .toEqual(recoveryReports(rows, []));
+  });
+
+  it("hands straight to saunaClearance without a second mapping step", () => {
+    const c = saunaClearance([], recoveryReports([]), []);
+    expect(c.confidence).toBe(0);
+    expect(c.delta).toBe(0);
   });
 });
