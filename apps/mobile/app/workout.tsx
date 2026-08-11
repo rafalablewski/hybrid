@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator, Animated, KeyboardAvoidingView, Platform, Dimensions, AccessibilityInfo } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -96,6 +95,7 @@ import {
   springToRN,
   livePrLifts,
   SHARED_ELEMENTS,
+  HERO,
   type ReadinessFeeling,
 } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
@@ -141,6 +141,7 @@ import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER } from "../components/aurora/kit";
 import { GlassNavButton, GlassSatellite, GlassSelectMenu, GlassSurface, GlassToolbarGroup, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED, type SFSymbol } from "../components/aurora/swiftui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
+import { coverInsets } from "../lib/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Aurora rounds everything more — pill CTAs and softer cards/banners. These
@@ -1122,9 +1123,13 @@ export default function Workout() {
   const canLog = !!cursorSet && setIsLoggable(cursorSet);
   const queued = queuedSetCount(exercises.map((x) => ({ sets: x.kind === "strength" ? x.sets : undefined })));
   const insets = useSafeAreaInsets();
+  // THE LOGGER IS A COVER, so it stands in the WINDOW's insets — a native
+  // SafeAreaView inside a fullScreenModal never applies its top edge, which is
+  // how the header came to sit on the status bar. See lib/layout coverInsets.
+  const safe = coverInsets(insets);
   // The dock sits ON the bottom edge, so the home-indicator inset is the FLOOR
   // of its pad, never an addition to it — the same arithmetic a sheet uses.
-  const dockPad = Math.max(insets.bottom, 12);
+  const dockPad = Math.max(safe.bottom, 12);
 
   // The rest timer's readout: the live countdown while one is running, the
   // armed duration otherwise. One piece of state, and the capsule is a clock
@@ -1150,12 +1155,28 @@ export default function Workout() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top"]}>
+    <View style={{ flex: 1, backgroundColor: C.ink }}>
       {/* Aurora's ambient blob field behind the logger — the live screen owns its
           own shell (sticky timer header), so it drops in the same backdrop the
-          rest of the Aurora app uses rather than wrapping in AuroraScreen. */}
+          rest of the Aurora app uses rather than wrapping in AuroraScreen.
+
+          OUTSIDE the padded box on purpose: the field is `absoluteFill`, and an
+          absolute child is laid out inside its parent's PADDING box, so putting
+          it under the safe-area pad would stop the wash at the status bar and
+          draw a seam across the top of the screen. */}
       {aurora && <AuroraField />}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
+      {/* The safe-area pad is the SCREEN's, applied here rather than by a native
+          SafeAreaView — see `safe` above. */}
+      <View style={{ flex: 1, paddingTop: safe.top }}>
+      {/* THE HEADER stands where every other screen's nav rail stands: HERO.rail
+          measured from the safe area — a 44pt row, 4pt below the inset and 8pt
+          of breathing under it (the collapsed bar's own height) — and the
+          screen's own GUTTER at the sides, so the chevron sits on the same
+          column as the cards below it. A cover has no HeroNav to inherit that
+          constant from, so it keeps it by hand; the alternative is a header
+          measured on its own, a few points in from and above every back circle
+          in the app, on the screen an athlete looks at most. */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: HERO.rail.top + HERO.rail.height + HERO.rail.bottom, paddingHorizontal: GUTTER, paddingTop: HERO.rail.top, paddingBottom: HERO.rail.bottom, borderBottomWidth: 1, borderBottomColor: C.line }}>
         {/* MINIMIZE — a chevron pointing DOWN, at where the session goes: the
             accessory strip above the tab bar. The direction is the affordance,
             and it is the same direction as the drag that will eventually do the
@@ -2044,6 +2065,7 @@ export default function Workout() {
         </View>
       )}
       </KeyboardAvoidingView>
+      </View>
 
       <RpeHelpModal visible={rpeHelp} onClose={() => setRpeHelp(false)} t={t} />
 
@@ -2074,7 +2096,9 @@ export default function Workout() {
         </Pressable>
       </Sheet>
 
-      {/* Get-ready count-in — covers the screen on a fresh start until GO. */}
+      {/* Get-ready count-in — covers the screen on a fresh start until GO, and
+          the WHOLE screen: it sits outside the safe-area pad, so the count runs
+          under the status bar the way a takeover should. */}
       {countdown != null && (
         <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, letterSpacing: 3, marginBottom: 12 }}>
@@ -2085,7 +2109,7 @@ export default function Workout() {
           </Text>
         </View>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -2297,6 +2321,11 @@ function Summary({
   };
   // The ★ satellite expands the save-as-routine composer beneath the cluster.
   const [routineOpen, setRoutineOpen] = useState(false);
+  // The summary is the SAME cover as the live screen, so it stands in the same
+  // window insets — a native SafeAreaView here dropped the top edge too, which
+  // put the ✕ that leaves the session on the status bar.
+  const insets = useSafeAreaInsets();
+  const safe = coverInsets(insets);
   const { prs, bests, cardioPrs, firstEver } = summary;
   // Title can be renamed here (optional) — start from the auto-title.
   const [title, setTitle] = useState(summary.title);
@@ -2381,10 +2410,13 @@ function Summary({
   // analysis are glass satellites at its sides; exit is a glass ✕ up top.
   const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: C.ink }} edges={["top", "bottom"]}>
+    <View style={{ flex: 1, backgroundColor: C.ink }}>
+      {/* Both backdrops sit OUTSIDE the safe-area pad — they are `absoluteFill`,
+          and an absolute child lays out inside its parent's padding box, so
+          padding above them would stop the field at the status bar. */}
       {aurora && <AuroraField />}
       <FinishField />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: 28, flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingTop: safe.top + 16, paddingBottom: safe.bottom + 28, flexGrow: 1 }}>
         {/* The one exit — where dismissal muscle memory expects it. Guests leave
             to the welcome screen (there's no Today tab behind them). */}
         <SummaryOrb
@@ -2538,7 +2570,7 @@ function Summary({
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

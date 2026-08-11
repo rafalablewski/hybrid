@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { COVER_SCREENS } from "@hybrid/core";
 
 /**
  * THE DESIGN-TOKEN RATCHET.
@@ -394,6 +395,33 @@ describe("presentation", () => {
         }
         i = gt + 1;
       }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("HARD — a COVER pads itself; no native SafeAreaView inside a fullScreenModal", () => {
+    // A cover (@hybrid/core COVER_SCREENS — on mobile the live logger, and
+    // nothing else) is presented in its OWN view controller. A native
+    // SafeAreaView mounted in there never applies its top edge, whatever the
+    // provider was seeded with, so the logger shipped a whole TestFlight build
+    // with its header across the status bar: the lift's name and the clock on
+    // the carrier row, the chevron in the notch band. The seed fixed the HOOK
+    // (which is why the dock's bottom pad was right in the same build) and
+    // nothing else, which is exactly what made the remaining half easy to miss.
+    //
+    // So a cover reads the hook and pads itself — lib/layout `coverInsets`. The
+    // route list comes from core rather than a filename typed here, for the
+    // reason the layout takes it from there too: a mode is a mode on both
+    // clients, and `log` means different things on each.
+    const covers = COVER_SCREENS.filter((r) => r !== "log").map((r) => `app/${r}.tsx`);
+    expect(covers.length).toBeGreaterThan(0);
+    const bad: string[] = [];
+    for (const path of covers) {
+      const file = FILES.find((f) => f.path === path);
+      expect(file, `${path} — a cover route with no source file`).toBeTruthy();
+      file!.text.split("\n").forEach((line, i) => {
+        if (/<SafeAreaView\b/.test(line)) bad.push(`${path}:${i + 1}`);
+      });
     }
     expect(bad).toEqual([]);
   });
