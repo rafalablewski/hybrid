@@ -216,6 +216,37 @@ code { font-family:var(--mono); font-size:11.5px; color:var(--blue); background:
 .formrow .v.step { background:rgba(243,244,239,.08); border-radius:8px; padding:3px 3px 3px 9px; color:var(--chalk); gap:9px; }
 .formrow .v.step b { color:var(--ash); font-weight:700; padding:0 4px; }
 
+/* the sport sheet — cards, as the app already draws them */
+.qs-import { display:flex; align-items:center; gap:10px; border-radius:16px; padding:11px 13px; background:rgba(198,248,79,.06); box-shadow:inset 0 0 0 1px rgba(198,248,79,.42); margin-top:12px; }
+.qs-import .t { font-weight:700; font-size:13.5px; color:var(--chalk); display:block; }
+.qs-import .s { font-family:var(--mono); font-size:9.5px; color:var(--ash); margin-top:2px; display:block; line-height:1.4; }
+.qs-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:10px; }
+.qs-card { border-radius:16px; padding:12px; background:rgba(255,255,255,.045); box-shadow:inset 0 0 0 1px rgba(255,255,255,.09); display:grid; gap:5px; justify-items:start; }
+.qs-card .t { font-weight:900; font-size:15.5px; letter-spacing:-.02em; color:var(--chalk); }
+.qs-card .k { font-family:var(--mono); font-size:8px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash); }
+.qs-other { margin-top:9px; display:flex; align-items:center; justify-content:center; gap:8px; border-radius:16px; padding:12px; background:rgba(255,255,255,.04); box-shadow:inset 0 0 0 1px rgba(255,255,255,.08); font-weight:700; font-size:13.5px; color:var(--chalk); }
+.qs-other b { color:var(--lime); font-weight:900; font-size:16px; }
+.dtoken { font-family:var(--mono); font-size:11.5px; color:var(--lime); background:rgba(198,248,79,.12); border-radius:8px; padding:4px 9px; display:inline-flex; align-items:center; gap:5px; }
+.stepper { display:inline-flex; align-items:stretch; border-radius:9px; overflow:hidden; box-shadow:inset 0 0 0 1px rgba(243,244,239,.16); }
+.stepper span { padding:5px 12px; font-family:var(--mono); font-size:13px; color:var(--chalk); }
+.stepper span + span { box-shadow:inset 1px 0 0 rgba(243,244,239,.16); }
+.imp-sec { font-family:var(--mono); font-size:8.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--ash); margin-top:13px; margin-bottom:1px; }
+.imp-row { display:flex; align-items:center; gap:11px; padding:8px 0; }
+.imp-row + .imp-row { border-top:1px solid rgba(255,255,255,.05); }
+.imp-row.dim { opacity:.42; }
+.tog { width:33px; height:19px; border-radius:999px; background:rgba(243,244,239,.16); position:relative; flex:none; }
+.tog.on { background:var(--lime); }
+.tog i { position:absolute; top:2px; left:2px; width:15px; height:15px; border-radius:50%; background:var(--chalk); display:block; }
+.tog.on i { left:16px; background:#101208; }
+
+/* shipped strip */
+.shipped { display:grid; gap:12px; margin-top:24px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); }
+.shipped .s { border:1px solid rgba(198,248,79,.28); background:rgba(198,248,79,.04); border-radius:16px; padding:16px; display:grid; gap:7px; align-content:start; }
+.shipped .s .k { font-family:var(--mono); font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--lime); }
+.shipped .s h3 { font-size:14.5px; }
+.shipped .s p { font-size:12.5px; }
+.shipped .s code { font-size:10.5px; }
+
 /* gallery */
 .acts { display:grid; gap:56px; margin-top:30px; }
 .act-head { display:flex; align-items:baseline; gap:13px; flex-wrap:wrap; padding-bottom:12px; border-bottom:1px solid var(--line); }
@@ -253,11 +284,11 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 <div class="wrap">
 
 <header class="masthead">
-  <div class="eyebrow">HYBRID — mobile design study — rev. 3</div>
+  <div class="eyebrow">HYBRID — mobile design study — rev. 4</div>
   <h1>Today → Train,<br />the whole experience<span class="dot">.</span></h1>
   <p class="standfirst">
     The logbook card rebuilt on the <b>SwiftUI view set</b>, then drawn out across
-    <b>sixteen states</b> — every kind of empty, every kind of logged, the calendar in both
+    <b>eighteen states</b> — every kind of empty, every kind of logged, the calendar in both
     directions, and the edges most redesigns never draw: loading, offline, failure, undo.
     With the specifications an engineer can build from.
   </p>
@@ -265,7 +296,8 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
     <div class="fact"><span class="k">Surface</span><span class="v">apps/mobile — Today</span></div>
     <div class="fact"><span class="k">Owns it</span><span class="v">logbook-rail.tsx</span></div>
     <div class="fact"><span class="k">Native layer</span><span class="v">@expo/ui 56 — 50 SwiftUI views</span></div>
-    <div class="fact"><span class="k">States drawn</span><span class="v">16</span></div>
+    <div class="fact"><span class="k">States drawn</span><span class="v">18</span></div>
+    <div class="fact"><span class="k">Shipped</span><span class="v">build 1, partial</span></div>
   </div>
 </header>
 
@@ -273,7 +305,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 <section class="section">
   <div class="rule-head">
     <h2>Three invariants</h2>
-    <span class="eyebrow">true on all sixteen screens, or the screen is wrong</span>
+    <span class="eyebrow">true on all eighteen screens, or the screen is wrong</span>
   </div>
 
   <div class="inv">
@@ -292,7 +324,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
       <span class="n">INVARIANT 2</span>
       <h3>Log a sport exists wherever a sport could.</h3>
       <p>
-        Present on <b>thirteen of sixteen</b> screens — including the first run, every past day, every
+        Present on <b>fifteen of eighteen</b> screens — including the first run, every past day, every
         day that already holds training, and both failure states. Absent only from the future (nothing
         has happened yet) and from the sheet that <em>is</em> it. Today's card offers it in exactly one
         state.
@@ -307,6 +339,69 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
         surfaces on one screen — the current card has three (pill, today-disc, sport label).
       </p>
     </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────────────────────────────────────── shipped ── -->
+<section class="section">
+  <div class="rule-head">
+    <h2>Shipped</h2>
+    <span class="eyebrow">branch claude/swiftui-ive-design-redesign — typecheck, 3 264 tests, iOS bundle green</span>
+  </div>
+
+  <p class="lede">
+    Four of these moves are no longer proposals. The still-frame slice of Build&nbsp;1 is written,
+    along with the first <b>native SwiftUI controls</b> the app has mounted that are controls rather
+    than materials — and the capability the whole study kept pointing at: a sport can now be logged on
+    a day that has already passed.
+  </p>
+
+  <div class="shipped">
+    <div class="s">
+      <span class="k">Shipped — invariant 1</span>
+      <h3>One empty block, three tenses</h3>
+      <p>
+        <code>core/empty-day.ts</code> holds the tense logic (unit-tested — one title key in all three,
+        and a past day can never offer the live logger); <code>aurora/empty-day.tsx</code> draws it once.
+        The rail's two bespoke empty states are gone.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — invariants 2 &amp; 3</span>
+      <h3>A primary and a secondary</h3>
+      <p>
+        <code>aurora/action-pair.tsx</code>. The dashed ＋ tile is retired; <b>Log a sport now sits on
+        every empty day</b>, today's included. The hierarchy is a fill, so a day that already holds
+        training spends the accent nowhere.
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — move 07</span>
+      <h3>Log a sport on a past day</h3>
+      <p>
+        <code>QuickSportLog</code> takes a date; the rail hands up the viewed day at local noon so no
+        timezone slides the record next door, and the save clamps at now. <b>The card grid and the
+        watch-import bar are untouched.</b>
+      </p>
+    </div>
+    <div class="s">
+      <span class="k">Shipped — native controls</span>
+      <h3>DatePicker and Stepper</h3>
+      <p>
+        <code>NativeDateField</code> and <code>NativeStepper</code> in <code>aurora/swiftui.tsx</code> —
+        real SwiftUI views, self-contained leaves, null off-iOS. A system date control is exactly where
+        native styling is <em>correct</em>.
+      </p>
+    </div>
+  </div>
+
+  <div class="note grey">
+    <span class="k">Deliberately not mounted</span>
+    <code>ContentUnavailableView</code>. Its <em>grammar</em> is what the empty block follows, but the
+    native view styles its own type — SF Pro in the middle of a card set in Archivo — and its props are
+    title / systemImage / description with no slot for the app's own buttons, so mounting it would split
+    one block across two renderers and lose the house face for nothing. Native rendering of the two
+    controls still needs a device round, as <code>swiftui-kit</code> already documents.
   </div>
 </section>
 
@@ -328,7 +423,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
   </p>
 
   <div class="plate" style="margin-top:24px; border-radius:20px; padding:20px">
-    <div class="m-mono" style="color:var(--blue)">Views these sixteen screens are built from</div>
+    <div class="m-mono" style="color:var(--blue)">Views these eighteen screens are built from</div>
     <div class="chips" style="margin-top:10px">
       <span class="chip">List</span><span class="chip">Section</span><span class="chip">ContentUnavailableView</span>
       <span class="chip">Label</span><span class="chip">LabeledContent</span><span class="chip">SwipeActions</span>
@@ -462,7 +557,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
       <p>A quick log always saves at "now", so the card cannot answer the most ordinary request an athlete has: <em>I played on Saturday and forgot.</em> The sheet opens dated to the day you were looking at — the one date the app can be certain about.</p>
       <ul>
         <li class="cut"><span class="m">−</span><span>The <code>isToday</code> gate at <code>done-floor.tsx:145</code></span></li>
-        <li><span class="m">+</span><span>Native <code>Form</code> / <code>DatePicker</code> / <code>Stepper</code> in <code>quick-sport.tsx</code></span></li>
+        <li><span class="m">+</span><span>Native <code>DatePicker</code> + <code>Stepper</code> in <code>quick-sport.tsx</code>. <b>The card grid and the watch-import bar stay exactly as they are</b></span></li>
         <li><span class="m">+</span><span><code>quickSport</code> takes a <code>date</code> → <code>startedAt</code></span></li>
       </ul>
     </div>
@@ -473,7 +568,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 <section class="section">
   <div class="rule-head">
     <h2>The full experience</h2>
-    <span class="eyebrow">sixteen states — four acts</span>
+    <span class="eyebrow">eighteen states — five acts</span>
   </div>
 
   <p class="lede">
@@ -1090,32 +1185,165 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
           <div class="chips"><span class="chip">ConfirmationDialog</span><span class="chip mod">contentTransition</span><span class="chip">Button</span></div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ═════════════════════════════ ACT V ═══════════════════════════════ -->
+    <div>
+      <div class="act-head">
+        <span class="n">ACT V</span><h2>Logging a sport</h2>
+        <span class="eyebrow">cards, the watch, and the day it lands on</span>
+      </div>
+
+      <div class="gallery">
+
         <!-- S16 -->
         <div class="screen">
           <div class="frame">
             <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
-            <div style="opacity:.32">
+            <div style="opacity:.3">
               <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
               <div class="datestamp">← Saturday, 8 August</div>
-              <div class="bigtitle">Saturday</div>
             </div>
             <div class="sheet">
               <div class="grab"></div>
-              <div class="m-row" style="margin-bottom:7px">
+              <div class="m-row">
                 <span style="font-weight:900;font-size:18px;letter-spacing:-.03em">Log a sport</span>
-                <span class="m-mono">Cancel</span>
+                <span class="m-mono">Close</span>
               </div>
-              <div class="formrow"><span class="l">Sport</span><span class="v">Tennis ⌄</span></div>
-              <div class="formrow"><span class="l">When</span><span class="v">Sat 8 Aug, 10:30 ⌄</span></div>
-              <div class="formrow"><span class="l">Duration</span><span class="v step">90 min <b>−</b><b>＋</b></span></div>
-              <div class="formrow"><span class="l">Distance</span><span class="v">4.11 km</span></div>
-              <div class="formrow"><span class="l">How did it feel</span><span class="v">Moderate ⌄</span></div>
-              <div class="btn prom wide" style="margin-top:14px;box-shadow:none">Save to Saturday</div>
+              <div style="font-family:var(--mono);font-size:10.5px;color:var(--ash);margin-top:5px">A run, a swim, a match — it still counts</div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px">
+                <span class="m-mono">When</span>
+                <span class="dtoken">Sat 8 Aug, 10:30 ⌄</span>
+              </div>
+
+              <div class="qs-import">
+                <span style="color:var(--lime)"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="3.2"/><path d="M9 6.5l.5-3h5l.5 3M9 17.5l.5 3h5l.5-3"/></svg></span>
+                <span style="flex:1"><span class="t">Import from your watch</span><span class="s">Trained on your watch? Pull it in with every value it measured.</span></span>
+                <span style="color:var(--lime);font-size:13px">→</span>
+              </div>
+
+              <div class="qs-grid">
+                <div class="qs-card"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg><span class="t">Run</span><span class="k">Tap to log</span></div>
+                <div class="qs-card"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17" r="3.2"/><circle cx="18.5" cy="17" r="3.2"/><path d="M8 17l4-8h4M9 9h4"/></svg><span class="t">Ride</span><span class="k">Tap to log</span></div>
+                <div class="qs-card"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 15c2-2 3.4-2 5.4 0s3.4 2 5.4 0 3.4-2 5.4 0M3 10c2-2 3.4-2 5.4 0s3.4 2 5.4 0 3.4-2 5.4 0"/></svg><span class="t">Swim</span><span class="k">Tap to log</span></div>
+                <div class="qs-card"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round"/></svg><span class="t">Tennis</span><span class="k">Tap to log</span></div>
+              </div>
+              <div class="qs-other"><b>＋</b>Other sport</div>
             </div>
           </div>
-          <div class="lab"><span class="s">S16</span><h3>The sheet that closes every loop</h3></div>
-          <p class="why">Thirteen <b>Log a sport</b> buttons arrive here, and the sheet is <b>already dated to the day you were looking at</b> — the one date the app can be certain about. Native <code>Form</code>, <code>Picker</code>, <code>DatePicker</code>, <code>Stepper</code>; the button says where it saves.</p>
-          <div class="chips"><span class="chip">BottomSheet</span><span class="chip">Form</span><span class="chip">DatePicker</span><span class="chip">Stepper</span><span class="chip">Picker</span></div>
+          <div class="lab"><span class="s">S16</span><h3>The sport sheet — cards, unchanged</h3></div>
+          <p class="why">
+            <b>This stays exactly as it is.</b> The one-tap card grid is the fastest path in the app —
+            back from a run, two taps and it is logged — and the watch import already sits above it,
+            where it belongs: if the training was recorded on the wrist there is nothing to type at all.
+            The only addition is the <b>When</b> row, which is what lets the whole sheet be reached from
+            a day that has already passed.
+          </p>
+          <div class="chips"><span class="chip">BottomSheet</span><span class="chip">DatePicker</span><span class="chip">Label</span><span class="chip">Button ×5</span></div>
+        </div>
+
+        <!-- S17 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div style="opacity:.3">
+              <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+              <div class="datestamp">← Saturday, 8 August</div>
+            </div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div style="display:flex;align-items:center;gap:11px">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round"/></svg></span>
+                <span style="flex:1;font-weight:900;font-size:19px;letter-spacing:-.03em">Tennis</span>
+                <span class="m-mono">Close</span>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px">
+                <span class="m-mono">When</span>
+                <span class="dtoken">Sat 8 Aug, 10:30 ⌄</span>
+              </div>
+
+              <div style="display:flex;gap:9px;align-items:flex-end;margin-top:12px">
+                <span style="flex:1"><span class="m-mono" style="display:block;margin-bottom:5px">Distance</span><span style="display:block;font-family:var(--mono);font-size:15px;color:var(--chalk);background:var(--ink);border-radius:10px;padding:10px 12px;box-shadow:inset 0 0 0 1px var(--line)">4.11</span></span>
+                <span style="flex:1"><span class="m-mono" style="display:block;margin-bottom:5px">Minutes</span><span style="display:block;font-family:var(--mono);font-size:15px;color:var(--chalk);background:var(--ink);border-radius:10px;padding:10px 12px;box-shadow:inset 0 0 0 1px var(--line)">90</span></span>
+                <span class="btn prom" style="box-shadow:none;padding:12px 18px">Log →</span>
+              </div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px">
+                <span style="font-family:var(--mono);font-size:12px;color:var(--ash)">90 min</span>
+                <span class="stepper"><span>−</span><span>＋</span></span>
+              </div>
+
+              <div style="font-family:var(--mono);font-size:11.5px;color:var(--lime);margin-top:11px">Pace 21:54 /km</div>
+            </div>
+          </div>
+          <div class="lab"><span class="s">S17</span><h3>One sport — the figures, and the day</h3></div>
+          <p class="why">
+            The <code>DatePicker</code> is the control that makes a past day loggable at all: the save
+            used to stamp <code>new Date()</code>, which recorded <em>when the record was typed</em> as a
+            property of the workout. Beside the typed field, a <code>Stepper</code> nudges the duration
+            in fives — with repeat-on-hold, disabled ends and the adjustable VoiceOver trait that
+            hand-drawn ± buttons never get. Additive: the field stays the exact-entry path.
+          </p>
+          <div class="chips"><span class="chip">DatePicker</span><span class="chip">Stepper</span><span class="chip">TextField ×2</span><span class="chip mod">tint</span></div>
+        </div>
+
+        <!-- S18 -->
+        <div class="screen">
+          <div class="frame">
+            <div class="navbar"><span class="avatar">RA</span><span class="wordmark"><span class="w">HYBRID<i>.</i></span></span><span class="ring">◔</span></div>
+            <div style="opacity:.3">
+              <div class="seg"><span class="on">Train</span><span>Analyse</span><span>Social</span></div>
+              <div class="datestamp">← Saturday, 8 August</div>
+            </div>
+            <div class="sheet">
+              <div class="grab"></div>
+              <div class="m-row">
+                <span style="font-weight:900;font-size:18px;letter-spacing:-.03em">Import from your device</span>
+                <span class="m-mono">Close</span>
+              </div>
+              <div style="font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:6px;line-height:1.5">Workouts your device recorded. Tap a row to leave it out.</div>
+
+              <div class="imp-sec">Adds a new session</div>
+              <div class="imp-row">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M5.2 6.2c3 2 4 5.6 3.2 9.4M18.8 6.2c-3 2-4 5.6-3.2 9.4" stroke-linecap="round"/></svg></span>
+                <span style="flex:1"><span class="t" style="font-weight:700;font-size:13.5px;display:block">Tennis</span><span class="s" style="font-family:var(--mono);font-size:10px;color:var(--ash);display:block;margin-top:2px">Sat 8 Aug – 90 min – 4.11 km</span></span>
+                <span class="tog on"><i></i></span>
+              </div>
+              <div class="imp-row">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M3 15c2-2 3.4-2 5.4 0s3.4 2 5.4 0 3.4-2 5.4 0M3 10c2-2 3.4-2 5.4 0s3.4 2 5.4 0 3.4-2 5.4 0"/></svg></span>
+                <span style="flex:1"><span class="t" style="font-weight:700;font-size:13.5px;display:block">Open water swim</span><span class="s" style="font-family:var(--mono);font-size:10px;color:var(--ash);display:block;margin-top:2px">Sat 8 Aug – 28 min – 1 200 m</span></span>
+                <span class="tog on"><i></i></span>
+              </div>
+
+              <div class="imp-sec">Joins what you logged</div>
+              <div class="imp-row">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="14.6" cy="4.5" r="1.7"/><path d="M4 20l3.4-4.6 1.2-3.6 4-2.2 3 2.4 2.6.5M8.6 11.8L6 9.6M12.6 9.6l1.6 4.3 3 3.4"/></svg></span>
+                <span style="flex:1"><span class="t" style="font-weight:700;font-size:13.5px;display:block">Tempo run</span><span class="s" style="font-family:var(--mono);font-size:10px;color:var(--ash);display:block;margin-top:2px">Joins the Easy run you logged</span></span>
+                <span class="tog on"><i></i></span>
+              </div>
+
+              <div class="imp-sec">Already in your log</div>
+              <div class="imp-row dim">
+                <span class="sym"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5.5" cy="17" r="3.2"/><circle cx="18.5" cy="17" r="3.2"/><path d="M8 17l4-8h4M9 9h4"/></svg></span>
+                <span style="flex:1"><span class="t" style="font-weight:700;font-size:13.5px;display:block">Commute ride</span><span class="s" style="font-family:var(--mono);font-size:10px;color:var(--ash);display:block;margin-top:2px">Fri 7 Aug – 22 min</span></span>
+                <span class="tog"><i></i></span>
+              </div>
+
+              <div class="btn prom wide" style="margin-top:14px;box-shadow:none">Import 3</div>
+            </div>
+          </div>
+          <div class="lab"><span class="s">S18</span><h3>Import from the watch — a List of Sections</h3></div>
+          <p class="why">
+            The strongest case in the app for native <code>List</code> + <code>Section</code> +
+            <code>Toggle</code>: three groups, one row each, every row excludable — the watch calls a
+            six-minute walk to the shop a workout and the athlete gets the final word. The grouping
+            <em>is</em> the explanation, so it needs no prose: <b>adds</b>, <b>joins what you typed</b>,
+            <b>already here</b>. It ends on the one question a recording cannot answer — how hard it felt.
+          </p>
+          <div class="chips"><span class="chip">List</span><span class="chip">Section ×3</span><span class="chip">Toggle ×4</span><span class="chip">Label</span></div>
         </div>
       </div>
     </div>
@@ -1147,13 +1375,15 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
         <tr><td>S13 offline</td><td>All done for today</td><td class="no">—</td><td class="no">none</td><td class="yes">bordered</td><td class="yes">swipe</td></tr>
         <tr><td>S14 load failed</td><td>Couldn't load your training</td><td class="yes">tense 4</td><td class="no">Try again</td><td class="yes">bordered</td><td class="no">—</td></tr>
         <tr><td>S15 after delete</td><td>All done for today</td><td class="no">—</td><td class="no">none</td><td class="yes">bordered</td><td class="yes">undo</td></tr>
-        <tr><td>S16 the sheet</td><td>Log a sport</td><td class="no">—</td><td class="yes">Save</td><td class="yes">this is it</td><td class="no">—</td></tr>
+        <tr><td>S16 sport sheet</td><td>Log a sport</td><td class="no">—</td><td class="yes">the cards</td><td class="yes">this is it</td><td class="no">—</td></tr>
+        <tr><td>S17 one sport</td><td>Tennis</td><td class="no">—</td><td class="yes">Log →</td><td class="yes">dated, editable</td><td class="no">—</td></tr>
+        <tr><td>S18 device import</td><td>Import from your device</td><td class="no">—</td><td class="yes">Import 3</td><td class="yes">off the watch</td><td class="yes">per-row toggle</td></tr>
       </tbody>
     </table>
   </div>
   <p style="margin-top:20px">
     <b>Invariant 1</b> — one empty block, four tenses, five appearances, one title string.
-    <b>Invariant 2</b> — Log a sport in thirteen of sixteen, absent only where a sport cannot exist.
+    <b>Invariant 2</b> — Log a sport in fifteen of eighteen, absent only where a sport cannot exist.
     <b>Invariant 3</b> — never two accent surfaces on one screen; on nine of them the accent is spent
     nowhere at all.
   </p>
@@ -1188,7 +1418,9 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
         <tr><td>logbook.undo</td><td>{title} deleted — UNDO</td><td>S15</td></tr>
         <tr><td>logbook.week.footer</td><td>This week — {n} sessions, {distance}</td><td>S2, as the Section footer</td></tr>
         <tr><td>logbook.device.footer</td><td>Measured, not typed — you logged {typed}</td><td>S6</td></tr>
-        <tr><td>logbook.sheet.save</td><td>Save to {weekday}</td><td>S16</td></tr>
+        <tr><td>w.home.quickSport.when</td><td>When</td><td>S16, S17 — the DatePicker's label</td></tr>
+        <tr><td>device.import.cardTitle</td><td>Import from your watch</td><td>S16 — already shipped</td></tr>
+        <tr><td>device.import.adds / joins / already</td><td>Adds a new session / Joins the {title} you logged / Already in your log</td><td>S18 — the three Sections</td></tr>
       </tbody>
     </table>
   </div>
@@ -1282,7 +1514,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
         <tr><td>🎾 and the whole emoji set</td><td>core sessionIcon</td><td><code>Label</code> + SF Symbol, emoji as the off-iOS floor</td></tr>
         <tr><td>The day remount</td><td>logbook-rail.tsx:123</td><td><code>TabView</code> paging + rolling figures</td></tr>
         <tr><td>The isToday gate on logging</td><td>done-floor.tsx:145</td><td>A <code>DatePicker</code> — any past day is loggable</td></tr>
-        <tr><td>Hand-drawn sheet fields</td><td>quick-sport.tsx</td><td><code>Form</code> / <code>Picker</code> / <code>Stepper</code></td></tr>
+        <tr><td>The save-time date stamp</td><td>quick-sport.tsx</td><td>A native <code>DatePicker</code> — the sport lands on the day it happened</td></tr>
       </tbody>
     </table>
   </div>
@@ -1363,9 +1595,9 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
 </section>
 
 <footer>
-  <span>HYBRID design study — rev. 3</span>
+  <span>HYBRID design study — rev. 4</span>
   <span>Today → Train</span>
-  <span>16 states</span>
+  <span>18 states</span>
   <span>Set in Archivo &amp; JetBrains Mono — the app's own faces</span>
 </footer>
 

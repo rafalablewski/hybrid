@@ -3,6 +3,7 @@ import { Platform, View, StyleSheet } from "react-native";
 import {
   Button,
   ContextMenu,
+  DatePicker,
   Divider,
   GlassEffectContainer,
   HStack,
@@ -14,6 +15,7 @@ import {
   RNHostView,
   RoundedRectangle,
   Spacer,
+  Stepper,
   Text as SwiftText,
 } from "@expo/ui/swift-ui";
 import {
@@ -22,6 +24,7 @@ import {
   animation,
   buttonStyle,
   contentShape,
+  datePickerStyle,
   font,
   foregroundColor,
   frame,
@@ -696,6 +699,122 @@ export function GlassPillRow({
           </HStack>
         </GlassEffectContainer>
       </Namespace>
+    </Host>
+  );
+}
+
+/**
+ * THE DATE FIELD — SwiftUI `DatePicker` in its compact form: the value reads as
+ * a tinted token, and tapping it presents the system's own calendar popover.
+ *
+ * This one is a LEAF WITH A JOB, not a skin. The sport log used to stamp
+ * `new Date()` at save time and nothing else, so a match played on Saturday
+ * could only ever be recorded as having happened at the moment you typed it —
+ * which is why the done floor hid its log row on every day but today. There was
+ * no date to disagree about, so there was nothing to offer. The field is what
+ * makes a past day loggable at all.
+ *
+ * A system date control is exactly where native styling is CORRECT: a calendar
+ * popover is the platform's, everyone already knows how to drive it, and it is
+ * the one control an app has nothing to add to. (Contrast
+ * `ContentUnavailableView`, which is a fine grammar but styles its own type —
+ * SF Pro in the middle of a card set in Archivo. That one we follow rather than
+ * mount; see `aurora/empty-day.tsx`.)
+ *
+ * Off-iOS the caller keeps its own field: this returns null, like every leaf
+ * here.
+ */
+export function NativeDateField({
+  value,
+  onChange,
+  earliest,
+  latest,
+  label,
+  tintColor,
+  withTime = true,
+}: {
+  value: Date;
+  onChange: (d: Date) => void;
+  /** Clamp — a logbook cannot hold a session from the future. */
+  earliest?: Date;
+  latest?: Date;
+  /** The accessible name; the trigger itself shows only the value. */
+  label: string;
+  tintColor?: string;
+  /** Include the clock. A sport that happened has a time of day; a plan does not. */
+  withTime?: boolean;
+}) {
+  if (!LIQUID_GLASS_SUPPORTED) return null;
+  return (
+    <Host matchContents>
+      <DatePicker
+        title=""
+        selection={value}
+        onDateChange={onChange}
+        displayedComponents={withTime ? ["date", "hourAndMinute"] : ["date"]}
+        {...(earliest || latest ? { range: { start: earliest, end: latest } } : {})}
+        modifiers={[
+          datePickerStyle("compact"),
+          accessibilityLabel(label),
+          ...(tintColor ? [tint(tintColor)] : []),
+        ]}
+      />
+    </Host>
+  );
+}
+
+/**
+ * THE STEPPER — SwiftUI `Stepper`, for a duration you nudge rather than type.
+ *
+ * The sport log asks for minutes through a numeric keyboard, which is three
+ * taps and a dismiss for a value that is almost always a round number near the
+ * last one. A stepper is the system's answer and it holds its own repeat-on-hold
+ * behaviour, its own disabled ends at `min`/`max`, and its own VoiceOver
+ * adjustable trait — none of which a pair of hand-drawn ± buttons gets.
+ *
+ * The label is drawn by SwiftUI in the caller's own face so the row still reads
+ * as the app's, the same trick `GlassSatellite` uses for its word.
+ */
+export function NativeStepper({
+  label,
+  value,
+  onChange,
+  step = 5,
+  min = 0,
+  max = 600,
+  fontFamily,
+  fontSize = 15,
+  fg,
+  tintColor,
+}: {
+  /** The value as the row should read it ("90 min"), not a bare number. */
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  step?: number;
+  min?: number;
+  max?: number;
+  fontFamily?: string;
+  fontSize?: number;
+  fg?: string;
+  tintColor?: string;
+}) {
+  if (!LIQUID_GLASS_SUPPORTED) return null;
+  return (
+    <Host matchContents>
+      <Stepper
+        label={label}
+        value={value}
+        step={step}
+        min={min}
+        max={max}
+        onValueChange={onChange}
+        modifiers={[
+          ...(fontFamily ? [font({ family: fontFamily, size: fontSize })] : []),
+          ...(fg ? [foregroundColor(fg)] : []),
+          ...(tintColor ? [tint(tintColor)] : []),
+        ]}
+      />
     </Host>
   );
 }

@@ -16,6 +16,8 @@ import { useLang } from "../../lib/i18n";
 import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
+import AEmptyDay from "./empty-day";
+import AActionPair from "./action-pair";
 import ReceiptBlock, { RECEIPT_GUTTER } from "./receipt-block";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -41,6 +43,7 @@ type Pal = ReturnType<typeof useTheme>["palette"];
 export default function AuroraLogbookRail({
   sessions,
   onLog,
+  onLogSport,
   onNavigate,
   onSelectDay,
   doneFloor,
@@ -48,6 +51,10 @@ export default function AuroraLogbookRail({
   sessions: LoggedSession[];
   /** Start an empty workout (today's primary action when nothing is logged). */
   onLog: () => void;
+  /** Open the sport log for the VIEWED day. Present on every empty day, today's
+   *  included — a sport is a different job from the structured logger, not an
+   *  overflow item, and a day that has already passed can still hold one. */
+  onLogSport?: (day: LogbookDay) => void;
   onNavigate?: (screen: string) => void;
   /** Fires when the athlete taps a day chip, so the caller can scope the rest
    *  of the screen (Also-today / feeling cards) to the viewed day. Mirrors the
@@ -126,8 +133,10 @@ export default function AuroraLogbookRail({
         receipt={receipt}
         units={units}
         streakDays={streakDays}
+        hasHistory={sessions.length > 0}
         doneFloor={doneFloor}
         onLog={onLog}
+        onLogSport={onLogSport}
         onHistory={() => onNavigate?.("history")}
         t={t}
       />
@@ -170,16 +179,20 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
   );
 }
 
-function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onLog, onHistory, t }: {
+function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, onLog, onLogSport, onHistory, t }: {
   C: Pal;
   day: LogbookDay;
   receipt: ReturnType<typeof mergeDoneReceipts>;
   units: WeightUnit;
   /** the athlete's current day-streak, for the done-today stamp. */
   streakDays: number;
+  /** the account holds any logged session at all — separates a FIRST RUN from
+   *  an ordinary open day, which are different sentences (core empty-day.ts). */
+  hasHistory: boolean;
   /** the day's logged sessions as this card's lower floor (see the prop above). */
   doneFloor?: ReactNode;
   onLog: () => void;
+  onLogSport?: (day: LogbookDay) => void;
   onHistory: () => void;
   t: (k: string) => string;
 }) {
@@ -223,39 +236,43 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onLog, onHis
     );
   }
 
-  // TODAY, nothing logged yet — the open day: one honest headline and the one
-  // lime action. The chooser's structure options live OUTSIDE the rail.
-  if (day.isToday) {
-    return (
-      <View>
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk, flex: 1 }}>{t("w.home.logbook.emptyToday")}</Text>
-          {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
-        </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: leading(fs.caption) }}>{t("w.home.logbook.emptyTodaySub")}</Text>
-        <Pressable onPress={onLog} style={({ pressed }) => ({ marginTop: 16, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", ...startGlow(C.lime, pressed) })}>
-          <CtaLabel label={t("w.home.today.alsoTodayLogFirst")} color={C.onAccent} fontSize={fs.bodyLg} />
-        </Pressable>
-        {/* the quick-SPORT door (a match, a run, a swim) — a different action to
-            the structured logger above it, and the only way to reach it here. */}
-        {doneFloor}
-      </View>
-    );
-  }
+  // NOTHING LOGGED — today or a day behind us, ONE block either way
+  // (aurora/empty-day.tsx, copy from core emptyDayCopy). It used to be two
+  // drawings with two headlines, two sub-lines and two registers of type for
+  // what is one state in two tenses; the tense now changes the sentence and
+  // nothing else. The corner stamp still sits above it, since "Yesterday" is a
+  // fact about the day rather than part of the block.
+  //
+  // THE ACTIONS ARE THE POINT OF THE ARRANGEMENT. Today offers the structured
+  // logger as the one filled action and the SPORT log beside it, neutral —
+  // never the old pairing of a glowing full-bleed pill with a dashed tile forty
+  // pixels below it, which was two actions at one weight in two vocabularies. A
+  // PAST day offers the sport alone, named and dated to that day: you cannot
+  // start a live session in a day that has already happened, but you can very
+  // much have played on Saturday and forgotten to log it.
+  const sportLabel = day.isToday
+    ? t("w.home.today.alsoTodayLogSport")
+    : t("w.home.logbook.sportOn").replace("{day}", day.weekdayShort);
 
-  // A PAST day with nothing logged gets NO floor: the arm below already says
-  // "nothing logged", and a logbook day is `logged` exactly when it holds
-  // sessions — so the floor could only repeat that sentence in smaller type.
-
-  // A PAST day with nothing logged — quiet, factual, no guilt (the rest-day
-  // register of the plan rail, without the moon: nothing was promised).
   return (
     <View>
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.ash, flex: 1 }}>{t("w.home.logbook.emptyPast")}</Text>
-        {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
-      </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 5, lineHeight: leading(fs.caption) }}>{t("w.home.today.doneModalEmptyDay")}</Text>
+      {!!stamp && (
+        <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>
+        </View>
+      )}
+      <AEmptyDay isToday={day.isToday} hasHistory={hasHistory}>
+        <AActionPair
+          actions={[
+            ...(day.isToday ? [{ label: t("w.home.today.alsoTodayLogFirst"), onPress: onLog, prominent: true }] : []),
+            ...(onLogSport ? [{ label: sportLabel, onPress: () => onLogSport(day) }] : []),
+          ]}
+        />
+      </AEmptyDay>
+      {/* Today keeps its floor — the quick-log ghost row and the day's sessions
+          live there. A past day gets none: the block above already says nothing
+          was logged, so the floor could only repeat it in smaller type. */}
+      {day.isToday ? doneFloor : null}
     </View>
   );
 }
