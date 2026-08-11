@@ -1,4 +1,3 @@
-import { type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -33,23 +32,23 @@ export type PairAction = {
   a11y?: string;
 };
 
-export default function AActionPair({ actions, align = "center", trailing }: {
+// NO TRAILING SLOT. One shipped here for a day: the day card's "View in
+// history" exit rode this row's far edge, to spare the card a line of its own.
+// It didn't fit — a 187px pill and a 133px label do not share a 311px measure,
+// so the row wrapped and handed the exit back the orphan line the slot existed
+// to remove. The exit is gone now (the Today screen already carries ONE door
+// into History, in the door-row anatomy, after the retrospective), and this
+// component is back to the one job it is named for. If a row ever genuinely
+// needs a trailing element, measure the two labels at 320pt first.
+export default function AActionPair({ actions, align = "center" }: {
   actions: PairAction[];
   /** Centred under an empty block; leading under a receipt, where the column
    *  edge is already established by the figures above. */
   align?: "center" | "leading";
-  /** THE WAY OUT, on the same baseline as the way in. A card's exit (History,
-   *  a fuller list) is not an action and never wears a capsule, but it does
-   *  belong on the card's LAST line — so it rides this row, pinned to the far
-   *  edge, instead of costing a line of its own underneath. With no actions at
-   *  all the row is still drawn for it (the plan rail's finished day offers
-   *  nothing to do, and still has to be leavable). Pairs with `align="leading"`;
-   *  a centred pair has no far edge to pin to. */
-  trailing?: ReactNode;
 }) {
   const { palette: C } = useTheme();
   const live = actions.filter(Boolean);
-  if (live.length === 0 && !trailing) return null;
+  if (live.length === 0) return null;
 
   return (
     <View
@@ -89,11 +88,6 @@ export default function AActionPair({ actions, align = "center", trailing }: {
           </Text>
         </Pressable>
       ))}
-      {/* `marginLeft: auto` rather than space-between, so a single action still
-          sits on the leading edge and the exit still lands on the trailing one
-          — and when the pills wrap, the exit stays on the last line's far end
-          instead of stranding itself above them. */}
-      {trailing ? <View style={{ marginLeft: "auto" }}>{trailing}</View> : null}
     </View>
   );
 }

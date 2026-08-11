@@ -142,12 +142,13 @@
     Every state of the day card as it now renders, drawn at the app's real
     values: 375pt screen, the shell's 12dp gutter, 20dp card padding. No tick,
     no 31px column — <b>one left edge from the headline to the last row</b> —
-    and the way out riding the card's last baseline at the far edge.
+    and no exit, because the screen already has one. The card ends on what
+    there is to do.
   </p>
 
   <div class="tools">
     <label for="edge"><input type="checkbox" id="edge" checked> Content edge</label>
-    <p>One line at 20dp. Everything except the exit starts on it; the exit is at the opposite edge, which is the whole point of it.</p>
+    <p>One line at 20dp. Every row in the card starts on it — headline, figure, seam, session, action.</p>
   </div>
 
   <!-- ══ states ════════════════════════════════════════════════════════ -->
@@ -189,13 +190,12 @@
 
             <div class="c-actions">
               <span class="pill">Log a sport on Mon</span>
-              <span class="exit">View in history →</span>
             </div>
           </div>
         </div>
         <div class="marks">
           <div class="mark"><b>1</b><span><i>Logged</i>, the 4.11, the seam and the tennis row all begin at 20dp. One edge.</span></div>
-          <div class="mark"><b>2</b><span>The exit shares the pill's baseline — the card is a full line shorter than before.</span></div>
+          <div class="mark"><b>2</b><span>It ends on the one thing left to do. The card is <i>two</i> lines shorter than the version you were sent.</span></div>
         </div>
       </div>
 
@@ -234,12 +234,11 @@
             <div class="c-actions">
               <span class="pill">Log a session</span>
               <span class="pill">Log a sport</span>
-              <span class="exit">View in history →</span>
             </div>
           </div>
         </div>
         <div class="marks">
-          <div class="mark"><b>1</b><span>Two offers fill the row, so the exit wraps to the next line and stays on its <i>far end</i> — never stranded above the controls.</span></div>
+          <div class="mark"><b>1</b><span>Two offers fill the row completely — which is what killed the exit: there was never 133px spare for it here.</span></div>
           <div class="mark"><b>2</b><span>Neither pill is filled: the work is real, so the accent stands down. The only chartreuse is today's date.</span></div>
         </div>
       </div>
@@ -254,10 +253,10 @@
       <span class="n">Enrolling changes the fill, never the shape</span>
     </div>
     <p class="note">
-      A finished plan day offers nothing to do, so the exit holds the last row on
-      its own — and it now sits <b>after</b> the catch-up list rather than above
-      it. The hairline that used to fence it off is gone; this card carries
-      exactly one, between the week and the day.
+      A finished plan day offers nothing to do, so it simply stops — after the
+      receipt, after what was done, after what is still owed. The hairline that
+      used to fence off the exit is gone with it; this card carries exactly one
+      separator, between the week and the day.
     </p>
 
     <div class="states">
@@ -297,59 +296,100 @@
               </div>
             </div>
 
-            <div class="c-actions">
-              <span class="exit">View in history →</span>
-            </div>
           </div>
         </div>
         <div class="marks">
           <div class="mark"><b>1</b><span>The day chip still carries its ✓ — that glyph is the <i>week's</i> vocabulary, where it distinguishes done from missed, skipped and moved. It was only redundant on the receipt.</span></div>
-          <div class="mark"><b>2</b><span>The exit is genuinely last: after the receipt, after what was done, after what's still owed.</span></div>
+          <div class="mark"><b>2</b><span>The card closes on what is still owed. Nothing trails it — the second hairline that used to fence off the exit is gone with the exit.</span></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ══ spec ══════════════════════════════════════════════════════════ -->
+  <!-- ══ the exit ══════════════════════════════════════════════════════ -->
   <section>
     <div class="sechead">
-      <h2>The exit, to the millimetre</h2>
-      <span class="n">aurora/history-exit.tsx</span>
+      <h2>Why there is no exit on the card</h2>
+      <span class="n">The measure, then the reason</span>
     </div>
+    <p class="note">
+      The exit rode the card's last baseline for exactly one revision, and it
+      collided. <b>The measure says it always would have:</b> a 375pt screen,
+      less the shell's two 12dp gutters and the card's two 20dp paddings, leaves
+      <b>311dp</b> of content. The pill and the label want more than that
+      between them, and a 320pt device is 46dp worse again. Flex wrap means it
+      never overlapped — it did something quieter and worse: it dropped to a
+      line of its own, which is the orphan the arrangement existed to remove.
+    </p>
 
     <div class="scroll">
       <table>
-        <thead><tr><th>Property</th><th>Value</th><th>Why that</th></tr></thead>
+        <thead><tr><th>On one line</th><th>Width</th><th></th></tr></thead>
         <tbody>
-          <tr><td class="k">face</td><td><span class="v">F.mono, fs.micro (11)</span></td><td>A label, not a control — the house grammar for a label is mono uppercase.</td></tr>
-          <tr><td class="k">tracking</td><td><span class="v">tracking.caps (1.2)</span></td><td>The token, not the literal that used to be typed into both rails.</td></tr>
-          <tr><td class="k">colour</td><td><span class="v">C.ash</span></td><td>An exit never goes anywhere the accent should announce. Chartreuse is <b>act now</b>.</td></tr>
-          <tr><td class="k">chrome</td><td><span class="v">none</span></td><td>No fill, border, radius or shadow — a bordered box at the end of a thing reads as one more item of it. No ring either: rings belong to rail tails and door rows.</td></tr>
-          <tr><td class="k">target</td><td><span class="v">hitSlop 14 / 16</span></td><td>Clears the 44dp floor without padding, which would break the baseline it shares with the pill.</td></tr>
-          <tr><td class="k">position</td><td><span class="v">marginLeft: auto</span></td><td>Pinned to the far edge of the actions row, so one action still sits leading and the exit still lands trailing — and when pills wrap, it rides the last line.</td></tr>
-          <tr><td class="k">arrow</td><td><span class="v">nested mono run</span></td><td>Archivo has no →; CtaLabel sets the arrow in JetBrains Mono so it can't fall back to a mismatched system glyph.</td></tr>
+          <tr><td><b>"Log a sport on Mon"</b> pill</td><td><span class="v">≈187dp</span></td><td>15dp display face, 17dp padding each side, 1dp border</td></tr>
+          <tr><td>gap</td><td><span class="v">9dp</span></td><td>the action row's own</td></tr>
+          <tr><td><b>"VIEW IN HISTORY →"</b></td><td><span class="v">≈133dp</span></td><td>17 characters, 11dp mono, 1.2 tracking, uppercase</td></tr>
+          <tr><td><b>Required</b></td><td><span class="v">≈329dp</span></td><td><b>Available: 311dp.</b> Short by 18 — and by 64 on a 320pt phone.</td></tr>
         </tbody>
       </table>
     </div>
 
-<pre><span class="cm">// logbook-rail.tsx — the logged day</span>
+    <p class="note">
+      Shrinking the label, wrapping it, or giving it a full-width row of its own
+      would each have answered the collision. None of them answers the question
+      the collision was asking, which is <b>why the card has an exit at all</b>.
+      This screen already has one, and it is a proper door — glyph, name and
+      subtitle, in the shared door-row anatomy, placed deliberately after the
+      retrospective clusters because the rule is <b>one exit point after all the
+      breakdowns</b>:
+    </p>
+
+    <div class="states" style="margin-top:26px">
+      <div class="state">
+        <div class="cap"><b>Already on Today</b><span>home.tsx, after the Progress group</span></div>
+        <div class="screen">
+          <div class="card" style="background:transparent;padding:20px 0">
+            <div style="display:flex;align-items:center;gap:12px">
+              <span style="width:32px;height:32px;flex:none;border-radius:999px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--ash);font-size:13px">▤</span>
+              <span style="flex:1">
+                <span style="display:block;font-size:14px;font-weight:700;color:var(--chalk)">History</span>
+                <span style="display:block;font:500 10px/1.5 var(--mono);color:var(--ash)">Every session, weeks and trend</span>
+              </span>
+              <span style="color:var(--ash);font-size:15px">›</span>
+            </div>
+          </div>
+        </div>
+        <div class="marks">
+          <div class="mark"><b>1</b><span>Named, subtitled, ringed — it says where it goes. <i>"View in history →"</i> described the gesture instead.</span></div>
+          <div class="mark"><b>2</b><span>The day card's link was a second door to this same room, 400dp higher, in a different vocabulary.</span></div>
+        </div>
+      </div>
+    </div>
+
+<pre><span class="cm">// logbook-rail.tsx — a logged day now ends on the action pair</span>
 &lt;<b>AActionPair</b>
   align=<span class="st">"leading"</span>
   actions={[
     ...(day.isToday ? [{ label: t(<span class="st">"w.home.today.alsoTodayLogFirst"</span>), onPress: onLog }] : []),
     ...(onLogSport ? [{ label: sportLabel, onPress: () =&gt; onLogSport(day) }] : []),
   ]}
-  <span class="hl">trailing={&lt;HistoryExit onPress={onHistory} /&gt;}</span>
 /&gt;
 
-<span class="cm">// week-rail.tsx — the finished plan day: nothing to do, still leavable</span>
-&lt;<b>AActionPair</b> align=<span class="st">"leading"</span> actions={[]} <span class="hl">trailing={&lt;HistoryExit onPress={onHistory} /&gt;}</span> /&gt;</pre>
+<span class="cm">// week-rail.tsx — a finished plan day ends on what is still owed</span>
+{doneFloor}
+{catchUp}
+
+<span class="cm">// and what went with the link, so nothing is left half-wired:</span>
+<span class="hl">−</span> aurora/history-exit.tsx            <span class="cm">deleted</span>
+<span class="hl">−</span> AActionPair's `trailing` slot      <span class="cm">withdrawn, not left as an unused API</span>
+<span class="hl">−</span> both rails' `onNavigate` prop      <span class="cm">and its two call sites in home.tsx</span>
+<span class="hl">−</span> w.home.rail.viewHistory            <span class="cm">removed from en, pl, de</span>
+<span class="hl">−</span> the plan rail's second hairline    <span class="cm">it existed to fence off the link</span></pre>
 
     <p class="note">
-      One component, one arrangement, two rails. If the exit should move to the
-      header slot or become a door row instead, it is this one prop in these two
-      places — the rest of the change (the tick, the column, the edge) is
-      independent of where it lands.
+      <b>If you want it back</b>, the honest form is not the baseline — it is a
+      second door row at the card's foot, which is a duplicate of the one above
+      and is the argument against it. One line of the revert if you disagree.
     </p>
   </section>
 

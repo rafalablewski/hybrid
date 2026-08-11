@@ -753,7 +753,6 @@ export default function AuroraHome() {
               sessions={sessions}
               maxes={planMaxes}
               onStart={(blocks, title) => startPlanDay(blocks, title)}
-              onNavigate={(screen) => { if (screen === "history") router.push("/history"); }}
               onSelectDay={setRailDay}
               doneFloor={doneFloor}
             />
@@ -775,7 +774,6 @@ export default function AuroraHome() {
                 else { const at = new Date(d.ts); at.setHours(12, 0, 0, 0); setQuickDay(at.getTime()); }
                 setQuickOpen(true);
               }}
-              onNavigate={(screen) => { if (screen === "history") router.push("/history"); }}
               onSelectDay={setRailDay}
               doneFloor={doneFloor}
             />

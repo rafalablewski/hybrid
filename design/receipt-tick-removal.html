@@ -225,9 +225,10 @@
     Removing the <b>✓</b> collapses the 31px column it sat in, which is what
     actually moves the card: every line now starts on the card's own content
     edge, so there is <em>one left edge</em> instead of two. The
-    <b>View in history</b> exit was indented to that column — with the column
-    gone it needed a home, and the home it gets is the card's last baseline,
-    beside the action pill rather than orphaned under it.
+    <b>View in history</b> exit was indented to that column. Looking for it a
+    home is what exposed the third change: it doesn't need one. The Today screen
+    already carries a door into History, so the card's link was the second one —
+    and the only one that couldn't fit.
   </p>
 
   <!-- ══ 1. diagnosis ══════════════════════════════════════════════════ -->
@@ -259,9 +260,10 @@
       </div>
       <div class="find">
         <div class="m">2<small>rails, 2 exits</small></div>
-        <p>The same six words were drawn twice: the logbook rail gave the exit
-          18px of margin, the plan rail gave it a hairline, 16px of padding and
-          put it <i>above</i> the catch-up list. Both indented 31px.</p>
+        <p>The same six words, drawn twice: 18px of margin in one rail, a
+          hairline and 16px of padding in the other, <i>above</i> its catch-up
+          list. Both indented 31px, and both pointing at a screen this page
+          already has a labelled door to.</p>
       </div>
     </div>
 
@@ -364,13 +366,12 @@
 
           <div class="m-actions">
             <span class="m-pill">Log a sport on Mon</span>
-            <span class="m-exit right">View in history →</span>
           </div>
         </div>
 
         <div class="marks">
           <div class="mark"><b>1</b><span>One left edge. The headline, the 4.11, the seam and the tennis row all start at the card's own 20px.</span></div>
-          <div class="mark"><b>2</b><span>The exit rides the pill's baseline at the far edge — <i>one line shorter</i>, and unmistakably not part of the receipt.</span></div>
+          <div class="mark"><b>2</b><span>The card ends on the action. The exit is gone — the screen's own History door does that job (see the section below).</span></div>
           <div class="mark"><b>3</b><span>The only chartreuse left in the card is today's date disc, which is the one thing that is genuinely <i>now</i>.</span></div>
         </div>
       </div>
@@ -381,7 +382,7 @@
   <section>
     <div class="sechead">
       <h2>Where the exit goes</h2>
-      <span class="n">Three homes, one shipped</span>
+      <span class="n">Three homes, none of them right</span>
     </div>
     <p class="note">
       The house rule is explicit on the <b>form</b>: an exit is never a bordered
@@ -418,22 +419,22 @@
       </div>
 
       <!-- B -->
-      <div class="opt picked">
+      <div class="opt">
         <div class="oh"><b>B</b><h3>The card's last baseline</h3></div>
         <div class="crop tall">
           <div class="m-title"><h4 style="font-size:19px">Logged</h4><span>Yesterday</span></div>
           <div class="m-hero"><b style="font-size:34px;line-height:36px">4.11</b><i>km</i></div>
           <div class="m-actions">
             <span class="m-pill">Log a sport on Mon</span>
-            <span class="m-exit right">View in history →</span>
           </div>
         </div>
-        <span class="verdict">Shipped</span>
+        <span class="verdict" style="color:var(--red);background:transparent;border-color:var(--red)">Tried, then cut</span>
         <ul>
           <li>Costs the card <i>no line at all</i> on a logged day — it shares the baseline the action pill already occupies.</li>
           <li>Both rails wear it unchanged; with no actions to sit beside, it simply holds the row alone.</li>
           <li>The far edge is the argument: on the content edge, under the figures, an exit reads as one more line <i>of</i> the receipt — which is exactly how it failed before.</li>
-          <li class="con">Only appears on days that have something logged. An empty day still reaches History through the app's own navigation.</li>
+          <li class="con">It does not fit. 187dp of pill plus 133dp of label in a 311dp measure: the row wraps and hands the exit back its orphan line.</li>
+          <li class="con">And the wrap exposed the real fault — this screen already carries a door into History, so the card's link was the second one.</li>
         </ul>
       </div>
 
@@ -460,13 +461,16 @@
       </div>
     </div>
 
-    <p class="note">
-      <b>Switching is one line per rail.</b> The exit is a single component
-      (<code class="inline">aurora/history-exit.tsx</code>) passed through
-      <code class="inline">AActionPair</code>'s new <code class="inline">trailing</code>
-      slot — moving to A means rendering it in the header row instead, C means
-      swapping it for <code class="inline">DoorRow</code>. Say the word and it
-      moves; nothing else in this change depends on which of the three wins.
+    <p class="note" style="border-left:2px solid var(--lime);padding-left:16px">
+      <b>None of the three shipped.</b> B was built, and it collided — which sent
+      us back to the question all three were answering. The Today screen already
+      carries a door into History: a labelled door row after the retrospective
+      clusters, placed by the rule that there is <b>one exit point after all the
+      breakdowns</b>. The day card's link was a second door to the same room,
+      400dp above the first, in a different vocabulary, and it was the one that
+      could not fit. So the card carries no exit at all now — it states the day
+      and offers the next action, and leaving is the screen's job. See
+      <b>design/done-card-final.html</b> for the card as it ships.
     </p>
   </section>
 
@@ -527,11 +531,10 @@
             <div class="ico" style="background:rgba(198,248,79,.16)">🏋️</div>
             <div><div class="nm">Lower + Engine</div><div class="mt">Moved from Sun 9 Aug</div></div>
           </div>
-          <div class="m-actions"><span class="m-exit right">View in history →</span></div>
         </div>
         <div class="marks">
           <div class="mark"><b>1</b><span>One hairline, where it earns its place: week above, day below.</span></div>
-          <div class="mark"><b>2</b><span>The exit is genuinely <i>last</i> — after the catch-up list, not through it.</span></div>
+          <div class="mark"><b>2</b><span>The card ends on what is still owed. The link that used to interrupt the catch-up list is gone, and its hairline with it.</span></div>
         </div>
       </div>
     </div>
@@ -556,19 +559,19 @@
           </tr>
           <tr>
             <td class="file">aurora/history-exit.tsx</td>
-            <td><span class="add">NEW</span> the exit as one component — mono caps in ash, no fill, no border, no ring. Its touch target comes from <b>hitSlop</b>, not padding, so it clears the 44dp floor without breaking the baseline it shares.</td>
+            <td><span class="del">−</span> built as one shared component, then <b>deleted</b> with the exit itself. It lived for one revision; the drift it was created to end never had time to start.</td>
           </tr>
           <tr>
             <td class="file">aurora/action-pair.tsx</td>
-            <td><span class="add">+</span> a <b>trailing</b> slot pinned with <code class="inline">marginLeft: auto</code> — so the way out rides the same row as the way in, and stays on the last line's far end when the pills wrap.</td>
+            <td><span class="add">+</span> a <b>trailing</b> slot, then <span class="del">−</span> withdrawn when the exit went. An unused prop is a future call site waiting to repeat the mistake, so it does not stay behind.</td>
           </tr>
           <tr>
             <td class="file">aurora/logbook-rail.tsx</td>
-            <td><span class="del">−</span> the hand-rolled exit and its 31px indent. The logged day's action pair now carries it.</td>
+            <td><span class="del">−</span> the hand-rolled exit and its 31px indent. The logged day ends on its action pair.</td>
           </tr>
           <tr>
             <td class="file">aurora/week-rail.tsx</td>
-            <td><span class="del">−</span> the same hand-rolled exit, its hairline and its 16px of padding; the exit moves <b>below</b> the catch-up list so it is genuinely the card's last line.</td>
+            <td><span class="del">−</span> the same hand-rolled exit, its hairline and its 16px of padding. The finished plan day ends on the catch-up list.</td>
           </tr>
           <tr>
             <td class="file">core/capabilities.ts</td>

@@ -20,8 +20,6 @@ import { useLang } from "../../lib/i18n";
 import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
-import AActionPair from "./action-pair";
-import HistoryExit from "./history-exit";
 import ReceiptBlock from "./receipt-block";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -119,7 +117,6 @@ export default function AuroraWeekRail({
   sessions,
   maxes,
   onStart,
-  onNavigate,
   onSelectDay,
   doneFloor,
 }: {
@@ -131,7 +128,6 @@ export default function AuroraWeekRail({
    *  logger should save under, so the engine recognises the session as the
    *  plan's own day. Mirrors the web rail exactly. */
   onStart: (planBlocks?: SessionBlock[], title?: string) => void;
-  onNavigate?: (screen: string) => void;
   /** Fires when the athlete taps a day chip, so the caller can scope the rest
    *  of the screen (Also-today / feeling cards) to the viewed day. Until the
    *  first tap the caller should assume today. Mirrors the web rail. */
@@ -241,7 +237,6 @@ export default function AuroraWeekRail({
           if (next) setOverride(sel.dateKey, { status: "postponed", toDateKey: next.dateKey });
         }}
         canPostpone={!!schedule.days[sel.index + 1]}
-        onHistory={() => onNavigate?.("history")}
         t={t}
       />
     </View>
@@ -325,7 +320,7 @@ function LiftRow({ C, r, showSession, first }: { C: Pal; r: { name: string; sess
   );
 }
 
-function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onSkip, onUnskip, onPostpone, canPostpone, onHistory, t }: {
+function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onSkip, onUnskip, onPostpone, canPostpone, t }: {
   C: Pal;
   day: ScheduledDay;
   /** the fulfilled day's summary (null when the logged session isn't loaded). */
@@ -340,7 +335,6 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
   onUnskip: () => void;
   onPostpone: () => void;
   canPostpone: boolean;
-  onHistory: () => void;
   t: (k: string) => string;
 }) {
   // The corner stamp — how far this day sits from now, never a second copy of
@@ -425,15 +419,16 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
           stamp={stamp}
         />
         {doneFloor}
+        {/* NO EXIT ON THE CARD. A "View in history →" used to sit between the
+            floor and the catch-up list, behind a second hairline and indented
+            31px to the ✓'s gutter — a way out drawn mid-card, with sessions
+            still to read underneath it. Moving it to the foot only relocated
+            the question, and the answer is that the card should not carry one:
+            the Today screen already has a door into History, after the
+            retrospective, with a glyph and a name ("one exit point after all
+            the breakdowns"). This card states the day. Leaving is the screen's
+            job, and its second hairline goes with the link. */}
         {catchUp}
-        {/* THE EXIT IS LAST, and it is the same one the logbook rail wears
-            (aurora/history-exit.tsx). It used to sit ABOVE the catch-up list
-            behind its own hairline and a 31px indent — a way out drawn in the
-            middle of the card, with sessions still to read underneath it, on an
-            edge borrowed from the ✓ that no longer exists. The hairline went
-            with it: this card already carries exactly one, between the week and
-            the day, and whitespace separates everything stacked below. */}
-        <AActionPair align="leading" actions={[]} trailing={<HistoryExit onPress={onHistory} />} />
       </View>
     );
   }
