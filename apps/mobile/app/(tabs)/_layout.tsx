@@ -1,10 +1,11 @@
 import { Redirect } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
-import { AURORA_NAV_TABS, AURORA_NAV_ACTIONS } from "@hybrid/core";
+import { AURORA_NAV_TABS, AURORA_NAV_ACTIONS, auroraNavAction } from "@hybrid/core";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
 import { F } from "../../lib/ui";
+import { useNavSurface, runNavAction } from "../../lib/nav-surface";
 import SessionAccessory from "../../components/aurora/session-accessory";
 
 /**
@@ -29,11 +30,24 @@ import SessionAccessory from "../../components/aurora/session-accessory";
  * iOS < 26 the trigger degrades to a plain trailing tab, which is correct:
  * those platforms have no detached slot to inherit.
  *
- * WHAT THE NATIVE BAR CANNOT DO: morph the circle to Add post while Today's
- * Feed hub tab is up, the way the web pill nav does — a native trigger is a
- * ROUTE, not a button, so it cannot swap its action per hub tab. The feed's
- * always-open composer sits at the top of that tab instead; the gap is
- * recorded as nav-action-morph-mobile in capabilities.ts.
+ * THE CIRCLE MORPHS, and it did not used to. The contract has always said the
+ * action is contextual (auroraNavAction), and this file used to record that
+ * mobile could not honour it — "a native trigger is a ROUTE, not a button" and
+ * expo-router's native tabs exposed no way to intercept the press. That second
+ * half is no longer true: a trigger now takes `listeners.tabPress`, and a
+ * `disabled` trigger still EMITS that press while skipping navigation. Those
+ * two together are exactly a button.
+ *
+ * So the circle is assembled from whatever the visible surface asks for
+ * (lib/nav-surface): a `route` action is an ordinary trigger that navigates, a
+ * `screen` action is a disabled trigger whose press the surface handles itself.
+ * On the add-to-meal picker that is the magnifier — see nav-bar.ts for why a
+ * magnifier there does NOT reopen the spent-slot trade. Everywhere else it is
+ * the dumbbell, navigating to the Train launcher, exactly as before.
+ *
+ * Off iOS 26 there is no detached slot, so this degrades to a trailing tab that
+ * changes its glyph — which is the right degradation: the verb is still stated,
+ * it simply is not separated.
  *
  * Other native-bar consequences, still deliberate:
  *  - The bar no longer appears on pushed sub-pages (Statistics, Settings,
@@ -69,9 +83,14 @@ const ICONS = {
   profile: { sf: { default: "person.crop.circle", selected: "person.crop.circle.fill" }, src: require("../../assets/icons/user-circle.png") },
 } as const;
 
-// The detached action's own icon — the dumbbell, never the search magnifier
-// the role would default to.
-const TRAIN_ICON = { sf: { default: "dumbbell", selected: "dumbbell.fill" }, src: require("../../assets/icons/list-add.png") } as const;
+// The detached action's own icon, per action id. The role would default to a
+// magnifier and a "Search" title; every one of these overrides it, including
+// the picker's — that one is the surface's verb, not the role's search.
+const ACTION_ICON = {
+  train: { sf: { default: "dumbbell", selected: "dumbbell.fill" }, src: require("../../assets/icons/list-add.png") },
+  post: { sf: { default: "square.and.pencil", selected: "square.and.pencil" }, src: require("../../assets/icons/list-add.png") },
+  search: { sf: { default: "magnifyingglass", selected: "magnifyingglass" }, src: require("../../assets/icons/search.png") },
+} as const;
 
 // Route name inside this directory, per tab id.
 const ROUTE: Record<string, string> = {
@@ -85,6 +104,11 @@ export default function TabsLayout() {
   const { session, ready } = useSession();
   const { t } = useLang();
   const { palette } = useTheme();
+  // What the visible surface says its verb is. Hooks run before the early
+  // returns below — a conditional hook would break the rules of hooks the one
+  // time this screen has no session.
+  const surface = useNavSurface();
+  const action = AURORA_NAV_ACTIONS[auroraNavAction(surface)];
 
   if (!ready) return null;
   if (!session) return <Redirect href="/login" />;
@@ -121,13 +145,30 @@ export default function TabsLayout() {
         </NativeTabs.Trigger>
       ))}
 
-      {/* THE ACTION — Train, detached beside the capsule via the search role
-          (the only detached geometry iOS 26 offers), wearing the dumbbell and
-          the Train label instead of the role's magnifier. It opens the Train
-          launcher: a trigger is a route, exactly what the old Train tab was. */}
-      <NativeTabs.Trigger name="log" role="search">
-        <NativeTabs.Trigger.Icon sf={TRAIN_ICON.sf} src={TRAIN_ICON.src} />
-        <NativeTabs.Trigger.Label>{label(AURORA_NAV_ACTIONS.train.labelKey, AURORA_NAV_ACTIONS.train.label)}</NativeTabs.Trigger.Label>
+      {/* THE ACTION — detached beside the capsule via the search role (the only
+          detached geometry iOS 26 offers), wearing the visible surface's verb.
+          The route stays `log` in every state: `name` identifies the trigger to
+          the navigator, so swapping it per surface would be renaming a route
+          under a mounted navigator rather than changing a button. A SCREEN
+          action instead marks the trigger `disabled` — which suppresses the
+          native navigation while still emitting `tabPress` — and hands the
+          press back to the surface that published it. */}
+      <NativeTabs.Trigger
+        name="log"
+        role="search"
+        disabled={action.kind === "screen"}
+        listeners={{
+          tabPress: () => {
+            if (action.kind !== "screen") return;
+            // If nothing claimed it, do nothing rather than falling through to
+            // Train: the circle is showing a magnifier, and sending someone to
+            // the gym from a magnifier is worse than a press that misses.
+            runNavAction();
+          },
+        }}
+      >
+        <NativeTabs.Trigger.Icon sf={ACTION_ICON[action.id].sf} src={ACTION_ICON[action.id].src} />
+        <NativeTabs.Trigger.Label>{label(action.labelKey, action.label)}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
     </NativeTabs>
   );

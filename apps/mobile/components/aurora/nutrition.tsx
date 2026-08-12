@@ -58,6 +58,7 @@ import {
   sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
   recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
+  NAV_SURFACE_FOOD_PICKER,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -79,9 +80,11 @@ import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
 import { useListMotion } from "../../lib/list-motion";
-import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
+import { usePublishNavSurface } from "../../lib/nav-surface";
+import { haptic } from "../../lib/haptics";
+import { AuroraScreen, ACard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
@@ -100,8 +103,8 @@ import NutritionTrends from "./nutrition-trends";
 import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
-  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap,
-  IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock,
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap, PICKER_EDGE, BLOCK,
+  IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock, IBarcode,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
 import {
@@ -376,6 +379,55 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
   const load = () => { refetch(); loadLibrary(); };
   useRefreshOnFocus(refetch);
+
+  /**
+   * THE PICKER'S OWN VERB, published to the bottom bar.
+   *
+   * While the add-to-meal picker is the visible surface, the bar's detached
+   * circle stops offering Train — which is the one thing nobody is doing at
+   * 23:08 with Snacks open — and becomes this screen's search: it brings the
+   * field back under the thumb and puts the cursor in it. The field is IN FLOW
+   * (deliberately — it scrolls with the decision it belongs to), so twenty rows
+   * down there was no way back to it but to scroll, and the one place a thumb
+   * already is on a phone is the bottom-right corner.
+   *
+   * `usePublishNavSurface` takes null everywhere but the picker, so the circle
+   * is the dumbbell on every other nutrition view.
+   */
+  const pickerScroller = useRef<ScrollView | null>(null);
+  const pickerInput = useRef<TextInput | null>(null);
+  /**
+   * SEARCH IS A STATE, NOT A PERMANENT BAND.
+   *
+   * The field used to sit under the day header on every visit. Once the bar's
+   * detached circle carries this screen's Find, that is the same question asked
+   * twice, ten inches apart — so the field is now what the circle OPENS, and
+   * the resting screen is what the athlete came for: what the day owes, the
+   * four sources, and the list. Same pattern the pantry already uses
+   * (`searchOpen` there), with the toggle being the bar rather than a hero
+   * accessory.
+   *
+   * Leaving search CLEARS the query, because a stale query behind a closed
+   * field would leave the list showing search results with nothing on screen
+   * explaining why.
+   */
+  const [pickerSearch, setPickerSearch] = useState(false);
+  const openPickerSearch = useCallback(() => {
+    // Already open — the press means "put me back in the field", which is the
+    // whole point of the circle once the list has scrolled the field away.
+    pickerScroller.current?.scrollTo({ y: 0, animated: true });
+    if (pickerSearch) pickerInput.current?.focus();
+    else setPickerSearch(true); // `autoFocus` takes it from here on mount
+    haptic.light();
+  }, [pickerSearch]);
+  const closePickerSearch = useCallback(() => {
+    setPickerSearch(false);
+    setFoodQuery("");
+  }, []);
+  // Leaving the picker leaves search with it: coming back to Snacks tomorrow
+  // should not reopen a keyboard over yesterday's question.
+  useEffect(() => { if (view !== "add") closePickerSearch(); }, [view, closePickerSearch]);
+  usePublishNavSurface(view === "add" ? NAV_SURFACE_FOOD_PICKER : null, openPickerSearch);
 
   // ── Editable food log — the per-entry records the Diary lists + edit/delete.
   const [logs, setLogs] = useState<FoodLogRow[]>([]);
@@ -1488,7 +1540,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       </>
     );
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} scrollRef={pickerScroller}>
         {screenHead(
           // The meal switcher. On iOS 26 it IS a system menu — the meals as an
           // inline picker (checkmark on the one in force) with "Add a meal
@@ -1496,8 +1548,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           LIQUID_GLASS_RENDERED ? (
             <GlassSelectMenu
               label={partLabel(mealType)}
-              fontFamily={F.black}
-              fontSize={19}
+              // THE HERO SYSTEM'S INLINE TITLE, not a hand-rolled one. Both
+              // branches of this switcher drew Archivo BLACK at 19 — a face and
+              // a size that appear on no other screen head in the app, so the
+              // picker's title sat 3pt above every title it pushes from. The
+              // rank owns the type (reference/hero-system.md §2).
+              fontFamily={F.bold}
+              fontSize={HERO_INLINE_TITLE.size}
               labelColor={C.chalk}
               a11yLabel={t("w.recovery.nutrition.chooseMeal")}
               options={partList.map((p) => ({ id: p.key, label: p.label }))}
@@ -1508,14 +1565,41 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             />
           ) : (
             <Pressable onPress={() => setMealPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 19, color: C.chalk }}>{partLabel(mealType)}</Text><IChevDown size={16} color={C.chalk} />
+              <Text
+                maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                numberOfLines={1}
+                style={{ fontFamily: F.bold, fontSize: HERO_INLINE_TITLE.size, lineHeight: HERO_INLINE_TITLE.lineHeight, letterSpacing: HERO_INLINE_TITLE.tracking * HERO_INLINE_TITLE.size, color: C.chalk }}
+              >
+                {partLabel(mealType)}
+              </Text>
+              <IChevDown size={16} color={C.chalk} />
             </Pressable>
           ),
           () => setView("home"),
-          // BACK, not a second dismiss chevron: the head used to draw a ⌄ on the
-          // left and the meal switcher a ⌄ beside the title — one glyph, two
-          // jobs, on the same row.
-          { icon: "back" },
+          {
+            // BACK, not a second dismiss chevron: the head used to draw a ⌄ on
+            // the left and the meal switcher a ⌄ beside the title — one glyph,
+            // two jobs, on the same row.
+            icon: "back",
+            // THE SCANNER MOVES HERE, into the head's one trailing slot, which
+            // this screen had left empty. It used to be the field's trailing
+            // glyph — right while the field was always on screen, wrong the
+            // moment the field went behind the bar's circle: scanning a label
+            // is a PRIMARY way to add a food, and a scanner two taps deep is a
+            // scanner nobody uses. The head is the one row that is always
+            // there.
+            right: (
+              <Pressable
+                onPress={() => { setFoodMsg(""); setScanSheet(true); }}
+                accessibilityRole="button"
+                accessibilityLabel={t("w.recovery.nutrition.scan.title")}
+                hitSlop={HIT_SLOP}
+                style={{ width: HERO.nav.hit, height: HERO.nav.hit, alignItems: "center", justifyContent: "center" }}
+              >
+                <IBarcode size={21} color={C.chalk} />
+              </Pressable>
+            ),
+          },
         )}
 
         <Sheet visible={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
@@ -1538,49 +1622,89 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
         <BarcodeScanSheet visible={scanSheet} onClose={() => setScanSheet(false)} onCode={onScanned} />
 
-        {/* THE GAP first — the screen's subject. It renders only when there is
-            a target to be short of. */}
-        {pickerGap ? <DayGap C={C} gap={pickerGap} /> : null}
+        {/* ── THE HEAD MATTER ──────────────────────────────────────────────
+            Everything above the list, as ONE stack with ONE owner of the space
+            in it. These four blocks each used to declare how much room the next
+            one got — the day header's 20dp bottom pad, the confirmation line's
+            12dp top margin, the source line's 16 — so the screen's rhythm was
+            the sum of three unrelated decisions and could not be read off any
+            single line of code. `gap: BLOCK` is that rhythm, chosen once.
+            (Null children take no gap, so a day with no target, no confirmation
+            and a typed query still spaces correctly.) */}
+        <View style={{ gap: BLOCK }}>
+          {/* THE GAP first — the screen's subject. It renders only when there is
+              a target to be short of. */}
+          {pickerGap ? (
+            <DayGap
+              C={C}
+              gap={pickerGap}
+              mealLabel={partLabel(mealType)}
+              mealKcal={mealTotals[mealType] ?? 0}
+            />
+          ) : null}
 
-        {/* THE ONE FIELD. Quick add and the database search were two boxes
-            asking the same question; this is that question, asked once. */}
-        <PickerField
-          value={foodQuery}
-          onChange={setFoodQuery}
-          onSubmit={() => {
-            // Enter commits the FIRST interpretation — the one on screen.
-            const s = pickerSubmit(answer);
-            if (s.kind === "macros") { logQuickAdd(macroDraft(s.macros, t("w.recovery.nutrition.quickEntry"))); setFoodQuery(""); }
-            else if (s.kind === "log") { logQuickAdd(quickAddDraft(s.match)); setFoodQuery(""); }
-            else if (s.kind === "portion") portionForQuickAdd(s.match);
-          }}
-          onScan={() => { setFoodMsg(""); setScanSheet(true); }}
-        />
-
-        {/* A one-tap add is invisible unless the screen says so. Same confirmation
-            line the hub and the diary already use; a FAILED write is already
-            surfaced by logEntry's notify(), so this slot only carries success. */}
-        {mealMsg ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
-            <AuroraIcon name="check" size={13} color={txt(C, C.lime)} />
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{mealMsg}</Text>
+          {/* THE ONE FIELD, now behind the bar's circle. Quick add and the
+              database search were two boxes asking the same question; this is
+              that question, asked once — and asked only when asked for.
+              The EDGE is the parent's to give — the field is a container, and a
+              container that sets its own outer margin is a block deciding where
+              the screen's column is. */}
+          {pickerSearch ? (
+          <View style={{ paddingHorizontal: PICKER_EDGE }}>
+            <PickerField
+              inputRef={pickerInput}
+              autoFocus
+              onCancel={closePickerSearch}
+              value={foodQuery}
+              onChange={setFoodQuery}
+              onSubmit={() => {
+                // Enter commits the FIRST interpretation — the one on screen.
+                const s = pickerSubmit(answer);
+                if (s.kind === "macros") { logQuickAdd(macroDraft(s.macros, t("w.recovery.nutrition.quickEntry"))); setFoodQuery(""); }
+                else if (s.kind === "log") { logQuickAdd(quickAddDraft(s.match)); setFoodQuery(""); }
+                else if (s.kind === "portion") portionForQuickAdd(s.match);
+              }}
+            />
           </View>
-        ) : null}
+          ) : null}
+
+          {/* A one-tap add is invisible unless the screen says so. Same confirmation
+              line the hub and the diary already use; a FAILED write is already
+              surfaced by logEntry's notify(), so this slot only carries success. */}
+          {mealMsg ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingHorizontal: PICKER_EDGE }}>
+              <AuroraIcon name="check" size={13} color={txt(C, C.lime)} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{mealMsg}</Text>
+            </View>
+          ) : null}
+
+          {/* ONE form, every platform. The iOS fork that put the system
+              segmented control here is gone — see SourceLine's header for why
+              (it re-introduced the filled track this screen deletes, and it
+              dropped the counts on the one platform we ship). It is the LAST
+              block of the head matter and it carries the list's own rule, so
+              the first row sits directly under it with no gap: the rule belongs
+              to the list, not to the stack above it. */}
+          {/* THE FOUR SOURCES, on the underline form, everywhere. This branch
+              briefly restored the iOS system segmented control here; #423 had
+              already deleted that control from the app for a structural reason
+              — a SwiftUI Host sizes its RN box from its content once at mount,
+              so the segment drew outside its own frame — and the picker was one
+              of the surfaces it broke on. The underline form is not a
+              consolation: it is the one that lays out, and it keeps the counts.
+              It is the LAST block of the head matter and carries the list's own
+              rule, so the first row sits directly under it with no gap. */}
+          {answer.kind === "resting" ? (
+            <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
+          ) : null}
+        </View>
 
         {answer.kind === "resting" ? (
           /* AT REST — all four sources, switchable, with the box gone. */
           <>
-            <View style={{ marginTop: 16 }}>
-              {/* The four sources on the UNDERLINE form, everywhere. They were
-                  briefly the system segmented control on iOS 26, which cost
-                  each source its COUNT (a native segment carries labels only)
-                  and then failed to lay out at all — swiftui.tsx, where that
-                  control was, has why it was never recoverable. */}
-              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
-            </View>
             {foodTab === "meals" ? (
               meals.length === 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
               ) : meals.map((m) => (
                 <FoodRow
                   key={m.id} C={C}
@@ -1592,7 +1716,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 />
               ))
             ) : foods.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
             ) : foodTab === "recent" && usuals.length ? (
               /* THE HOUR. The app knows the clock and the meal, so Recent
                  opens on what this athlete actually eats around now — and
@@ -1602,11 +1726,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                  A cold start has no habit, so `usuals` is empty and the list
                  stays exactly as it was — no empty state, nothing claimed. */
               <>
-                <ASection title={t("w.recovery.nutrition.pick.usualHour")} meta={clockLabel} />
+                <ASection title={t("w.recovery.nutrition.pick.usualHour")} meta={clockLabel} style={{ paddingHorizontal: PICKER_EDGE }} />
                 {usuals.map((u) => recentRow(u.item))}
                 {restOfRecent.length ? (
                   <>
-                    <ASection title={t("w.recovery.nutrition.pick.everythingElse")} />
+                    <ASection title={t("w.recovery.nutrition.pick.everythingElse")} style={{ paddingHorizontal: PICKER_EDGE }} />
                     {restOfRecent.map(recentRow)}
                   </>
                 ) : null}
@@ -1622,6 +1746,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <ASection
               title={t("w.recovery.nutrition.pick.understood")}
               meta={answer.kind === "macros" ? t("w.recovery.nutrition.pick.quickAdd") : t("w.recovery.nutrition.pick.allSources")}
+              style={{ paddingHorizontal: PICKER_EDGE }}
             />
             <Understood
               answer={answer}
@@ -1633,11 +1758,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
             {remoteQuery ? (
               <>
-                <ASection title={t("w.recovery.nutrition.pick.database")} meta={t("w.recovery.nutrition.pick.databaseMeta")} />
+                <ASection title={t("w.recovery.nutrition.pick.database")} meta={t("w.recovery.nutrition.pick.databaseMeta")} style={{ paddingHorizontal: PICKER_EDGE }} />
                 {searching ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6 }}>{t("w.recovery.nutrition.searching")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE }}>{t("w.recovery.nutrition.searching")}</Text>
                 ) : foodResults.length === 0 ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, paddingHorizontal: 6, lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
                 ) : foodResults.map((food, i) => (
                   <FoodRow
                     key={`${food.id || food.code}-${i}`} C={C}
@@ -2403,8 +2528,16 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 <Pressable onPress={() => shiftDiaryDay(1)} disabled={heroIsToday} accessibilityLabel={t("w.recovery.nutrition.nextDay")} hitSlop={6} style={{ width: 34, height: 34, borderRadius: 999, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><IChevRight size={16} color={heroIsToday ? C.line : C.chalk} /></Pressable>
               </View>
               <View style={{ marginTop: 16 }}>
-                {/* One over-target threshold for BOTH the ring and the number (web parity: 1.05). */}
-                <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.red : C.lime} track={C.line}>
+                {/* One over-target threshold for BOTH the ring and the number (1.05).
+                    OVER IS SAND, NOT RED. `red is kept strictly for risk`
+                    (theme/palette.ts), and 100 kcal past today's target is not a
+                    risk — it is the same statement the picker's rows and its day
+                    header already make in sand. Red here also made the hub and
+                    the picker disagree about the colour of one fact. (The label
+                    panel below keeps red: a saturated-fat or salt figure past a
+                    WHO/EFSA reference is a different claim from "you ate more
+                    than you planned to.") */}
+                <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.amber : C.lime} track={C.line}>
                   <View style={{ alignItems: "center" }}>
                     {/* THE NUMBER YOU CAME FOR, and the one that moves most: it
                         changes every time food is logged, so it rolls rather
@@ -2413,7 +2546,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                     <RollingNumber
                       value={String(Math.round(targets.kcal - heroDay.kcal))}
                       align="center"
-                      style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.red) : C.chalk }}
+                      // The picker's day header now draws this same figure, so
+                      // the two land on ONE spec: the `fs.stat` rung and
+                      // `tracking.display`, in place of a hand-set 44/-1 that
+                      // existed nowhere else.
+                      style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: tracking.display, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.amber) : C.chalk }}
                     />
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(heroDay.kcal)} / {targets.kcal}</Text>
                   </View>
@@ -2429,16 +2566,23 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 </View>
               ) : null}
             </View>
-            {/* Macros — hairline lines beneath the hero, same card. */}
+            {/* MACROS — the SAME ROW the picker's day header draws, because it
+                is the same three figures. This card hand-rolled a 4dp pill
+                track with a coloured mono-caps label while the picker
+                hand-rolled a 3dp one with an ash nano-caps label, so the two
+                nutrition heroes agreed on the numbers and on nothing else.
+                Both are AMeter now: one track (6dp, RADIUS.mark), one label
+                voice, one animated fill. The macro's colour stays where it
+                carries the meaning — the fill. */}
             <View style={{ alignSelf: "stretch", marginTop: 24 }}>
-              {([["w.recovery.nutrition.protein", heroDay.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", heroDay.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", heroDay.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
-                <View key={label} style={{ marginTop: i ? 18 : 0 }}>
-                  <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: colT }}>{t(label)}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{Math.round(cur)} / {tgt} g</Text>
-                  </View>
-                  <View style={{ height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink, overflow: "hidden", marginTop: 8 }}><View style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: 4, borderRadius: RADIUS.pill, backgroundColor: col }} /></View>
-                </View>
+              {([["w.recovery.nutrition.protein", heroDay.protein, targets.protein, C.blue], ["w.recovery.nutrition.carbs", heroDay.carbs, targets.carbs, C.amber], ["w.recovery.nutrition.fat", heroDay.fat, targets.fat, C.violet]] as const).map(([label, cur, tgt, col]) => (
+                <AMeter
+                  key={label}
+                  label={t(label)}
+                  value={`${Math.round(cur)} / ${tgt} g`}
+                  pct={tgt > 0 ? (cur / tgt) * 100 : 0}
+                  color={col}
+                />
               ))}
             </View>
           </ACard>

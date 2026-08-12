@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -129,6 +129,7 @@ export function AuroraScreen({
   onRefresh,
   top,
   hubTab,
+  scrollRef,
 }: {
   /** Optional because a screen that hands its own list to `scroller` has no
    *  body left for the shell to render — the list IS the body. */
@@ -165,6 +166,11 @@ export function AuroraScreen({
   padding?: number;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** The shell's scroller, for a screen that must move it from outside its own
+   *  render — the picker brings its field back under the thumb when the bar's
+   *  detached circle is pressed. Plain path only: a `hero` screen's scroller is
+   *  the hero system's, and that one has its own collapse track to respect. */
+  scrollRef?: RefObject<ScrollView | null>;
   /** Content rendered ABOVE the screen's own body, inside the same scroller —
    *  the slot Today's hub uses to hand a screen its profile header + tab pills
    *  when the screen is showing as one of Today's tabs rather than as its own
@@ -194,7 +200,7 @@ export function AuroraScreen({
     );
   }
   return (
-    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} top={top} hubTab={hubTab}>
+    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} top={top} hubTab={hubTab} scrollRef={scrollRef}>
       {children}
     </AuroraPlainScreen>
   );
@@ -213,6 +219,7 @@ function AuroraPlainScreen({
   onRefresh,
   top,
   hubTab,
+  scrollRef,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -222,6 +229,7 @@ function AuroraPlainScreen({
   onRefresh?: () => void;
   top?: ReactNode;
   hubTab?: boolean;
+  scrollRef?: RefObject<ScrollView | null>;
 }) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
@@ -242,6 +250,7 @@ function AuroraPlainScreen({
   const inner = hub ? <HubDissolve active>{children}</HubDissolve> : children;
   const body = scroll ? (
     <ScrollView
+      ref={scrollRef}
       // Clear the floating Aurora pill nav so the last content row never hides
       // under the bar — derived from the real bar height + safe-area inset (one
       // source of truth in lib/layout), not a hand-copied magic number.
@@ -1032,9 +1041,44 @@ export function AMeter({
   emphasis?: boolean;
 }) {
   const { palette } = useTheme();
+  const reduced = useReducedMotion();
   const fill = color ?? palette.lime;
   const clamped = Math.max(0, Math.min(100, pct));
   const width = clamped > 0 ? Math.max(2, clamped) : 0;
+
+  /**
+   * THE FILL TRAVELS to its new share instead of being redrawn at it — the
+   * meter's half of what `RollingNumber` does for the figure beside it.
+   *
+   * It matters most where the two sit together: the nutrition hero states the
+   * remaining energy as a figure AND as this track, and the figure already
+   * rolled while the track jump-cut, so one object moved and its twin blinked.
+   * They now travel on the SAME timing — `durations.collapse` with the same
+   * ease-out — so a logged food reads as one event.
+   *
+   * TIMING, NOT A SPRING, for the reason RollCell gives: a spring overshoots,
+   * and a bar that overshoots its value is briefly REPORTING A NUMBER THAT IS
+   * NOT TRUE. Springs are for objects travelling; this is a quantity arriving.
+   *
+   * It does not animate on mount. A screen whose every meter grows from zero on
+   * arrival is a screen animating its own layout rather than a change, and it
+   * would replay on every remount — the same discipline RollingNumber applies
+   * when it has no previous value to roll from. Reduce Motion sets the width
+   * outright: there is no position to cross-dissolve in a width.
+   */
+  const w = useRef(new Animated.Value(width)).current;
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; w.setValue(width); return; }
+    if (reduced) { w.setValue(width); return; }
+    Animated.timing(w, {
+      toValue: width,
+      duration: durations.collapse,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // a width is a layout prop
+    }).start();
+  }, [w, width, reduced]);
+
   return (
     <View style={{ marginTop: space.ms }}>
       {(label || value) && (
@@ -1061,7 +1105,12 @@ export function AMeter({
         accessibilityLabel={label}
         style={{ height: 6, borderRadius: RADIUS.mark, backgroundColor: palette.line, overflow: "hidden" }}
       >
-        <View style={{ width: `${width}%`, height: "100%", borderRadius: RADIUS.mark, backgroundColor: fill }} />
+        <Animated.View
+          style={{
+            width: w.interpolate({ inputRange: [0, 100], outputRange: ["0%", "100%"] }),
+            height: "100%", borderRadius: RADIUS.mark, backgroundColor: fill,
+          }}
+        />
       </View>
     </View>
   );

@@ -13,11 +13,16 @@ import type { AuroraIconName } from "./theme/icons";
  * The detached-circle slot beside an iOS 26 tab bar is the platform's SEARCH
  * role, and spending it on an action is a DELIBERATE trade recorded here so it
  * is never re-litigated by accident: HYBRID has no cross-app search to put
- * there, the circle wears the dumbbell (never a magnifier) in the accent
- * colour — the "go" colour, which the grammar reserves for things that act —
- * and on the feed it morphs to the compose glyph, none of which a search field
- * does. The action is CONTEXTUAL by design: Train everywhere, Add post on the
- * feed — the one surface whose primary verb isn't training (auroraNavAction).
+ * there, so the slot carries the app's VERB in the accent colour — the "go"
+ * colour, which the grammar reserves for things that act. The action is
+ * CONTEXTUAL by design (auroraNavAction): Train everywhere, Add post on the
+ * feed, Find on the add-to-meal picker — each surface's own primary
+ * verb, and on two of the three that verb is not training.
+ *
+ * The circle DOES wear a magnifier on the picker, and that is not the trade
+ * being reversed: it is not a cross-app search destination, it is that
+ * screen's verb (see AURORA_NAV_ACTIONS). The slot is still never spent on a
+ * search we do not have.
  *
  * Persistent session state does NOT go in the bar either — it belongs in the
  * tab-bar accessory (the system home for players and active orders, i.e. the
@@ -67,11 +72,30 @@ export const AURORA_NAV_TABS: readonly AuroraNavTab[] = [
  * resolved per surface by auroraNavAction(): TRAIN by default (it opens the
  * Train launcher, exactly what the retired Train tab did), ADD POST on the
  * feed, where the composer — not the gym — is the thing the athlete came to
- * do. The morph is a glyph crossfade inside the same circle, never a second
- * button. Glyphs are the kit's own: the shared inline dumbbell and the
- * `list-add` compose mark the quick-log already wears.
+ * do, and FIND on the add-to-meal picker. The morph is a glyph
+ * crossfade inside the same circle, never a second button. Glyphs are the
+ * kit's own: the shared inline dumbbell, the `list-add` compose mark the
+ * quick-log already wears, and the `search` magnifier.
+ *
+ * ── TWO KINDS OF ACTION, AND THE DIFFERENCE IS LOAD-BEARING ────────────────
+ * Train and Add post are DESTINATIONS: the circle goes somewhere. Find is a
+ * SCREEN ACTION: the circle acts on the surface already in front of you —
+ * it puts the cursor in the picker's field and brings that field back under
+ * your thumb, which is the one thing the picker could not do once the list had
+ * scrolled the field off the top. On the native bar those are implemented
+ * differently (a trigger is a route, so a screen action has to be a `disabled`
+ * trigger whose `tabPress` we handle), so the kind is declared here rather than
+ * inferred at the call site.
+ *
+ * WHY THE MAGNIFIER IS ALLOWED HERE, when the rule below says the circle never
+ * wears one: the rule is about the SLOT never being spent on a cross-app search
+ * we do not have. On the picker the magnifier is not a search destination — it
+ * is that screen's own verb, in the same sense Add post is the feed's. The
+ * circle still carries "the thing you came here to do", which is the whole
+ * contract; it is simply that on the one screen whose job IS finding a food,
+ * the verb happens to be a search.
  */
-export type AuroraNavActionId = "train" | "post";
+export type AuroraNavActionId = "train" | "post" | "search";
 
 export type AuroraNavAction = {
   id: AuroraNavActionId;
@@ -80,22 +104,42 @@ export type AuroraNavAction = {
   /** i18n key, with `label` as the fallback when the key is missing. */
   labelKey: string;
   label: string;
+  /**
+   * `route` — the circle NAVIGATES, and the native trigger can be an ordinary
+   * route trigger. `screen` — the circle ACTS on the surface in front of you,
+   * so the native trigger is marked `disabled` (which still emits `tabPress`)
+   * and the screen handles the press itself.
+   */
+  kind: "route" | "screen";
 };
 
 export const AURORA_NAV_ACTIONS: Record<AuroraNavActionId, AuroraNavAction> = {
-  train: { id: "train", glyph: "train", labelKey: "nav.train", label: "Train" },
-  post: { id: "post", glyph: "list-add", labelKey: "nav.addPost", label: "Add post" },
+  train: { id: "train", glyph: "train", labelKey: "nav.train", label: "Train", kind: "route" },
+  post: { id: "post", glyph: "list-add", labelKey: "nav.addPost", label: "Add post", kind: "route" },
+  // ONE WORD, like Train. The label sits under a 56dp circle and iOS truncates
+  // what does not fit: "Find a food" measured out to "Find a f…" on the device
+  // metrics, which is worse than saying less. "Find" is the same register as
+  // the other two — the circle carries a verb, never a noun.
+  search: { id: "search", glyph: "search", labelKey: "nav.find", label: "Find", kind: "screen" },
 } as const;
+
+/** The surface id the add-to-meal picker publishes while it is the visible
+ *  screen — Snacks, Breakfast, whichever meal it was opened for. One constant
+ *  so the screen and the bar cannot disagree about the spelling. */
+export const NAV_SURFACE_FOOD_PICKER = "food-picker";
 
 /**
  * Which action the circle carries on a given surface. `surface` is the visible
  * screen id, with the Today hub's inner tab folded in by the caller (the hub
  * renders Feed inside the `today` screen, so the shell passes "feed" while that
- * hub tab is up). The feed is the ONE override: everywhere else the app's verb
- * is training.
+ * hub tab is up) and the nutrition hub's inner view folded in the same way (it
+ * renders the picker inside the `nutrition` screen). Everywhere else the app's
+ * verb is training.
  */
 export function auroraNavAction(surface: string | null | undefined): AuroraNavActionId {
-  return surface === "feed" ? "post" : "train";
+  if (surface === "feed") return "post";
+  if (surface === NAV_SURFACE_FOOD_PICKER) return "search";
+  return "train";
 }
 
 /**
