@@ -184,7 +184,9 @@
 
   /* --- the day-gap hero --- */
   .hero-was { padding: 4px 4px 18px; }
-  .hero-now { padding: 0 6px 20px; }
+  .hero-now { padding: 0 6px; }
+  /* ONE owner for every gap above the list. */
+  .headmatter { display: flex; flex-direction: column; gap: 20px; }
 
   .figrow { display: flex; align-items: baseline; gap: 8px; }
   .fig-was {
@@ -192,7 +194,9 @@
     letter-spacing: -.5px; color: var(--lime); font-variant-numeric: tabular-nums;
   }
   .fig-now {
-    font-family: var(--display); font-weight: 900; font-size: 46px; line-height: 53px;
+    /* the box is the figure's own size — 1.15 leading parked ~7dp of dead air
+       above the digits, so the measured gap to the rail was not the seen one */
+    font-family: var(--display); font-weight: 900; font-size: 46px; line-height: 46px;
     letter-spacing: -.5px; color: var(--chalk); font-variant-numeric: tabular-nums;
   }
   .figlabel {
@@ -245,6 +249,7 @@
     padding: 13px 16px;
   }
   .field .ph { flex: 1; font-size: 14px; color: var(--ash); }
+  .phone.now .field { margin: 0 6px; min-height: 44px; }
   .field svg { flex: none; }
 
   /* the SwiftUI segmented control (before) */
@@ -265,6 +270,7 @@
     display: flex; gap: 18px; margin-top: 16px; padding: 0 6px;
     border-bottom: 1px solid var(--line); position: relative;
   }
+  .phone.now .sourceline { margin-top: 0; }
   .sourceline > button {
     appearance: none; background: none; border: 0; cursor: pointer; font: inherit;
     display: flex; align-items: baseline; gap: 5px; padding: 0 0 11px;
@@ -306,10 +312,27 @@
     width: 32px; height: 32px; border-radius: 999px; border: 1px solid var(--line);
     display: grid; place-items: center; flex: none;
   }
+  /* ROW_LEAD — the door's 32dp mark centred in the food row's 44dp column, so
+     both families put their title on one vertical. */
+  .door .lead { width: 44px; display: grid; place-items: center; flex: none; }
   .door .nm { flex: 1; font-family: var(--display); font-weight: 700; font-size: 16px; color: var(--chalk); }
 
   /* the alignment guide drawn over the device */
+  /* THE GRID, drawn over the device. The object edge is always on; the two
+     other verticals appear with the toggle. */
   .phone.guides { position: relative; }
+  .phone .gridline {
+    position: absolute; top: 132px; bottom: 26px; width: 1px;
+    background: repeating-linear-gradient(180deg, var(--teal) 0 3px, transparent 3px 8px);
+    opacity: 0; transition: opacity 180ms ease; pointer-events: none; z-index: 0;
+  }
+  .phone .gridline.text { background: repeating-linear-gradient(180deg, var(--violet) 0 3px, transparent 3px 8px); }
+  body.show-grid .phone .gridline { opacity: .75; }
+  .gridkey { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-top: 4px;
+             font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+             text-transform: uppercase; color: var(--ash); }
+  .gridkey b { font-weight: 400; color: var(--chalk); }
+  .gridkey i { width: 10px; height: 2px; display: inline-block; margin-right: 6px; vertical-align: middle; }
   .phone.guides .edgeline {
     position: absolute; top: 132px; bottom: 26px; width: 1px;
     background: repeating-linear-gradient(180deg, var(--terra) 0 3px, transparent 3px 8px);
@@ -385,12 +408,12 @@
       A phone screenshot of the food picker, read against the nutrition hub one screen away.
       The two surfaces show the <b>same day's figures</b> and were drawn by two people who never met:
       different face, different colour, different meter, different meaning for the same state — and on
-      iOS the source switcher was a stock SwiftUI control wearing none of it. Fifteen changes, every one of them a
+      iOS the source switcher was a stock SwiftUI control wearing none of it. Twenty changes, every one of them a
       return to something the app already decided.
     </p>
     <div class="facts">
       <div><p class="kicker">Screen</p><span class="v">Nutrition → add to meal<br>(<span class="mono">nutrition.tsx</span> view <span class="mono">"add"</span>)</span></div>
-      <div><p class="kicker">Changes</p><span class="v">Fifteen — ten on the picker,<br>then the finish and the motion</span></div>
+      <div><p class="kicker">Changes</p><span class="v">Twenty — the picker, then the<br>finish, the motion and the grid</span></div>
       <div><p class="kicker">New concepts</p><span class="v">None — every part of this<br>already ships elsewhere</span></div>
       <div><p class="kicker">Guards</p><span class="v">3 332 tests, typecheck,<br>iOS bundle: green</span></div>
     </div>
@@ -413,7 +436,13 @@
       <button type="button" data-state="cold" aria-pressed="true">Nothing logged (the screenshot)</button>
       <button type="button" data-state="mid" aria-pressed="false">Mid-afternoon</button>
       <button type="button" data-state="over" aria-pressed="false">Past the target</button>
+      <button type="button" id="gridtoggle" aria-pressed="false" style="margin-left:auto">Show the grid</button>
     </div>
+    <p class="gridkey">
+      <span><i style="background:#e58a5c"></i><b>Object edge</b> — where content stands</span>
+      <span><i style="background:#6cb6bd"></i><b>Column</b> — the screen's 12dp gutter</span>
+      <span><i style="background:#8ba0cc"></i><b>Text column</b> — after the leading mark</span>
+    </p>
 
     <div class="stage">
       <div class="stage-inner" id="stage">
@@ -423,6 +452,8 @@
           <div class="caphead"><span class="tag was">Before</span><span class="cap">shipped build</span></div>
           <div class="phone guides was">
             <div class="edgeline" style="left: 16px;"></div>
+            <div class="gridline" style="left: 13px;"></div>
+            <div class="gridline text" style="left: 67px;"></div>
             <div class="statusbar">
               <span>23:08</span>
               <span class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt">38</span></span>
@@ -506,8 +537,9 @@
             </div>
           </div>
           <p class="note" style="font-size:13.5px">
-            Dashed rule marks the rows' left edge. The day header sits 2dp left of it, the source
-            line 2dp left of the header again, and the empty line 6dp left of everything.
+            Five left edges. The field is the loudest: it spans the whole 12dp column, so the one
+            boxed object on the screen is also the only one wider than everything above and below it.
+            And the doors' titles sit 12dp left of the rows they follow — a step at the seam.
           </p>
         </div>
 
@@ -516,6 +548,8 @@
           <div class="caphead"><span class="tag now">After</span><span class="cap">this change</span></div>
           <div class="phone guides now">
             <div class="edgeline" style="left: 18px;"></div>
+            <div class="gridline" style="left: 13px;"></div>
+            <div class="gridline text" style="left: 79px;"></div>
             <div class="statusbar">
               <span>23:08</span>
               <span class="right"><span class="bars"><i></i><i></i><i></i><i></i></span><span>5G</span><span class="batt">38</span></span>
@@ -532,6 +566,7 @@
                 <div class="spacer"></div>
               </div>
 
+              <div class="headmatter">
               <div class="hero-now">
                 <div class="figrow">
                   <span class="fig-now" data-a="fig">2325</span>
@@ -572,6 +607,8 @@
                 <span class="rule" aria-hidden="true"></span>
               </div>
 
+              </div><!-- /headmatter -->
+
               <div data-a="listempty">
                 <div class="emptyline-now">Nothing logged yet. Foods you log will appear here.</div>
               </div>
@@ -595,20 +632,21 @@
               </div>
 
               <div class="door">
-                <div class="ring"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div>
+                <span class="lead"><span class="ring"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></span></span>
                 <span class="nm">Quick Log</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
               </div>
               <div class="door last">
-                <div class="ring"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></div>
+                <span class="lead"><span class="ring"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span></span>
                 <span class="nm">New food</span>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
               </div>
             </div>
           </div>
           <p class="note" style="font-size:13.5px">
-            One edge, top to bottom: header, switcher, rows, doors and the empty line all sit on 6dp.
-            The field keeps its own 16dp — it is a container, not a competing edge.
+            One object edge and one text column. The field now stands on the same two verticals as the
+            meter directly above it, and every title in the list — food or door — lands on the same
+            line. Hairlines stay full-bleed: a rule is a fold in the page, not a box around a group.
           </p>
         </div>
 
@@ -620,12 +658,12 @@
   <section>
     <div class="sechead">
       <p class="kicker">The changes</p>
-      <h2>Fifteen, grouped by what they fix</h2>
+      <h2>Twenty, grouped by what they fix</h2>
       <p class="note">
         Not a sequence — a list, labelled by the axis each one lives on. Nothing here is invented:
         every "after" is a treatment the app already ships somewhere else, usually on the hub screen
-        this picker is opened from. The last five are round two — the consistency I had left
-        half-finished, and the motion.
+        this picker is opened from. The last ten are rounds two and three — the consistency I had left
+        half-finished, the motion, and the grid.
       </p>
     </div>
 
@@ -1131,6 +1169,188 @@
         </div>
       </div>
 
+
+      <!-- ============ ROUND THREE ============ -->
+      <div class="change roundtwo">
+        <div class="axis"><span class="n" style="color:var(--teal)">Round three</span></div>
+        <div class="say">
+          <h3>The grid</h3>
+          <p>
+            Colour, type and motion were right and the objects were still landing where each block
+            happened to put them. A grid is three numbers — where content stands, where a title starts,
+            how far one block sits from the next — and this screen had four answers to the first, two
+            to the second and three to the third. They are constants now, at the top of the kit, so
+            the next block written here inherits them instead of deciding again. <b>Turn on "Show the
+            grid" above</b> and the before column fails all three verticals in one glance.
+          </p>
+        </div>
+        <div class="demo" style="justify-content:center">
+          <span class="mono" style="font-size:12px;color:var(--ash);line-height:1.8">
+            PICKER_EDGE&nbsp;&nbsp;6<br>ROW_LEAD&nbsp;&nbsp;&nbsp;&nbsp;44<br>BLOCK&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20
+          </span>
+        </div>
+      </div>
+
+      <!-- 16 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Object edge</span>
+          <span class="where">PICKER_EDGE<br>the field</span>
+        </div>
+        <div class="say">
+          <h3>The one boxed object joins the edge everything else stands on</h3>
+          <p>
+            The screen has a 12dp column and its content stands 6dp inside it, at 18 from the glass.
+            The field ignored that and spanned the full column — so on a screen whose whole design is
+            type on the ground, the single bordered box was also the only object wider than its
+            neighbours, sticking out 6dp on both sides. It is on the edge now, which puts its left and
+            right sides on the <em>same two verticals</em> as the energy meter directly above it.
+            Hairlines remain the deliberate exception: a rule spans the whole column while the content
+            it separates stands at 18, because a separator inset to its own content reads as a boxed
+            group rather than a fold in the page.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was — the field alone at 12</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">hero 18 · meter 18 · rows 18<br><span style="color:var(--terra)">field 12</span> · tabs 18</span>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">every object on 18<br>every hairline on 12</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 17 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Leading column</span>
+          <span class="where">ROW_LEAD<br>FoodRow, PickerDoor,<br>Understood</span>
+        </div>
+        <div class="say">
+          <h3>Three row families, one text vertical</h3>
+          <p>
+            A food row's ⊕ is a 44dp target; a door's ring is 32 (the exit rule's size, and it stays);
+            an interpretation row used a 12dp gap where the others used 16. Stacked, that put three
+            different title starts in one list — <b>78, 66 and 74</b> — with a visible step exactly at
+            the seam where the doors follow the rows. Every row now reserves the same
+            <code>ROW_LEAD</code> for its leading mark, and the door's 32dp ring is <em>centred in</em>
+            that column rather than being a column of its own. Width only: the door keeps its own
+            height, so it stays the lighter row it is meant to be. The column is <code>HIT_TARGET</code>
+            because that is what set it — as wide as the widest thing in it that has to be tappable.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was — a 12dp step at the seam</span>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:16px"><span style="width:44px;height:22px;border:1.6px solid var(--lime);border-radius:99px;flex:none"></span><span class="mono" style="font-size:11px;color:var(--chalk)">Skyr, plain</span></div>
+              <div style="display:flex;align-items:center;gap:16px"><span style="width:32px;height:22px;border:1px solid var(--line);border-radius:99px;flex:none"></span><span class="mono" style="font-size:11px;color:var(--terra)">Quick Log</span></div>
+            </div>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now — one column, one vertical</span>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:center;gap:16px"><span style="width:44px;height:22px;border:1.6px solid var(--lime);border-radius:99px;flex:none"></span><span class="mono" style="font-size:11px;color:var(--chalk)">Skyr, plain</span></div>
+              <div style="display:flex;align-items:center;gap:16px"><span style="width:44px;display:grid;place-items:center;flex:none"><span style="width:32px;height:22px;border:1px solid var(--line);border-radius:99px;display:block"></span></span><span class="mono" style="font-size:11px;color:var(--chalk)">Quick Log</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 18 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Block rhythm</span>
+          <span class="where">BLOCK<br>the head matter</span>
+        </div>
+        <div class="say">
+          <h3>One owner for every gap above the list</h3>
+          <p>
+            The day header carried a 20dp bottom pad, the confirmation line a 12dp top margin, the
+            source line a 16 — so the rhythm of the screen was the sum of three unrelated decisions,
+            each block deciding how much room the <em>next</em> one got, and none of it readable from
+            any single line. The head matter is one stack with <code>gap: BLOCK</code> now, and its
+            children carry no outer margins at all. Same discipline as the sheet rule already in the
+            house style: the container owns the space around its children. Null children take no gap,
+            so a day with no target and no confirmation still spaces correctly.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">hero paddingBottom 20<br>msg marginTop 12<br>sources marginTop 16</span>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">&lt;View style={{ gap: BLOCK }}&gt;<br>…and nothing else</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 19 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Optical</span>
+          <span class="where">DayGap<br>the figure's box</span>
+        </div>
+        <div class="say">
+          <h3>The measured gap is the seen gap</h3>
+          <p>
+            The figure's line box was <code>leading(fs.stat, "tight")</code> — 53dp around a 46dp
+            figure — which parks about 7dp of dead air above digits that have no ascenders to use it,
+            on top of the font's own. So the 8dp declared between the rail and the header was 20-odd
+            on the glass, and no number in the file said so. The display figure's box is its own size
+            now, the way the app's other display figure already sets it. Space you can only find by
+            screenshotting is space nobody engineered.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was — lineHeight 53</span>
+            <span style="display:block;background:rgba(229,138,92,.14);width:max-content"><span class="fig-now" style="font-size:38px;line-height:44px">1145</span></span>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now — lineHeight = fs.stat</span>
+            <span style="display:block;background:rgba(198,248,79,.12);width:max-content"><span class="fig-now" style="font-size:38px;line-height:38px">1145</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 20 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Touch</span>
+          <span class="where">PickerField</span>
+        </div>
+        <div class="say">
+          <h3>The field declares the floor instead of hoping the padding adds up</h3>
+          <p>
+            13dp of padding around a 14dp line lands at about 43 — under the 44dp HIG minimum, on the
+            control this screen exists to use. It is the exact failure the house guard was written for
+            ("padding cannot fix it: a chip's height is set by its label, so the floor has to be
+            declared"), and the guard only polices the shared primitives, so a screen-level field slid
+            under it. <code>minHeight: HIT_TARGET</code>, stated.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">paddingVertical 13 → ≈43dp</span>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">minHeight: HIT_TARGET (44)</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -1153,11 +1373,12 @@
         <tbody>
           <tr>
             <td class="f">components/aurora/nutrition-kit.tsx</td>
-            <td class="d"><code>DayGap</code> rebuilt on the hub's vocabulary and the shared meter, and
-              given the meal's own running total; <code>SourceLine</code>'s rule now flies on
-              <code>springs.lens</code> with a selection haptic; <code>PICKER_EDGE</code> and
-              <code>MACRO_FILL</code> exported and applied to <code>FoodRow</code> and
-              <code>PickerDoor</code>.</td>
+            <td class="d"><code>DayGap</code> rebuilt on the hub's vocabulary and the shared meter, given
+              the meal's own running total, and its figure's box tightened to its own size;
+              <code>SourceLine</code>'s rule now flies on <code>springs.lens</code> with a selection
+              haptic; the screen's grid — <code>PICKER_EDGE</code>, <code>ROW_LEAD</code>,
+              <code>BLOCK</code> — declared here and applied to <code>FoodRow</code> and
+              <code>PickerDoor</code>, whose leading columns now match.</td>
           </tr>
           <tr>
             <td class="f">components/aurora/nutrition.tsx</td>
@@ -1165,6 +1386,11 @@
               onto <code>HERO_INLINE_TITLE</code>; the picker's four section heads and four empty lines
               onto <code>PICKER_EDGE</code>; the hub's ring and figure to sand, <code>fs.stat</code> and
               <code>tracking.display</code>.</td>
+          </tr>
+          <tr>
+            <td class="f">components/aurora/quick-add.tsx</td>
+            <td class="d">The field takes the object edge and declares <code>minHeight: HIT_TARGET</code>;
+              the interpretation rows join the shared leading column and edge.</td>
           </tr>
           <tr>
             <td class="f">components/aurora/kit.tsx</td>
@@ -1314,9 +1540,17 @@
       placeRule(line, line.querySelector("button.on"), false));
   });
 
-  document.querySelectorAll(".switch button").forEach(btn => {
+  const grid = document.getElementById("gridtoggle");
+  grid.addEventListener("click", () => {
+    const on = grid.getAttribute("aria-pressed") !== "true";
+    grid.setAttribute("aria-pressed", String(on));
+    document.body.classList.toggle("show-grid", on);
+    grid.textContent = on ? "Hide the grid" : "Show the grid";
+  });
+
+  document.querySelectorAll(".switch button[data-state]").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".switch button")
+      document.querySelectorAll(".switch button[data-state]")
         .forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
       apply(btn.dataset.state);
     });

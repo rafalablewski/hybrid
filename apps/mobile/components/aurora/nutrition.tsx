@@ -100,7 +100,7 @@ import NutritionTrends from "./nutrition-trends";
 import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
-  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap, PICKER_EDGE,
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap, PICKER_EDGE, BLOCK,
   IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
@@ -1550,52 +1550,72 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
         <BarcodeScanSheet visible={scanSheet} onClose={() => setScanSheet(false)} onCode={onScanned} />
 
-        {/* THE GAP first — the screen's subject. It renders only when there is
-            a target to be short of. */}
-        {pickerGap ? (
-          <DayGap
-            C={C}
-            gap={pickerGap}
-            mealLabel={partLabel(mealType)}
-            mealKcal={mealTotals[mealType] ?? 0}
-          />
-        ) : null}
+        {/* ── THE HEAD MATTER ──────────────────────────────────────────────
+            Everything above the list, as ONE stack with ONE owner of the space
+            in it. These four blocks each used to declare how much room the next
+            one got — the day header's 20dp bottom pad, the confirmation line's
+            12dp top margin, the source line's 16 — so the screen's rhythm was
+            the sum of three unrelated decisions and could not be read off any
+            single line of code. `gap: BLOCK` is that rhythm, chosen once.
+            (Null children take no gap, so a day with no target, no confirmation
+            and a typed query still spaces correctly.) */}
+        <View style={{ gap: BLOCK }}>
+          {/* THE GAP first — the screen's subject. It renders only when there is
+              a target to be short of. */}
+          {pickerGap ? (
+            <DayGap
+              C={C}
+              gap={pickerGap}
+              mealLabel={partLabel(mealType)}
+              mealKcal={mealTotals[mealType] ?? 0}
+            />
+          ) : null}
 
-        {/* THE ONE FIELD. Quick add and the database search were two boxes
-            asking the same question; this is that question, asked once. */}
-        <PickerField
-          value={foodQuery}
-          onChange={setFoodQuery}
-          onSubmit={() => {
-            // Enter commits the FIRST interpretation — the one on screen.
-            const s = pickerSubmit(answer);
-            if (s.kind === "macros") { logQuickAdd(macroDraft(s.macros, t("w.recovery.nutrition.quickEntry"))); setFoodQuery(""); }
-            else if (s.kind === "log") { logQuickAdd(quickAddDraft(s.match)); setFoodQuery(""); }
-            else if (s.kind === "portion") portionForQuickAdd(s.match);
-          }}
-          onScan={() => { setFoodMsg(""); setScanSheet(true); }}
-        />
-
-        {/* A one-tap add is invisible unless the screen says so. Same confirmation
-            line the hub and the diary already use; a FAILED write is already
-            surfaced by logEntry's notify(), so this slot only carries success. */}
-        {mealMsg ? (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
-            <AuroraIcon name="check" size={13} color={txt(C, C.lime)} />
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{mealMsg}</Text>
+          {/* THE ONE FIELD. Quick add and the database search were two boxes
+              asking the same question; this is that question, asked once.
+              The EDGE is the parent's to give — the field is a container, and a
+              container that sets its own outer margin is a block deciding where
+              the screen's column is. */}
+          <View style={{ paddingHorizontal: PICKER_EDGE }}>
+            <PickerField
+              value={foodQuery}
+              onChange={setFoodQuery}
+              onSubmit={() => {
+                // Enter commits the FIRST interpretation — the one on screen.
+                const s = pickerSubmit(answer);
+                if (s.kind === "macros") { logQuickAdd(macroDraft(s.macros, t("w.recovery.nutrition.quickEntry"))); setFoodQuery(""); }
+                else if (s.kind === "log") { logQuickAdd(quickAddDraft(s.match)); setFoodQuery(""); }
+                else if (s.kind === "portion") portionForQuickAdd(s.match);
+              }}
+              onScan={() => { setFoodMsg(""); setScanSheet(true); }}
+            />
           </View>
-        ) : null}
+
+          {/* A one-tap add is invisible unless the screen says so. Same confirmation
+              line the hub and the diary already use; a FAILED write is already
+              surfaced by logEntry's notify(), so this slot only carries success. */}
+          {mealMsg ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingHorizontal: PICKER_EDGE }}>
+              <AuroraIcon name="check" size={13} color={txt(C, C.lime)} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{mealMsg}</Text>
+            </View>
+          ) : null}
+
+          {/* ONE form, every platform. The iOS fork that put the system
+              segmented control here is gone — see SourceLine's header for why
+              (it re-introduced the filled track this screen deletes, and it
+              dropped the counts on the one platform we ship). It is the LAST
+              block of the head matter and it carries the list's own rule, so
+              the first row sits directly under it with no gap: the rule belongs
+              to the list, not to the stack above it. */}
+          {answer.kind === "resting" ? (
+            <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
+          ) : null}
+        </View>
 
         {answer.kind === "resting" ? (
           /* AT REST — all four sources, switchable, with the box gone. */
           <>
-            <View style={{ marginTop: space.lg }}>
-              {/* ONE form, every platform. The iOS fork that put the system
-                  segmented control here is gone — see SourceLine's header for
-                  why (it re-introduced the filled track this screen deletes,
-                  and it dropped the counts on the one platform we ship). */}
-              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
-            </View>
             {foodTab === "meals" ? (
               meals.length === 0 ? (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>

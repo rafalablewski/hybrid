@@ -9,7 +9,7 @@ import {
   type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
 } from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
+import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
@@ -20,16 +20,52 @@ import { RollingNumber } from "./rolling-number";
 import SwipeRow from "../swipe-row";
 
 /**
- * THE PICKER'S LEFT EDGE — one number, every block that sits on the screen.
+ * THE PICKER'S GRID — three numbers, and every object on the screen sits on one
+ * of them. Stated here rather than at twenty call sites, because a grid that
+ * lives in prose gets re-derived and a grid that lives in constants gets used.
  *
- * The picker had three: the gap header indented 4, the rows and doors 6, and
- * the two empty-state lines 0. Stacked vertically that is three optical left
- * edges in one column, which is exactly the misalignment the eye reads as
- * "unfinished" without being able to name it. The field is the ONE exception
- * and legitimately so: it is a container, so its own 16 is interior padding
- * rather than a competing edge.
+ * ── PICKER_EDGE — the OBJECT edge ──────────────────────────────────────────
+ * AuroraScreen gives the screen a 12dp gutter; every object then stands 6dp
+ * inside it, at 18 from the glass. The picker had four different answers: the
+ * day header indented 4, the source line 2, the rows and doors 6, and the empty
+ * lines and section heads 0 — four optical left edges stacked in one column,
+ * which is what the eye reads as "unfinished" without being able to name it.
+ *
+ * The field used to be a fifth: it spanned the full 12dp column, so the one
+ * boxed object on a screen of type-on-the-ground was also the only one 6dp
+ * wider than everything above and below it. It is on the object edge now, which
+ * puts its left and right sides on the same two verticals as the energy meter
+ * directly above it.
+ *
+ * HAIRLINES ARE THE EXCEPTION, and deliberately: a rule spans the whole 12dp
+ * column while the content it separates stands at 18. A separator inset to its
+ * own content reads as a boxed group; full-bleed, it reads as a fold in the
+ * page. The source line's rule and the list's row hairlines both do this, which
+ * is why those two keep their own horizontal padding instead of inheriting the
+ * head matter's.
+ *
+ * ── ROW_LEAD — the LEADING COLUMN ──────────────────────────────────────────
+ * Every row on this screen — a food, an interpretation, a door — reserves the
+ * same 44dp for its leading mark, so all of them put their title on ONE
+ * vertical. They did not: a food row's ⊕ is a 44dp target and a door's ring is
+ * 32 (the exit rule's size, and it stays), so the doors' titles sat 12dp left of
+ * the rows they follow, with a visible step at the seam. The door's ring is now
+ * a 32dp mark CENTRED in the 44dp column rather than a 32dp column of its own —
+ * the row keeps its own height, only the column is shared. It is HIT_TARGET
+ * because that is what set it: the column is as wide as the widest thing that
+ * has to be tappable in it.
+ *
+ * ── BLOCK — the gap between two blocks of head matter ──────────────────────
+ * One value, applied ONCE by the parent as a `gap`, never by the blocks as
+ * outer margins. The head matter ran on three: the header's own 20dp bottom
+ * pad, the source line's 16dp top margin and the confirmation line's 12 — three
+ * unrelated decisions summing to a rhythm nobody chose, and each block deciding
+ * how much room the NEXT one gets. Same discipline as the sheet rule: the
+ * container owns the space around its children.
  */
 export const PICKER_EDGE = space.xs;
+export const ROW_LEAD = HIT_TARGET;
+export const BLOCK = space.xl;
 
 /** The three macros, told apart by COLOUR — the same three the hub's hero uses
  *  (teal / sand / violet). They are FILLS (a meter track), so they take the raw
@@ -261,11 +297,11 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
   const tone = gap.kcal.over ? txt(C, C.amber) : C.chalk;
   const macros = gap.macros.filter((m) => m.figure.want != null);
   return (
-    <View style={{ paddingHorizontal: PICKER_EDGE, paddingBottom: space.xl }}>
+    <View style={{ paddingHorizontal: PICKER_EDGE }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
         <RollingNumber
           value={String(Math.abs(left))}
-          style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: tracking.display, color: tone }}
+          style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: tracking.display, color: tone }}
         />
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
@@ -302,10 +338,11 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
           .replace("{b}", String(Math.round(gap.kcal.want ?? 0)))}
       />
       {macros.length ? (
-        // `space.sm` and not `space.lg`: AMeter carries its own `space.ms` top
-        // margin, so the gap the eye sees between the energy track and the
-        // macro labels is the sum.
-        <View style={{ flexDirection: "row", gap: space.lg, marginTop: space.sm }}>
+        // NO top margin: AMeter already carries `space.ms`, and that is the
+        // hero's one internal step — figure, energy, macros, evenly. Adding to
+        // it here made the second step 18 against the first's 10, which is a
+        // rhythm arrived at by addition rather than chosen.
+        <View style={{ flexDirection: "row", gap: space.lg }}>
           {macros.map((m) => (
             <View key={m.key} style={{ flex: 1 }}>
               <AMeter
@@ -463,13 +500,18 @@ export function PickerDoor({ C, title, icon, onPress, last }: {
       accessibilityRole="button"
       accessibilityLabel={title}
       style={{
-        flexDirection: "row", alignItems: "center", gap: 16,
+        flexDirection: "row", alignItems: "center", gap: space.lg,
         paddingVertical: 14, paddingHorizontal: PICKER_EDGE,
         borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line,
       }}
     >
-      <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        {icon}
+      {/* The column is ROW_LEAD wide; the ring is 32 and stays 32 (the exit
+          rule's size). Width only — the box takes the ring's height, so a door
+          stays the lighter row it is meant to be. */}
+      <View style={{ width: ROW_LEAD, alignItems: "center" }}>
+        <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+          {icon}
+        </View>
       </View>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
       <IChevRight size={18} color={C.ash} />
@@ -491,8 +533,8 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
 }) {
   const { t } = useLang();
   const body = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 16, paddingVertical: 12, paddingHorizontal: PICKER_EDGE, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }}>
-      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: 44, height: 44, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingVertical: 12, paddingHorizontal: PICKER_EDGE, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }}>
+      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
       <Pressable onPress={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>

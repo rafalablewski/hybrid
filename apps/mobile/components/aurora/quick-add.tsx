@@ -7,12 +7,12 @@ import {
   type QuickAddDraft,
   type QuickAddMatch,
 } from "@hybrid/core";
-import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
+import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
-import { IBarcode, IClose } from "./nutrition-kit";
+import { IBarcode, IClose, PICKER_EDGE, ROW_LEAD } from "./nutrition-kit";
 
 /**
  * THE PICKER FIELD (mobile) — the twin of apps/web/components/aurora/quick-add.tsx.
@@ -49,7 +49,7 @@ export function PickerField({ value, onChange, onSubmit, onScan }: {
   const typed = value.trim().length > 0;
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, minHeight: HIT_TARGET, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: space.lg }}>
       <AuroraIcon name="search" size={18} color={C.ash} />
       <TextInput
         value={value}
@@ -104,9 +104,9 @@ export function Understood({ answer, entryName, onLog, onPortion }: {
         onPress={() => onLog(macroDraft(answer.macros, entryName))}
         accessibilityRole="button"
         accessibilityLabel={t("w.recovery.nutrition.qa.logMacros").replace("{v}", phrase)}
-        style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 12, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line }}
+        style={{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingVertical: 12, paddingHorizontal: PICKER_EDGE, borderBottomWidth: 1, borderBottomColor: C.line }}
       >
-        <View style={{ width: 44, height: 44, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="add" size={18} color={txt(C, C.lime)} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -133,9 +133,9 @@ export function Understood({ answer, entryName, onLog, onPortion }: {
           onPress={() => (m.needsPortion ? onPortion(m) : onLog(quickAddDraft(m)))}
           accessibilityRole="button"
           accessibilityLabel={m.candidate.name}
-          style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 12, paddingHorizontal: 6, borderBottomWidth: 1, borderBottomColor: C.line }}
+          style={{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingVertical: 12, paddingHorizontal: PICKER_EDGE, borderBottomWidth: 1, borderBottomColor: C.line }}
         >
-          <View style={{ width: 44, height: 44, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: m.needsPortion ? C.line : C.lime, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: m.needsPortion ? C.line : C.lime, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name={m.needsPortion ? "chevron-down" : "add"} size={18} color={m.needsPortion ? C.ash : txt(C, C.lime)} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
@@ -176,7 +176,7 @@ export function NoneOfYours({ query }: { query: string }) {
   return (
     <Text
       maxFontSizeMultiplier={MAX_FONT_SCALE}
-      style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14, paddingHorizontal: 6, lineHeight: leading(fs.caption, "relaxed") }}
+      style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 14, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}
     >
       {t("w.recovery.nutrition.pick.noneYours").replace("{v}", query)}
     </Text>
