@@ -62,6 +62,15 @@ describe("aurora nav bar contract", () => {
     expect(AURORA_NAV_ACTIONS.search.glyph).toBe("search");
   });
 
+  it("keeps every action's label short enough for the circle to say it", () => {
+    // The label sits under a 56dp circle and iOS truncates the overflow, so a
+    // label that does not fit is a label the bar cannot deliver. "Train" set
+    // the budget; nothing may quietly exceed it by much.
+    for (const a of Object.values(AURORA_NAV_ACTIONS)) {
+      expect(a.label.length, a.id).toBeLessThanOrEqual(8);
+    }
+  });
+
   it("leaves a visible glass margin around the selection lens", () => {
     // Concentricity: the lens must be strictly shorter than the capsule's
     // inner height, otherwise the bar pinches the pill instead of holding it.

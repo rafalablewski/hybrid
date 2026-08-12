@@ -89,6 +89,21 @@
   /* ---------- masthead ---------- */
   header.top { padding: clamp(56px, 9vw, 104px) 0 0; }
   header.top .lede { margin-top: 20px; }
+  .contents {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 34px;
+  }
+  .contents a {
+    display: inline-flex; align-items: baseline; gap: 8px;
+    text-decoration: none; color: var(--ash);
+    border: 1px solid var(--line); border-radius: 999px; padding: 9px 15px;
+    font-size: 13.5px; transition: color .16s ease, border-color .16s ease;
+  }
+  .contents a:hover { color: var(--chalk); border-color: var(--ash); }
+  .contents a:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+  .contents b {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
+    text-transform: uppercase; color: var(--lime); font-weight: 400;
+  }
   .facts {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
     gap: 20px 28px; margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line);
@@ -146,7 +161,7 @@
     background: var(--ink);
     border: 1px solid var(--line);
     border-radius: 40px;
-    padding: 0 0 26px;
+    padding: 0 0 14px;
     overflow: hidden;
     box-shadow: 0 40px 80px -60px #000;
   }
@@ -317,6 +332,46 @@
   .door .lead { width: 44px; display: grid; place-items: center; flex: none; }
   .door .nm { flex: 1; font-family: var(--display); font-weight: 700; font-size: 16px; color: var(--chalk); }
 
+  /* ── THE SPLIT BOTTOM BAR ────────────────────────────────────────────────
+     The real one is the SYSTEM tab bar (expo-router NativeTabs), so on iOS 26
+     the capsule and the detached circle are the platform's own Liquid Glass.
+     This is an approximation of it at the geometry nav-bar.ts states: a 42dp
+     slot in 7dp of padding = a 56dp capsule, and a circle of the capsule's own
+     full height so the split reads as one bar in two pieces. */
+  .tabbar { display: flex; align-items: center; gap: 10px; padding: 20px 12px 4px; }
+  .capsule {
+    flex: 1; display: flex; align-items: center; gap: 2px; height: 56px; padding: 7px 10px;
+    border-radius: 999px; background: rgba(255,255,255,.075);
+    border: 1px solid rgba(255,255,255,.07);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  }
+  .slot {
+    flex: 1; height: 42px; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 2px; border-radius: 999px; min-width: 0;
+  }
+  .slot svg { display: block; }
+  .slot span {
+    font-family: var(--display); font-weight: 600; font-size: 10px; color: var(--ash);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+  }
+  .slot.on span { color: var(--lime); }
+  .circle {
+    width: 56px; height: 56px; flex: none; border-radius: 999px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    background: rgba(255,255,255,.075); border: 1px solid rgba(255,255,255,.07);
+    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  }
+  .circle span {
+    font-family: var(--display); font-weight: 600; font-size: 10px; color: var(--lime);
+    white-space: nowrap;
+  }
+  .barnote {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
+    text-align: center; padding-bottom: 4px;
+  }
+  .barnote.was { color: var(--terra); }
+  .barnote.now { color: var(--lime); }
+
   /* the alignment guide drawn over the device */
   /* THE GRID, drawn over the device. The object edge is always on; the two
      other verticals appear with the toggle. */
@@ -391,6 +446,14 @@
   .check .v { margin-top: 6px; font-size: 15px; font-weight: 700; color: var(--lime); }
   .check .v.plain { color: var(--chalk); font-weight: 600; font-size: 14px; }
 
+  .open {
+    margin-top: 34px; border: 1px solid var(--line); border-radius: 16px;
+    padding: clamp(20px, 2.6vw, 30px); background: var(--ink2);
+  }
+  .open h3 { color: var(--sand); margin-bottom: 14px; }
+  .open ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 11px; }
+  .open li { color: var(--ash); font-size: 15px; }
+  .open li::marker { color: var(--line); }
   footer { margin-top: clamp(60px, 8vw, 96px); padding-top: 24px; border-top: 1px solid var(--line);
            font-size: 14px; color: var(--ash); }
 
@@ -408,14 +471,21 @@
       A phone screenshot of the food picker, read against the nutrition hub one screen away.
       The two surfaces show the <b>same day's figures</b> and were drawn by two people who never met:
       different face, different colour, different meter, different meaning for the same state — and on
-      iOS the source switcher was a stock SwiftUI control wearing none of it. Twenty changes, every one of them a
-      return to something the app already decided.
+      iOS the source switcher was a stock SwiftUI control wearing none of it. Twenty-four changes across four rounds, almost every one a
+      return to something the app had already decided and then drifted from.
     </p>
+    <nav class="contents" aria-label="Contents">
+      <a href="#the-changes"><b>One</b> The screen — hero, meters, controls</a>
+      <a href="#round-two"><b>Two</b> The consistency finish, and motion</a>
+      <a href="#round-three"><b>Three</b> The grid</a>
+      <a href="#round-four"><b>Four</b> The bottom bar</a>
+    </nav>
+
     <div class="facts">
       <div><p class="kicker">Screen</p><span class="v">Nutrition → add to meal<br>(<span class="mono">nutrition.tsx</span> view <span class="mono">"add"</span>)</span></div>
-      <div><p class="kicker">Changes</p><span class="v">Twenty — the picker, then the<br>finish, the motion and the grid</span></div>
-      <div><p class="kicker">New concepts</p><span class="v">None — every part of this<br>already ships elsewhere</span></div>
-      <div><p class="kicker">Guards</p><span class="v">3 332 tests, typecheck,<br>iOS bundle: green</span></div>
+      <div><p class="kicker">Changes</p><span class="v">Twenty-four, in four rounds:<br>the screen, the finish, the<br>grid, the bar</span></div>
+      <div><p class="kicker">New UI</p><span class="v">None — every treatment here<br>already ships elsewhere</span></div>
+      <div><p class="kicker">Guards</p><span class="v">3 335 tests, typecheck,<br>iOS bundle: green</span></div>
     </div>
   </header>
 
@@ -535,6 +605,16 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
               </div>
             </div>
+            <div class="tabbar">
+              <div class="capsule">
+                <div class="slot on"><svg width="23" height="23" viewBox="0 0 24 24" fill="#c6f84f" stroke="#c6f84f" stroke-width="1.4" stroke-linejoin="round"><path d="M3 10.6 12 3.5l9 7.1V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></div>
+                <div class="slot"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 4 0V3M9 10v11M17 3c-1.6 1.4-2.4 3.4-2.4 5.6 0 1.6.8 2.6 2.4 2.6V21"/></svg><span>Nutrition</span></div>
+                <div class="slot"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4 7 8 5.5L20 7"/></svg><span>Messages</span></div>
+                <div class="slot"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20a7.4 7.4 0 0 1 14.4 0"/></svg><span>Profile</span></div>
+              </div>
+              <div class="circle"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#c6f84f" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg><span>Train</span></div>
+            </div>
+            <p class="barnote was">the circle offers Train, on a screen about food</p>
           </div>
           <p class="note" style="font-size:13.5px">
             Five left edges. The field is the loudest: it spans the whole 12dp column, so the one
@@ -642,6 +722,16 @@
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
               </div>
             </div>
+            <div class="tabbar">
+              <div class="capsule">
+                <div class="slot on"><svg width="23" height="23" viewBox="0 0 24 24" fill="#c6f84f" stroke="#c6f84f" stroke-width="1.4" stroke-linejoin="round"><path d="M3 10.6 12 3.5l9 7.1V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Today</span></div>
+                <div class="slot"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v7a2 2 0 0 0 4 0V3M9 10v11M17 3c-1.6 1.4-2.4 3.4-2.4 5.6 0 1.6.8 2.6 2.4 2.6V21"/></svg><span>Nutrition</span></div>
+                <div class="slot"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5.5" width="18" height="13" rx="2.5"/><path d="m4 7 8 5.5L20 7"/></svg><span>Messages</span></div>
+                <div class="slot"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20a7.4 7.4 0 0 1 14.4 0"/></svg><span>Profile</span></div>
+              </div>
+              <div class="circle"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#c6f84f" stroke-width="2.0" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.6"/><path d="M20 20l-4.2-4.2"/></svg><span>Find</span></div>
+            </div>
+            <p class="barnote now">the circle is this screen&rsquo;s verb</p>
           </div>
           <p class="note" style="font-size:13.5px">
             One object edge and one text column. The field now stands on the same two verticals as the
@@ -656,14 +746,14 @@
 
   <!-- ==================== THE LEDGER ==================== -->
   <section>
-    <div class="sechead">
+    <div class="sechead" id="the-changes">
       <p class="kicker">The changes</p>
-      <h2>Twenty, grouped by what they fix</h2>
+      <h2>Twenty-four, grouped by what they fix</h2>
       <p class="note">
         Not a sequence — a list, labelled by the axis each one lives on. Nothing here is invented:
         every "after" is a treatment the app already ships somewhere else, usually on the hub screen
-        this picker is opened from. The last ten are rounds two and three — the consistency I had left
-        half-finished, the motion, and the grid.
+        this picker is opened from. After the first ten come rounds two, three and four — the consistency left
+        half-finished, the motion, the grid, and the bottom bar.
       </p>
     </div>
 
@@ -985,7 +1075,7 @@
 
 
       <!-- ============ ROUND TWO ============ -->
-      <div class="change roundtwo">
+      <div class="change roundtwo" id="round-two">
         <div class="axis"><span class="n" style="color:var(--sand)">Round two</span></div>
         <div class="say">
           <h3>The half I had left undone</h3>
@@ -1171,7 +1261,7 @@
 
 
       <!-- ============ ROUND THREE ============ -->
-      <div class="change roundtwo">
+      <div class="change roundtwo" id="round-three">
         <div class="axis"><span class="n" style="color:var(--teal)">Round three</span></div>
         <div class="say">
           <h3>The grid</h3>
@@ -1351,6 +1441,162 @@
         </div>
       </div>
 
+
+      <!-- ============ ROUND FOUR ============ -->
+      <div class="change roundtwo" id="round-four">
+        <div class="axis"><span class="n" style="color:var(--violet)">Round four</span></div>
+        <div class="say">
+          <h3>The bar, and a wall that had already fallen</h3>
+          <p>
+            From a screenshot of Apple Podcasts: a glass capsule with a detached circular Search
+            beside it, and the note that our meal pages should do the same. They already could —
+            HYBRID's bar <em>is</em> that anatomy, and on iOS 26 both pieces are the system's own
+            Liquid Glass, inherited rather than rebuilt. Nothing had to be drawn. The only question
+            was what the circle carries, and answering it turned up a constraint in our own notes
+            that had quietly stopped being true.
+          </p>
+        </div>
+        <div class="demo" style="justify-content:center">
+          <span class="mono" style="font-size:12px;color:var(--ash);line-height:1.8">
+            0 new components<br>1 stale blocker deleted<br>1 other feature unblocked
+          </span>
+        </div>
+      </div>
+
+      <!-- 21 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">The circle</span>
+          <span class="where">nav-bar.ts<br>(tabs)/_layout.tsx</span>
+        </div>
+        <div class="say">
+          <h3>On the meal pages, the circle is this screen's verb</h3>
+          <p>
+            It carried <b>Train</b> — the one thing nobody is doing at 23:08 with Snacks open. On the
+            picker it now carries the magnifier and the word <b>Find</b>; everywhere else it is the
+            dumbbell, untouched. That is not a new idea, it is the contract finally being honoured:
+            <code>auroraNavAction</code> has always resolved the verb per surface (Train everywhere,
+            Add post on the feed) and mobile simply could not follow.
+          </p>
+          <p>
+            <b>And it does not reopen the spent-slot trade.</b> The recorded decision is that the
+            detached slot is never spent on a cross-app search we do not have. This is not a search
+            destination — it is that screen's verb, in exactly the sense Add post is the feed's — and
+            it resolves <em>from a surface</em>, so it can never become the app-wide default. There is
+            a test holding that line.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was — everywhere, including here</span>
+            <div style="display:flex;justify-content:center"><div class="circle"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#c6f84f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10"/></svg><span>Train</span></div></div>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now — on the meal pages only</span>
+            <div style="display:flex;justify-content:center"><div class="circle"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#c6f84f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.6"/><path d="M20 20l-4.2-4.2"/></svg><span>Find</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 22 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Stale blocker</span>
+          <span class="where">capabilities.ts<br>×2 entries</span>
+        </div>
+        <div class="say">
+          <h3>"The native bar cannot do this" stopped being true, and nobody had checked</h3>
+          <p>
+            Two places in the codebase said the system tab bar could not carry a contextual action:
+            <em>"a native trigger is a ROUTE, not a button, and expo-router's unstable native tabs
+            expose no tabPress intercept to repurpose the press."</em> The first half is still true.
+            The second is not, in the version we have installed: a trigger now takes
+            <code>listeners.tabPress</code>, and a trigger marked <code>disabled</code>
+            <b>still emits that press</b> while skipping navigation. A disabled trigger plus a press
+            listener is exactly a button.
+          </p>
+          <p>
+            So actions grew a <code>kind</code>. <code>route</code> — the circle <em>goes</em>
+            somewhere, an ordinary trigger. <code>screen</code> — it <em>acts</em> on the surface in
+            front of you, a disabled trigger whose press the surface handles. The route
+            <code>name</code> stays <code>log</code> in every state, because <code>name</code> is how
+            the navigator identifies the trigger: swapping it would rename a route under a mounted
+            navigator rather than change a button.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was — recorded as a platform wall</span>
+            <span class="mono" style="font-size:11.5px;color:var(--ash);line-height:1.6">nav-action-morph-mobile: <span style="color:var(--terra)">planned</span><br>feed-composer-retire: <span style="color:var(--terra)">blocked</span></span>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now</span>
+            <span class="mono" style="font-size:11.5px;color:var(--ash);line-height:1.6">nav-action-morph-mobile: <span style="color:var(--lime)">shipped</span><br>feed-composer-retire: <span style="color:var(--lime)">planned</span> — ~92dp<br>of feed band reclaimable</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 23 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">The press</span>
+          <span class="where">lib/nav-surface.ts</span>
+        </div>
+        <div class="say">
+          <h3>It brings the field back under your thumb</h3>
+          <p>
+            A search button on a screen that already has a search field sounds redundant until you
+            scroll. The field is deliberately <em>in flow</em> — it travels with the decision it
+            belongs to rather than pinning — so twenty rows into Recent there was no way back to it
+            but to scroll up. The press scrolls the picker home, puts the cursor in the field and
+            gives a light haptic. The bottom-right corner is where the thumb already is.
+          </p>
+          <p>
+            The screen publishes both its surface <em>and</em> its handler through a small module
+            store, cleared on unmount so no screen can leave a stale verb — or a dead ref — behind it
+            in the bar. Deliberately not a context: a provider would have to sit above the tabs
+            layout, and every screen in the app would re-render for one trigger.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl now">The channel</span>
+            <span class="mono" style="font-size:11.5px;color:var(--ash);line-height:1.7">screen&nbsp;→&nbsp;setNavSurface("food-picker")<br>screen&nbsp;→&nbsp;setNavAction(focusField)<br>bar&nbsp;&nbsp;&nbsp;&nbsp;→&nbsp;useNavSurface()<br>press&nbsp;&nbsp;→&nbsp;runNavAction()</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 24 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Label</span>
+          <span class="where">AURORA_NAV_ACTIONS</span>
+        </div>
+        <div class="say">
+          <h3>"Find a food" became "Find", because the mockup measured it</h3>
+          <p>
+            Drawing the bar into this page at its real geometry is what caught it: three words under a
+            56dp circle truncate to "Find a f…" on the device metrics, and a label the bar cannot
+            deliver is worse than a shorter one. <b>Find</b> is one word, a verb, and the same
+            register as Train — the circle carries a verb, never a noun. There is now a test capping
+            every action's label at the budget Train set, so the next one cannot quietly exceed it.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was</span>
+            <div style="display:flex;justify-content:center"><div class="circle"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#c6f84f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.6"/><path d="M20 20l-4.2-4.2"/></svg><span style="font-size:9px">Find a f…</span></div></div>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now</span>
+            <div style="display:flex;justify-content:center"><div class="circle"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#c6f84f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.6"/><path d="M20 20l-4.2-4.2"/></svg><span>Find</span></div></div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -1360,8 +1606,10 @@
       <p class="kicker">The diff</p>
       <h2>What it touched</h2>
       <p class="note">
-        Mobile only. The web client is retired, and its <code>nutrition-kit</code> twin went with it —
-        the phone is the golden standard for every treatment above.
+        Mobile and the shared core. The web client is retired, and its <code>nutrition-kit</code> twin
+        went with it — the phone is the golden standard for every treatment above. What still lives in
+        <code>core</code> is the part both the app and the admin panel read: the nav contract, the
+        engines, and the capabilities registry.
       </p>
     </div>
 
@@ -1399,9 +1647,27 @@
               the width outright.</td>
           </tr>
           <tr>
+            <td class="f">packages/core/src/nav-bar.ts</td>
+            <td class="d">A third action (<code>search</code>) and a <code>kind</code> on every one —
+              <code>route</code> navigates, <code>screen</code> acts on the surface. Plus
+              <code>NAV_SURFACE_FOOD_PICKER</code>, and the anatomy docstring corrected where it
+              claimed the circle never wears a magnifier.</td>
+          </tr>
+          <tr>
+            <td class="f">apps/mobile/lib/nav-surface.ts</td>
+            <td class="d">New. The channel a screen publishes its surface and its press handler
+              through, cleared on unmount.</td>
+          </tr>
+          <tr>
+            <td class="f">app/(tabs)/_layout.tsx</td>
+            <td class="d">The detached trigger is assembled from the visible surface's action —
+              <code>disabled</code> plus <code>listeners.tabPress</code> for a screen action.</td>
+          </tr>
+          <tr>
             <td class="f">packages/core/src/capabilities.ts</td>
-            <td class="d">New <code>nutrition-picker-consistency</code> entry — the ten findings, recorded
-              where the registry rule says they go.</td>
+            <td class="d"><code>nutrition-picker-consistency</code> for the screen work;
+              <code>nav-action-picker-search</code> for the bar; <code>nav-action-morph-mobile</code>
+              corrected from planned to shipped, and <code>feed-composer-retire</code> un-blocked.</td>
           </tr>
           <tr>
             <td class="f">design/…-before-after.html</td>
@@ -1412,9 +1678,10 @@
     </div>
 
     <div class="checks">
-      <div class="check"><div class="k">core tests</div><div class="v">3 254 passed</div></div>
+      <div class="check"><div class="k">core tests</div><div class="v">3 257 passed</div></div>
       <div class="check"><div class="k">mobile tests</div><div class="v">78 passed</div></div>
       <div class="check"><div class="k">design-token ratchet</div><div class="v">21 passed</div></div>
+      <div class="check"><div class="k">web parity guard</div><div class="v">13 passed</div></div>
       <div class="check"><div class="k">typecheck</div><div class="v">clean</div></div>
       <div class="check"><div class="k">iOS bundle</div><div class="v">exports (11 MB)</div></div>
       <div class="check"><div class="k">ratchet movement</div><div class="v plain">−3 raw letterSpacing<br>−2 raw fontSize<br>−2 hand-rolled meters</div></div>
@@ -1426,6 +1693,38 @@
       someone else's sweep spends debt this change did not pay. The counts moved down, which is the
       direction the ratchet wants.
     </p>
+
+    <div class="open">
+      <h3>What is not verified, and what is still open</h3>
+      <ul>
+        <li>
+          <b>None of the motion has run on a device.</b> The sandbox has no simulator, so the rolling
+          figure, the travelling fills, the flying rule and the tab-bar press are exercised by
+          typecheck, the test suites and the iOS bundle export — nothing more. The first TestFlight
+          build is where they are actually seen.
+        </li>
+        <li>
+          <b>The one I would check first:</b> whether iOS renders a <code>disabled</code> search-role
+          item at full strength or dims it. If it dims, the circle would read as unavailable, and the
+          fix is to keep the trigger enabled and point its route at a redirect instead.
+        </li>
+        <li>
+          <b>Two hand-rolled meters remain in nutrition</b>, logged rather than swept in: the insights
+          card's macro-balance row (a horizontal label|track|value — a different layout) and the
+          WHO/EFSA label panel (a 3dp reference bar — a different claim).
+        </li>
+        <li>
+          <b>The <code>HIT_TARGET</code> guard only polices the shared primitives.</b> A hand-rolled
+          field anywhere else can sit at 43dp and nothing fails — which is how the picker's field
+          did. Widening that rule is its own sweep.
+        </li>
+        <li>
+          <b>The feed's Add post morph is now a small follow-on, not a platform wall.</b> It needs the
+          Today hub to publish its surface and a compose sheet behind a <code>screen</code>-kind
+          action; the mechanism is already carrying the picker.
+        </li>
+      </ul>
+    </div>
   </section>
 
   <footer>

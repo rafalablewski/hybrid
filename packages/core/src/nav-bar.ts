@@ -16,7 +16,7 @@ import type { AuroraIconName } from "./theme/icons";
  * there, so the slot carries the app's VERB in the accent colour — the "go"
  * colour, which the grammar reserves for things that act. The action is
  * CONTEXTUAL by design (auroraNavAction): Train everywhere, Add post on the
- * feed, Find a food on the add-to-meal picker — each surface's own primary
+ * feed, Find on the add-to-meal picker — each surface's own primary
  * verb, and on two of the three that verb is not training.
  *
  * The circle DOES wear a magnifier on the picker, and that is not the trade
@@ -72,14 +72,14 @@ export const AURORA_NAV_TABS: readonly AuroraNavTab[] = [
  * resolved per surface by auroraNavAction(): TRAIN by default (it opens the
  * Train launcher, exactly what the retired Train tab did), ADD POST on the
  * feed, where the composer — not the gym — is the thing the athlete came to
- * do, and FIND A FOOD on the add-to-meal picker. The morph is a glyph
+ * do, and FIND on the add-to-meal picker. The morph is a glyph
  * crossfade inside the same circle, never a second button. Glyphs are the
  * kit's own: the shared inline dumbbell, the `list-add` compose mark the
  * quick-log already wears, and the `search` magnifier.
  *
  * ── TWO KINDS OF ACTION, AND THE DIFFERENCE IS LOAD-BEARING ────────────────
- * Train and Add post are DESTINATIONS: the circle goes somewhere. Find a food
- * is a SCREEN ACTION: the circle acts on the surface already in front of you —
+ * Train and Add post are DESTINATIONS: the circle goes somewhere. Find is a
+ * SCREEN ACTION: the circle acts on the surface already in front of you —
  * it puts the cursor in the picker's field and brings that field back under
  * your thumb, which is the one thing the picker could not do once the list had
  * scrolled the field off the top. On the native bar those are implemented
@@ -116,7 +116,11 @@ export type AuroraNavAction = {
 export const AURORA_NAV_ACTIONS: Record<AuroraNavActionId, AuroraNavAction> = {
   train: { id: "train", glyph: "train", labelKey: "nav.train", label: "Train", kind: "route" },
   post: { id: "post", glyph: "list-add", labelKey: "nav.addPost", label: "Add post", kind: "route" },
-  search: { id: "search", glyph: "search", labelKey: "nav.findFood", label: "Find a food", kind: "screen" },
+  // ONE WORD, like Train. The label sits under a 56dp circle and iOS truncates
+  // what does not fit: "Find a food" measured out to "Find a f…" on the device
+  // metrics, which is worse than saying less. "Find" is the same register as
+  // the other two — the circle carries a verb, never a noun.
+  search: { id: "search", glyph: "search", labelKey: "nav.find", label: "Find", kind: "screen" },
 } as const;
 
 /** The surface id the add-to-meal picker publishes while it is the visible
