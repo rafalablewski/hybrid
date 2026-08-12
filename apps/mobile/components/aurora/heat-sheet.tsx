@@ -8,19 +8,23 @@ import {
   heatIntensity,
   heatSittings,
   fmtTemp,
+  leading,
   space,
+  tracking,
   type HeatProtocol,
   type WeightUnit,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
-import { fs, F, leading } from "../../lib/ui";
+import { fs, F, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { haptic } from "../../lib/haptics";
 import { deleteHeat, logHeat } from "../../lib/api";
 import { useHeatSignalsQuery } from "../../lib/queries";
 import Sheet from "./sheet";
-import { RADIUS } from "./kit";
-import { NativeDateField, NativeStepper, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { ADrawer, APill, ASegment, AScrubField } from "./kit";
+import { AuroraIcon } from "./icons";
+import { RollingNumber } from "./rolling-number";
+import { NativeDateField, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 
 /**
  * LOG HEAT — the sauna sheet.
@@ -30,16 +34,29 @@ import { NativeDateField, NativeStepper, LIQUID_GLASS_SUPPORTED } from "./swiftu
  * there is no import path, no device match and nothing to wait for. Both halves
  * are the athlete's own: how long, and how hot.
  *
- * WHICH IS WHY THIS SHEET IS BUILT OUT OF SYSTEM CONTROLS. When a value is
- * always going to be nudged rather than typed — a round number near the last
- * round number — SwiftUI's own controls are simply better than anything we
- * would draw: `Stepper` brings repeat-on-hold, disabled ends at min/max and the
- * adjustable VoiceOver trait; the segmented `Picker` brings the platform's
- * selection behaviour and its focus ring; `DatePicker` brings the calendar
- * popover everybody already knows how to drive. A pair of hand-rolled ±
- * buttons gets none of it. Off-iOS every one of them returns null and the
- * plain RN rows below carry the sheet on their own — the presets are the floor,
- * the native layer is the refinement.
+ * WHICH IS WHY IT IS BUILT OUT OF THE KIT AND NOTHING ELSE. It used to be built
+ * out of native SwiftUI leaves called directly — three `GlassSegment`s, two
+ * `NativeStepper`s, a `NativeDateField`, and private off-iOS copies of two kit
+ * components — which cost it three separate defects. A `Host matchContents`
+ * lays out at its own intrinsic size, so each stepper wrapped in a bordered
+ * `space-between` row ESCAPED that row: the ± capsule floated clear of the
+ * field and the value fell to the bottom-left of an empty 108dp rectangle
+ * (twice, plus the date field). The segments were tinted `C.amber` where the
+ * kit's one segmented control does not, and their off-iOS fallback was a
+ * static pill row where every other screen gets `LiquidSeg` — which is now
+ * what `ASegment` draws on every platform, so going through the kit is also
+ * how this sheet stopped speaking SF Pro eight dp above type set in Archivo.
+ * And each value carried TWO controls — a preset segment and a stepper, both
+ * writing the same number, with the segment holding NO selection at all the
+ * moment the stepper moved the value off the preset grid.
+ *
+ * SO THE SHEET ASKS FOR EACH VALUE ONCE. `AScrubField` is the figure itself:
+ * drag across it for the long moves, nudge with the bare −/＋ for the exact
+ * one. That deleted the preset rows, and with them the five uppercase kickers
+ * that were naming what the values already said — "HOW LONG" above "20 min" is
+ * the interface talking about itself. The sheet went from ~790dp of scroll to a
+ * panel that rests without scrolling at all, which is the only measurement that
+ * matters for a log you open in a towel.
  *
  * TEMPERATURE IS NOT DECORATION. Twenty minutes at 90 °C and twenty minutes in
  * a 55 °C infrared cabin are not the same stimulus, so minutes are converted to
@@ -47,23 +64,10 @@ import { NativeDateField, NativeStepper, LIQUID_GLASS_SUPPORTED } from "./swiftu
  * shows that conversion live, at the moment of entry, so the athlete can see
  * that hotter is worth more before the engine tells them so — a model you meet
  * as a result is a black box; a model you meet as you type is a claim you can
- * argue with.
+ * argue with. The derivation line beneath it speaks ONLY when it has something
+ * to say: at the modality's own reference a minute is a minute, and printing
+ * "counts 1.00×" there is noise wearing the voice of an explanation.
  */
-
-/** Duration presets, in minutes. Round numbers near the last round number. */
-const MINUTE_PRESETS = [10, 15, 20, 30];
-
-/**
- * Temperature presets, per protocol, spanning the real range each modality
- * actually runs at. Offering 70/80/90/100 for a steam room would be offering
- * temperatures no steam room reaches — the presets have to be the ones an
- * athlete could plausibly tap, or they are decoration with a keypad behind them.
- */
-const TEMP_PRESETS: Record<HeatProtocol, number[]> = {
-  sauna: [70, 80, 90, 100],
-  steam: [40, 45, 50],
-  infrared: [45, 55, 60],
-};
 
 export function HeatSheet({
   visible,
@@ -96,8 +100,14 @@ export function HeatSheet({
     setTempC(HEAT_PROTOCOLS[p].refC);
   };
   const [when, setWhen] = useState<Date>(initialAt ?? new Date());
+  // The clock reads "Now" until it is opened. A compact DatePicker always draws
+  // its own two tokens, so the reduction has to be ours: the word at rest, the
+  // platform's control the moment you say you want a different time.
+  const [pickWhen, setPickWhen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [msg, setMsg] = useState("");
+  const [showRecent, setShowRecent] = useState(false);
 
   // The clock is re-read every time the sheet OPENS, not once when it mounts.
   // This component stays alive behind Today for as long as the app is open, so
@@ -110,13 +120,19 @@ export function HeatSheet({
   useEffect(() => {
     if (!visible) return;
     setWhen(initialAt ?? new Date());
+    setPickWhen(!!initialAt);
+    setShowRecent(false);
+    setFailed(false);
     setMsg("");
   }, [visible, initialAt]);
 
   const { data: heatRows = [] } = useHeatSignalsQuery();
   const [removing, setRemoving] = useState<string | null>(null);
   // The three most recent sittings, so a mis-tap is correctable here rather
-  // than nowhere. More than three would turn a log sheet into a history screen.
+  // than nowhere. More than three would turn a log sheet into a history screen
+  // — and even three do, if they are always on screen, which is why they are
+  // behind an expander now. A bare ＋ with an ash count: it GROWS the sheet in
+  // place, it does not go anywhere (the exit-affordance rule).
   const recent = useMemo(() => heatSittings(heatRows).slice(0, 3), [heatRows]);
 
   const remove = async (ids: string[]) => {
@@ -128,20 +144,25 @@ export function HeatSheet({
     else setMsg(t("w.recovery.heat.failed"));
   };
 
-  const equiv = useMemo(() => minutes * heatIntensity(tempC, protocol), [minutes, tempC, protocol]);
+  const intensity = useMemo(() => heatIntensity(tempC, protocol), [tempC, protocol]);
+  const equiv = minutes * intensity;
   // Zero equivalent minutes is a real answer, not an error: below the floor the
   // room is warm rather than thermally stressful, and the sheet says so instead
   // of letting the athlete save something that will silently score nothing.
   const worthless = equiv <= 0;
+  // At the modality's own reference the multiplier IS 1, and a line saying so
+  // explains nothing. Silence when there is nothing to explain.
+  const plain = Math.abs(intensity - 1) < 0.005;
 
   const save = async () => {
     if (saving) return;
     setSaving(true);
+    setFailed(false);
     setMsg("");
     const ok = await logHeat(minutes, tempC, protocol, when.toISOString());
     setSaving(false);
     if (!ok) {
-      setMsg(t("w.recovery.heat.failed"));
+      setFailed(true);
       return;
     }
     haptic.success();
@@ -149,115 +170,126 @@ export function HeatSheet({
     onClose();
   };
 
-  const label = { fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase" as const, letterSpacing: 0.9 };
-  const rowBox = {
-    flexDirection: "row" as const,
-    alignItems: "center" as const,
-    justifyContent: "space-between" as const,
-    gap: space.ms,
-    borderWidth: 1,
-    borderColor: C.line,
-    borderRadius: RADIUS.field,
-    paddingVertical: 11,
-    paddingHorizontal: 14,
+  // The failure REPORTS, then clears. APill's error state shakes and knocks
+  // once; leaving it red forever would turn an event into a description.
+  useEffect(() => {
+    if (!failed) return undefined;
+    const id = setTimeout(() => setFailed(false), 2400);
+    return () => clearTimeout(id);
+  }, [failed]);
+
+  const isNow = !initialAt && Math.abs(Date.now() - when.getTime()) < 60_000;
+  const label = {
+    fontFamily: F.mono,
+    fontSize: fs.micro,
+    color: C.ash,
+    textTransform: "uppercase" as const,
+    letterSpacing: tracking.label,
   };
+  const rule = { borderBottomWidth: 1, borderBottomColor: C.line };
 
   return (
-    <Sheet visible={visible} onClose={onClose} title={t("w.recovery.heat.title")} sub={t("w.recovery.heat.sub")}>
+    <Sheet visible={visible} onClose={onClose} title={t("w.recovery.heat.title")}>
       {/* ── WHICH KIND ───────────────────────────────────────────────────
           First, because it decides what the temperature below it MEANS: 45 °C
-          is nothing in a dry sauna and a full dose in a steam room. */}
-      <Text style={{ ...label, marginBottom: 8 }}>{t("w.recovery.heat.kind")}</Text>
-      <View style={{ flexDirection: "row", gap: 7 }}>
-        {HEAT_PROTOCOL_LIST.map((p) => {
-          const on = p === protocol;
-          return (
-            <Pressable
-              key={p}
-              onPress={() => pickProtocol(p)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              style={{
-                flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: RADIUS.pill,
-                backgroundColor: on ? C.amber : "transparent",
-                borderWidth: on ? 0 : 1, borderColor: C.line,
-              }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.onAccent : C.ash }}>
-                {t(`w.recovery.heat.protocol.${p}`)}
-              </Text>
-            </Pressable>
-          );
-        })}
+          is nothing in a dry sauna and a full dose in a steam room. The kit's
+          one segmented control, so it tints with the app accent and falls back
+          to the gesture-tracked lens off iOS — and it needs no kicker, because
+          three modality names say what they are. */}
+      <View style={{ marginTop: space.xl }}>
+        <ASegment
+          options={HEAT_PROTOCOL_LIST.map((p) => ({ id: p, label: t(`w.recovery.heat.protocol.${p}`) }))}
+          value={protocol}
+          onPick={pickProtocol}
+        />
       </View>
 
-      {/* ── HOW LONG ─────────────────────────────────────────────────────── */}
-      <Text style={{ ...label, marginTop: 18, marginBottom: 8 }}>{t("w.recovery.heat.howLong")}</Text>
-      <PresetRow C={C} values={MINUTE_PRESETS} value={minutes} onPick={setMinutes} suffix="" />
-      <View style={{ ...rowBox, marginTop: 10 }}>
-        {LIQUID_GLASS_SUPPORTED ? (
-          <NativeStepper
-            label={`${minutes} ${t("w.recovery.heat.min")}`}
+      {/* ── THE TWO VALUES ───────────────────────────────────────────────
+          The figure is the control. The unit beside it is the label. */}
+      <View style={{ marginTop: space.lg }}>
+        <View style={rule}>
+          <AScrubField
             value={minutes}
-            step={5}
+            onChange={setMinutes}
             min={HEAT_MINUTES_BOUNDS[0]}
             max={HEAT_MINUTES_BOUNDS[1]}
-            onChange={setMinutes}
-            fontFamily={F.mono}
-            fontSize={15}
-            fg={C.chalk}
-            tintColor={C.amber}
-          />
-        ) : (
-          <Nudge C={C} label={`${minutes} ${t("w.recovery.heat.min")}`} step={5} value={minutes} onChange={setMinutes} bounds={HEAT_MINUTES_BOUNDS} />
-        )}
-      </View>
-
-      {/* ── HOW HOT ──────────────────────────────────────────────────────── */}
-      <Text style={{ ...label, marginTop: 18, marginBottom: 8 }}>{t("w.recovery.heat.howHot")}</Text>
-      <PresetRow C={C} values={TEMP_PRESETS[protocol]} value={tempC} onPick={setTempC} suffix="°" />
-      <View style={{ ...rowBox, marginTop: 10 }}>
-        {LIQUID_GLASS_SUPPORTED ? (
-          <NativeStepper
-            label={fmtTemp(tempC, weightUnit)}
-            value={tempC}
             step={5}
+            suffix={t("w.recovery.heat.min")}
+            a11y={t("w.recovery.heat.howLong")}
+          />
+        </View>
+        <View style={rule}>
+          <AScrubField
+            value={tempC}
+            onChange={setTempC}
             min={HEAT_TEMP_BOUNDS[0]}
             max={HEAT_TEMP_BOUNDS[1]}
-            onChange={setTempC}
-            fontFamily={F.mono}
-            fontSize={15}
-            fg={C.chalk}
-            tintColor={C.amber}
+            step={5}
+            format={(v) => fmtTemp(v, weightUnit)}
+            a11y={t("w.recovery.heat.howHot")}
           />
-        ) : (
-          <Nudge C={C} label={fmtTemp(tempC, weightUnit)} step={5} value={tempC} onChange={setTempC} bounds={HEAT_TEMP_BOUNDS} />
-        )}
+        </View>
       </View>
 
-      {/* ── THE MODEL, SHOWN AS IT IS ENTERED ────────────────────────────── */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, marginTop: 12, paddingHorizontal: 4 }}>
-        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash }}>
-          {worthless ? t("w.recovery.heat.tooCool").replace("{n}", String(HEAT_PROTOCOLS[protocol].floorC)) : t("w.recovery.heat.thatIs")}
-        </Text>
-        {!worthless && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>
-            {t("w.recovery.heat.equiv").replace("{n}", String(Math.round(equiv)))}
+      {/* ── THE MODEL, SHOWN AS IT IS ENTERED ────────────────────────────
+          No card around it. A border and a fill do not make a number
+          important; scale does, and this is the largest thing on the sheet
+          after the two values it is derived from. */}
+      <View style={{ marginTop: space.lg }}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+          <RollingNumber
+            value={String(Math.round(equiv))}
+            style={{
+              fontFamily: F.black,
+              fontSize: fs.display,
+              color: worthless ? C.ash : txt(C, C.amber),
+              lineHeight: leading(fs.display, "tight"),
+              letterSpacing: tracking.display,
+            }}
+          />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>
+            {t("w.recovery.heat.equivWord")}
+          </Text>
+        </View>
+        {(worthless || !plain) && (
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: space.xs, lineHeight: leading(fs.caption) }}>
+            {worthless
+              ? t("w.recovery.heat.tooCool").replace("{n}", String(HEAT_PROTOCOLS[protocol].floorC))
+              : t("w.recovery.heat.counts")
+                  .replace("{x}", intensity.toFixed(2))
+                  .replace("{t}", fmtTemp(HEAT_PROTOCOLS[protocol].refC, weightUnit))}
           </Text>
         )}
       </View>
 
-      {/* ── WHEN ─────────────────────────────────────────────────────────── */}
-      <Text style={{ ...label, marginTop: 18, marginBottom: 8 }}>{t("w.recovery.heat.when")}</Text>
-      <View style={rowBox}>
-        {LIQUID_GLASS_SUPPORTED ? (
+      {/* ── WHEN ─────────────────────────────────────────────────────────
+          One word for the case that is almost every case. The exception —
+          a back-dated sitting — costs one tap and then it is the system's own
+          calendar, which everybody already knows how to drive. */}
+      <View style={{ marginTop: space.lg, minHeight: 34, justifyContent: "center" }}>
+        {LIQUID_GLASS_SUPPORTED && pickWhen ? (
           <NativeDateField
             value={when}
             onChange={setWhen}
             latest={new Date()}
             label={t("w.recovery.heat.when")}
-            tintColor={C.amber}
+            tintColor={C.lime}
           />
+        ) : LIQUID_GLASS_SUPPORTED ? (
+          <Pressable
+            onPress={() => setPickWhen(true)}
+            hitSlop={HIT_SLOP}
+            accessibilityRole="button"
+            accessibilityLabel={t("w.recovery.heat.when")}
+            style={{ flexDirection: "row", alignItems: "center", gap: space.xs, alignSelf: "flex-start" }}
+          >
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>
+              {isNow
+                ? t("w.recovery.heat.now")
+                : when.toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+            </Text>
+            <AuroraIcon name="chevron-down" size={14} color={C.ash} />
+          </Pressable>
         ) : (
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>
             {when.toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
@@ -265,131 +297,80 @@ export function HeatSheet({
         )}
       </View>
 
-      <Pressable
-        onPress={save}
-        disabled={saving || worthless}
-        accessibilityRole="button"
-        accessibilityLabel={t("w.recovery.heat.save")}
-        style={{
-          backgroundColor: C.amber,
-          borderRadius: RADIUS.pill,
-          paddingVertical: 15,
-          alignItems: "center",
-          marginTop: 20,
-          opacity: saving || worthless ? 0.45 : 1,
-        }}
-      >
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", letterSpacing: 1.2, color: C.onAccent }}>
-          {saving ? "…" : t("w.recovery.heat.save").toUpperCase()}
-        </Text>
-      </Pressable>
+      {/* The shared pill, not a hand-rolled one: it holds its width through the
+          commit (the idle label is laid out invisibly under the state), gates a
+          second press while in flight, announces `busy`, and reports a failure
+          in the button that failed rather than in a line underneath it. */}
+      <View style={{ marginTop: space.xl }}>
+        <APill
+          label={t("w.recovery.heat.save")}
+          onPress={save}
+          disabled={worthless}
+          state={saving ? "saving" : failed ? "error" : "idle"}
+        />
+      </View>
 
       {/* ── UNDO A MIS-TAP ───────────────────────────────────────────────
           Both rows a sitting wrote, removed together. Without this the only
           way to correct a fat-fingered 90-minute entry would be to log a
-          second one on top of it, and the engine would happily sum them. */}
+          second one on top of it, and the engine would happily sum them.
+          Behind an expander: it is a correction path, not a third of the
+          resting sheet. */}
       {recent.length > 0 && (
-        <View style={{ marginTop: 20 }}>
-          <Text style={{ ...label, marginBottom: 8 }}>{t("w.recovery.heat.recent")}</Text>
-          {recent.map((x) => (
-            <View key={x.ts} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
-                {new Date(x.ts).toLocaleDateString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
-              </Text>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
-                  {t(`w.recovery.heat.protocol.${x.protocol}`)} – {x.minutes} {t("w.recovery.heat.min")} – {fmtTemp(x.tempC, weightUnit)}
-                </Text>
-                <Pressable
-                  onPress={() => remove(x.ids)}
-                  disabled={!x.ids.length || removing === x.ts}
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel={t("w.recovery.heat.remove")}
+        <View style={{ marginTop: space.xl }}>
+          <Pressable
+            onPress={() => setShowRecent((v) => !v)}
+            hitSlop={HIT_SLOP}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showRecent }}
+            accessibilityLabel={t("w.recovery.heat.recent")}
+            style={{ flexDirection: "row", alignItems: "center", gap: space.sm, alignSelf: "flex-start" }}
+          >
+            <Text style={label}>{t("w.recovery.heat.recent")}</Text>
+            {/* Bare ＋/− in ash, no ring — it grows the sheet in place. */}
+            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>
+              {showRecent ? "−" : `＋ ${recent.length}`}
+            </Text>
+          </Pressable>
+          <ADrawer open={showRecent}>
+            <View style={{ marginTop: space.sm }}>
+              {recent.map((x) => (
+                <View
+                  key={x.ts}
+                  style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), opacity: x.ids.length ? 1 : 0.35 }}>
-                    {removing === x.ts ? "…" : "×"}
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
+                    {new Date(x.ts).toLocaleDateString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
                   </Text>
-                </Pressable>
-              </View>
+                  <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>
+                    {t(`w.recovery.heat.protocol.${x.protocol}`)}
+                  </Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
+                    {x.minutes} {t("w.recovery.heat.min")}   {fmtTemp(x.tempC, weightUnit)}
+                  </Text>
+                  <Pressable
+                    onPress={() => remove(x.ids)}
+                    disabled={!x.ids.length || removing === x.ts}
+                    hitSlop={HIT_SLOP}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("w.recovery.heat.remove")}
+                  >
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: txt(C, C.red), opacity: x.ids.length ? 1 : 0.35 }}>
+                      {removing === x.ts ? "…" : "×"}
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
             </View>
-          ))}
+          </ADrawer>
         </View>
       )}
 
       {!!msg && (
-        <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10, lineHeight: leading(fs.caption) }}>
+        <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: space.ms, lineHeight: leading(fs.caption) }}>
           {msg}
         </Text>
       )}
     </Sheet>
-  );
-}
-
-/** The off-iOS floor for a preset row — the same choices, drawn by us. */
-function PresetRow({
-  C, values, value, onPick, suffix,
-}: {
-  C: ReturnType<typeof useTheme>["palette"];
-  values: number[];
-  value: number;
-  onPick: (v: number) => void;
-  suffix: string;
-}) {
-  return (
-    <View style={{ flexDirection: "row", gap: 7 }}>
-      {values.map((v) => {
-        const on = v === value;
-        return (
-          <Pressable
-            key={v}
-            onPress={() => onPick(v)}
-            accessibilityRole="button"
-            accessibilityState={{ selected: on }}
-            style={{
-              flex: 1,
-              alignItems: "center",
-              paddingVertical: 9,
-              borderRadius: RADIUS.pill,
-              backgroundColor: on ? C.amber : "transparent",
-              borderWidth: on ? 0 : 1,
-              borderColor: C.line,
-            }}
-          >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: on ? C.onAccent : C.ash }}>
-              {v}{suffix}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-/** The off-iOS floor for a stepper. Deliberately plain: on iOS nobody sees it,
- *  and everywhere else it only has to work. */
-function Nudge({
-  C, label, value, step, onChange, bounds,
-}: {
-  C: ReturnType<typeof useTheme>["palette"];
-  label: string;
-  value: number;
-  step: number;
-  onChange: (v: number) => void;
-  bounds: readonly [number, number];
-}) {
-  const set = (v: number) => onChange(Math.max(bounds[0], Math.min(bounds[1], v)));
-  return (
-    <>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk }}>{label}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
-        <Pressable onPress={() => set(value - step)} hitSlop={12} accessibilityRole="button" accessibilityLabel="−">
-          <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: value <= bounds[0] ? C.line : C.ash }}>−</Text>
-        </Pressable>
-        <Pressable onPress={() => set(value + step)} hitSlop={12} accessibilityRole="button" accessibilityLabel="+">
-          <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: value >= bounds[1] ? C.line : txt(C, C.amber) }}>+</Text>
-        </Pressable>
-      </View>
-    </>
   );
 }

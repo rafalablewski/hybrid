@@ -7,6 +7,7 @@ import {
   heatSittings,
   saunaClearance,
   space,
+  tracking,
   type LoggedSession,
   type RecoveryReport,
 } from "@hybrid/core";
@@ -15,7 +16,8 @@ import { fs, F, PressScale } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useHeatSignalsQuery, useRevalidate } from "../../lib/queries";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
-import { ACard, RADIUS } from "./kit";
+import { ACard } from "./kit";
+import { AuroraIcon } from "./icons";
 import { HeatSheet } from "./heat-sheet";
 
 /**
@@ -96,36 +98,47 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
         ? "w.recovery.heat.clearSlower"
         : "w.recovery.heat.clearSame";
 
-  const meta = week.count > 0
-    ? t("w.recovery.heat.rowMeta").replace("{n}", String(week.count)).replace("{m}", String(week.equiv))
-    : t("w.recovery.heat.rowEmpty");
-
   return (
     <>
       <PressScale onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.recovery.heat.add")}>
-        <ACard style={{ paddingVertical: 13, paddingHorizontal: 16 }}>
+        <ACard>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms }}>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.heat.row")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{meta}</Text>
+              {/* THE FIGURES READ AS FIGURES. This row exists to put the chronic
+                  channel's own number on Today — sittings per week is exactly
+                  what the volume multiplier reads — and a sentence buries it.
+                  Composed rather than joined: a `.replace` into one string is
+                  what the middot rule calls out, and it also leaves nothing for
+                  the type to distinguish. */}
+              {week.count > 0 ? (
+                <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 3 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
+                    <Text style={{ color: C.chalk }}>{week.count}</Text> {t("w.recovery.heat.rowWeek")}
+                  </Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
+                    <Text style={{ color: C.chalk }}>{week.equiv}</Text> {t("w.recovery.heat.rowEquiv")}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3 }}>
+                  {t("w.recovery.heat.rowEmpty")}
+                </Text>
+              )}
             </View>
-            {/* Bare ＋ — it grows in place. No ring, because nothing opens. */}
-            <View
-              style={{
-                width: 30, height: 30, borderRadius: RADIUS.pill,
-                alignItems: "center", justifyContent: "center",
-              }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: txt(C, C.amber) }}>＋</Text>
-            </View>
+            {/* Bare ＋ — it grows in place. No ring, because nothing opens. DRAWN,
+                not typed: the fullwidth ＋ text character took its weight and
+                centring from the mono face, in an app with a vector icon set and
+                a size → stroke rule. */}
+            <AuroraIcon name="plus" size={20} color={txt(C, C.amber)} />
           </View>
         </ACard>
       </PressScale>
 
       {/* Only once it can honestly say something. */}
       {verdictKey && clearance && (
-        <ACard style={{ marginTop: 8, paddingVertical: 14, paddingHorizontal: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+        <ACard style={{ marginTop: space.sm }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
             {t("w.recovery.heat.clearTitle")}
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
