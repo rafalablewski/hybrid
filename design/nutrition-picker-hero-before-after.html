@@ -200,6 +200,12 @@
     text-transform: uppercase; color: var(--ash);
   }
   .ledger-was { font-family: var(--mono); font-size: 10px; color: var(--ash); margin-top: 8px; }
+  .mealtot { margin-left: auto; display: flex; align-items: baseline; gap: 6px; flex: none; }
+  .mealtot[hidden] { display: none; }
+  .mealtot .ml { font-family: var(--mono); font-size: 10px; letter-spacing: .9px;
+                 text-transform: uppercase; color: var(--ash); }
+  .mealtot .mv { font-family: var(--mono); font-weight: 700; font-size: 10px; color: var(--chalk);
+                 font-variant-numeric: tabular-nums; }
 
   /* AMeter — 6dp track, RADIUS.mark (3), label row above */
   .ameter { margin-top: 10px; }
@@ -214,7 +220,7 @@
   .ameter .val { font-family: var(--mono); font-size: 12px; color: var(--ash); flex: none;
                  font-variant-numeric: tabular-nums; }
   .ameter .track { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
-  .ameter .fill  { height: 100%; border-radius: 3px; transition: width .5s cubic-bezier(.22,.9,.3,1); }
+  .ameter .fill  { height: 100%; border-radius: 3px; transition: width 180ms cubic-bezier(.215,.61,.355,1); }
 
   /* the old hand-rolled macro block */
   .macros-was { display: flex; gap: 16px; margin-top: 18px; }
@@ -227,7 +233,7 @@
   .macros-was .val { font-family: var(--mono); font-weight: 700; font-size: 10px; color: var(--chalk);
                      font-variant-numeric: tabular-nums; }
   .macros-was .track { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
-  .macros-was .fill  { height: 3px; border-radius: 2px; transition: width .5s cubic-bezier(.22,.9,.3,1); }
+  .macros-was .fill  { height: 3px; border-radius: 2px; transition: width 180ms cubic-bezier(.215,.61,.355,1); }
 
   .macros-now { display: flex; gap: 16px; margin-top: 8px; }
   .macros-now > div { flex: 1; min-width: 0; }
@@ -257,15 +263,21 @@
   /* the source line (after) */
   .sourceline {
     display: flex; gap: 18px; margin-top: 16px; padding: 0 6px;
-    border-bottom: 1px solid var(--line);
+    border-bottom: 1px solid var(--line); position: relative;
   }
-  .sourceline > div {
-    display: flex; align-items: baseline; gap: 5px;
-    padding-bottom: 11px; margin-bottom: -1px; border-bottom: 2px solid transparent;
+  .sourceline > button {
+    appearance: none; background: none; border: 0; cursor: pointer; font: inherit;
+    display: flex; align-items: baseline; gap: 5px; padding: 0 0 11px;
   }
-  .sourceline > div.on { border-bottom-color: var(--chalk); }
-  .sourceline .nm { font-family: var(--display); font-weight: 600; font-size: 13px; color: var(--ash); }
-  .sourceline > div.on .nm { font-weight: 700; color: var(--chalk); }
+  .sourceline > button:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+  /* The rule TRAVELS — springs.lens (response .35 / damping .68), approximated
+     here as a 350ms curve with the same slight overshoot the phone gets. */
+  .sourceline .rule {
+    position: absolute; left: 6px; bottom: -1px; height: 2px; background: var(--chalk);
+    transition: transform 350ms cubic-bezier(.22,1.3,.36,1), width 350ms cubic-bezier(.22,1.3,.36,1);
+  }
+  .sourceline .nm { font-family: var(--display); font-weight: 600; font-size: 13px; color: var(--ash); transition: color 180ms ease; }
+  .sourceline > button.on .nm { font-weight: 700; color: var(--chalk); }
   .sourceline .ct { font-family: var(--mono); font-weight: 700; font-size: 10px; color: var(--ash); }
 
   /* the list */
@@ -316,6 +328,8 @@
     .change { grid-template-columns: 150px minmax(0, 1fr) minmax(240px, 330px); gap: 26px; align-items: start; }
   }
   .change .axis { display: flex; flex-direction: column; gap: 8px; }
+  .change.roundtwo { background: var(--ink); }
+  .change.roundtwo .say h3 { color: var(--sand); }
   .change .axis .n {
     font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
     text-transform: uppercase; color: var(--lime);
@@ -371,12 +385,12 @@
       A phone screenshot of the food picker, read against the nutrition hub one screen away.
       The two surfaces show the <b>same day's figures</b> and were drawn by two people who never met:
       different face, different colour, different meter, different meaning for the same state — and on
-      iOS the source switcher was a stock SwiftUI control wearing none of it. Ten changes, all of them
-      returns to something the app already decided.
+      iOS the source switcher was a stock SwiftUI control wearing none of it. Fifteen changes, every one of them a
+      return to something the app already decided.
     </p>
     <div class="facts">
       <div><p class="kicker">Screen</p><span class="v">Nutrition → add to meal<br>(<span class="mono">nutrition.tsx</span> view <span class="mono">"add"</span>)</span></div>
-      <div><p class="kicker">Changes</p><span class="v">Ten, across five axes</span></div>
+      <div><p class="kicker">Changes</p><span class="v">Fifteen — ten on the picker,<br>then the finish and the motion</span></div>
       <div><p class="kicker">New concepts</p><span class="v">None — every part of this<br>already ships elsewhere</span></div>
       <div><p class="kicker">Guards</p><span class="v">3 332 tests, typecheck,<br>iOS bundle: green</span></div>
     </div>
@@ -522,6 +536,7 @@
                 <div class="figrow">
                   <span class="fig-now" data-a="fig">2325</span>
                   <span class="figlabel" data-a="figlabel">kcal left today</span>
+                  <span class="mealtot" data-a="mealtot" hidden><span class="ml">Snacks</span><span class="mv" data-a="mealkcal">0</span></span>
                 </div>
                 <div class="ameter">
                   <div class="row"><span class="val" data-a="ledger" style="margin-left:0">0 of 2325 logged</span></div>
@@ -549,11 +564,12 @@
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16M6.5 12h11"/></svg>
               </div>
 
-              <div class="sourceline">
-                <div class="on"><span class="nm">Recent</span><span class="ct" data-a="ct1">0</span></div>
-                <div><span class="nm">Favorites</span><span class="ct">9</span></div>
-                <div><span class="nm">Meals</span><span class="ct">4</span></div>
-                <div><span class="nm">Foods</span><span class="ct">12</span></div>
+              <div class="sourceline" id="sourceline">
+                <button type="button" class="on"><span class="nm">Recent</span><span class="ct" data-a="ct1">0</span></button>
+                <button type="button"><span class="nm">Favorites</span><span class="ct">9</span></button>
+                <button type="button"><span class="nm">Meals</span><span class="ct">4</span></button>
+                <button type="button"><span class="nm">Foods</span><span class="ct">12</span></button>
+                <span class="rule" aria-hidden="true"></span>
               </div>
 
               <div data-a="listempty">
@@ -604,11 +620,12 @@
   <section>
     <div class="sechead">
       <p class="kicker">The changes</p>
-      <h2>Ten, grouped by what they fix</h2>
+      <h2>Fifteen, grouped by what they fix</h2>
       <p class="note">
         Not a sequence — a list, labelled by the axis each one lives on. Nothing here is invented:
         every "after" is a treatment the app already ships somewhere else, usually on the hub screen
-        this picker is opened from.
+        this picker is opened from. The last five are round two — the consistency I had left
+        half-finished, and the motion.
       </p>
     </div>
 
@@ -832,9 +849,10 @@
           <div class="side">
             <span class="sl now">Now — weight, a rule, and the counts</span>
             <div class="sourceline" style="margin:0;padding:0">
-              <div class="on"><span class="nm">Recent</span><span class="ct">0</span></div>
-              <div><span class="nm">Favorites</span><span class="ct">9</span></div>
-              <div><span class="nm">Meals</span><span class="ct">4</span></div>
+              <button type="button" class="on"><span class="nm">Recent</span><span class="ct">0</span></button>
+              <button type="button"><span class="nm">Favorites</span><span class="ct">9</span></button>
+              <button type="button"><span class="nm">Meals</span><span class="ct">4</span></button>
+              <span class="rule" style="left:0"></span>
             </div>
           </div>
         </div>
@@ -927,6 +945,192 @@
         </div>
       </div>
 
+
+      <!-- ============ ROUND TWO ============ -->
+      <div class="change roundtwo">
+        <div class="axis"><span class="n" style="color:var(--sand)">Round two</span></div>
+        <div class="say">
+          <h3>The half I had left undone</h3>
+          <p>
+            Asked whether the first pass was really consistent, the honest answer was <em>eight of
+            ten</em>. The two heroes now agreed on colour, face, state and motion — and still
+            disagreed on the <b>track</b>: 6dp here, 4dp pill on the hub, with the hub tying each
+            label to its bar by colour and the picker not tying them at all. Below is that finished,
+            plus the motion the screen was missing.
+          </p>
+        </div>
+        <div class="demo" style="justify-content:center">
+          <span class="mono" style="font-size:12px;color:var(--ash);line-height:1.7">
+            8 / 10 &nbsp;→&nbsp; 10 / 10<br>+ 1 hero fact<br>+ 3 transitions
+          </span>
+        </div>
+      </div>
+
+      <!-- 11 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Meter, finished</span>
+          <span class="where">nutrition.tsx<br>the hub's hero</span>
+        </div>
+        <div class="say">
+          <h3>Both nutrition heroes draw the same row now</h3>
+          <p>
+            The hub's three macro hairlines were the last hand-rolled proportion in the pair — a 4dp
+            pill track under a coloured mono-caps label. They are <code>AMeter</code> too: one track,
+            one label voice, one animated fill, on both screens. The macro's colour stays exactly
+            where it carries meaning — the fill. Two more remain in nutrition and are logged as
+            planned rather than swept in here: the insights card's macro-balance row (a horizontal
+            label|track|value, a different layout) and the WHO/EFSA label panel (a 3dp reference bar,
+            a different claim).
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was — hub, 4dp pill, coloured mono caps</span>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span class="mono" style="font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--teal)">Protein</span>
+                  <span class="mono" style="font-size:11px;color:var(--ash)">78 / 135 g</span>
+                </div>
+                <div style="height:4px;border-radius:999px;background:var(--ink);overflow:hidden;margin-top:8px"><div style="width:58%;height:4px;border-radius:999px;background:var(--teal)"></div></div>
+              </div>
+            </div>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now — AMeter, identical to the picker's</span>
+            <div class="ameter" style="margin:0">
+              <div class="row"><span class="lab">Protein</span><span class="val">78 / 135 g</span></div>
+              <div class="track"><div class="fill" style="width:58%;background:#6cb6bd"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Hero</span>
+          <span class="where">DayGap<br>mealKcal</span>
+        </div>
+        <div class="say">
+          <h3>The screen says what is already in this meal</h3>
+          <p>
+            The header answers <em>what does the day owe</em>; the title answers <em>which meal am I
+            in</em>. Nothing answered the question actually being asked at 23:08 with Snacks open —
+            <b>how much is already in Snacks</b> — even though the hub has listed that figure per meal
+            all along. It rides the figure row opposite the number, in the mono meta voice, and it
+            <b>rolls</b>: it is the one readout that moves the instant you tap ⊕, so it doubles as
+            proof the food landed in the right part of the day. Below zero-fact discipline: an empty
+            meal is not stated, because "Snacks 0" is not information.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was</span>
+            <div class="figrow"><span class="fig-now" style="font-size:30px;line-height:34px">1145</span><span class="figlabel">kcal left today</span></div>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now</span>
+            <div class="figrow">
+              <span class="fig-now" style="font-size:30px;line-height:34px">1145</span>
+              <span class="figlabel">kcal left</span>
+              <span class="mealtot"><span class="ml">Snacks</span><span class="mv">340</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 13 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Motion</span>
+          <span class="where">kit.tsx<br>AMeter</span>
+        </div>
+        <div class="say">
+          <h3>The fill travels, on the figure's own timing</h3>
+          <p>
+            The figure rolled and the track beside it jump-cut, so one object moved and its twin
+            blinked — for the same event. Every <code>AMeter</code> in the app now travels to its new
+            share on <code>durations.collapse</code> with the same ease-out <code>RollingNumber</code>
+            uses, so a logged food reads as <em>one</em> thing happening. <b>Timing, not a spring</b>,
+            for the reason RollCell already gives: a spring overshoots, and a bar that overshoots is
+            briefly reporting a number that is not true. It does not animate on mount — a screen whose
+            meters all grow from zero on arrival is animating its own layout, not a change — and
+            Reduce Motion sets the width outright, since a width has no position to cross-dissolve.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl now">Tap a day above — every track moves</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">durations.collapse 180ms<br>Easing.out(Easing.cubic)<br>useNativeDriver: false (a width is layout)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 14 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Motion</span>
+          <span class="where">SourceLine</span>
+        </div>
+        <div class="say">
+          <h3>The selection rule flies instead of cutting</h3>
+          <p>
+            Selection is this control's entire job, and it was the one thing it never showed
+            happening: the 2dp rule was a per-tab border that vanished under one label and appeared
+            under another. It is now a single indicator on <code>springs.lens</code> — the app's named
+            selection token, the same spring the Today hub's pill flies on — measuring each tab so it
+            lands on the label's true width, since these four labels are deliberately unequal. Reduce
+            Motion places it outright, and <code>haptic.selection</code> marks the commit, which is
+            what the codebase does everywhere else you move through discrete values.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl now">Tap a source — the rule travels</span>
+            <div class="sourceline" style="margin:0;padding:0">
+              <button type="button" class="on"><span class="nm">Recent</span><span class="ct">14</span></button>
+              <button type="button"><span class="nm">Favorites</span><span class="ct">9</span></button>
+              <button type="button"><span class="nm">Meals</span><span class="ct">4</span></button>
+              <span class="rule" style="left:0"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 15 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Motion</span>
+          <span class="where">nutrition.tsx<br>listMotion</span>
+        </div>
+        <div class="say">
+          <h3>Switching source is a transition, not a swap</h3>
+          <p>
+            Moving Recent → Favorites replaced the whole list in one frame, with the doors below
+            teleporting to wherever the new list ended. That is a layout change the <em>user</em>
+            caused, which is exactly what <code>useListMotion</code> is for — the app already animates
+            a deleted diary entry through it. Same call, same <code>springs.slide</code> curve: rows
+            grow into place, the doors ride up or down to meet them, and Reduce Motion commits
+            instantly, because a layout change has no position left to dissolve.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">onChange={setFoodTab}</span>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">onChange={(k) =&gt; listMotion(() =&gt; setFoodTab(k))}</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -949,9 +1153,11 @@
         <tbody>
           <tr>
             <td class="f">components/aurora/nutrition-kit.tsx</td>
-            <td class="d"><code>DayGap</code> rebuilt on the hub's vocabulary and the shared meter;
-              <code>PICKER_EDGE</code> and <code>MACRO_FILL</code> exported and applied to
-              <code>FoodRow</code>, <code>PickerDoor</code> and <code>SourceLine</code>.</td>
+            <td class="d"><code>DayGap</code> rebuilt on the hub's vocabulary and the shared meter, and
+              given the meal's own running total; <code>SourceLine</code>'s rule now flies on
+              <code>springs.lens</code> with a selection haptic; <code>PICKER_EDGE</code> and
+              <code>MACRO_FILL</code> exported and applied to <code>FoodRow</code> and
+              <code>PickerDoor</code>.</td>
           </tr>
           <tr>
             <td class="f">components/aurora/nutrition.tsx</td>
@@ -959,6 +1165,12 @@
               onto <code>HERO_INLINE_TITLE</code>; the picker's four section heads and four empty lines
               onto <code>PICKER_EDGE</code>; the hub's ring and figure to sand, <code>fs.stat</code> and
               <code>tracking.display</code>.</td>
+          </tr>
+          <tr>
+            <td class="f">components/aurora/kit.tsx</td>
+            <td class="d"><code>AMeter</code>'s fill travels to its new share on the figure's own timing —
+              shared, so every meter in the app gains it; no animation on mount, and Reduce Motion sets
+              the width outright.</td>
           </tr>
           <tr>
             <td class="f">packages/core/src/capabilities.ts</td>
@@ -979,7 +1191,7 @@
       <div class="check"><div class="k">design-token ratchet</div><div class="v">21 passed</div></div>
       <div class="check"><div class="k">typecheck</div><div class="v">clean</div></div>
       <div class="check"><div class="k">iOS bundle</div><div class="v">exports (11 MB)</div></div>
-      <div class="check"><div class="k">ratchet movement</div><div class="v plain">−2 raw letterSpacing<br>−2 raw fontSize<br>−1 hand-rolled meter</div></div>
+      <div class="check"><div class="k">ratchet movement</div><div class="v plain">−3 raw letterSpacing<br>−2 raw fontSize<br>−2 hand-rolled meters</div></div>
     </div>
 
     <p class="note" style="margin-top:26px">
@@ -1012,19 +1224,19 @@
       fig: "2325", label: "kcal left today", tone: "chalk",
       ledger: "0 of 2325 logged", kpct: 0,
       p: [0, 135], c: [0, 300], f: [0, 65],
-      rows: false, over: false, recent: "0",
+      rows: false, over: false, recent: "0", meal: 0,
     },
     mid: {
       fig: "1145", label: "kcal left today", tone: "chalk",
       ledger: "1180 of 2325 logged", kpct: 51,
       p: [78, 135], c: [140, 300], f: [41, 65],
-      rows: true, over: false, recent: "14",
+      rows: true, over: false, recent: "14", meal: 340,
     },
     over: {
       fig: "155", label: "kcal over today", tone: "sand",
       ledger: "2480 of 2325 logged", kpct: 100,
       p: [142, 135], c: [318, 300], f: [71, 65],
-      rows: true, over: true, recent: "14",
+      rows: true, over: true, recent: "14", meal: 495,
     },
   };
 
@@ -1062,6 +1274,10 @@
       set("a", k + "bar", el => { el.style.width = pct(v) + "%"; el.style.background = colour; });
     });
     set("a", "ct1", el => el.textContent = s.recent);
+    // What is already in THIS meal — the one figure the screen never showed.
+    // Hidden at zero: an empty meal stated as a fact is not information.
+    set("a", "mealtot", el => el.hidden = s.meal === 0);
+    set("a", "mealkcal", el => el.textContent = String(s.meal));
 
     // ---- the list under the switcher
     ["b", "a"].forEach(side => {
@@ -1072,6 +1288,31 @@
       set(side, "pbmeta", el => el.classList.toggle("over", s.over));
     });
   }
+
+  // THE RULE TRAVELS. On the phone this is springs.lens driving an Animated
+  // translateX + width over tabs measured with onLayout; here it is the same
+  // idea in CSS, over tabs measured with offsetLeft.
+  function placeRule(line, btn, animate) {
+    const rule = line.querySelector(".rule");
+    if (!rule || !btn) return;
+    const base = line.firstElementChild;
+    if (!animate) rule.style.transition = "none";
+    rule.style.width = btn.offsetWidth + "px";
+    rule.style.transform = "translateX(" + (btn.offsetLeft - base.offsetLeft) + "px)";
+    if (!animate) requestAnimationFrame(() => { rule.style.transition = ""; });
+  }
+  document.querySelectorAll(".sourceline").forEach(line => {
+    const tabs = [...line.querySelectorAll("button")];
+    placeRule(line, line.querySelector("button.on"), false);
+    tabs.forEach(btn => btn.addEventListener("click", () => {
+      tabs.forEach(b => b.classList.toggle("on", b === btn));
+      placeRule(line, btn, true);
+    }));
+  });
+  window.addEventListener("resize", () => {
+    document.querySelectorAll(".sourceline").forEach(line =>
+      placeRule(line, line.querySelector("button.on"), false));
+  });
 
   document.querySelectorAll(".switch button").forEach(btn => {
     btn.addEventListener("click", () => {

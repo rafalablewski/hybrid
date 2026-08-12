@@ -81,7 +81,7 @@ import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useListMotion } from "../../lib/list-motion";
-import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
+import { AuroraScreen, ACard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
@@ -1552,7 +1552,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
         {/* THE GAP first — the screen's subject. It renders only when there is
             a target to be short of. */}
-        {pickerGap ? <DayGap C={C} gap={pickerGap} /> : null}
+        {pickerGap ? (
+          <DayGap
+            C={C}
+            gap={pickerGap}
+            mealLabel={partLabel(mealType)}
+            mealKcal={mealTotals[mealType] ?? 0}
+          />
+        ) : null}
 
         {/* THE ONE FIELD. Quick add and the database search were two boxes
             asking the same question; this is that question, asked once. */}
@@ -1587,7 +1594,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                   segmented control here is gone — see SourceLine's header for
                   why (it re-introduced the filled track this screen deletes,
                   and it dropped the counts on the one platform we ship). */}
-              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
+              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
             </View>
             {foodTab === "meals" ? (
               meals.length === 0 ? (
@@ -2453,16 +2460,23 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 </View>
               ) : null}
             </View>
-            {/* Macros — hairline lines beneath the hero, same card. */}
+            {/* MACROS — the SAME ROW the picker's day header draws, because it
+                is the same three figures. This card hand-rolled a 4dp pill
+                track with a coloured mono-caps label while the picker
+                hand-rolled a 3dp one with an ash nano-caps label, so the two
+                nutrition heroes agreed on the numbers and on nothing else.
+                Both are AMeter now: one track (6dp, RADIUS.mark), one label
+                voice, one animated fill. The macro's colour stays where it
+                carries the meaning — the fill. */}
             <View style={{ alignSelf: "stretch", marginTop: 24 }}>
-              {([["w.recovery.nutrition.protein", heroDay.protein, targets.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", heroDay.carbs, targets.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", heroDay.fat, targets.fat, C.violet, txt(C, C.violet)]] as const).map(([label, cur, tgt, col, colT], i) => (
-                <View key={label} style={{ marginTop: i ? 18 : 0 }}>
-                  <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: colT }}>{t(label)}</Text>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{Math.round(cur)} / {tgt} g</Text>
-                  </View>
-                  <View style={{ height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink, overflow: "hidden", marginTop: 8 }}><View style={{ width: `${Math.min(100, tgt > 0 ? (cur / tgt) * 100 : 0)}%`, height: 4, borderRadius: RADIUS.pill, backgroundColor: col }} /></View>
-                </View>
+              {([["w.recovery.nutrition.protein", heroDay.protein, targets.protein, C.blue], ["w.recovery.nutrition.carbs", heroDay.carbs, targets.carbs, C.amber], ["w.recovery.nutrition.fat", heroDay.fat, targets.fat, C.violet]] as const).map(([label, cur, tgt, col]) => (
+                <AMeter
+                  key={label}
+                  label={t(label)}
+                  value={`${Math.round(cur)} / ${tgt} g`}
+                  pct={tgt > 0 ? (cur / tgt) * 100 : 0}
+                  color={col}
+                />
               ))}
             </View>
           </ACard>

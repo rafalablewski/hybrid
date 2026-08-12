@@ -1,8 +1,9 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
+  springs, springToRN,
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
   PICKER_SOURCES, pickerSourceLabelKey,
   type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
@@ -13,6 +14,8 @@ import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
 import { AMeter } from "./kit";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { haptic } from "../../lib/haptics";
 import { RollingNumber } from "./rolling-number";
 import SwipeRow from "../swipe-row";
 
@@ -231,8 +234,22 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
  * This is the picker's own header, not the sticky HUD that was removed
  * (nutrition-hud): it sits where the decision is being made and scrolls with it.
  */
-export function DayGap({ C, gap }: {
+export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
   C: ReturnType<typeof useTheme>["palette"]; gap: NutritionGap;
+  /** THE MEAL BEING LOGGED INTO, and what it already holds.
+   *
+   *  The header answers "what does the DAY owe"; the screen's title answers
+   *  "which meal am I in". Nothing answered the question actually being asked
+   *  at 23:08 with Snacks open — HOW MUCH IS ALREADY IN THIS MEAL — even though
+   *  the hub has shown that figure per meal all along. It rides the figure row
+   *  opposite the number, in the mono meta voice, and it ROLLS: it is the one
+   *  readout that moves the instant a ⊕ is tapped, so it doubles as proof the
+   *  food landed in the right part of the day.
+   *
+   *  It renders only above zero. "Snacks 0" is not information, and a header
+   *  that states an empty meal as a fact is the same confident-nothing this
+   *  block refuses to draw when there is no target. */
+  mealLabel?: string; mealKcal?: number;
 }) {
   const { t } = useLang();
   const left = gap.kcal.left ?? 0;
@@ -256,6 +273,22 @@ export function DayGap({ C, gap }: {
         >
           {t(isOver ? "w.recovery.nutrition.pick.kcalOver" : "w.recovery.nutrition.pick.kcalLeft")}
         </Text>
+        {mealLabel && mealKcal > 0 ? (
+          <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+            <Text
+              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              numberOfLines={1}
+              style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
+            >
+              {mealLabel}
+            </Text>
+            <RollingNumber
+              value={String(Math.round(mealKcal))}
+              align="right"
+              style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: C.chalk }}
+            />
+          </View>
+        ) : null}
       </View>
       {/* THE DAY'S ENERGY, as a proportion. The ledger line is the meter's own
           readout rather than a sentence floating above it — one object, not
@@ -321,6 +354,17 @@ export function DayGap({ C, gap }: {
  *
  * The system control is still right where it IS the object (the hub's
  * three-way view switch, `today-tabs`); it was never right for a source line.
+ *
+ * ── THE RULE TRAVELS ───────────────────────────────────────────────────────
+ * Selection is the whole job of this control, and it used to CUT: the 2dp rule
+ * was a per-tab border that vanished under one label and appeared under
+ * another, so the one thing the control exists to say was the one thing it
+ * never showed happening. It is now a single indicator that flies, on
+ * `springs.lens` — the app's named SELECTION token, the same spring the Today
+ * hub's pill uses — measuring each tab so the rule lands on the label's true
+ * width rather than an assumed one. Reduce Motion puts it there outright, and
+ * `haptic.selection` marks the commit, which is what this codebase does
+ * everywhere else you move through discrete values.
  */
 export function SourceLine({ C, value, counts, onChange }: {
   C: ReturnType<typeof useTheme>["palette"];
@@ -329,6 +373,31 @@ export function SourceLine({ C, value, counts, onChange }: {
   onChange: (key: PickerSourceKey) => void;
 }) {
   const { t } = useLang();
+  const reduced = useReducedMotion();
+  // Measured per tab — the rule is as wide as the label it underlines, and the
+  // four labels are deliberately unequal.
+  const [slots, setSlots] = useState<Record<string, { x: number; w: number }>>({});
+  const x = useRef(new Animated.Value(0)).current;
+  const w = useRef(new Animated.Value(0)).current;
+  const placed = useRef(false);
+  const slot = slots[value];
+  useEffect(() => {
+    if (!slot) return;
+    // The FIRST placement is not a move: the rule belongs under the selected
+    // tab from the first frame, and flying it in from x=0 on mount would
+    // animate the screen's arrival instead of the user's choice.
+    if (!placed.current || reduced) {
+      placed.current = true;
+      x.setValue(slot.x); w.setValue(slot.w);
+      return;
+    }
+    const cfg = { ...springToRN(springs.lens), useNativeDriver: false };
+    Animated.parallel([
+      Animated.spring(x, { toValue: slot.x, ...cfg }),
+      Animated.spring(w, { toValue: slot.w, ...cfg }),
+    ]).start();
+  }, [slot?.x, slot?.w, reduced, x, w]);
+
   return (
     <View
       accessibilityRole="tablist"
@@ -339,14 +408,14 @@ export function SourceLine({ C, value, counts, onChange }: {
         return (
           <Pressable
             key={key}
-            onPress={() => onChange(key)}
+            onPress={() => { if (!on) haptic.selection(); onChange(key); }}
+            onLayout={(e) => {
+              const { x: lx, width } = e.nativeEvent.layout;
+              setSlots((s) => (s[key] && s[key]!.x === lx && s[key]!.w === width ? s : { ...s, [key]: { x: lx, w: width } }));
+            }}
             accessibilityRole="tab"
             accessibilityState={{ selected: on }}
-            style={{
-              flexDirection: "row", alignItems: "baseline", gap: 5,
-              paddingBottom: 11, marginBottom: -1,
-              borderBottomWidth: 2, borderBottomColor: on ? C.chalk : "transparent",
-            }}
+            style={{ flexDirection: "row", alignItems: "baseline", gap: 5, paddingBottom: 11 }}
           >
             <Text
               maxFontSizeMultiplier={FIXED_FONT_SCALE}
@@ -363,6 +432,12 @@ export function SourceLine({ C, value, counts, onChange }: {
           </Pressable>
         );
       })}
+      {slot ? (
+        <Animated.View
+          pointerEvents="none"
+          style={{ position: "absolute", bottom: -1, left: PICKER_EDGE, height: 2, backgroundColor: C.chalk, width: w, transform: [{ translateX: x }] }}
+        />
+      ) : null}
     </View>
   );
 }

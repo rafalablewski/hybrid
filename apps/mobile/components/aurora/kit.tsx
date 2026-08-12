@@ -1034,9 +1034,44 @@ export function AMeter({
   emphasis?: boolean;
 }) {
   const { palette } = useTheme();
+  const reduced = useReducedMotion();
   const fill = color ?? palette.lime;
   const clamped = Math.max(0, Math.min(100, pct));
   const width = clamped > 0 ? Math.max(2, clamped) : 0;
+
+  /**
+   * THE FILL TRAVELS to its new share instead of being redrawn at it — the
+   * meter's half of what `RollingNumber` does for the figure beside it.
+   *
+   * It matters most where the two sit together: the nutrition hero states the
+   * remaining energy as a figure AND as this track, and the figure already
+   * rolled while the track jump-cut, so one object moved and its twin blinked.
+   * They now travel on the SAME timing — `durations.collapse` with the same
+   * ease-out — so a logged food reads as one event.
+   *
+   * TIMING, NOT A SPRING, for the reason RollCell gives: a spring overshoots,
+   * and a bar that overshoots its value is briefly REPORTING A NUMBER THAT IS
+   * NOT TRUE. Springs are for objects travelling; this is a quantity arriving.
+   *
+   * It does not animate on mount. A screen whose every meter grows from zero on
+   * arrival is a screen animating its own layout rather than a change, and it
+   * would replay on every remount — the same discipline RollingNumber applies
+   * when it has no previous value to roll from. Reduce Motion sets the width
+   * outright: there is no position to cross-dissolve in a width.
+   */
+  const w = useRef(new Animated.Value(width)).current;
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; w.setValue(width); return; }
+    if (reduced) { w.setValue(width); return; }
+    Animated.timing(w, {
+      toValue: width,
+      duration: durations.collapse,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // a width is a layout prop
+    }).start();
+  }, [w, width, reduced]);
+
   return (
     <View style={{ marginTop: space.ms }}>
       {(label || value) && (
@@ -1063,7 +1098,12 @@ export function AMeter({
         accessibilityLabel={label}
         style={{ height: 6, borderRadius: RADIUS.mark, backgroundColor: palette.line, overflow: "hidden" }}
       >
-        <View style={{ width: `${width}%`, height: "100%", borderRadius: RADIUS.mark, backgroundColor: fill }} />
+        <Animated.View
+          style={{
+            width: w.interpolate({ inputRange: [0, 100], outputRange: ["0%", "100%"] }),
+            height: "100%", borderRadius: RADIUS.mark, backgroundColor: fill,
+          }}
+        />
       </View>
     </View>
   );
