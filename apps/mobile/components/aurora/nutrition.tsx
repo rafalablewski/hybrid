@@ -58,7 +58,6 @@ import {
   sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
   recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
-  PICKER_SOURCES, pickerSourceLabelKey,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -84,7 +83,7 @@ import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, F
 import { useListMotion } from "../../lib/list-motion";
 import { AuroraScreen, ACard, AField, APill, AHeading, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
-import { GlassSegment, GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
+import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
 import { HubMasthead } from "./hub-masthead";
 import { CoverScreen, type CoverScreenApi } from "../plan-hero";
@@ -1572,19 +1571,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           /* AT REST — all four sources, switchable, with the box gone. */
           <>
             <View style={{ marginTop: 16 }}>
-              {/* The four sources as the SYSTEM segmented control where it
-                  renders (iOS 26) — the counts stay on the underline form,
-                  which every other platform keeps: a native segment carries
-                  labels only, and the list itself is the count. */}
-              {LIQUID_GLASS_RENDERED ? (
-                <GlassSegment
-                  options={PICKER_SOURCES.map((key) => ({ id: key, label: t(pickerSourceLabelKey(key)) }))}
-                  value={foodTab}
-                  onPick={setFoodTab}
-                />
-              ) : (
-                <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
-              )}
+              {/* The four sources on the UNDERLINE form, everywhere. They were
+                  briefly the system segmented control on iOS 26, which cost
+                  each source its COUNT (a native segment carries labels only)
+                  and then failed to lay out at all — swiftui.tsx, where that
+                  control was, has why it was never recoverable. */}
+              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={setFoodTab} />
             </View>
             {foodTab === "meals" ? (
               meals.length === 0 ? (

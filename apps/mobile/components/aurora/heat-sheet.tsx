@@ -42,8 +42,10 @@ import { NativeDateField, LIQUID_GLASS_SUPPORTED } from "./swiftui";
  * `space-between` row ESCAPED that row: the ± capsule floated clear of the
  * field and the value fell to the bottom-left of an empty 108dp rectangle
  * (twice, plus the date field). The segments were tinted `C.amber` where the
- * kit's one segmented control tints with the app accent, and their off-iOS
- * fallback was a static pill row where every other screen gets `LiquidSeg`.
+ * kit's one segmented control does not, and their off-iOS fallback was a
+ * static pill row where every other screen gets `LiquidSeg` — which is now
+ * what `ASegment` draws on every platform, so going through the kit is also
+ * how this sheet stopped speaking SF Pro eight dp above type set in Archivo.
  * And each value carried TWO controls — a preset segment and a stepper, both
  * writing the same number, with the segment holding NO selection at all the
  * moment the stepper moved the value off the preset grid.

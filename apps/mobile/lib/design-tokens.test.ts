@@ -495,6 +495,28 @@ describe("presentation", () => {
     expect(bad).toEqual([]);
   });
 
+  it("HARD — the segmented control is never a native Picker", () => {
+    // A SwiftUI `Host` sizes its RN box from the SwiftUI content ONCE, at mount
+    // (`matchContents`, the prop's own documented limit). Every segmented
+    // control in this app mounts before it knows its content — the labels are
+    // translated asynchronously by `useLang`, the date filter's segments are
+    // derived from the session history, and the Today hub REMOUNTS on every
+    // selection because the tab swaps the whole screen tree. So the DRAWN frame
+    // never tracked the LAYOUT frame, and it missed differently at each call
+    // site: the hub pills painted ~70pt below their box, onto "Tuesday, 11
+    // August", while the This-week filter painted above its row's centre, into
+    // the card's head. One component, two unrelated misses.
+    //
+    // A control that is one line of prose ("where an element maps to a real
+    // system control, it goes native") away from being re-added needs a guard
+    // rather than the prose. The segmented control is `ASegment` → `LiquidSeg`,
+    // laid out entirely by Yoga, on every platform. The other native leaves are
+    // unaffected: they size against content they already have, or sit in a
+    // sheet that gives them a height.
+    expect(codeHits(/\bGlassSegment\b/g)).toEqual([]);
+    expect(codeHits(/pickerStyle\(\s*["']segmented["']\s*\)/g)).toEqual([]);
+  });
+
   it("HARD — a COVER pads itself; no native SafeAreaView inside a fullScreenModal", () => {
     // A cover (@hybrid/core COVER_SCREENS — on mobile the live logger, and
     // nothing else) is presented in its OWN view controller. A native
