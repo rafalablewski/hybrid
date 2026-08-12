@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -129,6 +129,7 @@ export function AuroraScreen({
   onRefresh,
   top,
   hubTab,
+  scrollRef,
 }: {
   /** Optional because a screen that hands its own list to `scroller` has no
    *  body left for the shell to render — the list IS the body. */
@@ -165,6 +166,11 @@ export function AuroraScreen({
   padding?: number;
   refreshing?: boolean;
   onRefresh?: () => void;
+  /** The shell's scroller, for a screen that must move it from outside its own
+   *  render — the picker brings its field back under the thumb when the bar's
+   *  detached circle is pressed. Plain path only: a `hero` screen's scroller is
+   *  the hero system's, and that one has its own collapse track to respect. */
+  scrollRef?: RefObject<ScrollView | null>;
   /** Content rendered ABOVE the screen's own body, inside the same scroller —
    *  the slot Today's hub uses to hand a screen its profile header + tab pills
    *  when the screen is showing as one of Today's tabs rather than as its own
@@ -194,7 +200,7 @@ export function AuroraScreen({
     );
   }
   return (
-    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} top={top} hubTab={hubTab}>
+    <AuroraPlainScreen scroll={scroll} center={center} padding={padding} refreshing={refreshing} onRefresh={onRefresh} top={top} hubTab={hubTab} scrollRef={scrollRef}>
       {children}
     </AuroraPlainScreen>
   );
@@ -213,6 +219,7 @@ function AuroraPlainScreen({
   onRefresh,
   top,
   hubTab,
+  scrollRef,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -222,6 +229,7 @@ function AuroraPlainScreen({
   onRefresh?: () => void;
   top?: ReactNode;
   hubTab?: boolean;
+  scrollRef?: RefObject<ScrollView | null>;
 }) {
   const { palette } = useTheme();
   const insets = useSafeAreaInsets();
@@ -242,6 +250,7 @@ function AuroraPlainScreen({
   const inner = hub ? <HubDissolve active>{children}</HubDissolve> : children;
   const body = scroll ? (
     <ScrollView
+      ref={scrollRef}
       // Clear the floating Aurora pill nav so the last content row never hides
       // under the bar — derived from the real bar height + safe-area inset (one
       // source of truth in lib/layout), not a hand-copied magic number.

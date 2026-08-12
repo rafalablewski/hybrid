@@ -1,3 +1,4 @@
+import { type RefObject } from "react";
 import { View, Text, TextInput } from "react-native";
 import {
   macroDraft,
@@ -38,11 +39,15 @@ import { IBarcode, IClose, PICKER_EDGE, ROW_LEAD } from "./nutrition-kit";
  */
 
 /** The field. The screen's one container; everything else is type on the ground. */
-export function PickerField({ value, onChange, onSubmit, onScan }: {
+export function PickerField({ value, onChange, onSubmit, onScan, inputRef }: {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
   onScan: () => void;
+  /** So the bar's detached circle can put the cursor here from anywhere on the
+   *  screen — the field scrolls away with the content, and once the list is
+   *  twenty rows deep there was no way back to it but to scroll. */
+  inputRef?: RefObject<TextInput | null>;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -52,6 +57,7 @@ export function PickerField({ value, onChange, onSubmit, onScan }: {
     <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, minHeight: HIT_TARGET, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: space.lg }}>
       <AuroraIcon name="search" size={18} color={C.ash} />
       <TextInput
+        ref={inputRef}
         value={value}
         onChangeText={onChange}
         onSubmitEditing={onSubmit}

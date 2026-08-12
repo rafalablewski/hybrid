@@ -58,6 +58,7 @@ import {
   sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
   recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
+  NAV_SURFACE_FOOD_PICKER,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -81,6 +82,8 @@ import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useListMotion } from "../../lib/list-motion";
+import { usePublishNavSurface } from "../../lib/nav-surface";
+import { haptic } from "../../lib/haptics";
 import { AuroraScreen, ACard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
@@ -376,6 +379,32 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
   const load = () => { refetch(); loadLibrary(); };
   useRefreshOnFocus(refetch);
+
+  /**
+   * THE PICKER'S OWN VERB, published to the bottom bar.
+   *
+   * While the add-to-meal picker is the visible surface, the bar's detached
+   * circle stops offering Train — which is the one thing nobody is doing at
+   * 23:08 with Snacks open — and becomes this screen's search: it brings the
+   * field back under the thumb and puts the cursor in it. The field is IN FLOW
+   * (deliberately — it scrolls with the decision it belongs to), so twenty rows
+   * down there was no way back to it but to scroll, and the one place a thumb
+   * already is on a phone is the bottom-right corner.
+   *
+   * `usePublishNavSurface` takes null everywhere but the picker, so the circle
+   * is the dumbbell on every other nutrition view.
+   */
+  const pickerScroller = useRef<ScrollView | null>(null);
+  const pickerInput = useRef<TextInput | null>(null);
+  const focusPickerField = useCallback(() => {
+    // Scroll first: focusing an input that is off-screen leaves the keyboard
+    // covering a field nobody can see. `y: 0` is the field's home — it sits
+    // directly under the day header at the top of the screen.
+    pickerScroller.current?.scrollTo({ y: 0, animated: true });
+    pickerInput.current?.focus();
+    haptic.light();
+  }, []);
+  usePublishNavSurface(view === "add" ? NAV_SURFACE_FOOD_PICKER : null, focusPickerField);
 
   // ── Editable food log — the per-entry records the Diary lists + edit/delete.
   const [logs, setLogs] = useState<FoodLogRow[]>([]);
@@ -1488,7 +1517,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       </>
     );
     return (
-      <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      <AuroraScreen refreshing={refreshing} onRefresh={load} scrollRef={pickerScroller}>
         {screenHead(
           // The meal switcher. On iOS 26 it IS a system menu — the meals as an
           // inline picker (checkmark on the one in force) with "Add a meal
@@ -1578,6 +1607,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               the screen's column is. */}
           <View style={{ paddingHorizontal: PICKER_EDGE }}>
             <PickerField
+              inputRef={pickerInput}
               value={foodQuery}
               onChange={setFoodQuery}
               onSubmit={() => {

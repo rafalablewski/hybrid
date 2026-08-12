@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { AURORA_NAV_TABS, AURORA_NAV_ACTIONS, AURORA_NAV_GEOMETRY, auroraNavAction, formatSessionElapsed } from "./nav-bar";
+import { AURORA_NAV_TABS, AURORA_NAV_ACTIONS, AURORA_NAV_GEOMETRY, auroraNavAction, NAV_SURFACE_FOOD_PICKER, formatSessionElapsed } from "./nav-bar";
 
 describe("aurora nav bar contract", () => {
   it("carries the four places in the capsule", () => {
@@ -37,11 +37,29 @@ describe("aurora nav bar contract", () => {
     expect(AURORA_NAV_ACTIONS.post.glyph).toBe("list-add");
   });
 
-  it("resolves the action per surface: Train everywhere, Add post on the feed", () => {
+  it("resolves the action per surface: Train by default, the surface's own verb where it differs", () => {
     expect(auroraNavAction("feed")).toBe("post");
+    expect(auroraNavAction(NAV_SURFACE_FOOD_PICKER)).toBe("search");
     for (const surface of ["today", "nutrition", "messages", "profile", "train", "log", "performance", null, undefined]) {
       expect(auroraNavAction(surface), String(surface)).toBe("train");
     }
+  });
+
+  it("separates a circle that GOES from a circle that ACTS", () => {
+    // The native trigger is a route, so a screen action has to be built the
+    // other way round (a `disabled` trigger whose tabPress the screen handles).
+    // Declaring the kind here is what stops the bar guessing per call site.
+    expect(AURORA_NAV_ACTIONS.train.kind).toBe("route");
+    expect(AURORA_NAV_ACTIONS.post.kind).toBe("route");
+    expect(AURORA_NAV_ACTIONS.search.kind).toBe("screen");
+  });
+
+  it("keeps the picker's magnifier out of the cross-app-search slot", () => {
+    // The recorded trade is that the SLOT is never spent on a search we do not
+    // have. The picker's circle is that screen's verb, so it is resolved from a
+    // surface — it can never be the app-wide default.
+    expect(auroraNavAction(null)).not.toBe("search");
+    expect(AURORA_NAV_ACTIONS.search.glyph).toBe("search");
   });
 
   it("leaves a visible glass margin around the selection lens", () => {
