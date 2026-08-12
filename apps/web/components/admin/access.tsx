@@ -7,7 +7,9 @@ import { AuroraIcon } from "../aurora/icons";
 
 // The role-based data-access model (RBAC) — distinct from the per-feature persona
 // matrix below. Moved here (admin-only Governance) from the old user-facing
-// "Roles & access" screen; the plan/entitlement matrix now lives in Financials.
+// "Roles & access" screen. The per-feature persona matrix below is now the
+// only entitlement surface — the Financials console that used to hold a static
+// plan-inclusion table went with the 2026-08 strategy cuts.
 const ROLE_MODEL = [
   ["Client", LIME, "Owns their own data. Sees only themselves. Private coach notes stay hidden."],
   ["Coach", VIOLET, "Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client."],

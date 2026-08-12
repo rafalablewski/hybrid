@@ -4,7 +4,6 @@ import {
   developmentFraction,
   cohortNorm,
   benchmarkMetric,
-  talentReport,
   BENCHMARK_MODEL_VERSION,
   type Cohort,
 } from "./benchmarks";
@@ -72,22 +71,5 @@ describe("benchmarkMetric", () => {
     const youth: Cohort = { sport: "Hybrid", sex: "M", age: 15 };
     const b = benchmarkMetric("hpi", 70, youth);
     expect(b.potentialPercentile).toBe(b.percentile);
-  });
-});
-
-describe("talentReport", () => {
-  it("benchmarks every measured metric and rolls up scores", () => {
-    const r = talentReport(
-      { hpi: 82, relStrength: 1.8, vo2: 38 },
-      { sport: "Hybrid", sex: "M", age: 24 },
-    );
-    expect(r.benchmarks).toHaveLength(3);
-    expect(r.overall).toBeGreaterThan(0);
-    expect(r.modelVersion).toBe(BENCHMARK_MODEL_VERSION);
-  });
-
-  it("ignores missing metrics", () => {
-    const r = talentReport({ hpi: 70 }, { sport: "Running", sex: "F", age: 30 });
-    expect(r.benchmarks.map((b) => b.metric)).toEqual(["hpi"]);
   });
 });

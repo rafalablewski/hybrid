@@ -51,25 +51,19 @@ ALTER TABLE IF EXISTS "Biometric" DROP CONSTRAINT IF EXISTS "Biometric_userId_fk
 ALTER TABLE IF EXISTS "Signal" DROP CONSTRAINT IF EXISTS "Signal_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE IF EXISTS "Team" DROP CONSTRAINT IF EXISTS "Team_orgId_fkey";
 
 -- DropForeignKey
-ALTER TABLE IF EXISTS "Membership" DROP CONSTRAINT IF EXISTS "Membership_orgId_fkey";
 
 -- DropForeignKey
-ALTER TABLE IF EXISTS "Membership" DROP CONSTRAINT IF EXISTS "Membership_userId_fkey";
 
 -- DropForeignKey
 ALTER TABLE IF EXISTS "RtpProtocol" DROP CONSTRAINT IF EXISTS "RtpProtocol_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE IF EXISTS "VideoAnalysis" DROP CONSTRAINT IF EXISTS "VideoAnalysis_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE IF EXISTS "Event" DROP CONSTRAINT IF EXISTS "Event_userId_fkey";
 
 -- DropForeignKey
-ALTER TABLE IF EXISTS "TalentProfile" DROP CONSTRAINT IF EXISTS "TalentProfile_userId_fkey";
 
 -- DropForeignKey
 ALTER TABLE IF EXISTS "RiskOutcome" DROP CONSTRAINT IF EXISTS "RiskOutcome_userId_fkey";
@@ -123,25 +117,19 @@ ALTER TABLE IF EXISTS "Biometric" ADD CONSTRAINT "Biometric_userId_fkey" FOREIGN
 ALTER TABLE IF EXISTS "Signal" ADD CONSTRAINT "Signal_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE IF EXISTS "Team" ADD CONSTRAINT "Team_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE IF EXISTS "Membership" ADD CONSTRAINT "Membership_orgId_fkey" FOREIGN KEY ("orgId") REFERENCES "Organization"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE IF EXISTS "Membership" ADD CONSTRAINT "Membership_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE IF EXISTS "RtpProtocol" ADD CONSTRAINT "RtpProtocol_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE IF EXISTS "VideoAnalysis" ADD CONSTRAINT "VideoAnalysis_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE IF EXISTS "Event" ADD CONSTRAINT "Event_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE IF EXISTS "TalentProfile" ADD CONSTRAINT "TalentProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE IF EXISTS "RiskOutcome" ADD CONSTRAINT "RiskOutcome_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

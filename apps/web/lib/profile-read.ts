@@ -81,20 +81,19 @@ export async function loadPublicProfile(viewerId: string, handle: string): Promi
   // two surfaces disagreeing about her level, which is precisely what one
   // shared estimate exists to prevent.
   //
-  // Read from the talent profile because it is the only place sex is
-  // PERSISTED; the volume profile lives in each device's own prefs and the
-  // server cannot see it. The durable fix is persisting the volume profile
-  // server-side — until then a woman who filled in only the volume profile
-  // gets the right level on her own card and no worse than the old behaviour
-  // in public.
-  const talent = sessions
-    ? await prisma.talentProfile.findUnique({ where: { userId: profile.userId }, select: { sex: true } })
-    : null;
+  // NOTHING PERSISTS SEX ANY MORE. The talent profile was the only place it was
+  // stored server-side, and it went with the Talent Graph (2026-08 strategy
+  // cuts); the volume profile — where the athlete actually sets it — lives in
+  // each device's own prefs, which the server cannot read. So the public badge
+  // falls back to the published (male) bar for everyone, while the athlete's
+  // OWN card still scores her correctly from her device profile. That is a real
+  // disagreement between two surfaces, and the fix is persisting the volume
+  // profile server-side — tracked as `volume-profile-server-sync`.
   // ONE WORD and its accent. The ratio never travels — PR loads are already
   // public tiles, and publishing the ratio beside them would let any viewer
   // divide and recover the athlete's body mass.
   const badge = sessions
-    ? badgeFor(estimateFitnessLevel(sessions, { bodyweightKg: bw, sex: talent?.sex === "F" ? "F" : "M" }))
+    ? badgeFor(estimateFitnessLevel(sessions, { bodyweightKg: bw, sex: "M" }))
     : null;
 
   return {

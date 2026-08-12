@@ -13,7 +13,6 @@ import {
   sessionWrapped,
   fitScale,
   STAT_FIT_EM,
-  liftStanding,
   hasActiveConnection,
   feelSamples,
   loadBaseline,
@@ -28,7 +27,6 @@ import {
   sessionVolume,
   sessionSignature,
   SIGNATURE_MIN_BARS,
-  blockBestE1rm,
   blockTopLoad,
   strengthPrDelta,
   formatCardioPr,
@@ -56,7 +54,7 @@ import {
   type WeightUnit,
   type BodyweightLookup,
 } from "@hybrid/core";
-import { fetchTalent, fetchConnections, patchSessionDevice } from "../lib/api";
+import { fetchConnections, patchSessionDevice } from "../lib/api";
 import { healthKitAvailability } from "../lib/healthkit";
 import { useRevalidate } from "../lib/queries";
 import { DeviceMatchSheet } from "./device-match";
@@ -150,7 +148,6 @@ export function WorkoutWrapped({
   const [heatOpen, setHeatOpen] = useState(false);
   const [active, setActive] = useState(0);
   const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
-  const [cohort, setCohort] = useState<{ sport: string; sex: "M" | "F"; age: number } | null>(null);
   // null = not known yet (don't flash a "connect a device" prompt at someone
   // who already has one connected).
   const [deviceConnected, setDeviceConnected] = useState<boolean | null>(null);
@@ -167,10 +164,6 @@ export function WorkoutWrapped({
 
   useEffect(() => {
     let alive = true;
-    fetchTalent().then((d) => {
-      const p = d?.profile;
-      if (alive && p && typeof p.age === "number") setCohort({ sport: p.sport, sex: p.sex === "F" ? "F" : "M", age: p.age });
-    }).catch(() => {});
     fetchConnections().then((d) => {
       if (alive) setDeviceConnected(hasActiveConnection(d.connections));
     }).catch(() => {});
@@ -213,11 +206,6 @@ export function WorkoutWrapped({
     }
   const prSet = new Set(prs.map((p) => p.lift));
   const bests: ShareBest[] = [...bestMap.entries()].map(([name, weight]) => ({ name, weight, pr: prSet.has(name) })).sort((a, b) => b.weight - a.weight);
-  // "Where you stand" is a RELATIVE-STRENGTH percentile — the benchmark norms
-  // are built on estimated 1RM, so this one keeps e1RM on purpose.
-  const topE1rm = session.blocks.reduce((m, b) => (b.kind === "strength" ? Math.max(m, Math.round(blockBestE1rm(b, bwHere))) : m), 0);
-  const standing = cohort && topE1rm > 0 && bwHere ? liftStanding(topE1rm, bwHere, cohort) : null;
-
   // No PR to celebrate → the hero shows the number that DEFINES this kind of
   // session (distance for a swim, tonnage for a lift, time for a match), not
   // tonnage for everything — which read "0.0 t" on every cardio log.
@@ -353,13 +341,13 @@ export function WorkoutWrapped({
   };
 
   // Which panels exist (dots + snap offsets), details rides after them.
-  const keys: ("reveal" | "hero" | "feel" | "premium" | "device" | "standing")[] = [
+  const keys: ("reveal" | "hero" | "feel" | "premium" | "device" | "signature")[] = [
     ...(cel ? ["reveal" as const] : []),
     "hero" as const,
     "feel" as const,
     ...(wrapped.facts.length ? ["premium" as const] : []),
     ...(device || showDeviceAd ? ["device" as const] : []),
-    "standing" as const,
+    "signature" as const,
   ];
   const detailsIndex = keys.length;
   const snapOffsets = keys.map((_, i) => i * panelH);
@@ -593,19 +581,10 @@ export function WorkoutWrapped({
           </Panel>
         )}
 
-        {/* ── STANDING + SIGNATURE ── */}
+        {/* ── SIGNATURE ── */}
         <Panel center glows={<Glow size={panelH * 0.55} color={`${GOLD}14`} top={-panelH * 0.1} left={win.width / 2 - panelH * 0.275} />}>
           <View style={{ alignItems: "center" }}>
-            {standing ? (
-              <>
-                {eyebrow(t("session.wrapped.standing"))}
-                <Text style={{ fontFamily: F.black, fontSize: 62, color: C.chalk, letterSpacing: -2, marginTop: 16, textAlign: "center" }}>{t("session.wrapped.top")}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: 62, color: txt(C, C.lime), letterSpacing: -2, lineHeight: 62, textAlign: "center" }}>{standing.topPct}%</Text>
-                <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk, marginTop: 12, textAlign: "center" }}>{cohort!.sport} — {t("session.wrapped.estimate")}</Text>
-              </>
-            ) : (
-              eyebrow(t("session.wrapped.title"))
-            )}
+            {eyebrow(t("session.wrapped.title"))}
             {signature.length >= SIGNATURE_MIN_BARS && (
               <>
                 <View style={{ flexDirection: "row", alignItems: "flex-end", height: 72, marginTop: 34, gap: 3 }}>

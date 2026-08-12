@@ -68,40 +68,36 @@ model User {
   // (reference/sql-plan-maxes.sql).
   planMaxes Json @default("{}")
 
-  sessions         Session[]
-  macrocycles      Macrocycle[]
-  biometrics       Biometric[]
-  signals          Signal[]
-  connections      Connection[]
-  memberships      Membership[]
-  rtpProtocols     RtpProtocol[]
-  videos           VideoAnalysis[]
-  events           Event[]
-  talentProfile    TalentProfile?
-  riskOutcomes     RiskOutcome[]
-  checkins         Checkin[]
-  checkinReads     CheckinRead[]
+  sessions          Session[]
+  macrocycles       Macrocycle[]
+  biometrics        Biometric[]
+  signals           Signal[]
+  connections       Connection[]
+  rtpProtocols      RtpProtocol[]
+  riskOutcomes      RiskOutcome[]
+  checkins          Checkin[]
+  checkinReads      CheckinRead[]
   // ---- Profile "Private" tab (owner-only self-tracking) ----
-  bodyMetrics      BodyMetric[]
-  journalEntries   JournalEntry[]
-  hiddenHighlights HiddenHighlight[]
-  highlightOrder   HighlightOrder?
+  bodyMetrics       BodyMetric[]
+  journalEntries    JournalEntry[]
+  hiddenHighlights  HiddenHighlight[]
+  highlightOrder    HighlightOrder?
   notificationState NotificationState?
   templates         WorkoutTemplate[]
   savedMeals        SavedMeal[]
   foodProducts      FoodProduct[]
   foodLogs          FoodLog[]
   userRecipes       UserRecipe[]
-  planDayOverrides PlanDayOverride[]
-  assignments      Assignment[]      @relation("assignmentAthlete")
-  assignmentsMade  Assignment[]      @relation("assignmentCoach")
-  coachLinks       CoachLink[]       @relation("asClient")
-  clientLinks      CoachLink[]       @relation("asCoach")
-  coachGroups      CoachGroup[]      @relation("coachGroups")
-  coachPrograms    CoachProgram[]    @relation("coachPrograms")
-  coachInvites     CoachInvite[]     @relation("coachInvites")
-  coachDiets       CoachDiet[]       @relation("coachDiets")
-  adminAudits      AdminAudit[]      @relation("adminAuditActor")
+  planDayOverrides  PlanDayOverride[]
+  assignments       Assignment[]       @relation("assignmentAthlete")
+  assignmentsMade   Assignment[]       @relation("assignmentCoach")
+  coachLinks        CoachLink[]        @relation("asClient")
+  clientLinks       CoachLink[]        @relation("asCoach")
+  coachGroups       CoachGroup[]       @relation("coachGroups")
+  coachPrograms     CoachProgram[]     @relation("coachPrograms")
+  coachInvites      CoachInvite[]      @relation("coachInvites")
+  coachDiets        CoachDiet[]        @relation("coachDiets")
+  adminAudits       AdminAudit[]       @relation("adminAuditActor")
 
   // ---- Social layer + coach marketplace ----
   socialProfile         SocialProfile?
@@ -161,8 +157,8 @@ model CoachLink {
 
 // A solo coach's lightweight client GROUP (e.g. "Tuesday 6am squad") — a named
 // set of the coach's clients, so a coach can assign a whole plan to all of them
-// at once. Distinct from the enterprise Org Graph (Organization/Team/Membership),
-// which models institutions. Members are stored as client user ids and each is
+// at once. This is the ONLY grouping primitive — the enterprise Org Graph that
+// modelled institutions was cut (2026-08). Members are stored as client user ids and each is
 // re-validated against an ACTIVE CoachLink at assign time (membership is not a
 // grant on its own).
 model CoachGroup {
@@ -206,7 +202,7 @@ model CoachProgram {
 // ---- Social layer (handles · follow graph · feed reactions) --------------
 // A user's PUBLIC social identity — distinct from the private User row. Holds
 // the @handle, profile copy and the privacy gate for results. 1:1 with User
-// (own its row), same separate-table pattern as TalentProfile/OnboardingState
+// (own its row), the same separate-table pattern as OnboardingState
 // so the hot-path user lookup never depends on it. See reference/sql-social.sql.
 model SocialProfile {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -989,47 +985,6 @@ model Signal {
   @@index([userId, kind, ts])
 }
 
-// ---- Org Graph (Team Operating System) ----------------------------------
-// A club/federation as one governed org: a team hierarchy + staff with roles.
-// Access is scoped by role + data sensitivity in @hybrid/core (org.ts) and
-// enforced in the API; org membership gates org-level reads in RLS.
-model Organization {
-  id          String       @id @default(cuid())
-  name        String
-  createdAt   DateTime     @default(now())
-  teams       Team[]
-  memberships Membership[]
-}
-
-model Team {
-  id        String       @id @default(cuid())
-  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId     String
-  name      String
-  parent    Team?        @relation("TeamTree", fields: [parentId], references: [id], onDelete: SetNull)
-  parentId  String?
-  children  Team[]       @relation("TeamTree")
-  createdAt DateTime     @default(now())
-
-  @@index([orgId])
-  @@index([parentId])
-}
-
-model Membership {
-  id        String       @id @default(cuid())
-  org       Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  orgId     String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  role      String // OrgRole: OWNER | DIRECTOR | COACH | MEDICAL | ANALYST | ATHLETE
-  teamId    String? // optional: scope this member to a team subtree
-  createdAt DateTime     @default(now())
-
-  @@unique([orgId, userId])
-  @@index([orgId])
-  @@index([userId])
-}
-
 // A return-to-play protocol instance for an athlete + tissue. The gated stage
 // progression lives in @hybrid/core (rtp.ts); this stores state + audit.
 model RtpProtocol {
@@ -1045,56 +1000,6 @@ model RtpProtocol {
   createdAt  DateTime @default(now())
 
   @@index([userId])
-}
-
-// A markerless motion-analysis result (pose capture is client/native; this
-// stores the metrics from @hybrid/core video.ts). Derived asymmetry also lands
-// in the Signal ontology.
-model VideoAnalysis {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  movement  String
-  metrics   Json // MotionAnalysis shape
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-}
-
-// A target competition. The peaking optimizer (peaking.ts) back-solves the
-// plan to land the athlete's best day on this date.
-model Event {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  name      String
-  sport     String
-  date      DateTime
-  createdAt DateTime @default(now())
-
-  @@index([userId])
-}
-
-// An athlete's talent profile + benchmark inputs. Percentiles are computed in
-// @hybrid/core (benchmarks.ts); visibility gates discovery (the talent market).
-model TalentProfile {
-  id               String   @id @default(cuid())
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId           String   @unique
-  sport            String
-  sex              String // "M" | "F"
-  age              Int
-  metrics          Json // { relStrength?, vo2?, durability?, hpi? }
-  visibility       String   @default("private") // "private" | "discoverable"
-  // Moderation gate: a discoverable profile must be approved before it appears
-  // in discovery. Existing rows default to approved (grandfathered); a new/edited
-  // discoverable profile is set to pending by the API and enters the queue.
-  moderationStatus String   @default("approved") // pending | approved | rejected
-  moderationNote   String?
-  updatedAt        DateTime @default(now()) @updatedAt
-
-  @@index([visibility])
-  @@index([moderationStatus])
 }
 
 // A labeled risk outcome — the training signal for the injury calibration.
@@ -1123,21 +1028,6 @@ model ModelFit {
   createdAt DateTime @default(now())
 
   @@index([key, createdAt])
-}
-
-// A pending invitation to join an org by email, for people who don't have an
-// account yet. Claimed automatically on first sign-in (email match).
-model OrgInvite {
-  id        String   @id @default(cuid())
-  orgId     String
-  email     String
-  role      String
-  teamId    String?
-  status    String   @default("pending") // "pending" | "accepted" | "revoked"
-  createdAt DateTime @default(now())
-
-  @@unique([orgId, email])
-  @@index([email])
 }
 
 // A connected wearable/sensor account. Tokens let the server sync provider
@@ -1541,113 +1431,24 @@ model AdminAudit {
 // the migration is applied (the feature just no-ops / reports "unavailable").
 // ---------------------------------------------------------------------------
 
-// A one-off broadcast to an audience segment (newsletter, product update,
-// announcement). Authored in the admin Email console, sent now or scheduled.
-model EmailCampaign {
-  id           String         @id @default(cuid())
-  subject      String
-  body         String // plain text / light markdown with {{merge}} tags
-  audience     String         @default("all") // all | free | paid | coaches | clients | admins
-  status       String         @default("draft") // draft | scheduled | sending | sent | failed
-  scheduledAt  DateTime?
-  sentAt       DateTime?
-  sentCount    Int            @default(0)
-  failedCount  Int            @default(0)
-  // Resumable fan-out: the last recipient userId processed (id-ordered), so a
-  // large send continues across cron ticks instead of timing out in one request.
-  sendCursor   String?
-  // Short lease while a worker is processing a batch — serializes overlapping
-  // crons so a recipient is never double-sent.
-  lockedUntil  DateTime?
-  createdById  String?
-  createdEmail String?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @default(now()) @updatedAt
-  messages     EmailMessage[]
-
-  @@index([status, scheduledAt])
-}
-
-// An automated, multi-step lifecycle flow (welcome series, win-back inactive,
-// trial-ending nudge, coach-welcome). A user is ENROLLED when its trigger fires;
-// the cron worker advances each enrollment one step at a time, respecting the
-// per-step delay.
-model EmailSequence {
-  id        String   @id @default(cuid())
-  name      String
-  // signup | inactive | trial_ending | upgraded | coach_approved | manual
-  trigger   String   @default("signup")
-  audience  String   @default("all")
-  active    Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  steps       EmailSequenceStep[]
-  enrollments EmailEnrollment[]
-
-  @@index([trigger, active])
-}
-
-// One email in a sequence, fired `delayHours` after the PREVIOUS step (or after
-// enrollment for the first step).
-model EmailSequenceStep {
-  id         String        @id @default(cuid())
-  sequence   EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
-  sequenceId String
-  order      Int           @default(0)
-  delayHours Int           @default(0)
-  subject    String
-  body       String
-
-  @@index([sequenceId])
-}
-
-// A user's progress through a sequence. `nextSendAt` is when the cron should
-// send `currentStep`; advanced (or completed) after each send.
-model EmailEnrollment {
-  id          String        @id @default(cuid())
-  sequence    EmailSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
-  sequenceId  String
-  userId      String
-  email       String
-  status      String        @default("active") // active | completed | cancelled
-  currentStep Int           @default(0)
-  nextSendAt  DateTime?
-  enrolledAt  DateTime      @default(now())
-
-  @@unique([sequenceId, userId])
-  @@index([status, nextSendAt])
-}
-
 // The deliverability ledger — one row per attempted send (campaign, sequence
 // step, or transactional). The single source of truth for "did we email them".
 model EmailMessage {
-  id         String         @id @default(cuid())
-  campaign   EmailCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  campaignId String?
-  sequenceId String?
+  id         String    @id @default(cuid())
   userId     String?
   email      String
   subject    String
-  kind       String         @default("campaign") // campaign | sequence | transactional | verification
-  status     String         @default("sent") // sent | failed | bounced
+  kind       String    @default("transactional") // transactional | verification
+  status     String    @default("sent") // sent | failed | bounced
   providerId String? // Resend message id
   error      String?
   openedAt   DateTime?
   clickedAt  DateTime?
-  createdAt  DateTime       @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([email])
   @@index([userId])
   @@index([kind, createdAt])
-}
-
-// Unsubscribe / bounce / complaint list. Checked before EVERY marketing send so
-// a user who opted out is never contacted again (transactional mail bypasses it).
-model EmailSuppression {
-  email     String   @id
-  reason    String   @default("unsubscribe") // unsubscribe | bounce | complaint
-  createdAt DateTime @default(now())
 }
 
 // Idempotency ledger for inbound provider webhooks (Stripe). The event id is the

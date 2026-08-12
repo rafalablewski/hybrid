@@ -16,7 +16,6 @@ type Stats = {
   newUsers30: number;
   coaches: number;
   mau: number;
-  orgs: number;
   activeLinks: number;
   planPopularity: { goal: string; n: number }[];
   langSplit: { lang: string; n: number }[];
@@ -58,11 +57,10 @@ export default function AdminOverview() {
               <Stat label="Active coaches" value={s.coaches.toLocaleString()} color={palette.violet} />
             </Row2>
             <Row2>
-              <Stat label="Organizations" value={s.orgs.toLocaleString()} color={palette.blue} />
               <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} color={palette.violet} />
+              <Stat label="Avg sessions / user" value={s.totalUsers ? (s.sessions / s.totalUsers).toFixed(1) : "0"} />
             </Row2>
             <Row2>
-              <Stat label="Avg sessions / user" value={s.totalUsers ? (s.sessions / s.totalUsers).toFixed(1) : "0"} />
               <Stat label="30d activation" value={s.totalUsers ? `${Math.round((s.mau / s.totalUsers) * 100)}%` : "0%"} color={palette.lime} />
             </Row2>
 

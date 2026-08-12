@@ -7,7 +7,7 @@
 --      so those policies are inert — Postgres ignores a policy until RLS is
 --      enabled on the table. This file enables it.
 --   2. ~10 user-data tables (Signal, Checkin, Connection w/ OAuth tokens, RTP,
---      video, events, talent, risk, templates, onboarding) had NO policy at all.
+--      risk, templates, onboarding) had NO policy at all.
 --      This adds self-ownership policies + a deny-all baseline for the
 --      relational/admin tables.
 --
@@ -78,22 +78,7 @@ begin
     execute 'create policy rtp_coach_read on "RtpProtocol" for select using (public.is_active_coach("userId"))';
   end if;
 
-  -- VideoAnalysis / Event / TalentProfile / RiskOutcome — self only.
-  if to_regclass('public."VideoAnalysis"') is not null then
-    execute 'alter table "VideoAnalysis" enable row level security';
-    execute 'drop policy if exists video_own on "VideoAnalysis"';
-    execute 'create policy video_own on "VideoAnalysis" for all using ("userId" = public.app_user_id()) with check ("userId" = public.app_user_id())';
-  end if;
-  if to_regclass('public."Event"') is not null then
-    execute 'alter table "Event" enable row level security';
-    execute 'drop policy if exists event_own on "Event"';
-    execute 'create policy event_own on "Event" for all using ("userId" = public.app_user_id()) with check ("userId" = public.app_user_id())';
-  end if;
-  if to_regclass('public."TalentProfile"') is not null then
-    execute 'alter table "TalentProfile" enable row level security';
-    execute 'drop policy if exists talent_own on "TalentProfile"';
-    execute 'create policy talent_own on "TalentProfile" for all using ("userId" = public.app_user_id()) with check ("userId" = public.app_user_id())';
-  end if;
+  -- RiskOutcome — self only.
   if to_regclass('public."RiskOutcome"') is not null then
     execute 'alter table "RiskOutcome" enable row level security';
     execute 'drop policy if exists risk_own on "RiskOutcome"';
@@ -140,10 +125,6 @@ alter table if exists "CoachGroup"          enable row level security;
 alter table if exists "CoachProgram"        enable row level security;
 alter table if exists "CoachInvite"         enable row level security;
 alter table if exists "CoachDiet"           enable row level security;
-alter table if exists "Organization"        enable row level security;
-alter table if exists "Team"                enable row level security;
-alter table if exists "Membership"          enable row level security;
-alter table if exists "OrgInvite"           enable row level security;
 alter table if exists "AnonSession"         enable row level security;
 alter table if exists "ModelFit"            enable row level security;
 alter table if exists "Announcement"        enable row level security;
@@ -160,9 +141,4 @@ alter table if exists "AgentApproval"       enable row level security;
 alter table if exists "AgentNotification"   enable row level security;
 alter table if exists "Report"              enable row level security;
 alter table if exists "AdminAudit"          enable row level security;
-alter table if exists "EmailCampaign"       enable row level security;
-alter table if exists "EmailSequence"       enable row level security;
-alter table if exists "EmailSequenceStep"   enable row level security;
-alter table if exists "EmailEnrollment"     enable row level security;
 alter table if exists "EmailMessage"        enable row level security;
-alter table if exists "EmailSuppression"    enable row level security;

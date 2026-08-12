@@ -3,7 +3,6 @@ import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { patchUserMetadata } from "@/lib/supabase/admin";
-import { enrollInTrigger } from "@/lib/email";
 
 // Approve (→ promote the applicant to COACH) or deny a coach application.
 // Both audited. Admin-only.
@@ -37,8 +36,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // active role from the session, so without this the user wouldn't see the
     // coach surface until they next re-authenticated.
     await patchUserMetadata(updated.authId, { role: "coach" });
-    // Fire the coach-welcome lifecycle automation (best-effort / no-op until set up).
-    await enrollInTrigger("coach_approved", { id: app.userId, email: updated.email, role: "COACH", entitlement: updated.entitlement });
     await audit({
       actor: gate.admin,
       action: "coach.approve",

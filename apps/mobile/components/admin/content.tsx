@@ -44,17 +44,18 @@ export default function AdminContent() {
 
 function Capabilities() {
   const { palette } = useTheme();
-  const order: CapabilityStatus[] = ["shipped", "blocked", "planned"];
+  const order: CapabilityStatus[] = ["shipped", "blocked", "planned", "retired"];
   const meta: Record<CapabilityStatus, { label: string; color: string; blurb: string }> = {
     shipped: { label: "Shipped", color: palette.lime, blurb: "Built and working." },
     blocked: { label: "Blocked", color: palette.amber, blurb: "Implemented, stuck on missing data / access." },
     planned: { label: "Planned", color: palette.ash, blurb: "Not built yet." },
+    retired: { label: "Retired", color: palette.red, blurb: "Deliberately deleted. The reason is on the card." },
   };
 
   return (
     <View>
       <Mono color={palette.ash} style={{ fontSize: fs.body, marginBottom: 16 }}>
-        Living registry of every capability — kept current as features ship, block, or get planned.
+        Living registry of every capability — kept current as features ship, block, get planned, or get retired.
       </Mono>
 
       <View style={{ flexDirection: "row", gap: space.md }}>
@@ -96,6 +97,12 @@ function CapRow({ cap, color }: { cap: Capability; color: string }) {
         <Chip color={palette.ash}>{cap.area}</Chip>
       </View>
       <Mono color={palette.chalk} style={{ fontSize: 13, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>
+      {cap.retiredBecause ? (
+        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: `${palette.red}12`, borderWidth: 1, borderColor: `${palette.red}40` }}>
+          <Kicker color={palette.red}>Why it went</Kicker>
+          <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), marginTop: 3 }}>{cap.retiredBecause}</Mono>
+        </View>
+      ) : null}
       {cap.blockedBy ? (
         <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: `${palette.amber}12`, borderWidth: 1, borderColor: `${palette.amber}40` }}>
           <Kicker color={palette.amber}>Needs</Kicker>

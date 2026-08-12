@@ -29,15 +29,15 @@ import { deviceTrueSessions } from "../device-truth";
  *   1. For each benchmark lift, take the athlete's best e1RM and divide by
  *      body mass. That ratio is the measurement.
  *   2. Compare it to the thresholds for that lift, shifted for sex and scaled
- *      by the age-development curve the talent engine already uses — a 16-year
+ *      by the age-development curve in benchmarks.ts — a 16-year
  *      old and a 45-year old hitting the same ratio are not the same athlete.
  *   3. Take the athlete's BEST lift as the headline, because level is set by
  *      what you have built, not dragged down by the lift you neglect.
  *   4. Report it with the evidence and a confidence, and never silently
  *      overrule what the athlete said about themselves.
  *
- * WHAT THIS IS NOT. It is not a talent percentile — `benchmarks.ts` does that
- * job for the coach-facing talent report, against a sport cohort. This answers
+ * WHAT THIS IS NOT. It is not a cohort percentile — `benchmarks.ts` does that
+ * job, against a sport cohort. This answers
  * a different question with a different output: which training-age tier should
  * the volume model use. The two share the development curve and nothing else.
  *

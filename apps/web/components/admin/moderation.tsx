@@ -3,16 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { fs, space, LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, cond, Mono, Card, Chip, txt } from "@/lib/ui";
 
-type PendingProfile = {
-  id: string;
-  name: string;
-  email: string;
-  sport: string;
-  sex: string;
-  age: number;
-  metrics: Record<string, number>;
-  updatedAt: string;
-};
+// The moderation queue: user-flagged content reports (social profiles, comments
+// and posts). The talent-profile approval queue that used to sit beside it went
+// with the Talent Graph in the 2026-08 strategy cuts, so reports are the only
+// feeder now — and one feeder does not need a tab bar above it.
 type ReportItem = {
   id: string;
   reporterEmail: string;
@@ -21,14 +15,9 @@ type ReportItem = {
   reason: string;
   detail: string | null;
   createdAt: string;
-  target: { name: string; email: string; sport: string; visibility: string; moderationStatus: string } | null;
 };
 
-type Tab = "profiles" | "reports";
-
 export default function AdminModeration() {
-  const [tab, setTab] = useState<Tab>("profiles");
-  const [profiles, setProfiles] = useState<PendingProfile[] | null>(null);
   const [reports, setReports] = useState<ReportItem[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -39,34 +28,12 @@ export default function AdminModeration() {
       .then((r) => r.json())
       .then((d) => {
         setUnavailable(Boolean(d.unavailable));
-        setProfiles(d.pendingProfiles ?? []);
         setReports(d.reports ?? []);
       })
-      .catch(() => {
-        setProfiles([]);
-        setReports([]);
-      });
+      .catch(() => setReports([]));
   }, []);
 
   useEffect(load, [load]);
-
-  async function moderateProfile(id: string, action: "approve" | "reject") {
-    const note = action === "reject" ? prompt("Reason for rejection (optional, shown to no one):") ?? undefined : undefined;
-    setBusy(id);
-    setErr(null);
-    try {
-      const res = await fetch(`/api/admin/moderation/profile/${id}`, {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action, note }),
-      });
-      if (!res.ok) throw new Error();
-    } catch {
-      setErr("That action didn't go through — re-syncing the queue.");
-    }
-    setBusy(null);
-    load();
-  }
 
   async function resolveReport(id: string, action: "dismiss" | "resolve" | "takedown") {
     const note = action === "takedown" ? prompt("Takedown note (optional):") ?? undefined : undefined;
@@ -97,35 +64,8 @@ export default function AdminModeration() {
       </Card>
     );
 
-  const pCount = profiles?.length ?? 0;
-  const rCount = reports?.length ?? 0;
-
   return (
     <div>
-      <div style={{ display: "flex", gap: space.sm, marginBottom: 18 }}>
-        {([["profiles", `Pending profiles${pCount ? ` – ${pCount}` : ""}`], ["reports", `Reports${rCount ? ` – ${rCount}` : ""}`]] as const).map(([id, label]) => (
-          <button className="pressable"
-            key={id}
-            onClick={() => setTab(id)}
-            style={{
-              ...cond,
-              fontSize: fs.bodyLg,
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: ".08em",
-              padding: "10px 16px",
-              borderRadius: "var(--r-field)",
-              cursor: "pointer",
-              border: `1px solid ${tab === id ? LIME : LINE}`,
-              background: tab === id ? LIME : "transparent",
-              color: txt(tab === id ? ON_ACCENT : ASH),
-            }}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       {err && (
         <div role="alert">
           <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 12 }} c={RED}>
@@ -134,62 +74,32 @@ export default function AdminModeration() {
         </div>
       )}
 
-      {tab === "profiles" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
-          <Mono s={{ fontSize: fs.caption, display: "block" }} c={ASH}>
-            Discoverable talent profiles awaiting approval before they surface in discovery.
-          </Mono>
-          {profiles?.map((p) => (
-            <Card key={p.id} style={{ borderLeft: `3px solid ${AMBER}` }}>
-              <div style={{ marginBottom: 4 }}>
-                <Chip c={AMBER}>pending</Chip>
-                <Chip c={ASH}>{p.sport}</Chip>
-                <Chip c={ASH}>{p.sex}{p.age}</Chip>
-              </div>
-              <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{p.name}</div>
-              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 2 }} c={ASH}>{p.email}</Mono>
-              <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6 }} c={ASH}>
-                {Object.entries(p.metrics ?? {}).map(([k, v]) => `${k}: ${v}`).join("  –  ") || "no metrics"}
-              </Mono>
-              <div style={{ display: "flex", gap: space.sm, marginTop: 14 }}>
-                <button className="pressable" disabled={busy === p.id} onClick={() => moderateProfile(p.id, "approve")} style={primaryBtn}>Approve</button>
-                <button className="pressable" disabled={busy === p.id} onClick={() => moderateProfile(p.id, "reject")} style={{ ...ghostBtn, color: txt(RED), borderColor: `${RED}55` }}>Reject</button>
-              </div>
-            </Card>
-          ))}
-          {profiles && profiles.length === 0 && <Empty>No profiles awaiting review. 🎉</Empty>}
-        </div>
-      )}
-
-      {tab === "reports" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
-          <Mono s={{ fontSize: fs.caption, display: "block" }} c={ASH}>
-            User-flagged content. Take down to drop the target from discovery; dismiss if it&apos;s fine.
-          </Mono>
-          {reports?.map((r) => (
-            <Card key={r.id} style={{ borderLeft: `3px solid ${RED}` }}>
-              <div style={{ marginBottom: 4 }}>
-                <Chip c={RED}>{r.reason}</Chip>
-                <Chip c={ASH}>{r.targetType}</Chip>
-                {r.target && <Chip c={r.target.moderationStatus === "approved" ? LIME : AMBER}>{r.target.moderationStatus}</Chip>}
-              </div>
-              <div style={{ ...disp, fontWeight: 800, fontSize: fs.note }}>
-                {r.target ? `${r.target.name} – ${r.target.sport}` : `${r.targetType}:${r.targetId.slice(0, 8)} (target gone)`}
-              </div>
-              {r.detail && <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>“{r.detail}”</Mono>}
-              <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>
-                reported by {r.reporterEmail} – {new Date(r.createdAt).toLocaleDateString()}
-              </Mono>
-              <div style={{ display: "flex", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
-                <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "takedown")} style={{ ...primaryBtn, background: RED, border: `1px solid ${RED}` }}>Take down</button>
-                <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "dismiss")} style={ghostBtn}>Dismiss</button>
-                <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "resolve")} style={ghostBtn}>Mark resolved</button>
-              </div>
-            </Card>
-          ))}
-          {reports && reports.length === 0 && <Empty>No open reports. 🎉</Empty>}
-        </div>
-      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: space.ms }}>
+        <Mono s={{ fontSize: fs.caption, display: "block" }} c={ASH}>
+          User-flagged content. Take down to action the target; dismiss if it&apos;s fine.
+        </Mono>
+        {reports?.map((r) => (
+          <Card key={r.id} style={{ borderLeft: `3px solid ${RED}` }}>
+            <div style={{ marginBottom: 4 }}>
+              <Chip c={RED}>{r.reason}</Chip>
+              <Chip c={ASH}>{r.targetType}</Chip>
+            </div>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.note }}>
+              {r.targetType}:{r.targetId.slice(0, 8)}
+            </div>
+            {r.detail && <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>“{r.detail}”</Mono>}
+            <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6 }} c={ASH}>
+              reported by {r.reporterEmail} – {new Date(r.createdAt).toLocaleDateString()}
+            </Mono>
+            <div style={{ display: "flex", gap: space.sm, marginTop: 14, flexWrap: "wrap" }}>
+              <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "takedown")} style={{ ...primaryBtn, background: RED, border: `1px solid ${RED}` }}>Take down</button>
+              <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "dismiss")} style={ghostBtn}>Dismiss</button>
+              <button className="pressable" disabled={busy === r.id} onClick={() => resolveReport(r.id, "resolve")} style={ghostBtn}>Mark resolved</button>
+            </div>
+          </Card>
+        ))}
+        {reports && reports.length === 0 && <Empty>No open reports. 🎉</Empty>}
+      </div>
     </div>
   );
 }

@@ -26,21 +26,17 @@ import AdminSecurity from "./security";
 import AdminAccess from "./access";
 import CoachApplications from "./coach-applications";
 import AdminGuidance from "./guidance";
-import AdminFinancials from "./financials";
-import AdminEmail from "./email";
 import AdminAgents from "./agents";
 import AgentHQ from "./agent-hq";
 import EngineRoom from "./engine-room";
 
-type SectionId = "overview" | "users" | "directory" | "moderation" | "financials" | "email" | "hq" | "agents" | "engine" | "announcements" | "onboarding" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "system" | "guidance";
+type SectionId = "overview" | "users" | "directory" | "moderation" | "hq" | "agents" | "engine" | "announcements" | "onboarding" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "system" | "guidance";
 
 const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: AuroraIconName; group: string }[] = [
   { id: "overview", label: "Overview", icon: "◆", auroraIcon: "info", group: "Platform" },
   { id: "users", label: "Users", icon: "⦿", auroraIcon: "user", group: "Platform" },
-  { id: "directory", label: "Orgs & coaching", icon: "⬡", auroraIcon: "globe", group: "Platform" },
+  { id: "directory", label: "Coaching", icon: "⬡", auroraIcon: "globe", group: "Platform" },
   { id: "moderation", label: "Moderation", icon: "⚖", auroraIcon: "check-circle", group: "Platform" },
-  { id: "financials", label: "Financials", icon: "💰", auroraIcon: "offer", group: "Business" },
-  { id: "email", label: "Email & marketing", icon: "✉", auroraIcon: "mail", group: "Business" },
   { id: "hq", label: "Agent HQ", icon: "◳", auroraIcon: "navigation", group: "AI" },
   { id: "agents", label: "AI agents", icon: "🤖", auroraIcon: "user-square", group: "AI" },
   { id: "engine", label: "Engine room", icon: "ƒ", auroraIcon: "grid", group: "AI" },
@@ -317,8 +313,6 @@ export default function AdminPanel() {
         {section === "users" && <AdminUsers />}
         {section === "directory" && <AdminDirectory />}
         {section === "moderation" && <AdminModeration />}
-        {section === "financials" && <AdminFinancials />}
-        {section === "email" && <AdminEmail />}
         {section === "hq" && <AgentHQ />}
         {section === "agents" && <AdminAgents />}
         {section === "engine" && <EngineRoom />}

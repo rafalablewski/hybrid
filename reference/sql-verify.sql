@@ -12,11 +12,7 @@ with expected(obj, kind, note) as (values
   ('WorkoutTemplate','table',''),('Assignment','table',''),
   -- performance / roadmap
   ('RtpProtocol','table',''),('RiskOutcome','table',''),('ModelFit','table',''),
-  ('VideoAnalysis','table',''),('Event','table',''),('TalentProfile','table',''),
   ('Connection','table',''),
-  -- teams
-  ('Organization','table',''),('Team','table',''),('Membership','table',''),
-  ('OrgInvite','table',''),
   -- governance / CMS / trust & safety
   ('AdminAudit','table',''),('Announcement','table',''),('Exercise','table',''),
   ('MediaAsset','table',''),('Translation','table',''),('Report','table',''),

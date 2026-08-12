@@ -28,7 +28,6 @@ import { doneReceipt } from "./done-receipt";
 import { fmtWeight, fmtTonnage, type WeightUnit } from "./units";
 import { formatSportDistance } from "./olympic-sports";
 import { sessionEnergy, type EnergyEstimate } from "./energy";
-import { benchmarkMetric, type Cohort } from "./benchmarks";
 
 /** A free basic stat — unit lives in the value, label is an i18n key. */
 export interface WrappedStat {
@@ -134,27 +133,11 @@ export const HERO_TRACKING_EM = -0.031;
 /** One of the four stat tiles: ~76px of room at a 22px base. */
 export const STAT_FIT_EM = 3.25;
 
-/**
- * "Where you stand" — the headline lift's RELATIVE-STRENGTH percentile vs a
- * cohort (sport / sex / age), from the documented synthetic norms in
- * benchmarks.ts. An ESTIMATE (norms-prior-v0), surfaced only when the athlete
- * has a talent profile (sex + age) AND a known bodyweight — never fabricated.
- * `topPct` = "you're in the top N%".
- */
-export interface LiftStanding {
-  /** 1..99 percentile vs the cohort */
-  percentile: number;
-  /** "top N%" — the athlete's standing, N = 100 − percentile (≥ 1) */
-  topPct: number;
-}
-
-export function liftStanding(e1rmKg: number, bodyweightKg: number, cohort: Cohort): LiftStanding | null {
-  if (!(e1rmKg > 0) || !(bodyweightKg > 0)) return null;
-  const relStrength = e1rmKg / bodyweightKg;
-  const b = benchmarkMetric("relStrength", relStrength, cohort);
-  const percentile = Math.round(b.percentile);
-  return { percentile, topPct: Math.max(1, 100 - percentile) };
-}
+// "Where you stand" — the headline lift's relative-strength percentile against
+// a sport/sex/age cohort — was REMOVED with the Talent Graph (2026-08 strategy
+// cuts). The opt-in talent profile was its only source of sex + age, and there
+// is no other cohort input in the schema, so the card could never render again.
+// A panel that can only ever say nothing is worse than no panel.
 
 /** The endurance modalities — the ones where a distance and a pace mean
  *  something. Everything else that isn't a lift is a timed effort. */

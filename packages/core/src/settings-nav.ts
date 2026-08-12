@@ -60,7 +60,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: "reach",
     label: "Visibility & reach",
     categories: [
-      { id: "privacy", icon: "eye", title: "Privacy", subtitle: "Sharing, discoverability, analytics", keywords: ["coach", "discoverable", "talent", "analytics", "opt out"] },
+      { id: "privacy", icon: "eye", title: "Privacy", subtitle: "Sharing, discoverability, analytics", keywords: ["coach", "analytics", "opt out"] },
       { id: "coaching", icon: "user-add", title: "Coaching & access", subtitle: "Become a coach, request access", keywords: ["become a coach", "apply", "credentials", "roster"] },
     ],
   },

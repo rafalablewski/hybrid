@@ -1,56 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { parseForcePlateCsv, mapMetric } from "./forceplate";
 import { weightTrend } from "./composition";
 import { athleteSegment } from "./segment";
 import type { Signal } from "./signals";
-
-describe("force-plate CSV ingest", () => {
-  it("maps known metric labels to signal kinds", () => {
-    expect(mapMetric("Jump Height (cm)")).toBe("jumpHeight");
-    expect(mapMetric("Takeoff Asymmetry %")).toBe("asymmetry");
-    expect(mapMetric("Body Mass")).toBe("bodyMass");
-    expect(mapMetric("Peak Power")).toBeNull();
-    // Force columns must NOT be read as kg body mass.
-    expect(mapMetric("Weight (N)")).toBeNull();
-    expect(mapMetric("System Weight (N)")).toBeNull();
-    expect(mapMetric("Peak Force")).toBeNull();
-  });
-
-  it("rejects a bare Weight column whose unit is Newtons (force, not kg)", () => {
-    const csv = ["date,metric,value,unit", "2026-05-01,Weight,712,N", "2026-05-02,Weight,80,kg"].join("\n");
-    const r = parseForcePlateCsv(csv, { athleteId: "u" });
-    expect(r.imported).toBe(1); // the N row is dropped, the kg row kept
-    expect(r.signals[0]!.kind).toBe("bodyMass");
-    expect(r.signals[0]!.value).toBe(80);
-  });
-
-  it("parses a WIDE csv (date + metric columns)", () => {
-    const csv = [
-      "Date,Athlete,Jump Height (cm),Asymmetry (%),Peak Power",
-      "2026-05-01,Marcel,38.2,4.1,4200",
-      "2026-05-08,Marcel,39.0,3.4,4310",
-    ].join("\n");
-    const r = parseForcePlateCsv(csv, { athleteId: "u" });
-    expect(r.rows).toBe(2);
-    // 2 rows × (jumpHeight + asymmetry) = 4 signals; Peak Power ignored
-    expect(r.imported).toBe(4);
-    expect(r.ignored).toContain("Peak Power");
-    expect(r.signals.filter((s) => s.kind === "jumpHeight")).toHaveLength(2);
-    expect(r.signals[0]!.unit).toBe("cm");
-  });
-
-  it("parses a LONG csv (date,metric,value,unit)", () => {
-    const csv = ["date,metric,value,unit", "2026-05-01,Jump Height,40,cm", "2026-05-01,RSI,1.8,"].join("\n");
-    const r = parseForcePlateCsv(csv, { athleteId: "u" });
-    expect(r.imported).toBe(1); // RSI unrecognized
-    expect(r.signals[0]!.kind).toBe("jumpHeight");
-  });
-
-  it("skips rows with unparseable dates", () => {
-    const csv = ["Date,Jump Height", "not-a-date,40", "2026-05-01,41"].join("\n");
-    expect(parseForcePlateCsv(csv, { athleteId: "u" }).imported).toBe(1);
-  });
-});
 
 describe("smoothed weight trend", () => {
   const mk = (v: number, daysAgo: number): Signal => ({

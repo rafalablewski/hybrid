@@ -126,19 +126,6 @@ export const web_train = {
     "w.train.periodize.intensity": "intensity",
     "w.train.periodize.volume": "volume",
 
-    // competition.tsx
-    "w.train.comp.peakingOptimizer": "Competition – peaking optimizer",
-    "w.train.comp.intro": "Set a target date and the plan back-solves so your best day lands on the event — finals, not heats.",
-    "w.train.comp.eventName": "Event name",
-    "w.train.comp.addEvent": "Add event",
-    "w.train.comp.weeksOut": "weeks out",
-    "w.train.comp.wk": "wk",
-    "w.train.comp.peakLands": "peak lands on event ✓",
-    "w.train.comp.peakAtWeek": "peak at week",
-    "w.train.comp.adjustTaper": "— adjust taper",
-    "w.train.comp.projection": "Form projection",
-    "w.train.comp.formNote": "form (freshness) peaks as the taper sheds fatigue faster than fitness",
-    "w.train.comp.event": "event",
 
     // builder.tsx
     "w.train.builder.newWorkout": "New session",
@@ -385,9 +372,6 @@ export const web_train = {
     "w.train.blocks.zone": "HR zone",
     "w.train.blocks.collapse": "Collapse",
     "w.train.blocks.expand": "Expand",
-    "w.train.comp.dateLabel": "Date (YYYY-MM-DD)",
-    "w.train.comp.formAtEvent": "form at event",
-    "w.train.comp.projectionCaption": "wk 1 → event (peak week in lime)",
     "w.train.runTrack.seeAnalytics": "See your running analytics →",
     "w.train.periodize.weekSeason": "-week season",
     "w.train.periodize.nowIn": "Now in",
@@ -517,19 +501,6 @@ export const web_train = {
     "w.train.periodize.intensity": "intensywność",
     "w.train.periodize.volume": "objętość",
 
-    // competition.tsx
-    "w.train.comp.peakingOptimizer": "Zawody – optymalizator formy szczytowej",
-    "w.train.comp.intro": "Ustaw datę docelową, a plan cofa się, aby Twój najlepszy dzień wypadł na zawodach — finały, nie eliminacje.",
-    "w.train.comp.eventName": "Nazwa wydarzenia",
-    "w.train.comp.addEvent": "Dodaj wydarzenie",
-    "w.train.comp.weeksOut": "tygodni do startu",
-    "w.train.comp.wk": "tyg.",
-    "w.train.comp.peakLands": "szczyt wypada na zawodach ✓",
-    "w.train.comp.peakAtWeek": "szczyt w tygodniu",
-    "w.train.comp.adjustTaper": "— skoryguj tapering",
-    "w.train.comp.projection": "Prognoza formy",
-    "w.train.comp.formNote": "forma (świeżość) osiąga szczyt, gdy tapering redukuje zmęczenie szybciej niż formę",
-    "w.train.comp.event": "wydarzenie",
 
     // builder.tsx
     "w.train.builder.newWorkout": "Nowy trening",
@@ -768,9 +739,6 @@ export const web_train = {
     "w.train.blocks.zone": "strefa HR",
     "w.train.blocks.collapse": "Zwiń",
     "w.train.blocks.expand": "Rozwiń",
-    "w.train.comp.dateLabel": "Data (RRRR-MM-DD)",
-    "w.train.comp.formAtEvent": "forma na zawodach",
-    "w.train.comp.projectionCaption": "tydz. 1 → wydarzenie (tydzień szczytu na zielono)",
     "w.train.runTrack.seeAnalytics": "Zobacz swoją analitykę biegania →",
     "w.train.periodize.weekSeason": "-tygodniowy sezon",
     "w.train.periodize.nowIn": "Teraz w",
@@ -900,19 +868,6 @@ export const web_train = {
     "w.train.periodize.intensity": "Intensität",
     "w.train.periodize.volume": "Volumen",
 
-    // competition.tsx
-    "w.train.comp.peakingOptimizer": "Wettkampf – Peaking-Optimierer",
-    "w.train.comp.intro": "Setze ein Zieldatum und der Plan rechnet rückwärts, damit dein bester Tag auf den Wettkampf fällt — Finale, nicht Vorläufe.",
-    "w.train.comp.eventName": "Veranstaltungsname",
-    "w.train.comp.addEvent": "Veranstaltung hinzufügen",
-    "w.train.comp.weeksOut": "Wochen bis zum Start",
-    "w.train.comp.wk": "Wo.",
-    "w.train.comp.peakLands": "Höchstform fällt auf Wettkampf ✓",
-    "w.train.comp.peakAtWeek": "Höchstform in Woche",
-    "w.train.comp.adjustTaper": "— Tapering anpassen",
-    "w.train.comp.projection": "Form-Projektion",
-    "w.train.comp.formNote": "Form (Frische) erreicht den Höhepunkt, wenn das Tapering Ermüdung schneller abbaut als Fitness",
-    "w.train.comp.event": "Veranstaltung",
 
     // builder.tsx
     "w.train.builder.newWorkout": "Neues Session",
@@ -1151,9 +1106,6 @@ export const web_train = {
     "w.train.blocks.zone": "HF-Zone",
     "w.train.blocks.collapse": "Einklappen",
     "w.train.blocks.expand": "Ausklappen",
-    "w.train.comp.dateLabel": "Datum (JJJJ-MM-TT)",
-    "w.train.comp.formAtEvent": "Form beim Wettkampf",
-    "w.train.comp.projectionCaption": "Wo. 1 → Veranstaltung (Höchstform-Woche in Limette)",
     "w.train.runTrack.seeAnalytics": "Sieh dir deine Lauf-Analysen an →",
     "w.train.periodize.weekSeason": "-Wochen-Saison",
     "w.train.periodize.nowIn": "Jetzt in",

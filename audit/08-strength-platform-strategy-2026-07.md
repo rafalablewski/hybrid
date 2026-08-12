@@ -7,6 +7,23 @@ $1B+ outcome, not a lifestyle business. Nothing here is polite.
 *Date: 27 July 2026. Sources: the repository at commit `37c9b14`, plus public
 market research (linked at the end).*
 
+> **UPDATE — 12 August 2026: nine of the fifteen kills are executed.** The
+> Tactical/SOF vertical, Talent Graph, Org Graph / Team OS, Force plate CSV
+> ingest, Video intelligence, Competition intelligence + peaking, the Email
+> marketing platform, the **Longevity vertical** and the **Financials &
+> unit-economics console** are **deleted** — 9,472 lines removed across 134
+> files, 59 files gone entirely, 12 database tables, 7 nav destinations.
+> **See [§3.6](#36-what-was-actually-cut-12-aug-2026)
+> for what went, what was deliberately kept, and what the cuts cost.** This
+> supersedes §11.3's "the Kill List was not executed" — true when it was
+> written on 9 August, three days stale now.
+>
+> The analysis below is left as it was written on 27 July — it is the argument,
+> not a status page. Where a paragraph describes a screen that no longer exists,
+> read it as the case for why it shouldn't have. The three deletions that would
+> move usability most (nav collapse, the Today screen, the logger) are **still
+> outstanding**, and so are the other six kills.
+
 > **Re-audited 9 August 2026** — see **PART XI — Re-audit (2026-08-09)** at the end.
 > Two corrections to this document's own facts (the "5 days" clock was a
 > shallow-clone artifact; the real history starts 2026-06-02), and a scorecard of
@@ -59,6 +76,10 @@ point of view says *no* to things. This one has a Force Plate screen, a Tactical
 Competition Intelligence engine, a full nutrition stack with a recipe library,
 an email marketing automation platform, an AI agent org with Slack approvals,
 and a financials & unit-economics console — before it has one retained user.
+
+> *12 Aug: seven of those nine are deleted (§3.6). Saying no to seven things is
+> a point of view starting to form. It is not one yet — the nutrition stack and
+> the agent org are still here, and there is still not one retained user.*
 
 Andrew would put it this way: there is no distribution insight anywhere in this
 repository. Not one line of code, and not one entry in the capability registry,
@@ -334,7 +355,9 @@ recommends it at a conference, when the budget cycle opens, and when the
 migration is done for them.
 
 **What this means for you:** your Squad Monitor and Org Graph will not win a
-single college program on merit. That market is sold, not shipped. And it is
+single college program on merit. *(12 Aug: the Org Graph is deleted — §3.6. The
+Squad Monitor stays, aimed at solo coaches, who are an acquisition channel
+rather than an enterprise sale.)* That market is sold, not shipped. And it is
 absolutely not winnable by a pre-revenue team in parallel with a consumer app.
 
 ---
@@ -412,8 +435,9 @@ That is a real insight and it is buried under 270 other things.
 | **HYBRID** | **4** | 8 | 5 | **9** | **8** | 6 | 6 |
 
 You have Statistics, Analytics, Volume, Trends, Exercises, Performance, Endurance,
-Velocity, Force plate, Video and History as **eleven separate destinations**.
-Hevy has one. Usability 4 is generous. Nobody can hold eleven analysis surfaces
+Velocity, Force plate, Video and History as **eleven separate destinations**
+(nine since the 12 Aug cuts took Force plate and Video — see §3.6). Hevy has
+one. Usability 4 is generous. Nobody can hold eleven analysis surfaces
 in their head; the practical effect is that users find none of them.
 
 Innovation 9 is earned though: bodyweight-aware tonnage (10 bodyweight pull-ups
@@ -454,9 +478,15 @@ inflation without a launch.
 No Watch app. HealthKit unverified. Wearable OAuth uncredentialed. Meanwhile you
 have a Force Plate CSV ingest screen.
 
+> *12 Aug: the Force Plate screen is gone (§3.6). Every ❌ in this table is
+> still ❌ — deleting the distraction did not build the widget.*
+
 A Live Activity showing the rest timer on the lock screen is worth more to
 retention than the Talent Graph, the Org Graph, the Tactical vertical and the
 Longevity vertical combined. It is also roughly 1% of the work.
+
+> *12 Aug: all four are now deleted (§3.6). The Live Activity is still not
+> built — `live-activity-rest` is still `planned`.*
 
 ### Business readiness
 
@@ -609,7 +639,7 @@ are the features without which you cannot even get the meeting.
 | **Programming in a spreadsheet-speed grid** | Coaches write programs in Excel. Any builder slower than Excel is dead on arrival. Your `coach-program-builder` must accept a paste from Excel. |
 | **Autoregulation with coach-set guardrails** | Coaches will not let an algorithm change loads. They will let it *suggest within a band they define*. This distinction is the entire sale. |
 | **Velocity as first-class, from real hardware** | GymAware/Perch/Vitruve/Output integration. Your `vbt-capture` is blocked on exactly this. Perch alone has NFL/NBA/NCAA placements — integrating is a distribution channel, not just a feature. |
-| **Force plate + jump testing (already ingested)** | You have CSV ingest. Elite programs live on CMJ/RSI trends. This is real. |
+| ~~**Force plate + jump testing (already ingested)**~~ | You had CSV ingest; it was **deleted 12 Aug** (§3.6) because Hawkin/VALD already own those 5,000 institutions. Elite programs do live on CMJ/RSI trends — which is an argument for *integrating* with the plate vendor if a design partner ever signs, not for owning a parser. |
 | **Return-to-play protocols with medical hand-off** | You have `rtp`. This is the single feature athletic trainers pay for. |
 | **Exportable, auditable athlete records** | For NCAA compliance, insurers, and medical staff. Nobody does this well. |
 | **SSO / roster sync / SIS integration** | Procurement blocker. Boring. Mandatory. |
@@ -817,27 +847,244 @@ free bootstrap for the attestation tiers in 10x-1.
 
 Ordered by how much damage each one is currently doing.
 
-| Kill | Why |
-|---|---|
-| **The Tactical / SOF vertical** | Zero consumer users. Government/military sales cycles are 18–36 months and require FedRAMP-class compliance you cannot carry. This is a *different company*. |
-| **The Longevity / performance-medicine vertical** | Different buyer, different regulatory surface, different brand. Function Health and Superpower are funded and ahead. Not your fight. |
-| **Talent Graph** | Recruiting is a relationship market with entrenched incumbents. Meaningless without the verified record from 10x-1 — and *with* it, it builds itself later. |
-| **Org Graph / Team Operating System** | You are pre-revenue building enterprise multi-tenancy. TeamBuildr wins on relationships. Delete, or spin out after 100k consumers. |
-| **Competition intelligence + peaking optimizer** | Serves maybe 0.1% of users. Beautiful engineering, no market. |
-| **Video intelligence / markerless motion analysis** | Real ML cost, real accuracy risk, and the credible players (Perch, Output, Uplift, Onform) are hardware-adjacent. Buy or integrate, never build. |
-| **Force plate CSV ingest** | ~5,000 institutions worldwide own force plates and all of them already have Hawkin/VALD software. |
-| **The full nutrition stack (recipes, barcode, label scan, meal library, food DB)** | You are fighting MyFitnessPal *and* MacroFactor with a side feature. MacroFactor will beat you at nutrition and is now coming for training. Do not fight on their ground. Integrate with MacroFactor instead — genuinely. |
-| **The AI agent org, Slack approvals, scheduled agent runs, admin Engine Room** | Internal tooling for a company of one. Pure cost. |
-| **Email marketing automation platform (campaigns, sequences, enrollment, suppression)** | You built Customer.io. Buy Customer.io. |
-| **Financials & unit-economics console** | Modelling the economics of a business with zero revenue. This is the purest expression of the problem. |
-| **CMS: media library, localization manager, feature flags, announcements, moderation queue** | Infrastructure for a company at 10M users. You have 0. |
-| **i18n in EN/PL/DE before product-market fit** | Triples every copy change. Ship English. Localize when a market pulls you. |
-| **Two light themes + Liquid Glass + three palettes** | Aesthetic churn is not product work. One theme, executed perfectly. |
-| **The 34-destination navigation** | See §4. This is actively destroying your usability. |
+**Status legend:** ⛔️ **CUT** — deleted from the codebase, see §3.6. ◻️ standing — still shipped, still the founder's call.
+
+| Status | Kill | Why |
+|---|---|---|
+| ⛔️ CUT | **The Tactical / SOF vertical** | Zero consumer users. Government/military sales cycles are 18–36 months and require FedRAMP-class compliance you cannot carry. This is a *different company*. |
+| ⛔️ CUT | **The Longevity / performance-medicine vertical** | Different buyer, different regulatory surface, different brand. Function Health and Superpower are funded and ahead. Not your fight. |
+| ⛔️ CUT | **Talent Graph** | Recruiting is a relationship market with entrenched incumbents. Meaningless without the verified record from 10x-1 — and *with* it, it builds itself later. |
+| ⛔️ CUT | **Org Graph / Team Operating System** | You are pre-revenue building enterprise multi-tenancy. TeamBuildr wins on relationships. Delete, or spin out after 100k consumers. |
+| ⛔️ CUT | **Competition intelligence + peaking optimizer** | Serves maybe 0.1% of users. Beautiful engineering, no market. |
+| ⛔️ CUT | **Video intelligence / markerless motion analysis** | Real ML cost, real accuracy risk, and the credible players (Perch, Output, Uplift, Onform) are hardware-adjacent. Buy or integrate, never build. |
+| ⛔️ CUT | **Force plate CSV ingest** | ~5,000 institutions worldwide own force plates and all of them already have Hawkin/VALD software. |
+| ◻️ | **The full nutrition stack (recipes, barcode, label scan, meal library, food DB)** | You are fighting MyFitnessPal *and* MacroFactor with a side feature. MacroFactor will beat you at nutrition and is now coming for training. Do not fight on their ground. Integrate with MacroFactor instead — genuinely. |
+| ◻️ | **The AI agent org, Slack approvals, scheduled agent runs, admin Engine Room** | Internal tooling for a company of one. Pure cost. |
+| ⛔️ CUT | **Email marketing automation platform (campaigns, sequences, enrollment, suppression)** | You built Customer.io. Buy Customer.io. |
+| ⛔️ CUT | **Financials & unit-economics console** | Modelling the economics of a business with zero revenue. This is the purest expression of the problem. |
+| ◻️ | **CMS: media library, localization manager, feature flags, announcements, moderation queue** | Infrastructure for a company at 10M users. You have 0. |
+| ◻️ | **i18n in EN/PL/DE before product-market fit** | Triples every copy change. Ship English. Localize when a market pulls you. |
+| ◻️ partly | **Two light themes + Liquid Glass + three palettes** | Aesthetic churn is not product work. One theme, executed perfectly. *(Both light themes are gone as of Aug 2026 — the app is dark-only. Liquid Glass stayed.)* |
+| ◻️ | **The 34-destination navigation** | See §4. This is actively destroying your usability. |
 
 Rough estimate: **the Kill List is 60–70% of the codebase.** Deleting it would
 make the product better, not worse — and would make the remaining 30% ship
 faster forever.
+
+---
+
+## 3.6 What was actually cut (12 Aug 2026)
+
+Nine of the fifteen kills above are **executed** — deleted, not deferred. This
+section is the record of what went, what deliberately stayed, and what the
+deletion cost.
+
+**Headline: 9,472 lines removed across 134 files (885 added back — mostly the
+`retired` registry entries and this section), 59 files deleted outright, 12
+database tables dropped, 7 nav destinations removed (43 → 36).** Nothing on this
+list had a user.
+
+*A note on the delay: seven of these were prepared as PR #287 on 30 July and
+never merged. `main` moved ~250 commits in the meantime — including retiring the
+web client entirely — so this is not that branch rebased. It was re-executed
+against the current tree, which made most of it smaller: the web athlete client
+that used to carry a second copy of every screen is already gone.*
+
+### 1. Tactical / SOF vertical
+
+Gone: `packages/core/src/tactical.ts` (Deployment Readiness Index, duty status,
+unit go/no-go rollup) and its tests, the `tactical` nav destination, the
+`nav.tactical` flag, and the Tactical screen.
+
+**Kept deliberately:** the *consumer* **Tactical & Military** goal in the plan
+library. Ruck, carry and work-capacity programming for a lifter is not the SOF
+vertical — and r/tacticalbarbell is one of the watering holes §5.1 sends you to.
+Killing the goal would have cut a growth channel to kill a sales channel.
+
+### 2. Longevity / performance-medicine vertical
+
+Gone: `packages/core/src/longevity.ts` (biological-age-vs-chronological from
+resting HR, HRV, VO₂ and sleep, plus a healthspan score and flags), its tests,
+the Longevity screen, the `longevity` nav destination, the `nav.longevity` flag,
+and its EN/PL/DE copy. No table — it computed from `Signal` rows that already
+existed.
+
+**The real reason, beyond the market one:** a biological-age number is a
+diagnostic-adjacent claim, and it was being made by a company with no clinician,
+no validation study and no regulatory posture. Every marker it read is still
+surfaced — as **readiness**, which is a training statement we can stand behind.
+
+**Kept deliberately:** the **Mobility & Longevity** training goal in the plan
+library. That is a way to train, not a medical claim.
+
+### 3. Talent Graph
+
+Gone: the `TalentProfile` table, `/api/talent` and `/api/talent/search`, the
+Talent screen, the talent-profile moderation queue, the "Discoverable in Talent"
+privacy switch, and `talentReport()` from `benchmarks.ts`.
+
+**Kept deliberately:** the norm math itself — `normalCdf`, `cohortNorm`,
+`benchmarkMetric`, `developmentFraction`. The fitness-level engine and
+`datanet.ts` both consume it and neither was on the list.
+
+**What the cut cost, honestly — three things, none of them papered over:**
+
+1. **Wrapped's *"where you stand"* percentile went with it.** The opt-in talent
+   profile was its only source of sport/sex/age. Rather than leave a card that
+   can never render, the percentile, `liftStanding()` and their copy are gone,
+   and the signature panel stands alone.
+2. **`datanet` now reports zero cohort observations** instead of aggregating a
+   synthetic one — which is what §2.1 said was true all along. The pipe stays
+   laid for a real longitudinal source (adaptive MRV, program efficacy).
+3. **Nothing persists an athlete's sex any more.** `TalentProfile.sex` was the
+   only server-readable copy; the volume profile, where the athlete actually
+   sets it, lives in each device's own prefs. So the *public* level badge now
+   scores everyone against the published (male) bar while the athlete's *own*
+   card still scores her correctly — two surfaces disagreeing about the same
+   person. That is a regression, it is recorded on the code path itself, and
+   the fix is `volume-profile-server-sync`, which was already `planned`.
+
+### 4. Org Graph / Team Operating System
+
+Gone: `Organization`, `Team`, `Membership`, `OrgInvite` (tables and models),
+`packages/core/src/org.ts` (role × sensitivity × team-subtree access) and its
+tests, `/api/org/*`, `/api/admin/orgs`, the Organization screen, the org half of
+the admin Directory, and the Organizations admin stat.
+
+Return-to-play lost its org medical/director staff path — the athlete and their
+active coach remain.
+
+**Kept deliberately and emphatically:** the whole **coach console** — roster,
+squad monitor, team compare, client groups, program builder, coach↔client
+invite. §5.2 calls coaches *"the highest-leverage acquisition channel in
+fitness"*; one coach brings 30–200 athletes at zero CAC. The enterprise org
+chart on top of that was the part with no buyer.
+
+### 5. Force plate CSV ingest
+
+Gone: `engines/forceplate.ts` (the Hawkin/ForceDecks parser), its tests, the
+`forceplate` nav destination and the Force plate screen.
+
+**Kept deliberately:** the `jumpHeight` / `asymmetry` Signal kinds and the
+generic `/api/signals` ingest. The ontology was never the problem — the CSV
+importer and its screen were.
+
+### 6. Video intelligence
+
+Gone: `engines/video.ts` (pose frames → joint angles, rep counts, asymmetry,
+technique score), its tests, the `VideoAnalysis` table, `/api/video`, the
+`video` nav destination and the Video screen.
+
+It never had a capture path, so it had **never analysed a real recording** —
+ten passing unit tests over an engine with no input.
+
+**Not touched:** the exercise demo / media library, which shares the word.
+
+**One knock-on:** `vbt-capture` was partly counting on that pose pipeline for a
+camera-based capture path. It is still blocked, and now starts from a blank
+page — recorded on the capability.
+
+### 7. Competition intelligence + peaking optimizer
+
+Gone: `engines/peaking.ts` (`optimizeForEvent`, the Banister fitness–fatigue–form
+projection), its tests, the `Event` table, `/api/events`, the `competition` nav
+destination, the Competition screen, and the Calendar's event layer.
+
+**Not the same thing, and still recommended:** race-result integration for the
+hybrid/Hyrox tribe (§5.1) — a Hyrox finish landing in the log next to the block
+that produced it. That is a growth bet that starts from a blank page, not from
+this optimizer.
+
+### 8. Email marketing automation platform
+
+Gone: audience segments, lifecycle triggers, campaigns with resumable batched
+fan-out, multi-step sequences, enrollment, the unsubscribe HMAC and suppression
+list, the hourly cron worker (and its GitHub Actions schedule), the admin
+"Email & marketing" console, `/api/admin/email/*`, `/api/cron/email`,
+`/api/email/unsubscribe`, five database tables, and every `enrollInTrigger` call
+site.
+
+**Kept and still working:** transactional mail. `sendEmail()` over the Resend
+HTTP API, account verification, the coach-invite email, the merge-tag renderer
+in core, and the `EmailMessage` deliverability ledger. Buying Customer.io was
+always the answer; there is now nothing in the way of doing that.
+
+### 9. Financials & unit-economics console
+
+Gone: `packages/core/src/economics.ts` and its tests, the Financials screen on
+web **and** mobile, and the Business group in both admin consoles — the revenue
+streams, the cost drivers, the live unit-economics calculator, the per-segment
+economics, the SaaS health scorecard and the 12-month MRR/cash forecast.
+
+It modelled the unit economics of a business with zero revenue using assumptions
+we chose ourselves. Every number in it was an input. Rebuild it from Stripe's
+numbers once cards are being charged; by then it will be arithmetic over facts.
+
+**One thing went with it that was worth keeping, and has a home:** the static
+"what each plan includes" table. The *live* entitlement surface is the
+per-feature persona matrix in Admin → Governance → Access control, driven by
+`nav.ts` `minPersona` — which is the one that actually gates anything.
+
+### What this does NOT fix
+
+The three deletions that would move usability most are still outstanding, and
+they are the ones in Part VII, not this section:
+
+- **Nav is 36 destinations, not four.** Seven went; the collapse to
+  Today / Train / Progress / You (§7.1) has not happened.
+- **Today is a 3-tab hub with ~12 modules on its Dashboard** (§7.2, §11.2) —
+  better than the 17-module scroll this document found, still not one card and
+  one button.
+- **The logger is still unmeasured** (§7.3), because analytics is still not
+  connected.
+
+Deleting features you never shipped to anyone is the *easy* half of the Great
+Deletion. The hard half is deleting surface people can see.
+
+### The six kills still standing, and why they weren't taken here
+
+Not an oversight — each is a live product decision that belongs to the founder,
+not to a cleanup pass:
+
+- **The nutrition stack.** Expanded, not shrunk, in the weeks since this
+  document — its own tab, verified foods, recipes, a label panel. Deleting it
+  would throw away the most recent month of work on a strategy call the founder
+  has visibly already made the other way.
+- **The AI agent org / Slack approvals / scheduled runs / Engine Room.**
+  `mobile-engine-room` is an open `planned` item; the founder is building
+  *toward* this, not away from it.
+- **The CMS.** The moderation queue is now load-bearing for the social feed
+  (trust & safety), and feature flags gate live behaviour. Cutting it needs a
+  per-piece decision, not one swing.
+- **i18n EN/PL/DE.** Mechanical to remove and genuinely a tax, but the founder
+  is Polish and the second market may not be hypothetical.
+- **The nav collapse to four.** The single highest-value item on this list and
+  the one that most needs a designer's hand, not a delete key. It should be its
+  own change, with the IA decided first.
+- **The theme churn** is *mostly* done already — both light themes are gone and
+  the app is dark-only (Aug 2026). Liquid Glass stayed, deliberately.
+
+### Operational note
+
+The code change is complete and verified: core **3,158 tests green** (189
+files), web vitest 130 green + `tsc --noEmit` + `next build`, mobile
+`tsc --noEmit` + `expo export --platform ios`.
+
+The **database drop is not applied** — this sandbox cannot reach the Supabase
+host. Two paths, because production's migration bookkeeping is not yet
+reconciled (`prisma/MIGRATIONS.md`): a fresh environment gets the drop from the
+Prisma migration `20260812000000_strategy_cuts`; **production gets it by running
+`reference/sql-strategy-cuts-2026-08.sql` in the Supabase SQL Editor**. Until
+then the twelve tables simply sit there unread — nothing in the app touches
+them. Two env vars are now dead and can be removed from Vercel:
+`EMAIL_UNSUBSCRIBE_SECRET`, and the `CRON_SECRET` copy held as a GitHub Actions
+repo secret for the deleted email worker (`CRON_SECRET` itself is still needed
+in Vercel for the agent crons).
+
+Every cut is recorded in `packages/core/src/capabilities.ts` under a `retired`
+status with a `retiredBecause` on each — rendered on both admin Capabilities
+screens — so a future session reads *why* something was deleted instead of
+helpfully rebuilding it.
 
 ---
 
@@ -1051,7 +1298,9 @@ You did not attach screens, so I reviewed the shipped implementation:
 
 **34 nav destinations across 7 groups.** Eleven of them are analysis surfaces:
 Statistics, Performance, Analytics, Volume, Exercises, Trends, Velocity,
-Endurance, Force plate, Video, History.
+Endurance, Force plate, Video, History. *(12 Aug: Force plate and Video are
+deleted — §3.6. Nine remain, and the four-destination collapse this section
+argues for has still not happened.)*
 
 **A user cannot tell you the difference between Statistics, Analytics, Trends and
 Performance. Neither can I, and I read the code.**
@@ -1193,7 +1442,9 @@ empty-state-on-failure; `fetch-error.tsx` exists on both clients. Good.
 But: with 34 destinations and near-zero data on day one, **the majority of your
 app is empty state for the first month of every user's life.** Force Plate,
 Velocity, Talent, Video, Endurance, Competition, Longevity, Tactical, Org — all
-empty, all forever, for essentially everyone.
+empty, all forever, for essentially everyone. *(12 Aug: seven of those nine are
+deleted — §3.6. Velocity and Endurance remain, and both are still empty for
+essentially everyone.)*
 
 An empty screen is not neutral. It teaches the user that your product is mostly
 not for them. Every screen that cannot be populated in a user's first two weeks
@@ -1233,7 +1484,7 @@ Non-negotiable, in order. **Ship no new features.**
 | 2 | **Connect PostHog.** Instrument: install → first set logged → D1/D7/D30, time-to-first-set, taps-per-set, session abandon. | You currently cannot learn. Nothing else matters until this exists. |
 | 3 | **Stripe + Apple IAP live.** | Cannot take money. |
 | 4 | **Ship to the App Store.** | You do not exist. |
-| 5 | **Delete the Kill List.** Tactical, Longevity, Talent, Org, Competition, Video, Force plate, the nutrition stack, the email platform, the agent org, the financials console, the CMS. | ~60% of the code, ~0% of the value. This is the single highest-ROI action available. |
+| 5 | ~~**Delete the Kill List.**~~ **DONE IN PART, 12 Aug — see §3.6.** Tactical, Longevity, Talent, Org, Competition, Video, Force plate, the email platform and the financials console are deleted. Still standing: the nutrition stack, the agent org, the CMS. | ~60% of the code, ~0% of the value. This is the single highest-ROI action available. |
 | 6 | **Collapse nav to 4 destinations.** | The largest usability win available. |
 | 7 | **Rebuild Today as one card + one button.** | The daily loop must be one decision. |
 | 8 | **Logger: one mode, ghost values, custom numpad, Live Activity rest timer.** | The only feature that decides the company. |
@@ -1391,6 +1642,12 @@ Graph, Competition Intelligence, Video Intelligence, Force Plate, the entire
 nutrition stack, the email marketing platform, the AI agent org, the admin Engine
 Room, the financials console, the CMS, the moderation queue, i18n beyond English,
 two of the three themes.
+
+> *12 Aug: nine of these are done (§3.6) — Tactical, Longevity, Talent, Org,
+> Competition, Video, Force Plate, the email marketing platform and the
+> financials console, plus both light themes. Not done: the nutrition stack, the
+> agent org + Engine Room, the CMS + moderation queue, i18n. This week took
+> three days rather than one, thirteen days late, and it is a real week of it.*
 
 *Why first, before anything else:* every one of these has a permanent tax —
 regression surface, parity obligations under your own web↔mobile rule, design-system
@@ -1666,16 +1923,22 @@ diagnosis is not only intact, the ratio got worse. What did materially change is
 
 ## 11.3 Recommendations NOT taken
 
-1. **The Kill List was not executed. Zero items deleted.** Tactical, Longevity,
+1. ~~**The Kill List was not executed. Zero items deleted.**~~ **SUPERSEDED
+   THREE DAYS LATER — see §3.6.** As written on 9 August this was correct.
+   On **12 August 2026** nine of the fifteen were deleted: Tactical, Longevity,
    Talent Graph, Org Graph, Competition Intelligence, Video Intelligence, Force
-   plate, the email platform, the agent org, the financials console, and the full
-   CMS are all still shipped and maintained; the nutrition stack was not killed
-   but **massively expanded** (~30 shipped `nutrition-*` capabilities, its own tab
-   on the bottom bar, public product pages). i18n is still EN/PL/DE. The one
-   partial: themes (above).
+   plate, the email marketing platform and the financials console — 9,472 lines,
+   12 tables, 7 nav destinations. What this paragraph said is still true of the
+   **six that remain**: the agent org and the full CMS are shipped and
+   maintained, the nutrition stack was not killed but **massively expanded**
+   (~30 shipped `nutrition-*` capabilities, its own tab on the bottom bar,
+   public product pages), i18n is still EN/PL/DE, and the nav collapse has not
+   happened. Themes are now more than partial — both light themes are gone and
+   the app is dark-only.
 2. **Nav did not collapse to 4 — it grew from 34 to 43 destinations.** The analyze
    group went from 11 to 12 (4 folded via `promotedTo`, so menu-reachable analyze
-   is 8 — real consolidation motion, wrong direction on net).
+   is 8 — real consolidation motion, wrong direction on net). *(12 Aug: 43 → 36
+   after the cuts. Still nine times four.)*
 3. **Still cannot take money.** No Stripe account; all four billing capabilities
    blocked. The IAP side advanced materially (StoreKit 2 server verification,
    Apple root certs, native client, compliance hardening, Apple Developer account

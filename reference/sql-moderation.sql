@@ -1,19 +1,12 @@
--- HYBRID — Moderation queue (CMS content #6). Two feeders:
---   1) discoverable TalentProfiles awaiting approval (moderationStatus column),
---   2) user-submitted content Reports (flagged content).
+-- HYBRID — Moderation queue (CMS content #6). One feeder: user-submitted
+-- content Reports (flagged content).
 -- Run in the Supabase SQL Editor. Mirrors prisma/schema.prisma.
+--
+-- The second feeder (discoverable TalentProfiles awaiting approval) went with
+-- the Talent Graph in the 2026-08 strategy cuts — see
+-- reference/sql-strategy-cuts-2026-08.sql.
 
--- 1) Talent profile moderation gate. Existing rows default to 'approved' so
---    nothing already-live disappears; the API sets a new/edited DISCOVERABLE
---    profile to 'pending', and discovery search requires 'approved'.
-alter table "TalentProfile"
-  add column if not exists "moderationStatus" text not null default 'approved';
-alter table "TalentProfile"
-  add column if not exists "moderationNote" text;
-create index if not exists "TalentProfile_moderationStatus_idx"
-  on "TalentProfile" ("moderationStatus");
-
--- 2) Content reports. Denormalized (no FKs) so a report survives a
+-- Content reports. Denormalized (no FKs) so a report survives a
 --    reporter/target delete. Mutations happen via the server (Prisma bypasses
 --    RLS); RLS here is defense-in-depth — a user may only INSERT their own
 --    report, and there is no client SELECT policy (reads are server/admin-only).

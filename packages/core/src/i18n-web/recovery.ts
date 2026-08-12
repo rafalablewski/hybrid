@@ -604,19 +604,6 @@ export const web_recovery = {
     "w.recovery.nutrition.errSave": "Couldn't save",
     "w.recovery.nutrition.errNetwork": "Network error — try again.",
 
-    // longevity.tsx
-    "w.recovery.longevity.title": "Longevity",
-    "w.recovery.longevity.intro": "The recovery signals that drive readiness also predict healthspan. Estimate biological age vs chronological. Heuristic v0 — not a diagnostic.",
-    "w.recovery.longevity.yourMarkers": "Your markers",
-    "w.recovery.longevity.prefillNote": "prefilled from your latest signals when available",
-    "w.recovery.longevity.fAge": "Age",
-    "w.recovery.longevity.fRestingHr": "Resting HR",
-    "w.recovery.longevity.fSleep": "Sleep",
-    "w.recovery.longevity.bioAge": "Biological age",
-    "w.recovery.longevity.bioAgeEmpty": "Enter at least one recovery marker (resting HR, HRV, VO₂ or sleep) — or connect a wearable — and your biological-age estimate appears here. Nothing is pre-filled.",
-    "w.recovery.longevity.yrVsAge": "yr vs age",
-    "w.recovery.longevity.healthspan": "healthspan",
-    "w.recovery.longevity.model": "model",
 
     // progress.tsx
     "w.recovery.progress.title": "Progress photos",
@@ -1226,19 +1213,6 @@ export const web_recovery = {
     "w.recovery.nutrition.errSave": "Nie udało się zapisać",
     "w.recovery.nutrition.errNetwork": "Błąd sieci — spróbuj ponownie.",
 
-    // longevity.tsx
-    "w.recovery.longevity.title": "Długowieczność",
-    "w.recovery.longevity.intro": "Sygnały regeneracji, które napędzają gotowość, przewidują też długość zdrowego życia. Oszacuj wiek biologiczny względem metrykalnego. Heurystyka v0 — to nie diagnoza.",
-    "w.recovery.longevity.yourMarkers": "Twoje wskaźniki",
-    "w.recovery.longevity.prefillNote": "wstępnie wypełnione z najnowszych sygnałów, gdy dostępne",
-    "w.recovery.longevity.fAge": "Wiek",
-    "w.recovery.longevity.fRestingHr": "Spoczynkowe HR",
-    "w.recovery.longevity.fSleep": "Sen",
-    "w.recovery.longevity.bioAge": "Wiek biologiczny",
-    "w.recovery.longevity.bioAgeEmpty": "Podaj co najmniej jeden wskaźnik regeneracji (spoczynkowe HR, HRV, VO₂ lub sen) — albo połącz urządzenie noszone — a Twój szacunkowy wiek biologiczny pojawi się tutaj. Nic nie jest wstępnie wypełnione.",
-    "w.recovery.longevity.yrVsAge": "lat vs wiek",
-    "w.recovery.longevity.healthspan": "zdrowe życie",
-    "w.recovery.longevity.model": "model",
 
     // progress.tsx
     "w.recovery.progress.title": "Zdjęcia postępów",
@@ -1848,19 +1822,6 @@ export const web_recovery = {
     "w.recovery.nutrition.errSave": "Speichern fehlgeschlagen",
     "w.recovery.nutrition.errNetwork": "Netzwerkfehler — versuche es erneut.",
 
-    // longevity.tsx
-    "w.recovery.longevity.title": "Langlebigkeit",
-    "w.recovery.longevity.intro": "Die Erholungssignale, die die Bereitschaft steuern, sagen auch die Gesundheitsspanne voraus. Schätze das biologische Alter gegenüber dem chronologischen. Heuristik v0 — keine Diagnose.",
-    "w.recovery.longevity.yourMarkers": "Deine Marker",
-    "w.recovery.longevity.prefillNote": "vorausgefüllt aus deinen neuesten Signalen, falls verfügbar",
-    "w.recovery.longevity.fAge": "Alter",
-    "w.recovery.longevity.fRestingHr": "Ruhe-HR",
-    "w.recovery.longevity.fSleep": "Schlaf",
-    "w.recovery.longevity.bioAge": "Biologisches Alter",
-    "w.recovery.longevity.bioAgeEmpty": "Gib mindestens einen Erholungsmarker ein (Ruhe-HR, HRV, VO₂ oder Schlaf) — oder verbinde ein Wearable — und deine biologische Altersschätzung erscheint hier. Nichts ist vorausgefüllt.",
-    "w.recovery.longevity.yrVsAge": "J. vs Alter",
-    "w.recovery.longevity.healthspan": "Gesundheitsspanne",
-    "w.recovery.longevity.model": "Modell",
 
     // progress.tsx
     "w.recovery.progress.title": "Fortschrittsfotos",

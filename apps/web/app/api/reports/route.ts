@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db";
 // A session/PR card is DERIVED, not a content row anyone can file against, so
 // the menu reports the ATHLETE (socialProfile) there instead; see core
 // feed-actions.ts, which picks the label to match.
-const TARGET_TYPES = ["talentProfile", "socialProfile", "comment", "post"];
+const TARGET_TYPES = ["socialProfile", "comment", "post"];
 const REASONS = ["inappropriate", "fake", "spam", "other"];
 
 // File a content report (flagged content) — any signed-in user. Feeds the admin
@@ -33,10 +33,7 @@ export async function POST(request: Request) {
 
   // Reject reports against a non-existent target so the queue can't be spammed
   // with orphaned rows.
-  if (b.targetType === "talentProfile") {
-    const exists = await prisma.talentProfile.findUnique({ where: { id: targetId }, select: { id: true } });
-    if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
-  } else if (b.targetType === "socialProfile") {
+  if (b.targetType === "socialProfile") {
     const exists = await prisma.socialProfile.findUnique({ where: { userId: targetId }, select: { userId: true } }).catch(() => null);
     if (!exists) return NextResponse.json({ error: "target not found" }, { status: 404 });
   } else if (b.targetType === "comment") {

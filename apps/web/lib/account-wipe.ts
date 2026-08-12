@@ -20,9 +20,6 @@ export type WipeResult = { deleted: number; skipped: string[] };
  * every other table references User directly and is order-independent.
  *
  * Does NOT delete the User row or the Supabase auth user — callers decide that.
- * Deliberately KEEPS EmailSuppression: a recorded opt-out/bounce must survive
- * account deletion (CAN-SPAM / GDPR) so a re-signup of the same address can't be
- * re-emailed. It stores only the email + reason, none of the person's data.
  */
 export async function wipeUserData(id: string, email?: string | null): Promise<WipeResult> {
   let deleted = 0;
@@ -57,10 +54,7 @@ export async function wipeUserData(id: string, email?: string | null): Promise<W
   await wipe("signals", () => prisma.signal.deleteMany({ where: { userId: id } }));
   await wipe("checkins", () => prisma.checkin.deleteMany({ where: { userId: id } }));
   await wipe("rtpProtocols", () => prisma.rtpProtocol.deleteMany({ where: { userId: id } }));
-  await wipe("videoAnalyses", () => prisma.videoAnalysis.deleteMany({ where: { userId: id } }));
-  await wipe("events", () => prisma.event.deleteMany({ where: { userId: id } }));
   await wipe("riskOutcomes", () => prisma.riskOutcome.deleteMany({ where: { userId: id } }));
-  await wipe("talentProfile", () => prisma.talentProfile.deleteMany({ where: { userId: id } }));
   await wipe("connections", () => prisma.connection.deleteMany({ where: { userId: id } }));
   await wipe("templates", () => prisma.workoutTemplate.deleteMany({ where: { ownerId: id } }));
   await wipe("planDayOverrides", () => prisma.planDayOverride.deleteMany({ where: { userId: id } }));
@@ -71,8 +65,7 @@ export async function wipeUserData(id: string, email?: string | null): Promise<W
   await wipe("hiddenHighlights", () => prisma.hiddenHighlight.deleteMany({ where: { userId: id } }));
   await wipe("highlightOrder", () => prisma.highlightOrder.deleteMany({ where: { userId: id } }));
 
-  // --- memberships + assignments ------------------------------------------
-  await wipe("memberships", () => prisma.membership.deleteMany({ where: { userId: id } }));
+  // --- assignments ---------------------------------------------------------
   await wipe("assignments", () =>
     prisma.assignment.deleteMany({ where: { OR: [{ athleteId: id }, { assignedById: id }] } }),
   );
@@ -107,9 +100,8 @@ export async function wipeUserData(id: string, email?: string | null): Promise<W
     prisma.coachLink.deleteMany({ where: { OR: [{ coachId: id }, { clientId: id }] } }),
   );
 
-  // --- email footprint (KEEP EmailSuppression) ----------------------------
+  // --- email footprint ------------------------------------------------------
   if (email) {
-    await wipe("emailEnrollments", () => prisma.emailEnrollment.deleteMany({ where: { userId: id } }));
     await wipe("emailMessages", () =>
       prisma.emailMessage.deleteMany({
         where: { OR: [{ userId: id }, { email: email.toLowerCase() }] },

@@ -70,17 +70,6 @@ CREATE UNIQUE INDEX IF NOT EXISTS "User_appleOriginalTransactionId_key"
   ON "User" ("appleOriginalTransactionId");
 
 
--- 4. EMAIL — resumable campaign fan-out ----------------------------------------
---    Matches prisma/schema.prisma EmailCampaign additions.
---    sendCursor  : last recipient userId processed (id-ordered) so a large send
---                  continues across cron ticks instead of timing out.
---    lockedUntil : short lease while a worker processes a batch, so overlapping
---                  crons can't double-send a recipient.
-ALTER TABLE "EmailCampaign"
-  ADD COLUMN IF NOT EXISTS "sendCursor" TEXT,
-  ADD COLUMN IF NOT EXISTS "lockedUntil" TIMESTAMP(3);
-
-
 -- =============================================================================
 -- OPTIONAL (run separately, only if you want it) — trigram index so admin user
 -- search (email/name ILIKE '%q%') stops table-scanning. CONCURRENTLY here means

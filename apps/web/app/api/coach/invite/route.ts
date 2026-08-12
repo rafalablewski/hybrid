@@ -119,7 +119,6 @@ export async function POST(request: Request) {
         subject: `${coachName} invited you to train on HYBRID`,
         body: `${coachName} wants to coach you on HYBRID.\n\nAccept the invite and create your account here:\n\n${url}\n\nThis link expires in ${INVITE_TTL_DAYS} days.`,
         kind: "transactional",
-        marketing: false,
       });
       emailSent = res.ok;
     }
