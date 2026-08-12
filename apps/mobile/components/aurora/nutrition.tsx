@@ -59,7 +59,6 @@ import {
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
   recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
   NAV_SURFACE_FOOD_PICKER,
-  PICKER_SOURCES, pickerSourceLabelKey,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -87,7 +86,7 @@ import { usePublishNavSurface } from "../../lib/nav-surface";
 import { haptic } from "../../lib/haptics";
 import { AuroraScreen, ACard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
-import { GlassSegment, GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
+import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
 import { HubMasthead } from "./hub-masthead";
 import { CoverScreen, type CoverScreenApi } from "../plan-hero";
@@ -1686,23 +1685,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               block of the head matter and it carries the list's own rule, so
               the first row sits directly under it with no gap: the rule belongs
               to the list, not to the stack above it. */}
+          {/* THE FOUR SOURCES, on the underline form, everywhere. This branch
+              briefly restored the iOS system segmented control here; #423 had
+              already deleted that control from the app for a structural reason
+              — a SwiftUI Host sizes its RN box from its content once at mount,
+              so the segment drew outside its own frame — and the picker was one
+              of the surfaces it broke on. The underline form is not a
+              consolation: it is the one that lays out, and it keeps the counts.
+              It is the LAST block of the head matter and carries the list's own
+              rule, so the first row sits directly under it with no gap. */}
           {answer.kind === "resting" ? (
-            /* THE FOUR SOURCES. On iOS they are the SYSTEM segmented control —
-               the platform's own switch is what an iPhone user reaches for
-               without reading it, and this is the one screen in the app where
-               four peer collections are swapped between. The underline form
-               below carries Android and iOS < 26, where there is no system
-               segment to inherit; it also keeps the counts, which a native
-               segment cannot show (see SourceLine's header). */
-            LIQUID_GLASS_RENDERED ? (
-              <GlassSegment
-                options={PICKER_SOURCES.map((key) => ({ id: key, label: t(pickerSourceLabelKey(key)) }))}
-                value={foodTab}
-                onPick={(k) => listMotion(() => setFoodTab(k))}
-              />
-            ) : (
-              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
-            )
+            <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
           ) : null}
         </View>
 

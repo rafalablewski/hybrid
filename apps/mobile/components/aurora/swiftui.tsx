@@ -117,7 +117,7 @@ export function GlassSurface({ radius = RADIUS.card, tintColor }: { radius?: num
  * Glass, interactive: the material itself answers the touch (the specular
  * shimmer, the press bounce), which no RN scale transform over a static
  * backdrop can do. This is a self-contained LEAF per the composition rule
- * above — like `GlassSegment`'s Picker, the tap is handled by SwiftUI, so it
+ * above — like `GlassSelectMenu`'s Menu, the tap is handled by SwiftUI, so it
  * mounts ONLY where the material is known to render (`LIQUID_GLASS_RENDERED`);
  * everywhere else the caller keeps its whole RN button, glyph and all.
  *
@@ -181,7 +181,7 @@ export function GlassNavButton({
  * THE OVERFLOW MENU'S NATIVE FORM — a SwiftUI `Menu`: tap the glyph and the
  * system presents its own menu, which on iOS 26 is Liquid Glass zoom-morphing
  * out of the anchor. Another self-contained LEAF (trigger and items are one
- * native view; selection is handled by SwiftUI, like `GlassSegment`'s Picker),
+ * native view; selection is handled by SwiftUI, like `GlassWheel`'s Picker),
  * so it mounts only where the material renders — the RN card fallback keeps
  * every other platform.
  *
@@ -819,35 +819,43 @@ export function NativeStepper({
   );
 }
 
-/**
- * Native segmented control (SwiftUI `Picker` + `.pickerStyle(.segmented)`),
- * tinted with the active accent. Same shape/contract as the kit's RN `ASegment`
- * so kit.tsx can swap it in transparently on iOS.
- */
-export function GlassSegment<T extends string>({
-  options,
-  value,
-  onPick,
-  accent,
-}: {
-  options: { id: T; label: string }[];
-  value: T;
-  onPick: (v: T) => void;
-  accent?: string;
-}) {
-  return (
-    <Host matchContents={{ vertical: true }} style={{ width: "100%" }}>
-      <Picker
-        selection={value}
-        onSelectionChange={(v) => onPick(v as T)}
-        modifiers={accent ? [pickerStyle("segmented"), tint(accent)] : [pickerStyle("segmented")]}
-      >
-        {options.map((o) => (
-          <SwiftText key={o.id} modifiers={[tag(o.id)]}>
-            {o.label}
-          </SwiftText>
-        ))}
-      </Picker>
-    </Host>
-  );
-}
+/* ── `GlassSegment` IS GONE — DO NOT BRING IT BACK ──────────────────────────
+ *
+ * It was a SwiftUI `Picker` + `.pickerStyle(.segmented)` inside
+ * `<Host matchContents={{ vertical: true }}>`, and on device it did not lay
+ * out. `matchContents` sizes the RN host view from the SwiftUI content's
+ * layout ONCE, at mount (the prop's own documented limit) — but every segmented
+ * control in this app mounts before it knows its content: the labels are
+ * translated asynchronously by `useLang`, the segment list is derived from the
+ * session history (the date filter's months), and the Today hub REMOUNTS on
+ * every selection because the tab swaps the whole screen tree.
+ *
+ * The result on device was that THE DRAWN FRAME NEVER TRACKED THE LAYOUT FRAME
+ * — and it missed DIFFERENTLY at each call site, which is what makes this
+ * structural rather than a spacing bug. On Today the box reserved its ~60pt
+ * under the profile header and the control painted some 70pt BELOW it, on the
+ * date line and the title ("Tuesday, 11 August"). On the This-week card the row
+ * took its height from the month trigger beside the track instead — ~38pt — and
+ * the control painted 28pt tall ABOVE the row's centre, crossing into the head,
+ * with the trigger stranded at the bottom of a row it no longer shared a height
+ * with. One component, two call sites, two unrelated misses.
+ *
+ * That is not a styling defect to tune, and chasing the exact native offset
+ * would be answering the wrong question: a control whose height in Yoga is
+ * decided by a native measurement taken once, before the content exists, has no
+ * reason to agree with the screen around it in the first place. So the RN
+ * control — `aurora/liquid-seg.tsx`, laid out entirely
+ * by Yoga — is now the ONLY segmented control on every platform. It was never
+ * the poor relation: it carries the same inflate-scrub-fly interaction, plus
+ * the two things the system Picker structurally cannot do —
+ * `intercept` (a segment that opens a sheet instead of taking the selection,
+ * which the date filter's Month needs, since a segmented Picker only reports a
+ * selection that CHANGED and a re-tap on the segment already in force is
+ * silently dropped), and `flightKey` (the pill stays in the air across the
+ * hub's remount).
+ *
+ * The other native leaves here are unaffected and stay: they either size
+ * themselves against content they already have (`NativeStepper`,
+ * `NativeDateField`, `GlassSelectMenu`), or sit inside a sheet that gives them
+ * a height (`GlassWheel`).
+ * ───────────────────────────────────────────────────────────────────────── */

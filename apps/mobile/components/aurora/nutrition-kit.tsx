@@ -372,22 +372,24 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
  * fill, no accent. The counts are the Explore section head's mono meta, moved
  * onto the label they describe.
  *
- * ── THIS IS THE OFF-iOS FORM. ON iOS THE SOURCES ARE THE SYSTEM CONTROL ────
- * A pass over the picker replaced the native segmented control here with this
- * line on every platform, arguing that it re-introduced a filled radiused track
- * on a screen of type-on-the-ground, that it squeezed four unequal questions
- * into equal widths, and that it dropped the counts. The product decision went
- * the other way and it is recorded here so the swap is not made a third time:
- * ON iOS THE FOUR SOURCES ARE THE SYSTEM SEGMENTED CONTROL (SwiftUI `Picker` +
- * `.pickerStyle(.segmented)`, via `GlassSegment`), because the platform's own
- * switch is what an iPhone user reaches for without reading it, and this screen
- * is the one place in the app where four peer collections are swapped between.
+ * ── AND IT IS THE ONLY FORM, ON EVERY PLATFORM ─────────────────────────────
+ * This was argued twice and settled once, on the device rather than in prose.
  *
- * THE COUNTS ARE THE PRICE, and it is worth stating rather than forgetting: a
- * native segment carries labels only, so on iOS the list itself is the count.
- * This form keeps them for Android and iOS < 26, where there is no system
- * segment to inherit and a hand-drawn imitation of one would be the worse
- * outcome of the two.
+ * A design pass replaced the iOS system segmented control here with this line
+ * everywhere, on taste: it re-introduced a filled radiused track on a screen of
+ * type-on-the-ground, it squeezed four unequal questions into equal widths, and
+ * it dropped the counts the parent already computes. Asked to put the native
+ * control back, the honest answer turned out to be that there is nothing to put
+ * back — #423 had already DELETED it from the app for a structural reason no
+ * amount of taste survives: a SwiftUI `Host` sizes its RN box from its content
+ * once, at mount, and every segmented control in this app mounts before it
+ * knows its content (labels arrive from `useLang`), so the control drew outside
+ * its own frame. The picker was one of the surfaces it broke on.
+ *
+ * So this is not the consolation form, it is the one that lays out — and it
+ * keeps the counts. `design-tokens.test.ts` fails on any code reference to
+ * `GlassSegment`, which is the guard that makes the third attempt impossible
+ * rather than merely discouraged.
  *
  * ── THE RULE TRAVELS ───────────────────────────────────────────────────────
  * Selection is the whole job of this control, and it used to CUT: the 2dp rule
