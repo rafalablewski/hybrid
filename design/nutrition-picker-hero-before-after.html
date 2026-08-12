@@ -279,6 +279,7 @@
     overflow: hidden; text-overflow: ellipsis;
   }
   .segment div.on { background: rgba(255,255,255,.20); box-shadow: 0 1px 2px rgba(0,0,0,.35); }
+  .segment.now { margin-top: 0; }
 
   /* the source line (after) */
   .sourceline {
@@ -407,6 +408,10 @@
   }
   .change .axis { display: flex; flex-direction: column; gap: 8px; }
   .change.roundtwo { background: var(--ink); }
+  /* a change that was argued for and then turned down — the page is a record,
+     not a pitch, so it stays on it rather than being deleted */
+  .change.reversed { background: var(--ink); }
+  .change.reversed .say h3 { color: var(--terra); }
   .change.roundtwo .say h3 { color: var(--sand); }
   .change .axis .n {
     font-family: var(--mono); font-size: 10px; letter-spacing: .16em;
@@ -471,19 +476,20 @@
       A phone screenshot of the food picker, read against the nutrition hub one screen away.
       The two surfaces show the <b>same day's figures</b> and were drawn by two people who never met:
       different face, different colour, different meter, different meaning for the same state — and on
-      iOS the source switcher was a stock SwiftUI control wearing none of it. Twenty-four changes across four rounds, almost every one a
-      return to something the app had already decided and then drifted from.
+      iOS the source switcher was a stock SwiftUI control wearing none of it. Twenty-five changes across five rounds — almost every one a return to something
+      the app had already decided and then drifted from, and one argued for and turned down.
     </p>
     <nav class="contents" aria-label="Contents">
       <a href="#the-changes"><b>One</b> The screen — hero, meters, controls</a>
       <a href="#round-two"><b>Two</b> The consistency finish, and motion</a>
       <a href="#round-three"><b>Three</b> The grid</a>
       <a href="#round-four"><b>Four</b> The bottom bar</a>
+      <a href="#round-five"><b>Five</b> One question, asked once</a>
     </nav>
 
     <div class="facts">
       <div><p class="kicker">Screen</p><span class="v">Nutrition → add to meal<br>(<span class="mono">nutrition.tsx</span> view <span class="mono">"add"</span>)</span></div>
-      <div><p class="kicker">Changes</p><span class="v">Twenty-four, in four rounds:<br>the screen, the finish, the<br>grid, the bar</span></div>
+      <div><p class="kicker">Changes</p><span class="v">Twenty-five shipped, one reversed:<br>the screen, the finish, the grid,<br>the bar, the field</span></div>
       <div><p class="kicker">New UI</p><span class="v">None — every treatment here<br>already ships elsewhere</span></div>
       <div><p class="kicker">Guards</p><span class="v">3 335 tests, typecheck,<br>iOS bundle: green</span></div>
     </div>
@@ -643,7 +649,9 @@
                   <span class="t-now">Snacks</span>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f3f4ef" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                 </div>
-                <div class="spacer"></div>
+                <div class="spacer" style="display:grid;place-items:center">
+                  <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#f3f4ef" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16M6.5 12h11"/></svg>
+                </div>
               </div>
 
               <div class="headmatter">
@@ -673,18 +681,8 @@
                 </div>
               </div>
 
-              <div class="field">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-                <span class="ph">What did you eat?</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16M6.5 12h11"/></svg>
-              </div>
-
-              <div class="sourceline" id="sourceline">
-                <button type="button" class="on"><span class="nm">Recent</span><span class="ct" data-a="ct1">0</span></button>
-                <button type="button"><span class="nm">Favorites</span><span class="ct">9</span></button>
-                <button type="button"><span class="nm">Meals</span><span class="ct">4</span></button>
-                <button type="button"><span class="nm">Foods</span><span class="ct">12</span></button>
-                <span class="rule" aria-hidden="true"></span>
+              <div class="segment now">
+                <div class="on">Recent</div><div>Favorites</div><div>Meals</div><div>Foods</div>
               </div>
 
               </div><!-- /headmatter -->
@@ -734,9 +732,10 @@
             <p class="barnote now">the circle is this screen&rsquo;s verb</p>
           </div>
           <p class="note" style="font-size:13.5px">
-            One object edge and one text column. The field now stands on the same two verticals as the
-            meter directly above it, and every title in the list — food or door — lands on the same
-            line. Hairlines stay full-bleed: a rule is a fold in the page, not a box around a group.
+            One object edge and one text column: every title in the list — food or door — lands on the
+            same line, and hairlines stay full-bleed, because a rule is a fold in the page rather than
+            a box around a group. At rest there is no field at all; it is what the bar's circle opens,
+            and when it does it stands on the same two verticals as the meter above.
           </p>
         </div>
 
@@ -748,7 +747,7 @@
   <section>
     <div class="sechead" id="the-changes">
       <p class="kicker">The changes</p>
-      <h2>Twenty-four, grouped by what they fix</h2>
+      <h2>Twenty-five, grouped by what they fix</h2>
       <p class="note">
         Not a sequence — a list, labelled by the axis each one lives on. Nothing here is invented:
         every "after" is a treatment the app already ships somewhere else, usually on the hub screen
@@ -948,36 +947,40 @@
         </div>
       </div>
 
-      <!-- 7 -->
-      <div class="change">
+      <!-- 7 — proposed, then reversed -->
+      <div class="change reversed">
         <div class="axis">
-          <span class="n">Control</span>
-          <span class="where">SourceLine<br>(iOS fork removed)</span>
+          <span class="n" style="color:var(--terra)">Reversed</span>
+          <span class="where">SourceLine<br>(iOS fork restored)</span>
         </div>
         <div class="say">
-          <h3>The stock SwiftUI segmented control goes</h3>
+          <h3>The system segmented control stays</h3>
           <p>
-            On iOS the four sources rendered as <code>Picker</code> +
-            <code>.pickerStyle(.segmented)</code>. Three things were wrong with it, all visible in the
-            screenshot. It brought back the <b>filled, radiused grey track</b> that <code>SourceLine</code>
-            was written to delete — the only bordered box on a screen whose whole design is type on the
-            ground. It is equal-width, so four unequal questions got squeezed to the longest label. And it
-            <b>dropped the counts</b>: the parent computes <code>sourceCounts</code> and iOS threw them
-            away, so the one platform we actually ship on could not see that Favorites held nine and Recent
-            none. The system control is still right where it <em>is</em> the object — the hub's three-way
-            view switch. It was never right for a source line.
+            This pass replaced the iOS <code>Picker(.segmented)</code> with the underline form on every
+            platform, on three arguments: it re-introduced the filled radiused track this screen is
+            designed without, it squeezed four unequal questions into equal widths, and it dropped the
+            counts the parent already computes.
+          </p>
+          <p>
+            <b>The product call went the other way, and the fork is back.</b> On iOS the four sources
+            are the system control — the platform's own switch is what an iPhone user reaches for
+            without reading it, and this is the one screen in the app where four peer collections are
+            swapped between. The counts are the accepted price: a native segment carries labels only,
+            so the list is the count. The underline form stays as the Android and iOS&nbsp;&lt;&nbsp;26
+            answer, keeps its counts, and kept its travelling rule from round two. It is written into
+            <code>SourceLine</code>'s header so the swap is not attempted a third time.
           </p>
         </div>
         <div class="demo">
           <div class="side">
-            <span class="sl was">Was — SwiftUI, SF Pro, no counts</span>
+            <span class="sl now">iOS — the system control</span>
             <div class="segment" style="margin:0"><div class="on">Recent</div><div>Favorites</div><div>Meals</div><div>Foods</div></div>
           </div>
           <hr>
           <div class="side">
-            <span class="sl now">Now — weight, a rule, and the counts</span>
+            <span class="sl now">Android / iOS &lt; 26 — with the counts</span>
             <div class="sourceline" style="margin:0;padding:0">
-              <button type="button" class="on"><span class="nm">Recent</span><span class="ct">0</span></button>
+              <button type="button" class="on"><span class="nm">Recent</span><span class="ct">14</span></button>
               <button type="button"><span class="nm">Favorites</span><span class="ct">9</span></button>
               <button type="button"><span class="nm">Meals</span><span class="ct">4</span></button>
               <span class="rule" style="left:0"></span>
@@ -1297,7 +1300,8 @@
             right sides on the <em>same two verticals</em> as the energy meter directly above it.
             Hairlines remain the deliberate exception: a rule spans the whole column while the content
             it separates stands at 18, because a separator inset to its own content reads as a boxed
-            group rather than a fold in the page.
+            group rather than a fold in the page. (Round five then took the field off the resting
+            screen entirely — the edge still governs it whenever the circle opens it.)
           </p>
         </div>
         <div class="demo">
@@ -1597,6 +1601,99 @@
         </div>
       </div>
 
+
+      <!-- ============ ROUND FIVE ============ -->
+      <div class="change roundtwo" id="round-five">
+        <div class="axis"><span class="n" style="color:var(--sand)">Round five</span></div>
+        <div class="say">
+          <h3>One question, asked once</h3>
+          <p>
+            The consequence of round four, spotted immediately: if the bar's circle is this screen's
+            search, then a search field pinned under the day header is <em>the same question asked
+            twice, ten inches apart</em>. One of them had to go, and the one at the top is the one
+            that costs a permanent band on every visit.
+          </p>
+        </div>
+        <div class="demo" style="justify-content:center">
+          <span class="mono" style="font-size:12px;color:var(--ash);line-height:1.8">
+            −1 permanent band<br>+1 state<br>1 glyph rehomed
+          </span>
+        </div>
+      </div>
+
+      <!-- 25 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Search</span>
+          <span class="where">nutrition.tsx<br>pickerSearch</span>
+        </div>
+        <div class="say">
+          <h3>The field is what the circle opens, not a band you scroll past</h3>
+          <p>
+            At rest the screen is now what the athlete came for: what the day owes, the four sources,
+            the list. The circle reveals the field and focuses it; pressing it again when the field is
+            already open puts the cursor back in it, which is the original point — the field travels
+            with the content, so twenty rows down it is gone. This is the pattern the pantry already
+            uses (<code>searchOpen</code> there), with the bar as the toggle instead of a hero
+            accessory.
+          </p>
+          <p>
+            <b>Two consequences handled rather than accepted.</b> The keyboard covers the bottom bar,
+            so the control that <em>opened</em> the field cannot be the one that closes it — the field
+            carries a plain-word <b>Cancel</b>, reachable while typing, and no bordered box on it per
+            the exit rule. And leaving search clears the query: a stale query behind a closed field
+            would leave the list showing results with nothing on screen to explain why.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was — every visit, whether or not you search</span>
+            <div class="field" style="margin:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="ph">What did you eat?</span></div>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now — only when asked for</span>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="field" style="margin:0;flex:1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b8f86" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><span class="ph">What did you eat?</span></div>
+              <span style="font-family:var(--display);font-weight:600;font-size:14px;color:var(--ash)">Cancel</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 26 -->
+      <div class="change">
+        <div class="axis">
+          <span class="n">Scanner</span>
+          <span class="where">screenHead<br>the trailing slot</span>
+        </div>
+        <div class="say">
+          <h3>The barcode moves to the one row that is always there</h3>
+          <p>
+            Scanning was the field's trailing glyph — right while the field was always on screen, wrong
+            the moment it went behind a toggle. Scanning a label is a <em>primary</em> way to add a
+            food, and a scanner two taps deep is a scanner nobody uses. It moves into the head's single
+            trailing slot, which this screen had left empty since it was built. Nothing else on the
+            screen had to give up space for it.
+          </p>
+        </div>
+        <div class="demo">
+          <div class="side">
+            <span class="sl was">Was — inside the field</span>
+            <span class="mono" style="font-size:12px;color:var(--ash)">field → trailing glyph<br>(gone at rest)</span>
+          </div>
+          <hr>
+          <div class="side">
+            <span class="sl now">Now — the head's trailing slot</span>
+            <div class="rail" style="height:auto;margin:0">
+              <div class="navcircle"><svg viewBox="0 0 24 24" fill="none" stroke="#f3f4ef" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></div>
+              <div class="title"><span class="t-now">Snacks</span></div>
+              <div class="spacer" style="display:grid;place-items:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#f3f4ef" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16M6.5 12h11"/></svg></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -1638,7 +1735,9 @@
           <tr>
             <td class="f">components/aurora/quick-add.tsx</td>
             <td class="d">The field takes the object edge and declares <code>minHeight: HIT_TARGET</code>;
-              the interpretation rows join the shared leading column and edge.</td>
+              the interpretation rows join the shared leading column and edge; the field gains
+              <code>autoFocus</code>, an optional <code>onCancel</code> and an optional scan, since it
+              is now revealed rather than permanent.</td>
           </tr>
           <tr>
             <td class="f">components/aurora/kit.tsx</td>
@@ -1707,6 +1806,11 @@
           <b>The one I would check first:</b> whether iOS renders a <code>disabled</code> search-role
           item at full strength or dims it. If it dims, the circle would read as unavailable, and the
           fix is to keep the trigger enabled and point its route at a redirect instead.
+        </li>
+        <li>
+          <b>One entry on this page is marked Reversed.</b> The argument for dropping the system
+          segmented control is still written out where it was made, and so is the decision that
+          overruled it. A record that quietly deletes the moves that were turned down is a pitch.
         </li>
         <li>
           <b>Two hand-rolled meters remain in nutrition</b>, logged rather than swept in: the insights

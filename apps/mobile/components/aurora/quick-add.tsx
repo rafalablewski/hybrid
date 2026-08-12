@@ -39,25 +39,36 @@ import { IBarcode, IClose, PICKER_EDGE, ROW_LEAD } from "./nutrition-kit";
  */
 
 /** The field. The screen's one container; everything else is type on the ground. */
-export function PickerField({ value, onChange, onSubmit, onScan, inputRef }: {
+export function PickerField({ value, onChange, onSubmit, onScan, onCancel, inputRef, autoFocus }: {
   value: string;
   onChange: (v: string) => void;
   onSubmit: () => void;
-  onScan: () => void;
+  /** Optional: when the scan lives somewhere always-reachable instead (the
+   *  picker moved it to the head, since the field itself is now behind a
+   *  toggle and a scanner one tap deeper is a scanner nobody uses). */
+  onScan?: () => void;
+  /** Leaves search. Rendered as a plain word, never a bordered box — and it has
+   *  to exist: the control that OPENED this field is the bottom bar's circle,
+   *  and the keyboard covers the bottom bar. An exit you cannot reach while
+   *  typing is not an exit. */
+  onCancel?: () => void;
   /** So the bar's detached circle can put the cursor here from anywhere on the
    *  screen — the field scrolls away with the content, and once the list is
    *  twenty rows deep there was no way back to it but to scroll. */
   inputRef?: RefObject<TextInput | null>;
+  autoFocus?: boolean;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const typed = value.trim().length > 0;
 
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, minHeight: HIT_TARGET, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: space.lg }}>
+    <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+    <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm, minHeight: HIT_TARGET, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: space.lg }}>
       <AuroraIcon name="search" size={18} color={C.ash} />
       <TextInput
         ref={inputRef}
+        autoFocus={autoFocus}
         value={value}
         onChangeText={onChange}
         onSubmitEditing={onSubmit}
@@ -73,13 +84,21 @@ export function PickerField({ value, onChange, onSubmit, onScan, inputRef }: {
         <PressScale onPress={() => onChange("")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.clear")} hitSlop={HIT_SLOP}>
           <IClose size={18} color={C.ash} />
         </PressScale>
-      ) : (
-        // Scanning is the same question asked with a camera, so it stays the
-        // field's trailing glyph rather than becoming a control of its own.
+      ) : onScan ? (
+        // Scanning is the same question asked with a camera, so where the field
+        // is always present it stays the field's trailing glyph.
         <PressScale onPress={onScan} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scan.title")} hitSlop={HIT_SLOP}>
           <IBarcode size={20} color={C.ash} />
         </PressScale>
-      )}
+      ) : null}
+    </View>
+    {onCancel ? (
+      <PressScale onPress={onCancel} accessibilityRole="button" hitSlop={HIT_SLOP}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.ash }}>
+          {t("w.recovery.nutrition.cancel")}
+        </Text>
+      </PressScale>
+    ) : null}
     </View>
   );
 }

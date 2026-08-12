@@ -59,6 +59,7 @@ import {
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
   recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
   NAV_SURFACE_FOOD_PICKER,
+  PICKER_SOURCES, pickerSourceLabelKey,
   type PickerSourceKey, } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
@@ -80,13 +81,13 @@ import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "./cta-label";
 import RailTail from "./rail-tail";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
 import { useListMotion } from "../../lib/list-motion";
 import { usePublishNavSurface } from "../../lib/nav-surface";
 import { haptic } from "../../lib/haptics";
 import { AuroraScreen, ACard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
-import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
+import { GlassSegment, GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
 import { HubMasthead } from "./hub-masthead";
 import { CoverScreen, type CoverScreenApi } from "../plan-hero";
@@ -104,7 +105,7 @@ import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
   Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap, PICKER_EDGE, BLOCK,
-  IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock,
+  IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock, IBarcode,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
 import {
@@ -396,15 +397,38 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
    */
   const pickerScroller = useRef<ScrollView | null>(null);
   const pickerInput = useRef<TextInput | null>(null);
-  const focusPickerField = useCallback(() => {
-    // Scroll first: focusing an input that is off-screen leaves the keyboard
-    // covering a field nobody can see. `y: 0` is the field's home — it sits
-    // directly under the day header at the top of the screen.
+  /**
+   * SEARCH IS A STATE, NOT A PERMANENT BAND.
+   *
+   * The field used to sit under the day header on every visit. Once the bar's
+   * detached circle carries this screen's Find, that is the same question asked
+   * twice, ten inches apart — so the field is now what the circle OPENS, and
+   * the resting screen is what the athlete came for: what the day owes, the
+   * four sources, and the list. Same pattern the pantry already uses
+   * (`searchOpen` there), with the toggle being the bar rather than a hero
+   * accessory.
+   *
+   * Leaving search CLEARS the query, because a stale query behind a closed
+   * field would leave the list showing search results with nothing on screen
+   * explaining why.
+   */
+  const [pickerSearch, setPickerSearch] = useState(false);
+  const openPickerSearch = useCallback(() => {
+    // Already open — the press means "put me back in the field", which is the
+    // whole point of the circle once the list has scrolled the field away.
     pickerScroller.current?.scrollTo({ y: 0, animated: true });
-    pickerInput.current?.focus();
+    if (pickerSearch) pickerInput.current?.focus();
+    else setPickerSearch(true); // `autoFocus` takes it from here on mount
     haptic.light();
+  }, [pickerSearch]);
+  const closePickerSearch = useCallback(() => {
+    setPickerSearch(false);
+    setFoodQuery("");
   }, []);
-  usePublishNavSurface(view === "add" ? NAV_SURFACE_FOOD_PICKER : null, focusPickerField);
+  // Leaving the picker leaves search with it: coming back to Snacks tomorrow
+  // should not reopen a keyboard over yesterday's question.
+  useEffect(() => { if (view !== "add") closePickerSearch(); }, [view, closePickerSearch]);
+  usePublishNavSurface(view === "add" ? NAV_SURFACE_FOOD_PICKER : null, openPickerSearch);
 
   // ── Editable food log — the per-entry records the Diary lists + edit/delete.
   const [logs, setLogs] = useState<FoodLogRow[]>([]);
@@ -1553,10 +1577,30 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </Pressable>
           ),
           () => setView("home"),
-          // BACK, not a second dismiss chevron: the head used to draw a ⌄ on the
-          // left and the meal switcher a ⌄ beside the title — one glyph, two
-          // jobs, on the same row.
-          { icon: "back" },
+          {
+            // BACK, not a second dismiss chevron: the head used to draw a ⌄ on
+            // the left and the meal switcher a ⌄ beside the title — one glyph,
+            // two jobs, on the same row.
+            icon: "back",
+            // THE SCANNER MOVES HERE, into the head's one trailing slot, which
+            // this screen had left empty. It used to be the field's trailing
+            // glyph — right while the field was always on screen, wrong the
+            // moment the field went behind the bar's circle: scanning a label
+            // is a PRIMARY way to add a food, and a scanner two taps deep is a
+            // scanner nobody uses. The head is the one row that is always
+            // there.
+            right: (
+              <Pressable
+                onPress={() => { setFoodMsg(""); setScanSheet(true); }}
+                accessibilityRole="button"
+                accessibilityLabel={t("w.recovery.nutrition.scan.title")}
+                hitSlop={HIT_SLOP}
+                style={{ width: HERO.nav.hit, height: HERO.nav.hit, alignItems: "center", justifyContent: "center" }}
+              >
+                <IBarcode size={21} color={C.chalk} />
+              </Pressable>
+            ),
+          },
         )}
 
         <Sheet visible={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
@@ -1600,14 +1644,18 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             />
           ) : null}
 
-          {/* THE ONE FIELD. Quick add and the database search were two boxes
-              asking the same question; this is that question, asked once.
+          {/* THE ONE FIELD, now behind the bar's circle. Quick add and the
+              database search were two boxes asking the same question; this is
+              that question, asked once — and asked only when asked for.
               The EDGE is the parent's to give — the field is a container, and a
               container that sets its own outer margin is a block deciding where
               the screen's column is. */}
+          {pickerSearch ? (
           <View style={{ paddingHorizontal: PICKER_EDGE }}>
             <PickerField
               inputRef={pickerInput}
+              autoFocus
+              onCancel={closePickerSearch}
               value={foodQuery}
               onChange={setFoodQuery}
               onSubmit={() => {
@@ -1617,9 +1665,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 else if (s.kind === "log") { logQuickAdd(quickAddDraft(s.match)); setFoodQuery(""); }
                 else if (s.kind === "portion") portionForQuickAdd(s.match);
               }}
-              onScan={() => { setFoodMsg(""); setScanSheet(true); }}
             />
           </View>
+          ) : null}
 
           {/* A one-tap add is invisible unless the screen says so. Same confirmation
               line the hub and the diary already use; a FAILED write is already
@@ -1639,7 +1687,22 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               the first row sits directly under it with no gap: the rule belongs
               to the list, not to the stack above it. */}
           {answer.kind === "resting" ? (
-            <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
+            /* THE FOUR SOURCES. On iOS they are the SYSTEM segmented control —
+               the platform's own switch is what an iPhone user reaches for
+               without reading it, and this is the one screen in the app where
+               four peer collections are swapped between. The underline form
+               below carries Android and iOS < 26, where there is no system
+               segment to inherit; it also keeps the counts, which a native
+               segment cannot show (see SourceLine's header). */
+            LIQUID_GLASS_RENDERED ? (
+              <GlassSegment
+                options={PICKER_SOURCES.map((key) => ({ id: key, label: t(pickerSourceLabelKey(key)) }))}
+                value={foodTab}
+                onPick={(k) => listMotion(() => setFoodTab(k))}
+              />
+            ) : (
+              <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
+            )
           ) : null}
         </View>
 

@@ -372,25 +372,22 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
  * fill, no accent. The counts are the Explore section head's mono meta, moved
  * onto the label they describe.
  *
- * ── AND IT IS THE ONLY FORM, INCLUDING ON iOS ──────────────────────────────
- * The picker used to swap this for the SYSTEM segmented control (SwiftUI
- * `Picker` + `.pickerStyle(.segmented)`) wherever Liquid Glass renders, on the
- * argument that a native segment is what iOS users know. Three things were
- * wrong with that, and they are visible in one screenshot:
+ * ── THIS IS THE OFF-iOS FORM. ON iOS THE SOURCES ARE THE SYSTEM CONTROL ────
+ * A pass over the picker replaced the native segmented control here with this
+ * line on every platform, arguing that it re-introduced a filled radiused track
+ * on a screen of type-on-the-ground, that it squeezed four unequal questions
+ * into equal widths, and that it dropped the counts. The product decision went
+ * the other way and it is recorded here so the swap is not made a third time:
+ * ON iOS THE FOUR SOURCES ARE THE SYSTEM SEGMENTED CONTROL (SwiftUI `Picker` +
+ * `.pickerStyle(.segmented)`, via `GlassSegment`), because the platform's own
+ * switch is what an iPhone user reaches for without reading it, and this screen
+ * is the one place in the app where four peer collections are swapped between.
  *
- *   1. It brought back the filled, radiused track this component was written to
- *      delete — a grey slab in SF Pro, the only bordered box on a screen whose
- *      whole design is type on the ground, sitting directly under the app's own
- *      field and above the app's own rows.
- *   2. It DROPPED THE COUNTS. The parent computes `sourceCounts` and iOS threw
- *      them away, so the one platform the product actually ships on could not
- *      see that Favorites held nine and Meals none until it tapped each.
- *   3. A native segment is equal-width, so the four labels were squeezed to fit
- *      the longest — and equal-width is the wrong shape anyway: these are four
- *      different questions, not four states of one.
- *
- * The system control is still right where it IS the object (the hub's
- * three-way view switch, `today-tabs`); it was never right for a source line.
+ * THE COUNTS ARE THE PRICE, and it is worth stating rather than forgetting: a
+ * native segment carries labels only, so on iOS the list itself is the count.
+ * This form keeps them for Android and iOS < 26, where there is no system
+ * segment to inherit and a hand-drawn imitation of one would be the worse
+ * outcome of the two.
  *
  * ── THE RULE TRAVELS ───────────────────────────────────────────────────────
  * Selection is the whole job of this control, and it used to CUT: the 2dp rule
