@@ -43,7 +43,7 @@ export function ErrorNote({ error, onDismiss }: { error: string | null; onDismis
 }
 
 /**
- * A label/value stat tile (Overview/Financials/HQ) — the kit's `AStat`, kept
+ * A label/value stat tile (Overview/HQ) — the kit's `AStat`, kept
  * behind this name so the thirty-six admin call sites read as they always did.
  *
  * It used to draw its own: the same anatomy at `fs.display` with an ash sub,

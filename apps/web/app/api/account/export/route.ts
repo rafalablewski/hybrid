@@ -33,10 +33,7 @@ export async function GET(request: Request) {
   await grab("macrocycles", () => prisma.macrocycle.findMany({ where: { userId: id } }));
   await grab("templates", () => prisma.workoutTemplate.findMany({ where: { ownerId: id } }));
   await grab("assignments", () => prisma.assignment.findMany({ where: { OR: [{ athleteId: id }, { assignedById: id }] } }));
-  await grab("events", () => prisma.event.findMany({ where: { userId: id } }));
   await grab("rtpProtocols", () => prisma.rtpProtocol.findMany({ where: { userId: id } }));
-  await grab("videoAnalyses", () => prisma.videoAnalysis.findMany({ where: { userId: id } }));
-  await grab("talentProfile", () => prisma.talentProfile.findMany({ where: { userId: id } }));
   // SECURITY: never serialize the OAuth access/refresh tokens into the export
   // (they'd leak live third-party credentials into a downloadable/emailed file,
   // plaintext when TOKEN_ENCRYPTION_KEY is unset). Select only non-secret fields.

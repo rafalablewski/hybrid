@@ -350,7 +350,7 @@ export const ACCOUNTS_GUIDE: Guide = {
         {
           t: "term",
           term: "marketing@hybrid.app — campaigns",
-          text: "Newsletters and lifecycle marketing. A Google Workspace inbox (a human reads replies).",
+          text: "Newsletters and lifecycle marketing. A Google Workspace inbox (a human reads replies). NOTE: the app no longer SENDS campaigns — the in-house marketing-automation platform was cut in the 2026-08 strategy review, so when lifecycle mail is wanted it gets bought (Customer.io / Loops / Resend Broadcasts) and sends from this identity.",
         },
         {
           t: "term",

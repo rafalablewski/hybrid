@@ -109,7 +109,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       stripeCustomerId: true,
       createdAt: true,
       authId: true,
-      memberships: { select: { role: true, org: { select: { id: true, name: true } } } },
       _count: {
         select: {
           sessions: true,
@@ -156,7 +155,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     hasStripe: Boolean(user.stripeCustomerId),
     createdAt: user.createdAt,
     linkedAuth: Boolean(user.authId),
-    orgs: user.memberships.map((m) => ({ id: m.org.id, name: m.org.name, role: m.role })),
     counts: {
       sessions: user._count.sessions,
       checkins: user._count.checkins,

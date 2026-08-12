@@ -7,21 +7,22 @@ import {
   type Capability,
   type CapabilityStatus,
 } from "@hybrid/core";
-import { fs, space, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 
 const STATUS_META: Record<CapabilityStatus, { label: string; color: string; blurb: string }> = {
   shipped: { label: "Shipped", color: LIME, blurb: "Built and working." },
   blocked: { label: "Blocked", color: AMBER, blurb: "Implemented, but stuck on missing data / access / credentials." },
   planned: { label: "Planned", color: ASH, blurb: "Not built yet." },
+  retired: { label: "Retired", color: RED, blurb: "Deliberately deleted. The reason is on the card." },
 };
 
 export default function CapabilitiesScreen() {
-  const order: CapabilityStatus[] = ["shipped", "blocked", "planned"];
+  const order: CapabilityStatus[] = ["shipped", "blocked", "planned", "retired"];
 
   return (
     <div>
       <Mono s={{ fontSize: fs.body, display: "block", marginBottom: 16 }}>
-        Living registry of every capability — kept current as features ship, block, or get planned.
+        Living registry of every capability — kept current as features ship, block, get planned, or get retired.
       </Mono>
 
       {/* counts */}
@@ -104,6 +105,16 @@ function Row({ cap, color }: { cap: Capability; color: string }) {
         >
           {open ? "Show less" : "Show more"}
         </button>
+      )}
+      {cap.retiredBecause && (
+        <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 8, background: `${RED}12`, border: `1px solid ${RED}40` }}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={RED}>
+            Why it went
+          </Mono>
+          <Mono s={{ fontSize: fs.caption, lineHeight: 1.45, display: "block", marginTop: 3 }} c={CHALK}>
+            {cap.retiredBecause}
+          </Mono>
+        </div>
       )}
       {cap.blockedBy && (
         <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 8, background: `${AMBER}12`, border: `1px solid ${AMBER}40` }}>

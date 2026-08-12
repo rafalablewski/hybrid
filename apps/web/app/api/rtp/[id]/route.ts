@@ -16,20 +16,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const p = await prisma.rtpProtocol.findUnique({ where: { id } });
   if (!p) return NextResponse.json({ error: "not found" }, { status: 404 });
 
-  // The athlete, their active coach, or org medical/director/coach staff may act
-  // on the protocol (so staff sign-offs + overrides actually work).
+  // The athlete or their active coach may act on the protocol (so coach
+  // sign-offs + overrides actually work). The org medical/director staff path
+  // went with the Org Graph in the 2026-08 strategy cuts.
   if (p.userId !== user.id) {
-    const [coachLink, orgStaff] = await Promise.all([
-      prisma.coachLink.findFirst({ where: { coachId: user.id, clientId: p.userId, status: "ACTIVE" } }),
-      prisma.membership.findFirst({
-        where: {
-          userId: user.id,
-          role: { in: ["OWNER", "DIRECTOR", "MEDICAL", "COACH"] },
-          org: { memberships: { some: { userId: p.userId } } },
-        },
-      }),
-    ]);
-    if (!coachLink && !orgStaff) return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    const coachLink = await prisma.coachLink.findFirst({
+      where: { coachId: user.id, clientId: p.userId, status: "ACTIVE" },
+    });
+    if (!coachLink) return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
   const b = (await request.json().catch(() => ({}))) as { action?: unknown; gate?: unknown; reason?: unknown };

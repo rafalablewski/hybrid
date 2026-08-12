@@ -5,7 +5,7 @@ import { requireAdmin, audit } from "@/lib/admin";
 import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendAccountVerification, enrollInTrigger } from "@/lib/email";
+import { sendAccountVerification } from "@/lib/email";
 
 // Paginated, searchable user directory. Admin-only. Returns management metadata
 // + activity COUNTS per user — never the raw private training rows themselves.
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         coachVerified: true,
         createdAt: true,
         _count: {
-          select: { sessions: true, clientLinks: true, coachLinks: true, memberships: true, checkins: true },
+          select: { sessions: true, clientLinks: true, coachLinks: true, checkins: true },
         },
       },
     }),
@@ -66,7 +66,6 @@ export async function GET(request: Request) {
       sessions: u._count.sessions,
       clientsCoached: u._count.clientLinks,
       coaches: u._count.coachLinks,
-      orgs: u._count.memberships,
       checkins: u._count.checkins,
     })),
   });
@@ -155,14 +154,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: e instanceof Error ? e.message : "Could not save the user row." }, { status: 500 });
   }
 
-  // Welcome / verification email + lifecycle signup sequence (both best-effort,
-  // both no-op gracefully until Resend is configured).
+  // Welcome / verification email (best-effort; no-ops gracefully until Resend
+  // is configured).
   let verification: "sent" | "skipped" | "off" = "off";
   if (b.sendVerification) {
     const res = await sendAccountVerification(created);
     verification = res.ok ? "sent" : "skipped";
   }
-  await enrollInTrigger("signup", { id: created.id, email: created.email, role: created.role, entitlement });
 
   await audit({
     actor: gate.admin,

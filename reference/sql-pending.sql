@@ -7,6 +7,16 @@
 -- (RecordAttestation) and SECTION 4c (SavedPost). Re-running it now is a no-op
 -- from top to bottom.
 --
+-- NOTE (2026-08 strategy cuts): twelve of the tables this bundle sets up were
+-- later DROPPED — Organization, Team, Membership, OrgInvite, TalentProfile,
+-- VideoAnalysis, Event and the five Email* marketing tables. The blocks below
+-- that touch them are deliberately LEFT AS THEY WERE: this file is the record
+-- of what was applied, not a description of the current schema, and every one
+-- of those statements is guarded (ALTER TABLE IF EXISTS / to_regclass), so on
+-- a database where the drop has run they are simply no-ops. The drop itself is
+-- reference/sql-strategy-cuts-2026-08.sql (production) and the Prisma migration
+-- 20260812000000_strategy_cuts (fresh environments).
+--
 -- Future migrations append here, and the rule stays the same: append the new
 -- block, mark it not-yet-applied in its own header, and paste the WHOLE file
 -- again — everything above is idempotent, so the bundle is always the safe

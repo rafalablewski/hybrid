@@ -1,10 +1,17 @@
 /**
- * Benchmarks + talent projection — the network-effects layer.
+ * Cohort benchmark norms — percentile norms by age/sex/sport.
  *
- * Percentile norms by age/sex/sport, and a maturation-adjusted PROJECTION that
- * separates talent from early physical maturity (a 14-year-old at the adult
- * median is exceptional). Norms here are documented synthetic priors (v0) — the
- * structure the real population dataset refits into as the data network grows.
+ * Scope note (2026-08 strategy cuts): the TALENT GRAPH built on top of this
+ * (the discovery screen, coach talent search, the shareable talent report) was
+ * removed — recruiting is a relationship market and the graph is meaningless
+ * without a verified record. What is left is the norm math itself, which the
+ * shipped product still consumes: the fitness-level engine's maturation
+ * adjustment, and datanet's cohort refit. (Wrapped's "where you stand"
+ * percentile was a third consumer and went with the graph — the talent profile
+ * was its only source of sex and age.)
+ *
+ * Norms here are documented synthetic priors (v0) — the structure the real
+ * population dataset refits into as data accumulates.
  *
  * Pure stats. No I/O.
  */
@@ -42,16 +49,6 @@ export interface MetricBenchmark {
   cohortMean: number;
   /** maturation-adjusted potential percentile (youth physical metrics) */
   potentialPercentile: number;
-}
-
-export interface TalentReport {
-  cohort: Cohort;
-  benchmarks: MetricBenchmark[];
-  /** average current percentile across measured metrics */
-  overall: number;
-  /** average maturation-adjusted potential percentile */
-  potential: number;
-  modelVersion: string;
 }
 
 // --- normal distribution helpers ---
@@ -135,21 +132,4 @@ export function benchmarkMetric(metric: BenchmarkMetric, value: number, cohort: 
   }
 
   return { metric, value, percentile, cohortMean: Math.round(norm.mean * 100) / 100, potentialPercentile };
-}
-
-/** Benchmark every measured metric and roll up overall + potential scores. */
-export function talentReport(metrics: Partial<Record<BenchmarkMetric, number>>, cohort: Cohort): TalentReport {
-  const benchmarks: MetricBenchmark[] = [];
-  for (const m of BENCHMARK_METRICS) {
-    const v = metrics[m];
-    if (typeof v === "number" && Number.isFinite(v)) benchmarks.push(benchmarkMetric(m, v, cohort));
-  }
-  const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
-  return {
-    cohort,
-    benchmarks,
-    overall: avg(benchmarks.map((b) => b.percentile)),
-    potential: avg(benchmarks.map((b) => b.potentialPercentile)),
-    modelVersion: BENCHMARK_MODEL_VERSION,
-  };
 }

@@ -1,26 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import { Loading } from "../aurora/skeleton";
 
-type Org = { id: string; name: string; createdAt: string; teams: number; members: number };
 type Link = { id: string; status: string; createdAt: string; coach: string; client: string; notes: number };
 
 const statusColor: Record<string, string> = { ACTIVE: LIME, PENDING: AMBER, ENDED: ASH };
 const fmt = (d: string) => new Date(d).toISOString().slice(0, 10);
 
 export default function AdminDirectory() {
-  const [orgs, setOrgs] = useState<Org[] | null>(null);
   const [links, setLinks] = useState<Link[] | null>(null);
   const [counts, setCounts] = useState<{ status: string; n: number }[]>([]);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/orgs")
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((d) => setOrgs(d.orgs))
-      .catch(() => { setOrgs([]); setErr("Couldn't load the directory — try reloading."); });
     fetch("/api/admin/coaching")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((d) => { setLinks(d.links); setCounts(d.counts); })
@@ -36,24 +30,6 @@ export default function AdminDirectory() {
           </Mono>
         </div>
       )}
-      {/* organizations */}
-      <section>
-        <SectionTitle title="Organizations" kicker={`${orgs?.length ?? 0} total`} c={BLUE} />
-        <Card style={{ padding: 0, overflow: "hidden" }}>
-          <Table head={["Organization", "Teams", "Members", "Created"]} align={["left", "right", "right", "right"]}>
-            {orgs?.map((o) => (
-              <tr key={o.id}>
-                <Td label="Organization"><span style={{ ...disp, fontWeight: 600, fontSize: fs.bodyLg }}>{o.name}</span></Td>
-                <Td label="Teams" right><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.teams}</Mono></Td>
-                <Td label="Members" right><Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.members}</Mono></Td>
-                <Td label="Created" right><Mono s={{ fontSize: fs.body }} c={ASH}>{fmt(o.createdAt)}</Mono></Td>
-              </tr>
-            ))}
-            <Empty data={orgs} cols={4} label="No organizations yet." />
-          </Table>
-        </Card>
-      </section>
-
       {/* coaching links */}
       <section>
         <SectionTitle title="Coaching relationships" kicker="Coach ↔ client links" c={VIOLET} />

@@ -4,8 +4,7 @@ import { rateLimit, readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
 // Resolve a content report: dismiss (no action), resolve (handled out-of-band),
-// or takedown (reject the reported target so it leaves discovery) — all close the
-// report. Audited.
+// or takedown — all close the report. Audited.
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const gate = await requireAdmin(request);
   if (gate.error) return gate.error;
@@ -25,14 +24,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const report = await prisma.report.findUnique({ where: { id } });
   if (!report) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (report.status !== "open") return NextResponse.json({ error: "already resolved" }, { status: 409 });
-
-  // A takedown rejects the reported target so it drops out of discovery.
-  if (action === "takedown" && report.targetType === "talentProfile") {
-    await prisma.talentProfile.updateMany({
-      where: { id: report.targetId },
-      data: { moderationStatus: "rejected", moderationNote: note ?? "Removed after report" },
-    });
-  }
 
   const status = action === "dismiss" ? "dismissed" : "resolved";
   await prisma.report.update({

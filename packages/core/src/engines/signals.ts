@@ -15,7 +15,7 @@ import type { BiometricMetric, Biometrics } from "./types";
 /**
  * What a signal measures. Recovery kinds are live today; the rest are the
  * forward slots the ingestion layer (HealthKit / WHOOP / Garmin / Catapult /
- * force plates / markerless motion) will populate without touching the engines.
+ * bar sensors / wearables) will populate without touching the engines.
  */
 export type SignalKind =
   // recovery (live)
@@ -27,7 +27,7 @@ export type SignalKind =
   | "totalDistance"
   | "highSpeedRunning"
   | "accelLoad"
-  // neuromuscular (force plate / jump mat / bar sensor)
+  // neuromuscular (jump mat / bar sensor)
   | "jumpHeight"
   | "asymmetry"
   | "barVelocity"

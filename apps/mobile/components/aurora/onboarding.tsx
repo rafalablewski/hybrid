@@ -74,7 +74,7 @@ export default function AuroraOnboarding() {
               {plan ? (
                 <View style={{ backgroundColor: palette.ink2, borderColor: palette.line, borderWidth: 1, borderRadius: RADIUS.card, padding: 20 }}>
                   <Text style={{ fontFamily: F.black, fontSize: 22, color: palette.chalk }}>{plan.planName}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash, marginTop: 4 }}>{plan.goalLabel} – {plan.weeklyTarget}×/{t("w.train.comp.wk")} – {plan.weeks} {t("w.account.onboarding.weeks")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash, marginTop: 4 }}>{plan.goalLabel} – {plan.weeklyTarget}×/{t("w.train.periodize.wk")} – {plan.weeks} {t("w.account.onboarding.weeks")}</Text>
                   <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.chalk, marginTop: 12, lineHeight: leading(fs.bodyLg) }}>{plan.why}</Text>
                 </View>
               ) : (

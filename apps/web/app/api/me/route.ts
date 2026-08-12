@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getOrCreateDbUser, claimPendingInvites, claimPendingCoachInvites } from "@/lib/server-auth";
+import { getOrCreateDbUser, claimPendingCoachInvites } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
 // Returns the signed-in user's app profile (role sourced from the DB, not from
@@ -10,7 +10,6 @@ export async function GET(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  await claimPendingInvites(user.id, user.email);
   await claimPendingCoachInvites(user.id, user.email);
 
   // Has this user finished (or skipped) onboarding? Source of truth the clients

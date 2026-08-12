@@ -1,4 +1,4 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart, OrgRole, TeamNode } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, type HeatProtocol } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -1517,7 +1517,7 @@ export async function actCoachInvite(id: string, action: "accept" | "end"): Prom
   }
 }
 
-// --- Ported screens: state / connections / events / video ---
+// --- Ported screens: state / connections ---
 
 export type StateSnapshot = { hpi: number; injuryRisk: number; readiness: number; sessionCount: number };
 export async function fetchState(): Promise<StateSnapshot | null> {
@@ -1545,115 +1545,6 @@ export async function fetchConnections(): Promise<{ connections: Conn[]; provide
 export async function syncConnection(providerId: string): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/connect/${providerId}/sync`, { method: "POST", headers: await authHeaders() });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-export type EventRow = { id: string; name: string; sport: string; date: string };
-export async function fetchEvents(): Promise<EventRow[]> {
-  try {
-    const res = await fetchWithTimeout(`${API_URL}/api/events`, { headers: await authHeaders() });
-    if (!res.ok) return [];
-    return (((await res.json()) as { events?: EventRow[] }).events) ?? [];
-  } catch {
-    return [];
-  }
-}
-export async function createEvent(name: string, sport: string, date: string): Promise<EventRow | null> {
-  try {
-    const res = await fetchWithTimeout(`${API_URL}/api/events`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ name, sport, date }),
-    });
-    if (!res.ok) return null;
-    return ((await res.json()) as { event?: EventRow }).event ?? null;
-  } catch {
-    return null;
-  }
-}
-
-export type VideoAnalysis = {
-  id: string;
-  movement: string;
-  metrics: { movement: string; reps: number; minKneeAngle?: number; kneeAsymmetryPct?: number; techniqueScore: number; flags: string[] };
-  createdAt: string;
-};
-export async function fetchVideoAnalyses(): Promise<VideoAnalysis[]> {
-  try {
-    const res = await fetchWithTimeout(`${API_URL}/api/video`, { headers: await authHeaders() });
-    if (!res.ok) return [];
-    return (((await res.json()) as { analyses?: VideoAnalysis[] }).analyses) ?? [];
-  } catch {
-    return [];
-  }
-}
-
-// --- Talent graph + force-plate signal import ---
-
-export type TalentProfile = { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number>; moderationStatus?: string };
-export type TalentBench = { metric: string; value: number; percentile: number; cohortMean: number; potentialPercentile: number };
-export type TalentReport = { cohort: { sport: string; sex: string; age: number }; benchmarks: TalentBench[]; overall: number; potential: number; modelVersion: string };
-export type TalentResult = { id: string; name: string; sport: string; age: number; sex: string; percentile: number; potential: number };
-
-export async function fetchTalent(): Promise<{ profile: TalentProfile | null; report: TalentReport | null; computedHpi: number }> {
-  try {
-    const res = await fetchWithTimeout(`${API_URL}/api/talent`, { headers: await authHeaders() });
-    if (!res.ok) return { profile: null, report: null, computedHpi: 0 };
-    return (await res.json()) as { profile: TalentProfile | null; report: TalentReport | null; computedHpi: number };
-  } catch {
-    return { profile: null, report: null, computedHpi: 0 };
-  }
-}
-
-export async function saveTalentProfile(body: { sport: string; sex: string; age: number; visibility: string; metrics: Record<string, number | undefined> }): Promise<boolean> {
-  try {
-    const res = await fetchWithTimeout(`${API_URL}/api/talent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify(body),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-export async function searchTalent(metric: string, minPct: string, sport?: string, byPotential?: boolean): Promise<TalentResult[]> {
-  try {
-    const p = new URLSearchParams({ metric, minPct, ...(sport ? { sport } : {}), ...(byPotential ? { byPotential: "1" } : {}) });
-    const res = await fetchWithTimeout(`${API_URL}/api/talent/search?${p.toString()}`, { headers: await authHeaders() });
-    if (!res.ok) return [];
-    return (((await res.json()) as { results?: TalentResult[] }).results) ?? [];
-  } catch {
-    return [];
-  }
-}
-
-export async function reportProfile(targetId: string, reason: string): Promise<boolean> {
-  try {
-    const res = await fetchWithTimeout(`${API_URL}/api/reports`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ targetType: "talentProfile", targetId, reason }),
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
-/** Import one signal with an explicit ts/source (for CSV/force-plate import,
- *  where historical timestamps must be preserved). */
-export async function importSignal(s: { kind: string; value: number; unit?: string; source?: string; ts?: string }): Promise<boolean> {
-  try {
-    const res = await fetchWithTimeout(`${API_URL}/api/signals`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-      body: JSON.stringify({ kind: s.kind, value: s.value, unit: s.unit, source: s.source ?? "forceplate", ts: s.ts }),
-    });
     return res.ok;
   } catch {
     return false;
@@ -2222,121 +2113,5 @@ export async function fetchSquad(): Promise<{ squad: SquadRow[]; summary: SquadS
     return { squad: d.squad ?? [], summary: d.summary ?? null };
   } catch {
     return { squad: [], summary: null };
-  }
-}
-
-// ---- org graph ----
-// The mobile Org screen calls the SAME /api/org endpoints as the web console.
-
-export type OrgSummary = { id: string; name: string; role: OrgRole };
-export type OrgMember = { id: string; userId: string; name: string; role: OrgRole; teamId: string | null; email?: string };
-export type OrgInvite = { id: string; email: string; role: OrgRole; teamId: string | null };
-export type OrgDetail = {
-  org: { id: string; name: string };
-  myRole: OrgRole;
-  myTeamId: string | null;
-  teams: TeamNode[];
-  members: OrgMember[];
-  invites: OrgInvite[];
-};
-export type OrgAthleteView = {
-  hpi: { score: number; band: string; limiter: string };
-  readiness: { score: number };
-  summary: string;
-  sessionCount: number;
-  injury: { overall: number; band: string; flaggedCount: number; tissues?: { tissue: string; risk: number; band: string }[] };
-};
-
-/** Orgs the signed-in user belongs to. Empty on any failure. */
-export async function fetchOrgs(): Promise<OrgSummary[]> {
-  try {
-    const d = await fetchJson<{ orgs?: OrgSummary[] }>("/api/org");
-    return d.orgs ?? [];
-  } catch {
-    return [];
-  }
-}
-
-/** One org's teams, members and pending invites. null on any failure. */
-export async function fetchOrgDetail(id: string): Promise<OrgDetail | null> {
-  try {
-    return await fetchJson<OrgDetail>(`/api/org/${id}`);
-  } catch {
-    return null;
-  }
-}
-
-/** Create an org. Returns the new org's id, or null on failure. */
-export async function createOrg(name: string): Promise<string | null> {
-  try {
-    const d = await fetchJson<{ org?: { id: string } }>("/api/org", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name }),
-    });
-    return d.org?.id ?? null;
-  } catch {
-    return null;
-  }
-}
-
-/** Add a team (optionally nested under `parentId`). */
-export async function createOrgTeam(orgId: string, name: string, parentId?: string): Promise<boolean> {
-  try {
-    await fetchJson(`/api/org/${orgId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, parentId: parentId || undefined }),
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Invite/add a member by email. `pending` means an invite was created. */
-export async function addOrgMember(orgId: string, email: string, role: OrgRole): Promise<{ ok: boolean; pending?: boolean; error?: string }> {
-  try {
-    const d = await fetchJson<{ pending?: boolean }>(`/api/org/${orgId}/members`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, role }),
-    });
-    return { ok: true, pending: d.pending };
-  } catch (e) {
-    return { ok: false, error: e instanceof ApiError ? e.message : undefined };
-  }
-}
-
-/** Change a member's role and/or team. */
-export async function patchOrgMember(orgId: string, memberId: string, patch: { role?: OrgRole; teamId?: string | null }): Promise<boolean> {
-  try {
-    await fetchJson(`/api/org/${orgId}/members/${memberId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(patch),
-    });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Revoke a pending invite. */
-export async function revokeOrgInvite(orgId: string, inviteId: string): Promise<boolean> {
-  try {
-    await fetchJson(`/api/org/${orgId}/invites/${inviteId}`, { method: "DELETE" });
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** The Performance-State readout for one athlete in the org. */
-export async function fetchOrgAthlete(orgId: string, userId: string): Promise<OrgAthleteView | null> {
-  try {
-    return await fetchJson<OrgAthleteView>(`/api/org/${orgId}/athlete/${userId}`);
-  } catch {
-    return null;
   }
 }

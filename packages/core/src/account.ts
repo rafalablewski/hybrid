@@ -28,12 +28,10 @@ export const ACCOUNT_NOTIF_ROWS: PrefRowDef[] = [
 /** Privacy switches. Stored under user_metadata.privacy.{key}. */
 export const ACCOUNT_PRIVACY_DEFAULTS: Record<string, boolean> = {
   coachCanSeeDetail: true,
-  discoverable: false,
   analyticsOptOut: false,
 };
 
 export const ACCOUNT_PRIVACY_ROWS: PrefRowDef[] = [
   { key: "coachCanSeeDetail", title: "Share detail with my coach", desc: "Let a linked coach see your full session detail, not just summaries.", group: "Coaching" },
-  { key: "discoverable", title: "Discoverable in Talent", desc: "Appear in coach talent searches (your benchmarks, never raw logs).", group: "Discovery" },
   { key: "analyticsOptOut", title: "Opt out of product analytics", desc: "Don't include my usage in aggregate product analytics.", group: "Data & analytics" },
 ];

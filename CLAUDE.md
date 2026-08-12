@@ -95,19 +95,26 @@ touches duration/distance/pace, wire it through device-truth in the same change.
 
 ## RULE: keep the Capabilities registry current (always)
 `packages/core/src/capabilities.ts` is the single source of truth for **every**
-app capability. It is surfaced in the web admin **Capabilities** screen
-(`apps/web/components/capabilities.tsx`, admin-only).
+app capability. It is surfaced on BOTH admin Capabilities screens
+(`apps/web/components/capabilities.tsx` and
+`apps/mobile/components/admin/content.tsx`, admin-only).
 
 Each capability has a `status`:
 - `shipped` — built and working.
 - `blocked` — implemented (code is done) but cannot proceed because of missing
   data/access/credentials. Record `blockedBy` (what's needed to unblock).
 - `planned` — not built yet.
+- `retired` — deliberately DELETED (not paused, not deferred). Record
+  `retiredBecause`: why it went, and what would have to be true to revisit it.
 
-**Whenever you ship, block, or plan a feature, update `capabilities.ts` in the
-same change.** This list must always reflect reality. New blocked items (e.g.
-"needs an API key", "needs the Apple Developer account") go here so nothing
-implemented-but-stuck is forgotten.
+**Whenever you ship, block, plan or retire a feature, update `capabilities.ts`
+in the same change.** This list must always reflect reality. New blocked items
+(e.g. "needs an API key", "needs the Apple Developer account") go here so
+nothing implemented-but-stuck is forgotten.
+
+**Never delete a capability entry — retire it.** An entry that vanishes takes
+its reasoning with it, and the next session cheerfully rebuilds the thing. The
+code is in git; the argument for why it went lives only here.
 
 ## RULE: plan reps are a SINGLE number, never a range (always)
 When authoring plan programs (`packages/core/src/plan-programs.ts`), a rep

@@ -38,11 +38,6 @@ const GUARDED = ["blockBestE1rm", "bestE1rmByLift", "bestE1rmMap"] as const;
  * Paths are repo-relative and use forward slashes.
  */
 const REVIEWED: Record<string, string> = {
-  // Feeds liftStanding, whose cohort norms are expressed in e1RM per kg of
-  // bodyweight — a raw top load can't be compared against them.
-  "apps/mobile/components/workout-wrapped.tsx":
-    "topE1rm → liftStanding (benchmark norms are e1RM-based)",
-
   // The post now headlines topLoad; e1rm is still written ALONGSIDE it so the
   // estimate isn't lost and rows stay readable by anything expecting the old
   // shape. prPostFigure prefers topLoad and falls back to a labelled e1RM for

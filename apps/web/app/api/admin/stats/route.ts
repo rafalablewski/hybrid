@@ -27,7 +27,6 @@ export async function GET(request: Request) {
     plansByGoal,
     usersByLang,
     roleSplit,
-    orgs,
     activeLinks,
     userWeeks,
     sessionWeeks,
@@ -41,7 +40,6 @@ export async function GET(request: Request) {
     prisma.macrocycle.groupBy({ by: ["goal"], _count: { goal: true }, orderBy: { _count: { goal: "desc" } }, take: 6 }),
     prisma.user.groupBy({ by: ["language"], _count: { language: true } }),
     prisma.user.groupBy({ by: ["role"], _count: { role: true } }),
-    prisma.organization.count(),
     prisma.coachLink.count({ where: { status: "ACTIVE" } }),
     // Growth buckets computed in SQL (≤12 rows back) rather than fetching every
     // row in the window and filtering it 12 times in the lambda.
@@ -94,7 +92,6 @@ export async function GET(request: Request) {
     agentRuns30d,
     coaches: activeCoaches[0]?.n ?? 0,
     mau: recentSessionUsers[0]?.n ?? 0,
-    orgs,
     activeLinks,
     planPopularity: plansByGoal.map((p) => ({ goal: p.goal, n: p._count.goal })),
     langSplit: usersByLang

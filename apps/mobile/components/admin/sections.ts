@@ -9,7 +9,6 @@ export type AdminSectionId =
   | "users"
   | "directory"
   | "moderation"
-  | "financials"
   | "hq"
   | "agents"
   | "announcements"
@@ -29,9 +28,8 @@ export type AdminSection = { id: AdminSectionId; label: string; icon: AuroraIcon
 export const ADMIN_SECTIONS: AdminSection[] = [
   { id: "overview", label: "Overview", icon: "info", group: "Platform" },
   { id: "users", label: "Users", icon: "user", group: "Platform" },
-  { id: "directory", label: "Orgs & coaching", icon: "globe", group: "Platform" },
+  { id: "directory", label: "Coaching", icon: "globe", group: "Platform" },
   { id: "moderation", label: "Moderation", icon: "check-circle", group: "Platform" },
-  { id: "financials", label: "Financials", icon: "offer", group: "Business" },
   { id: "hq", label: "Agent HQ", icon: "navigation", group: "AI" },
   { id: "agents", label: "AI agents", icon: "user-square", group: "AI" },
   { id: "announcements", label: "Announcements", icon: "bell", group: "Content" },

@@ -90,9 +90,8 @@ export const NAV_GROUP_ORDER: NavGroup[] = ["home", "train", "analyze", "recover
 //     health (today/log/history/calendar/nutrition/progress/check-in) + setup,
 //     PLUS the routine Builder (composing your own workout is free).
 //   • ATHLETE — adds the depth + analytics (cockpit/plans/periodize/
-//     sport/competition/performance/velocity/running/force-plate/video/longevity/
-//     talent/connections).
-//   • COACH — adds the coaching console (coach/squad/team-compare/org/tactical),
+//     sport/performance/velocity/running/connections).
+//   • COACH — adds the coaching console (coach/squad/team-compare),
 //     on top of all the athlete depth (a coach trains too).
 //   • ADMIN — everything.
 //
@@ -117,7 +116,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "plans", label: "Plans", group: "train" },
   { id: "periodize", label: "Periodize", group: "train", minPersona: "athlete" },
   { id: "sport", label: "Sport", group: "train", minPersona: "athlete" },
-  { id: "competition", label: "Competition", group: "train", minPersona: "athlete" },
 
   // Statistics is folded into HISTORY as its "trend" view — History already
   // owned everything past this week, and a second destination charting the same
@@ -146,14 +144,11 @@ export const NAV_ITEMS: NavItem[] = [
   // Promoted onto Today as the sport lanes (endurance-lanes.ts) — still routable
   // from a lane's "See all", just no longer its own entry in More.
   { id: "endurance", label: "Endurance", group: "analyze", minPersona: "athlete", promotedTo: "today" },
-  { id: "forceplate", label: "Force plate", group: "analyze", minPersona: "athlete" },
-  { id: "video", label: "Video", group: "analyze", minPersona: "athlete" },
   { id: "history", label: "History", group: "analyze" },
 
   { id: "checkin", label: "Check-in", group: "recovery" },
   { id: "nutrition", label: "Nutrition", group: "recovery" },
   { id: "progress", label: "Progress photos", group: "recovery" },
-  { id: "longevity", label: "Longevity", group: "recovery", minPersona: "athlete" },
 
   // ---- Social (everyone) — follow friends, browse results, find a coach ----
   { id: "feed", label: "Feed", group: "social" },
@@ -172,9 +167,6 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "coach", label: "Coach", group: "teams", minPersona: "coach" },
   { id: "squad", label: "Squad monitor", group: "teams", minPersona: "coach" },
   { id: "teamcompare", label: "Team compare", group: "teams", minPersona: "coach" },
-  { id: "org", label: "Organization", group: "teams", minPersona: "coach" },
-  { id: "talent", label: "Talent", group: "teams", minPersona: "athlete" },
-  { id: "tactical", label: "Tactical", group: "teams", minPersona: "coach" },
 
   { id: "profile", label: "Profile", group: "account" },
   { id: "connections", label: "Connections", group: "account", minPersona: "athlete" },
