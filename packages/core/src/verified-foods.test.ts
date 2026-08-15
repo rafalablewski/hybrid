@@ -264,3 +264,16 @@ describe("freshness — the date finally does something", () => {
     expect(staleVerifiedFoods(checkedAt + 400 * DAY)).toHaveLength(4);
   });
 });
+
+describe("the pack our own catalog records", () => {
+  it("turns a verified item's pack size into a portion", () => {
+    // Pilos twaróg: a 100 g label on a 450 g pack.
+    const hit = verifiedFoodToHit(VERIFIED_FOODS.find((f) => f.packSize)!);
+    expect(hit.portions).toEqual([{ label: "", size: 450, source: "catalog" }]);
+  });
+
+  it("leaves an item with no pack size alone", () => {
+    const hit = verifiedFoodToHit(VERIFIED_FOODS.find((f) => !f.packSize)!);
+    expect(hit.portions).toEqual([]);
+  });
+});

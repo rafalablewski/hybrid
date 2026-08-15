@@ -152,7 +152,7 @@ describe("convertServing", () => {
 describe("compatibleUnits", () => {
   it("offers the same dimension only", () => {
     expect(compatibleUnits(parseServing("100 g")).map((u) => u.id)).toEqual(["g", "kg", "oz", "lb"]);
-    expect(compatibleUnits(parseServing("1 cup")).map((u) => u.id)).toEqual(["ml", "l", "floz", "cup", "tbsp", "tsp"]);
+    expect(compatibleUnits(parseServing("1 cup")).map((u) => u.id)).toEqual(["ml", "cl", "l", "floz", "cup", "tbsp", "tsp"]);
   });
 
   it("offers nothing for a count — '1 slice' is not 28 of anything", () => {

@@ -694,6 +694,24 @@ model FoodProduct {
    * the serving's weight in grams when known — enables per-100 g comparison
    */
   servingGrams Float?
+  /**
+   * THE FOOD'S NAMED PORTIONS — [{ label, size, source }], size in the
+   * serving's own measure (grams for a food sold by weight, millilitres for one
+   * sold by volume). A LIST, because real foods have several: a cheese has a
+   * slice and a block. `source` records where each came from — catalog (Open
+   * Food Facts publishes the net quantity), scanned, learned or typed — so a
+   * figure the catalog published is never confused with one the athlete
+   * corrected. See packages/core/src/portion.ts.
+   */
+  portions     Json     @default("[]")
+  /**
+   * LEGACY, read-only: the SINGLE pack the first cut of portions stored, before
+   * it was clear that asking the athlete could never scale past a handful of
+   * foods. Folded into `portions` at read time (core foodPortions) so nothing
+   * already recorded is lost. Nothing writes these any more.
+   */
+  packSize     Float?
+  packLabel    String?
   kcal         Int
   protein      Int // grams per serving
   carbs        Int // grams per serving
@@ -808,6 +826,16 @@ model FoodLog {
    */
   verifiedId String?
   qty        Float    @default(1) // number of servings logged
+  /**
+   * WHAT THE ATHLETE ACTUALLY ENTERED, and the unit they entered it in — 35
+   * "g", 1 "bottle", 1.5 "serving". `qty` still drives every total; this is the
+   * record of how the portion was expressed, so the diary row can say "35 g"
+   * instead of "0.35". A quantity edit rescales it by the same ratio. NULL on
+   * entries logged before this shipped, and on paths with no amount to record.
+   * See packages/core/src/portion.ts.
+   */
+  amount     Float?
+  amountUnit String?
   signalIds  Json     @default("[]") // string[] of the mirrored Signal ids
   ts         DateTime // the log instant — the client groups these into local days
   createdAt  DateTime @default(now())
