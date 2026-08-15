@@ -390,12 +390,14 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
 }
 
 // ------------------------------------------------------------ leaderboard ----
+// figure-order.ts's reading order, which is why active days and the streak sit
+// with the session count they are both facts about, and distance follows them.
 export type LeaderboardMetric =
   | "volume" // kg lifted this week
   | "sessions" // workouts this week
-  | "distance" // km run this week
   | "activeDays" // distinct days trained this week
   | "streak" // current day-streak
+  | "distance" // km run this week
   | "prs"; // PRs set this week (strength + cardio)
 
 export interface LeaderEntry {
@@ -422,9 +424,9 @@ export interface LeaderRow {
 export const LEADERBOARD_METRICS: { key: LeaderboardMetric; label: string }[] = [
   { key: "volume", label: "Volume" },
   { key: "sessions", label: "Sessions" },
-  { key: "distance", label: "Distance" },
   { key: "activeDays", label: "Active days" },
   { key: "streak", label: "Streak" },
+  { key: "distance", label: "Distance" },
   { key: "prs", label: "PRs" },
 ];
 
@@ -538,9 +540,9 @@ export function compareAthletes(
   const lines: CompareLine[] = [
     { key: "volume", label: "Weekly volume", a: Math.round(ra.volume), b: Math.round(rb.volume), unit: "kg", leader: lead(ra.volume, rb.volume) },
     { key: "sessions", label: "Weekly sessions", a: ra.sessions, b: rb.sessions, unit: "", leader: lead(ra.sessions, rb.sessions) },
-    { key: "distance", label: "Weekly distance", a: roundKm(ra.distanceKm), b: roundKm(rb.distanceKm), unit: "km", leader: lead(ra.distanceKm, rb.distanceKm) },
     { key: "activeDays", label: "Active days", a: ra.activeDays, b: rb.activeDays, unit: "", leader: lead(ra.activeDays, rb.activeDays) },
     { key: "streak", label: "Current streak", a: sa.current, b: sb.current, unit: "d", leader: lead(sa.current, sb.current) },
+    { key: "distance", label: "Weekly distance", a: roundKm(ra.distanceKm), b: roundKm(rb.distanceKm), unit: "km", leader: lead(ra.distanceKm, rb.distanceKm) },
   ];
 
   // all-time bests on shared lifts
@@ -569,10 +571,12 @@ export function compareAthletes(
   };
 }
 
-/** Lifetime headline stats for a profile card (cheap, from sessions only). */
+/** Lifetime headline stats for a profile card (cheap, from sessions only).
+ *  Declared in figure-order.ts's reading order, which is the order the profile
+ *  tiles render them in — the shape and the row shouldn't need reconciling. */
 export interface ProfileStats {
-  totalSessions: number;
   totalVolumeKg: number;
+  totalSessions: number;
   currentStreak: number;
   /** heaviest ACTUAL load per lift (kg) — not an estimate (#231) */
   topLifts: { lift: string; topLoad: number }[];
@@ -580,8 +584,8 @@ export interface ProfileStats {
 
 export function profileStats(sessions: LoggedSession[], now = Date.now(), bw?: BodyweightInput): ProfileStats {
   return {
-    totalSessions: sessions.length,
     totalVolumeKg: Math.round(totalVolume(sessions, bw)),
+    totalSessions: sessions.length,
     currentStreak: streak(sessions, { now }).current,
     topLifts: bestTopLoadByLift(sessions).slice(0, 3).map((r) => ({ lift: r.lift, topLoad: r.weightKg })),
   };

@@ -30,6 +30,7 @@
 import { type AttestationTier } from "./attestation";
 import { deviceTrueSession } from "./device-truth";
 import { roundKm } from "./distance";
+import { orderFigures } from "./figure-order";
 import {
   isAutoSessionTitle,
   sessionTitleText,
@@ -78,7 +79,7 @@ export type FeedArchetype = "stat" | "sets" | "text";
 
 /** The figures a card's stat row can carry. The CARD shows the first few; the
  *  opened post shows the whole set (feed-workout.ts `feedWorkoutStats`). */
-export type FeedStatKey = "duration" | "volume" | "sets" | "reps" | "hr" | "distance" | "pace" | "kcal";
+export type FeedStatKey = "volume" | "sets" | "reps" | "duration" | "distance" | "pace" | "kcal" | "hr";
 
 export interface FeedStat {
   key: FeedStatKey;
@@ -166,14 +167,14 @@ export interface FeedDetail {
 
 /** i18n key for a stat's label. Clients translate; core never ships English. */
 export const FEED_STAT_LABEL_KEY: Record<FeedStatKey, string> = {
-  duration: "feed.stat.min",
   volume: "feed.stat.volume",
   sets: "feed.stat.sets",
   reps: "feed.stat.reps",
-  hr: "feed.stat.hr",
+  duration: "feed.stat.min",
   distance: "feed.stat.distance",
   pace: "feed.stat.pace",
   kcal: "feed.stat.kcal",
+  hr: "feed.stat.hr",
 };
 
 /**
@@ -363,9 +364,15 @@ export function topSetLines(session: LoggedSession, limit = 3): FeedSetLine[] {
     .map(({ _rank, ...line }) => line);
 }
 
-/** The stat row for a session card — duration, volume, sets, and heart rate
- *  when a device recorded it. Read through device-truth, so a matched session
- *  shows what the watch measured rather than what was typed. */
+/** The stat row for a session card — volume, sets, duration, and either the
+ *  distance or the heart rate a device recorded. Read through device-truth, so
+ *  a matched session shows what the watch measured rather than what was typed.
+ *
+ *  Built in whatever order the evidence is easiest to derive in, then sorted
+ *  into the app's ONE reading order (figure-order.ts) on the way out — so a
+ *  feed card lists a session's figures the same way the Progress card and the
+ *  done receipt list them. The `if`s below decide WHETHER a figure is true;
+ *  none of them decides where it sits. */
 export function sessionStats(session: LoggedSession): FeedStat[] {
   const s = deviceTrueSession(session);
   const dev = session.device;
@@ -399,7 +406,7 @@ export function sessionStats(session: LoggedSession): FeedStat[] {
     const km = s.blocks.reduce((sum, b) => sum + (b.kind === "cardio" ? b.distance ?? 0 : 0), 0);
     if (km > 0) stats.push({ key: "distance", value: km, device: !!dev?.distanceKm });
   }
-  return stats;
+  return orderFigures(stats, (x) => x.key);
 }
 
 /**

@@ -15,8 +15,8 @@ export const web_analyze = {
     "w.analyze.stats.sessions": "Sessions",
     "w.analyze.stats.inRange": "in",
     "w.analyze.stats.activeDays": "Active days",
-    "w.analyze.stats.distance": "Distance",
     "w.analyze.stats.minutes": "Minutes",
+    "w.analyze.stats.distance": "Distance",
     "w.analyze.stats.empty": "Log a few sessions and your real training stats fill in here.",
 
     // performance
@@ -508,8 +508,8 @@ export const web_analyze = {
     "w.analyze.stats.sessions": "Sesje",
     "w.analyze.stats.inRange": "w okresie",
     "w.analyze.stats.activeDays": "Aktywne dni",
-    "w.analyze.stats.distance": "Dystans",
     "w.analyze.stats.minutes": "Minuty",
+    "w.analyze.stats.distance": "Dystans",
     "w.analyze.stats.empty": "Zapisz kilka treningów, a Twoje rzeczywiste statystyki pojawią się tutaj.",
 
     // performance
@@ -990,8 +990,8 @@ export const web_analyze = {
     "w.analyze.stats.sessions": "Einheiten",
     "w.analyze.stats.inRange": "in",
     "w.analyze.stats.activeDays": "Aktive Tage",
-    "w.analyze.stats.distance": "Distanz",
     "w.analyze.stats.minutes": "Minuten",
+    "w.analyze.stats.distance": "Distanz",
     "w.analyze.stats.empty": "Protokolliere ein paar Sessions und deine echten Trainingsstatistiken erscheinen hier.",
 
     // performance

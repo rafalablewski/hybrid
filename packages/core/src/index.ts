@@ -118,6 +118,7 @@ export * from "./access";
 export * from "./analytics";
 export * from "./units";
 export * from "./distance";
+export * from "./figure-order";
 export * from "./plates";
 export * from "./logger-prefs";
 export * from "./set-focus";

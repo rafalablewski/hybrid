@@ -351,9 +351,11 @@ function Overview({ data, cmp, name, onCompare, busy }: {
       {stats ? (
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
           {[
+            // Core figure-order.ts — tonnage, the session count, then the
+            // streak, which is a fact ABOUT that count and follows it.
             { l: t("w.social.statVolume"), v: `${Math.round(stats.totalVolumeKg / 1000)}t` },
-            { l: t("w.social.statStreak"), v: `${stats.currentStreak}d` },
             { l: t("w.social.statSessions"), v: stats.totalSessions.toLocaleString() },
+            { l: t("w.social.statStreak"), v: `${stats.currentStreak}d` },
           ].map((s) => (
             <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 14, paddingVertical: 12, alignItems: "center" }}>
               <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle }}>{s.v}</Text>
