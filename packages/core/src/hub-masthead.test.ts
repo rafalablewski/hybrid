@@ -136,11 +136,36 @@ describe("the hub head guard — no screen may draw its own", () => {
     }
   });
 
+  it("opens its first cluster with no marker at all", () => {
+    // "Train", in the display face, directly under a masthead that says Today,
+    // on a tab the hub pills already label Dashboard — a heading announcing
+    // what the screen was visibly about, and the reason this hub's three views
+    // didn't open alike (Performance and Feed go straight into their content).
+    // A cluster marker earns its place by naming a TURN; the first cluster
+    // turns from nothing. Deleted, key and all, rather than left dangling —
+    // `w.home.group.training` is a DIFFERENT key (the log's section head).
+    for (const file of [...HUB_SCREENS, "packages/core/src/i18n-web/home.ts"]) {
+      expect(read(file), file).not.toMatch(/w\.home\.group\.train(?!ing)/);
+    }
+  });
+
   it("lets the head own the gap below it", () => {
     // The subtle one. The head emits HUB_MASTHEAD.gap.below, so the block that
     // follows it must contribute NO top margin — RN does not collapse margins,
     // so a first block that kept its own would sit 16 lower than designed.
-    expect(code("apps/mobile/components/aurora/home.tsx")).toContain('<GroupMark label={t("w.home.group.train")} mt={0} />');
+    // On the dashboard that first row is the plan hero's five-branch ternary,
+    // and EVERY branch opens the row, so not one of them may carry a top
+    // margin. The retired GroupMark used to absorb this with mt={0}; the
+    // marker went, the invariant it was holding did not.
+    const home = code("apps/mobile/components/aurora/home.tsx");
+    // Branches one to three — the fetch error, the plan week rail, the logbook
+    // rail — all sit between the head and the logbook rail's own element.
+    const firstRow = home.slice(home.indexOf("<HubMasthead"), home.indexOf("<AuroraLogbookRail"));
+    expect(firstRow).not.toContain("marginTop");
+    // Branch four (the first-run chooser column) and branch five (the plan
+    // hero's card) open the same row further down the chain.
+    expect(home).toMatch(/firstRun \? \(\s*<View style=\{\{ gap: space\.sm \}\}>/);
+    expect(home).toMatch(/\) : \(\s*<ACard>/);
     // The feed's first block spaces DOWNWARD, not upward.
     const inbox = code("apps/mobile/components/pr-attestation.tsx").split("Co-sign requests")[0]!.slice(-400);
     expect(inbox).toContain("marginBottom: 16");

@@ -150,11 +150,16 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deloaded to {pct}%, −1 set — you're wrecked today",
     "w.home.today.rxWreckedBw": "Dropped a set — you're wrecked today",
     "w.home.today.goFull": "Go Full",
-    // ── Today's group markers — the four themed clusters the dashboard scroll
-    // is organised into (Train / Recover / Progress / Explore). Rendered as a
-    // quiet mono-uppercase wayfinding tier ABOVE the blocks' own heads; shared
-    // by web today.tsx and mobile home.tsx so the taxonomy can't drift.
-    "w.home.group.train": "Train",
+    // ── Today's group markers — the themed clusters the dashboard scroll is
+    // organised into. A wayfinding tier ABOVE the blocks' own heads, naming
+    // the TURN from one cluster to the next.
+    // THERE IS NO `train` KEY, and that is deliberate — do not re-add one. The
+    // first cluster opens directly under the masthead, which already names the
+    // day, on a tab the hub pills already label, so a "Train" heading there
+    // announced what the screen was visibly about (and made Dashboard the only
+    // one of the three hub views that didn't open straight into its content).
+    // A marker earns its place by naming a turn; the first cluster turns from
+    // nothing.
     "w.home.group.recover": "Recover",
     "w.home.group.progress": "Progress",
     "w.home.group.explore": "Explore",
@@ -1379,7 +1384,6 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deload do {pct}%, −1 seria — dziś jesteś wykończony",
     "w.home.today.rxWreckedBw": "Odjęto serię — dziś jesteś wykończony",
     "w.home.today.goFull": "Przejdź na Full",
-    "w.home.group.train": "Trening",
     "w.home.group.recover": "Regeneracja",
     "w.home.group.progress": "Postępy",
     "w.home.group.explore": "Odkrywaj",
@@ -2479,7 +2483,6 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deload auf {pct}%, −1 Satz — du bist heute erschöpft",
     "w.home.today.rxWreckedBw": "Ein Satz weniger — du bist heute erschöpft",
     "w.home.today.goFull": "Auf Full",
-    "w.home.group.train": "Training",
     "w.home.group.recover": "Erholung",
     "w.home.group.progress": "Fortschritt",
     "w.home.group.explore": "Entdecken",
