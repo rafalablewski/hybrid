@@ -324,10 +324,13 @@ export function sessionWrapped(
           : discipline === "conditioning"
             ? [["hours", minutes], ["rounds", roundsStat], ["kcal", kcal], ["hr", avgHr], ["effort", effortStat]]
             : [["hours", minutes], ["distance", distance], ["tonnage", volume], ["kcal", kcal], ["hr", avgHr], ["pace", pace], ["sets", sets]];
-  const basics = orderFigures(
-    wanted.filter((w): w is [string, WrappedStat] => w[1] != null).slice(0, 4),
-    ([key]) => key,
-  ).map(([, s]) => s);
+  // The four that made the cut, still in PRIORITY order — the headline below
+  // falls back to the top of this list, and "the most important figure we have"
+  // is a priority question. Reading the fallback off the laid-out row instead
+  // would quietly redefine it as "whichever figure sorts first", which is not
+  // the same claim and not one this file gets to make by accident.
+  const chosen = wanted.filter((w): w is [string, WrappedStat] => w[1] != null).slice(0, 4);
+  const basics = orderFigures(chosen, ([key]) => key).map(([, s]) => s);
 
   // ---- HEADLINE — the one number the hero shows. --------------------------
   const headline =
@@ -339,7 +342,7 @@ export function sessionWrapped(
           ? { value: volume.value, labelKey: "summary.volumeMoved" }
           : minutes
             ? { value: `${receipt.durationMin} min`, labelKey: "summary.minutes" }
-            : (basics[0] ?? { value: "—", labelKey: "session.wrapped.basics" });
+            : (chosen[0]?.[1] ?? { value: "—", labelKey: "session.wrapped.basics" });
 
   // ---- FACTS (premium) — real derived analytics only. ---------------------
   const facts: WrappedFact[] = [];
