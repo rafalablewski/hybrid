@@ -36,14 +36,20 @@ import { join } from "node:path";
  * width and height are skipped — a 56×56 box at radius 28 is an avatar, not a
  * card, and a card never fixes its own height.
  *
- * IT IS A RATCHET, NOT A LINE IN THE SAND. There are 25 of these left, on
- * screens this branch had no business rewriting, so they are listed below with
- * their counts. That makes the list do three jobs at once: Today's surfaces are
- * pinned at zero and can never regress; a NEW hand-roll anywhere fails
- * immediately; and fixing one fails until it is removed from the list, so the
- * number can only ever go down and the remaining work is visible instead of
- * remembered. The same idiom as `expo-alignment.test.ts`'s DELIBERATE map — an
- * exception is allowed to exist, but only in writing.
+ * IT IS A RATCHET, NOT A LINE IN THE SAND. There are 19 of these left (25 when
+ * the rule was written), on screens this branch had no business rewriting, so
+ * they are listed below with their counts. That makes the list do three jobs at
+ * once: the cleared surfaces are pinned at zero and can never regress; a NEW
+ * hand-roll anywhere fails immediately; and fixing one fails until it is
+ * removed from the list, so the number can only ever go down and the remaining
+ * work is visible instead of remembered. The same idiom as
+ * `expo-alignment.test.ts`'s DELIBERATE map — an exception is allowed to exist,
+ * but only in writing.
+ *
+ * The reverse check has already earned its keep: percent-program and
+ * history-views were cleared in the pass after this shipped, and the suite
+ * failed until both were struck off, which is exactly the moment a ratchet
+ * would otherwise quietly stop ratcheting.
  *
  * TO FIX ONE: `<ACard>` if it is a read surface, `<APressCard>` if it presses
  * (that gap — ACard being a View — is what kept the two chooser cards
@@ -68,11 +74,10 @@ const CARD_FILL = /backgroundColor:\s*[A-Za-z_$][\w.]*\.(?:ink2|card)\b/;
  * down so the rule can ship today and still fail on the next new one.
  */
 const RATCHET: Record<string, number> = {
-  // The plan surfaces — three boxes in one file, two of them `overflow: hidden`
-  // wrappers around a day list.
-  "components/percent-program.tsx": 3,
-  // History's three view modes each draw their own card.
-  "components/aurora/history-views.tsx": 3,
+  // CLEARED, and left here as a note rather than a line: percent-program (3)
+  // and history-views (3) were the two densest files on this list and are now
+  // at zero — see the CLEARED block at the bottom of this file, which pins
+  // them the same way Today's four are pinned. 25 → 19.
   "components/aurora/history.tsx": 1,
   // Nutrition — the biggest screen in the app, swept separately.
   "components/aurora/nutrition.tsx": 2,
@@ -222,25 +227,35 @@ describe("a card comes from the kit", () => {
 });
 
 describe("the surfaces this rule was written for stay on the kit", () => {
-  // The four files the material split was actually found in. If the sweep above
-  // ever stops seeing these, it has stopped guarding the thing it exists for.
-  const TODAY = [
+  /**
+   * CLEARED — every file that has been taken to zero, pinned so it stays there.
+   *
+   * The first four are where the material split was found (Today). The last two
+   * were the densest entries on the ratchet, cleared in the pass after this
+   * rule shipped. A file only joins this list by actually reaching zero, and
+   * once it is here the ratchet's `?? 0` fallback would catch a regression
+   * anyway — the point of naming them is that a REVIEWER can see what is done,
+   * and that the second assertion below can check they still draw cards at all.
+   */
+  const CLEARED = [
     "components/aurora/home.tsx",
     "components/aurora/week-verdict.tsx",
     "components/aurora/heat-row.tsx",
     "components/aurora/protocol.tsx",
+    "components/percent-program.tsx",
+    "components/aurora/history-views.tsx",
   ];
 
-  for (const f of TODAY) {
+  for (const f of CLEARED) {
     it(`${f} draws no card by hand`, () => {
       expect(handRolled(join(MOBILE, f))).toEqual([]);
     });
   }
 
   it("every one of them renders a kit card", () => {
-    // Zero hand-rolls is also what an empty file looks like. These four must be
+    // Zero hand-rolls is also what an empty file looks like. These must be
     // drawing cards, from the kit.
-    for (const f of TODAY) {
+    for (const f of CLEARED) {
       const src = readFileSync(join(MOBILE, f), "utf8");
       expect(src, `${f} should render ACard or APressCard`).toMatch(/<ACard|<APressCard/);
     }
