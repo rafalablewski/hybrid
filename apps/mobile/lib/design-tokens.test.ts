@@ -457,7 +457,33 @@ describe("colour", () => {
     // themed-screen uses became palette tokens and the Wrapped takeover's
     // became the named, deliberately fixed-dark HERO_TAKEOVER_INK /
     // HERO_TAKEOVER_RAISED.
-    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 82, "hex literal → a palette token");
+    // 82 → 75, and the small number is the finding rather than a shortfall.
+    // Only 13 of the 82 duplicated a token at all — this axis is NOT mostly
+    // drift, unlike the type and geometry ones. What the rest actually are:
+    //
+    //   43 are #fff / #000 / #ffffff. Pure white and pure black are NOT in the
+    //     palette — `chalk` is #f3f4ef, a cool off-white — so they are gradient
+    //     stops, scrims and ink on cover art, not colours that lost their name.
+    //     (8 of them ARE text, and might want chalk; that is a look, not a
+    //     rename, so it is left.)
+    //   12 are ink with an alpha suffix inside a LinearGradient stop
+    //     (#0c0d0c00 … #0c0d0ccc). Those want withAlpha(), a separate job.
+    //   6 are the exercise-page anatomy RAMP — derived shades climbing to the
+    //     accent. Its last stop was the accent's hex and now names it.
+    //
+    // THE ONE THING THIS SWEEP ACTUALLY FOUND was not in this count at all: the
+    // CRASH FALLBACK's hardcoded palette had gone stale in two places. It is
+    // exempt from this rule by design (provider-free — see its header), and an
+    // exemption with nothing watching it is exactly how its LINE drifted to the
+    // #2a2d2a that tokens.ts names as the stale hairline, and its CHALK to
+    // #eae3d4 — the GROUND colour of "Clay & Sage on Oat", a light theme
+    // deleted whole in Aug 2026 — used as TEXT. The screen a user sees only
+    // when everything else has broken was the last one painted in a retired
+    // theme. Both corrected, still literal, and now held by
+    // lib/error-boundary-palette.test.ts, which is the half of that exemption
+    // that was missing. The same #eae3d4 was drawing the web /terms and
+    // /privacy pages and went with it.
+    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 75, "hex literal → a palette token");
   });
 });
 

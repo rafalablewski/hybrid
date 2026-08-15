@@ -11,7 +11,7 @@ const wrap: React.CSSProperties = {
   maxWidth: 760,
   margin: "0 auto",
   padding: "48px 22px 96px",
-  color: "#eae3d4",
+  color: "#f3f4ef",
   background: "#0c0d0c",
   minHeight: "100vh",
   fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",

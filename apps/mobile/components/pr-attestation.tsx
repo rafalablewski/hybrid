@@ -51,7 +51,7 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
           </Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
             <Pressable onPress={() => respond(i.id, "cosign")} disabled={busyId === i.id} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 13, paddingVertical: 7 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: "#0c0d0c" }}>I watched it</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>I watched it</Text>
             </Pressable>
             <Pressable onPress={() => respond(i.id, "decline")} disabled={busyId === i.id} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 13, paddingVertical: 7 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Decline</Text>
@@ -146,7 +146,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
                   style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 }}
                 />
                 <Pressable onPress={() => ask(lift)} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: "#0c0d0c" }}>{busy ? "Sending" : "Send"}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{busy ? "Sending" : "Send"}</Text>
                 </Pressable>
               </View>
             )}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Animated, View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan } from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors} from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
@@ -19,7 +19,7 @@ import { useListMotion } from "../../lib/list-motion";
 
 /** Cover ink — the goal tiles are dark in BOTH themes, exactly like the covers
  *  they expand into (Explore's PlanCover recipe). */
-const TILE_INK = "#0c0d0c";
+const TILE_INK = colors.ink;
 /** One goal tile: wide enough that two-and-a-bit peek at 393dp, so a shelf
  *  reads as a rail rather than a cut-off grid. */
 const TILE_W = 172;

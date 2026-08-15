@@ -3,7 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   RECIPES, recipeCardStats, recipeCookView, recipeCoverView, recipeTileView,
   type Recipe, type RecipeCollection, type RecipeCookView,
-} from "@hybrid/core";
+ colors,} from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -25,7 +25,7 @@ export function collectionTitle(key: RecipeCollection, t: (k: string) => string)
 }
 
 /** One recipe tile — cover ink in both themes, like the covers they expand into. */
-export const TILE_INK = "#0c0d0c";
+export const TILE_INK = colors.ink;
 export const TILE_W = 172;
 export const TILE_H = 140;
 

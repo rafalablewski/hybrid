@@ -16,7 +16,7 @@ import {
   type ExercisePeriod,
   type ScrubMode,
   type WeightUnit,
-} from "@hybrid/core";
+ colors,} from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -33,7 +33,8 @@ import AuroraExerciseAnatomy from "./exercise-anatomy";
 // Chart-only raw hexes (mirror web exercise-page): the CVD-validated deep
 // chartreuse/sand pair for stacked tonnage, and the lime landscape ramp.
 const DEEP_BASE = "#84a01e", DEEP_HARD = "#bd871e";
-const RAMP = ["#33420f", "#4c6414", "#6f8f1c", "#9cc32d", "#c6f84f"];
+// The ramp climbs TO the accent — its last stop is the token, not a copy of it.
+const RAMP = ["#33420f", "#4c6414", "#6f8f1c", "#9cc32d", colors.lime];
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [
   { id: "8w", key: "w.analyze.ex.period8w" },

@@ -53,6 +53,7 @@ import {
   type LoggedSession,
   type WeightUnit,
   type BodyweightLookup,
+  THEMES,
 } from "@hybrid/core";
 import { fetchConnections, patchSessionDevice } from "../lib/api";
 import { healthKitAvailability } from "../lib/healthkit";
@@ -73,7 +74,10 @@ import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 
-const GOLD = "#e6c34e";
+// `gold` is a THEME value, and this const is module scope — so it names the
+// one theme the app has rather than copying its hex. (The light theme was
+// deleted whole in Aug 2026; see the light-theme-removed capability.)
+const GOLD = THEMES.dark.gold;
 
 // Deterministic confetti fan for the reveal (module-level → stable positions).
 const CONFETTI = Array.from({ length: 16 }, (_, i) => {

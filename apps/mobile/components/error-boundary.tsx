@@ -41,8 +41,19 @@ import { RADIUS } from "./aurora/kit";
 
 const INK = "#0c0d0c";
 const INK2 = "#141614";
-const LINE = "#2a2d2a";
-const CHALK = "#eae3d4";
+// `line` and `chalk`, copied — and they had both gone STALE, which is what an
+// exemption with no guard does. LINE was #2a2d2a, the exact value tokens.ts
+// names as the one that "made every chart hairline draw in a different grey
+// than every border"; CHALK was #eae3d4, the GROUND colour of "Clay & Sage on
+// Oat" — a light theme superseded by Kyoto Hour and then deleted whole in Aug
+// 2026 — used here as TEXT. The one screen a user sees when everything else has
+// broken was drawn in two colours the app had retired.
+//
+// They stay literal (this file must not import the theme; see the header), and
+// error-boundary-palette.test.ts now fails if either drifts from the palette
+// again. Hardcoding is the point; hardcoding the WRONG value was the bug.
+const LINE = "#242724";
+const CHALK = "#f3f4ef";
 const ASH = "#8b8f86";
 const LIME = "#c6f84f";
 const MONO = Platform.OS === "ios" ? "Menlo" : "monospace";
