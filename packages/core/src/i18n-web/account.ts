@@ -234,6 +234,10 @@ export const web_account = {
     "w.account.onboarding.weeks": "wks",
     "w.account.onboarding.no-plan": "Plans for this goal are coming soon — jump in now and enroll once they land.",
     "w.account.onboarding.setting-up": "Setting up…",
+    // The two halves of the enrol REPORTING ITSELF (APill's commit state): the
+    // word the tick lands beside, and what a failed save announces.
+    "w.account.onboarding.ready": "Ready",
+    "w.account.onboarding.save-failed": "Couldn't set up your plan. Check your connection and try again.",
     "w.account.onboarding.start-plan": "Start this plan",
     "w.account.onboarding.continue": "Continue",
     "w.account.onboarding.next": "Next",
@@ -678,6 +682,8 @@ export const web_account = {
     "w.account.onboarding.weeks": "tyg.",
     "w.account.onboarding.no-plan": "Plany dla tego celu już wkrótce — zacznij teraz i zapisz się, gdy się pojawią.",
     "w.account.onboarding.setting-up": "Przygotowywanie…",
+    "w.account.onboarding.ready": "Gotowe",
+    "w.account.onboarding.save-failed": "Nie udało się przygotować planu. Sprawdź połączenie i spróbuj ponownie.",
     "w.account.onboarding.start-plan": "Rozpocznij ten plan",
     "w.account.onboarding.continue": "Kontynuuj",
     "w.account.onboarding.next": "Dalej",
@@ -1107,6 +1113,8 @@ export const web_account = {
     "w.account.onboarding.weeks": "Wo.",
     "w.account.onboarding.no-plan": "Pläne für dieses Ziel kommen bald — leg jetzt los und melde dich an, sobald sie da sind.",
     "w.account.onboarding.setting-up": "Wird eingerichtet…",
+    "w.account.onboarding.ready": "Fertig",
+    "w.account.onboarding.save-failed": "Dein Plan konnte nicht eingerichtet werden. Prüfe die Verbindung und versuche es erneut.",
     "w.account.onboarding.start-plan": "Diesen Plan starten",
     "w.account.onboarding.continue": "Weiter",
     "w.account.onboarding.next": "Weiter",

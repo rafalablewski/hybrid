@@ -42,8 +42,16 @@ function walk(dir: string, out: string[] = []): string[] {
  *
  * The boundary before `label` matters too: without it the pattern matches
  * inside `busyLabel={…}`, which is the FIX rather than the defect.
+ *
+ * THE WORD LIST IS THE GUARD, and that is its weak seam: a screen whose
+ * in-flight flag is named something else is invisible here. `enrolling` was
+ * added after the onboarding pass found the wizard's CTA swapping 'Start this
+ * plan' for 'Setting up…' — the exact defect this file exists to stop, on the
+ * first screen a new athlete sees, sitting in the tree the whole time the rule
+ * was green. Anything new that names an in-flight state belongs in this list
+ * the day it is written.
  */
-const SWAPPED_LABEL = /(?<![A-Za-z])label=\{[^}]*\b(saving|submitting|busy|loading|posting|sending|deleting|creating|generating|uploading|working)\b[^}]*\?(?![?.])/i;
+const SWAPPED_LABEL = /(?<![A-Za-z])label=\{[^}]*\b(saving|submitting|busy|loading|posting|sending|deleting|creating|generating|uploading|working|enrolling)\b[^}]*\?(?![?.])/i;
 
 describe("commit buttons report without resizing", () => {
   it("never picks a button's label text from an in-flight flag", () => {

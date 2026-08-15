@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from "react";
 import { LanguageProvider } from "../lib/i18n";
 import { ThemeProvider } from "../lib/theme";
 import { TemplateProvider } from "../lib/template";
+import { SessionProvider } from "../lib/session";
 import { NavScrollProvider } from "../lib/nav-scroll";
 
 /**
@@ -25,11 +26,18 @@ export function renderScreen(ui: ReactElement) {
 function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider>
-      <LanguageProvider>
-        <TemplateProvider>
-          <NavScrollProvider>{children}</NavScrollProvider>
-        </TemplateProvider>
-      </LanguageProvider>
+      <TemplateProvider>
+        {/* Nested exactly as app/_layout.tsx nests them — SessionProvider
+            inside Template, Language inside Session — because a screen that
+            reads two of these reads them in that order. Anything a signed-out
+            visitor sees is what it reports here: there is no session in the
+            gate, which is the state the funnel screens are written for. */}
+        <SessionProvider>
+          <LanguageProvider>
+            <NavScrollProvider>{children}</NavScrollProvider>
+          </LanguageProvider>
+        </SessionProvider>
+      </TemplateProvider>
     </ThemeProvider>
   );
 }
