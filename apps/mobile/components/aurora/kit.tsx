@@ -1,5 +1,5 @@
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle } from "react-native";
+import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle, type TextInputProps } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -829,6 +829,8 @@ export function AField({
   autoFocus,
   autoCorrect,
   onClear,
+  onSubmit,
+  returnKey,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -842,6 +844,11 @@ export function AField({
   /** Renders a trailing clear affordance. Pass only when there is something to
    *  clear, so the control does not offer a dead button on an empty field. */
   onClear?: () => void;
+  /** What the keyboard's return key DOES. A search field whose return key
+   *  dismisses without acting is a wasted key: the athlete has already told you
+   *  what they want by typing it. */
+  onSubmit?: () => void;
+  returnKey?: TextInputProps["returnKeyType"];
 }) {
   const { palette } = useTheme();
   // Secure fields start masked; the eye toggles visibility.
@@ -872,6 +879,8 @@ export function AField({
         autoFocus={autoFocus}
         autoCorrect={autoCorrect}
         autoCapitalize="none"
+        onSubmitEditing={onSubmit}
+        returnKeyType={returnKey}
         style={{ flex: 1, fontFamily: F.reg, fontSize: fs.note, color: palette.chalk, paddingVertical: 17 }}
       />
       {onClear && (
@@ -905,11 +914,14 @@ export function ASearch({
   onChange,
   placeholder,
   autoFocus,
+  onSubmit,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder: string;
   autoFocus?: boolean;
+  /** Return-key action — typically "take the first result". */
+  onSubmit?: () => void;
 }) {
   return (
     <AField
@@ -920,6 +932,8 @@ export function ASearch({
       autoFocus={autoFocus}
       autoCorrect={false}
       onClear={value ? () => onChange("") : undefined}
+      onSubmit={onSubmit}
+      returnKey={onSubmit ? "go" : undefined}
     />
   );
 }

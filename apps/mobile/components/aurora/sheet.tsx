@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, Pressable, Animated, Easing, StyleSheet, ScrollView, Modal, KeyboardAvoidingView, Platform, PanResponder, useWindowDimensions } from "react-native";
+import { View, Text, Pressable, Animated, Easing, StyleSheet, ScrollView, Modal, Keyboard, KeyboardAvoidingView, Platform, PanResponder, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   motion,
@@ -76,6 +76,32 @@ import { F } from "../../lib/ui";
  * drops from motion.scrimFlat (0.6) to motion.scrimWithRecede (0.28) — a heavy
  * dim over an un-receded screen is what made the old sheet feel flat.
  */
+/**
+ * The keyboard's height while `active`, else 0. Only a FULL-HEIGHT sheet asks:
+ * a short one is lifted by the KeyboardAvoidingView and needs no measurement,
+ * so this stays inert (and adds no listeners) for every other sheet.
+ */
+function useKeyboardHeight(active: boolean): number {
+  const [height, setHeight] = useState(0);
+  useEffect(() => {
+    if (!active) {
+      setHeight(0);
+      return undefined;
+    }
+    // iOS gets the WILL events so the panel resizes on the same frames the
+    // keyboard travels on; Android only publishes the DID pair.
+    const ios = Platform.OS === "ios";
+    const subs = [
+      Keyboard.addListener(ios ? "keyboardWillShow" : "keyboardDidShow", (e) =>
+        setHeight(Math.max(0, Math.round(e.endCoordinates?.height ?? 0))),
+      ),
+      Keyboard.addListener(ios ? "keyboardWillHide" : "keyboardDidHide", () => setHeight(0)),
+    ];
+    return () => subs.forEach((s) => s.remove());
+  }, [active]);
+  return active ? height : 0;
+}
+
 export default function Sheet({
   visible,
   onClose,
@@ -126,10 +152,23 @@ export default function Sheet({
   const onClosedRef = useRef(onClosed);
   onClosedRef.current = onClosed;
 
-  // The panel is ALWAYS the full `large` height, translated down to its stop —
-  // that is what gives every sheet somewhere to grow into. `panelH` is
-  // therefore both the layout height and the dismissed offset.
-  const panelH = Math.round(screenH * sheetGesture.detents.large);
+  // THE KEYBOARD SHORTENS A FULL-HEIGHT SHEET; it does not shove it upwards.
+  //
+  // The KeyboardAvoidingView below pads the panel's container by the keyboard's
+  // height, which is exactly right for a SHORT sheet: the whole panel rides up
+  // and rests above the keys. For a `fill` sheet it is exactly wrong — the panel
+  // is 92% of the screen and the container is now ~60% of it, so a bottom-
+  // aligned child that tall overflows off the TOP, taking the grab handle, the
+  // title and (in the exercise picker) the search field with it. That went
+  // unseen for as long as no full-height sheet raised a keyboard by itself; the
+  // picker now focuses its field on open, so it is the default view.
+  //
+  // So a filling panel is clamped to the room that is actually left. It then
+  // ends exactly at the top of the keyboard: nothing is pushed off-screen, every
+  // row stays reachable, and — per the sheet-pad rule — the child still needs no
+  // keyboard padding of its own.
+  const keyboardH = useKeyboardHeight(render && fill);
+  const panelH = Math.round(Math.min(screenH * sheetGesture.detents.large, screenH - keyboardH));
   // What the sheet is naturally worth: the chrome plus what it holds. Measured
   // rather than assumed, so a three-row sheet still rests three rows tall — a
   // declared detent adds a stop above that, it does not inflate the sheet to

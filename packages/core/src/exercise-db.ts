@@ -784,6 +784,38 @@ export const GYM_CATEGORY_BY_NAME: Record<string, string> = Object.fromEntries(
   GYM_EXERCISES.map((e) => [e.name, e.category]),
 );
 
+/** Display spelling of the gear — the enum's kebab keys are not for reading. */
+export const EQUIPMENT_LABEL: Record<GymEquipment, string> = {
+  barbell: "Barbell",
+  dumbbell: "Dumbbell",
+  kettlebell: "Kettlebell",
+  machine: "Machine",
+  cable: "Cable",
+  bodyweight: "Bodyweight",
+  band: "Band",
+  "trap-bar": "Trap bar",
+  "ez-bar": "EZ bar",
+  smith: "Smith machine",
+  sled: "Sled",
+  medball: "Med ball",
+  landmine: "Landmine",
+  other: "Other",
+};
+
+/**
+ * The one-line "which one is this?" for a picker row: the GEAR and the muscle
+ * GROUP, which is exactly what tells eleven deadlifts apart at a glance. Empty
+ * for a name the DB doesn't know (a custom lift or a sport — those rows carry
+ * their own descriptor).
+ *
+ * Joined with a spaced en dash, never a middot (see the project rule).
+ */
+export function exerciseGearLine(name: string): string {
+  const e = gymExercise(name);
+  if (!e) return "";
+  return [EQUIPMENT_LABEL[e.equipment], e.category].filter(Boolean).join(" – ");
+}
+
 // ---- Engine bridge -----------------------------------------------------------
 // Map the fine-grained muscles onto the engine's 7 fatigue groups. Coarse by
 // design: arm/grip work attributes to "back" (pulling musculature), trunk and

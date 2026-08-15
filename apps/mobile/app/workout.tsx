@@ -1864,7 +1864,9 @@ export default function Workout() {
           onClose={() => setPickerOpen(false)}
           onPick={(name, kind) => addExercise(name, kind)}
           title={t("workout.pickExercise")}
-          recent={recent.map((r) => ({ name: r.name, kind: r.kind }))}
+          // `count` is not decoration: the picker ranks the movements this
+          // athlete actually trains above ones they have never touched.
+          recent={recent.map((r) => ({ name: r.name, kind: r.kind, count: r.count }))}
         />
 
         {/* Exercise detail sheet — per-set pills, live totals, and per-set

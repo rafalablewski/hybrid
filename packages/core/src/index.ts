@@ -71,6 +71,7 @@ export * from "./serving-units";
 export * from "./notes";
 export * from "./exercise-db";
 export * from "./exercise-profile";
+export * from "./exercise-search";
 export * from "./exercise-animation";
 export * from "./exercise-anatomy";
 export * from "./exercise-media";
