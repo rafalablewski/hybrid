@@ -33,7 +33,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
-import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
@@ -241,7 +241,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
       <View style={{ flexDirection: "row", alignItems: "baseline" }}>
         <RollingNumber
           value={String(sig.minutes)}
-          style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: -2, lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}
+          style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: trackFigure(52), lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}
         />
         <Text style={{ fontFamily: F.mono, fontSize: 20, color: C.ash, letterSpacing: tracking.normal }}> min</Text>
       </View>

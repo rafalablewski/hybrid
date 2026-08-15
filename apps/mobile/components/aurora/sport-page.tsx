@@ -30,7 +30,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { APill, AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
@@ -209,7 +209,7 @@ export default function AuroraSportPage() {
         <View style={{ flex: 1 }}>
           <Text style={label()}>{primaryLabel}</Text>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: space.ms }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: -1 }}>{m.primary.value}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
             {!!m.primary.unit && <Text style={{ ...mono(fs.note), marginBottom: 6 }}>{m.primary.unit}</Text>}
           </View>
           {!!m.primary.delta && (
@@ -375,7 +375,7 @@ export default function AuroraSportPage() {
                     accessibilityState={{ selected: on }}
                     style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : C.ink2 }}
                   >
-                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: 0.8, color: on ? C.onAccent : C.ash }}>{l.toUpperCase()}</Text>
+                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: tracking.label, color: on ? C.onAccent : C.ash }}>{l.toUpperCase()}</Text>
                   </Pressable>
                 );
               })}

@@ -185,59 +185,56 @@ describe("leading and tracking", () => {
     expectAtMost(hits(/lineHeight:\s*\d/g), 74, "absolute lineHeight → leading(size, role)");
   });
 
-  it("RATCHET — raw letterSpacing gives way to tracking.*", () => {
-    // 480 → 459 → 93. Every site whose value IS a rung now names it: 187 at 0.9
-    // → tracking.label, 111 at 1.2 → tracking.caps, 39 at -0.5 →
-    // tracking.display, 2 at 0 → tracking.normal. 339 sites, 76 files, and not
-    // one pixel moves — the numbers were already the token, they just weren't
-    // saying so.
+  it("HARD — tracking names its token; a big figure derives it", () => {
+    // 432 → 0. THE SHAPE OF THE ANSWER, because it is not one rule:
     //
-    // WHAT IS LEFT IS ONE FINDING, not a tail of odds and ends. Convert the 59
-    // negatives to em and they collapse into a single narrow band — roughly
-    // -0.015em under a section title, -0.035em on a big number — no matter
-    // which of the twelve dp values wrote them. They are PROPORTIONAL display
-    // tightening that each call site multiplied out by hand for its own size,
-    // which is why -1 appears at 20dp and again at 48dp: the same intent, and
-    // it cannot be right at both.
+    //   SMALL TYPE takes an ABSOLUTE rung. The eyebrows live at 10–13dp, a band
+    //     narrow enough that one dp value works across all of it, and the app
+    //     has exactly two: tracking.label (0.9) and tracking.caps (1.2). 298
+    //     sites already were those numbers and now say so; 24 more were
+    //     stragglers either side (0.4 … 0.8 under, 1.4 / 2 / 3 over) and snapped
+    //     to the nearer.
     //
-    // So the rung they need is not another absolute number, it is `track(size,
-    // role)` — the exact twin of `leading(size, role)` two rules up, which
-    // exists because absolute lineHeight was this same mistake on the other
-    // axis. That is a scale to design, not a value to snap to, and a ratchet is
-    // still not the place to invent one. Tracked as `tracking-proportional`.
+    //   TITLES take tracking.display (-0.5), and that was the contested call.
+    //     Two tightenings were in force at the same sizes: the token at -0.019
+    //     … -0.031em, and a raw -0.3 group at -0.013 … -0.023em. The token wins
+    //     because it IS the token — 51 call sites plus two core contracts (the
+    //     app-header wordmark, the hub masthead's title), and hub-masthead
+    //     chose it deliberately over the -1 that shipped before it. A house
+    //     value that has already survived one argument is the house value.
     //
-    // AND THE NEGATIVES DISAGREE WITH THE TOKEN, which is the finding that
-    // decides the design pass rather than a detail of it. `tracking.display`
-    // (-0.5, absolute) is used at 16–28dp, where it works out to -0.019 to
-    // -0.031em. The raw -0.3 group sits at 13–23dp — the SAME band — at -0.013
-    // to -0.023em. So at 16dp the app currently tightens a title by -0.031em in
-    // one file and -0.019em in another, and both believe they are right. There
-    // is no arithmetic that picks the winner; someone has to look at the two
-    // and say. That is the whole reason the rest of this is not swept here.
+    //   BIG FIGURES DERIVE IT — trackFigure(size), and this is the part an
+    //     absolute could not do. They run 30–68dp, a 2.3× span, where -0.5 is
+    //     -0.017em at the bottom and -0.007em at the top: nothing at all. Which
+    //     is why every one of them hand-multiplied its own value instead, and
+    //     why `letterSpacing: -1` appeared at 20dp AND at 48dp. In em those
+    //     twelve spellings collapse onto -0.035em, so that is the constant, and
+    //     trackFigure is leading()'s twin — same argument, one axis over.
     //
-    // 93 → 80: 13 eyebrows that had drifted a tenth or two off a rung (1.0,
-    // 1.1, 0.8, 1.4, 1.6, 2.0 at 10–13dp) snapped to their nearest, every shift
-    // ≤0.4dp. Those were unambiguous. The 65 that remain under the app's own
-    // scale are the design call above.
+    // THE BOUNDARY IS THE SCALE'S OWN: fs.hero (34) is documented as
+    // "mastheads / cover titles" and fs.stat (46) as "the one hero figure on a
+    // screen". Titles up to hero take the rung; figures from stat take the
+    // function. The four sites sitting at fs.stat under tracking.display moved
+    // with it, and a 32dp food NAME moved back — it is a title that happened to
+    // be large, not a figure.
     //
     // TWO EXEMPTIONS, both because the app's TYPE SCALE does not govern them:
     //
     //   lib/share.tsx — a branded card captured to a PNG at an arbitrary width.
     //     Its sizes are `width * 0.072`, fractions of the canvas rather than
     //     rungs of the app ladder, so its tracking belongs to that card's own
-    //     system. Snapping it to app rungs would tie a shared image to a scale
-    //     it is not drawn on.
+    //     system.
     //
     //   The one-time-code fields (login.tsx, mfa-settings.tsx) — letterSpacing
-    //     at 8 and 3 is doing SEMANTIC work: it tells you the characters are
-    //     discrete digits to be read one at a time. A rung would delete the
+    //     at 8 and 3 is doing SEMANTIC work: it says the characters are
+    //     discrete digits, to be read one at a time. A rung would delete the
     //     thing the spacing is saying.
     //
-    // Both are narrow and named. If a third wants adding, that is the signal
-    // the rule is wrong rather than the call site.
+    // Both are narrow and named. A third wanting to be added is the signal that
+    // the rule is wrong, not that the call site is.
     const OWN_SCALE = ["lib/share.tsx", "components/aurora/login.tsx", "components/aurora/mfa-settings.tsx"];
     const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
-    expectAtMost(raw, 65, "raw letterSpacing → tracking.*");
+    expect(raw, "letterSpacing → tracking.label/.caps/.display, or trackFigure(size)").toEqual([]);
   });
 });
 

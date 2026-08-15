@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, type TypeRole, type SpaceToken } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, type TypeRole, type SpaceToken } from "./scale";
 
 /**
  * THE SCALE'S OWN GUARD.
@@ -101,6 +101,27 @@ describe("tracking", () => {
     expect(tracking.normal).toBe(0);
     expect(tracking.label).toBeGreaterThan(0);
     expect(tracking.caps).toBeGreaterThan(tracking.label);
+  });
+
+  it("trackFigure tightens proportionally, where the absolute rung cannot", () => {
+    // The whole point: -0.5 is -0.017em at 30dp and -0.007em at 68dp, so one
+    // absolute value cannot serve a 2.3x span. This one scales with the figure.
+    // Equal em across the span, to within the 0.1dp rounding — which at 30dp
+    // is worth ~0.002em, so `2` is the honest precision here, not `3`.
+    expect(trackFigure(30) / 30).toBeCloseTo(trackFigure(68) / 68, 2);
+    // And every figure in the band is tighter than the absolute rung would be.
+    for (const size of [30, 40, 46, 56, 68]) {
+      expect(trackFigure(size), `${size}dp`).toBeLessThan(tracking.display);
+    }
+  });
+
+  it("lands on what the biggest figures were already drawn at", () => {
+    // fs.stat carried -1.6 by hand at three sites before this existed; the
+    // constant was derived from that cluster, so it has to return it.
+    expect(trackFigure(fs.stat)).toBe(-1.6);
+    // Rounded to 0.1dp — RN takes fractional letterSpacing, and at this size
+    // the tenth is visible.
+    expect(trackFigure(46)).toBe(Math.round(46 * TRACK_FIGURE_EM * 10) / 10);
   });
 
   it("codifies the two eyebrow trackings already in use", () => {

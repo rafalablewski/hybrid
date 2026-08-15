@@ -104,7 +104,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
 }) {
   const h = headline(card, units, t);
   const stroke = kindStroke(C, card.kind);
-  const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: tracking.display, color: C.chalk } as const;
   const open = () => {
     armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
     onOpen(card.name);

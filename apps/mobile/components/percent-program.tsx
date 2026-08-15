@@ -328,7 +328,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
 function WeekHeader({ title, right, C }: { title: string; right: string | null; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: -0.3, color: C.chalk, flexShrink: 1 }}>{title}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: tracking.display, color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
   );
@@ -405,7 +405,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: -0.3, color: C.chalk }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: tracking.display, color: C.chalk }} numberOfLines={1}>
             {day.title}
             {!!day.kindLabel && <Text style={{ color: C.ash }}> — {day.kindLabel}</Text>}
           </Text>

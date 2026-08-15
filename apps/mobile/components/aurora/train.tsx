@@ -239,7 +239,7 @@ function ListRow({
         <AuroraIcon name={icon} size={19} color={iconColor} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: -0.3 }}>{title}</Text>
+        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: tracking.display }}>{title}</Text>
         {!!meta && <View style={{ marginTop: 4 }}><MetaLine text={meta} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }} /></View>}
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>

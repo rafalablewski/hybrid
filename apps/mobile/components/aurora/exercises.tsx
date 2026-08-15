@@ -188,7 +188,7 @@ export default function AuroraExercises() {
               <View key={sec.bucket}>
                 {/* Explore's SectionHead — 18px black title, mono count at the baseline. */}
                 <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-                  <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{t(sec.labelKey)}</Text>
+                  <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: tracking.display, color: C.chalk }}>{t(sec.labelKey)}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{sec.entries.length}</Text>
                 </View>
                 <Card list={sec.entries} />

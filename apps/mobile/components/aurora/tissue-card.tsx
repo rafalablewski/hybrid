@@ -99,7 +99,7 @@ export default function TissueCard({
     <ACard solid style={{ marginTop: 16, borderColor: alert ? `${C.red}73` : C.line, backgroundColor: alert ? `${C.red}12` : undefined }}>
       {/* HEAD — the subject, and how many tissues are on the worklist. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.2, color: alert ? txt(C, C.red) : C.chalk }}>{t("w.injury.tissue")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 18, letterSpacing: tracking.display, color: alert ? txt(C, C.red) : C.chalk }}>{t("w.injury.tissue")}</Text>
         {hasData && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: alert ? txt(C, C.red) : C.ash }}>
             {axis.flaggedCount}/{axis.total} {t("w.injury.flaggedMeta")}
@@ -112,7 +112,7 @@ export default function TissueCard({
           claiming an all-clear. */}
       {hasData ? (
         <>
-          <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: -0.3, lineHeight: leading(16), marginTop: 8, color: C.chalk }}>
+          <Text style={{ fontFamily: F.black, fontSize: 16, letterSpacing: tracking.display, lineHeight: leading(16), marginTop: 8, color: C.chalk }}>
             {t(injuryHeadlineKey(axis))}
           </Text>
           <Axis axis={axis} C={C} t={t} />

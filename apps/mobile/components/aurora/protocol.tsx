@@ -214,7 +214,7 @@ export function InjurySheet({
       {/* THE READBACK — the choice said in words, so a highlight is never the
           only confirmation. It holds its height so nothing jumps. */}
       <View accessibilityLiveRegion="polite" style={{ minHeight: 54, marginTop: 14, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: area ? C.chalk : C.ash }}>
+        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: tracking.display, color: area ? C.chalk : C.ash }}>
           {area ? t(INJURY_AREA_KEY[area]) : t("w.injury.pickNone")}
         </Text>
         {area ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t(INJURY_AREA_HINT_KEY[area])}</Text> : null}
@@ -322,7 +322,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
     <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
       {/* WHAT AND HOW LONG — the two facts a protocol is about. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>
+        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: tracking.display, color: C.chalk }}>
           {t(INJURY_AREA_KEY[p.tissue as MuscleGroup] ?? p.tissue)}
         </Text>
         {v.days != null ? (

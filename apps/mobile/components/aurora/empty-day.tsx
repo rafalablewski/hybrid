@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import { emptyDayCopy, type EmptyDayCopy } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 
 // ── AURORA Empty day (mobile) ───────────────────────────────────────────────
@@ -63,7 +63,7 @@ export default function AEmptyDay({
         <EmptyGlyph copy={copy} color={copy.quiet ? `${C.ash}80` : `${C.ash}b3`} />
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: 17, letterSpacing: -0.3, color: copy.quiet ? C.ash : C.chalk, textAlign: "center" }}
+          style={{ fontFamily: F.black, fontSize: 17, letterSpacing: tracking.display, color: copy.quiet ? C.ash : C.chalk, textAlign: "center" }}
         >
           {t(copy.titleKey)}
         </Text>

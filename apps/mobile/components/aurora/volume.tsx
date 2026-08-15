@@ -20,7 +20,7 @@ import { setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ADrawer, AHeading, ASection, CardFoot, RADIUS, withAlpha } from "./kit";
 import { HeroAccessory } from "./hero";
 import Sheet from "./sheet";
@@ -256,7 +256,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 46, lineHeight: 50, letterSpacing: -1.6, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 46, lineHeight: 50, letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
             </View>
@@ -264,7 +264,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
               {rows.map((r) => (
                 <View key={r.muscle} style={{ flex: 1 }}>
                   <ShapeColumn s={r} color={zoneColor(r.zone)} dim={false} />
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.7, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
                 </View>
               ))}
             </View>
@@ -334,7 +334,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 10 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 68, lineHeight: 74, letterSpacing: -2.5, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 68, lineHeight: 74, letterSpacing: trackFigure(68), color: C.chalk }}>{summary.inRange}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, marginLeft: 4 }}>/{summary.total}</Text>
             </View>
             <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: 21, color: C.ash, marginTop: -2, maxWidth: 240 }}>{t("w.analyze.vol.heroCaption")}</Text>

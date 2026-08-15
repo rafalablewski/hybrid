@@ -11,7 +11,7 @@ import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { APill, ACard } from "./kit";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { DoorRow } from "./week-verdict";
 
 /**
@@ -138,7 +138,7 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
       <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: tracking.display, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 16 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
       {wv && (
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: -1, color: C.chalk }}>{wv.value}<Text style={{ fontSize: 15, color: C.ash }}> {wv.unit}</Text></Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: trackFigure(40), color: C.chalk }}>{wv.value}<Text style={{ fontSize: 15, color: C.ash }}> {wv.unit}</Text></Text>
           {dstr && dir !== "flat" && (
             <Text style={{ fontFamily: F.monoBold, fontSize: 13, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
           )}
@@ -266,7 +266,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
           placeholder="0"
           placeholderTextColor={C.ash}
           accessibilityLabel={`${t("w.account.profile.priv-height-t")} (${unit})`}
-          style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -1, color: C.chalk, paddingVertical: 2 }}
+          style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: tracking.display, color: C.chalk, paddingVertical: 2 }}
         />
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{unit}</Text>
         {/* The save appears only when there is a CHANGE to save — a stored
@@ -301,7 +301,7 @@ function MetricInput({ C, label, unit, value, onChange }: { C: Palette; label: s
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, marginTop: 2 }}>
-        <TextInput value={value} onChangeText={(v) => { if (isDecimalInput(v)) onChange(v); }} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -1, color: C.chalk, paddingVertical: 2 }} />
+        <TextInput value={value} onChangeText={(v) => { if (isDecimalInput(v)) onChange(v); }} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: tracking.display, color: C.chalk, paddingVertical: 2 }} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 6 }}>{unit}</Text>
       </View>
     </View>

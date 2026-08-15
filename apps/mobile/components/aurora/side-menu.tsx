@@ -217,7 +217,7 @@ export default function AuroraSideMenu({
             <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{initials}</Text>
             </View>
-            <Text numberOfLines={1} style={{ marginTop: 10, fontFamily: F.black, fontSize: fs.heading, letterSpacing: -0.4, color: C.chalk }}>{name || t("nav.you")}</Text>
+            <Text numberOfLines={1} style={{ marginTop: 10, fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: C.chalk }}>{name || t("nav.you")}</Text>
             <Text style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
               {[role.toUpperCase(), entitlement === "paid" ? "FULL" : "FREE"].join(" – ")}
             </Text>
@@ -268,8 +268,8 @@ export default function AuroraSideMenu({
               style={{ marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${pa.fill}80`, borderRadius: 22, padding: 16, overflow: "hidden" }}
             >
               <View pointerEvents="none" style={{ position: "absolute", top: -50, right: -40, width: 150, height: 150, borderRadius: 75, backgroundColor: `${pa.fill}24` }} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: pa.text }}>{t("w.home.pillnav.upgradeKicker")}</Text>
-              <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, marginTop: 6, letterSpacing: -0.4 }}>{t("nav.upgrade")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: pa.text }}>{t("w.home.pillnav.upgradeKicker")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, marginTop: 6, letterSpacing: tracking.display }}>{t("nav.upgrade")}</Text>
               <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: pa.fill, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: pa.ink }}>{t("w.home.pillnav.goFull")}</Text>
               </View>

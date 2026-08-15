@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { RADIUS } from "./kit";
 
 // ── AURORA Action pair (mobile) ─────────────────────────────────────────────
@@ -82,7 +82,7 @@ export default function AActionPair({ actions, align = "center" }: {
           <Text
             maxFontSizeMultiplier={FIXED_FONT_SCALE}
             numberOfLines={1}
-            style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: -0.2, color: a.prominent ? C.onAccent : txt(C, C.chalk) }}
+            style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: tracking.display, color: a.prominent ? C.onAccent : txt(C, C.chalk) }}
           >
             {a.label}
           </Text>

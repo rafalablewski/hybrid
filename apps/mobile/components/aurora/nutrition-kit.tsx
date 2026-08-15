@@ -9,7 +9,7 @@ import {
   type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
 } from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
+import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET , trackFigure} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
@@ -301,7 +301,7 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
         <RollingNumber
           value={String(Math.abs(left))}
-          style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: tracking.display, color: tone }}
+          style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: trackFigure(fs.stat), color: tone }}
         />
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}

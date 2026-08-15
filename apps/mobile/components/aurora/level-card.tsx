@@ -150,7 +150,7 @@ export default function LevelCard({ sessions, read }: {
       {/* BEAT 4 — the ratios that actually drive the engine, held back for the
           second read, in the `× bodyweight` notation the Volume screen ships. */}
       {level && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.5, color: C.ash, opacity: 0.75, marginTop: 12 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, opacity: 0.75, marginTop: 12 }}>
           {estimate.evidence
             .slice(0, 2)
             .map((e) => (e.kind === "strength"
@@ -231,7 +231,7 @@ function Working({ estimate, reach, figure, units }: {
       {/* THE THRESHOLD — the same numbers the sentence above quotes, so the two
           can never round apart. */}
       {reach?.next ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.5, color: C.ash, lineHeight: leading(fs.nano, "relaxed"), marginTop: 12 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, lineHeight: leading(fs.nano, "relaxed"), marginTop: 12 }}>
           {t(reach.kind === "strength" ? "w.analyze.vol.levelNextLift" : "w.analyze.vol.levelNextRun")
             .replace("{tier}", t(LEVEL_KEY[reach.next]))
             .replace("{target}", fmt(reach.target))

@@ -163,3 +163,33 @@ export const tracking: Record<TrackingRole, number> = {
   label: 0.9,
   caps: 1.2,
 };
+
+/**
+ * THE BIG-FIGURE TIGHTENING, proportional — `trackFigure(fs.stat)` → -1.6.
+ *
+ * `tracking.display` is the house TITLE tightening and stays exactly that: it
+ * is the token, it holds 51 call sites plus two core contracts (the app-header
+ * wordmark at 19, the hub masthead's title at fs.hero), and hub-masthead chose
+ * it deliberately over the `-1` that shipped before it. Titles are 13–34dp, a
+ * narrow enough band that one absolute dp works across it.
+ *
+ * THE BIG FIGURES ARE NOT TITLES AND THE ABSOLUTE BREAKS ON THEM. The kcal
+ * readouts, the weight entries, the volume totals run 30–68dp — a 2.3× span —
+ * and -0.5 across that is -0.017em at 30 and -0.007em at 68: at the top of the
+ * range it is doing nothing at all. Which is why every one of these figures had
+ * hand-multiplied its own value instead (-1, -1.6, -1.9, -2, -2.4, -2.5), and
+ * why `letterSpacing: -1` appeared at 20dp AND at 48dp — one optical intent,
+ * twelve spellings, correct at none of them.
+ *
+ * Converted to em those twelve collapse into one band centred on -0.035em, so
+ * that is the constant, and this is `leading(size, role)`'s twin: the same
+ * argument, one axis over. Rounded to 0.1dp — RN takes fractional letterSpacing
+ * and a figure this large shows the difference.
+ *
+ * It fits what was already drawn: at 46dp it returns -1.6, which is what the
+ * three biggest figures in the app already used. The sites that move most are
+ * the ones that were most clearly wrong (-1 at 44dp was -0.023em against its
+ * siblings' -0.035em), and none moves by more than 0.5dp.
+ */
+export const TRACK_FIGURE_EM = -0.035;
+export const trackFigure = (size: number): number => Math.round(size * TRACK_FIGURE_EM * 10) / 10;

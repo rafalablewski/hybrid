@@ -133,7 +133,7 @@ export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () =
         <View style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
         </View>
-        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: -0.8, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: tracking.display, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
       </View>
       {/* one tick per step — the method's length, stated by the plate itself */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 2 }}>

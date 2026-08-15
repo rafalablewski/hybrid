@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import type { WearableExplain, WearableRow } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, fs, F } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, F } from "../../lib/ui";
 import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -54,7 +54,7 @@ export default function WearableSheet({ explain, onClose }: {
         <View style={{ gap: 22 }}>
           {/* THE FIGURE — the same signed number the card prints. */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: txt(C, roleColor(C, totalRole)) }}>
+            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: trackFigure(44), color: txt(C, roleColor(C, totalRole)) }}>
               {signed(e.total)}
             </Text>
             <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>

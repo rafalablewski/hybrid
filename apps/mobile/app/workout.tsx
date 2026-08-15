@@ -133,7 +133,7 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { leading, tracking, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -1166,7 +1166,7 @@ export default function Workout() {
           {cursorName ? (
             <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, maxWidth: 160 }}>{cursorName}</Text>
           ) : null}
-          <Text style={{ fontFamily: F.mono, fontSize: cursorName ? fs.micro : fs.body, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: 1.4 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: cursorName ? fs.micro : fs.body, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: tracking.caps }}>
             {mmss(elapsed)}{paused ? ` – ${t("workout.paused").toUpperCase()}` : ""}
           </Text>
         </View>
@@ -1544,7 +1544,7 @@ export default function Workout() {
                                   keyboardType="numeric"
                                   placeholder="0"
                                   placeholderTextColor={C.ash}
-                                  style={{ fontFamily: F.black, fontSize: 46, letterSpacing: -1.6, color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                  style={{ fontFamily: F.black, fontSize: 46, letterSpacing: trackFigure(46), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                 />
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{bw ? measureLabel : unitLabel}</Text>
                               </Pressable>
@@ -1559,7 +1559,7 @@ export default function Workout() {
                                       keyboardType="numeric"
                                       placeholder="0"
                                       placeholderTextColor={C.ash}
-                                      style={{ fontFamily: F.black, fontSize: 46, letterSpacing: -1.6, color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                      style={{ fontFamily: F.black, fontSize: 46, letterSpacing: trackFigure(46), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                     />
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{measureLabel}</Text>
                                   </Pressable>
@@ -2042,7 +2042,7 @@ export default function Workout() {
           under the status bar the way a takeover should. */}
       {countdown != null && (
         <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, letterSpacing: 3, marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, letterSpacing: tracking.caps, marginBottom: 12 }}>
             {t("workout.getReady").toUpperCase()}
           </Text>
           <Text style={{ fontFamily: F.black, fontSize: countdown > 0 ? 132 : 96, color: txt(C, C.lime) }}>

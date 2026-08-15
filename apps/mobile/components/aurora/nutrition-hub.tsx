@@ -180,7 +180,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
           {series.days.map((d, i) => (
             <Text
               key={d.date}
-              style={{ flex: 1, textAlign: i === 0 ? "left" : d.today ? "right" : "center", fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.5, color: d.today ? txt(C, C.lime) : C.ash, opacity: d.today ? 1 : 0.7 }}
+              style={{ flex: 1, textAlign: i === 0 ? "left" : d.today ? "right" : "center", fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: d.today ? txt(C, C.lime) : C.ash, opacity: d.today ? 1 : 0.7 }}
             >
               {dayLabel(d.date)}
             </Text>

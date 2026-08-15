@@ -4,7 +4,7 @@ import {
   FOOD_ROLES, pantryShelves, pantryStats, roleCounts,
   type FoodRole, type PantryFood,
 } from "@hybrid/core";
-import { fs, F, leading, tracking, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, leading, tracking, trackFigure, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { AuroraIcon } from "./icons";
@@ -63,7 +63,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
   return (
     <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: CARD_PAD, marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: -1.2, lineHeight: fs.stat, color: C.chalk }}>{stats.count}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: fs.stat, color: C.chalk }}>{stats.count}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.pn.savedFoods")}</Text>
           {stats.lead ? (
