@@ -40,7 +40,8 @@ import {
   unitById,
   portionUnits, portionUnit, portionMeasure, portionQty, portionAmount, portionStep, portionEquivalent,
   loggedPortionOf, loggedAmountLabel, loggedAmountShown, stepLoggedPortion, rescaleLoggedAmount,
-  formatAmount, parsePackSize, type PortionUnit, type PortionUnitId,
+  parseFoodPortions, dedupePortions, usualAmounts, MAX_FOOD_PORTIONS,
+  formatAmount, parsePackSize, type PortionUnit, type FoodPortion,
   trainingEnergyOnDay,
   localDayKey,
   localTodayKey,
@@ -158,10 +159,10 @@ const entryStep = (shown: number, direction: number): number => portionStep(show
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
 type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null }
-  /** the container this food comes in, carried so re-logging a Recent still
+  /** the portions this food comes in, carried so re-logging a Recent still
    *  offers "the whole bottle" — a recent is a food PLUS its serving, and a
-   *  copy that dropped the pack would quietly lose a unit the pantry row had */
-  & { packSize?: number | null; packLabel?: string | null }
+   *  copy that dropped them would quietly lose units the pantry row had */
+  & { portions?: FoodPortion[] | null }
   /** WHEN this exact (food, serving) was logged — epoch ms, capped. Written
    *  on every log; read by usualAtHour so the picker can open on what this
    *  athlete actually eats at this time of day. Per-device, like the MRU
@@ -597,11 +598,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   //    per-serving macros with a quantity.
   const [portion, setPortion] = useState<
     ({ name: string; subname?: string | null; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; offFood?: FoodHit; servingGrams?: number | null; verified?: VerifiedStamp; verifiedId?: string | null } & MicroFacts
-      /** the saved product this came from, when it is one — the pack size is
+      /** the saved product this came from, when it is one — a new portion is
        *  written back to it, so it must be a row and not a copy */
-      & { productId?: string | null; packSize?: number | null; packLabel?: string | null }) | null
+      & { productId?: string | null; portions?: FoodPortion[] | null }) | null
   >(null);
-  const [portionUnitId, setPortionUnitId] = useState<PortionUnitId>("servings");
+  const [portionUnitId, setPortionUnitId] = useState<string>("servings");
   // The amount is TEXT, not a number: a half-typed "0." has to survive the
   // keystroke it takes to become "0.35", which a numeric state would round away.
   const [portionText, setPortionText] = useState("1");
@@ -613,7 +614,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     setPortion(base);
   };
   const portionUnitList = useMemo(
-    () => portionUnits({ serving: portion?.serving, servingGrams: portion?.servingGrams, packSize: portion?.packSize, packLabel: portion?.packLabel }),
+    () => portionUnits({ serving: portion?.serving, servingGrams: portion?.servingGrams, portions: portion?.portions }),
     [portion],
   );
   // A unit the food stopped offering (the sheet reopened on a different food)
@@ -623,7 +624,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const portionQtyValue = portionQty(portionTyped, portionUnitActive);
   // Switching unit keeps the PORTION, not the number: 1 serving becomes 100 g,
   // not 1 g. Anything else would silently change what is about to be logged.
-  const switchPortionUnit = (id: PortionUnitId) => {
+  const switchPortionUnit = (id: string) => {
     const next = portionUnit(portionUnitList, id);
     if (!next || id === portionUnitId) return;
     const carried = portionAmount(portionQtyValue, next);
@@ -633,23 +634,38 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   };
   const stepPortion = (d: number) => setPortionText(formatAmount(portionStep(portionTyped, portionUnitActive, d)));
   /** The caption under the stepper: the measure's own symbol, the athlete's word
-   *  for their container, or the generic "servings". */
+   *  for their container, or the generic "servings" / "pack". */
   const portionUnitLabel = (u: PortionUnit): string =>
-    u.symbol ?? (u.id === "pack" ? (u.packLabel || t("w.recovery.nutrition.pt.pack")) : t("w.recovery.nutrition.servings"));
+    u.symbol
+    ?? (u.kind === "portion" ? (u.portionLabel?.trim() || t("w.recovery.nutrition.pt.pack")) : t("w.recovery.nutrition.servings"));
 
-  // Record the pack from the amount on screen — the athlete weighed the tub
-  // once, and from now on it is one tap. PATCHes the saved row rather than
+  // ── LEARNED — the amounts this athlete actually logs for THIS food.
+  //    The answer for everything the catalog has never heard of: the deli
+  //    counter, the bakery, the thing somebody's mother makes. Costs nothing to
+  //    collect, because the diary already records what was entered and in which
+  //    unit. Offered as a prefill rather than invented into a named unit — a
+  //    learned amount's name is its size (core usualAmounts).
+  const portionUsual = useMemo(
+    () => portion ? usualAmounts(logs, portion.name) : [],
+    [logs, portion],
+  );
+
+  // Record a portion from the amount on screen — the athlete weighed the tub
+  // once, and from now on it is one tap. The LAST of the four sources (the
+  // catalog, the scan and their own logs all get there without asking), and the
+  // only one that needs a control. PATCHes the saved row rather than
   // re-creating it: a new id breaks every recipe ingredient pointing at the old
   // one (the same trap the pantry's held delete exists to avoid).
-  const rememberPack = async (size: number) => {
+  const rememberPortion = async (size: number) => {
     const p = portion;
     const packSize = parsePackSize(size);
     if (!p?.productId || packSize == null) return;
     setPackMsg("");
-    const ok = await updateFoodProduct(p.productId, { packSize });
+    const next = dedupePortions([...(p.portions ?? []), { label: "", size: packSize, source: "typed" }]);
+    const ok = await updateFoodProduct(p.productId, { portions: next });
     if (!ok) { setPackMsg(t("w.recovery.nutrition.pt.packFailed")); return; }
-    setProducts((xs) => xs.map((x) => x.id === p.productId ? { ...x, packSize } : x));
-    setPortion((cur) => cur ? { ...cur, packSize } : cur);
+    setProducts((xs) => xs.map((x) => x.id === p.productId ? { ...x, portions: next } : x));
+    setPortion((cur) => cur ? { ...cur, portions: next } : cur);
     const measure = portionUnit(portionUnitList, "measure");
     setPackMsg(t("w.recovery.nutrition.pt.packSaved").replace("{v}", `${formatAmount(packSize)} ${measure?.symbol ?? ""}`.trim()));
   };
@@ -794,7 +810,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat,
       satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt,
       servingGrams: portion.servingGrams, verified: portion.verified, verifiedId: portion.verifiedId ?? null,
-      packSize: portion.packSize ?? null, packLabel: portion.packLabel ?? null,
+      portions: portion.portions ?? null,
     });
     setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
     setPortion(null);
@@ -802,7 +818,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   };
 
   // Re-log a Recent/Favorite food → opens the portion editor (default 1×).
-  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat, sugar: q.sugar, fiber: q.fiber, salt: q.salt, servingGrams: q.servingGrams, packSize: q.packSize, packLabel: q.packLabel, verified: q.verified, verifiedId: q.verifiedId });
+  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat, sugar: q.sugar, fiber: q.fiber, salt: q.salt, servingGrams: q.servingGrams, portions: q.portions, verified: q.verified, verifiedId: q.verifiedId });
   // One-tap re-log of a Recent food at 1× to the current meal (the Today sheet's
   // fast path — no portion editor). Same signals + meal attribution as the picker.
   const relogRecent = async (q: QuickFood) => {
@@ -813,10 +829,20 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     load(); loadLogs(); revalidate.recovery();
   };
   // Log a product (saved food) from the picker → portion editor.
-  const logProduct = (p: FoodProductRow) => openPortion({ productId: p.id, name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, packSize: p.packSize, packLabel: p.packLabel, verifiedId: p.verifiedId });
+  const logProduct = (p: FoodProductRow) => openPortion({ productId: p.id, name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, portions: parseFoodPortions(p.portions), verifiedId: p.verifiedId });
 
   // Save the Create form → products OR meals API (one blend form, two targets),
   // carrying the personal subname, then return to the picker Personal tab.
+  /** The Create form's optional pack, as ONE portion the athlete typed. Empty
+   *  when they left it blank, or when the serving they chose has no measure to
+   *  state a size in. */
+  const typedCreatePortion = (): FoodPortion[] => {
+    const label = createForm.serving.trim() ? composeServingLabel(createForm.serving, createForm.unit) : null;
+    const size = parsePackSize(createForm.packSize);
+    if (!label || size == null || !portionMeasure({ serving: label })) return [];
+    return [{ label: createForm.packLabel.trim().slice(0, 24), size, source: "typed" }];
+  };
+
   const submitCreateFood = async () => {
     if (!createForm.name.trim()) return;
     const isMeal = createMode === "meal";
@@ -847,11 +873,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros, ...panelFields })
       : await createFoodProduct({
           name: createForm.name.trim(), subname, servingLabel: composedLabel, servingGrams,
-          // The pack is stated in the SERVING'S own measure, so a label with no
-          // measure at all ("1 slice") carries no pack either — a size with no
-          // unit is a number nobody can read back.
-          packSize: composedLabel && portionMeasure({ serving: composedLabel }) ? parsePackSize(createForm.packSize) : null,
-          packLabel: createForm.packLabel.trim() || null,
+          // A pack typed here is ONE portion, source "typed". It is stated in
+          // the SERVING'S own measure, so a label with no measure at all
+          // ("1 slice") carries none — a size with no unit is a number nobody
+          // can read back.
+          portions: typedCreatePortion(),
           ...macros, ...panelFields,
         });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
@@ -1057,7 +1083,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     setFoodQuery(code);
     setSearching(true);
     const foods = await searchFoods(code, { barcode: true });
-    setFoodResults(foods);
+    // A BARCODE IDENTIFIES ONE SPECIFIC PACKAGE — that is what a barcode is
+    // for — so a pack size that arrives on a scanned hit is better sourced than
+    // the same figure found by typing a name, and outranks it in the merge
+    // (core dedupePortions). Nothing else about the hit changes.
+    setFoodResults(foods.map((f) => f.portions?.length
+      ? { ...f, portions: f.portions.map((x) => ({ ...x, source: "scanned" as const })) }
+      : f));
     setSearching(false);
     if (foods.length === 0) setFoodMsg(t("w.recovery.nutrition.scan.notFound"));
   }, [t]);
@@ -1069,6 +1101,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat,
     satFat: food.satFat, sugar: food.sugar, fiber: food.fiber, salt: food.salt,
     servingGrams: food.servingGrams, verified: food.verified, verifiedId: food.id ?? null,
+    // THE CATALOG ALREADY KNOWS HOW BIG THE PACK IS. Open Food Facts publishes
+    // the net quantity on every product it holds, so "the whole bottle" is a
+    // unit here before the food has even been saved — no typing, at the scale
+    // of a supermarket rather than of one person's patience.
+    portions: food.portions ?? null,
     offFood: food,
   });
 
@@ -1078,6 +1115,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     setFoodMsg("");
     const res = await createFoodProduct({
       name: food.name, subname: food.brand, servingLabel: food.serving, servingGrams: food.servingGrams ?? undefined,
+      portions: food.portions ?? [],
       kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat,
       satFat: food.satFat, sugar: food.sugar, fiber: food.fiber, salt: food.salt,
       verifiedId: food.id ?? null,
@@ -1451,13 +1489,20 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         const q = portionQtyValue > 0 ? portionQtyValue : portionQty(portionUnitActive.initial, portionUnitActive);
         const sc = (v: number) => Math.round(v * q);
         const equiv = portionEquivalent(portionTyped, portionUnitActive, portionUnitList);
+        // The measure UNIT; its `initial` is one serving's worth of it (100 for
+        // a "100 g" food), which is what turns a portion's servingsPer back
+        // into a printable size.
         const measure = portionUnit(portionUnitList, "measure");
-        // The pack is offered for a SAVED food that can be measured and has no
-        // pack yet, from the measure unit — which is where the athlete has just
-        // typed what the container holds.
-        const canRememberPack =
+        const perServing = measure?.initial ?? 0;
+        const namedPortions = portionUnitList.filter((u) => u.kind === "portion");
+        // Offered for a SAVED food that can be measured and has room for another
+        // portion, from the measure unit — which is where the athlete has just
+        // typed what the container holds. The catalog, a scan and their own logs
+        // all get here without a control; this is the fallback.
+        const canRememberPortion =
           !!portion.productId && !!measure && portionUnitId === "measure" &&
-          !portionUnit(portionUnitList, "pack") && portionTyped > 0;
+          namedPortions.length < MAX_FOOD_PORTIONS && portionTyped > 0 &&
+          !namedPortions.some((u) => Math.abs(u.servingsPer * perServing - portionTyped) < 0.01);
         return (
           <View>
             {portion.verified ? (() => {
@@ -1501,26 +1546,50 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             {/* THE UNIT SWITCH. Only drawn when the food HAS a choice: a single
                 chip reading "servings" would be a control that decides nothing.
                 Mode chips, because one is always on and the number below
-                changes meaning with it. */}
+                changes meaning with it. It SCROLLS rather than wrapping — a
+                food can carry several named portions, and a switch that
+                reflowed to two rows would move the stepper down the screen
+                every time a different food opened. Inside a sheet, so it
+                respects the sheet's padding rather than bleeding (the
+                full-bleed rule is for rails sitting on a screen). */}
             {portionUnitList.length > 1 ? (
-              <View accessibilityRole="radiogroup" accessibilityLabel={t("w.recovery.nutrition.pt.measuredIn")} style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                accessibilityRole="radiogroup"
+                accessibilityLabel={t("w.recovery.nutrition.pt.measuredIn")}
+                contentContainerStyle={{ gap: 8, paddingRight: 4 }}
+                style={{ marginTop: 16, flexGrow: 0 }}
+              >
                 {portionUnitList.map((u) => {
                   const on = u.id === portionUnitActive.id;
+                  const label = u.kind === "portion"
+                    ? t("w.recovery.nutrition.pt.wholePack").replace("{v}", portionUnitLabel(u))
+                    : portionUnitLabel(u);
                   return (
                     <Pressable
                       key={u.id}
                       onPress={() => switchPortionUnit(u.id)}
                       accessibilityRole="radio"
                       accessibilityState={{ selected: on }}
-                      style={{ flex: 1, alignItems: "center", borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}14` : "transparent", borderRadius: 999, paddingVertical: 9, paddingHorizontal: 8 }}
+                      // A portion says how big it is on the chip, so picking
+                      // between "bottle" and "block" is not a memory test.
+                      accessibilityLabel={u.kind === "portion" && measure ? `${label}, ${formatAmount(u.servingsPer * perServing)} ${measure.symbol}` : label}
+                      style={{ minWidth: 84, alignItems: "center", borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}14` : "transparent", borderRadius: 999, paddingVertical: 9, paddingHorizontal: 14 }}
                     >
                       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.caption, letterSpacing: 0.6, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
-                        {u.id === "pack" ? t("w.recovery.nutrition.pt.wholePack").replace("{v}", portionUnitLabel(u)) : portionUnitLabel(u)}
+                        {label}
                       </Text>
+                      {u.kind === "portion" && measure ? (
+                        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 2 }}>
+                          {formatAmount(u.servingsPer * perServing)} {measure.symbol}
+                        </Text>
+                      ) : null}
                     </Pressable>
                   );
                 })}
-              </View>
+              </ScrollView>
             ) : null}
 
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 16, marginTop: 16 }}>
@@ -1539,10 +1608,30 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 {t("w.recovery.nutrition.pt.thatIs").replace("{v}", `${formatAmount(equiv.amount)} ${equiv.symbol}`)}
               </Text>
             ) : null}
+            {/* WHAT YOU USUALLY LOG. Learned from this athlete's own diary, so
+                a food no database has ever heard of still gets one-tap amounts
+                after a few weighings. Bare chips, not cards: they set the
+                number in place, they do not go anywhere. */}
+            {portionUnitId === "measure" && portionUsual.length ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 8, marginTop: 12 }}>
+                {portionUsual.map((u) => (
+                  <Pressable
+                    key={`${u.unit}:${u.amount}`}
+                    onPress={() => { setPortionText(formatAmount(u.amount)); haptic.light(); }}
+                    accessibilityRole="button"
+                    accessibilityLabel={t("w.recovery.nutrition.pt.usualA11y").replace("{v}", `${formatAmount(u.amount)} ${u.unit}`).replace("{n}", String(u.times))}
+                    style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 7, paddingHorizontal: 14 }}
+                  >
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{formatAmount(u.amount)} {u.unit}</Text>
+                  </Pressable>
+                ))}
+                <Text style={{ width: "100%", textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.recovery.nutrition.pt.usual")}</Text>
+              </View>
+            ) : null}
             {/* Weigh the tub once, and the whole thing is a unit from then on.
                 Chromeless — it changes this food, it does not go anywhere. */}
-            {canRememberPack ? (
-              <Pressable onPress={() => rememberPack(portionTyped)} accessibilityRole="button" style={{ alignSelf: "center", marginTop: 10, paddingVertical: 4 }}>
+            {canRememberPortion ? (
+              <Pressable onPress={() => rememberPortion(portionTyped)} accessibilityRole="button" style={{ alignSelf: "center", marginTop: 10, paddingVertical: 4 }}>
                 <CtaLabel label={t("w.recovery.nutrition.pt.setPack").replace("{v}", `${formatAmount(portionTyped)} ${measure!.symbol}`)} color={txt(C, C.lime)} fontSize={fs.nano} font={F.mono} style={{ textTransform: "uppercase", letterSpacing: 0.9 }} />
               </Pressable>
             ) : null}
@@ -1643,7 +1732,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           // Carried so STARRING one keeps the whole food — a favourite is stored
           // as this shape, and a stripped copy loses the serving weight (and so
           // the gram conversion), the micros and the verified provenance.
-          satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, packSize: p.packSize, packLabel: p.packLabel, verifiedId: p.verifiedId }));
+          satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, portions: parseFoodPortions(p.portions), verifiedId: p.verifiedId }));
     const sourceCounts: Record<PickerSourceKey, number> = {
       recent: recent.length, favorites: favorites.length, meals: meals.length, personal: products.length,
     };

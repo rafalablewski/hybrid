@@ -1,4 +1,4 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, type HeatProtocol } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -660,7 +660,7 @@ export async function favouriteRoutine(id: string, favourite: boolean): Promise<
 // four macros, so the panel survives the whole round-trip: search → portion
 // editor → log → diary, and library → log.
 export type SavedMealRow = { id: string; name: string; subname: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts;
-export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; servingGrams?: number | null; packSize?: number | null; packLabel?: string | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts;
+export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; servingGrams?: number | null; portions?: unknown; packSize?: number | null; packLabel?: string | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts;
 
 export async function fetchSavedMeals(): Promise<SavedMealRow[]> {
   try {
@@ -735,7 +735,7 @@ export async function fetchFoodProducts(): Promise<FoodProductRow[]> {
 }
 
 export async function createFoodProduct(
-  product: { name: string; subname?: string | null; servingLabel?: string; servingGrams?: number; packSize?: number | null; packLabel?: string | null; kcal?: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts,
+  product: { name: string; subname?: string | null; servingLabel?: string; servingGrams?: number; portions?: FoodPortion[]; kcal?: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts,
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, {
@@ -749,12 +749,12 @@ export async function createFoodProduct(
   }
 }
 
-// Amend a saved food — today, the pack it comes in. A food already in the
-// pantry has to be able to gain a pack size WITHOUT being deleted and
-// recreated: a new id breaks every recipe ingredient pointing at the old one.
+// Amend a saved food — today, the portions it comes in. A food already in the
+// pantry has to be able to gain a portion WITHOUT being deleted and recreated:
+// a new id breaks every recipe ingredient pointing at the old one.
 export async function updateFoodProduct(
   id: string,
-  patch: { packSize?: number | null; packLabel?: string | null },
+  patch: { portions?: FoodPortion[] },
 ): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products/${id}`, {

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  dedupePortions,
+  foodPortions,
   formatAmount,
   loggedAmountLabel,
   loggedAmountShown,
@@ -10,12 +12,16 @@ import {
   portionAmount,
   portionEquivalent,
   portionMeasure,
-  portionPack,
   portionQty,
   portionStep,
   portionUnit,
   portionUnits,
+  parseFoodPortions,
+  usualAmounts,
 } from "./portion";
+
+/** The kefir on the shelf: a 100 g label, a 400 g bottle the catalog knows about. */
+const KEFIR = { serving: "100 g", portions: [{ label: "bottle", size: 400, source: "catalog" as const }] };
 
 describe("portionMeasure — what this food can be weighed in", () => {
   it("reads grams off a mass label", () => {
@@ -63,33 +69,149 @@ describe("portionUnits — the units the editor offers", () => {
     expect(portionUnit(units, "measure")!.initial).toBe(100);
   });
 
-  it("adds the pack when one was recorded, and names it what the athlete calls it", () => {
-    const units = portionUnits({ serving: "100 g", packSize: 400, packLabel: "bottle" });
-    expect(units.map((u) => u.id)).toEqual(["servings", "measure", "pack"]);
-    const pack = portionUnit(units, "pack")!;
-    expect(pack.packLabel).toBe("bottle");
+  it("adds a unit per named portion, called what the athlete calls it", () => {
+    const units = portionUnits(KEFIR);
+    expect(units.map((u) => u.id)).toEqual(["servings", "measure", "portion:0"]);
+    const bottle = portionUnit(units, "portion:0")!;
+    expect(bottle.portionLabel).toBe("bottle");
+    expect(bottle.source).toBe("catalog");
     // One bottle is four servings of 100 g.
-    expect(pack.servingsPer).toBe(4);
+    expect(bottle.servingsPer).toBe(4);
   });
 
-  it("drops a pack it cannot express — a size with no measure has no unit", () => {
-    const units = portionUnits({ serving: "1 slice", packSize: 400 });
-    expect(units.map((u) => u.id)).toEqual(["servings"]);
-    expect(portionPack({ serving: "1 slice", packSize: 400 })).toBeNull();
+  it("offers several portions, smallest first", () => {
+    const units = portionUnits({
+      serving: "100 g",
+      portions: [
+        { label: "block", size: 200, source: "catalog" },
+        { label: "slice", size: 25, source: "learned" },
+      ],
+    });
+    expect(units.filter((u) => u.kind === "portion").map((u) => u.portionLabel)).toEqual(["slice", "block"]);
   });
 
-  it("ignores a nonsense pack size", () => {
-    for (const packSize of [0, -5, Number.NaN]) {
-      expect(portionUnits({ serving: "100 g", packSize }).map((u) => u.id)).toEqual(["servings", "measure"]);
+  it("caps the switch so it stays a switch and not a list", () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({ label: `p${i}`, size: 10 * (i + 1), source: "typed" as const }));
+    expect(portionUnits({ serving: "100 g", portions: many }).filter((u) => u.kind === "portion")).toHaveLength(5);
+  });
+
+  it("drops a portion it cannot express — a size with no measure has no unit", () => {
+    const food = { serving: "1 slice", portions: [{ label: "pack", size: 400, source: "catalog" as const }] };
+    expect(portionUnits(food).map((u) => u.id)).toEqual(["servings"]);
+    expect(foodPortions(food)).toEqual([]);
+  });
+
+  it("ignores a nonsense portion size", () => {
+    for (const size of [0, -5, Number.NaN]) {
+      const units = portionUnits({ serving: "100 g", portions: [{ label: "x", size, source: "typed" }] });
+      expect(units.map((u) => u.id)).toEqual(["servings", "measure"]);
     }
+  });
+
+  it("still honours the single pack the first cut stored", () => {
+    const units = portionUnits({ serving: "100 g", packSize: 400, packLabel: "bottle" });
+    expect(portionUnit(units, "portion:0")!.portionLabel).toBe("bottle");
+  });
+});
+
+describe("where a portion came from", () => {
+  it("keeps the best-sourced copy when two sources say the same thing", () => {
+    // A scan and the catalog entry behind it are the same bottle.
+    const out = dedupePortions([
+      { label: "bottle", size: 400, source: "catalog" },
+      { label: "bottle", size: 400, source: "scanned" },
+    ]);
+    expect(out).toEqual([{ label: "bottle", size: 400, source: "scanned" }]);
+  });
+
+  it("lets the athlete's own correction win over the catalog", () => {
+    const out = dedupePortions([
+      { label: "bottle", size: 400, source: "catalog" },
+      { label: "bottle", size: 400, source: "typed" },
+    ]);
+    expect(out[0]!.source).toBe("typed");
+  });
+
+  it("keeps two genuinely different sizes", () => {
+    const out = dedupePortions([
+      { label: "bottle", size: 400, source: "catalog" },
+      { label: "bottle", size: 1000, source: "catalog" },
+    ]);
+    expect(out).toHaveLength(2);
+  });
+
+  it("reads a stored list without trusting it", () => {
+    expect(parseFoodPortions([
+      { label: "bottle", size: 400, source: "catalog" },
+      { label: "broken", size: "not a number" },
+      { size: 250 },                                   // unnamed = the generic pack
+      { label: "nope" },                               // no size = no unit
+      "garbage",
+      null,
+    ])).toEqual([
+      { label: "", size: 250, source: "typed" },
+      { label: "bottle", size: 400, source: "catalog" },
+    ]);
+  });
+
+  it("survives a column that is not a list at all", () => {
+    expect(parseFoodPortions(null)).toEqual([]);
+    expect(parseFoodPortions("[]")).toEqual([]);
+    expect(parseFoodPortions({})).toEqual([]);
+  });
+});
+
+describe("usualAmounts — learned from what actually gets logged", () => {
+  const log = (name: string, amount: number | null, amountUnit: string | null) => ({ name, amount, amountUnit });
+
+  it("surfaces an amount the athlete keeps entering", () => {
+    const entries = [
+      log("Cheese", 35, "g"), log("Cheese", 35, "g"), log("Cheese", 35, "g"),
+      log("Cheese", 50, "g"),
+    ];
+    expect(usualAmounts(entries, "Cheese")).toEqual([{ amount: 35, unit: "g", times: 3 }]);
+  });
+
+  it("waits for a habit rather than reacting to a coincidence", () => {
+    const entries = [log("Cheese", 35, "g"), log("Cheese", 35, "g")];
+    expect(usualAmounts(entries, "Cheese")).toEqual([]);
+  });
+
+  it("matches the food by an accent-folded name", () => {
+    const entries = [log("Twaróg", 200, "g"), log("twarog", 200, "g"), log("TWARÓG", 200, "g")];
+    expect(usualAmounts(entries, "twarog")).toEqual([{ amount: 200, unit: "g", times: 3 }]);
+  });
+
+  it("does NOT merge two different weighings", () => {
+    // 35 g and 36 g are two things that happened, not one rounded thing.
+    const entries = [
+      log("Cheese", 35, "g"), log("Cheese", 35, "g"), log("Cheese", 35, "g"),
+      log("Cheese", 36, "g"), log("Cheese", 36, "g"), log("Cheese", 36, "g"),
+    ];
+    expect(usualAmounts(entries, "Cheese").map((u) => u.amount)).toEqual([35, 36]);
+  });
+
+  it("ignores anything that is not a measured amount", () => {
+    const entries = [
+      log("Cheese", 1.5, "serving"), log("Cheese", 1.5, "serving"), log("Cheese", 1.5, "serving"),
+      log("Cheese", 1, "bottle"), log("Cheese", 1, "bottle"), log("Cheese", 1, "bottle"),
+      log("Cheese", null, null), log("Cheese", null, null), log("Cheese", null, null),
+    ];
+    expect(usualAmounts(entries, "Cheese")).toEqual([]);
+  });
+
+  it("keeps other foods out of it", () => {
+    const entries = [log("Kefir", 400, "g"), log("Kefir", 400, "g"), log("Kefir", 400, "g")];
+    expect(usualAmounts(entries, "Cheese")).toEqual([]);
+    expect(usualAmounts(entries, "")).toEqual([]);
   });
 });
 
 describe("portionQty — what the diary is asked to store", () => {
-  const units = portionUnits({ serving: "100 g", packSize: 400, packLabel: "bottle" });
+  const units = portionUnits(KEFIR);
   const servings = portionUnit(units, "servings")!;
   const measure = portionUnit(units, "measure")!;
-  const pack = portionUnit(units, "pack")!;
+  const pack = portionUnit(units, "portion:0")!;
 
   it("logs the weight off the scale, not a rounded serving", () => {
     // 35 g of cheese against a 100 g label.
@@ -149,14 +271,14 @@ describe("portionStep — pressing −/+", () => {
 });
 
 describe("portionEquivalent — the line under the stepper", () => {
-  const units = portionUnits({ serving: "100 g", packSize: 400, packLabel: "bottle" });
+  const units = portionUnits(KEFIR);
 
   it("says what a servings count weighs", () => {
     expect(portionEquivalent(1.5, portionUnit(units, "servings")!, units)).toEqual({ amount: 150, symbol: "g" });
   });
 
   it("says what a pack weighs", () => {
-    expect(portionEquivalent(1, portionUnit(units, "pack")!, units)).toEqual({ amount: 400, symbol: "g" });
+    expect(portionEquivalent(1, portionUnit(units, "portion:0")!, units)).toEqual({ amount: 400, symbol: "g" });
   });
 
   it("stays quiet when the number is already the measure", () => {
@@ -184,10 +306,10 @@ describe("parsePackSize", () => {
 });
 
 describe("what the diary remembers", () => {
-  const units = portionUnits({ serving: "100 g", packSize: 400, packLabel: "bottle" });
+  const units = portionUnits(KEFIR);
   const servings = portionUnit(units, "servings")!;
   const measure = portionUnit(units, "measure")!;
-  const pack = portionUnit(units, "pack")!;
+  const pack = portionUnit(units, "portion:0")!;
   const words = { pack: "pack" };
 
   it("writes the amount in the unit it was entered in", () => {
@@ -197,7 +319,7 @@ describe("what the diary remembers", () => {
   });
 
   it("stores a CANONICAL token for an unnamed pack, never a translated word", () => {
-    const unnamed = portionUnit(portionUnits({ serving: "100 g", packSize: 400 }), "pack")!;
+    const unnamed = portionUnit(portionUnits({ serving: "100 g", portions: [{ label: "", size: 400, source: "catalog" }] }), "portion:0")!;
     expect(loggedPortionOf(1, unnamed)).toEqual({ amount: 1, amountUnit: "pack" });
   });
 

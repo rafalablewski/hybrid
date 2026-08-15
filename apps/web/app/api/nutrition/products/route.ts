@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { FREE_PRODUCT_LIMIT, parsePackSize } from "@hybrid/core";
+import { FREE_PRODUCT_LIMIT, parseFoodPortions } from "@hybrid/core";
 import { getOrCreateDbUser, entitlementOf } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 
 // The user's custom FOOD PRODUCT library (FoodProduct) — reusable foods with
 // per-serving macros, the offline half of the (blocked) food database. GET lists;
@@ -25,11 +26,6 @@ const panel = (v: unknown): number | null => {
   return Number.isFinite(n) && n >= 0 ? Math.min(Math.round(n * 10) / 10, 1000) : null;
 };
 
-
-// The athlete's own word for the container ("bottle", "tub"). Short, because it
-// is printed inside a stepper's caption and not a description field.
-export const packLabelOf = (v: unknown): string | null =>
-  typeof v === "string" && v.trim() ? v.trim().slice(0, 24) : null;
 
 export async function GET(request: Request) {
   const me = await getOrCreateDbUser(request);
@@ -61,7 +57,7 @@ export async function POST(request: Request) {
   if (parsed.error) return parsed.error;
   const b = parsed.data as {
     name?: unknown; subname?: unknown; servingLabel?: unknown; servingGrams?: unknown;
-    packSize?: unknown; packLabel?: unknown;
+    portions?: unknown;
     kcal?: unknown; protein?: unknown; carbs?: unknown; fat?: unknown;
     satFat?: unknown; sugar?: unknown; fiber?: unknown; salt?: unknown; verifiedId?: unknown;
   };
@@ -92,11 +88,10 @@ export async function POST(request: Request) {
       data: {
         ...base,
         servingGrams: panel(b.servingGrams),
-        // THE PACK — how big the bottle/tub/pack is, in the serving's own
-        // measure, plus what the athlete calls it. Both nullable: most foods
-        // are not bought in a container worth naming.
-        packSize: parsePackSize(b.packSize),
-        packLabel: packLabelOf(b.packLabel),
+        // THE FOOD'S PORTIONS — its pack, its slice, whatever it comes in —
+        // each carrying where it came from. Validated in core so a malformed
+        // entry is dropped rather than stored as a unit worth nothing.
+        portions: parseFoodPortions(b.portions) as unknown as Prisma.InputJsonValue,
         satFat: panel(b.satFat),
         sugar: panel(b.sugar),
         fiber: panel(b.fiber),

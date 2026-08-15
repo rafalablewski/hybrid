@@ -1,0 +1,23 @@
+-- A food's PORTIONS — a list, from four sources, not one pack somebody typed.
+--
+-- The first cut stored a single packSize + packLabel, which the athlete had to
+-- enter. That is fine for the four foods anybody has patience for and hopeless
+-- across a supermarket. Portions now come from wherever they are cheapest:
+--
+--   catalog  Open Food Facts publishes the net quantity on every product it
+--            holds; the app simply never asked for the field.
+--   scanned  a barcode identifies one specific PACKAGE — that is what it is for
+--   learned  what this athlete actually logs, over and over
+--   typed    they told us — the fallback, not the front door
+--
+--   portions  [{ label, size, source }] — size in the serving's own measure
+--
+-- packSize / packLabel are KEPT and read at load time (core foodPortions), so
+-- every bottle already recorded survives. Nothing writes them any more.
+--
+-- NOTE for production, whose migration bookkeeping is not yet reconciled (see
+-- prisma/MIGRATIONS.md): run reference/sql-food-portions.sql in the Supabase
+-- SQL Editor instead of applying this migration.
+
+-- AlterTable
+ALTER TABLE "FoodProduct" ADD COLUMN     "portions" JSONB NOT NULL DEFAULT '[]';

@@ -27,13 +27,36 @@
  * ("1 slice", "1 scoop") gets a measure only when a weight was actually
  * recorded for it, because nobody can weigh "1 medium" without being told.
  *
- * ── THE PACK IS THE FOOD'S OWN FACT, SO IT IS STORED ON THE FOOD ──────────
- * "The whole bottle" is one tap only if the app knows how big the bottle is.
- * That is a property of the product — it is printed on it — not of tonight's
- * log, so it lives on FoodProduct (`packSize` + `packLabel`) and is recorded
- * once. It is deliberately a SIZE plus a WORD rather than a second serving row:
- * the athlete's container is called a bottle, a tub or a pack, and a unit list
- * that made them pick "serving" again would be the same shrug that started this.
+ * ── A FOOD'S PORTIONS COME FROM WHEREVER THEY ARE CHEAPEST ────────────────
+ * "The whole bottle" is one tap only if the app knows how big the bottle is —
+ * and there are millions of products, so ASKING is the answer of last resort,
+ * not first. A food therefore carries a LIST of named portions, each recording
+ * WHERE IT CAME FROM, and the four sources are tried in order of how little the
+ * athlete has to do:
+ *
+ *   catalog  Open Food Facts publishes the net quantity on the pack
+ *            (`quantity` / `product_quantity`). Free, and it covers the long
+ *            tail no human would ever type in.
+ *   scanned  A barcode identifies one specific PACKAGE — that is what a barcode
+ *            is for — so a scan carries its pack size with it.
+ *   learned  What the athlete actually logs, over and over (`usualAmounts`).
+ *            This is the answer for the deli counter and the homemade loaf,
+ *            which no catalog has ever heard of.
+ *   typed    They told us. Correct as a fallback, wrong as the only route.
+ *
+ * A LIST rather than one pack, because real foods have several: a cheese has a
+ * slice and a block, a bread has a slice and a loaf. `source` is stored with
+ * each one so a figure the catalog published is never confused with one the
+ * athlete corrected — and so the athlete's own always wins the tie.
+ *
+ * WHAT IS NOT A SOURCE: a category guess ("cheese ≈ 30 g a slice"). Every rule
+ * in this codebase points the other way, and a wrong portion is worse than a
+ * missing one because nothing on screen admits it guessed. Coverage gaps are
+ * filled by the four above or left honestly empty.
+ *
+ * A LEARNED amount is deliberately NOT a named portion. It has no name — its
+ * name is its size — so it is offered as a prefill on the measure unit ("you
+ * usually log 35 g") rather than invented into a unit called something.
  *
  * Pure + unit-tested, and shared, so a portion converts identically wherever it
  * is edited.
@@ -41,19 +64,93 @@
 
 import { parseServing, servingGrams, unitById, type Serving } from "./serving-units";
 
-/** What the stepper is counting. */
-export type PortionUnitId = "servings" | "measure" | "pack";
+/* ── A FOOD'S NAMED PORTIONS ──────────────────────────────────────────────── */
+
+/** Where a portion came from. Kept ON the portion, because a size the catalog
+ *  published and one the athlete corrected are not the same claim, and the tie
+ *  between them has to break the same way every time. */
+export type PortionSource = "catalog" | "scanned" | "learned" | "typed";
+
+/** The athlete's own beats a scan, which beats what the catalog published: each
+ *  step down is a step further from the pack actually in their hand. */
+const SOURCE_RANK: Record<PortionSource, number> = { typed: 3, scanned: 2, catalog: 1, learned: 0 };
+
+export interface FoodPortion {
+  /** what to call it — "bottle", "slice", "tub". EMPTY means the generic pack,
+   *  localized at read time: the catalog publishes a net quantity and no word
+   *  for the container, and inventing an English one would be a translation
+   *  nobody asked for stored in the database. */
+  label: string;
+  /** its size in the food's OWN measure — grams for a food sold by weight,
+   *  millilitres for one sold by volume */
+  size: number;
+  source: PortionSource;
+}
+
+/** Read a portions list off a JSON column / an API body without trusting it.
+ *  Anything malformed is dropped rather than defaulted: a portion with no size
+ *  is a unit worth nothing, and one with a size but no food is not a portion. */
+export function parseFoodPortions(input: unknown): FoodPortion[] {
+  if (!Array.isArray(input)) return [];
+  const out: FoodPortion[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== "object") continue;
+    const r = raw as Record<string, unknown>;
+    const size = parsePackSize(r.size);
+    if (size == null) continue;
+    const source = typeof r.source === "string" && r.source in SOURCE_RANK ? (r.source as PortionSource) : "typed";
+    const label = typeof r.label === "string" ? r.label.trim().slice(0, 24) : "";
+    out.push({ label, size, source });
+  }
+  return dedupePortions(out);
+}
+
+/** How many named portions the editor will offer. Past this the unit switch is
+ *  a list, not a switch — and a food with seven named portions is a food whose
+ *  serving should have been defined differently. */
+export const MAX_FOOD_PORTIONS = 5;
+
+/**
+ * Collapse portions that say the same thing, keeping the best-sourced one.
+ *
+ * The four sources OVERLAP by design — a scanned barcode and the catalog entry
+ * behind it are the same pack — so without this a bottle appears twice on the
+ * unit switch, which reads as two different bottles until you check that they
+ * agree. Identity is the LABEL plus the SIZE: a 400 g bottle and a 1 kg bottle
+ * are genuinely two portions, and two 400 g entries are one.
+ */
+export function dedupePortions(portions: readonly FoodPortion[]): FoodPortion[] {
+  const best = new Map<string, FoodPortion>();
+  for (const p of portions) {
+    const key = `${p.label.toLowerCase()}|${p.size}`;
+    const prev = best.get(key);
+    if (!prev || SOURCE_RANK[p.source] > SOURCE_RANK[prev.source]) best.set(key, p);
+  }
+  // Smallest first: a slice before a block, so the unit switch reads from the
+  // amount you eat most often to the one you eat least.
+  return [...best.values()].sort((a, b) => a.size - b.size).slice(0, MAX_FOOD_PORTIONS);
+}
+
+/* ── THE UNITS THE STEPPER CAN COUNT ──────────────────────────────────────── */
+
+/** What KIND of thing the stepper is counting — the switch's own grammar. */
+export type PortionUnitKind = "servings" | "measure" | "portion";
 
 export interface PortionUnit {
-  id: PortionUnitId;
+  /** stable within one food's list: "servings", "measure", or "portion:<n>" —
+   *  the caller's selection key, so a re-render cannot select a different unit */
+  id: string;
+  kind: PortionUnitKind;
   /** how many SERVINGS one of this unit is — the whole conversion, in a number */
   servingsPer: number;
-  /** the symbol printed under the stepper ("g", "ml", "oz"); null for the two
-   *  units whose word is the caller's to localize (servings, and the pack's own
-   *  label, which the athlete typed) */
+  /** the symbol printed under the stepper ("g", "ml"); null for the units whose
+   *  word is the caller's to localize (servings, and a portion's own label) */
   symbol: string | null;
-  /** the athlete's word for a pack ("bottle") — only ever set on `pack` */
-  packLabel?: string | null;
+  /** the word for a portion ("bottle"), or "" for the generic pack */
+  portionLabel?: string | null;
+  /** where a portion unit's size came from — null on servings and the measure,
+   *  which are read off the food's own serving label */
+  source?: PortionSource | null;
   /** what one press of −/+ moves. A serving is a coarse thing and steps by a
    *  half; grams are fine-grained and step by five, because a scale reads 35 g
    *  and not 35.5 g and a 1 g step would be forty presses to a portion. */
@@ -61,8 +158,8 @@ export interface PortionUnit {
   /** the smallest amount this unit can hold — one step, never zero: an entry of
    *  nothing is a delete, and the editor has a close button for that. */
   min: number;
-  /** the amount the editor opens on. One serving, one pack — and for a measure,
-   *  one serving's worth, because that is the amount the food already states. */
+  /** the amount the editor opens on. One serving, one bottle — and for a
+   *  measure, one serving's worth, because that is what the food already states. */
   initial: number;
 }
 
@@ -73,10 +170,12 @@ export interface PortionFood {
   serving?: string | null;
   /** the serving's weight in grams, when it was actually recorded */
   servingGrams?: number | null;
-  /** the whole container, in the serving's OWN measure (grams for a food sold
-   *  by weight, millilitres for one sold by volume) */
+  /** the food's named portions, from any of the four sources */
+  portions?: readonly FoodPortion[] | null;
+  /** LEGACY, and read-only: the single pack the first cut of this feature
+   *  stored. Folded into `portions` by `foodPortions` so a food saved before
+   *  the list existed keeps its bottle. Nothing writes these any more. */
   packSize?: number | null;
-  /** what the athlete calls that container — "bottle", "tub", "pack" */
   packLabel?: string | null;
 }
 
@@ -120,58 +219,69 @@ export function portionMeasure(food: PortionFood): PortionMeasure | null {
   return null;
 }
 
-/** The pack, expressed in the food's measure — null when either is missing. A
- *  pack size with no measure to read it in is a number without a unit, and the
- *  one thing this module will not do is guess which. */
-export function portionPack(food: PortionFood, measure = portionMeasure(food)): { size: number; unit: string; label: string | null } | null {
-  const size = food.packSize;
-  if (!measure) return null;
-  if (size == null || !Number.isFinite(size) || size <= 0) return null;
-  return { size: round(size, 2), unit: measure.unit, label: food.packLabel?.trim() || null };
+/**
+ * A food's named portions, from every source it has one — including the single
+ * pack the first cut of this feature stored, folded in so nothing that was
+ * already recorded is lost.
+ *
+ * Empty when the food has no MEASURE: a size with no unit to read it in is a
+ * number nobody can act on, and the one thing this module will not do is guess
+ * which unit was meant.
+ */
+export function foodPortions(food: PortionFood, measure = portionMeasure(food)): FoodPortion[] {
+  if (!measure) return [];
+  const listed = parseFoodPortions(food.portions ?? []);
+  const legacy = parsePackSize(food.packSize);
+  if (legacy == null) return listed;
+  return dedupePortions([...listed, { label: food.packLabel?.trim() ?? "", size: legacy, source: "typed" }]);
 }
 
 /**
  * The units this food can be logged in, in the order the editor offers them.
  *
  * Servings always — every food has one, and it is what the label states. Then
- * the measure, if the food can honestly be measured. Then the pack, if one was
- * recorded. A food with only a count serving and no weight gets exactly one
+ * the measure, if the food can honestly be measured. Then one unit per named
+ * portion. A food with only a count serving and no weight gets exactly one
  * unit, which is the truth about it rather than a control that cannot work.
  */
 export function portionUnits(food: PortionFood): PortionUnit[] {
   const out: PortionUnit[] = [
-    { id: "servings", servingsPer: 1, symbol: null, step: 0.5, min: 0.5, initial: 1 },
+    { id: "servings", kind: "servings", servingsPer: 1, symbol: null, source: null, step: 0.5, min: 0.5, initial: 1 },
   ];
   const measure = portionMeasure(food);
-  if (measure) {
-    const step = STEP_FOR[measure.unit] ?? 0.5;
+  if (!measure) return out;
+
+  const step = STEP_FOR[measure.unit] ?? 0.5;
+  out.push({
+    id: "measure",
+    kind: "measure",
+    servingsPer: round(1 / measure.perServing, 6),
+    symbol: measure.unit,
+    source: null,
+    step,
+    min: step,
+    // One serving's worth: the editor opens on the amount the food already
+    // states, so switching units never silently changes what is being logged.
+    initial: measure.perServing,
+  });
+
+  foodPortions(food, measure).forEach((p, i) => {
     out.push({
-      id: "measure",
-      servingsPer: round(1 / measure.perServing, 6),
-      symbol: measure.unit,
-      step,
-      min: step,
-      // One serving's worth: the editor opens on the amount the food already
-      // states, so switching units never silently changes what is being logged.
-      initial: measure.perServing,
-    });
-  }
-  const pack = portionPack(food, measure);
-  if (pack && measure) {
-    out.push({
-      id: "pack",
-      servingsPer: round(pack.size / measure.perServing, 6),
+      id: `portion:${i}`,
+      kind: "portion",
+      servingsPer: round(p.size / measure.perServing, 6),
       symbol: null,
-      packLabel: pack.label,
+      portionLabel: p.label,
+      source: p.source,
       step: 0.5,
       min: 0.5,
       initial: 1,
     });
-  }
+  });
   return out;
 }
 
-export const portionUnit = (units: PortionUnit[], id: PortionUnitId): PortionUnit | undefined =>
+export const portionUnit = (units: PortionUnit[], id: string): PortionUnit | undefined =>
   units.find((u) => u.id === id);
 
 /**
@@ -267,7 +377,7 @@ export interface LoggedPortion {
 /** What to write alongside the quantity when a portion is logged. */
 export function loggedPortionOf(amount: number, unit: PortionUnit): { amount: number; amountUnit: string } {
   const unitToken = unit.symbol
-    ?? (unit.id === "pack" ? (unit.packLabel?.trim() || LOGGED_PACK_UNIT) : LOGGED_SERVING_UNIT);
+    ?? (unit.kind === "portion" ? (unit.portionLabel?.trim() || LOGGED_PACK_UNIT) : LOGGED_SERVING_UNIT);
   return { amount: round(amount, 2), amountUnit: unitToken };
 }
 
@@ -324,10 +434,76 @@ export function stepLoggedPortion(e: LoggedPortion, direction: number, maxQty = 
   // is how many servings one of its units is.
   const servingsPer = qty / a;
   const step = STEP_FOR[u] ?? 0.5;
-  const unit: PortionUnit = { id: "measure", servingsPer, symbol: u, step, min: step, initial: a };
+  const unit: PortionUnit = { id: "measure", kind: "measure", servingsPer, symbol: u, step, min: step, initial: a };
   const amount = portionStep(a, unit, direction, servingsPer > 0 ? maxQty / servingsPer : a);
   return { qty: round(amount * servingsPer, 4), amount };
 }
+
+/* ── LEARNED: WHAT THIS ATHLETE ACTUALLY LOGS ─────────────────────────────── */
+
+/** An amount the athlete keeps entering for a food, and how many times. */
+export interface UsualAmount {
+  amount: number;
+  /** the measure unit it was entered in — "g" or "ml" */
+  unit: string;
+  times: number;
+}
+
+/** How many times an amount has to appear before it is a habit rather than a
+ *  coincidence. Two is a repeat; three is what somebody does. */
+export const USUAL_AMOUNT_MIN = 3;
+
+/**
+ * The amounts this athlete usually logs for a food, most-used first.
+ *
+ * THIS IS THE SOURCE FOR EVERYTHING THE CATALOG HAS NEVER HEARD OF — the deli
+ * counter, the homemade loaf, the bakery down the road — which is most of what
+ * a person actually eats. It costs nothing to collect, because the diary
+ * already records what was entered and in which unit (`loggedPortionOf`).
+ *
+ * Deliberately NOT turned into a named portion. A learned amount has no name —
+ * its name is its size — so it is offered as a prefill on the measure unit,
+ * where "35 g" reads as exactly what it is. Inventing a word for it would put a
+ * label in the database that the athlete never chose and cannot correct.
+ *
+ * Amounts are matched EXACTLY rather than clustered. 35 g and 36 g are two
+ * different weighings, and a tracker that quietly merged them would be
+ * answering with a number that was never on the scale.
+ */
+export function usualAmounts(
+  entries: readonly { name?: string | null; amount?: number | null; amountUnit?: string | null }[],
+  foodName: string,
+  opts?: { min?: number; limit?: number },
+): UsualAmount[] {
+  const want = foldPortionName(foodName);
+  if (!want) return [];
+  const min = opts?.min ?? USUAL_AMOUNT_MIN;
+  const counts = new Map<string, UsualAmount>();
+  for (const e of entries) {
+    if (foldPortionName(e.name ?? "") !== want) continue;
+    const amount = e.amount;
+    const unit = e.amountUnit;
+    // Only a MEASURE is a usable suggestion: "1.5 servings" is not an amount
+    // anybody weighed, and a portion unit is already on the switch above.
+    if (amount == null || !Number.isFinite(amount) || amount <= 0) continue;
+    if (!unit || STEP_FOR[unit] == null) continue;
+    const key = `${unit}|${round(amount, 2)}`;
+    const prev = counts.get(key);
+    if (prev) prev.times += 1;
+    else counts.set(key, { amount: round(amount, 2), unit, times: 1 });
+  }
+  return [...counts.values()]
+    .filter((u) => u.times >= min)
+    // Most-used first; the smaller amount breaks a tie, because the portion you
+    // eat more often is usually the smaller one.
+    .sort((a, b) => b.times - a.times || a.amount - b.amount)
+    .slice(0, opts?.limit ?? 3);
+}
+
+/** Accent-folded, case-folded — the same fold the pantry and the picker apply,
+ *  so "Twaróg" and "twarog" are one food here too. */
+const foldPortionName = (s: string): string =>
+  s.toLowerCase().replace(/\u0142/g, "l").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 
 const round = (n: number, places: number): number => {
   const f = 10 ** places;
