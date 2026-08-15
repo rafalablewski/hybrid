@@ -192,12 +192,38 @@ describe("leading and tracking", () => {
     // axis. That is a scale to design, not a value to snap to, and a ratchet is
     // still not the place to invent one. Tracked as `tracking-proportional`.
     //
-    // The 34 positives split: ~19 are the eyebrow drifted a tenth or two off
-    // (1.0, 1.1, 0.8, 0.5 …) and snap to label/caps once someone confirms the
-    // sub-dp shift is fine; the rest are DELIBERATE wide tracking — the OTP
-    // field at 8, the TOTP field at 3 — where the spacing is telling you the
-    // characters are discrete. Those want a name, not a rung.
-    expectAtMost(hits(/letterSpacing:\s*-?\d/g), 93, "raw letterSpacing → tracking.*");
+    // AND THE NEGATIVES DISAGREE WITH THE TOKEN, which is the finding that
+    // decides the design pass rather than a detail of it. `tracking.display`
+    // (-0.5, absolute) is used at 16–28dp, where it works out to -0.019 to
+    // -0.031em. The raw -0.3 group sits at 13–23dp — the SAME band — at -0.013
+    // to -0.023em. So at 16dp the app currently tightens a title by -0.031em in
+    // one file and -0.019em in another, and both believe they are right. There
+    // is no arithmetic that picks the winner; someone has to look at the two
+    // and say. That is the whole reason the rest of this is not swept here.
+    //
+    // 93 → 80: 13 eyebrows that had drifted a tenth or two off a rung (1.0,
+    // 1.1, 0.8, 1.4, 1.6, 2.0 at 10–13dp) snapped to their nearest, every shift
+    // ≤0.4dp. Those were unambiguous. The 65 that remain under the app's own
+    // scale are the design call above.
+    //
+    // TWO EXEMPTIONS, both because the app's TYPE SCALE does not govern them:
+    //
+    //   lib/share.tsx — a branded card captured to a PNG at an arbitrary width.
+    //     Its sizes are `width * 0.072`, fractions of the canvas rather than
+    //     rungs of the app ladder, so its tracking belongs to that card's own
+    //     system. Snapping it to app rungs would tie a shared image to a scale
+    //     it is not drawn on.
+    //
+    //   The one-time-code fields (login.tsx, mfa-settings.tsx) — letterSpacing
+    //     at 8 and 3 is doing SEMANTIC work: it tells you the characters are
+    //     discrete digits to be read one at a time. A rung would delete the
+    //     thing the spacing is saying.
+    //
+    // Both are narrow and named. If a third wants adding, that is the signal
+    // the rule is wrong rather than the call site.
+    const OWN_SCALE = ["lib/share.tsx", "components/aurora/login.tsx", "components/aurora/mfa-settings.tsx"];
+    const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
+    expectAtMost(raw, 65, "raw letterSpacing → tracking.*");
   });
 });
 

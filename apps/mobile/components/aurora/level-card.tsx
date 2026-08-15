@@ -95,7 +95,7 @@ export default function LevelCard({ sessions, read }: {
 
   return (
     <ACard solid style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1, color: C.ash }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
         {t("w.analyze.vol.levelCardTitle")}
       </Text>
 

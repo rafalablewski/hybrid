@@ -508,7 +508,7 @@ function Full({ top }: { top?: ReactNode }) {
                           This replaces three sentences that restated the rows in
                           English-only prose. Mirrors web. */}
                       {facts.length > 0 && (
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.8, color: C.ash, marginTop: 12, lineHeight: leading(fs.nano) + 3 }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 12, lineHeight: leading(fs.nano) + 3 }}>
                           {`${t("w.home.readiness.provFrom")} – ${facts.map(factLine).join(", ")}`}
                         </Text>
                       )}

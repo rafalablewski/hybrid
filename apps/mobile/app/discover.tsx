@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { F, PressScale as Pressable } from "../lib/ui";
+import { F, PressScale as Pressable , tracking} from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -62,7 +62,7 @@ export default function DiscoverScreen() {
         <ACard style={cardStack}>{results.length === 0 ? <Empty title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { armPerson(h); if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
       ) : (
         <>
-          <Text style={{ color: C.ash, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</Text>
+          <Text style={{ color: C.ash, fontSize: 12, textTransform: "uppercase", letterSpacing: tracking.label, marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</Text>
           <ACard style={cardStack}>{sugg.length === 0 ? <Empty title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { armPerson(h); if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
         </>
       )}

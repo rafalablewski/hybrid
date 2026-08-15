@@ -62,7 +62,7 @@ export default function AuroraSport() {
         </Text>
       </View>
       {e.hasTransfer && showTransfer && (
-        <Text style={{ ...mono(fs.nano, txt(C, C.lime)), textTransform: "uppercase", letterSpacing: 1 }}>{t("w.train.sportPage.transfer")}</Text>
+        <Text style={{ ...mono(fs.nano, txt(C, C.lime)), textTransform: "uppercase", letterSpacing: tracking.label }}>{t("w.train.sportPage.transfer")}</Text>
       )}
       <Text style={mono(fs.body)}>→</Text>
     </Pressable>

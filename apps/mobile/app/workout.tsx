@@ -1943,14 +1943,14 @@ export default function Workout() {
                   so a countdown costs a LINE rather than a banner that shoves
                   the layout down every time you finish a set. */}
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 10 }}>
-                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.1, textTransform: "uppercase", color: restSince != null ? txt(C, C.blue) : C.ash }}>
+                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: restSince != null ? txt(C, C.blue) : C.ash }}>
                   {restSince != null
                     ? `${restLeft != null && restLeft <= 0 ? t("workout.restDone") : t("workout.resting")} – ${restReadout}`
                     : cursor
                       ? `${t("workout.setWord")} ${cursor.setIndex + 1}${cursorTotal > 1 ? ` ${t("workout.ofWord")} ${cursorTotal}` : ""}`
                       : t("workout.setsWord")}
                 </Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.1, textTransform: "uppercase", color: C.ash }}>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
                   {prefs.restTimer ? `${t("w.train.blocks.rest")} ${mmss(prefs.restSeconds)}` : t("workout.noRestTimer")}
                 </Text>
               </View>

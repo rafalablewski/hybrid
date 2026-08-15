@@ -248,7 +248,7 @@ export default function AuroraSideMenu({
                   {groups.map(({ group, items }) => (
                     <View key={group} style={{ marginBottom: 10 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 10, paddingBottom: 4 }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{items.length + (group === "train" ? extras.length : 0)}</Text>
                       </View>
                       {items.map(({ item, locked }) => tool(item.id, locked))}

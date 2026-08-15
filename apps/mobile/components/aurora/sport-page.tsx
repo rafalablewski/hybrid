@@ -593,7 +593,7 @@ function EffortSplitBar({
         {shown.map((b, i) => (
           <View key={b.k} style={{ flexBasis: `${b.v}%`, flexGrow: 0, flexShrink: 1, minWidth: 58, alignItems: i === shown.length - 1 ? "flex-end" : "flex-start" }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{b.v}%</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{b.k}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label, marginTop: 4 }}>{b.k}</Text>
           </View>
         ))}
       </View>
