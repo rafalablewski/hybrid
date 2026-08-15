@@ -43,6 +43,17 @@ import { GUTTER, RADIUS } from "./aurora/kit";
  * five different tails, and the ⋯ and the hold are the same control reached two
  * ways.
  *
+ * ── WHY NOT THE SYSTEM'S ContextMenu ──────────────────────────────────────
+ * iOS 26 has one, and aurora/swiftui.tsx already wraps it (`GlassContextMenu`).
+ * It is deliberately not used here: that wrapper is a TRIAL — the
+ * `context-menu-previews` capability is BLOCKED on a device build proving the
+ * feed still scrolls cleanly with cards inside it — and this menu is the only
+ * route to deleting a saved food. A control that is the sole door to a feature
+ * cannot ship on a seam that has not been proven on hardware, and one that
+ * existed on iOS 26 and nowhere else would be two different apps. When the trial
+ * clears, `AnchoredMenu` is the fallback branch and this file is where the fork
+ * goes — the way FeedMenuTrigger already forks.
+ *
  * ACCESSIBILITY: a long press is a gesture VoiceOver cannot make. Every caller
  * therefore passes the same actions through `accessibilityActions` as well —
  * the hold is an accelerant on top of a reachable control, never the only door.

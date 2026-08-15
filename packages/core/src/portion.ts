@@ -354,16 +354,41 @@ export function portionAmount(qty: number, unit: PortionUnit): number {
   return round(q / unit.servingsPer, 2);
 }
 
-/** One press of −/+. Steps ON the unit's own grid when the amount is already on
- *  it, and OFF it otherwise: 35 g +5 is 40 g, but 0.35 servings +0.5 is 0.85 and
- *  NOT 0.5 — snapping to the grid would silently discard a weight somebody
- *  measured, which is the whole thing this module exists to preserve. */
+/**
+ * One press of −/+. Steps ON the unit's own grid when the amount is already on
+ * it, and OFF it otherwise: 35 g +5 is 40 g, but 0.35 servings +0.5 is 0.85 and
+ * NOT 0.5 — snapping to the grid would silently discard a weight somebody
+ * measured, which is the whole thing this module exists to preserve.
+ *
+ * A PORTION IS THE EXCEPTION, AND IT ALWAYS SNAPS.
+ *
+ * The rule above is about protecting a WEIGHING. A named container is not one:
+ * it is a countable thing, and an off-grid amount of it is never something
+ * anybody measured — it is what a unit switch left behind. Switching a 100 g
+ * serving to a 400 g bottle carries the portion rather than the number (which is
+ * right: it must not silently change what is about to be logged), and that lands
+ * on 0.25 bottles. With no snap the grid is offset by a quarter for good:
+ * 0.25 → 0.75 → 1.25 → 1.75, so ONE WHOLE BOTTLE is not reachable by pressing +
+ * at all. The athlete has to select the field and retype the number the chip
+ * they just pressed already named.
+ *
+ * Snapping here costs nothing the rule was protecting and fixes that: from 0.25,
+ * + gives 0.5 and then 1. Found by building the interaction rather than reading
+ * it — the flow reads fine in the code and is unusable in the hand.
+ *
+ * It snaps IN THE DIRECTION OF TRAVEL, not to the nearest: rounding 0.25 + 0.5
+ * lands on 1 and skips the 0.5 the athlete was stepping towards, which is a
+ * press that moved twice.
+ */
 export function portionStep(amount: number, unit: PortionUnit, direction: number, max = 10_000): number {
   const a = Number.isFinite(amount) ? amount : unit.initial;
-  const onGrid = Math.abs(a / unit.step - Math.round(a / unit.step)) < 1e-9;
-  const next = onGrid
-    ? Math.round((a + direction * unit.step) / unit.step) * unit.step
-    : a + direction * unit.step;
+  const grid = a / unit.step;
+  const onGrid = Math.abs(grid - Math.round(grid)) < 1e-9;
+  const next = unit.kind === "portion"
+    ? (direction > 0 ? Math.ceil(grid + 1e-9) : Math.floor(grid - 1e-9)) * unit.step
+    : onGrid
+      ? Math.round((a + direction * unit.step) / unit.step) * unit.step
+      : a + direction * unit.step;
   return round(Math.min(max, Math.max(unit.min, next)), 2);
 }
 

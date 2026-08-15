@@ -3560,8 +3560,20 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         ) : null}
         {meals.length > 0 ? (
           <View style={{ marginTop: 12 }}>
+            {/* THE HOLD REACHES HERE TOO. This row keeps its × — it is visible,
+                it works, and taking a control away to prove a point about a
+                gesture is the trade the picker's swipe was spared. But a saved
+                meal that deletes by holding on one screen and only by a × on
+                another is the same "one food, two answers" this change exists to
+                end, so the hold is armed on both. */}
             {meals.map((m, i) => (
-              <View key={m.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+              <HoldMenu
+                key={m.id}
+                items={[{ key: "delete", label: t("w.recovery.nutrition.deleteMeal"), destructive: true }]}
+                onSelect={() => removeMeal(m.id)}
+                a11yLabel={m.name}
+                style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
+              >
                 {m.emoji ? <Text style={{ fontSize: fs.heading, width: 22, textAlign: "center" }}>{m.emoji}</Text> : <Glyph name="bowl" size={22} color={C.ash} strokeWidth={5} />}
                 <View style={{ flex: 1 }}>
                   <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
@@ -3574,7 +3586,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                   <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: C.onAccent }}>{t("w.recovery.nutrition.log")}</Text>
                 </Pressable>
                 <Pressable onPress={() => removeMeal(m.id)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.deleteMeal")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>×</Text></Pressable>
-              </View>
+              </HoldMenu>
             ))}
           </View>
         ) : null}

@@ -348,6 +348,32 @@ describe("portionStep — pressing −/+", () => {
   it("clamps at the ceiling", () => {
     expect(portionStep(10_000, measure, 1, 10_000)).toBe(10_000);
   });
+
+  // ── A PORTION IS COUNTABLE, so it is the one unit that always snaps.
+  it("SNAPS a portion onto its grid — a container is counted, not weighed", () => {
+    const bottle = portionUnit(portionUnits(KEFIR), "portion:bottle|400")!;
+    // 0.25 is not a weighing; it is what switching a 100 g serving to a 400 g
+    // bottle leaves behind. Without the snap the grid is offset by a quarter for
+    // good and ONE WHOLE BOTTLE is unreachable by pressing +.
+    expect(portionStep(0.25, bottle, 1)).toBe(0.5);
+    expect(portionStep(0.5, bottle, 1)).toBe(1);
+    expect(portionStep(1.25, bottle, -1)).toBe(1);
+  });
+
+  it("and the snap does not leak onto the units that hold a measured amount", () => {
+    expect(portionStep(0.35, servings, 1)).toBe(0.85);
+    expect(portionStep(37, measure, 1)).toBe(42);
+  });
+
+  it("one whole bottle is reachable from a unit switch in two presses", () => {
+    const units2 = portionUnits(KEFIR);
+    const bottle = portionUnit(units2, "portion:bottle|400")!;
+    const measure2 = portionUnit(units2, "measure")!;
+    // What the sheet does: opens on the measure, athlete taps the bottle chip.
+    const carried = portionAmount(portionQty(measure2.initial, measure2), bottle);
+    expect(carried).toBe(0.25);
+    expect(portionStep(portionStep(carried, bottle, 1), bottle, 1)).toBe(1);
+  });
 });
 
 describe("portionEquivalent — the line under the stepper", () => {
