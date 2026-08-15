@@ -5,6 +5,7 @@ import { ThemeProvider } from "../lib/theme";
 import { TemplateProvider } from "../lib/template";
 import { SessionProvider } from "../lib/session";
 import { NavScrollProvider } from "../lib/nav-scroll";
+import QueryProvider from "../lib/query";
 
 /**
  * A screen, rendered under the app's REAL providers.
@@ -25,6 +26,11 @@ export function renderScreen(ui: ReactElement) {
 
 function Providers({ children }: { children: ReactNode }) {
   return (
+    // Outermost, exactly as app/_layout.tsx has it: anything that reads a
+    // query (the exercise catalog behind the drawer's search index) needs a
+    // client, and a screen that fetches is a screen this gate should still be
+    // able to mount.
+    <QueryProvider>
     <ThemeProvider>
       <TemplateProvider>
         {/* Nested exactly as app/_layout.tsx nests them — SessionProvider
@@ -39,5 +45,6 @@ function Providers({ children }: { children: ReactNode }) {
         </SessionProvider>
       </TemplateProvider>
     </ThemeProvider>
+    </QueryProvider>
   );
 }

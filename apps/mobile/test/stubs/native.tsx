@@ -46,6 +46,23 @@ export const useLocalSearchParams = () => ({});
 export const usePathname = () => "/";
 export const Link = Box;
 
+/* ── expo-file-system (the data export writes a file to share) ───────────── */
+/** Only the shape the export path constructs; nothing here touches a disk. The
+ *  gate reaches this module by IMPORT alone — the drawer pulls in settings for
+ *  its search routes — so a module that throws at import time would take down
+ *  every screen below it without any file ever being written. */
+export const Paths = { cache: "file:///cache", document: "file:///document" };
+export class File {
+  uri: string;
+  constructor(dir: string, name: string) { this.uri = `${dir}/${name}`; }
+  create() {}
+  write() {}
+}
+
+/* ── expo-sharing (the share sheet the export hands its file to) ─────────── */
+export const isAvailableAsync = async () => false;
+export const shareAsync = async () => {};
+
 /* ── expo-secure-store (the Supabase session store) ──────────────────────── */
 const secure = new Map<string, string>();
 export const getItemAsync = async (k: string) => secure.get(k) ?? null;
