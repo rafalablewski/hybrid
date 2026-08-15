@@ -103,7 +103,7 @@ import NutritionTrends from "./nutrition-trends";
 import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
-  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceLine, PickerDoor, DayGap, PICKER_EDGE, BLOCK,
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceSwitch, PickerDoor, DayGap, PICKER_EDGE, BLOCK,
   IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock, IBarcode,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
@@ -1630,8 +1630,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             the sum of three unrelated decisions and could not be read off any
             single line of code. `gap: BLOCK` is that rhythm, chosen once.
             (Null children take no gap, so a day with no target, no confirmation
-            and a typed query still spaces correctly.) */}
-        <View style={{ gap: BLOCK }}>
+            and a typed query still spaces correctly.)
+
+            THE SEAM UNDER IT is the stack's own step, and only at rest. The
+            source switch used to end in a hairline the LIST borrowed as its top
+            edge, so the two touched; a segmented track is an object, not a rule,
+            and an object sitting on the first row is the one spacing this screen
+            has never had to state. At rest it takes BLOCK, like every other seam
+            in the stack. TYPED, it stays 0: that branch opens on an ASection,
+            which brings its own `marginTop` — adding to it would be the "sum of
+            unrelated decisions" this stack exists to end. */}
+        <View style={{ gap: BLOCK, marginBottom: answer.kind === "resting" ? BLOCK : 0 }}>
           {/* THE GAP first — the screen's subject. It renders only when there is
               a target to be short of. */}
           {pickerGap ? (
@@ -1678,24 +1687,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </View>
           ) : null}
 
-          {/* ONE form, every platform. The iOS fork that put the system
-              segmented control here is gone — see SourceLine's header for why
-              (it re-introduced the filled track this screen deletes, and it
-              dropped the counts on the one platform we ship). It is the LAST
-              block of the head matter and it carries the list's own rule, so
-              the first row sits directly under it with no gap: the rule belongs
-              to the list, not to the stack above it. */}
-          {/* THE FOUR SOURCES, on the underline form, everywhere. This branch
-              briefly restored the iOS system segmented control here; #423 had
-              already deleted that control from the app for a structural reason
-              — a SwiftUI Host sizes its RN box from its content once at mount,
-              so the segment drew outside its own frame — and the picker was one
-              of the surfaces it broke on. The underline form is not a
-              consolation: it is the one that lays out, and it keeps the counts.
-              It is the LAST block of the head matter and carries the list's own
-              rule, so the first row sits directly under it with no gap. */}
+          {/* THE FOUR SOURCES, on the app's ONE segmented control — the same
+              track, lens and spring as the Today hub, the This-week filter and
+              the Trends switcher one tap away, with the counts riding ASegment's
+              `meta` slot. It is the LAST block of the head matter; SourceSwitch's
+              header has the full account of why this screen drew its own control
+              for three passes and no longer does. */}
           {answer.kind === "resting" ? (
-            <SourceLine C={C} value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
+            <SourceSwitch value={foodTab} counts={sourceCounts} onChange={(k) => listMotion(() => setFoodTab(k))} />
           ) : null}
         </View>
 
