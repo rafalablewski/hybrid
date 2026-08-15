@@ -71,6 +71,8 @@ export default defineConfig({
             "expo-haptics": stub("native.tsx"),
             "expo-router": stub("native.tsx"),
             "expo-secure-store": stub("native.tsx"),
+            "expo-file-system": stub("native.tsx"),
+            "expo-sharing": stub("native.tsx"),
             // LAST: a prefix alias, so every entry above wins over it.
             "react-native": "react-native-web",
           },
