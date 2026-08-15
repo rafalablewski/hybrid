@@ -517,6 +517,55 @@ describe("presentation", () => {
     expect(codeHits(/pickerStyle\(\s*["']segmented["']\s*\)/g)).toEqual([]);
   });
 
+  it("HARD — a tab row is the shared control, never a hand-drawn one", () => {
+    // The other half of the rule above, and the one that actually kept getting
+    // broken. Forbidding the NATIVE segmented control says nothing about the
+    // four surfaces that drew their own instead — the nutrition picker's
+    // sources, the profile's tabs, the public profile's tabs and the day card's
+    // session toggle — and every one of them was written by somebody who had
+    // read the rules and concluded, reasonably, that a track was too heavy
+    // there. Four reasonable local decisions are how an app ends up switching
+    // four ways.
+    //
+    // A tab row is `ASegment`. The one file allowed to spell tabs by hand is
+    // the shared control's own implementation, which has to.
+    //
+    // NOTE FOR THE NEXT ARGUMENT, because it will be made again and it is a
+    // GOOD argument: "a track inside a card is a second surface." That is true
+    // of a RAISED track and it is why the card case sat unconverted longest —
+    // the answer is `surface: 'card'`, which recesses the track into the card
+    // instead of stacking one on it. Reach for that before reaching for a
+    // bespoke row.
+    const SHARED = "components/aurora/liquid-seg.tsx";
+    const byHand = codeHits(/accessibilityRole=\{?\s*["']tab(?:list)?["']/g).filter((h) => !h.startsWith(SHARED));
+    expect(byHand).toEqual([]);
+  });
+
+  it("RATCHET — the underline selection rule gives way to the shared control", () => {
+    // THE SAME DEFECT, SPELLED WITHOUT THE ROLE — and the reason the rule above
+    // is not the whole guard. A hand-drawn tab row that never sets
+    // `accessibilityRole` is invisible to it, and two survive: the period
+    // switches in `trends.tsx` and `exercise-page.tsx`. Both are a row of
+    // labels with a 2dp CHARTREUSE bottom border under the selected one, which
+    // is a segmented control with the track taken off, and the accent spent on
+    // a control that goes nowhere.
+    //
+    // They are a ratchet rather than a HARD zero because neither is a straight
+    // swap: the Trends one shares a band row WITH ITS SECTION LABEL (label
+    // left, switch right — a head-level control, not a full-width switch), so
+    // dropping a track in changes that row's whole shape. That is a design
+    // decision, and a guard is not the place to make one.
+    //
+    // The pattern is deliberately narrow — width 2 AND a colour ternary on the
+    // same line — so it catches the SELECTED/not idiom and leaves plain 2dp
+    // dividers alone. When these two land, this graduates to HARD.
+    expectAtMost(
+      codeHits(/borderBottomWidth:\s*2\b[^\n]*borderBottomColor:[^\n]*\?/g),
+      2,
+      "underline selection rule → ASegment (or a deliberate head-level control)",
+    );
+  });
+
   it("HARD — a COVER pads itself; no native SafeAreaView inside a fullScreenModal", () => {
     // A cover (@hybrid/core COVER_SCREENS — on mobile the live logger, and
     // nothing else) is presented in its OWN view controller. A native
