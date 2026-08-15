@@ -781,7 +781,11 @@ export async function deleteFoodProduct(id: string): Promise<boolean> {
 // `derived` marks an entry the server rebuilt from its Signals because no
 // FoodLog row exists for it (logged before the table shipped, or the migration
 // hasn't run) — it edits by a relative scale instead of an absolute quantity.
-export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean } & MicroFacts;
+export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean }
+  /** the portion AS ENTERED — 35 "g", 1 "bottle" — so the row can say what
+   *  was logged instead of the quantity that scales the macros (portion.ts) */
+  & { amount?: number | null; amountUnit?: string | null }
+  & MicroFacts;
 export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, { headers: await authHeaders() });
@@ -794,7 +798,7 @@ export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
 // Log one food/meal → creates the editable entry AND the mirrored Signals the
 // engines read. Macros are PER SERVING; qty scales them.
 export async function createFoodLog(
-  entry: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; verifiedId?: string | null } & MicroFacts,
+  entry: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; amount?: number | null; amountUnit?: string | null; verifiedId?: string | null } & MicroFacts,
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, {

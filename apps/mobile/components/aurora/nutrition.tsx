@@ -39,6 +39,7 @@ import {
   servingGrams as servingGramsOf,
   unitById,
   portionUnits, portionUnit, portionMeasure, portionQty, portionAmount, portionStep, portionEquivalent,
+  loggedPortionOf, loggedAmountLabel, loggedAmountShown, stepLoggedPortion, rescaleLoggedAmount,
   formatAmount, parsePackSize, type PortionUnit, type PortionUnitId,
   trainingEnergyOnDay,
   localDayKey,
@@ -450,7 +451,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   useEffect(() => { loadLogs(); }, [loadLogs]);
   // Log one food/meal → creates the editable entry AND the mirrored Signals the
   // engines read (one round-trip). Per-serving macros + qty so it stays editable.
-  const logEntry = async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; verifiedId?: string | null } & MicroFacts): Promise<boolean> => {
+  const logEntry = async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; amount?: number | null; amountUnit?: string | null; verifiedId?: string | null } & MicroFacts): Promise<boolean> => {
     const { ok } = await createFoodLog(e);
     if (!ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return false; }
     return true;
@@ -545,8 +546,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     if (failed === 0) setCopySheet(false);
   };
 
+  // The AMOUNT moves with the quantity, by the same ratio — locally for the
+  // optimistic row, and again on the server for the stored one, from the same
+  // core rule, so the two cannot land on different numbers.
   const editLogQty = async (id: string, qty: number) => {
-    setLogs((xs) => xs.map((x) => x.id === id ? { ...x, qty } : x)); // optimistic
+    setLogs((xs) => xs.map((x) => x.id === id
+      ? { ...x, qty, amount: rescaleLoggedAmount(x.amount, x.qty, qty) ?? x.amount }
+      : x)); // optimistic
     await updateFoodLogQty(id, qty);
     loadLogs(); refetch(); revalidate.recovery();
   };
@@ -563,9 +569,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // multiplier is per-visit UI state — the amounts on screen are always the
   // server's own numbers.
   const [derivedScale, setDerivedScale] = useState<Record<string, number>>({});
-  const stepEntry = async (l: FoodLogRow, next: number) => {
-    if (!l.derived) { await editLogQty(l.id, next); return; }
+  /** One press of a row's −/+. A real entry steps in ITS OWN unit (core
+   *  stepLoggedPortion): grams for a weighed portion, half a bottle for a pack,
+   *  half a serving for everything else. A derived entry has no unit and no
+   *  per-serving base, so its multiplier keeps the half-step it always had. */
+  const stepEntry = async (l: FoodLogRow, direction: number) => {
+    if (!l.derived) { await editLogQty(l.id, stepLoggedPortion(l, direction).qty); return; }
     const prev = derivedScale[l.id] ?? 1;
+    const next = entryStep(prev, direction);
     if (next === prev) return;
     setDerivedScale((m) => ({ ...m, [l.id]: next }));
     await scaleFoodLog(l.id, next / prev);
@@ -772,6 +783,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat,
       satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt,
       verifiedId: portion.verifiedId ?? null, qty: q,
+      // WHAT WAS ENTERED, alongside the quantity that scales the macros: the
+      // diary row says "35 g" rather than the 0.35 that 35 g of a 100 g food
+      // works out to. An empty field logged the editor's opening amount, so
+      // that is the amount recorded too.
+      ...loggedPortionOf(portionTyped > 0 ? portionTyped : portionUnitActive.initial, portionUnitActive),
     }))) return;
     pushRecent({
       key: `${portion.name}|${portion.serving}`, name: portion.name, subname: portion.subname ?? null, serving: portion.serving,
@@ -3094,23 +3110,30 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       // own, so it's labelled by its time of day and scales by a multiplier.
       const entryRow = (l: FoodLogRow) => {
         const mult = derivedScale[l.id] ?? 1;
-        const shown = l.derived ? mult : l.qty;
+        // THE ROW SHOWS WHAT WAS ENTERED. An entry logged as 35 g used to read
+        // "0.35" — the quantity that scales the macros, which is the correct
+        // number and not the one the athlete typed. The amount is now stored
+        // beside it, so the stepper counts grams (or bottles) and the meta line
+        // names the unit. An entry from before this shipped, or one with no
+        // amount to record (a quick macro line), reads exactly as it always did.
+        const shown = l.derived ? mult : loggedAmountShown(l);
+        const amountLabel = l.derived ? null : loggedAmountLabel(l, { pack: t("w.recovery.nutrition.pt.pack") });
         const d = new Date(l.ts);
         const time = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
         return (
         <View key={l.id} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 8, paddingLeft: 31, paddingRight: 2 }}>
           <View style={{ flex: 1 }}>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{l.name || t("w.recovery.nutrition.loggedEntry")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.derived ? `${time} — ` : ""}{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.derived ? `${time} — ` : ""}{amountLabel ? `${amountLabel} — ` : ""}{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            {/* The half-serving grid is a floor, not a magnet: an entry logged
-                as 35 g of a 100 g serving is 0.35, and rounding it onto the
-                grid on the first press would throw away a weight somebody
-                measured. Same rule as the portion editor's stepper. */}
-            <Pressable onPress={() => stepEntry(l, entryStep(shown, -1))} accessibilityLabel={t("w.recovery.nutrition.decrease")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>−</Text></Pressable>
+            {/* Each press steps the entry's OWN unit — five grams for a weighed
+                portion, half a bottle for a pack, half a serving otherwise —
+                and never snaps an off-grid amount onto the grid, which is how a
+                measured 35 g used to become 50 g on the first tap. */}
+            <Pressable onPress={() => stepEntry(l, -1)} accessibilityLabel={t("w.recovery.nutrition.decrease")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>−</Text></Pressable>
             <Text style={{ minWidth: 26, textAlign: "center", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{l.derived ? `×${shown}` : formatAmount(shown)}</Text>
-            <Pressable onPress={() => stepEntry(l, entryStep(shown, 1))} accessibilityLabel={t("w.recovery.nutrition.increase")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>+</Text></Pressable>
+            <Pressable onPress={() => stepEntry(l, 1)} accessibilityLabel={t("w.recovery.nutrition.increase")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>+</Text></Pressable>
           </View>
           <Pressable onPress={() => deleteLogEntry(l.id)} accessibilityLabel={t("w.recovery.nutrition.deleteEntry")} hitSlop={6} style={{ padding: 4 }}><ITrash size={17} color={C.ash} /></Pressable>
         </View>

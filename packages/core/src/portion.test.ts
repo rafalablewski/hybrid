@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   formatAmount,
+  loggedAmountLabel,
+  loggedAmountShown,
+  loggedPortionOf,
   parsePackSize,
+  rescaleLoggedAmount,
+  stepLoggedPortion,
   portionAmount,
   portionEquivalent,
   portionMeasure,
@@ -175,6 +180,80 @@ describe("parsePackSize", () => {
     expect(parsePackSize("-3")).toBeNull();
     expect(parsePackSize("bottle")).toBeNull();
     expect(parsePackSize(null)).toBeNull();
+  });
+});
+
+describe("what the diary remembers", () => {
+  const units = portionUnits({ serving: "100 g", packSize: 400, packLabel: "bottle" });
+  const servings = portionUnit(units, "servings")!;
+  const measure = portionUnit(units, "measure")!;
+  const pack = portionUnit(units, "pack")!;
+  const words = { pack: "pack" };
+
+  it("writes the amount in the unit it was entered in", () => {
+    expect(loggedPortionOf(35, measure)).toEqual({ amount: 35, amountUnit: "g" });
+    expect(loggedPortionOf(1, pack)).toEqual({ amount: 1, amountUnit: "bottle" });
+    expect(loggedPortionOf(1.5, servings)).toEqual({ amount: 1.5, amountUnit: "serving" });
+  });
+
+  it("stores a CANONICAL token for an unnamed pack, never a translated word", () => {
+    const unnamed = portionUnit(portionUnits({ serving: "100 g", packSize: 400 }), "pack")!;
+    expect(loggedPortionOf(1, unnamed)).toEqual({ amount: 1, amountUnit: "pack" });
+  });
+
+  it("labels the row with what was actually entered", () => {
+    expect(loggedAmountLabel({ amount: 35, amountUnit: "g", qty: 0.35 }, words)).toBe("35 g");
+    expect(loggedAmountLabel({ amount: 1, amountUnit: "bottle", qty: 4 }, words)).toBe("1 bottle");
+    expect(loggedAmountLabel({ amount: 1, amountUnit: "pack", qty: 4 }, words)).toBe("1 pack");
+  });
+
+  it("stays silent when the bare number already reads correctly", () => {
+    // Servings: the number beside the stepper has always meant servings.
+    expect(loggedAmountLabel({ amount: 1.5, amountUnit: "serving", qty: 1.5 }, words)).toBeNull();
+    // An entry from before this shipped, or a quick macro line.
+    expect(loggedAmountLabel({ qty: 2 }, words)).toBeNull();
+    expect(loggedAmountLabel({ amount: null, amountUnit: null, qty: 2 }, words)).toBeNull();
+  });
+
+  it("shows the amount when there is one, the quantity otherwise", () => {
+    expect(loggedAmountShown({ amount: 35, amountUnit: "g", qty: 0.35 })).toBe(35);
+    expect(loggedAmountShown({ qty: 0.35 })).toBe(0.35);
+  });
+
+  it("rescales the amount with the quantity, exactly", () => {
+    expect(rescaleLoggedAmount(35, 0.35, 0.4)).toBe(40);
+    expect(rescaleLoggedAmount(400, 4, 2)).toBe(200);
+  });
+
+  it("has no amount to rescale when none was recorded", () => {
+    expect(rescaleLoggedAmount(null, 1, 2)).toBeNull();
+    expect(rescaleLoggedAmount(35, 0, 2)).toBeNull();
+  });
+});
+
+describe("stepLoggedPortion — the diary row's −/+", () => {
+  it("steps a gram entry in grams, and moves the quantity with it", () => {
+    expect(stepLoggedPortion({ amount: 35, amountUnit: "g", qty: 0.35 }, 1)).toEqual({ amount: 40, qty: 0.4 });
+    expect(stepLoggedPortion({ amount: 35, amountUnit: "g", qty: 0.35 }, -1)).toEqual({ amount: 30, qty: 0.3 });
+  });
+
+  it("steps a pack entry by half a pack", () => {
+    expect(stepLoggedPortion({ amount: 1, amountUnit: "bottle", qty: 4 }, -1)).toEqual({ amount: 0.5, qty: 2 });
+  });
+
+  it("keeps the half-serving grid for an entry with no amount", () => {
+    expect(stepLoggedPortion({ qty: 1 }, 1)).toEqual({ amount: null, qty: 1.5 });
+  });
+
+  it("does NOT round an off-grid legacy quantity onto the grid", () => {
+    // An entry logged before this shipped can still be a 0.35: the first press
+    // must not turn a measured portion into half a serving.
+    expect(stepLoggedPortion({ qty: 0.35 }, 1)).toEqual({ amount: null, qty: 0.85 });
+  });
+
+  it("respects the quantity ceiling through the entry's own unit", () => {
+    const at = stepLoggedPortion({ amount: 5000, amountUnit: "g", qty: 50 }, 1);
+    expect(at.qty).toBeLessThanOrEqual(50);
   });
 });
 

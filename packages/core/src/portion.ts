@@ -227,6 +227,108 @@ export function portionEquivalent(
   return { amount: portionAmount(qty, measure), symbol: measure.symbol! };
 }
 
+/* ── WHAT THE DIARY REMEMBERS ─────────────────────────────────────────────
+ *
+ * A diary entry stores per-serving macros and a QUANTITY, which is the right
+ * shape for every engine downstream and the wrong thing to show a person: log
+ * 35 g of a 100 g food and the row read "0.35". The number is correct and it is
+ * not the number the athlete entered — they weighed 35 grams, and the row
+ * should say so.
+ *
+ * So an entry also carries the amount AS ENTERED and the unit it was entered
+ * in. It is a RECORD, not a second source of truth: `qty` still drives every
+ * total, and the two stay in step because a quantity edit rescales the amount
+ * by the same ratio (`rescaleLoggedAmount`) — the ratio between them is fixed
+ * for a given food and unit, so this can never drift.
+ *
+ * `amountUnit` holds a measure SYMBOL ("g", "ml" — the same token in every
+ * language this app ships), the athlete's own word for their container
+ * ("bottle" — already in their language, because they typed it), or one of two
+ * CANONICAL tokens that are localized when printed. Storing a translated word
+ * would leave last month's entries speaking a language the athlete has since
+ * switched away from.
+ */
+
+/** The canonical unit tokens — localized at read time, never stored translated. */
+export const LOGGED_SERVING_UNIT = "serving";
+export const LOGGED_PACK_UNIT = "pack";
+
+/** A logged entry, as far as this module is concerned. */
+export interface LoggedPortion {
+  /** the number the athlete entered, in `amountUnit` — null on entries logged
+   *  before this shipped, and on the paths that have no amount to record
+   *  (a quick macro line, a copied preset) */
+  amount?: number | null;
+  amountUnit?: string | null;
+  /** servings — what the macros are multiplied by, and always present */
+  qty: number;
+}
+
+/** What to write alongside the quantity when a portion is logged. */
+export function loggedPortionOf(amount: number, unit: PortionUnit): { amount: number; amountUnit: string } {
+  const unitToken = unit.symbol
+    ?? (unit.id === "pack" ? (unit.packLabel?.trim() || LOGGED_PACK_UNIT) : LOGGED_SERVING_UNIT);
+  return { amount: round(amount, 2), amountUnit: unitToken };
+}
+
+/**
+ * What the Diary row prints in front of its macros — "35 g", "1 bottle".
+ *
+ * Null when the amount adds nothing: an entry with no amount on record, and an
+ * entry counted in SERVINGS, where the bare number beside the stepper has always
+ * meant servings and a label repeating it would be noise on every row.
+ */
+export function loggedAmountLabel(e: LoggedPortion, words: { pack: string }): string | null {
+  const a = e.amount;
+  if (a == null || !Number.isFinite(a) || a <= 0) return null;
+  const u = e.amountUnit;
+  if (!u || u === LOGGED_SERVING_UNIT) return null;
+  return `${formatAmount(a)} ${u === LOGGED_PACK_UNIT ? words.pack : u}`;
+}
+
+/** The number the row's stepper shows: the amount when one was recorded, the
+ *  quantity otherwise. */
+export function loggedAmountShown(e: LoggedPortion): number {
+  const a = e.amount;
+  if (a == null || !Number.isFinite(a) || a <= 0 || !e.amountUnit) return e.qty;
+  return round(a, 2);
+}
+
+/** Keep the amount in step with a quantity edit. The ratio between them is
+ *  fixed for a given food and unit, so scaling by the quantity's own ratio is
+ *  exact rather than a re-derivation that could disagree. */
+export function rescaleLoggedAmount(amount: number | null | undefined, fromQty: number, toQty: number): number | null {
+  if (amount == null || !Number.isFinite(amount) || amount <= 0) return null;
+  if (!Number.isFinite(fromQty) || fromQty <= 0 || !Number.isFinite(toQty) || toQty <= 0) return null;
+  return round(amount * (toQty / fromQty), 2);
+}
+
+/**
+ * One press of the Diary row's −/+, in the entry's OWN unit.
+ *
+ * A row logged in grams steps by five grams, not by half a serving — stepping
+ * an entry by a unit it was never entered in is how a measured 35 g became 50 g
+ * on the first tap. Entries with no amount keep the half-serving grid they have
+ * always had.
+ */
+export function stepLoggedPortion(e: LoggedPortion, direction: number, maxQty = 50): { qty: number; amount: number | null } {
+  const qty = Number.isFinite(e.qty) && e.qty > 0 ? e.qty : 1;
+  const a = e.amount;
+  const u = e.amountUnit;
+  const servings = portionUnits({})[0]!;
+  if (a == null || !Number.isFinite(a) || a <= 0 || !u || u === LOGGED_SERVING_UNIT) {
+    const next = portionStep(qty, servings, direction, maxQty);
+    return { qty: next, amount: u === LOGGED_SERVING_UNIT ? next : null };
+  }
+  // The entry's own conversion, recovered from what it stored: `qty / amount`
+  // is how many servings one of its units is.
+  const servingsPer = qty / a;
+  const step = STEP_FOR[u] ?? 0.5;
+  const unit: PortionUnit = { id: "measure", servingsPer, symbol: u, step, min: step, initial: a };
+  const amount = portionStep(a, unit, direction, servingsPer > 0 ? maxQty / servingsPer : a);
+  return { qty: round(amount * servingsPer, 4), amount };
+}
+
 const round = (n: number, places: number): number => {
   const f = 10 ** places;
   return Math.round(n * f) / f;

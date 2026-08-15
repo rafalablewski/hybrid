@@ -818,6 +818,16 @@ model FoodLog {
    */
   verifiedId String?
   qty        Float    @default(1) // number of servings logged
+  /**
+   * WHAT THE ATHLETE ACTUALLY ENTERED, and the unit they entered it in — 35
+   * "g", 1 "bottle", 1.5 "serving". `qty` still drives every total; this is the
+   * record of how the portion was expressed, so the diary row can say "35 g"
+   * instead of "0.35". A quantity edit rescales it by the same ratio. NULL on
+   * entries logged before this shipped, and on paths with no amount to record.
+   * See packages/core/src/portion.ts.
+   */
+  amount     Float?
+  amountUnit String?
   signalIds  Json     @default("[]") // string[] of the mirrored Signal ids
   ts         DateTime // the log instant — the client groups these into local days
   createdAt  DateTime @default(now())
