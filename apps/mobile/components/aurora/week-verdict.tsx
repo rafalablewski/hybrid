@@ -518,7 +518,7 @@ export default function AuroraWeekVerdict({
                   <Text
                     numberOfLines={1}
                     maxFontSizeMultiplier={FIXED_FONT_SCALE}
-                    style={{ fontFamily: F.mono, fontSize: 10, marginTop: 3, color: col ?? C.ash }}
+                    style={{ fontFamily: F.mono, fontSize: fs.nano, marginTop: 3, color: col ?? C.ash }}
                   >
                     {`${delta > 0 ? "+" : "−"}${Math.abs(delta)}%`}
                   </Text>
