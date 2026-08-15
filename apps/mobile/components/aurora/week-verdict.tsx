@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
@@ -11,9 +11,10 @@ import {
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
-import { ACard, ADrawer, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
+import { ACard, withAlpha } from "./kit";
 import PeriodRecords from "./period-records";
 import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
+import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
@@ -52,10 +53,10 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE }
  *     Endurance section grew a second view of it — one control, two callers,
  *     rather than the four copies that would otherwise exist, and ONE period:
  *     both read core's TODAY_RANGE_STORE_KEY, so scrubbing either moves both.
- *   • FIGURES THAT OPEN. Every column is a button; pressing one expands the
- *     card's lower compartment, carrying the groups the total is made of and
- *     the sessions underneath them. "41.6 km" becomes 39 km of running, 600 m
- *     in the pool and the rest across tennis and squash, each with its sessions.
+ *   • FIGURES THAT OPEN. Every column is a button; pressing one raises a SHEET
+ *     carrying the groups the total is made of and the sessions underneath
+ *     them. "41.6 km" becomes 39 km of running, 600 m in the pool and the rest
+ *     across tennis and squash, each with its sessions.
  *
  * The card NEVER disappears. A block that comes and goes is worse than one that
  * is sometimes quiet, so an empty period keeps its place and says so.
@@ -67,17 +68,40 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE }
  * restraint. It used to mark the metric the SENTENCE named and nothing else, so
  * it never moved: pressing Hours left the chartreuse sitting on Distance, and
  * the press itself showed up only as an `ink`-on-`ink2` fill nobody sees on a
- * phone in daylight. Because pressing was invisible, the drawer had to shout —
- * it arrived as a second bordered, rounded card inside this one, with a caret
- * travelling between columns to point back at whichever figure had opened it.
+ * phone in daylight. So the open column takes the tone (core's
+ * `figureDirection` — its OWN move, never the sentence's, so a fallen Hours
+ * column reads terracotta inside a card headlining a distance rise). At rest —
+ * nothing open — the named metric still holds the tone, so the resting card is
+ * unchanged.
  *
- * So the open column takes the tone (core's `figureDirection` — its OWN move,
- * never the sentence's, so a fallen Hours column reads terracotta inside a card
- * headlining a distance rise), and with the colour doing the pointing, THREE
- * container edges went with it: the caret, the drawer's border and the drawer's
- * radius. The panel is now the card's own lower compartment, bled to its edges
- * and taking its bottom corners. At rest — nothing open — the named metric
- * still holds the tone, so the resting card is unchanged.
+ * THE BREAKDOWN IS A SHEET, and this is the third and last shape it has taken.
+ * It began as a second bordered, rounded card drawn INSIDE this one, with a
+ * caret travelling between the columns to point back at whichever figure had
+ * opened it. That was un-carded into the card's own lower compartment — bled to
+ * the card's edges, taking its bottom corners, eased open by the kit's
+ * `ADrawer` — which fixed the card-in-a-card but not the thing underneath it:
+ *
+ *   • IT PUSHED THE SCREEN DOWN. Groups, a share bar, five session rows and a
+ *     "show all" is several hundred points of content unfolding in the middle
+ *     of Today, so Records, the exercise rail and the whole Endurance cluster
+ *     below it were shoved off the fold by a press meant to answer one figure.
+ *     Reading the answer meant scrolling; closing it left you somewhere else.
+ *   • IT WAS A MODAL WEARING A DISCLOSURE. Everything inside it is a detour off
+ *     the week — narrow to a sport, expand the list, open a session — and there
+ *     was no dismissal but pressing the same column again, off-screen by then.
+ *
+ * The sheet is the shape the content already had: it comes up over Today
+ * without moving a pixel of it, it takes the drag, the scrim and the tap-out
+ * every other sheet on this screen takes (the period picker is one, ten points
+ * above), and it RESTS AT ITS CONTENT HEIGHT, so five rows is a short sheet and
+ * "show all" elongates it. What the card lost by giving the panel up — the
+ * figure you pressed, sitting right above its own breakdown — the sheet
+ * restates in its first row, because the column is behind the scrim now.
+ *
+ * The lit column stays. It is no longer POINTING at anything (a sheet is
+ * unambiguous about what opened it), but it is what the screen looks like the
+ * instant the finger lands, before the panel has travelled, and what is still
+ * true underneath while it is up.
  *
  * THE FOUR COLUMNS DO NOT MOVE — Tonnage, Sessions, Hours, Distance, core's
  * VERDICT_METRICS order, every period, whatever the sentence is about. They
@@ -86,7 +110,7 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE }
  * was never twice in the same place. Colour is what points at the subject; it
  * costs the layout nothing, and the row is found by POSITION before it is read
  * at all. The same order governs the meta line under every session row in the
- * drawer below. Each column's LABEL is the metric's NAME and each FIGURE
+ * sheet. Each column's LABEL is the metric's NAME and each FIGURE
  * carries its own unit — the one grammar all four can share, since tonnage's
  * unit is the athlete's (t or lb) and can only travel with the number.
  *
@@ -102,19 +126,12 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE }
  *  Endurance section's card reads too, so the two filters move together. */
 /** Set once the athlete has opened any column — see the hint below. */
 const HINT_KEY = "hybrid.today.actHinted";
+/** Session rows before the sheet offers "show all". The sheet rests at its
+ *  CONTENT height, so this is also what decides how tall it opens: five rows is
+ *  a short sheet, and expanding the list elongates it rather than pushing
+ *  Today's screen around, which is what the cap protected the screen from back
+ *  when the breakdown unfolded inside the card. */
 const ROWS_SHOWN = 5;
-/** The verdict card's own inner padding — what the detail compartment bleeds by
- *  to reach the card's edges. NOT the screen gutter: the compartment lives
- *  inside the card, so it must follow the card. The two were both written as
- *  bare numbers, which is how the 16 -> 12 gutter sweep came to "fix" this one
- *  into 12 as well, insetting the compartment 4dp from the card on both sides
- *  and shifting its text off the figures above it. Named, the mistake is no
- *  longer expressible.
- *
- *  The VALUE now comes from the kit (`CARD_PAD`), which is the point: naming it
- *  fixed which container it belonged to but not what it should be, and it sat
- *  at 16 while Performance sat at 20. Mirrors web's CARD_PAD. */
-const CARD_PAD = SHARED_CARD_PAD;
 
 /** Render a "{m}"-templated sentence with the metric name in bold. */
 function Lead({ template, word, color }: { template: string; word: string | null; color: string }) {
@@ -202,6 +219,17 @@ export default function AuroraWeekVerdict({
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
   const [all, setAll] = useState(false);
+  // HOLD THE OPEN METRIC THROUGH THE EXIT. Sheet keeps its node mounted while
+  // the panel slides back down; reading `open` straight would empty the body on
+  // the first frame of that, so the athlete watches a blank sheet leave. Same
+  // device as the freshness explainer's.
+  const held = useRef<ActivityMetric | null>(null);
+  useEffect(() => { if (open) held.current = open; }, [open]);
+  const showing = open ?? held.current;
+  // A session opened from inside the sheet is navigated to AFTER the panel has
+  // gone, not underneath it — pushing a route while a Modal is up puts the new
+  // screen behind the sheet. Same order upgrade.tsx uses for its route pop.
+  const pending = useRef<string | null>(null);
   // THE HINT, ONCE. "Open a figure for the sessions behind it" is the only
   // sentence on this screen written about the interface rather than about the
   // athlete's training, and it held a row of the card forever — including on
@@ -291,16 +319,20 @@ export default function AuroraWeekVerdict({
   // three ways that cost it nothing — the bold word in the lead, the column's
   // tone, and the delta beside it — and none of them require it to move.
 
-  const detail: ActivityDetail | null = open ? summary.details[open] : null;
+  const detail: ActivityDetail | null = showing ? summary.details[showing] : null;
   const shown = detail
     ? (group ? detail.groups.find((g) => g.id === group)?.items ?? detail.items : detail.items)
     : [];
   const rows = all ? shown : shown.slice(0, ROWS_SHOWN);
 
-  const toggle = (m: ActivityMetric) => {
+  // A column can only be pressed while the sheet is DOWN (it covers the card
+  // otherwise), so this opens rather than toggles. Every press is a fresh
+  // breakdown: the previous one's group filter and "show all" belong to the
+  // metric they were chosen on.
+  const openColumn = (m: ActivityMetric) => {
     setGroup(null);
     setAll(false);
-    setOpen((cur) => (cur === m ? null : m));
+    setOpen(m);
     if (!hinted) {
       setHinted(true);
       AsyncStorage.setItem(HINT_KEY, "1").catch(() => {});
@@ -317,7 +349,8 @@ export default function AuroraWeekVerdict({
   // THE OPEN COLUMN'S OWN COMPARISON — the working-out for the colour the press
   // just produced, printed where it was produced. Absent when the metric has no
   // baseline to move from, which is not the same as "it didn't move".
-  const openFig = open ? v.figures.find((f) => f.metric === open) ?? null : null;
+  const openFig = showing ? v.figures.find((f) => f.metric === showing) ?? null : null;
+  const openTone = openFig ? dirColor(figureDirection(openFig)) : C.chalk;
   const openDelta = openFig ? figureDeltaPct(openFig) : null;
   const openWhy = openFig && openDelta !== null
     ? t("w.home.act.vsBase")
@@ -341,12 +374,11 @@ export default function AuroraWeekVerdict({
           base style (hairline, ink2, cardShadow, CARD_PAD) with the radius as
           a literal 28 rather than RADIUS.card — and on iOS 26 that copy is
           SOLID where the real one drops a native Liquid Glass layer, so
-          Today's largest card was the odd material out. Only the padding is
-          genuinely this card's own: the compartment below supplies the bottom
-          padding while it is open, so the card gives its own up rather than
-          fencing the panel in. (Yoga resolves the edge-specific padding over
-          ACard's shorthand, so passing all three is what overrides it.) */}
-      <ACard style={{ paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD }}>
+          Today's largest card was the odd material out. It takes no padding
+          override either: the card used to drop its bottom pad to nothing so
+          the lower compartment could supply its own, and the compartment left
+          with the drawer. */}
+      <ACard>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
           <View style={{ flex: 1 }}>
@@ -400,10 +432,11 @@ export default function AuroraWeekVerdict({
             return (
               <Pressable
                 key={f.metric}
-                onPress={() => toggle(f.metric)}
+                onPress={() => openColumn(f.metric)}
                 accessibilityRole="button"
-                accessibilityState={{ expanded: isOpen }}
+                accessibilityState={{ selected: isOpen }}
                 accessibilityLabel={`${t(verdictLabelKey(f.metric))} – ${fmt(f.metric, f.value)}`}
+                accessibilityHint={t("w.home.act.hint")}
                 style={{
                   // Padding is the WASH's inset now, so it is symmetric: the lit
                   // panel sits evenly around its own figure instead of being
@@ -437,57 +470,79 @@ export default function AuroraWeekVerdict({
         </View>
 
         {/* The caret that used to sit here is gone. Its whole job was pointing
-            at the column that opened the panel, and the lit column does that
-            without moving — see the file header. */}
+            at the column that opened the panel, and a sheet needs no pointing —
+            see the file header. */}
 
-        {/* ── THE DRAWER — the detail SLIDES out of the figure row instead of
-            appearing under it. The measured height, the mount-on-first-open and
-            the a11y clipping are the kit's `ADrawer`, the same one Volume's
-            compact card opens on: this card had its own copy, which measured
-            its panel IN FLOW inside a box clipped to zero and so could only
-            ever measure zero. ─────────────────────────────────────────────── */}
-        <ADrawer open={!!detail}>
-          {detail && (
-            <View style={{
-              // THE CARD'S LOWER COMPARTMENT, not a card in a card. It bleeds
-              // the card's own padding on three sides and inherits its bottom
-              // corners (28 less the 1px border), so the only edge between the
-              // figures and their breakdown is one hairline. The card drops its
-              // bottom padding while this is open — the panel's own padding is
-              // the card's bottom now.
-              backgroundColor: C.ink, borderTopWidth: 1, borderTopColor: C.line,
-              marginHorizontal: -CARD_PAD, marginTop: 12,
-              paddingHorizontal: CARD_PAD, paddingTop: 14, paddingBottom: CARD_PAD,
-              borderBottomLeftRadius: 27, borderBottomRightRadius: 27,
-            }}>
-              <MetricDetail
-                detail={detail}
-                why={openWhy}
-                whyColor={openFig ? dirColor(figureDirection(openFig)) : C.ash}
-                rows={rows}
-                shownCount={shown.length}
-                all={all}
-                group={group}
-                onGroup={(id) => { setGroup(id); setAll(false); }}
-                onAll={() => setAll((x) => !x)}
-                onSession={onSession}
-                t={t}
-                fmtValue={fmtValue}
-                fmtMinutes={fmtMinutes}
-                groupName={groupName}
-                dateFmt={dateFmt}
-                units={units}
-              />
-            </View>
-          )}
-        </ADrawer>
-
-        {!open && !hinted && (
+        {!hinted && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
             {t("w.home.act.hint")}
           </Text>
         )}
       </ACard>
+
+      {/* ── THE BREAKDOWN, AS A SHEET. It comes up OVER Today rather than
+          unfolding inside the card, so pressing a figure no longer shoves
+          Records, the exercise rail and the whole Endurance cluster off the
+          fold — and it dismisses the way everything else on this screen
+          dismisses (drag, scrim, tap out), instead of only by finding the
+          column that opened it, three hundred points up by then.
+
+          It is the shared aurora/sheet.tsx, the same component the period
+          picker ten points above opens on, so the two controls on this one card
+          present identically. No `detents`: the sheet rests at its CONTENT
+          height, which is what makes a five-row breakdown a short sheet and
+          "show all" an elongation rather than a jump. ─────────────────────── */}
+      <Sheet
+        visible={!!open}
+        onClose={() => setOpen(null)}
+        // The session waits for the panel to LEAVE. Pushing the route from the
+        // row's press would raise the session screen behind a sheet that is
+        // still up (a Modal is its own native window), so the handler parks the
+        // id and the exit spends it.
+        onClosed={() => {
+          const id = pending.current;
+          pending.current = null;
+          if (id) onSession?.(id);
+        }}
+        title={showing ? t(verdictLabelKey(showing)) : ""}
+        sub={`${title}, ${span}`}
+      >
+        {detail && (
+          <View>
+            {/* THE FIGURE, RESTATED. The column it came from is behind the
+                scrim now, so the sheet carries the total it is decomposing —
+                in that column's own tone, with its own comparison beside it.
+                Not the sentence's: a fallen Hours column reads terracotta
+                whatever the week's headline was about. */}
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 30, letterSpacing: -0.5, color: openTone }}>
+                {fmt(detail.metric, detail.total)}
+              </Text>
+              {openWhy && (
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: openTone }}>
+                  {openWhy}
+                </Text>
+              )}
+            </View>
+            <MetricDetail
+              detail={detail}
+              rows={rows}
+              shownCount={shown.length}
+              all={all}
+              group={group}
+              onGroup={(id) => { setGroup(id); setAll(false); }}
+              onAll={() => setAll((x) => !x)}
+              onSession={onSession ? (id) => { pending.current = id; setOpen(null); } : undefined}
+              t={t}
+              fmtValue={fmtValue}
+              fmtMinutes={fmtMinutes}
+              groupName={groupName}
+              dateFmt={dateFmt}
+              units={units}
+            />
+          </View>
+        )}
+      </Sheet>
 
       {/* RECORDS — the Progress cluster's block (b), which used to be a mono
           kicker in this card's foot. It is a SECTION of its own now
@@ -516,14 +571,10 @@ export default function AuroraWeekVerdict({
 /* ───────────────────────────── the breakdown ───────────────────────────── */
 
 function MetricDetail({
-  detail, why, whyColor, rows, shownCount, all, group, onGroup, onAll, onSession,
+  detail, rows, shownCount, all, group, onGroup, onAll, onSession,
   t, fmtValue, fmtMinutes, groupName, dateFmt, units,
 }: {
   detail: ActivityDetail;
-  /** This column's own move against its own baseline — the working-out for the
-   *  tone the press just put on it. Null when it has no baseline. */
-  why: string | null;
-  whyColor: string;
   rows: ActivityEntry[];
   shownCount: number;
   all: boolean;
@@ -573,18 +624,14 @@ function MetricDetail({
 
   return (
     <>
-      {/* The right of this row used to carry the session count, which is now on
-          the "Sessions" rule below — where the sessions actually are. This says
-          instead what the column just did, in the tone the column is wearing:
-          the reason for the colour, beside the colour. */}
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...kicker, color: C.ash, flex: 1 }} numberOfLines={1}>{t(activityDetailKey(detail.metric))}</Text>
-        {why && (
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: whyColor }}>
-            {why}
-          </Text>
-        )}
-      </View>
+      {/* This row used to carry two things on its right in turn — the session
+          count (now on the "Sessions" rule below, where the sessions actually
+          are) and then the column's own comparison. The comparison rode up to
+          the sheet's figure row with the figure it explains, so what is left is
+          the label this always was: the heading over the share bar. */}
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...kicker, color: C.ash, marginTop: 14 }} numberOfLines={1}>
+        {t(activityDetailKey(detail.metric))}
+      </Text>
 
       {detail.groups.length === 0 && (
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 10 }}>{t("w.home.act.empty")}</Text>
