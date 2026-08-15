@@ -475,7 +475,7 @@ export function UserRecipeEditor({
           accessibilityState={{ disabled: !!saving }}
           style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", opacity: saving ? 0.6 : 1 }}
         >
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>
             {t("w.recovery.nutrition.recipeSave")}
           </Text>
         </PressScale>
@@ -536,10 +536,10 @@ export function UserRecipeEditor({
         </Text>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: space.xl }}>
           <PressScale onPress={() => setConfirmDelete(false)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.cancel")} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text>
           </PressScale>
           <PressScale onPress={() => { setConfirmDelete(false); onDelete?.(); }} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.recipeDelete")} style={{ flex: 1, backgroundColor: C.red, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: "#fff" }}>{t("w.recovery.nutrition.recipeDelete")}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: "#fff" }}>{t("w.recovery.nutrition.recipeDelete")}</Text>
           </PressScale>
         </View>
       </Sheet>

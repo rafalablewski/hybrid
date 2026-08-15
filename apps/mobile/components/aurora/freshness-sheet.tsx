@@ -149,13 +149,17 @@ function Row({ C, row, label }: { C: Palette; row: FreshnessRow; label: string }
 function Step({ C, step, t }: { C: Palette; step: FreshnessStep; t: (k: string) => string }) {
   const label = step.arg === null ? t(step.key) : t(step.key).replace("{n}", String(step.arg));
   const color = step.total ? C.chalk : C.ash;
-  const weight = step.total ? ("700" as const) : ("400" as const);
+  // The FACE carries the weight, not `fontWeight`: only two mono faces are
+  // loaded (400 and 700), each under its own family name, so a weight asked
+  // for on top of a face the family cannot serve is synthesized — or dropped
+  // for the system font. See lib/ui.tsx `F`.
+  const face = step.total ? F.monoBold : F.mono;
   return (
     <>
       {step.total ? <View style={{ height: 1, backgroundColor: C.line }} /> : null}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: weight, color }}>{label}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: weight, color }}>{step.value}</Text>
+        <Text style={{ flex: 1, fontFamily: face, fontSize: fs.caption, color }}>{label}</Text>
+        <Text style={{ fontFamily: face, fontSize: fs.caption, color }}>{step.value}</Text>
       </View>
     </>
   );

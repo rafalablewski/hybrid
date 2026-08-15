@@ -211,7 +211,7 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
         <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: r.sub ? F.reg : F.bold, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C.ash : C.chalk, paddingLeft: r.sub ? 14 : 0 }}>{t(r.labelKey)}</Text>
           {r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{r.note}</Text> : null}
-          <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: r.sub ? fs.caption : fs.body, color: r.value ? C.chalk : C.ash, minWidth: 64, textAlign: "right" }}>{r.value ?? "—"}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: r.sub ? fs.caption : fs.body, color: r.value ? C.chalk : C.ash, minWidth: 64, textAlign: "right" }}>{r.value ?? "—"}</Text>
           {p100 ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, minWidth: 62, textAlign: "right" }}>{p100[i]!.value ?? "—"}</Text> : null}
         </View>
       ))}
@@ -461,7 +461,7 @@ export function SourceLine({ C, value, counts, onChange }: {
             </Text>
             <Text
               maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: C.ash }}
+              style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: C.ash }}
             >
               {counts[key]}
             </Text>

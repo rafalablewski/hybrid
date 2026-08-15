@@ -183,7 +183,7 @@ export function Understood({ answer, entryName, onLog, onPortion }: {
           </View>
           <Text
             maxFontSizeMultiplier={FIXED_FONT_SCALE}
-            style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
+            style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
           >
             {t(PROVENANCE_KEY[m.candidate.source])}
           </Text>

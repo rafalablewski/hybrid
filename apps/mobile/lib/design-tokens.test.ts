@@ -110,6 +110,29 @@ describe("type scale", () => {
     // decided for itself; ~37% of them land off the ladder entirely.
     expectAtMost(hits(/fontSize:\s*\d+/g), 489, "raw fontSize → use an fs.* rung");
   });
+
+  it("RATCHET — weight is a FACE (F.*), never a `fontWeight`", () => {
+    // THE FONT BUG THIS RULE EXISTS FOR. `F` names six loaded faces and each is
+    // registered under its OWN family name — "JetBrainsMono_400Regular",
+    // "Archivo_700Bold". So `fontFamily: F.mono` declares a family with exactly
+    // one face in it, and asking that family for 700 asks for a weight it does
+    // not have: iOS falls back toward the system face, Android smears a
+    // synthetic bold onto the regular. Either way the label stops being our
+    // font, and it does so NEXT TO labels that got it right — which is what
+    // "the font is inconsistent" looks like from the outside.
+    //
+    // There is nothing to gain by it: F.monoBold and F.bold/F.black ARE the
+    // heavier faces, so every site had a token sitting right there.
+    //
+    // 103 → 72. The whole FOOD domain is clear (nutrition + its kit, panels,
+    // quick-add, pantry, recipes, water, copy-day, freshness) — the meal pages
+    // were the worst of it at 31 sites, several inside one sheet. A weight that
+    // varies (`on ? "700" : "500"`) becomes a varying face, not a varying
+    // weight: `fontFamily: on ? F.monoBold : F.mono`.
+    //
+    // Comment-blind: the files fixed first are the ones that write down why.
+    expectAtMost(codeHits(/fontWeight:/g), 72, "fontWeight → pick the FACE (F.mono/F.monoBold, F.reg/F.semi/F.bold/F.black)");
+  });
 });
 
 describe("leading and tracking", () => {

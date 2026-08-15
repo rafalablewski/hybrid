@@ -261,14 +261,14 @@ export function PantryScreen<T extends PantryFood>({
       {canCreate ? (
         <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 14 }}>
           <IPlus size={15} color={txt(C, C.lime)} strokeWidth={2.2} />
-          <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
         </Pressable>
       ) : (
         /* The cap gates the ADD, never the library: every food already saved
            stays loggable, searchable and deletable at the cap. */
         <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: `${premium?.fill ?? C.lime}1f`, borderWidth: 1, borderColor: `${premium?.fill ?? C.lime}66`, borderRadius: 999, paddingVertical: 14 }}>
           <Text style={{ color: premium?.text ?? txt(C, C.lime) }}>✦</Text>
-          <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: premium?.text ?? txt(C, C.lime) }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: premium?.text ?? txt(C, C.lime) }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
         </Pressable>
       )}
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, textAlign: "center", marginTop: 10 }}>
