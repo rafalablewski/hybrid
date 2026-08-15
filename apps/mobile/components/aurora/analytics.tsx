@@ -170,8 +170,10 @@ function AthleteAnalytics({ sessions }: { sessions: LoggedSession[] }) {
   return (
     <>
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5, marginTop: 12 }}>
-        <StatCell label={t("w.home.analytics.sessions")} value={sessions.length} accent={C.lime} />
+        {/* Tonnage before the session count — the app's one figure order
+            (core figure-order.ts), same as Today's Progress card. */}
         <StatCell label={t("w.home.analytics.totalVolume")} value={fmtTonnage(view.vol, units)} />
+        <StatCell label={t("w.home.analytics.sessions")} value={sessions.length} accent={C.lime} />
         <StatCell label={best ? `${best.lift} ${t("w.home.analytics.col.heaviest")}` : t("w.home.analytics.heaviest")} value={best ? fmtWeight(best.weightKg, units) : "—"} accent={C.lime} />
         <StatCell label={t("w.home.analytics.lastReadiness")} value={view.lastReadiness ?? "—"} accent={C.blue} />
       </View>

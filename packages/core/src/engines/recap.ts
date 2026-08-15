@@ -17,15 +17,19 @@ import {
 // shareable summary (with deltas vs the week before), so "come home and review"
 // has a natural weekly beat. Pure, so web + mobile compute it identically.
 
+// The figures are DECLARED in the app's reading order (figure-order.ts), the
+// order every recap surface renders them in. They used to lead with the session
+// count while the Progress card led with tonnage, and a shape that suggests one
+// sequence while the screens use another is how the drift started.
 export interface WeeklyRecap {
   /** ISO start of the 7-day window. */
   start: string;
-  sessions: number;
   volume: number; // kg tonnage
   sets: number;
-  minutes: number; // summed where completedAt is known
-  activeDays: number; // distinct calendar days trained
   lifts: number; // distinct strength lifts
+  sessions: number;
+  activeDays: number; // distinct calendar days trained
+  minutes: number; // summed where completedAt is known
   distanceKm: number; // total cardio distance logged this week
   prs: PrHit[]; // records set this week (best per lift)
   cardioPrs: CardioPrHit[]; // cardio records set this week (distance/pace)

@@ -129,7 +129,7 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     expect(m.distanceUnit).toBe("km");
     expect(m.paceUnit).toBe("/km");
     expect(m.pace).not.toBeNull();
-    expect(m.totals.map((t) => t.id)).toEqual(["efforts", "distance", "hours", "week"]);
+    expect(m.totals.map((t) => t.id)).toEqual(["efforts", "hours", "distance", "week"]);
     expect(m.bests.map((b) => b.id)).toContain("fastest");
     expect(m.bests.map((b) => b.id)).toContain("longest");
   });

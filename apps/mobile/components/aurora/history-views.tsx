@@ -415,9 +415,11 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
       </ACard>
 
       <View style={{ flexDirection: "row", gap: 10 }}>
+        {/* Core figure-order.ts: active days sit with the session count they
+            are a fact about, then time, then the ground covered. */}
         <Mini label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} />
-        <Mini label={t("w.analyze.stats.distance")} value={hasData ? fmtKm(recap.distanceKm) : "—"} />
         <Mini label={t("w.analyze.stats.minutes")} value={hasData ? String(Math.round(recap.minutes)) : "—"} />
+        <Mini label={t("w.analyze.stats.distance")} value={hasData ? fmtKm(recap.distanceKm) : "—"} />
       </View>
 
       {!hasData && (

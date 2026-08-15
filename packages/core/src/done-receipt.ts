@@ -226,10 +226,16 @@ const stat = (
 ): DoneReceiptStat => ({ figure, unit, value: unit ? `${figure} ${unit}` : figure, labelKey, ...extra });
 
 /**
- * The stats a receipt shows, in display order — duration, volume, distance,
- * climb, sets, energy — each included only when it has something true to say.
- * Unit lives in the value; the uppercase label stays a bare word (one grammar,
- * per the design's trust pass).
+ * The stats a receipt shows, in the app's ONE reading order (figure-order.ts):
+ * volume, sets, duration, distance, climb, energy — each included only when it
+ * has something true to say. Unit lives in the value; the uppercase label stays
+ * a bare word (one grammar, per the design's trust pass).
+ *
+ * The row used to open with DURATION and put sets fifth, which was nothing but
+ * the order the pushes were typed in — and it meant the receipt and the
+ * Progress card, two blocks apart on Today, listed the same day's figures
+ * differently. The sequence is `figureRank`'s now; what each `if` decides is
+ * whether a figure is TRUE, which is this function's actual job.
  *
  * SETS IS A STRENGTH FIGURE. It reads `strengthSets`, so a swim, a tennis
  * match or a squash game — none of which have sets — shows its duration and
@@ -244,13 +250,14 @@ const stat = (
  */
 export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceiptStat[] {
   const out: DoneReceiptStat[] = [];
-  if (r.durationMin != null) out.push(stat(String(r.durationMin), "min", "w.home.rail.duration"));
   if (r.tonnageKg > 0) {
     // fmtTonnage owns the unit and the athlete's system ("5.5 t" / "12,100 lb").
     const t = fmtTonnage(r.tonnageKg, units);
     const cut = t.lastIndexOf(" ");
     out.push(stat(cut > 0 ? t.slice(0, cut) : t, cut > 0 ? t.slice(cut + 1) : "", "w.home.today.volume"));
   }
+  if (r.strengthSets > 0) out.push(stat(String(r.strengthSets), "", "w.home.today.sets", { needsLabel: true }));
+  if (r.durationMin != null) out.push(stat(String(r.durationMin), "min", "w.home.rail.duration"));
   // The receipt keeps metre precision; a rail stat reads at the shared km
   // precision (two decimals) — but only once there IS a kilometre. Under one,
   // a 34 m pool swim would read "0.03 km", so anything sub-kilometre reads in
@@ -266,7 +273,6 @@ export function doneReceiptStats(r: DoneReceipt, units: WeightUnit): DoneReceipt
   // distance) without ever rendering it. It needs its label: "320 m" beside
   // "9.4 km" is unreadable as climb without one.
   if (r.elevationM > 0) out.push(stat(String(r.elevationM), "m", "w.home.today.climb", { needsLabel: true }));
-  if (r.strengthSets > 0) out.push(stat(String(r.strengthSets), "", "w.home.today.sets", { needsLabel: true }));
   if (r.kcal != null && r.kcal > 0)
     out.push(
       stat(`${r.kcalMeasured ? "" : "~"}${r.kcal}`, "kcal", "w.home.today.energy", { estimate: !r.kcalMeasured }),

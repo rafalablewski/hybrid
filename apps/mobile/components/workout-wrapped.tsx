@@ -246,7 +246,7 @@ export function WorkoutWrapped({
     ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: cel.kind === "strength" ? cel.lift : cel.move, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as SlideData] : []),
     ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as SlideData] : []),
   ];
-  // The overview card is a GYM card (title + minutes/sets/volume): on a swim it
+  // The overview card is a GYM card (title + volume/sets/minutes): on a swim it
   // would read "1 set, 0.0 t", so it only rides along when the session actually
   // did that kind of work. The single-stat card headlines the same number the
   // hero does, so a cardio log leads with its distance instead of zero tonnage.

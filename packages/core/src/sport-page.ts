@@ -137,9 +137,12 @@ export interface SportPrimary {
   at: string | null;
 }
 
-/** One cell of the totals row. `id` names the string the client localizes. */
+/** One cell of the totals row, in figure-order.ts's reading order — efforts,
+ *  hours, distance, and then THIS WEEK, which is last because it is not a
+ *  fourth measure but a second window on whichever measure the sport uses.
+ *  `id` names the string the client localizes. */
 export interface SportTotal {
-  id: "efforts" | "distance" | "hours" | "week";
+  id: "efforts" | "hours" | "distance" | "week";
   value: string;
   /** The unit to name in the label ("km" / "m"), when the cell has one. */
   unit: string | null;
@@ -502,10 +505,10 @@ export function sportPageModel(
   /* ── totals — the distance cell exists only when the sport measures one ── */
   const thisWeek = weeks[weeks.length - 1] ?? { value: 0, efforts: 0, weekStart: new Date(now).toISOString() };
   const totals: SportTotal[] = [{ id: "efforts", value: String(totalsRaw.efforts), unit: null }];
-  if (hasDistance) totals.push({ id: "distance", value: sportDistance(totalsRaw.distanceKm, distanceUnit), unit: distanceUnit });
   // Time logged reads in hours AND minutes: rounding to whole hours printed a
   // flat "1" over 67 minutes of tennis, and the athlete had logged the 7.
   totals.push({ id: "hours", value: formatDuration(totalsRaw.minutes), unit: null });
+  if (hasDistance) totals.push({ id: "distance", value: sportDistance(totalsRaw.distanceKm, distanceUnit), unit: distanceUnit });
   totals.push({
     id: "week",
     value: hasDistance ? sportDistance(distanceUnit === "m" ? thisWeek.value / 1000 : thisWeek.value, distanceUnit) : formatDuration(thisWeek.value),

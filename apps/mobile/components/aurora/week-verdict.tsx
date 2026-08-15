@@ -4,7 +4,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
   durationUnits, formatDuration,
-  groupDistanceDisplay, fmtKm, kmValue,
+  groupDistanceDisplay, fmtKm,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
   figureDeltaPct, figureDirection,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
@@ -78,6 +78,17 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE }
  * radius. The panel is now the card's own lower compartment, bled to its edges
  * and taking its bottom corners. At rest — nothing open — the named metric
  * still holds the tone, so the resting card is unchanged.
+ *
+ * THE FOUR COLUMNS DO NOT MOVE — Tonnage, Sessions, Hours, Distance, core's
+ * VERDICT_METRICS order, every period, whatever the sentence is about. They
+ * used to be sorted with the sentence's metric pulled to the front, so the row
+ * never looked the same two weeks running and the figure you were reaching for
+ * was never twice in the same place. Colour is what points at the subject; it
+ * costs the layout nothing, and the row is found by POSITION before it is read
+ * at all. The same order governs the meta line under every session row in the
+ * drawer below. Each column's LABEL is the metric's NAME and each FIGURE
+ * carries its own unit — the one grammar all four can share, since tonnage's
+ * unit is the athlete's (t or lb) and can only travel with the number.
  *
  * The COLUMN DIVIDERS followed them out. Each column drew a hairline on its left
  * edge, but the column is a rounded press target, so the hairline took the
@@ -221,10 +232,18 @@ export default function AuroraWeekVerdict({
   // beneath it share this formatter, so a span can't print two ways.
   const fmtMinutes = (m: number) => formatDuration(m, durationUnits(t));
 
+  // ONE VALUE GRAMMAR across the four columns: the LABEL names the metric and
+  // the FIGURE carries its own unit. Distance used to print bare ("6.83") under
+  // a label that was itself the unit ("KM") — the only column of the four that
+  // split it that way, so the row read as three measurements and one loose
+  // number, and it could not be fixed in the label because tonnage's unit is
+  // the athlete's (t or lb) and has to travel with the figure. Precision is
+  // still core's one kilometre rule (distance.ts) — this changes what the
+  // figure SAYS, never what it rounds to.
   const fmt = (metric: string, value: number) =>
     metric === "tonnage" ? fmtTonnage(value, units)
       : metric === "hours" ? fmtMinutes(value)
-        : metric === "distance" ? kmValue(value)
+        : metric === "distance" ? fmtKm(value)
           : String(Math.round(value));
 
   /** A contribution in ITS OWN unit — 600 m of swimming inside a km total. */
@@ -262,10 +281,15 @@ export default function AuroraWeekVerdict({
   // it stopped being a divider's shoulder and became the whole separation.
   const gutter = wide ? 8 : 12;
 
-  // Named metric first — the sentence's subject shouldn't be the last column.
-  const ordered = v.metric
-    ? [...v.figures].sort((a, b) => (a.metric === v.metric ? -1 : b.metric === v.metric ? 1 : 0))
-    : v.figures;
+  // ONE ORDER, ALWAYS: tonnage → sessions → hours → km, exactly as core hands
+  // the figures over (VERDICT_METRICS). This row used to pull the SENTENCE's
+  // metric to the front, which meant the four columns rearranged themselves
+  // every time the week's story changed — tonnage led one week, distance the
+  // next, and the figure you were looking for was never twice in the same
+  // place. A row of totals is read by POSITION before it is read at all, so the
+  // position has to be a constant. The sentence's subject is already marked
+  // three ways that cost it nothing — the bold word in the lead, the column's
+  // tone, and the delta beside it — and none of them require it to move.
 
   const detail: ActivityDetail | null = open ? summary.details[open] : null;
   const shown = detail
@@ -361,7 +385,7 @@ export default function AuroraWeekVerdict({
             figure, which groups it without help. Same reasoning that retired
             the hairline under a GroupMark. */}
         <View style={{ flexDirection: "row", gap: gutter, marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
-          {ordered.map((f, i) => {
+          {v.figures.map((f, i) => {
             const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
             // AT REST the sentence keeps the colour, so the card's first paint
@@ -520,22 +544,27 @@ function MetricDetail({
 
   /** The one meta line under a session row — this contribution's own figures,
    *  never the whole session's, so a run inside a lifting day can't claim the
-   *  tonnage that happened beside it. */
+   *  tonnage that happened beside it.
+   *
+   *  SAME ORDER AS THE COLUMNS ABOVE, tonnage → hours → km, minus whichever
+   *  metric the panel is open on: that one is already the figure on the right
+   *  of this very row, and printing it twice is what the omission is for. This
+   *  used to be four hand-written branches, and each had picked its own
+   *  sequence — a row read "20 min – 1.2 t" on the distance panel and
+   *  "1.2 t – 20 min" one panel over — so the meta line contradicted the
+   *  columns it hangs under, and itself. Distance also reads in the GROUP's own
+   *  unit here, the same unit its value column uses, so a 600 m swim can't say
+   *  "0.6 km" on one line and "600 m" on the next. */
   const meta = (it: ActivityEntry): string => {
     const bits: string[] = [];
+    // Sets take tonnage's slot on the tonnage panel — they are what the
+    // tonnage is MADE of, not a fifth figure standing beside it.
     if (detail.metric === "tonnage") {
       if (it.sets > 0) bits.push(`${it.sets} ${t("w.home.act.uSets")}`);
-      if (it.minutes > 0) bits.push(fmtMinutes(it.minutes));
-    } else if (detail.metric === "distance") {
-      if (it.minutes > 0) bits.push(fmtMinutes(it.minutes));
-      if (it.tonnage > 0) bits.push(fmtTonnage(it.tonnage, units));
-    } else if (detail.metric === "hours") {
-      if (it.distanceKm > 0) bits.push(`${groupDistanceDisplay(it.distanceKm, unitOf(it.groupId).unit)} ${unitOf(it.groupId).unit}`);
-      if (it.tonnage > 0) bits.push(fmtTonnage(it.tonnage, units));
-    } else {
-      if (it.minutes > 0) bits.push(fmtMinutes(it.minutes));
-      if (it.tonnage > 0) bits.push(fmtTonnage(it.tonnage, units));
-      if (it.distanceKm > 0) bits.push(fmtKm(it.distanceKm));
+    } else if (it.tonnage > 0) bits.push(fmtTonnage(it.tonnage, units));
+    if (detail.metric !== "hours" && it.minutes > 0) bits.push(fmtMinutes(it.minutes));
+    if (detail.metric !== "distance" && it.distanceKm > 0) {
+      bits.push(`${groupDistanceDisplay(it.distanceKm, unitOf(it.groupId).unit)} ${unitOf(it.groupId).unit}`);
     }
     return bits.join(" – ");
   };

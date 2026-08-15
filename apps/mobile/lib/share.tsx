@@ -46,9 +46,11 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
       </View>
       <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 14 }}>{stats.title || "Workout"}</Text>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
-        <Stat label={t("summary.minutes")} value={String(stats.minutes)} />
-        <Stat label={t("summary.sets")} value={String(stats.sets)} />
+        {/* Core figure-order.ts — the same sequence the summary the athlete
+            just closed used, so the shared card isn't a third arrangement. */}
         <Stat label={t("summary.volumeMoved")} value={fmtTonnage(stats.volume, units)} />
+        <Stat label={t("summary.sets")} value={String(stats.sets)} />
+        <Stat label={t("summary.minutes")} value={String(stats.minutes)} />
       </View>
       {stats.bests.length > 0 && (
         <View style={{ marginTop: 18, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
@@ -96,9 +98,9 @@ export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: str
 
       <View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: width * 0.06 }}>
-          <Stat label={t("summary.minutes")} value={String(stats.minutes)} />
-          <Stat label={t("summary.sets")} value={String(stats.sets)} />
           <Stat label={t("summary.volumeMoved")} value={fmtTonnage(stats.volume, units)} />
+          <Stat label={t("summary.sets")} value={String(stats.sets)} />
+          <Stat label={t("summary.minutes")} value={String(stats.minutes)} />
         </View>
         {stats.bests.length > 0 && (
           <View style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: width * 0.05 }}>
@@ -258,9 +260,11 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
             {slide.firstEver ? "First workout 🎉" : s.title || "Workout"}
           </Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} run={animate} />
-            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} run={animate} />
+            {/* The third card in this file, and it reads the same row the two
+                above it do — core figure-order.ts. */}
             <StoryStat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} st={st} width={width} run={animate} />
+            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} run={animate} />
+            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} run={animate} />
           </View>
         </StoryShell>
       );
@@ -357,8 +361,8 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.lime, letterSpacing: 2 }}>{t("w.teams.coach.thisWeek").toUpperCase()}</Text>
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 18 }}>
-          <Stat label={t("w.teams.coach.sessionsWord")} value={String(recap.sessions)} />
           <Stat label={t("summary.volumeMoved")} value={fmtTonnage(recap.volume, units)} />
+          <Stat label={t("w.teams.coach.sessionsWord")} value={String(recap.sessions)} />
           <Stat label={t("recap.prs")} value={String(recap.prs.length)} />
         </View>
         <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, flexDirection: "row", justifyContent: "space-between" }}>
@@ -378,7 +382,7 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
         </View>
         {hasPrev && (
           <Text style={{ fontFamily: F.bold, fontSize: 12, color: recap.volumeDelta >= 0 ? C.lime : C.amber, marginTop: 10 }}>
-            {signed(recap.sessionsDelta)} {t("w.teams.coach.sessionsWord")} – {signed(Math.round(kgToUnit(recap.volumeDelta, units)))} {units} {t("recap.vsLastWeek")}
+            {signed(Math.round(kgToUnit(recap.volumeDelta, units)))} {units} – {signed(recap.sessionsDelta)} {t("w.teams.coach.sessionsWord")} {t("recap.vsLastWeek")}
           </Text>
         )}
       </View>
@@ -390,7 +394,7 @@ RecapShareCard.displayName = "RecapShareCard";
 export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, units: WeightUnit = "kg"): string {
   return [
     `\u{1F4C8} ${t("w.teams.coach.thisWeek")} — HYBRID`,
-    `${recap.sessions} ${t("w.teams.coach.sessionsWord")} – ${fmtTonnage(recap.volume, units)} – ${recap.prs.length} ${t("recap.prs")}`,
+    `${fmtTonnage(recap.volume, units)} – ${recap.sessions} ${t("w.teams.coach.sessionsWord")} – ${recap.prs.length} ${t("recap.prs")}`,
     recap.prs[0] ? `\u{1F3C6} ${recap.prs[0].lift} ${fmtWeight(recap.prs[0].topLoad, units)}` : null,
     t("share.tracked"),
   ]
