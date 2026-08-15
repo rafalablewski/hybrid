@@ -4,9 +4,15 @@ import {
   HEAT_FLOOR_C,
   HEAT_INTENSITY_MAX,
   HEAT_REF_C,
+  HEAT_AFTER_SESSION_H,
+  HEAT_DUPLICATE_MIN,
+  HEAT_EDGE_GRACE_MIN,
   HEAT_SESSION_MIN_EQUIV,
   HEAT_WINDOW_H,
   heatAdjustment,
+  heatAfterSession,
+  heatAlreadyLogged,
+  heatSittingsBetween,
   heatIntensity,
   heatSittings,
   heatWeeklyFrequency,
@@ -413,6 +419,90 @@ describe("saunaClearance — does heat help THIS athlete?", () => {
     // reported sore (2), so the heat group cleared more of the same session —
     // a lower ratio against the population curve, so a negative delta.
     expect(c.delta).toBeLessThan(0);
+  });
+
+  /* ── NOTHING IS LOGGED IN ORDER ────────────────────────────────────────── */
+
+  it("tags a sitting logged just BEFORE the recorded end as heat — the clock, not the sauna", () => {
+    // The scenario in full: trained at 13:00, sauna straight after and typed on
+    // the spot, watch stopped late and the recording not imported until 21:00.
+    // The sitting's instant ends up minutes before a session end it plainly
+    // followed, and without the edge grace this pair does not merely drop — it
+    // lands in the WITHOUT-heat bucket, putting the treatment in the control.
+    const b = build([{ freshness: 3, heat: false }, { freshness: 3, heat: false }]);
+    const end = Date.parse(b.sessions[0]!.completedAt!);
+    const early = sittingAt(end - 10 * 60_000, 25, 90);
+    const pairs = pairReads(b.sessions, b.recovery, { now: b.now, heatSignals: early });
+    expect(pairs.filter((p) => p.heat === true)).toHaveLength(1);
+  });
+
+  it("still refuses a sitting from BEFORE the grace — the window is a window", () => {
+    const b = build([{ freshness: 3, heat: false }, { freshness: 3, heat: false }]);
+    const end = Date.parse(b.sessions[0]!.completedAt!);
+    const before = sittingAt(end - (HEAT_EDGE_GRACE_MIN + 5) * 60_000, 25, 90);
+    const pairs = pairReads(b.sessions, b.recovery, { now: b.now, heatSignals: before });
+    expect(pairs.every((p) => p.heat === false)).toBe(true);
+  });
+});
+
+/* ── WHAT IS ALREADY ON THE RECORD ─────────────────────────────────────────── */
+
+describe("heatSittingsBetween / heatAlreadyLogged / heatAfterSession", () => {
+  const at = (ms: number, minutes = 20, tempC = 80): HeatSignalRow[] => {
+    const ts = new Date(ms).toISOString();
+    return [
+      { id: `m${ms}`, kind: "sauna", value: minutes, source: "manual", ts },
+      { id: `t${ms}`, kind: "saunaTemp", value: tempC, source: "manual", ts },
+    ];
+  };
+  const MIN = 60_000;
+
+  it("returns the sittings inside the window, ends included, newest first", () => {
+    const rows = [...at(NOW - 3 * HOUR), ...at(NOW - 2 * HOUR), ...at(NOW - HOUR)];
+    const got = heatSittingsBetween(rows, NOW - 3 * HOUR, NOW - 2 * HOUR);
+    expect(got).toHaveLength(2);
+    expect(Date.parse(got[0]!.ts)).toBeGreaterThan(Date.parse(got[1]!.ts));
+  });
+
+  it("is empty rather than throwing on a window that is nonsense", () => {
+    expect(heatSittingsBetween(at(NOW), NOW, NOW - HOUR)).toEqual([]);
+    expect(heatSittingsBetween(at(NOW), NaN, NOW)).toEqual([]);
+  });
+
+  it("finds the sitting a second save would duplicate, and names the NEAREST one", () => {
+    const rows = [...at(NOW - 80 * MIN, 30), ...at(NOW - 10 * MIN, 25)];
+    expect(heatAlreadyLogged(rows, NOW)?.minutes).toBe(25);
+  });
+
+  it("does not call a sitting outside the window a duplicate", () => {
+    const rows = at(NOW - (HEAT_DUPLICATE_MIN + 5) * MIN);
+    expect(heatAlreadyLogged(rows, NOW)).toBeNull();
+    expect(heatAlreadyLogged([], NOW)).toBeNull();
+  });
+
+  /**
+   * THE OUT-OF-ORDER CASE, stated as the app meets it: the sauna row is
+   * written first and the session row lands hours later, backdated. Both
+   * questions have to come out the same as if they had arrived in order.
+   */
+  it("finds the sauna logged after a session imported long afterwards", () => {
+    const end = Date.parse("2026-08-12T12:00:00.000Z"); // trained until 13:00 local
+    const rows = at(end + 15 * MIN); // typed on the spot
+    // The recording is imported at 21:00 — nine hours after both events — and
+    // the summary asks the log, not the clock.
+    expect(heatAfterSession(rows, new Date(end).toISOString())?.minutes).toBe(20);
+  });
+
+  it("accepts a sitting stamped just before the end and rejects the next evening's", () => {
+    const end = Date.parse("2026-08-12T12:00:00.000Z");
+    expect(heatAfterSession(at(end - 10 * MIN), end)).not.toBeNull();
+    expect(heatAfterSession(at(end - (HEAT_EDGE_GRACE_MIN + 5) * MIN), end)).toBeNull();
+    expect(heatAfterSession(at(end + (HEAT_AFTER_SESSION_H * 60 + 5) * MIN), end)).toBeNull();
+  });
+
+  it("returns null for a session with no usable end rather than guessing one", () => {
+    expect(heatAfterSession(at(NOW), null)).toBeNull();
+    expect(heatAfterSession(at(NOW), "not a date")).toBeNull();
   });
 });
 

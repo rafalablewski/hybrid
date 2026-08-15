@@ -5,6 +5,7 @@ import {
   HEAT_PROTOCOLS,
   HEAT_PROTOCOL_LIST,
   HEAT_TEMP_BOUNDS,
+  heatAlreadyLogged,
   heatIntensity,
   heatSittings,
   fmtTemp,
@@ -58,6 +59,19 @@ import { NativeDateField, LIQUID_GLASS_SUPPORTED } from "./swiftui";
  * panel that rests without scrolling at all, which is the only measurement that
  * matters for a log you open in a towel.
  *
+ * AND IT REFUSES TO WRITE THE SAME SAUNA TWICE. Nothing in this app is logged
+ * in the order it happened — a watch recording gets imported that evening while
+ * the sauna after it was typed on the spot — so the invitation to log a sitting
+ * routinely arrives HOURS after the sitting was already logged. The summary of
+ * a just-imported session opens this sheet defaulted to that session's end, and
+ * before this guard a second press wrote a second sitting an hour off the
+ * first, which `heatAdjustment` sums inside one 48 h window and
+ * `heatWeeklyFrequency` counts as two. The check is `heatAlreadyLogged` and it
+ * WARNS rather than blocks: it names the sitting already on the record, opens
+ * the recent list so it can be deleted, and lets a second press through — an
+ * athlete who really did sit twice before supper is not wrong, and this sheet
+ * does not get to tell them they are.
+ *
  * TEMPERATURE IS NOT DECORATION. Twenty minutes at 90 °C and twenty minutes in
  * a 55 °C infrared cabin are not the same stimulus, so minutes are converted to
  * EQUIVALENT MINUTES before anything scores them (engines/heat.ts). The sheet
@@ -108,6 +122,11 @@ export function HeatSheet({
   const [failed, setFailed] = useState(false);
   const [msg, setMsg] = useState("");
   const [showRecent, setShowRecent] = useState(false);
+  // The sitting already on the record that this save would duplicate, once the
+  // athlete has been told about it. Set by the first press, cleared whenever
+  // `when` moves — a different time is a different sitting, and a warning that
+  // outlived the value it was about would be describing nothing.
+  const [dupe, setDupe] = useState<{ ts: string; minutes: number; tempC: number } | null>(null);
 
   // The clock is re-read every time the sheet OPENS, not once when it mounts.
   // This component stays alive behind Today for as long as the app is open, so
@@ -122,6 +141,7 @@ export function HeatSheet({
     setWhen(initialAt ?? new Date());
     setPickWhen(!!initialAt);
     setShowRecent(false);
+    setDupe(null);
     setFailed(false);
     setMsg("");
   }, [visible, initialAt]);
@@ -154,8 +174,26 @@ export function HeatSheet({
   // explains nothing. Silence when there is nothing to explain.
   const plain = Math.abs(intensity - 1) < 0.005;
 
+  // Moving the clock retires any duplicate warning: it was about the old
+  // instant, and leaving it up would let a second press through unchecked.
+  const pickWhenAt = (d: Date) => {
+    setWhen(d);
+    setDupe(null);
+  };
+
   const save = async () => {
     if (saving) return;
+    // THE OUT-OF-ORDER GUARD. First press with a sitting already on the record
+    // near this instant names it and stops; a second press goes through.
+    if (!dupe) {
+      const clash = heatAlreadyLogged(heatRows, when.getTime());
+      if (clash) {
+        haptic.warning();
+        setDupe({ ts: clash.ts, minutes: clash.minutes, tempC: clash.tempC });
+        setShowRecent(true);
+        return;
+      }
+    }
     setSaving(true);
     setFailed(false);
     setMsg("");
@@ -275,7 +313,7 @@ export function HeatSheet({
         {LIQUID_GLASS_SUPPORTED && pickWhen ? (
           <NativeDateField
             value={when}
-            onChange={setWhen}
+            onChange={pickWhenAt}
             latest={new Date()}
             label={t("w.recovery.heat.when")}
             tintColor={C.lime}
@@ -306,9 +344,26 @@ export function HeatSheet({
           commit (the idle label is laid out invisibly under the state), gates a
           second press while in flight, announces `busy`, and reports a failure
           in the button that failed rather than in a line underneath it. */}
-      <View style={{ marginTop: space.xl }}>
+      {/* ── ALREADY LOGGED? ──────────────────────────────────────────────
+          It quotes the sitting rather than warning in the abstract: "you may
+          already have logged this" is a hedge, and the athlete cannot check it
+          without leaving. The recent list below is open by the time this
+          appears, so the correction is one row down. */}
+      {dupe && (
+        <Text
+          accessibilityLiveRegion="polite"
+          style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber), marginTop: space.lg, lineHeight: leading(fs.caption) }}
+        >
+          {t("w.recovery.heat.dupe")
+            .replace("{n}", String(dupe.minutes))
+            .replace("{t}", fmtTemp(dupe.tempC, weightUnit))
+            .replace("{at}", new Date(dupe.ts).toLocaleString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" }))}
+        </Text>
+      )}
+
+      <View style={{ marginTop: dupe ? space.ms : space.xl }}>
         <APill
-          label={t("w.recovery.heat.save")}
+          label={t(dupe ? "w.recovery.heat.saveAnyway" : "w.recovery.heat.save")}
           onPress={save}
           disabled={worthless}
           state={saving ? "saving" : failed ? "error" : "idle"}
