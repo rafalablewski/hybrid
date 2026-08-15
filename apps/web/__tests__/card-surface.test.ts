@@ -36,7 +36,7 @@ import { join } from "node:path";
  * width and height are skipped — a 56×56 box at radius 28 is an avatar, not a
  * card, and a card never fixes its own height.
  *
- * IT IS A RATCHET, NOT A LINE IN THE SAND. There are 19 of these left (25 when
+ * IT IS A RATCHET, NOT A LINE IN THE SAND. There are 16 of these left (25 when
  * the rule was written), on screens this branch had no business rewriting, so
  * they are listed below with their counts. That makes the list do three jobs at
  * once: the cleared surfaces are pinned at zero and can never regress; a NEW
@@ -74,14 +74,12 @@ const CARD_FILL = /backgroundColor:\s*[A-Za-z_$][\w.]*\.(?:ink2|card)\b/;
  * down so the rule can ship today and still fail on the next new one.
  */
 const RATCHET: Record<string, number> = {
-  // CLEARED, and left here as a note rather than a line: percent-program (3)
-  // and history-views (3) were the two densest files on this list and are now
-  // at zero — see the CLEARED block at the bottom of this file, which pins
-  // them the same way Today's four are pinned. 25 → 19.
+  // CLEARED, and left here as a note rather than as lines: percent-program (3)
+  // and history-views (3) were the two densest files on this list, then the
+  // nutrition surface (nutrition 2 + pantry 1). All are at zero — see the
+  // CLEARED block at the bottom of this file, which pins them the same way
+  // Today's four are pinned. 25 → 19 → 16.
   "components/aurora/history.tsx": 1,
-  // Nutrition — the biggest screen in the app, swept separately.
-  "components/aurora/nutrition.tsx": 2,
-  "components/aurora/pantry.tsx": 1,
   // The rails. coach-rail also carries its own inline copy of cardShadow's
   // five values, which is the same defect one layer further down.
   "components/aurora/coach-rail.tsx": 1,
@@ -230,9 +228,12 @@ describe("the surfaces this rule was written for stay on the kit", () => {
   /**
    * CLEARED — every file that has been taken to zero, pinned so it stays there.
    *
-   * The first four are where the material split was found (Today). The last two
-   * were the densest entries on the ratchet, cleared in the pass after this
-   * rule shipped. A file only joins this list by actually reaching zero, and
+   * The first four are where the material split was found (Today). The rest
+   * came off the ratchet in the passes after this rule shipped, densest first.
+   * `nutrition.tsx` is the one that best makes the case: it already rendered
+   * EIGHT real ACards beside its two hand-rolls, so on iOS 26 the material
+   * split was inside a single screen. A file only joins this list by
+   * reaching zero, and
    * once it is here the ratchet's `?? 0` fallback would catch a regression
    * anyway — the point of naming them is that a REVIEWER can see what is done,
    * and that the second assertion below can check they still draw cards at all.
@@ -244,6 +245,8 @@ describe("the surfaces this rule was written for stay on the kit", () => {
     "components/aurora/protocol.tsx",
     "components/percent-program.tsx",
     "components/aurora/history-views.tsx",
+    "components/aurora/nutrition.tsx",
+    "components/aurora/pantry.tsx",
   ];
 
   for (const f of CLEARED) {
