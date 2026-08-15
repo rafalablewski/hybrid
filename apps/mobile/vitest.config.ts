@@ -42,6 +42,9 @@ export default defineConfig({
             "lib/health-quantities.test.ts",
             "lib/ui.test.ts",
             "lib/design-tokens.test.ts",
+            // Reads the shipped .ttf name tables as DATA (plus ui.tsx and
+            // swiftui.tsx as text), so it stays inside the boundary.
+            "lib/native-face.test.ts",
             "lib/error-boundary-palette.test.ts",
             "lib/search-surfaces.test.ts",
             "lib/event-pooling.test.ts",

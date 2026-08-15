@@ -214,6 +214,53 @@ export const F = {
   monoBold: "JetBrainsMono_700Bold",
 } as const;
 
+/**
+ * THE SAME SIX FACES, UNDER THE NAMES CORE TEXT KNOWS THEM BY.
+ *
+ * `F` holds ALIASES, not font names. `useFonts({ Archivo_700Bold })` hands
+ * expo-font the key as a *family alias* and expo-font makes it work by
+ * SWIZZLING `UIFont.fontNames(forFamilyName:)` — React Native's text path asks
+ * that method, gets the alias resolved to the font's real PostScript name, and
+ * draws Archivo. Nothing else on the system asks that method.
+ *
+ * SwiftUI does not. `@expo/ui`'s `font({ family })` modifier ends in
+ * `Font.custom(family, size:)`, which goes to Core Text directly — and Core
+ * Text has never heard of "Archivo_700Bold" (the binary's PostScript name is
+ * `Archivo-Bold`; the alias only ever existed in expo-font's own dictionary).
+ * An unresolvable name in `Font.custom` does not throw and does not warn: it
+ * QUIETLY DRAWS SAN FRANCISCO. So every native leaf in swiftui.tsx that was
+ * "given the caller's own face" — the nutrition head's meal switcher
+ * ("Breakfast ⌄"), the logger's timer capsule, its set-type menu, the
+ * satellite's word, the quick-sport stepper — has been rendering the SYSTEM
+ * font next to Archivo everywhere else on the same screen. The prop was passed,
+ * the screenshots kept showing the wrong face, and nothing in the codebase
+ * disagreed, because the failure is a silent fallback three layers down.
+ *
+ * These are the `name` table's ID-6 (PostScript) entries of the very .ttf files
+ * `@expo-google-fonts` ships, which is what `CTFontManagerRegisterFontsForURL`
+ * registers them under. `native-face.test.ts` parses those files and fails if
+ * any entry here stops matching — the map is not allowed to be a guess.
+ */
+export const F_POSTSCRIPT: Record<string, string> = {
+  [F.reg]: "Archivo-Regular",
+  [F.semi]: "Archivo-SemiBold",
+  [F.bold]: "Archivo-Bold",
+  [F.black]: "Archivo-Black",
+  [F.mono]: "JetBrainsMono-Regular",
+  [F.monoBold]: "JetBrainsMono-Bold",
+};
+
+/**
+ * An `F` alias → the name to hand SwiftUI. Call it at EVERY `font({ family })`
+ * in the native kit and nowhere else: callers keep passing `F.bold`, because a
+ * call site that has to remember which of two names a face goes by is a call
+ * site that will forget. An unmapped family passes through unchanged — a face
+ * we do not load is the caller's business, not this map's.
+ */
+export function nativeFace(family: string): string {
+  return F_POSTSCRIPT[family] ?? family;
+}
+
 // Concentric rings fake a radial falloff — RN has no CSS blur or radial
 // gradient (and we add no native gradient dep), so we stack a few low-opacity
 // circles; the glass cards' BlurView softens them further as it frosts what's
