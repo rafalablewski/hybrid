@@ -1035,31 +1035,96 @@ export function ASearch({
  * `Segmented` and History's `ViewSwitcher`) turned out on reading to be
  * WRAPPING and SCROLLING chip rails rather than segmented controls at all, and
  * became `AChip` rows. What is left is this and the LiquidSeg it delegates to.
+ *
+ * ── A SEGMENT MAY CARRY A COUNT ────────────────────────────────────────────
+ * `meta` puts the section head's mono figure inside the segment, beside its
+ * label. It exists because the nutrition picker's four sources (Recent /
+ * Favorites / Meals / Foods) each know their size, and dropping that figure was
+ * the ONE thing that had kept those four on a hand-drawn control of their own
+ * rather than this one. A switch that can say "Recent 12" is a switch the
+ * picker has no reason to redraw.
+ *
+ * ── THE LABEL SHRINKS BEFORE IT TRUNCATES ──────────────────────────────────
+ * Equal-width segments are the form's premise, so the longest label in the
+ * longest locale sets whether it works at all: German's "Lebensmittel" wants
+ * ~86dp in an ~82dp quarter of a phone-wide track, and `numberOfLines={1}`
+ * alone answered that with "Lebensmit…". The system control shrinks its labels
+ * to fit rather than clipping them, so this one does too — down to
+ * `minimumFontScale`, and only where a label actually needs it. Every call site
+ * gains it (three of the language switcher's own labels were on the edge).
+ *
+ * ── AND IT WORKS INSIDE A CARD ─────────────────────────────────────────────
+ * `surface="card"` recesses the track instead of raising it, so a control on a
+ * raised surface is still a container. The four hand-drawn tab rows this
+ * component replaced included one INSIDE a day card, and "a track may be
+ * heavier than the card wants" was the honest reservation about converting it.
+ * The weight is real and it is the point: a switch that changes what the card
+ * below it shows should look like a control, not like two words that happen to
+ * be underlined. What it must NOT do is disappear — see the note on the fill.
  */
 export function ASegment<T extends string>({
   options,
   value,
   onPick,
+  surface = "screen",
 }: {
-  options: { id: T; label: string }[];
+  options: { id: T; label: string; meta?: string | number }[];
   value: T;
   onPick: (v: T) => void;
+  /** What the control is standing ON: the screen's own ground, or any RAISED
+   *  surface — a card, a sheet panel, a settings group. See TRACK ON A CARD. */
+  surface?: "screen" | "card";
 }) {
   const { palette } = useTheme();
   const index = Math.max(0, options.findIndex((o) => o.id === value));
+  // ── THE TRACK ON A CARD ──────────────────────────────────────────────────
+  // The default track is `ink2` — one step UP from the screen's `ink` ground,
+  // which is what makes it read as a container at all. A CARD is already
+  // `ink2`, so that same track inside one is invisible: identical fill, with
+  // nothing but a hairline to say a control is there. (The day card's session
+  // toggle is the case that found this.)
+  //
+  // The answer is not another step up — there is no token above `ink2` worth
+  // the name, and stacking surfaces to say "control" is how a screen grows
+  // six containers of the same weight. It is a step DOWN: on a raised card the
+  // track is a WELL cut into it, which is also how the system control reads on
+  // a grouped background. Same lens, same border, inverted ground.
+  //
+  // "CARD" MEANS ANY RAISED SURFACE, and the sweep that added this found three
+  // call sites that had been drawing an invisible track since before the prop
+  // existed: Settings' language switcher and the logger's four preference
+  // groups (both inside an `ACard`), and the heat sheet's modality switch (a
+  // Sheet panel, which is also ink2). A GLASS card hides it less completely
+  // than a solid one, which is exactly why it survived — it looked fine on the
+  // reviewer's iOS 26 phone and flat on everything else.
+  const trackFill = surface === "card" ? palette.ink : palette.ink2;
   return (
     <LiquidSeg
       items={options.map((o) => ({
         key: o.id,
-        label: o.label,
+        // The accessible name carries the count too — a screen reader gets what
+        // the eye gets, which is the whole reason the figure is on the control.
+        label: o.meta == null ? o.label : `${o.label} ${o.meta}`,
         render: (on: boolean) => (
-          <Text
-            maxFontSizeMultiplier={MAX_FONT_SCALE}
-            numberOfLines={1}
-            style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.chalk : palette.ash }}
-          >
-            {o.label}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5, maxWidth: "100%", paddingHorizontal: 4 }}>
+            <Text
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.chalk : palette.ash, flexShrink: 1 }}
+            >
+              {o.label}
+            </Text>
+            {o.meta == null ? null : (
+              <Text
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+                style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: palette.ash }}
+              >
+                {o.meta}
+              </Text>
+            )}
+          </View>
         ),
       }))}
       index={index}
@@ -1067,7 +1132,7 @@ export function ASegment<T extends string>({
       // 44 so the segment clears the HIG target; the track's own padding puts
       // the control at 52, which is what a segmented control should be.
       segHeight={HIT_TARGET}
-      trackStyle={{ backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line }}
+      trackStyle={{ backgroundColor: trackFill, borderWidth: 1, borderColor: palette.line }}
     />
   );
 }

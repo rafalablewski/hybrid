@@ -125,7 +125,10 @@ export default function AuroraSettings() {
         return (
       <>
         <Section label={t("w.account.settings.language")}>
-          <ASegment options={LANGUAGES} value={lang} onPick={setLang} />
+          {/* `surface="card"`: a Section wraps its body in an ACard, and the
+              default track is the card's own ink2 — so this switch had been
+              drawing an invisible track on every non-glass device. */}
+          <ASegment options={LANGUAGES} value={lang} onPick={setLang} surface="card" />
         </Section>
         {/* The Liquid Glass switch is gone on purpose: the native SwiftUI
             treatment is ALWAYS ON on iOS — the look is the product, not a

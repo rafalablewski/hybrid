@@ -1364,8 +1364,16 @@ export const web_recovery = {
     "w.recovery.nutrition.tab.recent": "Zuletzt",
     "w.recovery.nutrition.tab.favorites": "Favoriten",
     "w.recovery.nutrition.tab.meals": "Mahlzeiten",
-    "w.recovery.nutrition.tab.personal": "Lebensmittel",
-    "w.recovery.nutrition.personalEmpty": "Noch keine gespeicherten Lebensmittel. Lege eines an, um deine Bibliothek aufzubauen.",
+    // PRODUKTE, not Lebensmittel — the picker's four sources are four equal
+    // segments a quarter of a phone-wide track, and "Lebensmittel" is the one
+    // label in any locale that does not fit one: it lands ON the shrink floor
+    // at 390pt and past it at 375. "Produkte" is the word this file already
+    // uses for the same saved list (see noProductsYet), it is four characters
+    // shorter, and it reads better as the mono PROVENANCE tag a ranked row
+    // carries. The general German word for food stays "Lebensmittel"
+    // everywhere else in this vocabulary — this is the NAME OF ONE LIST.
+    "w.recovery.nutrition.tab.personal": "Produkte",
+    "w.recovery.nutrition.personalEmpty": "Noch keine gespeicherten Produkte. Lege eines an, um deine Bibliothek aufzubauen.",
     "w.recovery.nutrition.mealsEmptyPicker": "Noch keine gespeicherten Mahlzeiten. Erstelle eine, um sie mit einem Tipp zu erfassen.",
     "w.recovery.nutrition.addPart": "Tageszeit hinzufügen",
     "w.recovery.nutrition.addPartSub": "Deine eigenen Mahlzeiten-Slots — z. B. Pre-Session, zweites Frühstück.",

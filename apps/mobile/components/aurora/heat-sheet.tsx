@@ -197,10 +197,15 @@ export function HeatSheet({
           to the gesture-tracked lens off iOS — and it needs no kicker, because
           three modality names say what they are. */}
       <View style={{ marginTop: space.xl }}>
+        {/* `surface="card"` — a Sheet's panel is ink2, the same fill the track
+            defaults to, so this one drew an invisible track too. A sheet is a
+            raised surface like a card; the prop reads the ground, not the
+            container's name. */}
         <ASegment
           options={HEAT_PROTOCOL_LIST.map((p) => ({ id: p, label: t(`w.recovery.heat.protocol.${p}`) }))}
           value={protocol}
           onPick={pickProtocol}
+          surface="card"
         />
       </View>
 
