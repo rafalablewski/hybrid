@@ -151,7 +151,9 @@ export default function AuroraHistory() {
           {sessionShape(s) === "cardio"
             ? (() => {
                 const ct = sessionCardioSummary(s);
-                const parts = [ct.distanceKm > 0 ? fmtKm(ct.distanceKm) : null, ct.minutes ? `${ct.minutes} min` : null].filter(Boolean);
+                // Time before the ground it covered — core figure-order.ts, the
+                // order the Progress card and the done receipt use too.
+                const parts = [ct.minutes ? `${ct.minutes} min` : null, ct.distanceKm > 0 ? fmtKm(ct.distanceKm) : null].filter(Boolean);
                 if (parts.length) return chip(C.blue, parts.join(" – "));
                 const minutes = s.blocks.reduce((sum, b) => sum + (b.kind !== "strength" ? (b.minutes ?? 0) : 0), 0);
                 return chip(C.blue, minutes > 0 ? `${minutes} min` : `${s.blocks.length} ${s.blocks.length === 1 ? t("w.analyze.hist.block") : t("history.blocks")}`);

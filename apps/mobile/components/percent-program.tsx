@@ -3,7 +3,6 @@ import { View, Text, TextInput, ScrollView, Animated, Easing } from "react-nativ
 import { LinearGradient } from "expo-linear-gradient";
 import {
   planProgramView,
-  planCoverView,
   splitInputsTitle,
   inputEcho,
   rpeColor,
@@ -16,7 +15,6 @@ import {
   outlierPrescription,
   dayMaxPct,
   loadTier,
-  dayPulse,
   dayLeadWords,
   stepWords,
   rpeMeaning,
@@ -26,15 +24,14 @@ import {
   type GoalNode,
   type GoalPlan,
   type PlanProgram,
-  type PlanWeekBar,
   type ProgramDayView,
   type ProgramLiftView,
   type ProgramSessionView,
   type InkTier,
   type LoadColor,
   type LiftKind,
-
-  ALPHA,} from "@hybrid/core";
+  ALPHA,
+} from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import MeasuredOutcome from "./measured-outcome";
 import { useRevalidate } from "../lib/queries";
@@ -42,10 +39,10 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
-import { withAlpha, ASection, GUTTER, CARD_PAD , RADIUS} from "./aurora/kit";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../lib/ui";
+import { ACard, cardStack, withAlpha, ASection, DockRail, DockChip } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
-import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
+import PlanCoverScreen, { PlanDockPill, COVER_GUTTER } from "./plan-hero";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
@@ -74,8 +71,8 @@ function groupByKind(lifts: ProgramLiftView[]): Group[] {
  * blocks, endurance pace plans, …) through the shared planProgramView, in the
  * full-bleed cover redesign: PlanCoverScreen provides the collapsing cover, the
  * stats hem and the docked enroll pill; this component supplies the body — the
- * maxes LEDGER, the volume-WAVEFORM week rail (sticky under the collapsed bar),
- * and the programme day cards. Renders the SAME content as the web.
+ * maxes LEDGER, the week rail (sticky under the collapsed bar) and the
+ * programme day cards.
  */
 export default function PercentProgram({
   goal,
@@ -115,7 +112,6 @@ export default function PercentProgram({
     if (Number.isFinite(n) && n > 0) maxes[i.key] = n;
   }
   const view = planProgramView(program, { week, maxes });
-  const cover = planCoverView(goal, plan, program);
 
   const revalidate = useRevalidate();
   const enroll = async () => {
@@ -169,7 +165,7 @@ export default function PercentProgram({
           )}
         </>
       }
-      rail={multiWeek ? <WeekRail C={C} bars={cover.weekBars} weeks={view.weeks} week={view.week} setWeek={setWeek} wkLabel={t("w.train.plans.wkShort")} /> : undefined}
+      rail={multiWeek ? <WeekRail weeks={view.weeks} week={view.week} setWeek={setWeek} wkLabel={t("w.train.plans.wkShort")} railLabel={t("w.train.plans.chooseWeek")} /> : undefined}
       dock={
         <PlanDockPill
           state={state}
@@ -184,10 +180,14 @@ export default function PercentProgram({
         <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} />
       </View>
 
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, marginBottom: 12 }}>
+      {/* ACard + cardStack. This spelled the kit's box out by hand with the
+          radius as a literal 28 and the run gap as a literal 12 — both are
+          tokens (RADIUS.card, cardStack), and neither copy could ever mount
+          the glass. See card-surface.test.ts. */}
+      <ACard style={cardStack}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{view.progression}</Text>
-      </View>
+      </ACard>
 
       <MeasuredOutcome planId={plan.id} />
 
@@ -201,41 +201,29 @@ export default function PercentProgram({
   );
 }
 
-/** The Explore SectionHead vocabulary — display-face title left, mono meta
- *  right. Shared by the ledger and schedule heads on this screen. */
 /**
- * The WAVEFORM week rail — one slim column per week whose bar height is that
- * week's real volume, so the plan's wave and taper read as shape before they're
- * read as numbers. Selection is the only accent. Full-bleed (the caller's rail
- * slot runs edge-to-edge); docks under the collapsed cover.
+ * The week rail — one chip per week, sticky under the collapsed cover.
+ *
+ * It used to be a WAVEFORM: each chip carried a bar whose height was that
+ * week's volume. The bars are gone. They were decoration dressed as data — the
+ * week's real volume is already stated in words beside the Schedule head, the
+ * heights were normalised against the plan's own peak (so the same wave read
+ * differently for every plan and compared to nothing), and being the one
+ * hand-rolled rail on a surface that has a shared primitive is exactly how the
+ * four dock rails drifted apart the first time. With the bars gone this is
+ * plainly what it always was — a MODE rail, one week selected, the panel below
+ * changing — so it rides the kit's DockRail/DockChip and cannot drift again.
+ * The gutter is COVER_GUTTER, not GUTTER: the rail slot is full-bleed and
+ * unpadded, and a resting chip lines up with the cover scaffold's column (16),
+ * not with the app's (12).
  */
-function WeekRail({ C, bars, weeks, week, setWeek, wkLabel }: { C: Palette; bars: PlanWeekBar[]; weeks: number[]; week: number; setWeek: (w: number) => void; wkLabel: string }) {
-  const byWeek = new Map(bars.map((b) => [b.week, b.value]));
-  const max = Math.max(1, ...bars.map((b) => b.value));
-  const hasBars = bars.length > 0;
-  // CoverScreen's rail slot is full-width and unpadded, so this padding IS the
-  // screen gutter — the token, not the number.
+function WeekRail({ weeks, week, setWeek, wkLabel, railLabel }: { weeks: number[]; week: number; setWeek: (w: number) => void; wkLabel: string; railLabel: string }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 8, gap: 2 }}>
-      {weeks.map((w) => {
-        const on = w === week;
-        const v = byWeek.get(w) ?? 0;
-        return (
-          <Pressable key={w} onPress={() => setWeek(w)} accessibilityRole="button" accessibilityState={{ selected: on }} hitSlop={4} style={{ width: 46, alignItems: "center", gap: 6, paddingVertical: 3 }}>
-            {hasBars ? (
-              <View style={{ width: 16, height: 34, justifyContent: "flex-end" }}>
-                <View style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: RADIUS.mark, backgroundColor: on ? C.lime : withAlpha(C.chalk, ALPHA.solid) }} />
-              </View>
-            ) : (
-              <View style={{ width: 22, height: 2, borderRadius: 2, backgroundColor: on ? C.lime : withAlpha(C.chalk, ALPHA.solid), marginTop: 16 }} />
-            )}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
-              {wkLabel} {w}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+    <DockRail label={railLabel} gutter={COVER_GUTTER}>
+      {weeks.map((w) => (
+        <DockChip key={w} role="mode" label={`${wkLabel} ${w}`} selected={w === week} onPress={() => setWeek(w)} />
+      ))}
+    </DockRail>
   );
 }
 
@@ -292,9 +280,13 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
   const allProse = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
 
   if (allProse) {
-    const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden" as const, marginBottom: 12 };
     return (
-      <View style={card}>
+      /* A ROW-LIST CARD: the rows run to the card's own edges and carry their
+         own 16 inset plus the hairlines between them, so this one takes
+         `padding: 0` and keeps the clip. That pad is the only thing about it
+         that was ever bespoke — the fill, the hairline, the radius and the
+         run gap were all the kit's, written out. */
+      <ACard style={[cardStack, { padding: 0, overflow: "hidden" }]}>
         <WeekHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} />
         {days.map((day, di) => {
           const lifts = day.sessions.flatMap((s) => s.lifts);
@@ -311,7 +303,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
             </View>
           );
         })}
-      </View>
+      </ACard>
     );
   }
 
@@ -331,20 +323,6 @@ function WeekHeader({ title, right, C }: { title: string; right: string | null; 
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
       <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
-    </View>
-  );
-}
-
-// The day's load shape — one hairline bar per prescription, the day-level echo
-// of the week waveform. Semantic: every bar is a real step (dayPulse, core).
-function Pulse({ day, C }: { day: ProgramDayView; C: Palette }) {
-  const bars = dayPulse(day);
-  if (!bars.length) return null;
-  return (
-    <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: 16 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {bars.map((b, i) => (
-        <View key={i} style={{ width: 3, borderRadius: 1.5, height: Math.max(3, Math.round(b.h * 16)), backgroundColor: b.hot ? C.lime : withAlpha(C.chalk, ALPHA.edge) }} />
-      ))}
     </View>
   );
 }
@@ -390,13 +368,22 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
 }
 
 // One accordion day: a pressable summary row (title + plain-words summary,
-// pulse + volume + chevron) that opens into the day's full tables.
+// volume + chevron) that opens into the day's full tables. The row used to
+// carry a PULSE too — a strip of hairline bars, the day-level echo of the week
+// waveform. It went with the waveform: the summary row already says what the
+// day is in words and how much of it there is as a figure, and a sparkline
+// nobody can read a number off is the third thing competing for the same row.
 function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open: boolean; onToggle: () => void; onLift: (l: ProgramLiftView, marker: string | null) => void; C: Palette }) {
   const expandable = day.sessions.some((s) => s.lifts.length > 0);
   const words = dayLeadWords(day);
   const right = dayContentSummary(day);
   return (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden", marginBottom: 12 }}>
+    /* ACard, not APressCard: what presses here is the HEADER ROW, which
+       collapses back to a header when the day is open — the card itself is
+       not a tap target, and making it one would put the whole expanded day's
+       tables inside the press. Same row-list treatment as the week card
+       above: `padding: 0`, because every row already insets itself by 16. */
+    <ACard style={[cardStack, { padding: 0, overflow: "hidden" }]}>
       <Pressable
         disabled={!expandable}
         onPress={onToggle}
@@ -416,7 +403,6 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
             </Text>
           )}
         </View>
-        <Pulse day={day} C={C} />
         {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
         {expandable && (
           <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: open ? C.lime : withAlpha(C.chalk, ALPHA.edge), backgroundColor: open ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>
@@ -431,7 +417,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
           ))}
         </Collapse>
       )}
-    </View>
+    </ACard>
   );
 }
 

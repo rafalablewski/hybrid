@@ -5,12 +5,12 @@ import {
   INJURY_FIGURES, INJURY_VIEWBOX, INJURY_AREA_KEY, INJURY_AREA_HINT_KEY,
   INJURY_WHEN, INJURY_WHEN_KEY, nearestInjuryArea, injuryTouchPoint, injuryDateFor,
   rtpView, riskRole, type InjuryWhen, type InjuryFigure, type MuscleGroup, type TissueRisk,
-
-  ALPHA,} from "@hybrid/core";
+  ALPHA,
+} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor, type Palette } from "../../lib/theme";
-import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { ACheckMark, RADIUS } from "./kit";
+import { fs, space, leading, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { ACard, ACheckMark, RADIUS } from "./kit";
 import { haptic } from "../../lib/haptics";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
@@ -321,7 +321,24 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
   };
 
   return (
-    <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 20, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
+    /* ACard, wearing the protocol's own colour as its accent rail.
+     *
+     * This was the LAST geometry left in Today's Recover cluster: an unfilled
+     * hairline box at radius 20 with 16/16/12 padding, sitting between the
+     * check-in card and the Heat row, both of which are ACard at radius 28 and
+     * a flat 20 pad. Three boxes, three shapes, one cluster — and on iOS 26 it
+     * was also the only one with no material at all, since it never carried a
+     * fill to begin with.
+     *
+     * THE COLOUR IS THE REASON IT STAYED HAND-DRAWN, and it is the reason it
+     * can stop: `accent` draws exactly the left rail this card wanted — lime
+     * once the athlete is cleared, blue while the ladder is still running —
+     * so the protocol keeps the one thing that made it look different from a
+     * panel of the day's figures, and gives up the four values that were only
+     * different because nobody had asked. The stage spine below already
+     * carries the same `accent`, so the rail and the ladder now agree by
+     * construction rather than by coincidence. */
+    <ACard accent={accent}>
       {/* WHAT AND HOW LONG — the two facts a protocol is about. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: C.chalk }}>
@@ -491,7 +508,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
           </View>
         ) : null}
       </View>
-    </View>
+    </ACard>
   );
 }
 

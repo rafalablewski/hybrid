@@ -71,9 +71,29 @@ export default function AuroraTrain() {
   const prescribedDone = isAthlete && !!doneToday;
 
   return (
+    // THE HEAD — a plain AHeading on the plain scaffold, and NO HERO. Train is
+    // a ROOT TAB, and the kit states the rule twice: AuroraScreen's `hero` prop
+    // ("a root tab has nothing to pop and no title to establish, so a rail there
+    // would be chrome for its own sake") and Nutrition at its own tab root ("AT
+    // THE TAB ROOT there is no hero, because a tab root has nothing to pop and
+    // no origin to name").
+    //
+    // This screen was briefly handed to the hero system for consistency with
+    // Performance and Feed. That was the wrong comparison — those two wear a
+    // hero as PUSHED screens, and Train's actual peers are the other tabs. It
+    // was also expensive: the hero's box is a fixed 132dp of which Train fills
+    // only the title, leaving the rail, eyebrow and meta rows reserved and
+    // empty, and pushing today's session card 34dp DOWN the screen whose whole
+    // job is starting a session in one tap. Reverted deliberately — see
+    // capabilities.ts `screen-head-guard` for the full argument, and do not
+    // re-add a hero here without reading it.
+    //
+    // The head takes NO size override: AHeading resolves the same `title` rung
+    // (fs.display) the hero does, so the title is identical in size to
+    // Performance's and Feed's — which is the consistency that was actually
+    // asked for. `aurora-head.test.ts` fails the build if that drifts back.
     <AuroraScreen>
-      <AHeading style={{ fontSize: 28 }}>{t("train.title")}</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>{t("train.intro")}</Text>
+      <AHeading>{t("train.title")}</AHeading>
 
       {/* Resume a workout left in progress — kept above the adaptive slot. */}
       {draft && (
@@ -144,11 +164,14 @@ export default function AuroraTrain() {
       </View>
 
       {/* Build a reusable routine. */}
+      {/* NO FOOTNOTE. This trailed a line promising the summary "lands in
+          History and on the web for the deep dive" — a web client retired in
+          Aug 2026, so it sent athletes somewhere that no longer exists, in
+          three languages. It was also the same restatement the intro was: the
+          screen ends on the control, not on prose about what happens next. */}
       <PressScale onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>＋ {t("train.buildRoutine")}</Text>
       </PressScale>
-
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: leading(fs.caption, "relaxed") }}>{t("train.finishedNote")}</Text>
     </AuroraScreen>
   );
 }

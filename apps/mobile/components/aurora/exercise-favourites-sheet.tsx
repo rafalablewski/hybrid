@@ -10,9 +10,10 @@ import {
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { ASearch , RADIUS} from "./kit";
+import { AuroraExerciseAvatar } from "./exercise-media";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { useExerciseFavourites, toggleExerciseFavourite } from "../../lib/exercise-favourites";
 import { haptic } from "../../lib/haptics";
 import { useListMotion } from "../../lib/list-motion";
@@ -79,9 +80,14 @@ export default function ExerciseFavouritesSheet({
         accessibilityLabel={`${on ? t("w.home.exw.unpin") : t("w.home.exw.pin")} – ${e.name}`}
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line, opacity: locked ? 0.45 : 1 }}
       >
-        <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.body, letterSpacing: tracking.display, color: on ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
-        </View>
+        {/* The SQUARE exercise avatar (shared — exercise-media), the same one the
+            Exercises browser draws: this sheet lists the same browse entries, so
+            a lift must not wear one tile here and another there. It held the
+            lift's INITIALS until now, which exercise-marks retired for being the
+            worst of both worlds — it repeated the name beside it in a form that
+            collided (Cable Chest Press and Cable Crossover both "CC"). The
+            implement says what the name doesn't. */}
+        <AuroraExerciseAvatar name={e.name} glyph={24} tint={on ? txt(C, C.lime) : C.ash} />
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
         {/* The pinned star rides the amber TEXT tone, not the fill (the

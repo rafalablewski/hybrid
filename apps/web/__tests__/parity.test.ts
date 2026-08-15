@@ -107,9 +107,20 @@ describe("the sheet's elongation", () => {
   });
 
   it("lays the panel out at the full height rather than sizing it to content", () => {
-    // The panel's height IS panelH, the same number the dismiss uses.
-    expect(mobileSheet).toMatch(/const panelH = Math\.round\(screenH \* sheetGesture\.detents\.large\)/);
+    // The panel's height IS panelH, the same number the dismiss uses. It is the
+    // `large` detent, and the ONE thing allowed to shorten it is the keyboard:
+    // a `fill` sheet that let the KeyboardAvoidingView pad it instead overflowed
+    // off the TOP, taking the grab handle, the title and the field with it.
+    // Anything else subtracted here means the panel is being sized to what it
+    // holds, which is the drift this guard exists for.
+    expect(mobileSheet).toMatch(/const panelH = Math\.round\(\s*Math\.min\(screenH \* sheetGesture\.detents\.large, screenH - keyboardH\)\s*\)/);
     expect(mobileSheet).toMatch(/height: panelH,/);
+  });
+
+  it("measures the keyboard only for a sheet that FILLS, never for a short one", () => {
+    // A short sheet is lifted by the KeyboardAvoidingView and needs no
+    // measurement; adding listeners for it would be cost with no effect.
+    expect(mobileSheet).toMatch(/useKeyboardHeight\(render && fill\)/);
   });
 
   it("claims the drag in both directions", () => {

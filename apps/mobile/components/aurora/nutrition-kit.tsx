@@ -1,22 +1,19 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Animated, PanResponder } from "react-native";
+import { type ReactNode } from "react";
+import { View, Text, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
-  springs, springToRN,
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
-  PICKER_SOURCES, pickerSourceLabelKey,
-  type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
+  PICKER_SOURCES, pickerSourceLabelKey, figureText,
+  type GapFigure, type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
-
-  ALPHA,} from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET , trackFigure} from "../../lib/ui";
+  ALPHA,
+} from "@hybrid/core";
+import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
-import { AMeter , RADIUS} from "./kit";
-import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { haptic } from "../../lib/haptics";
+import { AMeter, ASegment , RADIUS} from "./kit";
 import { RollingNumber } from "./rolling-number";
 import SwipeRow from "../swipe-row";
 
@@ -261,6 +258,9 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
  *     logged" under a hero that had just said 2325, so the one thing it never
  *     showed was the PROPORTION — which is the whole reason the hub draws a
  *     ring. Flat, this is that ring.
+ *   - and that meter is the FIRST COLUMN OF THE LEDGER, not a full-width block
+ *     above it. See the ledger's own note below: four figures of one day, one
+ *     form, one line.
  *   - every track is the shared `AMeter` (6dp, RADIUS.mark). The hand-rolled
  *     3dp/radius-2 bar here was the sixth spelling of one object.
  *   - a macro past its own target no longer turns SAND. It said nothing on the
@@ -296,13 +296,12 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
   // flag printed "50 kcal left" at 2 050 logged.
   const isOver = left < 0;
   const tone = gap.kcal.over ? txt(C, C.amber) : C.chalk;
-  const macros = gap.macros.filter((m) => m.figure.want != null);
   return (
     <View style={{ paddingHorizontal: PICKER_EDGE }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
         <RollingNumber
           value={String(Math.abs(left))}
-          style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: trackFigure(fs.stat), color: tone }}
+          style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: tracking.display, color: tone }}
         />
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
@@ -327,154 +326,197 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
           </View>
         ) : null}
       </View>
-      {/* THE DAY'S ENERGY, as a proportion. The ledger line is the meter's own
-          readout rather than a sentence floating above it — one object, not
-          two. `AMeter` draws the readout row above the track, which keeps the
-          reading order the block always had (figure → ledger → fill). */}
-      <AMeter
-        pct={gap.kcal.pct}
-        color={gap.kcal.over ? C.amber : C.lime}
-        value={t("w.recovery.nutrition.pick.ofTarget")
-          .replace("{a}", String(Math.round(gap.kcal.have)))
-          .replace("{b}", String(Math.round(gap.kcal.want ?? 0)))}
-      />
-      {macros.length ? (
-        // NO top margin: AMeter already carries `space.ms`, and that is the
-        // hero's one internal step — figure, energy, macros, evenly. Adding to
-        // it here made the second step 18 against the first's 10, which is a
-        // rhythm arrived at by addition rather than chosen.
-        <View style={{ flexDirection: "row", gap: space.lg }}>
-          {macros.map((m) => (
-            <View key={m.key} style={{ flex: 1 }}>
-              <AMeter
-                label={t(`w.recovery.nutrition.${m.key}`)}
-                value={`${Math.round(m.figure.have)}/${Math.round(m.figure.want ?? 0)}`}
-                pct={m.figure.pct}
-                color={C[MACRO_FILL[m.key]]}
-              />
-            </View>
-          ))}
-        </View>
-      ) : null}
+      {/* The day's four figures. The picker DROPS a macro nobody set a target
+          for: this block's subject is the gap, and a figure with nothing to be
+          short of has no place in it. (The diary keeps it — see MacroLedger.) */}
+      <MacroLedger C={C} figures={gap} onlyTargeted style={{ marginTop: space.ms }} />
     </View>
   );
 }
 
 /**
- * THE SOURCE LINE — Recent / Favorites / Meals / Foods, kept, with the box gone.
+ * THE LEDGER — a day's figures in ONE line, in ONE form.
+ *
+ *     KCAL 1675/2325   PROTEIN 118/150   CARBS 186/250   FAT 52/70
+ *
+ * ── WHY IT IS ONE COMPONENT ────────────────────────────────────────────────
+ * Two screens show these four numbers, and they said them in three dialects.
+ * The picker stated energy as a SENTENCE ("1675 of 2325 logged") over a
+ * full-width track and the macros as a ratio three-up; the diary's day card
+ * said `P 118/150g` under single-letter labels, on a 4dp bar of its own, with
+ * energy split off again into a big mono figure with a slashed target. Same
+ * day, same question — how much of what I planned have I logged — asked three
+ * ways, which is how a reader ends up doing conversions the app should have
+ * done. There is one form now, and it lives here.
+ *
+ * ── THE HEAD STACKS, AND THAT IS A WIDTH FACT ──────────────────────────────
+ * `AMeter` draws its own head as one row (label left, value right). That is
+ * right at three columns and impossible at four: four columns leave ~80dp each
+ * on a 393dp phone and ~76 on an SE, while "Protein 118/150" wants ~102 — so
+ * the shared head would have ellipsised the label on every column carrying a
+ * three-digit target, and "Kohlenhydrate" on all of them in German. So the
+ * readout stacks and the TRACK stays the shared AMeter: only the head above it
+ * is laid out for four-up.
+ *
+ * ── THE FIGURE ROLLS ───────────────────────────────────────────────────────
+ * These are the numbers the picker exists to move — log a food and all four
+ * change under your thumb. The hero above them rolled, the meal total beside it
+ * rolled, the meter fills travelled, and the ledger jump-cut, so one event read
+ * as two. The whole `have/want` string goes through `RollingNumber`: only the
+ * changed digits travel, the "/" is punctuation and stays put, and a target
+ * that changes rolls too.
+ *
+ * ── A FIGURE WITH NO TARGET STILL HAPPENED ─────────────────────────────────
+ * `want: null` means nobody set a target, never that the target is zero. Such a
+ * column states the amount and draws NO track — a bar at 0 % reads as "you have
+ * eaten none of your carbs" when the truth is "you have no carb target". Which
+ * columns survive is the caller's call, and the two callers differ honestly:
+ * the picker is about the GAP so it drops them (`onlyTargeted`), the diary is a
+ * RECORD of the day so it keeps them.
+ */
+export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
+  C: ReturnType<typeof useTheme>["palette"];
+  /** the day's figures — `nutritionGap` (picker) or `nutritionFigures` (diary) */
+  figures: NutritionGap;
+  /** drop a macro that has no target instead of reporting the amount alone */
+  onlyTargeted?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { t } = useLang();
+  const macros = onlyTargeted ? figures.macros.filter((m) => m.figure.want != null) : figures.macros;
+  /**
+   * Energy first, then the macros — one list, because they are drawn as one
+   * row: energy is not a different KIND of thing from protein here, it is the
+   * first of four answers to the same question.
+   *
+   * `kcal` is the unit itself rather than a translated noun. It is what every
+   * food row on the picker already says, and it is the same word in all three
+   * locales; the macros keep their translated names.
+   *
+   * OVER is flagged on the ENERGY alone, in SAND — the hub's rule. A macro past
+   * its own target says so with a full track, and carbs are DRAWN in sand, so a
+   * sand carb figure would say nothing at all.
+   */
+  const items: { key: string; label: string; figure: GapFigure; fill: string; tone: string }[] = [
+    {
+      key: "kcal",
+      label: "kcal",
+      figure: figures.kcal,
+      fill: figures.kcal.over ? C.amber : C.lime,
+      tone: figures.kcal.over ? txt(C, C.amber) : C.chalk,
+    },
+    ...macros.map((m) => ({
+      key: m.key,
+      label: t(`w.recovery.nutrition.${m.key}`),
+      figure: m.figure,
+      fill: C[MACRO_FILL[m.key]],
+      tone: C.chalk,
+    })),
+  ];
+  return (
+    <View style={[{ flexDirection: "row", gap: space.md }, style]}>
+      {items.map((item) => (
+        <View
+          key={item.key}
+          style={{ flex: 1 }}
+          // A column reads as ONE figure, not as a label plus a number plus a
+          // progress bar: the AMeter inside is collapsed into this sentence.
+          // The retired "{a} of {b} logged" line lives on here, which is the
+          // one place a sentence beats a ratio.
+          accessible
+          accessibilityLabel={
+            item.figure.want == null
+              ? `${item.label} ${Math.round(item.figure.have)}`
+              : `${item.label} – ${t("w.recovery.nutrition.pick.ofTarget")
+                  .replace("{a}", String(Math.round(item.figure.have)))
+                  .replace("{b}", String(Math.round(item.figure.want)))}`
+          }
+        >
+          <Text
+            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            numberOfLines={1}
+            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
+          >
+            {item.label}
+          </Text>
+          <View style={{ marginTop: space.xxs }}>
+            <RollingNumber
+              value={figureText(item.figure.have, item.figure.want)}
+              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: item.tone }}
+            />
+          </View>
+          {/* No target, no track. The amount is the whole statement. */}
+          {item.figure.want != null ? <AMeter pct={item.figure.pct} color={item.fill} /> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/**
+ * THE SOURCE SWITCH — Recent / Favorites / Meals / Foods, on the app's ONE
+ * segmented control.
  *
  * The four sources are four different questions (what did I just eat, what do I
- * always eat, what have I built, what have I saved) and all four stay. What the
- * redesign drops is the PILL BAR they were wrapped in: a bordered, filled,
- * radiused seventh container whose selected tab wore CHARTREUSE — the app's one
- * "go" colour — on a control that goes nowhere.
+ * always eat, what have I built, what have I saved) and all four stay. What
+ * changed is the control drawn around them: this was the last hand-drawn
+ * selection control in the app, and it is `ASegment` now — the same track, the
+ * same lens, the same `springs.lens` travel and the same `haptic.selection`
+ * that the Today hub, the This-week filter, Statistics, Nutrition TRENDS and
+ * Settings all switch on. Trends is one tap from this screen and was switching
+ * on a track while the picker switched on an underline; the athlete has no way
+ * to read that as anything but two apps.
  *
- * Selection is carried by weight and a rule instead. No border, no radius, no
- * fill, no accent. The counts are the Explore section head's mono meta, moved
- * onto the label they describe.
+ * ── WHY THIS TOOK THREE PASSES, RECORDED SO IT TAKES NO MORE ───────────────
+ * The two earlier arguments here were both about the NATIVE control, and both
+ * are settled — but neither of them was ever an argument against this one.
  *
- * ── AND IT IS THE ONLY FORM, ON EVERY PLATFORM ─────────────────────────────
- * This was argued twice and settled once, on the device rather than in prose.
- *
- * A design pass replaced the iOS system segmented control here with this line
- * everywhere, on taste: it re-introduced a filled radiused track on a screen of
+ * A design pass replaced the iOS system segmented control with an underline
+ * line, on taste: it re-introduced a filled radiused track on a screen of
  * type-on-the-ground, it squeezed four unequal questions into equal widths, and
- * it dropped the counts the parent already computes. Asked to put the native
- * control back, the honest answer turned out to be that there is nothing to put
- * back — #423 had already DELETED it from the app for a structural reason no
- * amount of taste survives: a SwiftUI `Host` sizes its RN box from its content
- * once, at mount, and every segmented control in this app mounts before it
- * knows its content (labels arrive from `useLang`), so the control drew outside
- * its own frame. The picker was one of the surfaces it broke on.
+ * it dropped the counts the parent already computes. The product decision then
+ * went the other way and restored the native fork — and #423 deleted THAT for a
+ * structural reason no amount of taste survives: a SwiftUI `Host` sizes its RN
+ * box from its content once, at mount, and every segmented control in this app
+ * mounts before it knows its content (labels arrive from `useLang`), so the
+ * control drew outside its own frame. The picker was one of the surfaces it
+ * broke on. `design-tokens.test.ts` fails on any code reference to
+ * `GlassSegment`, so that third attempt is impossible rather than discouraged.
  *
- * So this is not the consolation form, it is the one that lays out — and it
- * keeps the counts. `design-tokens.test.ts` fails on any code reference to
- * `GlassSegment`, which is the guard that makes the third attempt impossible
- * rather than merely discouraged.
+ * What the underline outlived, then, was a control that no longer exists — and
+ * the replacement it was never weighed against is Yoga-laid-out, carries no
+ * accent (the lens is a neutral step of the text colour, never chartreuse), and
+ * lost only ONE of the three objections: the counts. So the counts moved onto
+ * `ASegment` as its `meta` slot rather than the picker keeping a control of its
+ * own to hold them, and the label shrinks before it truncates so four unequal
+ * German words survive four equal widths. Nothing about this screen is left
+ * arguing for a bespoke switch.
  *
- * ── THE RULE TRAVELS ───────────────────────────────────────────────────────
- * Selection is the whole job of this control, and it used to CUT: the 2dp rule
- * was a per-tab border that vanished under one label and appeared under
- * another, so the one thing the control exists to say was the one thing it
- * never showed happening. It is now a single indicator that flies, on
- * `springs.lens` — the app's named SELECTION token, the same spring the Today
- * hub's pill uses — measuring each tab so the rule lands on the label's true
- * width rather than an assumed one. Reduce Motion puts it there outright, and
- * `haptic.selection` marks the commit, which is what this codebase does
- * everywhere else you move through discrete values.
+ * The rule this control used to carry is gone with it. That hairline was doing
+ * two jobs — saying which tab was selected, and giving the list beneath it a top
+ * edge — and a track is an OBJECT, not a rule: the list opens on its first row
+ * now, with the head matter's own step above it (see the call site).
  */
-export function SourceLine({ C, value, counts, onChange }: {
-  C: ReturnType<typeof useTheme>["palette"];
+export function SourceSwitch({ value, counts, onChange }: {
   value: PickerSourceKey;
   counts: Record<PickerSourceKey, number>;
   onChange: (key: PickerSourceKey) => void;
 }) {
   const { t } = useLang();
-  const reduced = useReducedMotion();
-  // Measured per tab — the rule is as wide as the label it underlines, and the
-  // four labels are deliberately unequal.
-  const [slots, setSlots] = useState<Record<string, { x: number; w: number }>>({});
-  const x = useRef(new Animated.Value(0)).current;
-  const w = useRef(new Animated.Value(0)).current;
-  const placed = useRef(false);
-  const slot = slots[value];
-  useEffect(() => {
-    if (!slot) return;
-    // The FIRST placement is not a move: the rule belongs under the selected
-    // tab from the first frame, and flying it in from x=0 on mount would
-    // animate the screen's arrival instead of the user's choice.
-    if (!placed.current || reduced) {
-      placed.current = true;
-      x.setValue(slot.x); w.setValue(slot.w);
-      return;
-    }
-    const cfg = { ...springToRN(springs.lens), useNativeDriver: false };
-    Animated.parallel([
-      Animated.spring(x, { toValue: slot.x, ...cfg }),
-      Animated.spring(w, { toValue: slot.w, ...cfg }),
-    ]).start();
-  }, [slot?.x, slot?.w, reduced, x, w]);
-
   return (
-    <View
-      accessibilityRole="tablist"
-      style={{ flexDirection: "row", gap: 18, borderBottomWidth: 1, borderBottomColor: C.line, paddingHorizontal: PICKER_EDGE }}
-    >
-      {PICKER_SOURCES.map((key) => {
-        const on = key === value;
-        return (
-          <Pressable
-            key={key}
-            onPress={() => { if (!on) haptic.selection(); onChange(key); }}
-            onLayout={(e) => {
-              const { x: lx, width } = e.nativeEvent.layout;
-              setSlots((s) => (s[key] && s[key]!.x === lx && s[key]!.w === width ? s : { ...s, [key]: { x: lx, w: width } }));
-            }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            style={{ flexDirection: "row", alignItems: "baseline", gap: 5, paddingBottom: 11 }}
-          >
-            <Text
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              style={{ fontFamily: on ? F.bold : F.semi, fontSize: fs.body, color: on ? C.chalk : C.ash }}
-            >
-              {t(pickerSourceLabelKey(key))}
-            </Text>
-            <Text
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: C.ash }}
-            >
-              {counts[key]}
-            </Text>
-          </Pressable>
-        );
-      })}
-      {slot ? (
-        <Animated.View
-          pointerEvents="none"
-          style={{ position: "absolute", bottom: -1, left: PICKER_EDGE, height: 2, backgroundColor: C.chalk, width: w, transform: [{ translateX: x }] }}
-        />
-      ) : null}
+    // The object edge, like the field and the meter above it — the track is a
+    // box on the screen's column, and PICKER_EDGE is where boxes stand.
+    <View style={{ paddingHorizontal: PICKER_EDGE }}>
+      <ASegment
+        options={PICKER_SOURCES.map((key) => ({
+          id: key,
+          label: t(pickerSourceLabelKey(key)),
+          meta: counts[key],
+        }))}
+        value={value}
+        onPick={onChange}
+      />
     </View>
   );
 }

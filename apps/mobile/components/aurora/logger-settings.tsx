@@ -48,7 +48,10 @@ export default function AuroraLoggerSettings() {
   const Group = <T extends string>({ title, options, value, onPick }: { title: string; options: { id: T; label: string }[]; value: T; onPick: (v: T) => void }) => (
     <>
       <SLabel>{title}</SLabel>
-      <ACard><ASegment options={options} value={value} onPick={onPick} /></ACard>
+      {/* `surface="card"` — the group IS an ACard (ink2), and the track's
+          default fill is that same ink2, so all four of these switches drew an
+          invisible track on any device without Liquid Glass. */}
+      <ACard><ASegment options={options} value={value} onPick={onPick} surface="card" /></ACard>
     </>
   );
 

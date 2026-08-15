@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { FREE_PRODUCT_LIMIT } from "@hybrid/core";
+import { FREE_PRODUCT_LIMIT, parseFoodPortions } from "@hybrid/core";
 import { getOrCreateDbUser, entitlementOf } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
+import type { Prisma } from "@prisma/client";
 
 // The user's custom FOOD PRODUCT library (FoodProduct) — reusable foods with
 // per-serving macros, the offline half of the (blocked) food database. GET lists;
@@ -56,6 +57,7 @@ export async function POST(request: Request) {
   if (parsed.error) return parsed.error;
   const b = parsed.data as {
     name?: unknown; subname?: unknown; servingLabel?: unknown; servingGrams?: unknown;
+    portions?: unknown;
     kcal?: unknown; protein?: unknown; carbs?: unknown; fat?: unknown;
     satFat?: unknown; sugar?: unknown; fiber?: unknown; salt?: unknown; verifiedId?: unknown;
   };
@@ -86,6 +88,10 @@ export async function POST(request: Request) {
       data: {
         ...base,
         servingGrams: panel(b.servingGrams),
+        // THE FOOD'S PORTIONS — its pack, its slice, whatever it comes in —
+        // each carrying where it came from. Validated in core so a malformed
+        // entry is dropped rather than stored as a unit worth nothing.
+        portions: parseFoodPortions(b.portions) as unknown as Prisma.InputJsonValue,
         satFat: panel(b.satFat),
         sugar: panel(b.sugar),
         fiber: panel(b.fiber),

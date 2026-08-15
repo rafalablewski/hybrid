@@ -123,16 +123,16 @@ describe("doneReceipt", () => {
 });
 
 describe("doneReceiptStats", () => {
-  it("orders duration – volume – distance – sets, unit inside the value", () => {
+  it("reads in the app's one figure order — volume, sets, duration — unit inside the value", () => {
     const stats = doneReceiptStats(doneReceipt(session()), "kg");
     expect(stats.map((s) => s.labelKey)).toEqual([
-      "w.home.rail.duration",
       "w.home.today.volume",
       "w.home.today.sets",
+      "w.home.rail.duration",
     ]);
-    expect(stats[0]!.value).toBe("48 min");
-    expect(stats[1]!.value).toBe("5.5 t");
-    expect(stats[2]!.value).toBe("11");
+    expect(stats[0]!.value).toBe("5.5 t");
+    expect(stats[1]!.value).toBe("11");
+    expect(stats[2]!.value).toBe("48 min");
   });
 
   // ── sets are a STRENGTH figure ────────────────────────────────────────────

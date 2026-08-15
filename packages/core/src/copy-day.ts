@@ -50,6 +50,10 @@ export interface CopyableEntry extends MicroFacts {
   qty: number;
   ts: string;
   verifiedId?: string | null;
+  /** what the athlete entered and the unit they entered it in (portion.ts) —
+   *  a copied 35 g of cheese is still 35 g */
+  amount?: number | null;
+  amountUnit?: string | null;
 }
 
 /** One entry to write, ready to POST. Deliberately the SAME shape the normal
@@ -66,6 +70,8 @@ export interface CopyDraft extends MicroFacts {
   /** ISO timestamp on the TARGET day, at the source entry's time of day */
   ts: string;
   verifiedId: string | null;
+  amount: number | null;
+  amountUnit: string | null;
 }
 
 /** Every entry on one local calendar day, oldest first. */
@@ -148,6 +154,11 @@ export function copyDayPlan(logs: CopyableEntry[], opts: CopyOptions): CopyPlan 
     // Provenance survives a copy: a Verified food copied forward is still that
     // Verified food, and the diary entry can still be traced to the catalog.
     verifiedId: l.verifiedId ?? null,
+    // So does the PORTION AS ENTERED. A copied entry that kept only its
+    // quantity would come back reading "0.35" on a day the original read
+    // "35 g" — the same meal, described two ways.
+    amount: l.amount ?? null,
+    amountUnit: l.amountUnit ?? null,
   }));
 
   return {

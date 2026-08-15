@@ -4,13 +4,13 @@ import Svg, { Path, Circle, Polyline } from "react-native-svg";
 import {
   type NutritionGoal, type NutritionNudge as NutritionNudgeShape, type NutritionSummary,
   type WeightPoint,
-
-  ALPHA,} from "@hybrid/core";
+  ALPHA,
+} from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard, AHeading, RADIUS } from "./kit";
+import { APill, ACard, ASection, AMeter, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { Glyph } from "./nutrition-kit";
 import { withAlpha } from "./field";
@@ -134,15 +134,31 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
               </View>
             ))}
           </View>
+          {/* MACRO BALANCE — the last hand-drawn proportion in nutrition, and
+              now the shared meter like every other.
+
+              It was a `label | 4dp track | 52dp value` row, three of them
+              stacked: a fifth track height (4 against AMeter's 6), a fifth
+              radius, a label column sized to a magic 52dp — and the label wore
+              its macro's accent as TYPE while the fill beside it wore the same
+              accent. One quantity, painted twice, in the one place the app had
+              already settled: the fill carries the colour, the label is ash.
+
+              The row also broke in the two ways a hand-sized label column
+              always does: "Kohlenhydrate" in a 52dp box, and a value column
+              wide enough for "9%" but not for a figure that grew. AMeter puts
+              the label and its value on one row ABOVE the track, so both are
+              free to take the width they need, and all three tracks share a
+              baseline.
+
+              These are shares of ENERGY, not amounts against a target, so they
+              stay their own block rather than joining the ledger — the ledger's
+              form is `have/want` and a split has no `want`. */}
           {summary.macroSplit ? (
             <View style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("w.recovery.nutrition.macroBalance")}</Text>
-              {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.violet, txt(C, C.violet)]] as const).map(([label, pct, col, colT]) => (
-                <View key={label} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: colT, width: 52 }}>{t(label)}</Text>
-                  <View style={{ flex: 1, height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink2, overflow: "hidden" }}><View style={{ width: `${pct}%`, height: 4, borderRadius: RADIUS.pill, backgroundColor: col }} /></View>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, width: 30, textAlign: "right" }}>{pct}%</Text>
-                </View>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.macroBalance")}</Text>
+              {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.violet]] as const).map(([label, pct, col]) => (
+                <AMeter key={label} label={t(label)} value={`${pct}%`} pct={pct} color={col} />
               ))}
             </View>
           ) : null}
@@ -208,7 +224,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
 
       {step === 0 ? (
         <View style={{ marginTop: 24 }}>
-          <AHeading style={{ fontSize: fs.title }}>{t("w.recovery.nutrition.pickGoal")}</AHeading>
+          <ASection title={t("w.recovery.nutrition.pickGoal")} style={{ marginTop: 0, marginBottom: 0 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickGoalSub")}</Text>
           {GOAL_OPTS.map((o) => choice(goal === o.id, o.label, o.sub, () => setGoal(o.id)))}
           {primary(t("w.recovery.nutrition.continue"), () => setStep(1))}
@@ -217,7 +233,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
 
       {step === 1 ? (
         <View style={{ marginTop: 24 }}>
-          <AHeading style={{ fontSize: fs.title }}>{t("w.recovery.nutrition.pickActivity")}</AHeading>
+          <ASection title={t("w.recovery.nutrition.pickActivity")} style={{ marginTop: 0, marginBottom: 0 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickActivitySub")}</Text>
           {MACT.map((a) => choice(activity === a.id, t(a.labelKey), t(a.subKey), () => setActivity(a.id)))}
           <ACard solid style={{ marginTop: 4 }}>
@@ -247,7 +263,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
         <View style={{ marginTop: 24 }}>
           <ACard solid style={{ alignItems: "center", paddingVertical: 20, backgroundColor: withAlpha(pa.fill, ALPHA.wash), borderColor: withAlpha(pa.fill, ALPHA.line) }}>
             <View style={{ backgroundColor: withAlpha(pa.fill, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
-            <AHeading style={{ fontSize: fs.headline, marginTop: 16, textAlign: "center" }}>{t("w.recovery.nutrition.trialTitle")}</AHeading>
+            <ASection title={t("w.recovery.nutrition.trialTitle")} style={{ marginTop: 16, marginBottom: 0, justifyContent: "center" }} titleStyle={{ fontSize: fs.headline, lineHeight: leading(fs.headline, "snug"), textAlign: "center" }} />
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.trialSub")}</Text>
             <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, marginTop: 16 }}>$9.99<Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text></Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3 }}>{t("w.recovery.nutrition.trialNote")}</Text>

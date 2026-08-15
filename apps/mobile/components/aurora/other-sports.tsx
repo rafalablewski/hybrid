@@ -8,8 +8,8 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { GUTTER, RADIUS } from "./kit";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { GUTTER, RADIUS, AMarkTile } from "./kit";
 import { useChartScrub } from "./chart-scrub";
 import HistoryStrip from "./history-strip";
 
@@ -166,7 +166,10 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
   const body = (
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <Text style={{ fontSize: fs.body }}>{lane.icon}</Text>
+        {/* 24dp — the RAIL-CARD rung (see AMarkTile). The tile is smaller here
+            than on a full-width header because the card is only 150 wide and
+            the sport's name has to survive beside it. */}
+        <AMarkTile size={24}><Text style={{ fontSize: fs.body }}>{lane.icon}</Text></AMarkTile>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{lane.sport}</Text>
       </View>
 

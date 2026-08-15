@@ -3,13 +3,13 @@ import { View, Text, TextInput } from "react-native";
 import {
   FOOD_ROLES, pantryShelves, pantryStats, roleCounts,
   type FoodRole, type PantryFood,
-
-  ALPHA,} from "@hybrid/core";
-import { fs, F, leading, tracking, trackFigure, PressScale as Pressable } from "../../lib/ui";
+  ALPHA,
+} from "@hybrid/core";
+import { fs, F, leading, tracking, PressScale as Pressable , trackFigure} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { AuroraIcon } from "./icons";
-import { DockRail, DockChip, CARD_PAD, GUTTER , RADIUS} from "./kit";
+import { ACard, DockRail, DockChip, GUTTER , RADIUS} from "./kit";
 import GroupMark from "./group-mark";
 import { FoodRow, IClose, IPlus, Glyph } from "./nutrition-kit";
 import { withAlpha } from "./field";
@@ -63,7 +63,10 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
   const counts = useMemo(() => roleCounts(items), [items]);
   const pct = Math.round(stats.completeness * 100);
   return (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, marginTop: 16 }}>
+    /* ACard. Nothing here was ever this card's own — the radius was the
+       literal 28 that RADIUS.card holds and the pad was CARD_PAD already, so
+       the whole box was the kit spelled out. Only the leading gap is passed. */
+    <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: fs.stat, color: C.chalk }}>{stats.count}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -95,7 +98,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6, lineHeight: leading(fs.nano, "snug") }}>
         {t("w.recovery.nutrition.pn.fullyStated").replace("{n}", String(stats.complete)).replace("{m}", String(stats.count))}
       </Text>
-    </View>
+    </ACard>
   );
 }
 
@@ -121,7 +124,7 @@ export function PantrySearchToggle({ open, onToggle }: { open: boolean; onToggle
 
 export function PantryScreen<T extends PantryFood>({
   items, query, onQuery, searchOpen, onSearchOpen, onLogOne, onOpen, onDelete,
-  onCreate, canCreate, full, limit, msg, dbSlot, searchHint, premium,
+  onCreate, canCreate, full, limit, msg, dbSlot, searchHint, premium, usualFor,
 }: {
   items: T[];
   /** Shared with the food-database search, so ONE field asks both questions. */
@@ -131,8 +134,14 @@ export function PantryScreen<T extends PantryFood>({
    *  accessory — a slot this component does not draw. Web parity: same props. */
   searchOpen: boolean;
   onSearchOpen: (open: boolean) => void;
-  /** ⊕ — log one serving to the current meal, now, with no sheet. */
+  /** ⊕ — log this food to the current meal, now, with no sheet: the athlete's
+   *  USUAL amount when they have one, otherwise one serving. */
   onLogOne: (f: T) => void;
+  /** what this athlete usually logs for a food, learned from their own diary
+   *  (core usualAmounts). The row says it, because ⊕ acts on it — a tap that
+   *  logged 35 g while the row read "100 g" would be the screen and the button
+   *  disagreeing. */
+  usualFor?: (f: T) => { amount: number; unit: string } | null;
   /** the row body — the portion editor, for a quantity and the full panel. */
   onOpen: (f: T) => void;
   onDelete: (id: string) => void;
@@ -157,8 +166,13 @@ export function PantryScreen<T extends PantryFood>({
   const matches = shelves.reduce((n, s) => n + s.items.length, 0);
   const q = query.trim();
 
-  const foodMeta = (f: T) =>
-    `${f.servingLabel ?? ""}${f.servingLabel ? " – " : ""}${Math.round(f.kcal)} kcal – ${Math.round(f.protein)}P ${Math.round(f.carbs)}C ${Math.round(f.fat)}F`;
+  const foodMeta = (f: T) => {
+    const usual = usualFor?.(f);
+    const head = usual
+      ? t("w.recovery.nutrition.pt.usually").replace("{v}", `${usual.amount} ${usual.unit}`)
+      : f.servingLabel ?? "";
+    return `${head}${head ? " – " : ""}${Math.round(f.kcal)} kcal – ${Math.round(f.protein)}P ${Math.round(f.carbs)}C ${Math.round(f.fat)}F`;
+  };
 
   return (
     <View>

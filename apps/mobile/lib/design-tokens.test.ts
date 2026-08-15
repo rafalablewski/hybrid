@@ -157,7 +157,7 @@ describe("type scale", () => {
     //     but the guard is load-bearing and a rename is not worth weakening it
     //     for. It sits as a raw 22 and is counted here, which is the honest
     //     place for a site that has no rung it is allowed to name.
-    expectAtMost(hits(/fontSize:\s*\d+/g), 89, "raw fontSize → use an fs.* rung");
+    expectAtMost(hits(/fontSize:\s*\d+/g), 87, "raw fontSize → use an fs.* rung");
   });
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
@@ -320,7 +320,7 @@ describe("geometry", () => {
     // concentric inset, or a genuine off-ladder choice — and only the third kind
     // is sweepable. That is a different job from the rename and is not attempted
     // here.
-    expectAtMost(hits(/borderRadius:\s*\d/g), 166, "raw borderRadius → RADIUS.*");
+    expectAtMost(hits(/borderRadius:\s*\d/g), 163, "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -581,7 +581,7 @@ describe("colour arithmetic", () => {
     // where none exists. The remaining count is those two things, and it should
     // fall only if one of them turns out to be a tint in disguise — NOT by
     // adding rungs until the number reaches zero.
-    expectAtMost(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 120,
+    expectAtMost(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 119,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number");
   });
 
@@ -829,6 +829,52 @@ describe("presentation", () => {
     // sheet that gives them a height.
     expect(codeHits(/\bGlassSegment\b/g)).toEqual([]);
     expect(codeHits(/pickerStyle\(\s*["']segmented["']\s*\)/g)).toEqual([]);
+  });
+
+  it("HARD — a tab row is the shared control, never a hand-drawn one", () => {
+    // The other half of the rule above, and the one that actually kept getting
+    // broken. Forbidding the NATIVE segmented control says nothing about the
+    // four surfaces that drew their own instead — the nutrition picker's
+    // sources, the profile's tabs, the public profile's tabs and the day card's
+    // session toggle — and every one of them was written by somebody who had
+    // read the rules and concluded, reasonably, that a track was too heavy
+    // there. Four reasonable local decisions are how an app ends up switching
+    // four ways.
+    //
+    // A tab row is `ASegment`. The one file allowed to spell tabs by hand is
+    // the shared control's own implementation, which has to.
+    //
+    // NOTE FOR THE NEXT ARGUMENT, because it will be made again and it is a
+    // GOOD argument: "a track inside a card is a second surface." That is true
+    // of a RAISED track and it is why the card case sat unconverted longest —
+    // the answer is `surface: 'card'`, which recesses the track into the card
+    // instead of stacking one on it. Reach for that before reaching for a
+    // bespoke row.
+    const SHARED = "components/aurora/liquid-seg.tsx";
+    const byHand = codeHits(/accessibilityRole=\{?\s*["']tab(?:list)?["']/g).filter((h) => !h.startsWith(SHARED));
+    expect(byHand).toEqual([]);
+  });
+
+  it("HARD — the underline selection rule gives way to the shared control", () => {
+    // THE SAME DEFECT, SPELLED WITHOUT THE ROLE — and the reason the rule above
+    // is not the whole guard. A hand-drawn tab row that never sets
+    // `accessibilityRole` is invisible to it, and writing this one found two
+    // that nobody had counted: the period switches in `trends.tsx` and
+    // `exercise-page.tsx`. Both were a row of labels with a 2dp CHARTREUSE
+    // bottom border under the selected one — a segmented control with the track
+    // taken off, and the accent spent on a control that goes nowhere.
+    //
+    // It shipped as a RATCHET at 2 for one honest reason: the Trends switch
+    // shares a band row WITH ITS SECTION LABEL, so dropping a track in changes
+    // that row's shape, and that is a design decision a guard has no business
+    // making. The decision was made — the label keeps its natural width, the
+    // track takes the rest of the row — so the ceiling is zero and this is HARD,
+    // exactly as the ratchet said it would be.
+    //
+    // The pattern is deliberately narrow — width 2 AND a colour ternary on the
+    // same line — so it catches the SELECTED/not idiom and leaves plain 2dp
+    // dividers alone.
+    expect(codeHits(/borderBottomWidth:\s*2\b[^\n]*borderBottomColor:[^\n]*\?/g)).toEqual([]);
   });
 
   it("HARD — a COVER pads itself; no native SafeAreaView inside a fullScreenModal", () => {

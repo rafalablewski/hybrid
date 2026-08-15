@@ -4,6 +4,7 @@ import { exerciseMedia, exerciseThumb, inferBlockKind, type ExerciseMediaAsset }
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, tracking, PressScale as Pressable } from "../../lib/ui";
+import { AMarkTile } from "./kit";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraExerciseMark from "./exercise-mark";
 import { RADIUS } from "./kit";
@@ -142,6 +143,50 @@ function Loop({ frames, cycleMs, poster, alt, active }: { frames: string[]; cycl
         />
       ))}
     </View>
+  );
+}
+
+/* ── the exercise AVATAR: the tile that carries the thumb ── */
+
+/**
+ * THE EXERCISE AVATAR — what a lift wears in a row, a card header or a picker
+ * result: the kit's square `AMarkTile` with the lift's own mark already inside.
+ * A lift is a THING — an implement, a drawing, a piece of the catalogue — not a
+ * face, so it takes the square and a PERSON keeps the circle.
+ *
+ * The box is the kit's, not this file's and certainly not the call site's: six
+ * surfaces drew their own before the tile existed. This is now the ONLY way a
+ * lift is pictured in a row or a header — `variant="thumb"` is still offered for
+ * a surface that genuinely owns its own frame, but nothing takes it today, so
+ * treat a new caller of it as a question rather than a pattern.
+ */
+export function AuroraExerciseAvatar({
+  name,
+  size = 40,
+  glyph,
+  tint,
+  icon,
+  label,
+}: {
+  name: string;
+  /** The tile's box. */
+  size?: number;
+  /** Mark size inside the box; defaults to 60% of it. */
+  glyph?: number;
+  /** Mark colour; defaults to the lift's modality accent. */
+  tint?: string;
+  /** A catalogue emoji, drawn in place of the implement mark when present. */
+  icon?: string | null;
+  /** a11y label — see `AMarkTile`; give one only where the row doesn't already say it. */
+  label?: string;
+}) {
+  const { palette: C } = useTheme();
+  return (
+    <AMarkTile size={size} label={label}>
+      {icon
+        ? <Text style={{ fontSize: Math.round(size * 0.42) }}>{icon}</Text>
+        : <Thumb name={name} size={glyph ?? Math.round(size * 0.6)} tint={tint ?? modalityTint(name, C)} />}
+    </AMarkTile>
   );
 }
 

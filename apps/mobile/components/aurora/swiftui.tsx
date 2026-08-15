@@ -14,14 +14,11 @@ import {
   Picker,
   RNHostView,
   RoundedRectangle,
-  Spacer,
   Stepper,
   Text as SwiftText,
 } from "@expo/ui/swift-ui";
 import {
-  Animation,
   accessibilityLabel,
-  animation,
   buttonStyle,
   contentShape,
   datePickerStyle,
@@ -36,7 +33,6 @@ import {
   tag,
   tint,
 } from "@expo/ui/swift-ui/modifiers";
-import type { Spring } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { RADIUS, withAlpha } from "./kit";
 import { ALPHA } from "@hybrid/core";
@@ -383,12 +379,13 @@ export function GlassSelectMenu<T extends string>({
  * button it belongs with.
  *
  * The pieces already existed separately and drifted apart: `GlassMenuButton`
- * drew a menu, `GlassSelectMenu` drew a picker trigger, and `GlassPillRow`
- * knew how to FUSE capsules — but only as decoration, `pointerEvents="none"`
- * with React Native taking the taps. This is those three joined up, and it is
- * a stricter reading of the composition rule than what it replaces: today the
- * logger's timer chip and its `⋯` are two separate `Host`s standing next to
- * each other pretending to be a group.
+ * drew a menu and `GlassSelectMenu` drew a picker trigger. This is those joined
+ * up, and it is a stricter reading of the composition rule than what it
+ * replaces: today the logger's timer chip and its `⋯` are two separate `Host`s
+ * standing next to each other pretending to be a group. (The now-deleted
+ * `GlassPillRow`, the Today dock's fusing capsules, knew the same trick but
+ * only as decoration — `pointerEvents="none"` with React Native taking the
+ * taps.)
  *
  * The LEFT slot is a toggle you flip in the moment (the rest timer: armed or
  * not, counting when it counts). The RIGHT slot is the menu holding everything
@@ -583,123 +580,6 @@ export function GlassWheel<T extends string>({
           </SwiftText>
         ))}
       </Picker>
-    </Host>
-  );
-}
-
-/**
- * LIQUID GLASS PILL ROW — a leading-anchored row of glass capsules that MORPH.
- *
- * This is the one place in the app that uses Liquid Glass as a *behaviour*
- * rather than as a material. Inside a `GlassEffectContainer`, capsules tagged
- * with a `glassEffectId` in a shared `Namespace` are not independent surfaces:
- * when they come within the container's `spacing` of each other the system
- * FUSES them into one lozenge, and when their frames change it flows the glass
- * between the old shape and the new — the specular rim travelling, the
- * refraction re-sampling, a droplet stretching and pinching off. None of that
- * can be approximated by a blur behind an animated view, which is what this
- * replaced: a row of static glass tiles whose widths were tweened in JS.
- *
- * It draws ONLY the glass. The marks and the words stay in React Native on top
- * (the app's own vector glyphs and type, so the detached row and the in-flow
- * switcher can't draw the same three marks two ways), and taps stay on the RN
- * layer too — this Host is `pointerEvents="none"`, so if the native layer never
- * renders, the dock is a plain RN row and still works.
- *
- * The two layers stay locked together because they are handed the same
- * geometry (`hubPillWidths`) and the same PHYSICS: `spring` here goes straight
- * into SwiftUI's `.spring(response:dampingFraction:)`, and the RN side runs the
- * same token through `springToRN`. Both solve one differential equation, so the
- * glyph cannot drift off the capsule it is riding.
- *
- * Every animatable value arrives as a plain number and SwiftUI animates ITSELF
- * to it — nothing is driven frame-by-frame over the bridge, which is what made
- * the earlier JS-driven glass jank (it re-sampled its backdrop every frame).
- */
-export function GlassPillRow({
-  widths,
-  activeIndex,
-  gap,
-  open,
-  height,
-  tintColor,
-  spring,
-  splitSpring,
-}: {
-  /** Each pill's target width, in order. See `hubPillWidths` in core. */
-  widths: number[];
-  /** Which pill wears the accent tint, and what the exchange is keyed to. */
-  activeIndex: number;
-  /** The RESTING space between pills — constant, because it is also the
-   *  container's blend distance: two capsules fuse as they come within it and
-   *  pinch apart as they pass it, so animating it would move the very
-   *  threshold the split is crossing. */
-  gap: number;
-  /** Whether the row is split. Closed, the pills touch — and touching Liquid
-   *  Glass is ONE lozenge, which is the whole point: `open` toggling is SPLIT
-   *  and MERGE. */
-  open: boolean;
-  height: number;
-  /** The accent, carried IN the material as a glass tint rather than as a film
-   *  laid over it — a tinted pane, not a coloured sheet behind glass. */
-  tintColor?: string;
-  /** EXCHANGE — the selected pill inflating to its word. */
-  spring: Spring;
-  /** SPLIT / MERGE — the gap opening and closing. */
-  splitSpring: Spring;
-}) {
-  // One namespace per mounted row: the ids only have to be unique within it.
-  const ns = useId();
-  if (!LIQUID_GLASS_SUPPORTED) return null;
-  const radius = height / 2;
-  const lead = open ? gap : 0;
-  const swiftSpring = Animation.spring({ response: spring.response, dampingFraction: spring.dampingFraction });
-  const swiftSplit = Animation.spring({ response: splitSpring.response, dampingFraction: splitSpring.dampingFraction });
-  return (
-    <Host style={StyleSheet.absoluteFill} pointerEvents="none">
-      <Namespace id={ns}>
-        {/* `spacing` is how close two capsules must be to start blending, and
-            it is the row's own resting gap: split, the pills sit right at the
-            threshold, so shutting the gap carries them through it and they
-            fuse — and opening it pinches them apart again. Constant, because
-            animating the threshold as well as the distance would mean the
-            split never cleanly crosses anything. */}
-        <GlassEffectContainer spacing={gap}>
-          <HStack spacing={0}>
-            {widths.map((w, i) => (
-              <RoundedRectangle
-                key={i}
-                cornerRadius={radius}
-                modifiers={[
-                  // Order is the SwiftUI modifier chain, and it matters: size
-                  // the shape, glass THAT, tag the glass so the container can
-                  // flow it, then hold the gap outside the capsule so the
-                  // leading pill still starts on the content column.
-                  frame({ width: w, height }),
-                  glassEffect({
-                    glass: { variant: "regular", ...(i === activeIndex && tintColor ? { tint: tintColor } : {}) },
-                    shape: "roundedRectangle",
-                    cornerRadius: radius,
-                  }),
-                  glassEffectId(`hub-pill-${i}`, ns),
-                  padding({ leading: i === 0 ? 0 : lead }),
-                  // Two watched values, two springs: a selection exchanges
-                  // widths, an arrival opens the gap, and they are not the same
-                  // motion. A change SwiftUI cannot attribute to either — the
-                  // first width landing after the labels measure — snaps, which
-                  // is what it should do.
-                  animation(swiftSpring, activeIndex),
-                  animation(swiftSplit, open),
-                ]}
-              />
-            ))}
-            {/* LEADING-anchored: the pills sit where the in-flow switcher's own
-                left edge was, so detaching reads as the control lifting
-                straight up rather than sliding sideways. */}
-            <Spacer />
-          </HStack>
-        </GlassEffectContainer>
-      </Namespace>
     </Host>
   );
 }

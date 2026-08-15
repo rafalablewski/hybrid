@@ -27,14 +27,20 @@ const TILE_H = 140;
 
 /** AURORA Plans — goal tree → plan list → full plan detail + enroll, reusing the
  *  exact plan library (GOAL_TREE / planDetail / enrollPlan). */
-export default function AuroraPlans() {
+export default function AuroraPlans({ openGoal, openPlan }: {
+  /** Land on a goal, and optionally one of its plans — the cross-app search's
+   *  plan results. A result that only reached the library root would be a
+   *  broken promise; the athlete named the plan. */
+  openGoal?: string;
+  openPlan?: string;
+} = {}) {
   // Survivors of a filter MOVE to their new positions; only arrivals fade.
   const refilter = useListMotion();
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const [goalId, setGoalId] = useState<string | null>(null);
-  const [planId, setPlanId] = useState<string | null>(null);
+  const [goalId, setGoalId] = useState<string | null>(openGoal ?? null);
+  const [planId, setPlanId] = useState<string | null>(openPlan ?? null);
   // Free-text search over the library. The CATEGORY lever is gone: with every
   // category rendered as its own shelf, filtering to one leaves an empty
   // screen — so the chips navigate to a shelf instead of narrowing to one.

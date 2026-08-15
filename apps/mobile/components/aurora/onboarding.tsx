@@ -172,7 +172,7 @@ function QuestionBody({
 function Step({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
     <View>
-      <AHeading style={{ fontSize: fs.display }}>{title}</AHeading>
+      <AHeading>{title}</AHeading>
       {!!sub && <ASub style={{ marginTop: 8 }}>{sub}</ASub>}
       <View style={{ marginTop: 20, gap: space.ms }}>{children}</View>
     </View>

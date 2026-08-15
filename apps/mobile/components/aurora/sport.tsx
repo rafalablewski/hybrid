@@ -5,8 +5,8 @@ import { ago, searchSports, sportIndex, sportIndexMeta, type LoggedSession, type
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, RADIUS } from "./kit";
+import { leading, fs, space, F, PressScale as Pressable , tracking} from "../../lib/ui";
+import { AuroraScreen, RADIUS, AMarkTile } from "./kit";
 import { useListMotion } from "../../lib/list-motion";
 
 /**
@@ -52,7 +52,11 @@ export default function AuroraSport() {
         borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line,
       }}
     >
-      <Text style={{ fontSize: 24 }}>{e.icon}</Text>
+      {/* The sport's catalogue glyph in the kit's SQUARE tile — the same 40dp
+          box the exercise lists wear, because a sport is a thing you did, not a
+          person. It drew bare here, which left the one list of activities in the
+          app looking unlike every list of lifts. */}
+      <AMarkTile><Text style={{ fontSize: 17 }}>{e.icon}</Text></AMarkTile>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         <Text style={{ ...mono(fs.micro), marginTop: 3 }}>

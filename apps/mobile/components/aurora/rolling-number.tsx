@@ -28,6 +28,7 @@ export function RollingNumber({
   value,
   style,
   align = "left",
+  maxFontSizeMultiplier,
 }: {
   /** The formatted figure, exactly as it should read. */
   value: string;
@@ -35,6 +36,15 @@ export function RollingNumber({
   /** Which way the row packs — a right-aligned figure keeps its last digit
    *  pinned as it grows a column. */
   align?: "left" | "right" | "center";
+  /** The Dynamic Type ceiling, passed straight to every cell.
+   *
+   *  A figure in a COLUMN needs one: the ledger runs four of them across a
+   *  ~73dp column, where "1675/2325" already sits within a few points of the
+   *  edge at 100 %, and the plain `<Text>` it replaced carried
+   *  `FIXED_FONT_SCALE`. Left off, this component silently removed a clamp its
+   *  caller had. A figure with a row to itself (the picker's hero) still wants
+   *  none — it should grow with the reader's setting. */
+  maxFontSizeMultiplier?: number;
 }) {
   const prev = useRef<string | null>(null);
   const [, force] = useState(0);
@@ -60,9 +70,9 @@ export function RollingNumber({
     >
       {cells.map((c, i) =>
         roll && c.rolls && c.changed ? (
-          <RollCell key={`${c.key}:${c.char}:${i}`} from={c.prev ?? ""} to={c.char} dir={dir} style={style} />
+          <RollCell key={`${c.key}:${c.char}:${i}`} from={c.prev ?? ""} to={c.char} dir={dir} style={style} max={maxFontSizeMultiplier} />
         ) : (
-          <Text key={`${c.key}:${i}`} style={style}>{c.char}</Text>
+          <Text key={`${c.key}:${i}`} maxFontSizeMultiplier={maxFontSizeMultiplier} style={style}>{c.char}</Text>
         ),
       )}
     </View>
@@ -78,7 +88,7 @@ export function RollingNumber({
  * On `durations.collapse`, not a spring: a digit travels its own height, and
  * overshooting a character out of its own box and back reads as a wobble.
  */
-function RollCell({ from, to, dir, style }: { from: string; to: string; dir: 1 | -1 | 0; style?: StyleProp<TextStyle> }) {
+function RollCell({ from, to, dir, style, max }: { from: string; to: string; dir: 1 | -1 | 0; style?: StyleProp<TextStyle>; max?: number }) {
   const t = useRef(new Animated.Value(0)).current;
   const [h, setH] = useState(0);
   useEffect(() => {
@@ -94,13 +104,13 @@ function RollCell({ from, to, dir, style }: { from: string; to: string; dir: 1 |
       {/* The INCOMING face is the one in flow: it defines the column's width and
           height, so a measurement is never needed before the first frame. */}
       <Animated.View style={{ transform: [{ translateY: inY }], opacity: t }}>
-        <Text style={style}>{to}</Text>
+        <Text maxFontSizeMultiplier={max} style={style}>{to}</Text>
       </Animated.View>
       <Animated.View
         pointerEvents="none"
         style={[StyleSheet.absoluteFill, { transform: [{ translateY: outY }], opacity: t.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }]}
       >
-        <Text style={style}>{from}</Text>
+        <Text maxFontSizeMultiplier={max} style={style}>{from}</Text>
       </Animated.View>
     </View>
   );

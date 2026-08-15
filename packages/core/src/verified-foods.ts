@@ -23,7 +23,8 @@
  */
 
 import { type NutritionFacts, atwaterKcal, auditFacts, factsCompleteness, foldFoodName, kj } from "./food-facts";
-import type { FoodHit } from "./nutrition-off";
+import { parsePackQuantity, type FoodHit } from "./nutrition-off";
+import { portionMeasure, type FoodPortion } from "./portion";
 import { LIDL_MARK, MAX_MARK } from "./source-marks";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -286,6 +287,18 @@ export function sourceCheckedOn(sourceId: string): string | null {
  */
 export function verifiedFoodToHit(f: VerifiedFood): FoodHit {
   const src = verifiedSource(f.sourceId);
+  // THE PACK OUR OWN CATALOG ALREADY RECORDS. `packSize` was a display string
+  // on the product page and nothing else — the same oversight that left Open
+  // Food Facts' net quantity unrequested, one tier up. It is parsed through the
+  // SAME reader OFF's is (parsePackQuantity), so a curated item and a community
+  // one produce identical portions, and a pack stated in the wrong measure for
+  // the food is dropped rather than converted.
+  const measure = portionMeasure({ serving: f.servingLabel, servingGrams: f.servingGrams });
+  const portions: FoodPortion[] = measure
+    ? parsePackQuantity(f.packSize)
+        .filter((q) => q.unit === measure.unit)
+        .map((q) => ({ label: "", size: q.size, source: "catalog" as const }))
+    : [];
   return {
     code: "",
     id: f.id,
@@ -302,6 +315,7 @@ export function verifiedFoodToHit(f: VerifiedFood): FoodHit {
     salt: f.facts.salt ?? null,
     servingGrams: f.servingGrams,
     perServing: true,
+    portions,
     verified: src ? { sourceId: src.id, sourceName: src.name, verifiedOn: f.verifiedOn } : undefined,
   };
 }

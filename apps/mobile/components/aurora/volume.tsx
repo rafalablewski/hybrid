@@ -308,7 +308,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
           here instead. */}
       {(top || unified) && (
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-          <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.vol.title")}</AHeading>
+          <AHeading>{t("w.analyze.vol.title")}</AHeading>
           {onOpenModel && (
             <Pressable
               onPress={onOpenModel}

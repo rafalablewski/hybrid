@@ -19,9 +19,9 @@ import { animateListChange } from "../../lib/list-motion";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, space, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS, ASearch } from "./kit";
-import AuroraExerciseMedia from "./exercise-media";
+import { AuroraExerciseAvatar } from "./exercise-media";
 import { AuroraIcon } from "./icons";
 import { withAlpha } from "./field";
 
@@ -90,11 +90,10 @@ export default function AuroraExercises() {
           accessibilityLabel={e.name}
           style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12 }}
         >
-          {/* the lift's DRAWN demo once it exists (core: exercise-media), and
-              until then its IMPLEMENT mark (core: exercise-marks) */}
-          <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={e.staple ? txt(C, C.lime) : C.ash} />
-          </View>
+          {/* the SQUARE exercise avatar (shared — exercise-media): the lift's
+              DRAWN demo once it exists (core: exercise-media), and until then
+              its IMPLEMENT mark (core: exercise-marks) */}
+          <AuroraExerciseAvatar name={e.name} glyph={24} tint={e.staple ? txt(C, C.lime) : C.ash} />
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: withAlpha(C.ash, 0.55) }}>›</Text>

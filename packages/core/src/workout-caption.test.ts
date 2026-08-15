@@ -7,7 +7,9 @@ const t = (k: string) =>
 describe("workoutShareCaption", () => {
   it("builds the caption both clients share", () => {
     expect(workoutShareCaption({ title: "Morning workout", minutes: 59, sets: 19, volume: 7100, headline: "🏆 Barbell Deadlift 100 kg" }, "kg", t))
-      .toBe("💪 Morning workout — done.\n59 min – 19 sets – 7.1 t\n🏆 Barbell Deadlift 100 kg\nTracked with HYBRID.");
+      // Tonnage, sets, then time — the app's one figure order (figure-order.ts),
+      // so the caption reads the session the way the screen behind it just did.
+      .toBe("💪 Morning workout — done.\n7.1 t – 19 sets – 59 min\n🏆 Barbell Deadlift 100 kg\nTracked with HYBRID.");
   });
 
   it("drops the clock segment rather than claiming 0 min", () => {

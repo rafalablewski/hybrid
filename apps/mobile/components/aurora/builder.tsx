@@ -41,7 +41,7 @@ import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import ExercisePickerSheet from "./exercise-picker";
-import AuroraExerciseMedia from "./exercise-media";
+import { AuroraExerciseAvatar } from "./exercise-media";
 import SwipeRow from "../swipe-row";
 import { animateListChange } from "../../lib/list-motion";
 import { RollingNumber } from "./rolling-number";
@@ -87,9 +87,12 @@ export default function AuroraBuilder() {
   // pushes down move together, rather than the new one appearing fully formed
   // in space that was already made for it. (The reorder commit gets this from
   // useDragReorder, which animates every reorderable list in the app.)
-  const add = (name: string, kind?: BlockKind) => {
+  const add = (name: string, kind?: BlockKind) => addMany([{ name, kind }]);
+  /** The picker's queue: a whole block of a routine in one commit. */
+  const addMany = (picks: { name: string; kind?: BlockKind }[]) => {
+    if (!picks.length) return;
     animateListChange(reducedMotion);
-    b.addExercise(name, kind);
+    for (const p of picks) b.addExercise(p.name, p.kind);
     setPicker(false);
   };
   const removeRoutine = (id: string) => {
@@ -157,6 +160,7 @@ export default function AuroraBuilder() {
         visible={picker}
         onClose={() => setPicker(false)}
         onPick={(name, kind) => add(name, kind)}
+        onPickMany={(picks) => addMany(picks)}
         title={t("w.train.builder.pickExercise")}
       />
 
@@ -309,13 +313,14 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
       {/* header */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
         {grip}
-        {/* The lift's IMPLEMENT, tinted by modality — it carries both what the
-            old mono "STRENGTH" word said (via the tint) and the gear it takes
-            (via the drawing), and becomes the hand-drawn demo once that lift is
-            drawn. */}
-        <View accessibilityRole="image" accessibilityLabel={b.kind}>
-          <AuroraExerciseMedia name={b.name} variant="thumb" size={20} tint={txt(C, c)} />
-        </View>
+        {/* The lift's SQUARE avatar (shared — exercise-media), tinted by modality
+            because a Builder list MIXES kinds and the tint is doing real work
+            here: it carries what the old mono "STRENGTH" word said, while the
+            drawing carries the gear the lift takes, and becomes the hand-drawn
+            demo once that lift is drawn. Square like every other picture of a
+            lift — this header drew the mark bare, with no tile, and was the last
+            surface in the app still doing so. */}
+        <AuroraExerciseAvatar name={b.name} size={36} glyph={20} tint={txt(C, c)} label={b.kind} />
         <TextInput
           value={b.name}
           onChangeText={(v) => builder.setField(b.uid, "name", v)}

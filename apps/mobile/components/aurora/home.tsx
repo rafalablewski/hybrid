@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView, RefreshControl, Animated, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -58,8 +58,8 @@ import {
   type Equipment,
   type ScheduledDay,
   type LogbookDay,
-
-  ALPHA,} from "@hybrid/core";
+  ALPHA,
+} from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -72,9 +72,9 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, tracking, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
+import { ACard, APressCard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import ExerciseWidgetRail from "./exercise-widget";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
@@ -106,7 +106,6 @@ import SectionSeam from "./section-seam";
 import { TodayTabs } from "./today-tabs";
 import { AppHeader } from "./app-header";
 import { StreakMark } from "./streak-mark";
-import { TodayHubDock } from "./today-hub-dock";
 import { RtpPanel } from "./protocol";
 import { HeatRow } from "./heat-row";
 // THE HUB's other two tabs — the same full screens their own routes render,
@@ -659,23 +658,14 @@ export default function AuroraHome() {
   // ONE page — the command centre, this week's volume and the eight-week trend
   // in a single scroll. AuroraPerformance owns that composition, so there is
   // nothing to switch between here.
-  // THE DOCK — the same three destinations, floating, once the control inside
-  // the header above has scrolled off. It rides OVER each view's scroller (a
-  // hub tab owns its own), never inside it, so every tab keeps its exits.
-  const hubDock = <TodayHubDock value={tab} onChange={selectTab} topInset={insets.top} />;
-  // Performance and Feed own their whole screen, so the dock is layered on top
-  // of them rather than handed through `top` (which lands inside their
-  // scrollers and would scroll away with the header).
-  const withDock = (screen: ReactNode) => (
-    <View style={{ flex: 1 }}>
-      {screen}
-      {hubDock}
-    </View>
-  );
+  //
+  // The switcher scrolls away with the header it belongs to. It used to detach
+  // into a floating row of glass pills that hung over all three views (see the
+  // retired today-hub-floating-pills capability); nothing persists at the top
+  // edge now, so the whole viewport below the status bar is the view you chose.
+  if (tab === "performance") return <AuroraPerformance top={hubHeader} />;
 
-  if (tab === "performance") return withDock(<AuroraPerformance top={hubHeader} />);
-
-  if (tab === "feed") return withDock(<FeedView top={hubHeader} />);
+  if (tab === "feed") return <FeedView top={hubHeader} />;
 
   return (
     // Inset PADDING, not a SafeAreaView: this shell remounts in full view when
@@ -689,11 +679,9 @@ export default function AuroraHome() {
           same field here so it isn't the one flat tab next to History/More/You. */}
       <AuroraField />
       {/* The safe-area inset is a padded LAYER rather than the shell itself, so
-          the dock below mounts in the same coordinate space here as it does over
-          Performance and Feed (which own their own safe areas). An absolute
-          child is positioned against its parent's PADDING box, so a dock inside
-          the padded shell would sit one inset too low and, worse, would only
-          retract as far as the status bar instead of clear off the screen. */}
+          the gradient field above still runs edge to edge behind the status bar
+          — padding the shell would push the backdrop down with the content and
+          leave a flat band across the notch. */}
       <View style={{ flex: 1, paddingTop: insets.top }}>
       {showTour && <Tour steps={FIRST_RUN_TOUR} onDone={finishTour} />}
       <ScrollView
@@ -855,14 +843,13 @@ export default function AuroraHome() {
             ) : null}
             {plan ? (
               <>
-                {/* NOT `fs.headline`, deliberately — hub-masthead.test.ts bans
-                    that rung anywhere in a hub screen, to stop one re-growing a
-                    title of its own. This is a CARD title, not the hub's head,
-                    so the ban is a false positive here; but the guard is
-                    load-bearing and a rename is not worth weakening it for.
-                    Left as a raw 22 and counted in the fontSize ratchet, which
-                    is the honest place for a site that has no rung it may
-                    name. */}
+                {/* NOT `fs.headline`, deliberately — hub-masthead.test.ts bans that
+                    rung anywhere in a hub screen, to stop one re-growing a title
+                    of its own. This is a CARD title, not the hub's head, so the
+                    ban is a false positive here; but the guard is load-bearing
+                    and a rename is not worth weakening it for. Left as a raw 22
+                    and counted in the fontSize ratchet, which is the honest
+                    place for a site that has no rung it may name. */}
                 <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
                 {/* One anchor — "how far in" — carried by a thin bar, not four
                     overlapping restatements of the same position. */}
@@ -956,7 +943,13 @@ export default function AuroraHome() {
             chooser above owns that state, and an empty card under it would be a
             second competing log CTA. */}
         {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
-          <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow() }}>
+          /* ACard, not a hand-drawn copy of it. This wrapper spelled out
+             ACard's exact base style — hairline, RADIUS.card, CARD_PAD, ink2,
+             cardShadow — which on iOS 26 is the ONE thing the copy cannot
+             reproduce: ACard drops a native Liquid Glass layer and a literal
+             View stays solid ink2, so this card was opaque between two glass
+             ones. */
+          <ACard style={{ marginTop: 16 }}>
             <DoneFloor
               rows={doneOnDay}
               planIds={fulfilledIds}
@@ -972,7 +965,7 @@ export default function AuroraHome() {
               onDone={() => setDoneOpen(true)}
               onRate={setRating}
             />
-          </View>
+          </ACard>
         )}
 
         {/* ═════ GROUP: RECOVER — how the body is answering. The daily
@@ -1194,8 +1187,6 @@ export default function AuroraHome() {
       </ScrollView>
       </View>
 
-      {hubDock}
-
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet visible={quickOpen} onClose={() => { setQuickOpen(false); setQuickDay(null); }} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>
         <View style={{ marginTop: 16 }}>
@@ -1287,15 +1278,17 @@ export default function AuroraHome() {
 // body stay neutral. Mirrored on web (aurora/today.tsx ChooserCard).
 function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
   return (
-    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20, overflow: "hidden" }}>
-      {/* path-accent glow blooming from the top-right corner (Go-Full anatomy) */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, ALPHA.wash) }]} />
-      <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.17), withAlpha(accent, 0.0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
+    /* APressCard — the kit's pressable surface, carrying the Go-Full corner
+       glow. This drew ACard's box by hand (and so could never take the glass)
+       for one reason: ACard is a View, and there was nothing in the kit that
+       was a card AND a press target. There is now. The pad drops out
+       entirely — 20 was already CARD_PAD, spelled as a number. */
+    <APressCard onPress={onPress} a11yLabel={title} glow={accent}>
       <Text style={{ fontSize: fs.title, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "tight") }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 16 }} />
-    </PressScale>
+    </APressCard>
   );
 }
 
@@ -1307,15 +1300,17 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
 // Mirrored on web (aurora/today.tsx StructureCard).
 function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { C: P; width: number; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
   return (
-    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, overflow: "hidden" }}>
-      {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, ALPHA.wash) }]} />
-      <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.17), withAlpha(accent, 0.0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
+    /* The same APressCard as ChooserCard above — which is the point, since
+       this IS ChooserCard at rail width. The two values that stay are the two
+       that are genuinely about being a rail card: the fixed `width`, and a 16
+       pad rather than CARD_PAD, because a 72%-wide card cannot spend 20 a
+       side. Everything else is now decided once, in the kit. */
+    <APressCard onPress={onPress} a11yLabel={title} glow={accent} style={{ width, padding: 16 }}>
       <Text style={{ fontSize: fs.note, lineHeight: leading(fs.note, "tight"), color: txt(C, accent) }}>{glyph}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
-    </PressScale>
+    </APressCard>
   );
 }
 
@@ -1565,7 +1560,10 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     }
   };
   return (
-    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow() }}>
+    /* ACard, not a hand-drawn copy of it — see the DONE TODAY wrapper above.
+       This is the card the Heat row is clustered with, so the two were drawn
+       on different materials on iOS 26 while sitting one gap apart. */
+    <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same
@@ -1783,7 +1781,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           ) : null}
         </>
       ) : null}
-    </View>
+    </ACard>
   );
 }
 

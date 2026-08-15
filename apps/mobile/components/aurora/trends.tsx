@@ -15,7 +15,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, tracking, F, PressScale as Pressable } from "../../lib/ui";
 import { useChartScrub } from "./chart-scrub";
-import { AuroraScreen, ACard, AHeading, ASub } from "./kit";
+import { AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [{ id: "8w", key: "w.analyze.trends.period8w" }, { id: "6m", key: "w.analyze.trends.period6m" }, { id: "1y", key: "w.analyze.trends.period1y" }, { id: "all", key: "w.analyze.trends.periodAll" }];
 
@@ -154,7 +154,7 @@ export default function AuroraTrends({ top, unified = false }: {
       {/* Standing alone the title is the HERO's (below); embedded — a hub tab,
           or inside the unified Performance page — the host owns the head, so
           only the sub-line renders here. */}
-      {(top || unified) && <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>}
+      {(top || unified) && <AHeading>{t("w.analyze.trends.title")}</AHeading>}
       <ASub style={{ marginTop: top || unified ? 10 : 0 }}>{t("w.analyze.trends.subtitle")}</ASub>
 
       {!trained ? (
@@ -182,16 +182,35 @@ export default function AuroraTrends({ top, unified = false }: {
           />
 
           {/* The quiet band — the sheet's one recessive surface, carrying the
-              section's name and its period switch. The switch is an underline
-              that moves, not a filled pill: the fill was competing with the
-              figures above it for the same accent. */}
-          <View style={[{ backgroundColor: C.ink, flexDirection: "row", alignItems: "center", gap: space.sm, paddingHorizontal: PAD_X, paddingVertical: 12 }, divider]}>
-            <Text style={[bandLabel, { flex: 1 }]}>{t("w.analyze.trends.perExercise")}</Text>
-            {PERIODS.map((p) => { const on = period === p.id; return (
-              <Pressable key={p.id} onPress={() => setPeriod(p.id)} style={{ paddingHorizontal: 4, paddingVertical: 3, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}>
-                <Text style={{ fontFamily: on ? F.bold : F.semi, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{t(p.key)}</Text>
-              </Pressable>
-            ); })}
+              section's name and its period switch.
+
+              THE ROW SURVIVES, THE UNDERLINE DOES NOT. The switch was a row of
+              labels on a 2dp CHARTREUSE border, and the comment here used to
+              call it "an underline that moves" — it never moved: the border was
+              per-tab, so it appeared under one label and vanished from under
+              another. Its stated reason ("the fill was competing with the
+              figures above it for the same accent") was a real objection to a
+              chartreuse PILL, and it does not apply to the shared control,
+              whose lens is a neutral step of the text colour and never the
+              accent. So this is `ASegment`, the same switch the rest of the app
+              changes state with.
+
+              IT STAYS IN THE LABEL'S ROW — the band is one row and that is its
+              shape; the label keeps its natural width and the track takes the
+              rest. The band's own padding drops from 12 to 8 because the track
+              brings a 52dp height of its own, so the band grows by ~20dp rather
+              than ~44. And the track is the DEFAULT (raised) fill, not
+              `surface: 'card'`: this band is `ink`, the darker ground, so a
+              raised track reads against it exactly as it does on a screen. */}
+          <View style={[{ backgroundColor: C.ink, flexDirection: "row", alignItems: "center", gap: space.md, paddingHorizontal: PAD_X, paddingVertical: 8 }, divider]}>
+            <Text numberOfLines={1} style={[bandLabel, { flexShrink: 1 }]}>{t("w.analyze.trends.perExercise")}</Text>
+            <View style={{ flex: 1 }}>
+              <ASegment
+                options={PERIODS.map((p) => ({ id: p.id, label: t(p.key) }))}
+                value={period}
+                onPick={setPeriod}
+              />
+            </View>
           </View>
 
           <View style={{ paddingHorizontal: PAD_X, paddingTop: 13, paddingBottom: 4 }}>
@@ -201,9 +220,9 @@ export default function AuroraTrends({ top, unified = false }: {
                 {/* The header mirrors the ROW: what the row's second line shows,
                     the header's second line sorts. */}
                 <Text style={{ marginTop: 5 }}>
-                  <Col k="sessions" label={t("w.analyze.trends.colFreq")} />
-                  <Text style={colHead}> – </Text>
                   <Col k="volume" label={t("w.analyze.trends.colVolume")} />
+                  <Text style={colHead}> – </Text>
+                  <Col k="sessions" label={t("w.analyze.trends.colFreq")} />
                 </Text>
               </View>
               <Col k="topWeight" label={t("w.analyze.trends.colHeaviest")} style={{ width: 78, textAlign: "right" }} />
@@ -218,7 +237,10 @@ export default function AuroraTrends({ top, unified = false }: {
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{r.name}</Text>
                   <Text numberOfLines={1} style={[meta, { marginTop: 5 }]}>
-                    {`${r.sessions}× – ${r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}`}
+                    {/* Volume before the session count — core figure-order.ts.
+                        The header above sorts these two in the same sequence,
+                        which is the whole point of the mirror. */}
+                    {`${r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)} – ${r.sessions}×`}
                   </Text>
                 </View>
                 <Text style={{ width: 78, textAlign: "right", fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk }}>

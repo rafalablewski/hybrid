@@ -33,6 +33,8 @@ import {
   workoutShareCaption,
   fmtWeight,
   formatSportPace,
+  heatAfterSession,
+  fmtTemp,
   formatSportDistance,
   statCountUp,
   prsForSession,
@@ -53,12 +55,12 @@ import {
   type LoggedSession,
   type WeightUnit,
   type BodyweightLookup,
+  ALPHA,
   THEMES,
-
-  ALPHA,} from "@hybrid/core";
+} from "@hybrid/core";
 import { fetchConnections, patchSessionDevice } from "../lib/api";
 import { healthKitAvailability } from "../lib/healthkit";
-import { useRevalidate } from "../lib/queries";
+import { useHeatSignalsQuery, useRevalidate } from "../lib/queries";
 import { DeviceMatchSheet } from "./device-match";
 import { DeviceMark } from "./aurora/device-mark";
 import { AuroraIcon } from "./aurora/icons";
@@ -70,7 +72,7 @@ import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
 import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
-import { leading, fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
@@ -165,6 +167,30 @@ export function WorkoutWrapped({
   const revalidate = useRevalidate();
   // Only a binary with the native module can read the watch's workouts.
   const canMatch = healthKitAvailability() === "ready";
+
+  /**
+   * THE SAUNA THIS SESSION ALREADY HAS, if any.
+   *
+   * This screen is routinely opened HOURS after the training it describes — a
+   * watch recording gets imported that evening, and the summary of a 13:00
+   * workout is read at 21:00 — while the sauna at 14:00 was typed the moment it
+   * ended. So "finish in the sauna?" cannot be an unconditional invitation: put
+   * to an athlete who logged it seven hours ago, it is an invitation to log it
+   * twice, and the sheet behind it opens defaulted to this session's own end,
+   * an hour off the sitting already on the record. `heatAdjustment` would sum
+   * both inside one 48 h window and the frequency tier that feeds MRV would
+   * count two sittings the athlete never took.
+   *
+   * The prompt therefore READS the record first and states what it finds. It
+   * still opens the sheet — a second round is a real thing and the sitting may
+   * need correcting — but the athlete is answering a question about something
+   * they can see rather than one that assumes nothing happened.
+   */
+  const { data: heatRows = [] } = useHeatSignalsQuery();
+  const loggedHeat = useMemo(
+    () => heatAfterSession(heatRows, session.completedAt ?? session.startedAt ?? null),
+    [heatRows, session.completedAt, session.startedAt],
+  );
   const pagerRef = useRef<ScrollView>(null);
   const storyRefs = useRef<Record<number, View | null>>({});
 
@@ -252,7 +278,7 @@ export function WorkoutWrapped({
     ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: cel.kind === "strength" ? cel.lift : cel.move, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as SlideData] : []),
     ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as SlideData] : []),
   ];
-  // The overview card is a GYM card (title + minutes/sets/volume): on a swim it
+  // The overview card is a GYM card (title + volume/sets/minutes): on a swim it
   // would read "1 set, 0.0 t", so it only rides along when the session actually
   // did that kind of work. The single-stat card headlines the same number the
   // hero does, so a cardio log leads with its distance instead of zero tonnage.
@@ -474,11 +500,15 @@ export function WorkoutWrapped({
               from the session end is known exactly, which is what the decay in
               engines/heat.ts and the phase-4 pair matching both read. Passing
               the session's own end as the default means a sauna logged on the
-              way home is dated to the sauna, not to the tap. */}
+              way home is dated to the sauna, not to the tap.
+
+              It ASKS or it REPORTS, depending on what the log already holds —
+              see `loggedHeat` above. An out-of-order import is exactly the case
+              where the invitation arrives after the answer. */}
           <Pressable
             onPress={() => setHeatOpen(true)}
             accessibilityRole="button"
-            accessibilityLabel={t("w.recovery.heat.afterSession")}
+            accessibilityLabel={t(loggedHeat ? "w.recovery.heat.afterSessionDone" : "w.recovery.heat.afterSession")}
             style={{
               marginTop: 22, alignSelf: "stretch", flexDirection: "row", alignItems: "center",
               justifyContent: "space-between", gap: 12,
@@ -487,8 +517,17 @@ export function WorkoutWrapped({
             }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.heat.afterSession")}</Text>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.recovery.heat.afterSessionSub")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>
+                {t(loggedHeat ? "w.recovery.heat.afterSessionDone" : "w.recovery.heat.afterSession")}
+              </Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>
+                {loggedHeat
+                  ? t("w.recovery.heat.afterSessionLogged")
+                      .replace("{n}", String(loggedHeat.minutes))
+                      .replace("{t}", fmtTemp(loggedHeat.tempC, units))
+                      .replace("{at}", new Date(loggedHeat.ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }))
+                  : t("w.recovery.heat.afterSessionSub")}
+              </Text>
             </View>
             <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.amber) }}>&#8594;</Text>
           </Pressable>

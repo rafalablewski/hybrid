@@ -1,3 +1,4 @@
+import { useLocalSearchParams } from "expo-router";
 import AuroraPlans from "../components/aurora/plans";
 
 /** Contain a crash to THIS screen — the tab bar and the back gesture stay live
@@ -6,5 +7,6 @@ import AuroraPlans from "../components/aurora/plans";
 export { RouteErrorBoundary as ErrorBoundary } from "../components/error-boundary";
 
 export default function Plans() {
-  return <AuroraPlans />;
+  const { goal, plan } = useLocalSearchParams<{ goal?: string; plan?: string }>();
+  return <AuroraPlans openGoal={typeof goal === "string" ? goal : undefined} openPlan={typeof plan === "string" ? plan : undefined} />;
 }

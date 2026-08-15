@@ -27,6 +27,7 @@ import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { GUTTER, RADIUS, withAlpha } from "./kit";
+import { AuroraExerciseAvatar } from "./exercise-media";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
  *  conditioning sand + ticker red ride accentText (parity with the web
@@ -132,11 +133,21 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
         paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
       }}
     >
-      {/* The name gets the whole row. The delta used to sit beside it
-          and cost "Standing Overhead Press" its last words on a narrow
-          device; it reads as well from the footer, where the kind word
-          used to be. */}
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
+      {/* THE LIFT'S MARK, then its name. This rail was the last lift surface in
+          the app with no picture of the lift on it at all, which is the one
+          place a mark earns most: you swipe a rail, and an implement is what
+          lets you find the barbell card without reading four of them.
+
+          It costs the name 30dp, and the delta was moved OFF this row for
+          exactly that reason — but a delta is a variable-width number that
+          reads as well from the footer, and a fixed 24dp mark is not the same
+          bargain. Ash, not the kind's colour: the strip below already draws
+          kind as colour and the mark now draws it as a SHAPE, and this card's
+          own note argues against spending a third channel on one fact. */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <AuroraExerciseAvatar name={card.name} size={24} glyph={14} tint={C.ash} />
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
+      </View>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
         <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={[heroStyle, read?.best ? { color: txt(C, C.lime) } : null]}>
           {read ? read.value : h.v}

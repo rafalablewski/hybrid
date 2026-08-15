@@ -290,6 +290,117 @@ export function heatSittings(signals: HeatSignalRow[]): HeatSitting[] {
   return out.sort((a, b) => Date.parse(b.ts) - Date.parse(a.ts));
 }
 
+/* ── WHAT IS ALREADY ON THE RECORD ─────────────────────────────────────────── */
+
+/**
+ * NOTHING IS LOGGED IN THE ORDER IT HAPPENED, so a log surface has to be able
+ * to ask what is already there.
+ *
+ * A sitting is typed AT the sitting — you come out of the sauna, you log it.
+ * The session beside it arrives whenever the watch next syncs, which can be
+ * eight hours later: train at 13:00, sauna at 14:00 and log it on the spot,
+ * import the workout at 21:00. The app meets the two events in the opposite
+ * order to the one they happened in, and it must not care.
+ *
+ * The ENGINES already don't. Every figure in this module reads event time
+ * (`Signal.ts`, `Session.completedAt`) and never write time, so the model comes
+ * out identical whichever row landed first. The ENTRY POINTS did care, and in
+ * the worst possible way: the summary of a just-imported session offered
+ * "finish in the sauna?" as though the evening's sauna had never been logged,
+ * and the sheet behind it — pre-filled with the session's own end — would write
+ * a SECOND sitting an hour off the first. `heatAdjustment` then sums both
+ * inside the same 48 h window and `heatWeeklyFrequency` counts two sittings
+ * where the athlete had one. An out-of-order import is exactly the case that
+ * produces that duplicate, because it is the case where the invitation to log
+ * arrives hours after the thing was logged.
+ *
+ * So both surfaces ask ONE primitive rather than each inventing a window.
+ */
+
+/**
+ * Sittings recorded between two instants, newest first.
+ *
+ * Half-open at the bottom and closed at the top ([from, to]) so a caller
+ * centring a window on an instant gets that instant's own sitting back.
+ */
+export function heatSittingsBetween(signals: HeatSignalRow[], from: number, to: number): HeatSitting[] {
+  if (!Number.isFinite(from) || !Number.isFinite(to) || to < from) return [];
+  return heatSittings(signals).filter((s) => {
+    const t = Date.parse(s.ts);
+    return t >= from && t <= to;
+  });
+}
+
+/**
+ * How close two sittings have to be before they are one sauna logged twice.
+ *
+ * Ninety minutes, and the number is set by the FAILURE it prevents rather than
+ * by physiology. Nobody sits twice inside an hour and a half and means it as
+ * two entries; an athlete who genuinely does a second round has the picker to
+ * say so. The cost of the two mistakes is not symmetric — a false "already
+ * logged" costs one extra tap on a warning the athlete can overrule, while a
+ * missed duplicate silently doubles the dose in the readiness ring and adds a
+ * phantom sitting to the frequency tier that feeds MRV, with nothing on any
+ * screen saying it happened.
+ */
+export const HEAT_DUPLICATE_MIN = 90;
+
+/**
+ * A sitting already on the record close enough to `at` that saving another
+ * would be double-counting one sauna — the NEAREST such sitting, so a warning
+ * can quote the one the athlete actually means.
+ */
+export function heatAlreadyLogged(
+  signals: HeatSignalRow[],
+  at: number,
+  withinMin: number = HEAT_DUPLICATE_MIN,
+): HeatSitting | null {
+  if (!Number.isFinite(at)) return null;
+  const w = withinMin * 60_000;
+  const near = heatSittingsBetween(signals, at - w, at + w);
+  if (near.length === 0) return null;
+  return near.reduce((best, s) =>
+    Math.abs(Date.parse(s.ts) - at) < Math.abs(Date.parse(best.ts) - at) ? s : best,
+  );
+}
+
+/**
+ * How long after a session ends a sitting still reads as "the sauna after that
+ * session". Three hours, matching READ_BOUNDS.immediate — past that the session
+ * has settled and the sitting is its own event rather than the tail of a
+ * workout.
+ */
+export const HEAT_AFTER_SESSION_H = 3;
+
+/**
+ * …and how far BEFORE the recorded end a sitting still belongs to it.
+ *
+ * Not slack for its own sake. The sitting's instant is TYPED and the session's
+ * end is MEASURED by a watch, and the two clocks are never reconciled: an
+ * athlete who logs the sauna while cooling down, against a recording whose end
+ * is whenever they remembered to stop the watch, produces a sitting stamped
+ * minutes BEFORE the session it plainly followed. And a sitting is a span, not
+ * an instant — a 20-minute sitting stamped at its start overlaps an end four
+ * minutes later. Half an hour covers both and stays far inside MIN_PAIR_GAP_H,
+ * so nothing here can reach into a neighbouring pair.
+ */
+export const HEAT_EDGE_GRACE_MIN = 30;
+
+/**
+ * The sitting this session already has recorded against it, if any — the one
+ * NEAREST the session's end, so the post-session prompt names the sauna the
+ * athlete took rather than one from later that evening.
+ */
+export function heatAfterSession(signals: HeatSignalRow[], sessionEnd: string | number | null | undefined): HeatSitting | null {
+  const end = typeof sessionEnd === "number" ? sessionEnd : sessionEnd ? Date.parse(sessionEnd) : NaN;
+  if (!Number.isFinite(end)) return null;
+  const found = heatSittingsBetween(signals, end - HEAT_EDGE_GRACE_MIN * 60_000, end + HEAT_AFTER_SESSION_H * HOUR_MS);
+  if (found.length === 0) return null;
+  return found.reduce((best, s) =>
+    Math.abs(Date.parse(s.ts) - end) < Math.abs(Date.parse(best.ts) - end) ? s : best,
+  );
+}
+
 /* ── THE ACUTE CREDIT ──────────────────────────────────────────────────────── */
 
 /** What the readiness term is worth today, and every figure behind it — so the

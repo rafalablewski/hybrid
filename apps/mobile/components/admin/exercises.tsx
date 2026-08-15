@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
-import { ALL_MUSCLES } from "@hybrid/core";
-import { fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
+import { ALL_MUSCLES, searchMissSummary, topSearchMisses } from "@hybrid/core";
+import { leading, fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { useConfirm } from "../aurora/confirm";
+import { useSearchMisses, clearSearchMisses } from "../../lib/search-misses";
 
 // Mobile parity for apps/web/components/admin/exercises.tsx. Same
 // /api/admin/exercises (+/[id]) backend + the ./shared parse enums: CRUD over
@@ -237,6 +238,8 @@ export default function AdminExercises() {
 
             <Input value={q} onChangeText={setQ} placeholder="Search the library…" />
 
+            <SearchMisses />
+
             {editing === null && (
               <View style={{ marginBottom: 16 }}>
                 <PillBtn label="+ New exercise" onPress={openNew} />
@@ -341,5 +344,60 @@ export default function AdminExercises() {
         );
       }}
     </LoadSwap>
+  );
+}
+
+/**
+ * THE VOCABULARY BACKLOG — what athletes searched for that the app didn't know.
+ *
+ * The exercise search ships ~50 curated nicknames, every one of them a guess
+ * about gym slang. This is the list of guesses that were wrong, written by the
+ * people who use it: queries that matched nothing, and — weighted higher —
+ * queries a custom movement was created from, which is the athlete having given
+ * up and named it themselves. Each row is either a nickname to add to
+ * EXERCISE_NICKNAMES or a movement genuinely missing from the catalog.
+ *
+ * It sits on THIS screen because this is where an operator already is when they
+ * would act on it. Device-local (AsyncStorage), so it is this device's misses,
+ * not the fleet's — aggregating across athletes needs a server table and is
+ * tracked as `search-vocabulary-sync`. That is also why there is no web twin:
+ * the web console cannot read a phone's storage, so a panel there would be
+ * permanently empty rather than merely sparse.
+ */
+function SearchMisses() {
+  const { palette } = useTheme();
+  const misses = useSearchMisses();
+  const top = topSearchMisses(misses, 12);
+  const { confirm } = useConfirm();
+  if (top.length === 0) return null;
+  return (
+    <ACard style={{ marginBottom: 16 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>Searched, not found</Text>
+        <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{`${misses.length} on this device`}</Mono>
+      </View>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: leading(fs.micro) }}>
+        Each one is a nickname to add, or a movement the catalog is missing.
+      </Mono>
+      <View style={{ marginTop: 12, gap: 8 }}>
+        {top.map((m) => (
+          <View key={m.query} style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+            <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.body, color: palette.chalk }}>{m.query}</Text>
+            <Chip color={m.custom ? palette.amber : palette.ash}>{searchMissSummary(m)}</Chip>
+            <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{m.last.slice(5)}</Mono>
+          </View>
+        ))}
+      </View>
+      <View style={{ flexDirection: "row", marginTop: 14 }}>
+        <PillBtn
+          label="Clear backlog"
+          outline
+          color={palette.ash}
+          onPress={async () => {
+            if (await confirm({ title: "Clear the backlog?", message: "The misses recorded on this device are forgotten. Anything not yet added to the catalog is lost.", confirmLabel: "Clear", destructive: true })) clearSearchMisses();
+          }}
+        />
+      </View>
+    </ACard>
   );
 }
