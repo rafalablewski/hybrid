@@ -14,7 +14,7 @@ import {
 import { readPairCurve, readReports, placeReads } from "../readiness-reads";
 import { QUICK_CHECKIN_METRIC } from "../checkin-flow";
 import { RECOVERY_WINDOW_H } from "../feel-schedule";
-import { heatSittings, HEAT_SESSION_MIN_EQUIV, type HeatSignalRow } from "./heat";
+import { heatSittings, HEAT_EDGE_GRACE_MIN, HEAT_SESSION_MIN_EQUIV, type HeatSignalRow } from "./heat";
 
 /**
  * MATCHING THE TWO READS BACK UP.
@@ -143,6 +143,18 @@ export interface RecoveryPair {
    * minutes in a cool cabin would otherwise relabel a pair without having
    * plausibly changed it. Undefined when no heat log was supplied at all,
    * which is not the same as false.
+   *
+   * The window opens HEAT_EDGE_GRACE_MIN BEFORE the session end, and that
+   * matters more than it looks. The sitting's instant is typed and the end is
+   * measured by a watch that gets stopped whenever the athlete remembers —
+   * routinely so, since the recording may not be imported until that evening —
+   * so a sauna taken straight after training can land minutes before the end
+   * it plainly followed. Without the grace that pair does not merely lose a
+   * sample: it lands in the WITHOUT-heat bucket, which is the one outcome worse
+   * than dropping it, because the control side then contains the treatment.
+   *
+   * The grace never reaches back past the session's own START, so on a short
+   * session it cannot relabel a PRE-workout sauna as heat taken after one.
    */
   heat?: boolean;
 }
@@ -206,6 +218,19 @@ export function pairReads(
     // The next session to start, if any — the pair may not reach past it.
     const nextEnd = endTimes.find((t) => t > end) ?? Infinity;
 
+    // Where the heat window opens: the edge grace, but never earlier than the
+    // session STARTED. The grace exists to absorb one clock artefact — a watch
+    // stopped after the athlete had already left for the sauna — and on a long
+    // session `end − 30 min` is comfortably mid-session, so it absorbs only
+    // that. On a SHORT one (a 15-minute run) it would reach back past the start
+    // and quietly relabel a sauna taken BEFORE training as heat taken after it,
+    // which is not a clock artefact but a different sitting. Clamping to the
+    // start keeps the grace what it claims to be.
+    const started = Date.parse(s.startedAt);
+    const heatFrom = Number.isFinite(started) && started < end
+      ? Math.max(end - HEAT_EDGE_GRACE_MIN * 60_000, started)
+      : end - HEAT_EDGE_GRACE_MIN * 60_000;
+
     // THE IMMEDIATE SIDE, preferred from the session's own answer.
     let immediateLag = typeof s.fatigue === "number"
       ? hoursAfterSession(s.completedAt ?? s.startedAt, s.feelLoggedAt)
@@ -257,8 +282,10 @@ export function pairReads(
           at: new Date(end).toISOString(),
           curve,
           // The window the pair actually measures: from the session end to the
-          // recovery read. Heat outside it did not happen during this clearance.
-          ...(heatAt ? { heat: heatAt.some((t) => t > end && t <= r.at) } : {}),
+          // recovery read. Heat outside it did not happen during this clearance
+          // — with the edge grace, because "before the end" is a clock artefact
+          // at that boundary and not a fact about the sauna (see `heat` above).
+          ...(heatAt ? { heat: heatAt.some((t) => t > heatFrom && t <= r.at) } : {}),
         });
       }
       break; // one recovery read per session — the first that qualifies
