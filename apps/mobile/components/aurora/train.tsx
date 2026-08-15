@@ -18,7 +18,7 @@ import { track } from "../../lib/track";
 import { leading, fs, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { APill, AuroraScreen, ACard, RADIUS, withAlpha } from "./kit";
+import { APill, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import type { AuroraIconName } from "@hybrid/core";
@@ -70,18 +70,30 @@ export default function AuroraTrain() {
   const prescribedDone = isAthlete && !!doneToday;
 
   return (
-    // THE HEAD IS THE HERO SYSTEM'S, as it is on Performance and Feed. Train
-    // hand-rolled its own — an AHeading with a typed 28 that opted out of the
-    // rung the kit computes — and then slipped an intro paragraph between the
-    // title and today's session. That is the one screen where a sentence of
-    // instruction earns its place least: the card directly below it carries a
-    // "Start session" button. Both are gone, and handing the shell over buys
-    // the collapse track and the rail Train was the last root screen without.
+    // THE HEAD — a plain AHeading on the plain scaffold, and NO HERO. Train is
+    // a ROOT TAB, and the kit states the rule twice: AuroraScreen's `hero` prop
+    // ("a root tab has nothing to pop and no title to establish, so a rail there
+    // would be chrome for its own sake") and Nutrition at its own tab root ("AT
+    // THE TAB ROOT there is no hero, because a tab root has nothing to pop and
+    // no origin to name").
     //
-    // `back={false}` because Train is a ROOT tab: the rail keeps its leading
-    // slot empty rather than drawing a pop button with nothing under it, and
-    // the title's y is identical to a pushed screen's either way.
-    <AuroraScreen hero={{ rank: "title", title: t("train.title") }} back={false}>
+    // This screen was briefly handed to the hero system for consistency with
+    // Performance and Feed. That was the wrong comparison — those two wear a
+    // hero as PUSHED screens, and Train's actual peers are the other tabs. It
+    // was also expensive: the hero's box is a fixed 132dp of which Train fills
+    // only the title, leaving the rail, eyebrow and meta rows reserved and
+    // empty, and pushing today's session card 34dp DOWN the screen whose whole
+    // job is starting a session in one tap. Reverted deliberately — see
+    // capabilities.ts `screen-head-guard` for the full argument, and do not
+    // re-add a hero here without reading it.
+    //
+    // The head takes NO size override: AHeading resolves the same `title` rung
+    // (fs.display) the hero does, so the title is identical in size to
+    // Performance's and Feed's — which is the consistency that was actually
+    // asked for. `aurora-head.test.ts` fails the build if that drifts back.
+    <AuroraScreen>
+      <AHeading>{t("train.title")}</AHeading>
+
       {/* Resume a workout left in progress — kept above the adaptive slot. */}
       {draft && (
         <ACard style={{ marginTop: 16 }}>

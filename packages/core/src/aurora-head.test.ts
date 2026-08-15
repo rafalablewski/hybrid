@@ -90,14 +90,24 @@ describe("the screen-head guard — no head opts out of its rung", () => {
     expect(offenders, offenders.join("\n")).toEqual([]);
   });
 
-  it("keeps Train's head in the hero system rather than hand-rolled", () => {
-    // The screen this rule came from. Its head is the hero's now, at the same
-    // rank Performance and Feed stand at, and `back={false}` because a root tab
-    // has nothing to pop.
+  it("keeps Train's head bare — the right rung, and no hero on a tab root", () => {
+    // The screen this rule came from, and the shape it settled on after the
+    // hero was tried and reverted.
+    //
+    // THE RUNG is the point and always was: a bare AHeading resolves the same
+    // `title` rung the hero does, so Train's title is identical in size to
+    // Performance's and Feed's. No style prop at all — the guard above forbids
+    // a fontSize, and this pins the head that started it to the bare form.
+    //
+    // NO HERO, because a ROOT TAB has nothing to pop and no origin to name —
+    // the kit says so on AuroraScreen's `hero` prop and again at Nutrition's
+    // own tab root. Handing Train to the hero system spent a fixed 132dp on a
+    // box it filled only the title of, pushing today's session 34dp down the
+    // screen built for one tap. If a later session is tempted again, the
+    // argument is in capabilities.ts `screen-head-guard`.
     const src = code(resolve(MOBILE, "components/aurora/train.tsx"));
-    expect(src).toMatch(/hero=\{\{\s*rank:\s*"title"/);
-    expect(src).toContain("back={false}");
-    expect(headings(src)).toEqual([]);
+    expect(headings(src)).toEqual(['<AHeading>']);
+    expect(src).not.toMatch(/hero=\{/);
   });
 
   it("has retired the footnote that pointed at the retired web client", () => {
