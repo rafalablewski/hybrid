@@ -61,7 +61,7 @@ import {
   verifiedSource, verifiedFood, verifiedFoodToHit, verifiedFoodsBySource, relatedVerifiedFoods,
   sourceCheckedOn, kj, verifiedFreshness, type Recipe, type RecipeCollection,
   dedupeCandidates, pickerAnswer, pickerRemoteQuery, pickerSubmit, quickAddVocab, macroDraft, quickAddDraft,
-  recordLog, usualAtHour, nutritionGap, wouldOvershoot, KCAL_OVER_TOLERANCE,
+  recordLog, usualAtHour, nutritionGap, nutritionFigures, figureText, wouldOvershoot,
   NAV_SURFACE_FOOD_PICKER,
   type PickerSourceKey, } from "@hybrid/core";
 import {
@@ -107,7 +107,7 @@ import NutritionTrends from "./nutrition-trends";
 import { PickerField, Understood, NoneOfYours } from "./quick-add";
 import BarcodeScanSheet from "./barcode-scan";
 import {
-  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceSwitch, PickerDoor, DayGap, PICKER_EDGE, BLOCK,
+  Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceSwitch, PickerDoor, DayGap, MacroLedger, MACRO_FILL, PICKER_EDGE, BLOCK,
   IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock, IBarcode,
   presetGlyph, macroKcal,
 } from "./nutrition-kit";
@@ -141,7 +141,6 @@ const MEAL_TYPES = DEFAULT_MEAL_PART_KEYS;
 // band (web parity — one threshold, both surfaces).
 // Where 'over' begins — the shared band, so the hub's ring and the picker's
 // header cannot disagree about it (core/nutrition-gap.ts).
-const KCAL_OVER_THRESHOLD = KCAL_OVER_TOLERANCE;
 const mealGlyph = (m: string): NutritionGlyphName => m === "breakfast" ? "sunrise" : m === "lunch" ? "sun" : m === "dinner" ? "moon" : m === "snack" ? "cup" : "bowl";
 /** A serving weight recovered from its label, EXACT conversions only — a
  *  volume weight is an assumption (see serving-units.ts) and must not be
@@ -1314,6 +1313,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   //    diary's scrubbed day: the picker writes to today, so a header reading
   //    yesterday's remainder would be answering a question nobody asked.
   const pickerGap = useMemo(() => nutritionGap(today, targets), [today, targets]);
+  // THE HERO'S FIGURES, through the same sum as the picker's and the diary's.
+  // The ring used to compute its own share and its own over-flag inline, and
+  // the second of those was wrong in the state the app is careful about
+  // everywhere else: with NO target, `kcal > targets.kcal * 1.05` reduces to
+  // `kcal > 0`, so the first food of the day painted the ring amber against a
+  // number nobody set. `gapFigure` reports no target as no target.
+  const heroFigures = useMemo(() => nutritionFigures(heroDay, targets), [heroDay, targets]);
   const mismatch = useMemo(() => targetMismatch(targets), [targets]);
   const maint = useMemo(() => estimateMaintenance(sig, {}), [signals]);
   const recentDays = useMemo(() => dailyNutrition(sig).slice(0, 7), [signals]);
@@ -1434,7 +1440,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     return (
       <View>
         <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk }}>{t("w.recovery.nutrition.addMealTitle")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 4 }}>{Math.round(today.kcal)} / {targets.kcal} {t("w.recovery.nutrition.kcalToday")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{figureText(today.kcal, targets.kcal)} {t("w.recovery.nutrition.kcalToday")}</Text>
 
         {/* Meal selector — the quick-add is attributed to the chosen meal,
             matching the full picker so today's intake groups the same way. */}
@@ -2918,22 +2924,29 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                     panel below keeps red: a saturated-fat or salt figure past a
                     WHO/EFSA reference is a different claim from "you ate more
                     than you planned to.") */}
-                <Ring value={targets.kcal > 0 ? (heroDay.kcal / targets.kcal) * 100 : 0} size={190} ticks={52} color={heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? C.amber : C.lime} track={C.line}>
+                <Ring value={heroFigures.kcal.pct} size={190} ticks={52} color={heroFigures.kcal.over ? C.amber : C.lime} track={C.line}>
                   <View style={{ alignItems: "center" }}>
                     {/* THE NUMBER YOU CAME FOR, and the one that moves most: it
                         changes every time food is logged, so it rolls rather
                         than swapping. Web parity — its side used to run a
                         mount-only count-up this never had. */}
                     <RollingNumber
-                      value={String(Math.round(targets.kcal - heroDay.kcal))}
+                      // NO TARGET, NO REMAINDER. This printed `0 - 1675 = -1675`
+                      // under a "CALORIES LEFT" label when no target was set —
+                      // a confident wrong number of exactly the kind the picker
+                      // refuses to draw (DayGap renders nothing without one).
+                      // An em dash is the app's own mark for a figure that does
+                      // not exist yet, and a figure that changes SHAPE does not
+                      // roll, which is already RollingNumber's rule.
+                      value={heroFigures.kcal.left != null ? String(heroFigures.kcal.left) : "—"}
                       align="center"
                       // The picker's day header now draws this same figure, so
                       // the two land on ONE spec: the `fs.stat` rung and
                       // `tracking.display`, in place of a hand-set 44/-1 that
                       // existed nowhere else.
-                      style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: tracking.display, color: heroDay.kcal > targets.kcal * KCAL_OVER_THRESHOLD ? txt(C, C.amber) : C.chalk }}
+                      style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: tracking.display, color: heroFigures.kcal.over ? txt(C, C.amber) : C.chalk }}
                     />
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{Math.round(heroDay.kcal)} / {targets.kcal}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{figureText(heroFigures.kcal.have, heroFigures.kcal.want)}</Text>
                   </View>
                 </Ring>
               </View>
@@ -2956,13 +2969,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 voice, one animated fill. The macro's colour stays where it
                 carries the meaning — the fill. */}
             <View style={{ alignSelf: "stretch", marginTop: 24 }}>
-              {([["w.recovery.nutrition.protein", heroDay.protein, targets.protein, C.blue], ["w.recovery.nutrition.carbs", heroDay.carbs, targets.carbs, C.amber], ["w.recovery.nutrition.fat", heroDay.fat, targets.fat, C.violet]] as const).map(([label, cur, tgt, col]) => (
+              {heroFigures.macros.map((m) => (
                 <AMeter
-                  key={label}
-                  label={t(label)}
-                  value={`${Math.round(cur)} / ${tgt} g`}
-                  pct={tgt > 0 ? (cur / tgt) * 100 : 0}
-                  color={col}
+                  key={m.key}
+                  label={t(`w.recovery.nutrition.${m.key}`)}
+                  // THE SAME SPELLING AS THE LEDGER. This wrote `118 / 150 g`
+                  // while the picker and the diary wrote `118/150`, so the two
+                  // heroes of one day agreed on the number and disagreed on how
+                  // to say it. The unit is the label's job.
+                  value={figureText(m.figure.have, m.figure.want)}
+                  pct={m.figure.pct}
+                  color={C[MACRO_FILL[m.key]]}
                 />
               ))}
             </View>
@@ -3194,7 +3211,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       <ACard solid style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.yourMeals")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{full ? t("w.recovery.nutrition.unlimited") : `${meals.length} / ${FREE_MEAL_LIMIT}`}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{full ? t("w.recovery.nutrition.unlimited") : `${meals.length}/${FREE_MEAL_LIMIT}`}</Text>
         </View>
         {meals.length === 0 && !showMealBuilder ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 10, lineHeight: leading(fs.caption, "snug") }}>{t("w.recovery.nutrition.yourMealsEmpty")}</Text>
@@ -3313,7 +3330,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       {/* DIARY — the selected day's individual entries, grouped by part, each
           editable (quantity) and deletable. Defaults to today; pick a past day
           in the record below. Then the week strip + recent days. */}
-      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey(); const macros: [string, number, number, string][] = [["P", daySummary.protein, targets.protein ?? 0, C.blue], ["C", daySummary.carbs, targets.carbs ?? 0, C.amber], ["F", daySummary.fat, targets.fat ?? 0, C.violet]];
+      {view === "diary" && (() => { const isToday = diaryDay === localTodayKey();
       // One logged item: what it was, what it cost, a stepper to rescale it and
       // a bin to remove it. A derived entry (no FoodLog row) has no name of its
       // own, so it's labelled by its time of day and scales by a multiplier.
@@ -3380,23 +3397,39 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             {t("w.recovery.nutrition.copyDay")}
           </Text>
         </Pressable>
+        {/* THE DAY'S ENERGY, as the card's one figure — and ONLY the figure.
+            The "/ 2325" it used to trail is gone from here because the ledger
+            below states it, in the column where the other three targets are:
+            the same number twice, eight points apart, in two different forms is
+            exactly what this pass exists to remove. It ROLLS, like every other
+            figure that moves when a day is edited. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 34, fontWeight: "700", color: C.chalk }}>{Math.round(daySummary.kcal)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>kcal{targets.kcal ? ` / ${Math.round(targets.kcal)}` : ""}</Text>
+          <RollingNumber
+            value={String(Math.round(daySummary.kcal))}
+            align="center"
+            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            style={{ fontFamily: F.monoBold, fontSize: fs.hero, color: C.chalk }}
+          />
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>kcal</Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-          {macros.map(([lab, val, tgt, tint]) => (
-            <View key={lab} style={{ flex: 1 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, tint) }}>{lab}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{Math.round(val)}{tgt ? `/${Math.round(tgt)}` : ""}g</Text>
-              </View>
-              <View style={{ height: 4, borderRadius: 999, backgroundColor: C.line, overflow: "hidden" }}>
-                <View style={{ width: `${tgt ? Math.min(100, (val / tgt) * 100) : 0}%`, height: "100%", backgroundColor: tint, borderRadius: 999 }} />
-              </View>
-            </View>
-          ))}
-        </View>
+        {/* THE LEDGER — the same four figures, in the same form, as the meal
+            picker one tab away. This card used to speak a dialect of its own:
+            single-letter labels, a `g` suffix the picker drops, a hand-rolled
+            4dp bar instead of the shared meter, and no energy column at all
+            (energy was the figure above, measured against a target the macros
+            below stated in a different way). It keeps a macro nobody targeted —
+            a diary is a RECORD of the day, and what you ate is worth stating
+            with or without a plan to measure it against; that column simply
+            draws no track. Read through the SAME arithmetic as the picker, so
+            the two can never disagree about the day they both describe. */}
+        <MacroLedger
+          C={C}
+          figures={nutritionFigures(
+            { kcal: daySummary.kcal, protein: daySummary.protein, carbs: daySummary.carbs, fat: daySummary.fat },
+            targets,
+          )}
+          style={{ marginTop: 16 }}
+        />
         {/* The label panel for the whole day. It is a FLOOR, not a total — only
             the foods that stated a value contribute one, so the caption says so
             rather than letting a partial number read as a complete one. */}

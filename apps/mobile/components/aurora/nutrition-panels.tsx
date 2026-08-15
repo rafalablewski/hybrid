@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SC
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard, ASection, RADIUS } from "./kit";
+import { APill, ACard, ASection, AMeter, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { Glyph } from "./nutrition-kit";
 import { withAlpha } from "./field";
@@ -133,15 +133,31 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
               </View>
             ))}
           </View>
+          {/* MACRO BALANCE — the last hand-drawn proportion in nutrition, and
+              now the shared meter like every other.
+
+              It was a `label | 4dp track | 52dp value` row, three of them
+              stacked: a fifth track height (4 against AMeter's 6), a fifth
+              radius, a label column sized to a magic 52dp — and the label wore
+              its macro's accent as TYPE while the fill beside it wore the same
+              accent. One quantity, painted twice, in the one place the app had
+              already settled: the fill carries the colour, the label is ash.
+
+              The row also broke in the two ways a hand-sized label column
+              always does: "Kohlenhydrate" in a 52dp box, and a value column
+              wide enough for "9%" but not for a figure that grew. AMeter puts
+              the label and its value on one row ABOVE the track, so both are
+              free to take the width they need, and all three tracks share a
+              baseline.
+
+              These are shares of ENERGY, not amounts against a target, so they
+              stay their own block rather than joining the ledger — the ledger's
+              form is `have/want` and a split has no `want`. */}
           {summary.macroSplit ? (
             <View style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>{t("w.recovery.nutrition.macroBalance")}</Text>
-              {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue, txt(C, C.blue)], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber, txt(C, C.amber)], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.violet, txt(C, C.violet)]] as const).map(([label, pct, col, colT]) => (
-                <View key={label} style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 8 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: colT, width: 52 }}>{t(label)}</Text>
-                  <View style={{ flex: 1, height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink2, overflow: "hidden" }}><View style={{ width: `${pct}%`, height: 4, borderRadius: RADIUS.pill, backgroundColor: col }} /></View>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, width: 30, textAlign: "right" }}>{pct}%</Text>
-                </View>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.macroBalance")}</Text>
+              {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.violet]] as const).map(([label, pct, col]) => (
+                <AMeter key={label} label={t(label)} value={`${pct}%`} pct={pct} color={col} />
               ))}
             </View>
           ) : null}

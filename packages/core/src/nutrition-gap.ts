@@ -66,7 +66,19 @@ export interface MacroTotals {
 const usable = (n: number | null | undefined): n is number =>
   typeof n === "number" && Number.isFinite(n) && n > 0;
 
-const figure = (have: number, want: number | null | undefined, tolerance: number): GapFigure => {
+/**
+ * ONE logged figure against ONE target.
+ *
+ * Exported because it is the arithmetic behind every `have / want` in the app,
+ * and the second screen to draw those figures (the diary's day card) must not
+ * re-derive it: a percentage computed twice is a meter and a ring disagreeing
+ * about the same day, which is the drift `nutritionGap` was written to end.
+ */
+export function gapFigure(
+  have: number,
+  want: number | null | undefined,
+  tolerance = KCAL_OVER_TOLERANCE,
+): GapFigure {
   const h = Number.isFinite(have) ? Math.max(0, have) : 0;
   if (!usable(want)) return { have: h, want: null, left: null, pct: 0, over: false };
   return {
@@ -76,13 +88,57 @@ const figure = (have: number, want: number | null | undefined, tolerance: number
     pct: Math.min(100, Math.max(0, (h / want) * 100)),
     over: h > want * tolerance,
   };
-};
+}
+
+/**
+ * THE FIGURE'S ONE SPELLING — `have/want`, both rounded, no spaces, no unit.
+ *
+ * Five surfaces state a logged figure against its target and, before this, four
+ * of them spelled it differently: the ledger wrote `118/150`, the hub's macro
+ * meters `118 / 150 g`, the hub's ring `1675 / 2325`, the Today sheet
+ * `1675 / 2325 kcal today`. A reader crossing two screens has to work out
+ * whether the `g` and the spaces mean something. They do not.
+ *
+ * The UNIT is the label's job (a macro is grams, kcal says kcal), so the figure
+ * carries none. Both halves are ROUNDED here rather than at each call site: an
+ * overridden target is taken exactly as typed (nutrition-targets.ts), so a
+ * target of 2325.5 would otherwise reach the glass wherever a call site
+ * interpolated it raw — as two of them did.
+ *
+ * No target is not a target of zero: with none, the figure states the amount
+ * alone, and its caller draws no track.
+ */
+export function figureText(have: number, want?: number | null): string {
+  const h = Math.round(Number.isFinite(have) ? Math.max(0, have) : 0);
+  return usable(want) ? `${h}/${Math.round(want)}` : String(h);
+}
+
+/**
+ * The day's four figures, whether or not there is a target behind them.
+ *
+ * This is what a RECORD of a day needs — the diary lists what was eaten and
+ * says which of it was measured against something. A figure nobody set a target
+ * for still reports `want: null`, so the caller draws the amount and no track;
+ * it is never a bar at 0 %.
+ */
+export function nutritionFigures(
+  have: MacroTotals,
+  want: Partial<MacroTotals> | null | undefined,
+  tolerance = KCAL_OVER_TOLERANCE,
+): NutritionGap {
+  return {
+    kcal: gapFigure(have.kcal, want?.kcal, tolerance),
+    macros: GAP_MACROS.map((key) => ({ key, figure: gapFigure(have[key], want?.[key], tolerance) })),
+  };
+}
 
 /**
  * What is left of today, against the targets in force.
  *
  * `null` means "no energy target yet" — the caller shows nothing rather than a
- * number nobody set.
+ * number nobody set. That guard is the ONLY thing between this and
+ * `nutritionFigures`: a screen about the GAP needs a target to have a subject,
+ * a screen about the DAY does not.
  */
 export function nutritionGap(
   have: MacroTotals,
@@ -90,10 +146,7 @@ export function nutritionGap(
   tolerance = KCAL_OVER_TOLERANCE,
 ): NutritionGap | null {
   if (!want || !usable(want.kcal)) return null;
-  return {
-    kcal: figure(have.kcal, want.kcal, tolerance),
-    macros: GAP_MACROS.map((key) => ({ key, figure: figure(have[key], want[key], tolerance) })),
-  };
+  return nutritionFigures(have, want, tolerance);
 }
 
 /**

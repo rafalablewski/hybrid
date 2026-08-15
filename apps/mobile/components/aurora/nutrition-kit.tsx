@@ -1,11 +1,11 @@
 import { type ReactNode } from "react";
-import { View, Text } from "react-native";
+import { View, Text, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
-  PICKER_SOURCES, pickerSourceLabelKey,
-  type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
+  PICKER_SOURCES, pickerSourceLabelKey, figureText,
+  type GapFigure, type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
 } from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
@@ -257,6 +257,9 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
  *     logged" under a hero that had just said 2325, so the one thing it never
  *     showed was the PROPORTION — which is the whole reason the hub draws a
  *     ring. Flat, this is that ring.
+ *   - and that meter is the FIRST COLUMN OF THE LEDGER, not a full-width block
+ *     above it. See the ledger's own note below: four figures of one day, one
+ *     form, one line.
  *   - every track is the shared `AMeter` (6dp, RADIUS.mark). The hand-rolled
  *     3dp/radius-2 bar here was the sixth spelling of one object.
  *   - a macro past its own target no longer turns SAND. It said nothing on the
@@ -292,7 +295,6 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
   // flag printed "50 kcal left" at 2 050 logged.
   const isOver = left < 0;
   const tone = gap.kcal.over ? txt(C, C.amber) : C.chalk;
-  const macros = gap.macros.filter((m) => m.figure.want != null);
   return (
     <View style={{ paddingHorizontal: PICKER_EDGE }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
@@ -323,35 +325,130 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
           </View>
         ) : null}
       </View>
-      {/* THE DAY'S ENERGY, as a proportion. The ledger line is the meter's own
-          readout rather than a sentence floating above it — one object, not
-          two. `AMeter` draws the readout row above the track, which keeps the
-          reading order the block always had (figure → ledger → fill). */}
-      <AMeter
-        pct={gap.kcal.pct}
-        color={gap.kcal.over ? C.amber : C.lime}
-        value={t("w.recovery.nutrition.pick.ofTarget")
-          .replace("{a}", String(Math.round(gap.kcal.have)))
-          .replace("{b}", String(Math.round(gap.kcal.want ?? 0)))}
-      />
-      {macros.length ? (
-        // NO top margin: AMeter already carries `space.ms`, and that is the
-        // hero's one internal step — figure, energy, macros, evenly. Adding to
-        // it here made the second step 18 against the first's 10, which is a
-        // rhythm arrived at by addition rather than chosen.
-        <View style={{ flexDirection: "row", gap: space.lg }}>
-          {macros.map((m) => (
-            <View key={m.key} style={{ flex: 1 }}>
-              <AMeter
-                label={t(`w.recovery.nutrition.${m.key}`)}
-                value={`${Math.round(m.figure.have)}/${Math.round(m.figure.want ?? 0)}`}
-                pct={m.figure.pct}
-                color={C[MACRO_FILL[m.key]]}
-              />
-            </View>
-          ))}
+      {/* The day's four figures. The picker DROPS a macro nobody set a target
+          for: this block's subject is the gap, and a figure with nothing to be
+          short of has no place in it. (The diary keeps it — see MacroLedger.) */}
+      <MacroLedger C={C} figures={gap} onlyTargeted style={{ marginTop: space.ms }} />
+    </View>
+  );
+}
+
+/**
+ * THE LEDGER — a day's figures in ONE line, in ONE form.
+ *
+ *     KCAL 1675/2325   PROTEIN 118/150   CARBS 186/250   FAT 52/70
+ *
+ * ── WHY IT IS ONE COMPONENT ────────────────────────────────────────────────
+ * Two screens show these four numbers, and they said them in three dialects.
+ * The picker stated energy as a SENTENCE ("1675 of 2325 logged") over a
+ * full-width track and the macros as a ratio three-up; the diary's day card
+ * said `P 118/150g` under single-letter labels, on a 4dp bar of its own, with
+ * energy split off again into a big mono figure with a slashed target. Same
+ * day, same question — how much of what I planned have I logged — asked three
+ * ways, which is how a reader ends up doing conversions the app should have
+ * done. There is one form now, and it lives here.
+ *
+ * ── THE HEAD STACKS, AND THAT IS A WIDTH FACT ──────────────────────────────
+ * `AMeter` draws its own head as one row (label left, value right). That is
+ * right at three columns and impossible at four: four columns leave ~80dp each
+ * on a 393dp phone and ~76 on an SE, while "Protein 118/150" wants ~102 — so
+ * the shared head would have ellipsised the label on every column carrying a
+ * three-digit target, and "Kohlenhydrate" on all of them in German. So the
+ * readout stacks and the TRACK stays the shared AMeter: only the head above it
+ * is laid out for four-up.
+ *
+ * ── THE FIGURE ROLLS ───────────────────────────────────────────────────────
+ * These are the numbers the picker exists to move — log a food and all four
+ * change under your thumb. The hero above them rolled, the meal total beside it
+ * rolled, the meter fills travelled, and the ledger jump-cut, so one event read
+ * as two. The whole `have/want` string goes through `RollingNumber`: only the
+ * changed digits travel, the "/" is punctuation and stays put, and a target
+ * that changes rolls too.
+ *
+ * ── A FIGURE WITH NO TARGET STILL HAPPENED ─────────────────────────────────
+ * `want: null` means nobody set a target, never that the target is zero. Such a
+ * column states the amount and draws NO track — a bar at 0 % reads as "you have
+ * eaten none of your carbs" when the truth is "you have no carb target". Which
+ * columns survive is the caller's call, and the two callers differ honestly:
+ * the picker is about the GAP so it drops them (`onlyTargeted`), the diary is a
+ * RECORD of the day so it keeps them.
+ */
+export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
+  C: ReturnType<typeof useTheme>["palette"];
+  /** the day's figures — `nutritionGap` (picker) or `nutritionFigures` (diary) */
+  figures: NutritionGap;
+  /** drop a macro that has no target instead of reporting the amount alone */
+  onlyTargeted?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { t } = useLang();
+  const macros = onlyTargeted ? figures.macros.filter((m) => m.figure.want != null) : figures.macros;
+  /**
+   * Energy first, then the macros — one list, because they are drawn as one
+   * row: energy is not a different KIND of thing from protein here, it is the
+   * first of four answers to the same question.
+   *
+   * `kcal` is the unit itself rather than a translated noun. It is what every
+   * food row on the picker already says, and it is the same word in all three
+   * locales; the macros keep their translated names.
+   *
+   * OVER is flagged on the ENERGY alone, in SAND — the hub's rule. A macro past
+   * its own target says so with a full track, and carbs are DRAWN in sand, so a
+   * sand carb figure would say nothing at all.
+   */
+  const items: { key: string; label: string; figure: GapFigure; fill: string; tone: string }[] = [
+    {
+      key: "kcal",
+      label: "kcal",
+      figure: figures.kcal,
+      fill: figures.kcal.over ? C.amber : C.lime,
+      tone: figures.kcal.over ? txt(C, C.amber) : C.chalk,
+    },
+    ...macros.map((m) => ({
+      key: m.key,
+      label: t(`w.recovery.nutrition.${m.key}`),
+      figure: m.figure,
+      fill: C[MACRO_FILL[m.key]],
+      tone: C.chalk,
+    })),
+  ];
+  return (
+    <View style={[{ flexDirection: "row", gap: space.md }, style]}>
+      {items.map((item) => (
+        <View
+          key={item.key}
+          style={{ flex: 1 }}
+          // A column reads as ONE figure, not as a label plus a number plus a
+          // progress bar: the AMeter inside is collapsed into this sentence.
+          // The retired "{a} of {b} logged" line lives on here, which is the
+          // one place a sentence beats a ratio.
+          accessible
+          accessibilityLabel={
+            item.figure.want == null
+              ? `${item.label} ${Math.round(item.figure.have)}`
+              : `${item.label} – ${t("w.recovery.nutrition.pick.ofTarget")
+                  .replace("{a}", String(Math.round(item.figure.have)))
+                  .replace("{b}", String(Math.round(item.figure.want)))}`
+          }
+        >
+          <Text
+            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            numberOfLines={1}
+            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
+          >
+            {item.label}
+          </Text>
+          <View style={{ marginTop: space.xxs }}>
+            <RollingNumber
+              value={figureText(item.figure.have, item.figure.want)}
+              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: item.tone }}
+            />
+          </View>
+          {/* No target, no track. The amount is the whole statement. */}
+          {item.figure.want != null ? <AMeter pct={item.figure.pct} color={item.fill} /> : null}
         </View>
-      ) : null}
+      ))}
     </View>
   );
 }
