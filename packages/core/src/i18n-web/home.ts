@@ -173,11 +173,6 @@ export const web_home = {
     // trained in its own 8-week window. The retired key was `metaWeek`.
     "w.home.group.metaOf": "{a} of {b} this week",
     "w.home.group.metaMoves": "{a} of {b} movements",
-    // The Performance page's clusters (State / Training / Season, plus the
-    // shared Explore label above) — same headline-tier GroupMark, same grammar.
-    "w.home.group.state": "State",
-    "w.home.group.training": "Training",
-    "w.home.group.season": "Season",
     // ── This week — the verdict card (Statistics + Analytics, merged onto Today).
     // The lead sentences take {m} = the metric name below; the vs* lines take
     // {b} = the BASELINE alone, unit-formatted. They used to open with {v} = the
@@ -1389,9 +1384,6 @@ export const web_home = {
     "w.home.group.explore": "Odkrywaj",
     "w.home.group.metaOf": "{a} z {b} w tym tygodniu",
     "w.home.group.metaMoves": "{a} z {b} ćwiczeń",
-    "w.home.group.state": "Stan",
-    "w.home.group.training": "Trening",
-    "w.home.group.season": "Sezon",
     "w.home.week.title": "Ten tydzień",
     "w.home.other.title": "Inne sporty",
     "w.home.other.efforts": "Wyjścia",
@@ -2488,9 +2480,6 @@ export const web_home = {
     "w.home.group.explore": "Entdecken",
     "w.home.group.metaOf": "{a} von {b} diese Woche",
     "w.home.group.metaMoves": "{a} von {b} Übungen",
-    "w.home.group.state": "Zustand",
-    "w.home.group.training": "Training",
-    "w.home.group.season": "Saison",
     "w.home.week.title": "Diese Woche",
     "w.home.other.title": "Andere Sportarten",
     "w.home.other.efforts": "Einheiten",

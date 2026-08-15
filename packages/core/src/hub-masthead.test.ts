@@ -142,11 +142,32 @@ describe("the hub head guard — no screen may draw its own", () => {
     // what the screen was visibly about, and the reason this hub's three views
     // didn't open alike (Performance and Feed go straight into their content).
     // A cluster marker earns its place by naming a TURN; the first cluster
-    // turns from nothing. Deleted, key and all, rather than left dangling —
-    // `w.home.group.training` is a DIFFERENT key (the log's section head).
+    // turns from nothing. Deleted, key and all, rather than left dangling.
+    // The `(?!ing)` is not decoration: `w.home.group.training` was one of the
+    // three Performance-cluster labels, and this guard has to be able to tell
+    // a re-added Train from a word that merely starts the same way.
     for (const file of [...HUB_SCREENS, "packages/core/src/i18n-web/home.ts"]) {
       expect(read(file), file).not.toMatch(/w\.home\.group\.train(?!ing)/);
     }
+  });
+
+  it("keeps the group labels down to the markers that actually render", () => {
+    // The Performance clusters (State / Training / Season) were labels for
+    // GroupMarks that are not in the code — mobile's Performance is still the
+    // numbered card scroll, and the web twin died before it grew them either.
+    // Three strings in three locales for a marker set that doesn't exist, and
+    // they read as evidence Performance was clustered when it wasn't. Every
+    // surviving w.home.group.* key must be rendered by something.
+    const i18n = read("packages/core/src/i18n-web/home.ts");
+    const keys = new Set([...i18n.matchAll(/"(w\.home\.group\.[a-zA-Z]+)"/g)].map((m) => m[1]!));
+    const rendered = [
+      ...HUB_SCREENS,
+      "apps/mobile/components/aurora/exercise-widget.tsx",
+      "apps/mobile/components/aurora/other-sports.tsx",
+    ]
+      .map((f) => read(f))
+      .join("\n");
+    for (const key of keys) expect(rendered, key).toContain(key);
   });
 
   it("lets the head own the gap below it", () => {
