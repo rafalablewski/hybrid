@@ -154,7 +154,7 @@ export default function AuroraTrends({ top, unified = false }: {
       {/* Standing alone the title is the HERO's (below); embedded — a hub tab,
           or inside the unified Performance page — the host owns the head, so
           only the sub-line renders here. */}
-      {(top || unified) && <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>}
+      {(top || unified) && <AHeading>{t("w.analyze.trends.title")}</AHeading>}
       <ASub style={{ marginTop: top || unified ? 10 : 0 }}>{t("w.analyze.trends.subtitle")}</ASub>
 
       {!trained ? (

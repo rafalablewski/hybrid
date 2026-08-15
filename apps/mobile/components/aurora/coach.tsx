@@ -36,7 +36,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, RADIUS, AChip } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASection, RADIUS, AChip } from "./kit";
 import { AuroraIcon } from "./icons";
 
 // Goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
@@ -196,14 +196,14 @@ export default function AuroraCoach() {
 
           {groupsOn && (
             <>
-              <AHeading style={{ fontSize: fs.title, marginTop: 24 }}>{t("w.teams.coach.clientGroups")}</AHeading>
+              <ASection title={t("w.teams.coach.clientGroups")} />
               <CoachGroups clients={clients.map((l) => ({ clientId: l.client?.id ?? "", name: personName(l.client) })).filter((c) => c.clientId)} />
             </>
           )}
 
           {programsOn && (
             <>
-              <AHeading style={{ fontSize: fs.title, marginTop: 24 }}>{t("w.teams.coach.programs")}</AHeading>
+              <ASection title={t("w.teams.coach.programs")} />
               <CoachPrograms clients={clients.map((l) => ({ linkId: l.id, name: personName(l.client) }))} />
             </>
           )}
@@ -334,7 +334,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       <Pressable onPress={back} style={{ marginBottom: 10 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("w.teams.coach.roster")}</Text>
       </Pressable>
-      <AHeading style={{ fontSize: fs.display }}>{personName(link.client)}</AHeading>
+      <AHeading>{personName(link.client)}</AHeading>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4, marginBottom: 12 }}>{link.client?.email}</Text>
 
       {/* Roster TAGS */}
