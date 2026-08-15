@@ -1,4 +1,4 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, MicroFacts, NutritionGoal, NutritionMealPart } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, type HeatProtocol } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -660,7 +660,7 @@ export async function favouriteRoutine(id: string, favourite: boolean): Promise<
 // four macros, so the panel survives the whole round-trip: search → portion
 // editor → log → diary, and library → log.
 export type SavedMealRow = { id: string; name: string; subname: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts;
-export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; servingGrams?: number | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts;
+export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; servingGrams?: number | null; portions?: unknown; packSize?: number | null; packLabel?: string | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts;
 
 export async function fetchSavedMeals(): Promise<SavedMealRow[]> {
   try {
@@ -735,7 +735,7 @@ export async function fetchFoodProducts(): Promise<FoodProductRow[]> {
 }
 
 export async function createFoodProduct(
-  product: { name: string; subname?: string | null; servingLabel?: string; servingGrams?: number; kcal?: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts,
+  product: { name: string; subname?: string | null; servingLabel?: string; servingGrams?: number; portions?: FoodPortion[]; kcal?: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts,
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, {
@@ -746,6 +746,27 @@ export async function createFoodProduct(
     return { ok: res.ok, status: res.status };
   } catch {
     return { ok: false, status: null };
+  }
+}
+
+// Amend a saved food. Editing has to be possible AT ALL: delete-and-recreate
+// mints a new id and breaks every recipe ingredient pointing at the old one, so
+// without this a typo in a serving label was permanent for anything a recipe
+// used. Only the keys sent are changed.
+export async function updateFoodProduct(
+  id: string,
+  patch: { name?: string; subname?: string | null; servingLabel?: string; servingGrams?: number | null; portions?: FoodPortion[] }
+    & Partial<MicroFacts> & { kcal?: number; protein?: number; carbs?: number; fat?: number },
+): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(patch),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 
@@ -762,7 +783,11 @@ export async function deleteFoodProduct(id: string): Promise<boolean> {
 // `derived` marks an entry the server rebuilt from its Signals because no
 // FoodLog row exists for it (logged before the table shipped, or the migration
 // hasn't run) — it edits by a relative scale instead of an absolute quantity.
-export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean } & MicroFacts;
+export type FoodLogRow = { id: string; name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; ts: string; derived?: boolean }
+  /** the portion AS ENTERED — 35 "g", 1 "bottle" — so the row can say what
+   *  was logged instead of the quantity that scales the macros (portion.ts) */
+  & { amount?: number | null; amountUnit?: string | null }
+  & MicroFacts;
 export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, { headers: await authHeaders() });
@@ -775,7 +800,7 @@ export async function fetchFoodLogs(): Promise<FoodLogRow[]> {
 // Log one food/meal → creates the editable entry AND the mirrored Signals the
 // engines read. Macros are PER SERVING; qty scales them.
 export async function createFoodLog(
-  entry: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; verifiedId?: string | null } & MicroFacts,
+  entry: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; amount?: number | null; amountUnit?: string | null; verifiedId?: string | null } & MicroFacts,
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/log`, {

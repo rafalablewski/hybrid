@@ -36,7 +36,7 @@ import type {
   UserPageTabId,
 } from "@hybrid/core";
 import { F, Loading, LoadSwap, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, ASection, cardStack } from "../../components/aurora/kit";
+import { AuroraScreen, ACard, ASection, ASegment, cardStack } from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -244,26 +244,29 @@ export default function UserScreen() {
         </View>
       ) : null}
 
-      {/* ── THE TABS ── navigation, and therefore NOT buttons: text on a rule,
-          with the accent under the one you're on. They used to be chips under a
-          row of pills, which made a field of seven equal-looking controls out
-          of two different kinds of thing. */}
+      {/* ── THE TABS ── navigation, and therefore NOT buttons. They used to be
+          chips under a row of pills, which made a field of seven equal-looking
+          controls out of two different kinds of thing; that fix left them as
+          text on a rule, with the accent UNDER the one you're on — and the
+          accent was the part that did not survive the second look. Chartreuse
+          is the app's one "go" colour and a tab goes nowhere it isn't already,
+          so this is `ASegment` now, like every other switch in the app: a
+          neutral lens that travels on springs.lens, with a haptic at the
+          commit. The row's hairline went with the rule — a track is an object,
+          not a rule, and each tab's content already sets its own top step.
+
+          VALUE IS `shown`, NOT `tab`. The two differ: a tab that no longer
+          exists (a coach who stopped coaching, a page that turned private)
+          falls back to Overview through resolveUserPageTab, and feeding the
+          raw want to a control that finds its index by identity would park the
+          lens on segment 0 while the page rendered something else. */}
       {tabs.length > 1 ? (
-        <View style={{ flexDirection: "row", gap: 22, marginTop: 20, borderBottomWidth: 1, borderBottomColor: C.line }}>
-          {tabs.map((x) => {
-            const on = shown === x.id;
-            return (
-              <Pressable
-                key={x.id}
-                onPress={() => setTab(x.id)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: on }}
-                style={{ paddingBottom: 10, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent", marginBottom: -1 }}
-              >
-                <Text style={{ fontFamily: on ? F.bold : F.reg, fontSize: fs.body, color: on ? C.chalk : C.ash }}>{t(x.labelKey)}</Text>
-              </Pressable>
-            );
-          })}
+        <View style={{ marginTop: 20 }}>
+          <ASegment
+            options={tabs.map((x) => ({ id: x.id, label: t(x.labelKey) }))}
+            value={shown}
+            onPick={setTab}
+          />
         </View>
       ) : null}
 
@@ -351,9 +354,11 @@ function Overview({ data, cmp, name, onCompare, busy }: {
       {stats ? (
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
           {[
+            // Core figure-order.ts — tonnage, the session count, then the
+            // streak, which is a fact ABOUT that count and follows it.
             { l: t("w.social.statVolume"), v: `${Math.round(stats.totalVolumeKg / 1000)}t` },
-            { l: t("w.social.statStreak"), v: `${stats.currentStreak}d` },
             { l: t("w.social.statSessions"), v: stats.totalSessions.toLocaleString() },
+            { l: t("w.social.statStreak"), v: `${stats.currentStreak}d` },
           ].map((s) => (
             <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 14, paddingVertical: 12, alignItems: "center" }}>
               <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle }}>{s.v}</Text>

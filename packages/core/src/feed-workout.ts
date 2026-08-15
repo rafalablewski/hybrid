@@ -40,6 +40,7 @@ import {
   type StrengthBlock,
 } from "./engines";
 import { sessionStats, type FeedPrLine, type FeedStat } from "./feed-card";
+import { orderFigures } from "./figure-order";
 
 /** One logged set, as it will be read on the opened post. */
 export interface FeedWorkoutSet {
@@ -135,13 +136,17 @@ const num = (s: string | undefined): number | null => {
 };
 
 /**
- * The stat row for the POST: the card's row first, in the card's own order, then
- * the figures a two-or-three-cell row could never carry — total reps, the
- * distance that a heart-rate reading pushed out of the card, the pace it implies
- * and the energy the device measured.
+ * The stat row for the POST: everything the card carries, plus the figures a
+ * two-or-three-cell row could never fit — total reps, the distance that a
+ * heart-rate reading pushed out of the card, the pace it implies and the energy
+ * the device measured.
  *
- * It EXTENDS `sessionStats` rather than recomputing: the first cells are
- * literally the card's, so opening a post can't restate its minutes differently.
+ * It EXTENDS `sessionStats` rather than recomputing: the cells are literally
+ * the card's, so opening a post can't restate its minutes differently. The
+ * extras used to be APPENDED, which put reps after duration and distance on an
+ * opened post while the card beside it had them the other way round; the whole
+ * row sorts through the app's one reading order (figure-order.ts) instead, so
+ * the post reads as the card with more of it rather than as a second layout.
  */
 export function feedWorkoutStats(session: LoggedSession): FeedStat[] {
   const s = deviceTrueSession(session);
@@ -174,7 +179,7 @@ export function feedWorkoutStats(session: LoggedSession): FeedStat[] {
   // pace derived from the rounded minutes beside it would contradict them.
   if (distanceKm > 0 && seconds > 0) stats.push({ key: "pace", value: Math.round(seconds / distanceKm), device: !!dev?.durationSec });
   if (dev?.kcal) stats.push({ key: "kcal", value: dev.kcal, device: true });
-  return stats;
+  return orderFigures(stats, (x) => x.key);
 }
 
 /**

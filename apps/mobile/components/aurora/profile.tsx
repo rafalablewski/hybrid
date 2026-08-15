@@ -33,9 +33,9 @@ import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { useFitnessLevel } from "../../lib/use-fitness-level";
-import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { AuroraScreen, RADIUS, CARD_PAD, ASection } from "./kit";
+import { AuroraScreen, RADIUS, CARD_PAD, ASection, ASegment } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
 import { NAV_HREF } from "../../lib/nav-href";
 import { AuroraIcon } from "./icons";
@@ -213,8 +213,10 @@ export default function AuroraProfile() {
         ? { to: STREAK_DESTINATION, aria: t(STREAK_ARIA_KEY).replace("{n}", String(dayStreak.current)) }
         : {}),
     });
-    if (hasData) out.push({ v: `${sessions.length}`, k: t("w.account.profile.id-sessions"), icon: "calendar-event", hkey: "sessions" });
+    // Tonnage, then the session count — core figure-order.ts, the order every
+    // other surface lists the same two figures in.
     if (hasData && lifetimeTonnage > 0) out.push({ v: fmtTonnage(lifetimeTonnage, prefs.units), k: t("w.account.profile.spec-tonnage"), icon: "list-check", hkey: "tonnage" });
+    if (hasData) out.push({ v: `${sessions.length}`, k: t("w.account.profile.id-sessions"), icon: "calendar-event", hkey: "sessions" });
     if (earnedCount > 0) out.push({ v: `${earnedCount}`, k: t("w.account.profile.achievements"), icon: "verified", hkey: "badges" });
     return out.slice(0, 6);
   }, [topPrs, prefs.units, weekStreakBest, dayStreak.current, streakLabel, hasData, sessions.length, lifetimeTonnage, earnedCount, t]);
@@ -349,25 +351,35 @@ export default function AuroraProfile() {
         ))}
       </View>
 
-      {/* TABS — Overview / PRs / Activity.
+      {/* TABS — Overview / PRs / Activity, on the app's ONE segmented control.
           There is no 4th "Private" tab: it held a link to Performance, a link
           to Settings and Body & progress, so two thirds of it duplicated
           doorways the app already has. Body & progress moved to Nutrition →
-          Body, next to the weigh-in its targets are steered by. */}
-      <View style={{ flexDirection: "row", marginTop: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        {([
-          { id: "overview" as const, label: t("w.account.profile.tab-overview") },
-          { id: "prs" as const, label: t("w.account.profile.tab-prs") },
-          { id: "activity" as const, label: t("w.account.profile.tab-activity") },
-        ]).map((tb) => {
-          const on = tab === tb.id;
-          return (
-            <PressScale key={tb.id} onPress={() => setTab(tb.id)} accessibilityRole="tab" accessibilityState={{ selected: on }} style={{ flex: 1, alignItems: "center", paddingVertical: 12 }}>
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{tb.label}</Text>
-              {on && <View style={{ position: "absolute", left: "18%", right: "18%", bottom: -1, height: 2, borderRadius: 2, backgroundColor: C.lime }} />}
-            </PressScale>
-          );
-        })}
+          Body, next to the weigh-in its targets are steered by.
+
+          This was a segmented control drawn by hand — three equal widths, and
+          a 2dp rule inset 18% either side that appeared under one label and
+          vanished from under another, so the one thing the control exists to
+          say was the one thing it never showed happening. Worse, that rule was
+          CHARTREUSE: the app's single "go" colour, spent on a control that goes
+          nowhere, which is exactly what the nutrition picker's first pass
+          deleted. `ASegment` carries selection on a neutral lens that travels
+          on springs.lens with a haptic, and the accent goes back to meaning
+          "this does something".
+
+          The hairline under the row went with it. It was the tab row's
+          underline doing double duty as the content's top edge; a track is an
+          object, not a rule, and the content below already sets its own step. */}
+      <View style={{ marginTop: 16 }}>
+        <ASegment
+          options={[
+            { id: "overview" as const, label: t("w.account.profile.tab-overview") },
+            { id: "prs" as const, label: t("w.account.profile.tab-prs") },
+            { id: "activity" as const, label: t("w.account.profile.tab-activity") },
+          ]}
+          value={tab}
+          onPick={setTab}
+        />
       </View>
 
       {/* TAB CONTENT */}
@@ -378,7 +390,7 @@ export default function AuroraProfile() {
             <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink2, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.ov-tw")}</Text>
               <View style={{ flexDirection: "row", gap: 24, marginTop: 8 }}>
-                {[{ v: `${thisWeek.count}`, k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, prefs.units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
+                {[{ v: fmtTonnage(thisWeek.vol, prefs.units), k: t("w.account.profile.spec-tonnage") }, { v: `${thisWeek.count}`, k: t("w.account.profile.id-sessions") }].map((s) => (
                   <View key={s.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
                     <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, letterSpacing: -0.5 }}>{s.v}</Text>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{s.k}</Text>

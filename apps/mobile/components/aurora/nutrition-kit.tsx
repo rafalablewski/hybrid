@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Animated, PanResponder, type StyleProp, type ViewStyle } from "react-native";
+import { type ReactNode } from "react";
+import { View, Text, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
-  springs, springToRN,
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
   PICKER_SOURCES, pickerSourceLabelKey, figureText,
   type GapFigure, type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
@@ -13,9 +12,7 @@ import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SC
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
-import { AMeter } from "./kit";
-import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { haptic } from "../../lib/haptics";
+import { AMeter, ASegment } from "./kit";
 import { RollingNumber } from "./rolling-number";
 import SwipeRow from "../swipe-row";
 
@@ -457,120 +454,68 @@ export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
 }
 
 /**
- * THE SOURCE LINE — Recent / Favorites / Meals / Foods, kept, with the box gone.
+ * THE SOURCE SWITCH — Recent / Favorites / Meals / Foods, on the app's ONE
+ * segmented control.
  *
  * The four sources are four different questions (what did I just eat, what do I
- * always eat, what have I built, what have I saved) and all four stay. What the
- * redesign drops is the PILL BAR they were wrapped in: a bordered, filled,
- * radiused seventh container whose selected tab wore CHARTREUSE — the app's one
- * "go" colour — on a control that goes nowhere.
+ * always eat, what have I built, what have I saved) and all four stay. What
+ * changed is the control drawn around them: this was the last hand-drawn
+ * selection control in the app, and it is `ASegment` now — the same track, the
+ * same lens, the same `springs.lens` travel and the same `haptic.selection`
+ * that the Today hub, the This-week filter, Statistics, Nutrition TRENDS and
+ * Settings all switch on. Trends is one tap from this screen and was switching
+ * on a track while the picker switched on an underline; the athlete has no way
+ * to read that as anything but two apps.
  *
- * Selection is carried by weight and a rule instead. No border, no radius, no
- * fill, no accent. The counts are the Explore section head's mono meta, moved
- * onto the label they describe.
+ * ── WHY THIS TOOK THREE PASSES, RECORDED SO IT TAKES NO MORE ───────────────
+ * The two earlier arguments here were both about the NATIVE control, and both
+ * are settled — but neither of them was ever an argument against this one.
  *
- * ── AND IT IS THE ONLY FORM, ON EVERY PLATFORM ─────────────────────────────
- * This was argued twice and settled once, on the device rather than in prose.
- *
- * A design pass replaced the iOS system segmented control here with this line
- * everywhere, on taste: it re-introduced a filled radiused track on a screen of
+ * A design pass replaced the iOS system segmented control with an underline
+ * line, on taste: it re-introduced a filled radiused track on a screen of
  * type-on-the-ground, it squeezed four unequal questions into equal widths, and
- * it dropped the counts the parent already computes. Asked to put the native
- * control back, the honest answer turned out to be that there is nothing to put
- * back — #423 had already DELETED it from the app for a structural reason no
- * amount of taste survives: a SwiftUI `Host` sizes its RN box from its content
- * once, at mount, and every segmented control in this app mounts before it
- * knows its content (labels arrive from `useLang`), so the control drew outside
- * its own frame. The picker was one of the surfaces it broke on.
+ * it dropped the counts the parent already computes. The product decision then
+ * went the other way and restored the native fork — and #423 deleted THAT for a
+ * structural reason no amount of taste survives: a SwiftUI `Host` sizes its RN
+ * box from its content once, at mount, and every segmented control in this app
+ * mounts before it knows its content (labels arrive from `useLang`), so the
+ * control drew outside its own frame. The picker was one of the surfaces it
+ * broke on. `design-tokens.test.ts` fails on any code reference to
+ * `GlassSegment`, so that third attempt is impossible rather than discouraged.
  *
- * So this is not the consolation form, it is the one that lays out — and it
- * keeps the counts. `design-tokens.test.ts` fails on any code reference to
- * `GlassSegment`, which is the guard that makes the third attempt impossible
- * rather than merely discouraged.
+ * What the underline outlived, then, was a control that no longer exists — and
+ * the replacement it was never weighed against is Yoga-laid-out, carries no
+ * accent (the lens is a neutral step of the text colour, never chartreuse), and
+ * lost only ONE of the three objections: the counts. So the counts moved onto
+ * `ASegment` as its `meta` slot rather than the picker keeping a control of its
+ * own to hold them, and the label shrinks before it truncates so four unequal
+ * German words survive four equal widths. Nothing about this screen is left
+ * arguing for a bespoke switch.
  *
- * ── THE RULE TRAVELS ───────────────────────────────────────────────────────
- * Selection is the whole job of this control, and it used to CUT: the 2dp rule
- * was a per-tab border that vanished under one label and appeared under
- * another, so the one thing the control exists to say was the one thing it
- * never showed happening. It is now a single indicator that flies, on
- * `springs.lens` — the app's named SELECTION token, the same spring the Today
- * hub's pill uses — measuring each tab so the rule lands on the label's true
- * width rather than an assumed one. Reduce Motion puts it there outright, and
- * `haptic.selection` marks the commit, which is what this codebase does
- * everywhere else you move through discrete values.
+ * The rule this control used to carry is gone with it. That hairline was doing
+ * two jobs — saying which tab was selected, and giving the list beneath it a top
+ * edge — and a track is an OBJECT, not a rule: the list opens on its first row
+ * now, with the head matter's own step above it (see the call site).
  */
-export function SourceLine({ C, value, counts, onChange }: {
-  C: ReturnType<typeof useTheme>["palette"];
+export function SourceSwitch({ value, counts, onChange }: {
   value: PickerSourceKey;
   counts: Record<PickerSourceKey, number>;
   onChange: (key: PickerSourceKey) => void;
 }) {
   const { t } = useLang();
-  const reduced = useReducedMotion();
-  // Measured per tab — the rule is as wide as the label it underlines, and the
-  // four labels are deliberately unequal.
-  const [slots, setSlots] = useState<Record<string, { x: number; w: number }>>({});
-  const x = useRef(new Animated.Value(0)).current;
-  const w = useRef(new Animated.Value(0)).current;
-  const placed = useRef(false);
-  const slot = slots[value];
-  useEffect(() => {
-    if (!slot) return;
-    // The FIRST placement is not a move: the rule belongs under the selected
-    // tab from the first frame, and flying it in from x=0 on mount would
-    // animate the screen's arrival instead of the user's choice.
-    if (!placed.current || reduced) {
-      placed.current = true;
-      x.setValue(slot.x); w.setValue(slot.w);
-      return;
-    }
-    const cfg = { ...springToRN(springs.lens), useNativeDriver: false };
-    Animated.parallel([
-      Animated.spring(x, { toValue: slot.x, ...cfg }),
-      Animated.spring(w, { toValue: slot.w, ...cfg }),
-    ]).start();
-  }, [slot?.x, slot?.w, reduced, x, w]);
-
   return (
-    <View
-      accessibilityRole="tablist"
-      style={{ flexDirection: "row", gap: 18, borderBottomWidth: 1, borderBottomColor: C.line, paddingHorizontal: PICKER_EDGE }}
-    >
-      {PICKER_SOURCES.map((key) => {
-        const on = key === value;
-        return (
-          <Pressable
-            key={key}
-            onPress={() => { if (!on) haptic.selection(); onChange(key); }}
-            onLayout={(e) => {
-              const { x: lx, width } = e.nativeEvent.layout;
-              setSlots((s) => (s[key] && s[key]!.x === lx && s[key]!.w === width ? s : { ...s, [key]: { x: lx, w: width } }));
-            }}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            style={{ flexDirection: "row", alignItems: "baseline", gap: 5, paddingBottom: 11 }}
-          >
-            <Text
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              style={{ fontFamily: on ? F.bold : F.semi, fontSize: fs.body, color: on ? C.chalk : C.ash }}
-            >
-              {t(pickerSourceLabelKey(key))}
-            </Text>
-            <Text
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: C.ash }}
-            >
-              {counts[key]}
-            </Text>
-          </Pressable>
-        );
-      })}
-      {slot ? (
-        <Animated.View
-          pointerEvents="none"
-          style={{ position: "absolute", bottom: -1, left: PICKER_EDGE, height: 2, backgroundColor: C.chalk, width: w, transform: [{ translateX: x }] }}
-        />
-      ) : null}
+    // The object edge, like the field and the meter above it — the track is a
+    // box on the screen's column, and PICKER_EDGE is where boxes stand.
+    <View style={{ paddingHorizontal: PICKER_EDGE }}>
+      <ASegment
+        options={PICKER_SOURCES.map((key) => ({
+          id: key,
+          label: t(pickerSourceLabelKey(key)),
+          meta: counts[key],
+        }))}
+        value={value}
+        onPick={onChange}
+      />
     </View>
   );
 }

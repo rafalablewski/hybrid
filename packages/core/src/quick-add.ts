@@ -19,20 +19,28 @@
  * wholesale by a client that has one — the same shape `DURATION_UNITS` uses.
  * Core ships a default, never a hard-coded assumption.
  *
- * ── GRAMS ONLY CONVERT WHEN THE CONVERSION IS KNOWN ───────────────────────
- * "chicken 200g" against a product whose serving is "100 g" with
- * `servingGrams: 100` is two servings. Against a product that never recorded a
- * serving weight, it is NOT 2, and it is not 1 either — it is unanswerable, so
- * the match comes back flagged `needsPortion` and the caller opens the portion
- * editor instead of logging a number nobody computed. Silently treating "200g"
- * as one serving of an unknown weight is exactly the confident-wrong-number
- * failure the rest of this codebase is built to avoid.
+ * ── AN AMOUNT CONVERTS THROUGH THE FOOD'S OWN MEASURE, OR NOT AT ALL ──────
+ * "chicken 200g" against a product whose serving is "100 g" is two servings,
+ * and portion.ts is what says so — the SAME reader the portion editor's unit
+ * switch uses, so what you type and what the sheet shows cannot disagree about
+ * one food. Against a product with no measure at all ("1 slice", no weight on
+ * record) it is NOT 2, and it is not 1 either — it is unanswerable, so the
+ * match comes back flagged `needsPortion` and the caller opens the editor
+ * instead of logging a number nobody computed.
+ *
+ * A MASS TYPED AT A VOLUME FOOD IS ALSO UNANSWERABLE. "kefir 400ml" against a
+ * food sold by the millilitre is 400 ml; against one sold by weight it needs a
+ * density this app does not have, so it opens the editor rather than quietly
+ * treating millilitres as grams — which is what this module used to do, at
+ * water density, for every food alike. That was right for water, close enough
+ * for milk, and wrong for oil, with nothing on screen admitting which.
  *
  * Pure + unit-tested, and shared, so the phone and the browser read the same
  * sentence the same way (parity rule).
  */
 
 import type { NutritionFacts } from "./food-facts";
+import { portionMeasure } from "./portion";
 
 /** The words the parser recognises. Replaceable by a localised caller. */
 export interface QuickAddVocab {
@@ -78,17 +86,16 @@ export const quickAddVocab = (t: (key: string) => string): QuickAddVocab => {
   };
 };
 
-/** Mass/volume units the parser understands, and their gram equivalent where
- *  one exists. `null` means "a count of servings", not "unitless". */
-const UNITS: Record<string, number | null> = {
-  g: 1, gram: 1, grams: 1, gr: 1,
-  kg: 1000, kilo: 1000, kilos: 1000,
-  // Volume is treated as grams at water density. That is exactly right for
-  // water and close enough for milk and juice, which is what people type it
-  // for; it is NOT right for oil, and the portion editor remains the way to be
-  // precise about anything where it matters.
-  ml: 1, l: 1000, litre: 1000, liter: 1000,
-  oz: 28.349523125, ounce: 28.349523125, ounces: 28.349523125,
+/** The units the parser understands: what to multiply by, and WHICH MEASURE the
+ *  result is in. The measure is the half this table used to throw away — every
+ *  unit normalized to grams, so a millilitre became a gram before any food had
+ *  been consulted about whether that made sense. */
+const UNITS: Record<string, { factor: number; measure: "g" | "ml" }> = {
+  g: { factor: 1, measure: "g" }, gram: { factor: 1, measure: "g" }, grams: { factor: 1, measure: "g" }, gr: { factor: 1, measure: "g" },
+  kg: { factor: 1000, measure: "g" }, kilo: { factor: 1000, measure: "g" }, kilos: { factor: 1000, measure: "g" },
+  ml: { factor: 1, measure: "ml" }, l: { factor: 1000, measure: "ml" }, litre: { factor: 1000, measure: "ml" }, liter: { factor: 1000, measure: "ml" },
+  cl: { factor: 10, measure: "ml" },
+  oz: { factor: 28.349523125, measure: "g" }, ounce: { factor: 28.349523125, measure: "g" }, ounces: { factor: 28.349523125, measure: "g" },
 };
 
 export type QuickAddKind = "macros" | "food" | "unknown";
@@ -114,10 +121,12 @@ export interface QuickAddFood {
   kind: "food";
   /** everything that was not a number, a unit or a keyword */
   query: string;
-  /** how much: a gram figure, or a count of servings */
+  /** how much: an amount in `unit`, or a count of servings */
   amount: number;
-  /** "g" when `amount` is a mass, null when it is a count of servings */
-  unit: "g" | null;
+  /** the MEASURE the amount is in — "g" or "ml", normalized from whatever was
+   *  typed ("1.5kg" → 1500 g, "33cl" → 330 ml). Null when it is a count of
+   *  servings. The two are never interchanged: see the file note. */
+  unit: "g" | "ml" | null;
 }
 
 export interface QuickAddUnknown { kind: "unknown" }
@@ -246,7 +255,8 @@ function readMacros(tokens: string[], v: QuickAddVocab): QuickAddMacros | null {
 
 /** Food lookup: a name, and how much of it. */
 function readFood(tokens: string[], v: QuickAddVocab): QuickAddFood | QuickAddUnknown {
-  let grams: number | null = null;
+  let amount: number | null = null;
+  let measure: "g" | "ml" | null = null;
   let count: number | null = null;
   const nameParts: string[] = [];
 
@@ -255,20 +265,20 @@ function readFood(tokens: string[], v: QuickAddVocab): QuickAddFood | QuickAddUn
     if (v.times.includes(tok.toLowerCase())) continue; // the "x" in "2 x whey"
     if (!NUMBER_RE.test(tok)) {
       // A unit with no number in front of it is not a unit, it is a word.
-      if (UNITS[tok.toLowerCase()] !== undefined && (grams != null || count != null)) continue;
+      if (UNITS[tok.toLowerCase()] !== undefined && (amount != null || count != null)) continue;
       nameParts.push(tok);
       continue;
     }
     const n = num(tok);
     const next = tokens[i + 1]?.toLowerCase();
-    const factor = next != null ? UNITS[next] : undefined;
-    if (factor != null) { grams = n * factor; i++; }
+    const u = next != null ? UNITS[next] : undefined;
+    if (u != null) { amount = n * u.factor; measure = u.measure; i++; }
     else count = n;
   }
 
   const query = nameParts.join(" ").trim();
   if (!query) return { kind: "unknown" };
-  if (grams != null) return { kind: "food", query, amount: Math.round(grams * 10) / 10, unit: "g" };
+  if (amount != null && measure != null) return { kind: "food", query, amount: Math.round(amount * 10) / 10, unit: measure };
   return { kind: "food", query, amount: count != null && count > 0 ? count : 1, unit: null };
 }
 
@@ -368,15 +378,18 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 /**
  * How many servings the phrase asks for.
  *
- * A count is a count. Grams convert ONLY when the serving weight is on record;
- * otherwise the answer is unknown and says so (see the file note) rather than
- * quietly becoming 1.
+ * A count is a count. An AMOUNT converts through the food's own measure — the
+ * same `portionMeasure` the portion editor's unit switch is built from, so one
+ * food cannot mean two things depending on which control you reached for. When
+ * the food has no measure, or has one in the OTHER dimension, the answer is
+ * unknown and says so rather than quietly becoming 1 (or quietly becoming a
+ * density nobody supplied).
  */
 function quantityFor(parsed: QuickAddFood, c: QuickAddCandidate): { qty: number; needsPortion: boolean } {
-  if (parsed.unit !== "g") return { qty: parsed.amount, needsPortion: false };
-  const per = c.servingGrams;
-  if (per == null || !Number.isFinite(per) || per <= 0) return { qty: 1, needsPortion: true };
-  return { qty: Math.round((parsed.amount / per) * 100) / 100, needsPortion: false };
+  if (parsed.unit == null) return { qty: parsed.amount, needsPortion: false };
+  const measure = portionMeasure({ serving: c.servingLabel, servingGrams: c.servingGrams });
+  if (!measure || measure.unit !== parsed.unit) return { qty: 1, needsPortion: true };
+  return { qty: Math.round((parsed.amount / measure.perServing) * 100) / 100, needsPortion: false };
 }
 
 /** What a resolved match writes to the diary — per SINGLE serving with a

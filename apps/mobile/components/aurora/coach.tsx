@@ -560,16 +560,18 @@ function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string)
         ) : (
           <>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-              <Metric label={t("w.teams.coach.sessionsWord")} value={`${r.sessions}`} color={C.chalk} />
+              {/* Core figure-order.ts: tonnage, then the session count and the
+                  days it spread over, then what came out of it. */}
               <Metric label={t("summary.kgMoved")} value={r.volume.toLocaleString()} color={txt(C, C.lime)} />
+              <Metric label={t("w.teams.coach.sessionsWord")} value={`${r.sessions}`} color={C.chalk} />
               <Metric label={t("recap.activeDays")} value={`${r.activeDays}`} color={C.chalk} />
               <Metric label={t("recap.prs")} value={`${r.prs.length}`} color={r.prs.length ? txt(C, C.lime) : C.ash} />
               {r.topMuscle && <Metric label={t("recap.top")} value={MUSCLE_LABEL[r.topMuscle.muscle] ?? r.topMuscle.muscle} color={C.chalk} />}
             </View>
             {hasPrev && (
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, r.volumeDelta >= 0 ? C.lime : C.amber), marginTop: 16 }}>
-                {r.sessionsDelta >= 0 ? "+" : ""}{r.sessionsDelta} {t("w.teams.coach.sessionsWord")} – {r.volumeDelta >= 0 ? "+" : ""}
-                {r.volumeDelta.toLocaleString()} kg {t("recap.vsLastWeek")}
+                {r.volumeDelta >= 0 ? "+" : ""}{r.volumeDelta.toLocaleString()} kg – {r.sessionsDelta >= 0 ? "+" : ""}
+                {r.sessionsDelta} {t("w.teams.coach.sessionsWord")} {t("recap.vsLastWeek")}
               </Text>
             )}
             {r.prs.length > 0 && (

@@ -36,9 +36,11 @@ export function workoutShareCaption(
   return [
     c.firstEver ? t("share.firstWorkout") : null,
     `\u{1F4AA} ${c.title || t("share.workoutFallback")} — ${t("share.done")}`,
-    // A session with no clock (imported, or still running) drops the segment
-    // rather than claiming "0 min".
-    `${c.minutes ? `${c.minutes} min – ` : ""}${c.sets} ${t("summary.sets").toLowerCase()} – ${fmtTonnage(c.volume, units)}`,
+    // The figures read in the app's one order (figure-order.ts) — tonnage,
+    // sets, then time — so a shared caption says the same session the same way
+    // the app just showed it. A session with no clock (imported, or still
+    // running) drops the segment rather than claiming "0 min".
+    `${fmtTonnage(c.volume, units)} – ${c.sets} ${t("summary.sets").toLowerCase()}${c.minutes ? ` – ${c.minutes} min` : ""}`,
     c.headline || null,
     t("share.tracked"),
   ]

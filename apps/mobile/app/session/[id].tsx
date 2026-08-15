@@ -124,9 +124,11 @@ export default function SessionDetail() {
     session.completedAt
       ? Math.max(1, Math.round((new Date(session.completedAt).getTime() - new Date(session.startedAt).getTime()) / 60000))
       : null;
-  // Sport-adaptive headline: a run/match has no "volume", so cardio sessions read
-  // as Duration · Distance · Pace; a lift keeps Minutes · Sets · Volume; a mixed
-  // session shows both. (#4 — per-session, sport-specific stats.)
+  // Sport-adaptive headline: a run/match has no "volume", so the discipline
+  // decides WHICH figures the Wrapped tiles carry (a lift gets tonnage, sets
+  // and time; a run gets time, distance and pace; a mixed session shows both).
+  // WHAT ORDER they then read in is not decided here or there — it is core's
+  // one figure order (figure-order.ts). (#4 — per-session, sport-specific stats.)
   const shape = sessionShape(session);
   const cardio = sessionCardioSummary(session);
   const cardioMin = cardio.minutes || minutes || 0;

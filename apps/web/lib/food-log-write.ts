@@ -41,6 +41,13 @@ export async function writeFoodLog(userId: string, b: FoodLogInput) {
   const qty = num(b.qty) || 1;
   const satFat = panelNum(b.satFat), sugar = panelNum(b.sugar), fiber = panelNum(b.fiber), salt = panelNum(b.salt);
   const verifiedId = typeof b.verifiedId === "string" && b.verifiedId.trim() ? b.verifiedId.trim().slice(0, 60) : null;
+  // WHAT WAS ACTUALLY ENTERED — 35 "g", 1 "bottle" — so the diary row can say
+  // it instead of the 0.35 that qty holds. Both null unless the client sent
+  // them; a quick macro line has no amount to record (core/portion.ts).
+  const amount = num(b.amount) || null;
+  const amountUnit = amount != null && typeof b.amountUnit === "string" && b.amountUnit.trim()
+    ? b.amountUnit.trim().slice(0, 24)
+    : null;
 
   // 1) Mirror the scaled totals into the Signal ontology (what the engines
   //    read). ONE builder in core decides which Signals a log means, so this
@@ -62,6 +69,11 @@ export async function writeFoodLog(userId: string, b: FoodLogInput) {
   //    fails on unknown columns and the entry would be lost entirely if we
   //    stopped there. The retry keeps the named, editable row; only the panel
   //    is dropped.
+  //
+  //    THREE tiers, not two, since the amount columns are a migration LATER
+  //    than the panel: falling straight from "with amount" to "macros only"
+  //    would make a missing amount column silently cost the label panel as
+  //    well, on a database that has it.
   const base = {
     userId,
     name: b.name.trim().slice(0, 80),
@@ -71,14 +83,19 @@ export async function writeFoodLog(userId: string, b: FoodLogInput) {
     signalIds,
     ts,
   };
+  const withPanel = { ...base, satFat, sugar, fiber, salt, verifiedId };
   try {
-    return await prisma.foodLog.create({ data: { ...base, satFat, sugar, fiber, salt, verifiedId } });
+    return await prisma.foodLog.create({ data: { ...withPanel, amount, amountUnit } });
   } catch {
     try {
-      return await prisma.foodLog.create({ data: base });
+      return await prisma.foodLog.create({ data: withPanel });
     } catch {
-      /* FoodLog not migrated at all — Signals are written, so totals hold */
-      return null;
+      try {
+        return await prisma.foodLog.create({ data: base });
+      } catch {
+        /* FoodLog not migrated at all — Signals are written, so totals hold */
+        return null;
+      }
     }
   }
 }

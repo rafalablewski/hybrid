@@ -100,8 +100,9 @@ export default function Statistics() {
         <Mini icon="heart" label="HPI" value={hasData ? String(state.hpi.score) : "—"} color={C.lime} />
       </View>
       <View style={{ flexDirection: "row", gap: space.md, marginTop: 12 }}>
-        <Mini icon="navigation" label="Distance" value={hasData ? fmtKm(recap.distanceKm) : "—"} color={C.lime} />
+        {/* Core figure-order.ts — time before the ground it covered. */}
         <Mini icon="play" label="Minutes" value={hasData ? String(Math.round(recap.minutes)) : "—"} color={C.lime} />
+        <Mini icon="navigation" label="Distance" value={hasData ? fmtKm(recap.distanceKm) : "—"} color={C.lime} />
       </View>
 
       {!hasData && (

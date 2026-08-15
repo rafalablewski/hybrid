@@ -37,6 +37,7 @@ import {
   blockBestE1rm,
   moveItem,
   moveItemTo,
+  displacedIndex,
   sessionMeta,
 } from "./session";
 import type { LoggedSession, StrengthBlock, SessionBlock } from "./session";
@@ -425,6 +426,38 @@ describe("set roles (warm-up / cool-down)", () => {
     expect(moveItemTo(arr, 1, 1)).toBe(arr); // same index — no-op
     expect(moveItemTo(arr, 0, 9)).toBe(arr); // out of range — no-op
     expect(arr).toEqual(["a", "b", "c", "d"]); // original untouched
+  });
+
+  it("displacedIndex agrees with moveItemTo for every row, both directions", () => {
+    // The preview is only worth showing if it opens the gap where the move will
+    // actually put things — so assert the two against each other exhaustively
+    // rather than hand-checking a couple of cases.
+    const arr = ["a", "b", "c", "d", "e"];
+    for (let from = 0; from < arr.length; from++) {
+      for (let to = 0; to < arr.length; to++) {
+        const after = moveItemTo(arr, from, to);
+        for (let k = 0; k < arr.length; k++) {
+          expect({ from, to, k, at: displacedIndex(k, from, to) })
+            .toEqual({ from, to, k, at: after.indexOf(arr[k]!) });
+        }
+      }
+    }
+  });
+
+  it("displacedIndex moves only the rows BETWEEN the two slots", () => {
+    // Down the list: everything the card passes steps UP one.
+    expect(displacedIndex(0, 1, 3)).toBe(0); // above the pickup — untouched
+    expect(displacedIndex(2, 1, 3)).toBe(1);
+    expect(displacedIndex(3, 1, 3)).toBe(2);
+    expect(displacedIndex(4, 1, 3)).toBe(4); // below the drop — untouched
+    // Up the list: everything it passes steps DOWN one.
+    expect(displacedIndex(1, 3, 1)).toBe(2);
+    expect(displacedIndex(2, 3, 1)).toBe(3);
+    expect(displacedIndex(0, 3, 1)).toBe(0);
+    expect(displacedIndex(4, 3, 1)).toBe(4);
+    // The held row itself lands on the slot, and a no-op move shifts nothing.
+    expect(displacedIndex(1, 1, 3)).toBe(3);
+    for (let k = 0; k < 5; k++) expect(displacedIndex(k, 2, 2)).toBe(k);
   });
 });
 

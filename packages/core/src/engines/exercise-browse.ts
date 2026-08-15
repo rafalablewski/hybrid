@@ -94,16 +94,18 @@ export function exerciseBucket(name: string, kind?: SessionBlock["kind"]): Exerc
   return "other";
 }
 
-/** Tile monogram: first letters of the first two words, or the first two
- *  letters of a single-word name ("Back Squat" → BS, "Snatch" → SN). */
-export function exerciseInitials(name: string): string {
-  const words = name.split(/[^\p{L}\p{N}]+/u).filter((w) => /\p{L}/u.test(w) && !/^(and|the|of)$/i.test(w));
-  // Spread to code points so surrogate pairs (non-BMP characters) never split.
-  if (words.length >= 2) return ([...words[0]!][0]! + [...words[1]!][0]!).toUpperCase();
-  if (words.length === 1) return [...words[0]!].slice(0, 2).join("").toUpperCase();
-  return [...name.trim()].slice(0, 2).join("").toUpperCase();
-}
-
+/**
+ * RETIRED — `exerciseInitials` and the `initials` field this interface carried.
+ *
+ * A browse entry described a lift for a tile, and a tile's monogram was part of
+ * that description. The monogram is gone: exercise-marks replaced it with the
+ * lift's IMPLEMENT precisely because two letters repeat the name beside them and
+ * collide while doing it (Cable Chest Press and Cable Crossover were both "CC").
+ * The last surface still drawing it — the pin-exercises sheet — went to the
+ * shared square avatar, and the web client that drew the rest of them was
+ * retired before that. Computing a string for nobody is how a dead idea gets
+ * rebuilt: the next tile would have found `initials` sitting there and used it.
+ */
 export interface ExerciseBrowseEntry {
   name: string;
   kind: SessionBlock["kind"];
@@ -113,7 +115,6 @@ export interface ExerciseBrowseEntry {
   /** Time-decayed use score: Σ 0.5^(daysAgo/14) over uses in the last 90 days. */
   score: number;
   bucket: ExerciseBucket;
-  initials: string;
   /** Trained within the last 14 days — counts toward "in rotation". */
   inRotation: boolean;
   /** Trained in ≥3 distinct weeks of the last 4 — the current staples. */
@@ -168,7 +169,6 @@ export function exerciseBrowse(sessions: LoggedSession[], now: number = Date.now
       daysSince,
       score,
       bucket: exerciseBucket(name, u.kind),
-      initials: exerciseInitials(name),
       inRotation: daysSince <= 14,
       staple: weeks.size >= 3,
       stale: u.times.length >= 4 && daysSince >= 14,

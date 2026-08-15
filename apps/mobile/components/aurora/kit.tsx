@@ -453,6 +453,168 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
 }
 
 /**
+ * THE MARK TILE — the box a THING's mark sits in: a lift's implement, a room's
+ * body map, a sport's glyph.
+ *
+ * It is SQUARE (`RADIUS.mark`), and that is the entire job. A PERSON's avatar is
+ * a circle (components/social-kit `Avatar`, radius 999), so the shape carries the
+ * noun and nothing has to be read to tell a barbell from a face.
+ *
+ * The box lives here because it kept being redrawn: SIX surfaces each owned a
+ * copy — the picker's rows, the picker's own Rooms grid one scroll below them,
+ * the Exercises browser and the pin sheet at 40/12, the logger's card header and
+ * the Builder's block header with no box at all — and squaring them one at a
+ * time is how a sheet ends up showing two radii.
+ * `AuroraExerciseAvatar` (aurora/exercise-media) wraps this with the lift's mark
+ * already inside; reach for the tile directly only when the CONTENT is something
+ * else (a body map, a catalogue emoji).
+ *
+ * FOUR SIZES, AND NO FIFTH. The ladder is set by what the tile sits beside, so
+ * a new surface picks the rung its neighbours already use rather than measuring
+ * one of its own — which is how this drifted to six different boxes the first
+ * time:
+ *   40  a LIST ROW — the exercise picker, the Exercises browser, the pin sheet,
+ *       the Sports index, the quick-log sport picker.
+ *   36  a FULL-WIDTH CARD or SHEET HEADER — the logger's exercise card, the
+ *       Builder's block card, the quick-log sport sheet.
+ *   28  a COMPACT ROW — the exercise sheet's Order block.
+ *   24  a RAIL CARD's header, where the card itself is only 150–200 wide —
+ *       Today's exercise favourites and the Other-sports lanes.
+ * A SECTION HEAD takes none of them: a marker before a heading is the thing the
+ * no-decorative-dot rule exists to stop (see aurora/endurance-lanes).
+ */
+export function AMarkTile({ size = 40, label, children, style }: {
+  size?: number;
+  /**
+   * a11y label. Give one only where the tile SAYS something its row does not —
+   * the logger's cards label it with the block's kind. In a picker or browser row
+   * the pressable already announces the name, so the tile stays silent rather
+   * than making VoiceOver read it twice.
+   */
+  label?: string;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette } = useTheme();
+  return (
+    <View
+      accessibilityRole={label ? "image" : undefined}
+      accessibilityLabel={label}
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: RADIUS.mark,
+          backgroundColor: palette.ink,
+          borderWidth: 1,
+          borderColor: palette.line,
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
+/**
+ * THE CARD YOU CAN PRESS — ACard's surface, on a press target.
+ *
+ * ACard is a `View`. That one fact is what kept two of Today's cards
+ * hand-rolled long after the rest moved: `ChooserCard` and `StructureCard` are
+ * both a pressable card with a corner glow, and there was nothing in the kit
+ * that was both, so each drew ACard's box from memory — hairline, `C.line`,
+ * `RADIUS.card`, `C.ink2`, `overflow: hidden` — and neither could ever pick up
+ * the native glass, because the material is not a style property. Wrapping
+ * ACard in a PressScale was never the answer either: the scale would then run
+ * on a wrapper that is not the surface, so the shadow and the glass would sit
+ * still while the box inside them shrank.
+ *
+ * THE GLOW IS PART OF THE PRIMITIVE, not decoration a caller adds. It is two
+ * absolutely-filled layers under the content (a flat 5% wash, then a gradient
+ * blooming from the top-right corner), it was drawn identically in both cards,
+ * and it is the thing that needs `overflow: hidden` — so a caller who supplies
+ * `glow` and forgets to clip gets a rectangle of colour outside a rounded card.
+ * Passing the hue is the whole API; the geometry is not negotiable.
+ *
+ * ORDER MATTERS UNDER GLASS: the glass goes down first as the surface, the
+ * glow paints ON it, and the content sits on top. A glow under the glass would
+ * be a coloured card seen through frosting rather than a tint in the material.
+ *
+ * `solid` opts out of the glass exactly as on ACard, and `style` overrides the
+ * padding the same way (the rail cut sits at 16 rather than CARD_PAD, because
+ * it is a rail-width card, not a full-width one).
+ */
+export function APressCard({
+  children,
+  onPress,
+  a11yLabel,
+  glow,
+  solid,
+  style,
+}: {
+  children: ReactNode;
+  onPress: () => void;
+  /** The card's accessible name — normally its own title. */
+  a11yLabel: string;
+  /** Accent hue for the corner bloom. Omit for a plain pressable card. */
+  glow?: string;
+  solid?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette } = useTheme();
+  const glass = LIQUID_GLASS_SUPPORTED && !solid;
+  const flat = StyleSheet.flatten(style) as ViewStyle | undefined;
+  const radius = typeof flat?.borderRadius === "number" ? flat.borderRadius : RADIUS.card;
+  return (
+    <PressScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
+      style={[
+        {
+          backgroundColor: glass ? "transparent" : palette.ink2,
+          borderColor: palette.line,
+          borderWidth: 1,
+          borderRadius: RADIUS.card,
+          padding: CARD_PAD,
+          // THE CLIP RIDES WITH THE GLOW, and only with it. The glow bleeds to
+          // the card's own edges so it must be clipped — but on iOS
+          // `overflow: hidden` sets the layer's masksToBounds, which clips the
+          // SHADOW too. Setting it unconditionally would have handed every
+          // caller a `cardShadow()` that can never render: a primitive
+          // promising ACard's surface and then guaranteeing one part of it is
+          // dead. A glowing card trades the shadow for the clip (which is what
+          // both chooser cards already did, drawing neither); a plain one keeps
+          // the depth ACard has.
+          overflow: glow ? "hidden" : undefined,
+          ...cardShadow(),
+        },
+        style,
+      ]}
+    >
+      {glass && <GlassSurface radius={radius} />}
+      {glow ? (
+        <>
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${glow}0d` }]} />
+          <LinearGradient
+            pointerEvents="none"
+            colors={[`${glow}2b`, `${glow}00`]}
+            start={{ x: 1, y: 0 }}
+            end={{ x: 0.25, y: 0.8 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </>
+      ) : null}
+      {children}
+    </PressScale>
+  );
+}
+
+/**
  * THE BUTTON'S VARIANTS.
  *
  * `outline` came across from lib/ui's retired `Button`, which was the other half
@@ -941,31 +1103,96 @@ export function ASearch({
  * `Segmented` and History's `ViewSwitcher`) turned out on reading to be
  * WRAPPING and SCROLLING chip rails rather than segmented controls at all, and
  * became `AChip` rows. What is left is this and the LiquidSeg it delegates to.
+ *
+ * ── A SEGMENT MAY CARRY A COUNT ────────────────────────────────────────────
+ * `meta` puts the section head's mono figure inside the segment, beside its
+ * label. It exists because the nutrition picker's four sources (Recent /
+ * Favorites / Meals / Foods) each know their size, and dropping that figure was
+ * the ONE thing that had kept those four on a hand-drawn control of their own
+ * rather than this one. A switch that can say "Recent 12" is a switch the
+ * picker has no reason to redraw.
+ *
+ * ── THE LABEL SHRINKS BEFORE IT TRUNCATES ──────────────────────────────────
+ * Equal-width segments are the form's premise, so the longest label in the
+ * longest locale sets whether it works at all: German's "Lebensmittel" wants
+ * ~86dp in an ~82dp quarter of a phone-wide track, and `numberOfLines={1}`
+ * alone answered that with "Lebensmit…". The system control shrinks its labels
+ * to fit rather than clipping them, so this one does too — down to
+ * `minimumFontScale`, and only where a label actually needs it. Every call site
+ * gains it (three of the language switcher's own labels were on the edge).
+ *
+ * ── AND IT WORKS INSIDE A CARD ─────────────────────────────────────────────
+ * `surface="card"` recesses the track instead of raising it, so a control on a
+ * raised surface is still a container. The four hand-drawn tab rows this
+ * component replaced included one INSIDE a day card, and "a track may be
+ * heavier than the card wants" was the honest reservation about converting it.
+ * The weight is real and it is the point: a switch that changes what the card
+ * below it shows should look like a control, not like two words that happen to
+ * be underlined. What it must NOT do is disappear — see the note on the fill.
  */
 export function ASegment<T extends string>({
   options,
   value,
   onPick,
+  surface = "screen",
 }: {
-  options: { id: T; label: string }[];
+  options: { id: T; label: string; meta?: string | number }[];
   value: T;
   onPick: (v: T) => void;
+  /** What the control is standing ON: the screen's own ground, or any RAISED
+   *  surface — a card, a sheet panel, a settings group. See TRACK ON A CARD. */
+  surface?: "screen" | "card";
 }) {
   const { palette } = useTheme();
   const index = Math.max(0, options.findIndex((o) => o.id === value));
+  // ── THE TRACK ON A CARD ──────────────────────────────────────────────────
+  // The default track is `ink2` — one step UP from the screen's `ink` ground,
+  // which is what makes it read as a container at all. A CARD is already
+  // `ink2`, so that same track inside one is invisible: identical fill, with
+  // nothing but a hairline to say a control is there. (The day card's session
+  // toggle is the case that found this.)
+  //
+  // The answer is not another step up — there is no token above `ink2` worth
+  // the name, and stacking surfaces to say "control" is how a screen grows
+  // six containers of the same weight. It is a step DOWN: on a raised card the
+  // track is a WELL cut into it, which is also how the system control reads on
+  // a grouped background. Same lens, same border, inverted ground.
+  //
+  // "CARD" MEANS ANY RAISED SURFACE, and the sweep that added this found three
+  // call sites that had been drawing an invisible track since before the prop
+  // existed: Settings' language switcher and the logger's four preference
+  // groups (both inside an `ACard`), and the heat sheet's modality switch (a
+  // Sheet panel, which is also ink2). A GLASS card hides it less completely
+  // than a solid one, which is exactly why it survived — it looked fine on the
+  // reviewer's iOS 26 phone and flat on everything else.
+  const trackFill = surface === "card" ? palette.ink : palette.ink2;
   return (
     <LiquidSeg
       items={options.map((o) => ({
         key: o.id,
-        label: o.label,
+        // The accessible name carries the count too — a screen reader gets what
+        // the eye gets, which is the whole reason the figure is on the control.
+        label: o.meta == null ? o.label : `${o.label} ${o.meta}`,
         render: (on: boolean) => (
-          <Text
-            maxFontSizeMultiplier={MAX_FONT_SCALE}
-            numberOfLines={1}
-            style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.chalk : palette.ash }}
-          >
-            {o.label}
-          </Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5, maxWidth: "100%", paddingHorizontal: 4 }}>
+            <Text
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.75}
+              style={{ fontFamily: F.bold, fontSize: fs.body, color: on ? palette.chalk : palette.ash, flexShrink: 1 }}
+            >
+              {o.label}
+            </Text>
+            {o.meta == null ? null : (
+              <Text
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+                style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: palette.ash }}
+              >
+                {o.meta}
+              </Text>
+            )}
+          </View>
         ),
       }))}
       index={index}
@@ -973,7 +1200,7 @@ export function ASegment<T extends string>({
       // 44 so the segment clears the HIG target; the track's own padding puts
       // the control at 52, which is what a segmented control should be.
       segHeight={HIT_TARGET}
-      trackStyle={{ backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line }}
+      trackStyle={{ backgroundColor: trackFill, borderWidth: 1, borderColor: palette.line }}
     />
   );
 }
