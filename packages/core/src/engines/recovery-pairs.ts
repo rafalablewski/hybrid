@@ -152,6 +152,9 @@ export interface RecoveryPair {
    * it plainly followed. Without the grace that pair does not merely lose a
    * sample: it lands in the WITHOUT-heat bucket, which is the one outcome worse
    * than dropping it, because the control side then contains the treatment.
+   *
+   * The grace never reaches back past the session's own START, so on a short
+   * session it cannot relabel a PRE-workout sauna as heat taken after one.
    */
   heat?: boolean;
 }
@@ -215,6 +218,19 @@ export function pairReads(
     // The next session to start, if any — the pair may not reach past it.
     const nextEnd = endTimes.find((t) => t > end) ?? Infinity;
 
+    // Where the heat window opens: the edge grace, but never earlier than the
+    // session STARTED. The grace exists to absorb one clock artefact — a watch
+    // stopped after the athlete had already left for the sauna — and on a long
+    // session `end − 30 min` is comfortably mid-session, so it absorbs only
+    // that. On a SHORT one (a 15-minute run) it would reach back past the start
+    // and quietly relabel a sauna taken BEFORE training as heat taken after it,
+    // which is not a clock artefact but a different sitting. Clamping to the
+    // start keeps the grace what it claims to be.
+    const started = Date.parse(s.startedAt);
+    const heatFrom = Number.isFinite(started) && started < end
+      ? Math.max(end - HEAT_EDGE_GRACE_MIN * 60_000, started)
+      : end - HEAT_EDGE_GRACE_MIN * 60_000;
+
     // THE IMMEDIATE SIDE, preferred from the session's own answer.
     let immediateLag = typeof s.fatigue === "number"
       ? hoursAfterSession(s.completedAt ?? s.startedAt, s.feelLoggedAt)
@@ -269,9 +285,7 @@ export function pairReads(
           // recovery read. Heat outside it did not happen during this clearance
           // — with the edge grace, because "before the end" is a clock artefact
           // at that boundary and not a fact about the sauna (see `heat` above).
-          ...(heatAt
-            ? { heat: heatAt.some((t) => t > end - HEAT_EDGE_GRACE_MIN * 60_000 && t <= r.at) }
-            : {}),
+          ...(heatAt ? { heat: heatAt.some((t) => t > heatFrom && t <= r.at) } : {}),
         });
       }
       break; // one recovery read per session — the first that qualifies

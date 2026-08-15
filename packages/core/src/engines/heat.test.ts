@@ -436,6 +436,25 @@ describe("saunaClearance — does heat help THIS athlete?", () => {
     expect(pairs.filter((p) => p.heat === true)).toHaveLength(1);
   });
 
+  it("never lets the grace reach past the session's own start — a PRE-workout sauna is not post-session heat", () => {
+    // The fixture's sessions run an hour, so end − 30 min is mid-session and the
+    // grace absorbs only the clock artefact it is for. Shorten one to 10 minutes
+    // and the grace would otherwise reach back before it started, relabelling a
+    // sauna taken BEFORE training as heat taken after it.
+    const b = build([{ freshness: 3, heat: false }, { freshness: 3, heat: false }]);
+    const end = Date.parse(b.sessions[0]!.completedAt!);
+    const short = b.sessions.map((s, i) =>
+      i === 0 ? { ...s, startedAt: new Date(end - 10 * 60_000).toISOString() } : s,
+    );
+    const before = sittingAt(end - 25 * 60_000, 25, 90); // 15 min before it started
+    const pairs = pairReads(short, b.recovery, { now: b.now, heatSignals: before });
+    expect(pairs.every((p) => p.heat === false)).toBe(true);
+    // …and the same sitting, once the session is long enough to contain it, IS
+    // the post-session sauna the grace exists for.
+    const long = pairReads(b.sessions, b.recovery, { now: b.now, heatSignals: before });
+    expect(long.filter((p) => p.heat === true)).toHaveLength(1);
+  });
+
   it("still refuses a sitting from BEFORE the grace — the window is a window", () => {
     const b = build([{ freshness: 3, heat: false }, { freshness: 3, heat: false }]);
     const end = Date.parse(b.sessions[0]!.completedAt!);
@@ -498,6 +517,26 @@ describe("heatSittingsBetween / heatAlreadyLogged / heatAfterSession", () => {
     expect(heatAfterSession(at(end - 10 * MIN), end)).not.toBeNull();
     expect(heatAfterSession(at(end - (HEAT_EDGE_GRACE_MIN + 5) * MIN), end)).toBeNull();
     expect(heatAfterSession(at(end + (HEAT_AFTER_SESSION_H * 60 + 5) * MIN), end)).toBeNull();
+  });
+
+  /**
+   * WHAT A MISSED DUPLICATE ACTUALLY COSTS — the reason the guard warns rather
+   * than trusting the athlete to notice. Two rows for ONE sauna, an hour apart
+   * because the second was written from a summary defaulted to the session's
+   * end, are not merged by heatSittings: the group key is the exact instant, so
+   * they are two sittings, and every figure downstream reads two.
+   */
+  it("would double the dose and the weekly frequency if it got through", () => {
+    const one = at(NOW - 2 * HOUR, 25, 90);
+    const twice = [...one, ...at(NOW - 3 * HOUR, 25, 90)];
+    expect(heatSittings(twice)).toHaveLength(2);
+    expect(heatAdjustment(one, { now: NOW }).minutes).toBe(25);
+    expect(heatAdjustment(twice, { now: NOW }).minutes).toBe(50);
+    // …and the chronic channel that feeds the MRV multiplier counts two
+    // sittings the athlete never took.
+    expect(heatWeeklyFrequency(one, NOW)).toBeLessThan(heatWeeklyFrequency(twice, NOW));
+    // Which is exactly what heatAlreadyLogged sees before the second write.
+    expect(heatAlreadyLogged(one, NOW - 3 * HOUR)).not.toBeNull();
   });
 
   it("returns null for a session with no usable end rather than guessing one", () => {
