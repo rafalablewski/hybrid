@@ -11,7 +11,7 @@ import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
 import { useSharedSurfaceTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
-import { leading, fs, F, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, tracking, fs, F, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { AuroraField, withAlpha } from "./aurora/kit";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./aurora/hero";
@@ -358,7 +358,7 @@ export function CoverScreen({
                 <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 16, marginBottom: 16 }}>
                   {cover.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
-                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: tracking.display, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: wide ? 12 : 14, color: C.ash }}>{s.unit}</Text>}
                       </Text>

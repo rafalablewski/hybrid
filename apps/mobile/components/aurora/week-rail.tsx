@@ -17,7 +17,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { CtaLabel } from "./cta-label";
 import ReceiptBlock from "./receipt-block";
@@ -204,10 +204,10 @@ export default function AuroraWeekRail({
     >
       {/* header: plan name + progress on one baseline row */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: tracking.display, color: C.chalk }}>
           {schedule.planName}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{dayLine}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{dayLine}</Text>
       </View>
 
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
@@ -274,7 +274,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`}
       style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5, opacity: day.isRest ? 0.45 : 1 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
           hairline disc (preview cue); otherwise a bare tonal number. */}
       <View style={{ height: 28, alignItems: "center", justifyContent: "center" }}>
@@ -383,7 +383,7 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
   // Sessions postponed ONTO this date — a light catch-up list (all states).
   const catchUp = day.postponedIn.length > 0 && (
     <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.home.rail.catchUp")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.home.rail.catchUp")}</Text>
       {day.postponedIn.map((it, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
           <View style={{ flex: 1 }}>
@@ -436,7 +436,7 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.5, color: C.chalk, flex: 1 }}>{day.title}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking.display, color: C.chalk, flex: 1 }}>{day.title}</Text>
         {!!stamp && <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>}
       </View>
 
@@ -464,7 +464,7 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
                 accessibilityLabel={sessionLabel(s, t)}
                 style={{ paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}
               >
-                <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 12, letterSpacing: 0.9, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
+                <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 12, letterSpacing: tracking.label, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
               </Pressable>
             );
           })}
@@ -481,7 +481,7 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
       </View>
       {hasMore && (
         <Pressable onPress={() => setOpen((v) => !v)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingTop: 12, paddingBottom: 2 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{open ? t("w.home.rail.showLess") : t("w.home.rail.showMore").replace("{n}", String(rows.length - PEEK))}</Text>
           <Caret c={C.ash} open={open} />
         </Pressable>
       )}

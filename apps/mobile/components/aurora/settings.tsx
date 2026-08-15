@@ -12,7 +12,7 @@ import { useAccountSettings } from "../../lib/account";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS, ASearch } from "./kit";
 import MfaSettings from "./mfa-settings";
@@ -222,7 +222,7 @@ export default function AuroraSettings() {
                 <>
                   <AuroraIcon name="lock" size={fs.micro + 2} color={C.ash} />
                   <View style={{ borderWidth: 1, borderColor: txt(C, C.lime), backgroundColor: `${C.lime}1a`, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: 0.9 }}>{t("w.account.settings.paid")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: tracking.label }}>{t("w.account.settings.paid")}</Text>
                   </View>
                 </>
               )}
@@ -455,7 +455,7 @@ export default function AuroraSettings() {
 
 function Label({ children, color, top, tight }: { children: ReactNode; color: string; top?: boolean; tight?: boolean }) {
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color, marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }}>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color, marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }}>
       {children}
     </Text>
   );
@@ -468,7 +468,7 @@ function Section({ label, tone, children }: { label: string; tone?: string; chil
   const { palette: C } = useTheme();
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
       <ACard>{children}</ACard>
     </View>
   );

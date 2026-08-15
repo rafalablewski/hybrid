@@ -3,7 +3,7 @@ import { View, Text, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 import RailTail from "./rail-tail";
@@ -34,7 +34,7 @@ function Stat({ C, value, label, first, star }: { C: Palette; value: string; lab
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: 13, color: C.chalk }}>
         {star ? <Text style={{ color: C.gold }}>★ </Text> : null}{value}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: `${C.ash}b3`, marginTop: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: `${C.ash}b3`, marginTop: 4 }}>{label}</Text>
     </View>
   );
 }
@@ -113,7 +113,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
                     <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ color: C.chalk, fontFamily: F.black, fontSize: 16, flexShrink: 1 }}>{c.name}</Text>
                     {c.verified ? <Text style={{ color: accentText, fontSize: 12, marginLeft: 4 }}>✓</Text> : null}
                   </View>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ marginTop: 5, fontFamily: F.monoBold, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ marginTop: 5, fontFamily: F.monoBold, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
                 </View>
               </View>
 

@@ -24,7 +24,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import AuroraVolume from "./volume";
@@ -300,7 +300,7 @@ function Full({ top }: { top?: ReactNode }) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
               <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
                   {t("w.home.cockpit.freshness")}
                 </Text>
                 <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
@@ -350,7 +350,7 @@ function Full({ top }: { top?: ReactNode }) {
             {/* CAPABILITY — freshness rises on a layoff; this does not. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
                   {t("w.home.cockpit.capability").replace("{n}", String(capability.weeks))}
                 </Text>
                 {capability.pct !== null && (
@@ -371,8 +371,8 @@ function Full({ top }: { top?: ReactNode }) {
                 carries the series identity here, never hue alone. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.home.cockpit.last14")}</Text>
-                <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.home.cockpit.last14")}</Text>
+                <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
                   {t("w.home.cockpit.shownRange").replace("{lo}", String(plot.lo)).replace("{hi}", String(plot.hi))}
                 </Text>
               </View>
@@ -415,7 +415,7 @@ function Full({ top }: { top?: ReactNode }) {
                   <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{deficit.kept}</Text>
                 </Ring>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
                   {/* THE FACE — one line, naming the limiter and nothing else. */}
                   <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 3, lineHeight: leading(fs.subtitle) }}>
                     {t(verdictReadiness.key).replace(
@@ -454,11 +454,11 @@ function Full({ top }: { top?: ReactNode }) {
                     accessibilityState={{ expanded: whyOpen }}
                     style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
                       {t(verdictReadiness.doorKey).replace("{n}", String(verdictReadiness.deficit))}
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.chalk }}>
+                      <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.chalk }}>
                         {t(readinessReasonsKey(verdictReadiness.reasons)).replace("{n}", String(verdictReadiness.reasons))}
                       </Text>
                       <AuroraIcon name="chevron-down" size={12} color={C.ash} style={whyOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
@@ -475,10 +475,10 @@ function Full({ top }: { top?: ReactNode }) {
                         ))}
                       </View>
                       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
                           {t("w.home.readiness.barKept").replace("{n}", String(deficit.kept))}
                         </Text>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
                           {t("w.home.readiness.barSpent").replace("{n}", String(deficit.deficit))}
                         </Text>
                       </View>
@@ -730,9 +730,9 @@ function Comp({ C, label, value, onExplain, explainLabel }: {
       accessibilityLabel={`${label} ${value} – ${explainLabel}`}
       style={{ flex: 1, alignItems: "center" }}
     >
-      <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, letterSpacing: -0.5 }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, letterSpacing: tracking.display }}>{value}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
         {/* The glyph IS a ring — wrapping it in a second bordered circle, as the
             Today reading does at 18px, reads as noise beside a nano label. */}
         <AuroraIcon name="info" size={13} color={C.ash} />
@@ -744,7 +744,7 @@ function Comp({ C, label, value, onExplain, explainLabel }: {
 function Mod({ C, label, value, onPress, last }: { C: Palette; label: string; value: string; onPress: () => void; last?: boolean }) {
   return (
     <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: `${C.line}99` }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
       <CtaLabel label={`${value} →`} color={C.ash} fontSize={fs.caption} font={F.mono} style={{ marginLeft: "auto", flexShrink: 1 }} />
     </Pressable>
   );
@@ -796,7 +796,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
             <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
                 {t("w.home.cockpit.freshness")}
               </Text>
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
@@ -816,7 +816,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
            house rule forbids it. The lock on the right is the semantic one. */
         <ACard solid key={s.key} style={{ marginTop: 12, opacity: 0.75, flexDirection: "row", alignItems: "center", gap: space.md }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t(`w.home.cockpit.tease.${s.key}.kicker`)}</Text>
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, marginTop: 4, lineHeight: leading(fs.caption) }}>{t(`w.home.cockpit.tease.${s.key}.blurb`)}</Text>
           </View>
           <AuroraIcon name="lock" size={18} color={C.ash} />

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Kicker, Loading, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, Mono, Kicker, Loading, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Stat, ErrorNote, FilterGroup, PillBtn } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -835,7 +835,7 @@ function Mini({ label, value }: { label: string; value: string }) {
   const { palette } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 10, padding: 10 }}>
-      <Mono color={palette.ash} style={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9 }}>{label}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label }}>{label}</Mono>
       <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );

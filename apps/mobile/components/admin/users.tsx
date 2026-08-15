@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { fs, space, Mono, Chip, Loading, LoadSwap, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, tracking, Mono, Chip, Loading, LoadSwap, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { Intro, ErrorNote, Input, PillBtn, FilterGroup, KV } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -238,7 +238,7 @@ function UserDetail({
           <ACard accent={palette.amber} style={[cardStack, { marginTop: -4 }]}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <View style={{ flexShrink: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
                   User record
                 </Text>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>{d.name || "—"}</Text>
@@ -265,7 +265,7 @@ function UserDetail({
 
             {d.orgs.length > 0 && (
               <View style={{ marginTop: 16 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
                   Organizations
                 </Text>
                 {d.orgs.map((o) => (
@@ -276,7 +276,7 @@ function UserDetail({
 
             {/* role / language editor */}
             <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
                 Manage access
               </Text>
 
@@ -321,7 +321,7 @@ function UserDetail({
 
             {/* danger zone */}
             <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: `${palette.red}44`, paddingTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
                 Danger zone
               </Text>
               <Mono color={palette.ash} style={{ lineHeight: 18, marginBottom: 12 }}>

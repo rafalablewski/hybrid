@@ -228,7 +228,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 /* A–Z — display-face letter heads; offsets feed the rail. */
                 az.map((sec) => (
                   <View key={sec.letter} onLayout={(ev) => { letterY.current[sec.letter] = ev.nativeEvent.layout.y; }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 24, letterSpacing: -0.5, color: C.ash, marginTop: 16, marginBottom: 6, marginHorizontal: 2 }}>{sec.letter}</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: 24, letterSpacing: tracking.display, color: C.ash, marginTop: 16, marginBottom: 6, marginHorizontal: 2 }}>{sec.letter}</Text>
                     {slab(sec.entries)}
                   </View>
                 ))

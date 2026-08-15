@@ -133,7 +133,7 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, tracking, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -1225,7 +1225,7 @@ export default function Workout() {
                 accessibilityLabel={t("workout.sessionOptions")}
                 style={{ height: 28, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", borderRadius: 999 }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: 0.9 }}>⋯</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: tracking.label }}>⋯</Text>
               </Pressable>
             </View>
           )}
@@ -1467,7 +1467,7 @@ export default function Workout() {
                                 on the right. */}
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
                               {grip}
-                              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
+                              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
                               </Text>
                               <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -1488,7 +1488,7 @@ export default function Workout() {
                                       hitSlop={6}
                                       style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: set ? withAlpha(C.amber, 0.5) : C.line, backgroundColor: set ? withAlpha(C.amber, 0.1) : "transparent" }}
                                     >
-                                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: set ? txt(C, C.amber) : C.ash }}>{prefs.rpeAsRir ? "RIR" : "RPE"}</Text>
+                                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: set ? txt(C, C.amber) : C.ash }}>{prefs.rpeAsRir ? "RIR" : "RPE"}</Text>
                                       <Text style={{ fontFamily: F.monoBold, fontSize: 10, color: set ? txt(C, C.amber) : C.ash }}>{rpeShown || "–"}</Text>
                                     </Pressable>
                                   );
@@ -1574,7 +1574,7 @@ export default function Workout() {
                             {prefs.detailed && rpeOpenUid === x.uid && (
                               <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 6 }}>
                                 <Pressable onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
-                                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
+                                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
                                 </Pressable>
                                 {[...RPE_SCALE].reverse().map((step) => {
                                   const val = String(step.rpe);
@@ -1844,7 +1844,7 @@ export default function Workout() {
             </Pressable>
             {routines.length > 0 && (
               <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, padding: 12 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginBottom: 8 }}>{t("train.routines")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginBottom: 8 }}>{t("train.routines")}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
                   {routines.map((r) => (
                     <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, borderRadius: R.chip, paddingVertical: 8, paddingHorizontal: 12 }}>
@@ -1917,7 +1917,7 @@ export default function Workout() {
                satellite doesn't carry: the label lives in the moment it is
                read rather than taxing the primary's width all session. */
             <View accessibilityLiveRegion="polite">
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
                 {queued === 0 ? t("workout.setsWord") : queued === 1 ? t("workout.oneSetQueued") : `${queued} ${t("workout.setsQueued")}`}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
@@ -2108,18 +2108,18 @@ function ExerciseSheet({
             {/* Flat totals — big number over a small mono label, no boxes. */}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
               <View>
-                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t("workout.totalVolume")}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t("workout.totalVolume")}</Text>
               </View>
               <View>
-                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk }}>{setLine}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk }}>{setLine}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
               </View>
             </View>
 
             {/* ONE velocity module — the unit is named once, with the mean. */}
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 24, marginBottom: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{`${t("workout.barSpeed")} (m/s)`}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{`${t("workout.barSpeed")} (m/s)`}</Text>
               {ls.meanVel != null && (
                 <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.chalk }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</Text>
               )}
@@ -2188,9 +2188,9 @@ function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () =
     <Sheet visible={visible} onClose={onClose} title={t("w.train.blocks.rpeHelpTitle")}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: leading(fs.body), marginBottom: 16 }}>{RPE_INTRO}</Text>
           <View style={{ flexDirection: "row", marginBottom: 6 }}>
-            <Text style={{ width: 40, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>RPE</Text>
-            <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>{t("rpe.rir")}</Text>
-            <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>{t("rpe.feels")}</Text>
+            <Text style={{ width: 40, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>RPE</Text>
+            <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{t("rpe.rir")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{t("rpe.feels")}</Text>
           </View>
           {RPE_SCALE.map((step) => (
             <View key={step.rpe} style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 5, borderTopWidth: 1, borderTopColor: C.line }}>
@@ -2423,7 +2423,7 @@ function Summary({
         </View>
 
         {/* One whisper of a hint — the current look + how to change it. */}
-        <Mono color={C.ash} style={{ textAlign: "center", marginTop: 10, fontSize: fs.nano, letterSpacing: 1.2 }}>
+        <Mono color={C.ash} style={{ textAlign: "center", marginTop: 10, fontSize: fs.nano, letterSpacing: tracking.caps }}>
           {`${t(st.nameKey)} — ${t("summary.cardHint")}`.toUpperCase()}
         </Mono>
 
@@ -2622,7 +2622,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
   if (!allowed || state === "upsell")
     return (
       <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 16, marginTop: 16 }}>
-        <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 0.9 }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Mono>
+        <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: tracking.label }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Mono>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
         <Pressable
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "save-routine" }); router.push("/upgrade"); }}
@@ -2654,7 +2654,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
 
   return (
     <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: 16, padding: 16, marginTop: 16 }}>
-      <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: 0.9 }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
+      <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: tracking.label }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
       <TextInput
         value={name}
         onChangeText={setName}
@@ -2860,7 +2860,7 @@ function LiveStat({
         {mark ? <AuroraIcon name={mark} size={fs.subtitle + 2} color={accent ?? C.chalk} /> : null}
         <RollingNumber value={value} align="center" style={{ fontFamily: F.black, fontSize: fs.subtitle, color: accent ?? C.chalk }} />
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: accent ?? C.ash, letterSpacing: 0.9, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: accent ?? C.ash, letterSpacing: tracking.label, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -2941,7 +2941,7 @@ function Cell({ value, onChange, done, active, keyboard = "numeric" }: { value: 
 function ColHead({ children, w }: { children: React.ReactNode; w?: number }) {
   const C = useTheme().palette;
   return (
-    <Text style={{ flex: w ? undefined : 1, width: w, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9 }}>
+    <Text style={{ flex: w ? undefined : 1, width: w, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>
       {children}
     </Text>
   );

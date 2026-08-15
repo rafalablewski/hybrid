@@ -29,7 +29,7 @@ import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
@@ -84,9 +84,9 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
       onPress={() => ctx.onOpen(s.id)}
       style={{ borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: -0.5, color: C.chalk }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>
         {h.value}
-        <Text style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C.ash }}> {unitOf(h, t)}</Text>
+        <Text style={{ fontSize: fs.bodyLg, letterSpacing: tracking.normal, color: C.ash }}> {unitOf(h, t)}</Text>
       </Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
         {[sessionTitleText(s.title, t), ...headlineMeta(h, t)].join(" – ")}
@@ -102,14 +102,14 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
 }
 
 function DayLabel({ C, text, today }: { C: Palette; text: string; today?: boolean }) {
-  return <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: today ? (txt(C, C.lime) as string) : C.ash }}>{text}</Text>;
+  return <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: today ? (txt(C, C.lime) as string) : C.ash }}>{text}</Text>;
 }
 
 function RestGapRow({ C, days }: { C: Palette; days: number }) {
   const { t } = useLang();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 2 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: withAlpha(C.ash, 0.7) }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: withAlpha(C.ash, 0.7) }}>
         {days} {days === 1 ? t("histview.restDay") : t("histview.restDays")}
       </Text>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
@@ -244,7 +244,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
         <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, 0.3) : C.line }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
-            {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: 1.2, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
+            {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: tracking.caps, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
           </View>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, height: 34, marginTop: 12, marginBottom: 4 }}>
             {w.days.map((d) => {
@@ -315,7 +315,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
       {stream.map((item, i) =>
         item.kind === "gap" ? (
           <View key={`g${i}`} style={{ height: 34, marginBottom: 6, justifyContent: "center" }}>
-            <Text style={{ position: "absolute", left: 0, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: withAlpha(C.ash, 0.55) }}>
+            <Text style={{ position: "absolute", left: 0, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: withAlpha(C.ash, 0.55) }}>
               {item.days} {item.days === 1 ? t("histview.restDay") : t("histview.restDays")}
             </Text>
           </View>
@@ -362,8 +362,8 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const Mini = ({ label, value }: { label: string; value: string }) => (
     /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
     <View style={{ ...cardStyle, flex: 1, padding: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.5, marginTop: 4, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: tracking.display, marginTop: 4, color: C.chalk }}>{value}</Text>
     </View>
   );
 
@@ -380,7 +380,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
               accessibilityState={{ selected: on }}
               style={{ flex: 1, paddingVertical: 8, borderRadius: 999, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
             >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
                 {t(rg.key)}
               </Text>
             </Pressable>

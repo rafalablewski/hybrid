@@ -30,7 +30,7 @@ import {
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { APill, AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
@@ -123,7 +123,7 @@ export default function AuroraSportPage() {
   };
 
   const mono = (size: number, color = C.ash) => ({ fontFamily: F.mono, fontSize: size, color });
-  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: 1.2 });
+  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: tracking.caps });
   const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
   const u = durationUnits(t);

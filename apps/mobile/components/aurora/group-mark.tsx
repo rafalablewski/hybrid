@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { View, Text } from "react-native";
 import { useTheme } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { F, tracking } from "../../lib/ui";
 
 /** GROUP MARKER — the HEADLINE TIER (cluster-marker study, direction 02).
  *  The hub's long scrolls (Today's daily loop, the Performance page) are
@@ -28,7 +28,7 @@ export default function GroupMark({ label, mt = 36, right }: { label: string; mt
   const heading = (
     <Text
       accessibilityRole="header"
-      style={{ fontFamily: F.black, fontSize: 23, letterSpacing: -0.5, lineHeight: 26, color: C.chalk }}
+      style={{ fontFamily: F.black, fontSize: 23, letterSpacing: tracking.display, lineHeight: 26, color: C.chalk }}
     >
       {label}
     </Text>

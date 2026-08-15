@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { alsoTodayCopy, isRated, sessionIcon, sessionMeta, type LoggedSession, type WeightUnit } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { withAlpha } from "./kit";
 import { ArrowGlyph } from "./cta-label";
 import SwipeRow from "../swipe-row";
@@ -117,7 +117,7 @@ export default function DoneFloor({
           accessibilityLabel={countLabel}
           style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 2 }}
         >
-          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
+          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
           <ArrowGlyph size={14} color={quiet} />
         </Pressable>
       ) : (
@@ -153,7 +153,7 @@ export default function DoneFloor({
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
                 </View>
                 {onPlanRow ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
                 ) : null}
               </Pressable>
               {ask ? (
@@ -165,7 +165,7 @@ export default function DoneFloor({
                   accessibilityHint={t("session.feel.rateUnrated")}
                   style={{ paddingVertical: 8, paddingLeft: 4 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
                 </Pressable>
               ) : null}
             </View>

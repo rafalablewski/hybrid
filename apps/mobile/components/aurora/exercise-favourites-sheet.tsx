@@ -12,7 +12,7 @@ import Sheet from "./sheet";
 import { ASearch } from "./kit";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useExerciseFavourites, toggleExerciseFavourite } from "../../lib/exercise-favourites";
 import { haptic } from "../../lib/haptics";
 import { useListMotion } from "../../lib/list-motion";
@@ -83,7 +83,7 @@ export default function ExerciseFavouritesSheet({
           <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: on ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
         </View>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
         {/* The pinned star rides the amber TEXT tone, not the fill (the
             accent-text channel). */}
         <Text style={{ fontSize: 15, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
@@ -100,7 +100,7 @@ export default function ExerciseFavouritesSheet({
   const head = (label: string, count: number) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, marginBottom: 10, marginHorizontal: 2 }}>
       <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{count}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
     </View>
   );
 

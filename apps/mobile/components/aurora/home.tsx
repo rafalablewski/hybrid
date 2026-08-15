@@ -71,7 +71,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
@@ -793,7 +793,7 @@ export default function AuroraHome() {
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
               <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
             </View>
             {/* the chooser as a snap slider — the exercise-widget rail's idiom:
                 one card ≈ 72% wide so the next path peeks in from the right,
@@ -1284,7 +1284,7 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
       <Text style={{ fontSize: 18, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "tight") }}>{sub}</Text>
-      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 16 }} />
+      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 16 }} />
     </PressScale>
   );
 }
@@ -1304,7 +1304,7 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
       <Text style={{ fontSize: 15, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
-      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
+      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
     </PressScale>
   );
 }
@@ -1576,22 +1576,22 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
              window shuts. Chalk, not the accent: the accent is the "go" colour,
              and this undoes a go. */
           <Pressable onPress={undo} disabled={busy} accessibilityRole="button" accessibilityLabel={t("w.home.today.readUndoA11y")} hitSlop={10} style={{ opacity: busy ? 0.5 : 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.chalk }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.chalk }}>
               {t("w.home.today.readUndo")}
             </Text>
           </Pressable>
         ) : !isToday && dayLabel ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text>
         ) : asking ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>
             {t("session.feel.promptRecovery")}
           </Text>
         ) : gate.reason === "dayFull" && isToday ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
             {dayReads.length} / {MAX_READS_PER_DAY}
           </Text>
         ) : held && gate.opensAt != null ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
             {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
           </Text>
         ) : null}
@@ -1655,7 +1655,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             <PressScale key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
               style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
               <ReadinessFace feeling={key} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
             </PressScale>
           );
         })}
@@ -1681,7 +1681,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             accessibilityState={{ expanded: readsOpen }}
             style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
           >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
               {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
             </Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length}</Text>

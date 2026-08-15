@@ -8,7 +8,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { GUTTER, RADIUS } from "./kit";
 import { useChartScrub } from "./chart-scrub";
 import HistoryStrip from "./history-strip";
@@ -88,7 +88,7 @@ export default function AuroraOtherSports({
             denominator, set in mono uppercase as though it were a measurement.
             No parent, no quote. Mirrors web other-sports.tsx. */}
         {parentage.enduranceMinutes > 0 && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
             {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.enduranceMinutes, u))}
           </Text>
         )}
@@ -171,8 +171,8 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.5, color: C.chalk }}>{lane.efforts}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: tracking.display, color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.other.efforts")}
         </Text>
       </View>

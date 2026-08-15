@@ -8,7 +8,7 @@ import {
 import { GUTTER } from "./kit";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 /**
@@ -70,7 +70,7 @@ function PrCell({ pr, units, t, width, onOpen }: {
   const proof = strengthPrProof(pr, units);
   const body = (
     <>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
         {pr.lift}
       </Text>
       <Text style={{ fontFamily: F.monoBold, fontSize: fs.display, letterSpacing: -0.8, marginTop: 7, color: txt(C, C.lime) }}>
@@ -188,7 +188,7 @@ export default function PeriodRecords({
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.act.recordsTitle")}</Text>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: C.ash }}>{windowName}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{windowName}</Text>
           {prs.length > 2 && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{prs.length}</Text>
           )}

@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { doneReceiptHero, type DoneReceipt, type DoneReceiptStat, type WeightUnit } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, FIXED_FONT_SCALE } from "../../lib/ui";
 
 // ── AURORA Done receipt block (mobile) ──────────────────────────────────────
 // The finished day, as both week rails render it: the headline, ONE figure at
@@ -56,14 +56,14 @@ export default function ReceiptBlock({
   // A supporting label, for the figures whose unit can't name them. Uppercase
   // mono — the house grammar for a label, and the only casing that is correct
   // in every language (lowercasing "Höhenmeter" would not be German).
-  const suffix = { fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash } as const;
+  const suffix = { fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash } as const;
 
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          style={{ flex: 1, fontFamily: F.black, fontSize: 19, lineHeight: HEAD_LINE, letterSpacing: -0.5, color: C.chalk }}
+          style={{ flex: 1, fontFamily: F.black, fontSize: 19, lineHeight: HEAD_LINE, letterSpacing: tracking.display, color: C.chalk }}
         >
           {title}
         </Text>

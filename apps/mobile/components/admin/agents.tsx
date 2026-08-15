@@ -14,7 +14,7 @@ import {
   type Kpi,
 } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Kicker, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, Mono, Kicker, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack, ASection } from "../aurora/kit";
@@ -444,7 +444,7 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
         <View style={{ marginTop: 12 }}>
           {run.steps.map((s, i) => (
             <View key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: palette.violet }}>
-              <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9 }}>
+              <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label }}>
                 ↳ delegated to {s.role} — {s.agent}
               </Mono>
               <Mono color={palette.ash} style={{ fontSize: fs.micro, marginVertical: 2 }}>"{s.task}"</Mono>

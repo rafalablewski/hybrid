@@ -41,7 +41,7 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { withAlpha, ASection, GUTTER, CARD_PAD } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
@@ -184,7 +184,7 @@ export default function PercentProgram({
       </View>
 
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: CARD_PAD, marginBottom: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{view.progression}</Text>
       </View>
 
@@ -228,7 +228,7 @@ function WeekRail({ C, bars, weeks, week, setWeek, wkLabel }: { C: Palette; bars
             ) : (
               <View style={{ width: 22, height: 2, borderRadius: 2, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16), marginTop: 16 }} />
             )}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
               {wkLabel} {w}
             </Text>
           </Pressable>
@@ -440,7 +440,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
 function SessionRule({ marker, color, volume, top, C }: { marker: string; color: string; volume: string | null; top: boolean; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, color) }}>{marker}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, color) }}>{marker}</Text>
       {!!volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{volume}</Text>}
     </View>
   );
@@ -487,7 +487,7 @@ function SessionBlock({ s, si, count, day, C, onLift }: { s: ProgramSessionView;
 function GroupRule({ label, C }: { label: string; C: Palette }) {
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
     </View>
   );
 }
@@ -529,7 +529,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
         <View style={{ width: MX_NAME }}>
           <View style={{ height: HDR_H, justifyContent: "center", paddingLeft: 16, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
             {!!label && (
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
                 {label}
               </Text>
             )}
@@ -617,13 +617,13 @@ function AccessoryRows({ lifts, label, C, onPress }: { lifts: ProgramLiftView[];
     <View>
       {(label || hasRpe) && (
         <View style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
             {label ?? ""}
           </Text>
           {hasRpe && (
             <>
-              <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 0.9 }}>Sets×Reps</Text>
-              <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 0.9 }}>RPE</Text>
+              <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: tracking.label }}>Sets×Reps</Text>
+              <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: tracking.label }}>RPE</Text>
             </>
           )}
         </View>

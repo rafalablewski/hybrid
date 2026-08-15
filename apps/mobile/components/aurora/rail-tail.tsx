@@ -3,7 +3,7 @@ import { ArrowGlyph } from "./cta-label";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { F, PressScale as Pressable, FIXED_FONT_SCALE, tracking } from "../../lib/ui";
 
 /**
  * RAIL TAIL — the ONE "see all" affordance, and the TWIN of
@@ -88,7 +88,7 @@ export default function RailTail({
       </View>
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
-        style={{ color, fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", textAlign: "center", lineHeight: 15 }}
+        style={{ color, fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", textAlign: "center", lineHeight: 15 }}
       >
         {premium ? `✦ ${text}` : text}
       </Text>

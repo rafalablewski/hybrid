@@ -17,7 +17,7 @@ import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./rang
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, F, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 
 /**
  * THE ACTIVITY CARD — "This week" and everything the date filter turns it into,
@@ -390,10 +390,10 @@ export default function AuroraWeekVerdict({
                   backgroundColor: isOpen && col ? withAlpha(col, dir === "flat" ? 0.06 : 0.09) : "transparent",
                 }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: col ?? C.ash }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: col ?? C.ash }}>
                   {t(verdictLabelKey(f.metric))}
                 </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: -0.5, marginTop: 3, color: col ?? C.chalk }}>
+                <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: tracking.display, marginTop: 3, color: col ?? C.chalk }}>
                   {fmt(f.metric, f.value)}
                 </Text>
                 {/* THE RAIL — selection in a second channel, so the state does
@@ -455,7 +455,7 @@ export default function AuroraWeekVerdict({
         </ADrawer>
 
         {!open && !hinted && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
             {t("w.home.act.hint")}
           </Text>
         )}
@@ -536,7 +536,7 @@ function MetricDetail({
     return bits.join(" – ");
   };
 
-  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase" as const };
+  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const };
 
   return (
     <>

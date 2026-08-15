@@ -7,7 +7,7 @@ import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useSharedSurfaceSource } from "../../lib/shared-element";
 import { ACard, AField, GUTTER, RADIUS, withAlpha, DockRail, DockChip } from "./kit";
@@ -153,7 +153,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
     <View onLayout={onLayout} style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
         <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{group.category}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
         </Text>
       </View>
@@ -250,8 +250,8 @@ function GoalTileFace({ cover, pressed }: { cover: ReturnType<typeof goalCoverVi
       >
         {cover.glyph}
       </Text>
-      <Text style={{ alignSelf: "flex-end", fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: 0.9, color: cover.ready ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>{cover.count}</Text>
-      <Text numberOfLines={3} style={{ fontFamily: F.black, fontSize: 16, lineHeight: 18, letterSpacing: -0.5, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
+      <Text style={{ alignSelf: "flex-end", fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, color: cover.ready ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.5)" }}>{cover.count}</Text>
+      <Text numberOfLines={3} style={{ fontFamily: F.black, fontSize: 16, lineHeight: 18, letterSpacing: tracking.display, color: cover.ready ? "#fff" : "rgba(255,255,255,0.62)" }}>{cover.title}</Text>
     </View>
   );
 }
@@ -293,7 +293,7 @@ function EnrolledCard({ enrolled }: { enrolled: EnrolledSeason | null }) {
   const started = enrolled.startedAt ? new Date(enrolled.startedAt) : null;
   return (
     <ACard style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.currentPlan")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.train.plans.currentPlan")}</Text>
       <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 4 }}>{planName}</Text>
       {started && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t("w.train.plans.startedOn")} {started.toLocaleDateString()}</Text>}
     </ACard>
@@ -322,18 +322,18 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
             <Pressable key={p.id} onPress={() => pick(p.id)}>
               <ACard style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{p.tag}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{p.tag}</Text>
                   {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
                 </View>
                 <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
                 <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
                   {hero.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.14), paddingTop: 8 }}>
-                      <Text style={{ fontFamily: F.black, fontSize: 20, lineHeight: 21, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                      <Text style={{ fontFamily: F.black, fontSize: 20, lineHeight: 21, letterSpacing: tracking.display, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: 12, color: C.ash }}>{s.unit}</Text>}
                       </Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{s.label}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{s.label}</Text>
                     </View>
                   ))}
                 </View>
@@ -384,7 +384,7 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
         <Field label={t("w.train.plans.level")} value={d.level} />
 
         <ACard style={{ marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.train.plans.weeklySplit")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.train.plans.weeklySplit")}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 8 }}>
             {d.split.map((day, i) => (
               <View key={i} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 8 }}>
@@ -396,7 +396,7 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
 
         {d.days.map((session, di) => (
           <ACard key={di} style={{ marginBottom: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{session.day}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{session.day}</Text>
             {session.items?.map((it, i) => (
               <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 8, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
                 <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, flex: 1 }}>{it.name}</Text>
@@ -420,7 +420,7 @@ function Field({ label, value }: { label: string; value: string }) {
   const { palette: C } = useTheme();
   return (
     <ACard style={{ marginBottom: 12 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: leading(fs.bodyLg) }}>{value}</Text>
     </ACard>
   );

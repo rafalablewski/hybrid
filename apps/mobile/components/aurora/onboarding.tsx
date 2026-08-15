@@ -9,7 +9,7 @@ import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APill, ASegment, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -126,7 +126,7 @@ function QuestionBody({
       <>
         {ONBOARDING_GOAL_GROUPS.map((group) => (
           <View key={group.category} style={{ marginTop: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 12, marginBottom: 6 }}>{group.category}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 12, marginBottom: 6 }}>{group.category}</Text>
             {group.goals.map((g) => (
               <Choice key={g.id} active={selected === g.id} title={g.label} sub={g.blurb} onPress={() => setAnswer(q.key, g.id)} />
             ))}

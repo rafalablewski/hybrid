@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useChartScrub, type ScrubBind } from "./chart-scrub";
 import { GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
@@ -194,7 +194,7 @@ export function LaneOrderChip({ order, onPress }: { order: LaneOrder; onPress: (
         paddingHorizontal: 9, paddingVertical: 4,
       }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
         {t(ORDER_KEY[order])}
       </Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>⌄</Text>
@@ -227,7 +227,7 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         <Text
           numberOfLines={1}
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}
+          style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
         >
           {t("w.home.end.scopeAll")}
         </Text>
@@ -327,7 +327,7 @@ function Tile({ w, label, a11y, foot, footRight, bind, children }: {
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
         numberOfLines={1}
         accessibilityLabel={a11y}
-        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}
+        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
       >
         {label}
       </Text>

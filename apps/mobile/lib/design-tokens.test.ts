@@ -172,13 +172,32 @@ describe("leading and tracking", () => {
   });
 
   it("RATCHET — raw letterSpacing gives way to tracking.*", () => {
-    // 18 distinct values, of which 0.9 and 1.2 are the same eyebrow drawn twice.
-    // 480 → 459: the nutrition trio (nutrition-kit, nutrition-panels, pantry)
-    // took its 0.9 / 1.2 / -0.5 to tracking.label / .caps / .display, which is
-    // every site in them that HAS a token. What is left there is -1, -1.2, -1.6
-    // — display tightenings with no rung to land on, and a ratchet is not the
-    // place to invent one.
-    expectAtMost(hits(/letterSpacing:\s*-?\d/g), 459, "raw letterSpacing → tracking.*");
+    // 480 → 459 → 93. Every site whose value IS a rung now names it: 187 at 0.9
+    // → tracking.label, 111 at 1.2 → tracking.caps, 39 at -0.5 →
+    // tracking.display, 2 at 0 → tracking.normal. 339 sites, 76 files, and not
+    // one pixel moves — the numbers were already the token, they just weren't
+    // saying so.
+    //
+    // WHAT IS LEFT IS ONE FINDING, not a tail of odds and ends. Convert the 59
+    // negatives to em and they collapse into a single narrow band — roughly
+    // -0.015em under a section title, -0.035em on a big number — no matter
+    // which of the twelve dp values wrote them. They are PROPORTIONAL display
+    // tightening that each call site multiplied out by hand for its own size,
+    // which is why -1 appears at 20dp and again at 48dp: the same intent, and
+    // it cannot be right at both.
+    //
+    // So the rung they need is not another absolute number, it is `track(size,
+    // role)` — the exact twin of `leading(size, role)` two rules up, which
+    // exists because absolute lineHeight was this same mistake on the other
+    // axis. That is a scale to design, not a value to snap to, and a ratchet is
+    // still not the place to invent one. Tracked as `tracking-proportional`.
+    //
+    // The 34 positives split: ~19 are the eyebrow drifted a tenth or two off
+    // (1.0, 1.1, 0.8, 0.5 …) and snap to label/caps once someone confirms the
+    // sub-dp shift is fine; the rest are DELIBERATE wide tracking — the OTP
+    // field at 8, the TOTP field at 3 — where the spacing is telling you the
+    // characters are discrete. Those want a name, not a rung.
+    expectAtMost(hits(/letterSpacing:\s*-?\d/g), 93, "raw letterSpacing → tracking.*");
   });
 });
 

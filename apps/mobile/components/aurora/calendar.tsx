@@ -9,7 +9,7 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, tracking, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -126,7 +126,7 @@ export default function AuroraCalendar() {
       {/* key={selected}: the destination hook claims once per mount, so the
           detail section must be a fresh mount for each day it describes. */}
       <DayDetail key={selected}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
         {new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
       </Text>
 

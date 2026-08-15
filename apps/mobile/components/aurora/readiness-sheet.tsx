@@ -6,7 +6,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F } from "../../lib/ui";
+import { leading, tracking, fs, F } from "../../lib/ui";
 import ReadinessFace from "./readiness-face";
 import Sheet from "./sheet";
 
@@ -150,7 +150,7 @@ function Block({ C, head, meta, children }: {
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: 15, color: C.chalk }}>{head}</Text>
-        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{meta}</Text> : null}
+        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{meta}</Text> : null}
       </View>
       {children}
     </View>

@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { routineSummary, type SessionBlock } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { withAlpha, ASection } from "./kit";
 import Sheet from "./sheet";
 import { CtaLabel } from "./cta-label";
@@ -109,7 +109,7 @@ export default function QuickStartSheet({
           accessibilityRole="button"
           style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 16, paddingVertical: 12, alignItems: "center" }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: tracking.label, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
         </Pressable>
       </View>
     </Sheet>
@@ -158,7 +158,7 @@ function FavouriteCard({ C, width, r, t, onLaunch, onToggleFav }: { C: P; width:
       <Text style={{ fontSize: 16, lineHeight: 18, color: txt(C, accent) }}>{glyph}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 15, letterSpacing: -0.3, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
-      <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
+      <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
     </Pressable>
   );
 }

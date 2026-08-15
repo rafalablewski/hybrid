@@ -14,7 +14,7 @@ import {
 } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import AEmptyDay from "./empty-day";
 import AActionPair from "./action-pair";
@@ -119,7 +119,7 @@ export default function AuroraLogbookRail({
           History that briefly replaced it went with the card's exit entirely —
           this screen has one door into the log, and it is not up here. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: tracking.display, color: C.chalk }}>
           {t("w.home.logbook.title")}
         </Text>
       </View>
@@ -190,7 +190,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${a11yLoad}`}
       style={{ width: DAY_W, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
           hairline disc (preview cue); otherwise a bare tonal number (chalk when
           the day holds training, ash when it doesn't). */}

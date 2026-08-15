@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, Text, Modal } from "react-native";
-import { leading, fs, F, space, PressScale as Pressable } from "../lib/ui";
+import { leading, tracking, fs, F, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 
@@ -34,7 +34,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
     <Modal visible transparent animationType="fade" onRequestClose={onDone}>
       <View style={{ flex: 1, backgroundColor: "rgba(8,9,11,.82)", justifyContent: "flex-end", padding: 16 }}>
         <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, marginBottom: 24 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>
             {`Step ${i + 1} / ${steps.length}`}
           </Text>
           <Text style={{ fontFamily: F.bold, fontSize: fs.heading, color: C.chalk, marginTop: 8 }}>{step.title}</Text>

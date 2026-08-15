@@ -8,7 +8,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F, leading } from "../../lib/ui";
+import { F, tracking, leading } from "../../lib/ui";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useFitnessLevel, type FitnessLevelRead } from "../../lib/use-fitness-level";
 import { ACard, CardFoot } from "./kit";
@@ -137,7 +137,7 @@ export default function LevelCard({ sessions, read }: {
         ))}
       </View>
       {level && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 8 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 8 }}>
           {t("w.analyze.vol.levelTier").replace("{n}", String(index + 1))}
         </Text>
       )}

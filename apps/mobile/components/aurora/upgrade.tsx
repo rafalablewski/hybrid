@@ -9,7 +9,7 @@ import { LegalLinks } from "../legal-links";
 import { supabase } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import Sheet from "./sheet";
@@ -117,10 +117,10 @@ export default function AuroraUpgrade() {
     <Sheet visible={open} onClose={close} onClosed={() => router.back()}>
       {/* badge */}
       <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
       </View>
 
-      <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
 
       {/* benefits */}
@@ -138,10 +138,10 @@ export default function AuroraUpgrade() {
 
       {/* price */}
       <View style={{ alignItems: "center", marginTop: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.5, color: C.chalk }}>
+        <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking.display, color: C.chalk }}>
           {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: 0.9 }}>{t("w.account.upgrade.trial-note")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: tracking.label }}>{t("w.account.upgrade.trial-note")}</Text>
       </View>
 
       {!!error && (

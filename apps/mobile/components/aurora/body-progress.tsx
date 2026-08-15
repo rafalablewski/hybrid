@@ -11,7 +11,7 @@ import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { APill, ACard } from "./kit";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { DoorRow } from "./week-verdict";
 
 /**
@@ -108,7 +108,7 @@ export default function BodyProgress({
         <ACard solid style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
             <Text style={head}>{t("w.account.profile.priv-trends")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {trends.map((tr) => <MetricTile key={tr.def.key} C={C} tr={tr} units={units} />)}
@@ -134,8 +134,8 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
   const dstr = d != null ? fmtMetricDelta(BODY_METRIC_DEFS[0], d, units) : null;
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 16 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: tracking.display, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 16 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
       {wv && (
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
           <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: -1, color: C.chalk }}>{wv.value}<Text style={{ fontSize: 15, color: C.ash }}> {wv.unit}</Text></Text>
@@ -146,8 +146,8 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
       )}
       <View style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-cadence")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-cadence")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 5 }}>
           {Array.from({ length: report.cadenceOf }).map((_, i) => (
@@ -167,10 +167,10 @@ function MetricTile({ C, tr, units }: { C: Palette; tr: MetricTrend; units: "kg"
   return (
     <View style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 6 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t(tr.def.labelKey)}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t(tr.def.labelKey)}</Text>
         <Text style={{ fontFamily: F.monoBold, fontSize: 11, color: dirColorM(C, tr.direction) }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</Text>
       </View>
-      <Text style={{ fontFamily: F.monoBold, fontSize: 22, letterSpacing: -0.5, color: C.chalk }}>{value}<Text style={{ fontSize: 11, color: C.ash }}> {unit}</Text></Text>
+      <Text style={{ fontFamily: F.monoBold, fontSize: 22, letterSpacing: tracking.display, color: C.chalk }}>{value}<Text style={{ fontSize: 11, color: C.ash }}> {unit}</Text></Text>
       <Bars C={C} heights={sparkHeights(tr.series)} />
     </View>
   );
@@ -253,7 +253,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
   return (
     <View style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, marginBottom: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-height-t")}</Text>
+        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-height-t")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: heightCm != null ? lime : C.ash }}>
           {heightCm != null ? fmtHeight(heightCm, units) : t("w.account.profile.priv-height-none")}
         </Text>
@@ -298,7 +298,7 @@ function MetricInput({ C, label, unit, value, onChange }: { C: Palette; label: s
     <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: C.lime }} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, marginTop: 2 }}>
         <TextInput value={value} onChangeText={(v) => { if (isDecimalInput(v)) onChange(v); }} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -1, color: C.chalk, paddingVertical: 2 }} />

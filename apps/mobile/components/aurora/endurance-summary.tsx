@@ -7,7 +7,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, cardShadow, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, cardShadow, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useActivityRange, useRangeLabels } from "./range-filter";
 
 /**
@@ -97,7 +97,7 @@ export default function AuroraEnduranceSummary({
     d === "down" ? txt(C, C.red) : d === "up" ? txt(C, C.lime) : C.ash;
   const tone = dirColor(enduranceDirection(w, "minutes"));
 
-  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase" as const };
+  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const };
 
   /* AN EMPTY PERIOD KEEPS ITS PLACE AND DROPS ITS CHROME.
    *

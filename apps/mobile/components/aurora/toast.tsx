@@ -6,7 +6,7 @@ import { durations } from "@hybrid/core";
 import { haptic } from "../../lib/haptics";
 import { AURORA_NAV_BAR_HEIGHT } from "../../lib/layout";
 import { useTheme } from "../../lib/theme";
-import { F, fs } from "../../lib/ui";
+import { F, fs, tracking } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { withAlpha } from "./field";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -105,7 +105,7 @@ export function ToastHost() {
         ) : (
           <BlurView intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
         )}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.9, textTransform: "uppercase", color: kind === "error" ? C.red : C.chalk }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: kind === "error" ? C.red : C.chalk }}>
           {msg}
         </Text>
       </Animated.View>

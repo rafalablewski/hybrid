@@ -68,7 +68,7 @@ import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
 import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
@@ -359,7 +359,7 @@ export function WorkoutWrapped({
   // carrying the ✦ premium signifier. It is an EYEBROW, not a third invention.
   const eyebrow = (label: string) => <HeroEyebrow label={label} tone="tint" accent={GOLD} mark="✦" />;
   const scrollHint = (
-    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textAlign: "center", marginTop: 16 }}>{t("session.wrapped.scroll")} ↑</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: C.ash, textAlign: "center", marginTop: 16 }}>{t("session.wrapped.scroll")} ↑</Text>
   );
   // The takeover is rank `cover`, mode `takeover`: no collapse track, but the
   // rail sits at the system's y and the panels clear the same bar height every
@@ -420,7 +420,7 @@ export function WorkoutWrapped({
                 {/* A modelled figure wears a "~" — it is never presented as a
                     measurement (see core/energy.ts). */}
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ fontFamily: F.black, fontSize: 22 * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), color: C.chalk }}>{b.estimate ? "~" : ""}{b.value}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
               </View>
             ))}
           </View>
@@ -432,11 +432,11 @@ export function WorkoutWrapped({
                tinted, and a white logo next to lime text would read as two
                claims at once. See core/device-marks.ts. */
             <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: `${C.chalk}52`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
               {deviceMark ? (
                 <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
               ) : (
-                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
               )}
             </Pressable>
           ) : canMatch ? (
@@ -495,7 +495,7 @@ export function WorkoutWrapped({
             <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8, marginBottom: 20 }}>{t("session.wrapped.premiumLead")}</Text>
             {wrapped.facts.map((f) => (
               <View key={f.labelKey + f.value} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
                 <Text style={{ fontFamily: F.black, fontSize: 26, color: f.tone === "up" || f.labelKey === "session.wrapped.est1rm" ? txt(C, C.lime) : C.violet }}>{f.value}</Text>
               </View>
             ))}
@@ -511,14 +511,14 @@ export function WorkoutWrapped({
         {device && (
           <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}14`} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.device.panelTitle"))}
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.5, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: 11, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
             <View style={{ marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED }}>
                 <View style={{ flex: 1.1 }} />
                 {/* An imported session has no logged column — the recording IS the log. */}
                 {!imported && (
-                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
+                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
                 )}
                 {/* The lockup heads the measured column instead of the device's
                     name, and the column's figures below are chalk with it — the
@@ -528,12 +528,12 @@ export function WorkoutWrapped({
                     <DeviceMark provider={device.provider} height={15} on="dark" label={deviceName ?? undefined} />
                   </View>
                 ) : (
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
                 )}
               </View>
               {comparison.map((r) => (
                 <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED, borderTopWidth: 1, borderTopColor: C.line }}>
-                  <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
+                  <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
                   {/* A modelled figure wears a "~" — never presented as a measurement. */}
                   {!imported && (
                     <Text style={{ flex: 1, fontFamily: F.bold, fontSize: 14, color: C.chalk, textAlign: "right" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</Text>
@@ -558,7 +558,7 @@ export function WorkoutWrapped({
         {showDeviceAd && (
           <Panel center glows={<Glow size={panelH * 0.45} color={`${C.violet}18`} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: -0.5, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
             <View style={{ marginTop: 24, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               {([
                 ["heart", C.red, "session.wrapped.device.hr"],
@@ -592,7 +592,7 @@ export function WorkoutWrapped({
                     <View key={i} style={{ width: 6, height: `${Math.round(v * 100)}%`, borderRadius: 3, backgroundColor: C.lime, opacity: 0.4 + v * 0.6 }} />
                   ))}
                 </View>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash, marginTop: 12 }}>{t("session.wrapped.signatureCap")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: C.ash, marginTop: 12 }}>{t("session.wrapped.signatureCap")}</Text>
               </>
             )}
           </View>

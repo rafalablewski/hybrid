@@ -26,7 +26,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { track } from "../../lib/track";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import { HubGlyph } from "./today-tabs";
 
@@ -280,7 +280,7 @@ export default function AuroraSideMenu({
           {role === "admin" && (
             <Pressable onPress={() => goHref("/admin")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 11, marginTop: 14, paddingVertical: 10, paddingHorizontal: 4 }}>
               <AuroraIcon name="verified" size={18} color={txt(C, C.amber)} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.amber) }}>Admin console</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.amber) }}>Admin console</Text>
             </Pressable>
           )}
 

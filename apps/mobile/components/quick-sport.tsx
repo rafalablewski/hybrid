@@ -15,7 +15,7 @@ import { createSession } from "../lib/api";
 import { saveGuestSession } from "../lib/guest";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
-import { fs, space, F, PressScale as Pressable } from "../lib/ui";
+import { fs, space, tracking, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
 import { APill } from "./aurora/kit";
@@ -108,7 +108,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
           <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
             <Text style={{ fontSize: 26 }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{shortSport(name)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label, marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
           </Pressable>
         ))}
       </View>
@@ -135,7 +135,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
             <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8 }}>
               {filtered.map((g) => (
                 <View key={g.category} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.caps, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
                   {g.sports.map((s) => {
                     const hint = sportTracksDistance(s.name) ? sportDistanceUnit(s.name) : g.category;
                     return (
@@ -220,7 +220,7 @@ function LogSheet({ sport, date, onClose, onSaved }: { sport: string | null; dat
               otherwise; off-iOS the row states the day it will save to rather
               than offering a control the platform can't draw natively. */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, marginTop: 14, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9 }}>{t("w.home.quickSport.when")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label }}>{t("w.home.quickSport.when")}</Text>
             {LIQUID_GLASS_SUPPORTED ? (
               <NativeDateField
                 value={when}
@@ -239,12 +239,12 @@ function LogSheet({ sport, date, onClose, onSaved }: { sport: string | null; dat
           <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end", marginTop: 10 }}>
             {tracksDist && (
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label, marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
                 <TextInput value={distance} onChangeText={setDistance} keyboardType="numeric" placeholder={sportDistanceUnit(name) === "m" ? "400" : "8"} placeholderTextColor={C.ash} autoFocus style={field} />
               </View>
             )}
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 0.9, marginBottom: 6 }}>Minutes</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label, marginBottom: 6 }}>Minutes</Text>
               <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} autoFocus={!tracksDist} style={field} />
             </View>
             {/* The shared pill, not a hand-rolled one. This call site was the

@@ -21,7 +21,7 @@ import { useLang } from "../lib/i18n";
 import { haptic } from "../lib/haptics";
 import { DeviceMark } from "./aurora/device-mark";
 import { ToggleRow } from "./toggle-row";
-import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 
@@ -327,7 +327,7 @@ export function DeviceImportSheet({
                       <Text
                         maxFontSizeMultiplier={FIXED_FONT_SCALE}
                         numberOfLines={1}
-                        style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}
+                        style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}
                       >
                         {l.title}
                       </Text>
@@ -356,7 +356,7 @@ export function DeviceImportSheet({
               looking for their Garmin should find the answer here. */}
           {(phase === "list" || phase === "unavailable") && (
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
                 {t("device.import.sources")}
               </Text>
               {DEVICE_IMPORT_PROVIDERS.map((p) => (

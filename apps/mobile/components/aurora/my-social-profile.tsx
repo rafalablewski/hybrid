@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Image, AccessibilityInfo } from "react-native";
 import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
-import { leading, LoadSwap, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, LoadSwap, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
@@ -240,7 +240,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
 function SectionLabel({ children, first }: { children: ReactNode; first?: boolean }) {
   const C = useTheme().palette;
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginLeft: 4, marginBottom: 10, marginTop: first ? 0 : 18 }}>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginLeft: 4, marginBottom: 10, marginTop: first ? 0 : 18 }}>
       {children}
     </Text>
   );

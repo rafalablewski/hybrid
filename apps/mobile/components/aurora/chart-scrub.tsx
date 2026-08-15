@@ -3,7 +3,7 @@ import { PanResponder, Text, View } from "react-native";
 import { scrubFraction, scrubIndex, type ChartReading, type ScrubMode } from "@hybrid/core";
 import { haptic } from "../../lib/haptics";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, tracking, F } from "../../lib/ui";
 
 /**
  * THE HELD CHART (mobile) — press a chart and it states the figure under your
@@ -214,7 +214,7 @@ export function ChartReadout({ read, side, when, note, C: palette }: {
 }) {
   const theme = useTheme();
   const C = palette ?? theme.palette;
-  const label = { fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1.2, textTransform: "uppercase" as const };
+  const label = { fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.caps, textTransform: "uppercase" as const };
   return (
     <View
       pointerEvents="none"

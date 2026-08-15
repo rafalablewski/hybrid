@@ -13,7 +13,7 @@ import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } fr
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
-import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 import Sheet from "./aurora/sheet";
@@ -180,13 +180,13 @@ export function DeviceMatchSheet({
                       </View>
                       {best && (
                         <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
-                          <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: 0.9, color: C.onAccent, textTransform: "uppercase" }}>
+                          <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: tracking.label, color: C.onAccent, textTransform: "uppercase" }}>
                             ✓ {t("session.device.best")}
                           </Text>
                         </View>
                       )}
                       {!best && linked && (
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: txt(C, C.lime), textTransform: "uppercase" }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: txt(C, C.lime), textTransform: "uppercase" }}>
                           {t("session.device.matchedChip")}
                         </Text>
                       )}

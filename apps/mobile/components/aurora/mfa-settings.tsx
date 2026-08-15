@@ -3,7 +3,7 @@ import { View, Text, TextInput, ActivityIndicator } from "react-native";
 import { isValidTotpCode } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { APill, ACard, RADIUS } from "./kit";
 import { QrMatrix } from "../coach-invite";
 
@@ -100,14 +100,14 @@ export default function MfaSettings() {
 
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
         Two-factor authentication
       </Text>
       <ACard style={{ borderLeftWidth: 3, borderLeftColor: accent }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Authenticator app (TOTP)</Text>
           <View style={{ backgroundColor: `${verified.length ? C.lime : C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: 0.9 }}>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: tracking.label }}>
               {verified.length ? "on" : "off"}
             </Text>
           </View>

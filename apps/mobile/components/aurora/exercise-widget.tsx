@@ -24,7 +24,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { GUTTER, RADIUS, withAlpha } from "./kit";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
@@ -225,7 +225,7 @@ export default function ExerciseWidgetRail({
           one-exit rule. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
         </Text>
       </View>
