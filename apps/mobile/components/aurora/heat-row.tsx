@@ -5,6 +5,7 @@ import {
   CLEARANCE_SLOW,
   HEAT_SESSION_MIN_EQUIV,
   heatSittings,
+  leading,
   saunaClearance,
   space,
   tracking,
@@ -37,7 +38,22 @@ import { HeatSheet } from "./heat-sheet";
  *
  * THE GLYPH IS A BARE ＋, NOT A RINGED ARROW. House rule, and it is honest
  * here: tapping this grows the log in place through a sheet — it does not open
- * a destination. An arrow would promise a screen that does not exist.
+ * a destination. An arrow would promise a screen that does not exist. It is
+ * ASH, like every other expander mark in the app (the Other-sports tail, the
+ * endurance block's All-sports control, this feature's OWN sheet — "bare ＋/−
+ * in ash"): a hue on a control mark says "go", and this one goes nowhere. It
+ * wore amber, which made it the single tinted glyph in the Recover cluster and
+ * the only expander in the product not in ash.
+ *
+ * IT SITS IN TODAY'S RHYTHM, AND WEARS TODAY'S CARD HEAD. Two things it did
+ * not do. Every block on the screen owns its own 16dp top gap (the plan hero,
+ * the done floor, the check-in card, RtpPanel; the chromeless doors take 14) —
+ * this one emitted none, so its card butted flush against the check-in card
+ * clustered directly above it, two hairlines touching with nothing between
+ * them. And its title was the one card title on Today in BOOK weight: the
+ * check-in beside it heads at F.bold/16, the protocol at F.black/20, the doors
+ * at F.bold/14. "Heat" now heads exactly as "Readiness" does — same cluster,
+ * same rung.
  */
 export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSession[]; recovery?: RecoveryReport[] } = {}) {
   const { palette: C } = useTheme();
@@ -100,11 +116,21 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
 
   return (
     <>
-      <PressScale onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={t("w.recovery.heat.add")}>
+      {/* The gap belongs to the PressScale, not to the card inside it: a margin
+          on the card would sit inside the pressed surface's own box. */}
+      <PressScale
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={t("w.recovery.heat.add")}
+        style={{ marginTop: space.lg }}
+      >
         <ACard>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms }}>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.heat.row")}</Text>
+              {/* -0.3, the value the check-in card and the protocol card
+                  already head at — not tracking.display (-0.5), which is the
+                  masthead's rung. */}
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.3, color: C.chalk }}>{t("w.recovery.heat.row")}</Text>
               {/* THE FIGURES READ AS FIGURES. This row exists to put the chronic
                   channel's own number on Today — sittings per week is exactly
                   what the volume multiplier reads — and a sentence buries it.
@@ -126,11 +152,12 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
                 </Text>
               )}
             </View>
-            {/* Bare ＋ — it grows in place. No ring, because nothing opens. DRAWN,
-                not typed: the fullwidth ＋ text character took its weight and
-                centring from the mono face, in an app with a vector icon set and
-                a size → stroke rule. */}
-            <AuroraIcon name="plus" size={20} color={txt(C, C.amber)} />
+            {/* Bare ＋ in ASH — it grows in place. No ring, because nothing
+                opens; no hue, because nothing goes. DRAWN, not typed: the
+                fullwidth ＋ text character took its weight and centring from
+                the mono face, in an app with a vector icon set and a size →
+                stroke rule. */}
+            <AuroraIcon name="plus" size={20} color={C.ash} />
           </View>
         </ACard>
       </PressScale>
@@ -141,7 +168,7 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
             {t("w.recovery.heat.clearTitle")}
           </Text>
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space.xs }}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber) }}>{t("w.recovery.heat.clearWith")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: txt(C, C.amber) }}>{clearance.withHeat.index.toFixed(2)}</Text>
           </View>
@@ -149,8 +176,8 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.recovery.heat.clearWithout")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk }}>{clearance.withoutHeat.index.toFixed(2)}</Text>
           </View>
-          <View style={{ height: 1, backgroundColor: C.line, marginVertical: 11 }} />
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 18 }}>
+          <View style={{ height: 1, backgroundColor: C.line, marginVertical: space.md }} />
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>
             {t(verdictKey)}{" "}
             {t("w.recovery.heat.clearPairs").replace("{n}", String(clearance.withSamples.length + clearance.withoutSamples.length))}
           </Text>
