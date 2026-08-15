@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Modal, ScrollView, StyleSheet, Animated, Easing, Linking, Pressable as RNPressable, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter, type Href } from "expo-router";
@@ -6,11 +6,20 @@ import {
   avatarInitials,
   groupedNavWithLocks,
   AURORA_NAV_ICONS,
+  NAV_ITEMS,
   SIDE_MENU_PRIMARY,
   SIDE_MENU_FOOTER,
   SIDE_MENU_NAMED_IDS,
   SIDE_MENU_WIDTH,
   FUNNEL,
+  SEARCH,
+  buildGlobalSearchIndex,
+  searchGlobal,
+  groupGlobalResults,
+  navForPersonaWithLocks,
+  type AuroraIconName,
+  type GlobalResult,
+  type GlobalResultKind,
   type SideMenuRow,
   type TodayTabId,
   type NavGroup,
@@ -26,7 +35,9 @@ import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { track } from "../../lib/track";
+import { useExercises } from "../../lib/queries";
 import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { ASearch } from "./kit";
 import { AuroraIcon } from "./icons";
 import { HubGlyph } from "./today-tabs";
 
@@ -37,8 +48,17 @@ import { HubGlyph } from "./today-tabs";
  *
  * It slides in from the LEFT edge under a scrim, and it is where navigation by
  * name lives now that the bottom bar spends its fourth slot on Messages instead
- * of on the More springboard (see @hybrid/core nav-bar.ts). Four bands:
+ * of on the More springboard (see @hybrid/core nav-bar.ts). Five bands:
  *   • IDENTITY — who you are, tapping through to Profile.
+ *   • SEARCH — the app's ONLY cross-app search, and the drawer is the honest
+ *     home for it: this is already the list of everywhere you can go, so making
+ *     it searchable rather than only scrollable is the smallest true version of
+ *     the feature. It reaches screens, settings, movements, sports, plans,
+ *     recipes and help — one index, ranked by the same engine the exercise
+ *     picker uses (@hybrid/core global-search + ranked-search), so "hamstrings"
+ *     finds the Romanian Deadlift and "2fa" finds Password & security. The tab
+ *     bar could not host it: the iOS 26 detached search slot is deliberately
+ *     spent on the Train action, and nav-bar.ts guards that trade with a test.
  *   • THE PRIMARY LIST — Profile, History, the three hub views, Nutrition. The
  *     hub rows switch Today in place, because the drawer lives inside the hub.
  *   • ALL TOOLS — the whole persona-filtered nav, the springboard the More tab
@@ -57,6 +77,17 @@ import { HubGlyph } from "./today-tabs";
  *  sets its own padding — named here so the number is a decision rather than a
  *  literal that reads like the screen gutter. The web twin uses the same 16. */
 const PANEL_PAD = 16;
+
+/** One glyph per result kind, so a mixed list is sortable by eye. */
+const KIND_ICON: Record<GlobalResultKind, AuroraIconName> = {
+  screen: "grid",
+  setting: AURORA_NAV_ICONS.settings ?? "settings",
+  exercise: AURORA_NAV_ICONS.exercises ?? "list-play",
+  sport: AURORA_NAV_ICONS.sport ?? "navigation",
+  plan: AURORA_NAV_ICONS.plans ?? "bookmark",
+  recipe: "fork-knife",
+  help: AURORA_NAV_ICONS.help ?? "info",
+};
 
 const GROUP_LABEL: Record<NavGroup, string> = {
   home: "Home", train: "Train", analyze: "Analyze", recovery: "Recovery", social: "Social", teams: "Teams & coaching", account: "Account",
@@ -91,13 +122,15 @@ export default function AuroraSideMenu({
   const { width: screenW } = useWindowDimensions();
   const reduced = useReducedMotion();
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const { catalog, aliasMap } = useExercises();
 
   const panelW = Math.min(SIDE_MENU_WIDTH, Math.round(screenW * 0.86));
   // The panel travels; the scrim fades with it. One driver, so the two can
   // never disagree about how far open the drawer is.
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    if (!open) { setToolsOpen(false); return; }
+    if (!open) { setToolsOpen(false); setQuery(""); return; }
     anim.setValue(reduced ? 1 : 0);
     if (reduced) return;
     Animated.timing(anim, { toValue: 1, duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start();
@@ -127,6 +160,43 @@ export default function AuroraSideMenu({
       return;
     }
     goId(row.target.screen);
+  };
+
+  // ── CROSS-APP SEARCH ───────────────────────────────────────────────────────
+  // One index over everything the app holds, ranked by the shared engine. Built
+  // once per catalog + persona, not per keystroke: normalizing a few hundred
+  // names is the expensive half, scoring them is microseconds — which is why
+  // there is no debounce here either.
+  const searchIndex = useMemo(
+    () =>
+      buildGlobalSearchIndex({
+        label: (key, fallback) => { const v = t(key); return v === key ? fallback : v; },
+        screens: navForPersonaWithLocks(persona, NAV_ITEMS, access)
+          .filter(({ item }) => isEnabled(`nav.${item.id}`))
+          .map(({ item, locked }) => ({ id: item.id, locked })),
+        exercises: catalog,
+        aliasMap,
+      }),
+    [t, persona, access, isEnabled, catalog, aliasMap],
+  );
+  const q = query.trim();
+  const found = useMemo(() => (q ? groupGlobalResults(searchGlobal(searchIndex, q, { limit: 40 })) : []), [q, searchIndex]);
+
+  /** Where a result goes. A result that only reached the right SCREEN would be
+   *  a broken promise — the athlete named the thing, so land on the thing. */
+  const openResult = (r: GlobalResult) => {
+    track(SEARCH.global, { client: "mobile", kind: r.kind });
+    if (r.kind === "screen") {
+      if (r.locked) { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: `search-${r.id}` }); goHref("/upgrade"); return; }
+      goId(r.id);
+      return;
+    }
+    if (r.kind === "setting") { goHref("/settings"); return; }
+    if (r.kind === "exercise") { goHref({ pathname: "/exercise", params: { name: r.id } }); return; }
+    if (r.kind === "sport") { goHref({ pathname: "/sport-page", params: { name: r.id } }); return; }
+    if (r.kind === "plan") { goHref({ pathname: "/plans", params: r.parentId ? { goal: r.parentId, plan: r.id } : { goal: r.id } }); return; }
+    if (r.kind === "recipe") { goHref({ pathname: "/nutrition", params: { recipe: r.id } }); return; }
+    goHref("/help");
   };
 
   // ALL TOOLS — everything this persona may see that the drawer hasn't already
@@ -223,6 +293,44 @@ export default function AuroraSideMenu({
             </Text>
           </Pressable>
 
+          {/* SEARCH — the app's only cross-app field. */}
+          <ASearch value={query} onChange={setQuery} placeholder={t("nav.searchPh")} />
+
+          {q ? (
+            /* RESULTS replace the drawer's own lists: while you are searching,
+               the fixed menu underneath is noise, and stacking the two would
+               bury the answer below a screenful of navigation. */
+            found.length === 0 ? (
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, paddingVertical: 18 }}>{t("nav.searchNone")}</Text>
+            ) : (
+              found.map((g) => (
+                <View key={g.kind} style={{ marginBottom: 6 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, paddingTop: 12, paddingBottom: 2 }}>
+                    {t(`nav.searchKind.${g.kind}`)}
+                  </Text>
+                  {g.hits.map((h) => (
+                    <Pressable
+                      key={`${h.value.kind}:${h.value.id}`}
+                      onPress={() => openResult(h.value)}
+                      accessibilityRole="button"
+                      accessibilityLabel={h.value.sub ? `${h.value.title}, ${h.value.sub}` : h.value.title}
+                      style={{ flexDirection: "row", alignItems: "center", gap: 11, paddingVertical: 9, paddingHorizontal: 4 }}
+                    >
+                      <AuroraIcon name={KIND_ICON[h.value.kind]} size={17} color={h.value.locked ? C.ash : C.chalk} />
+                      <View style={{ flex: 1 }}>
+                        <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: h.value.locked ? C.ash : C.chalk }}>{h.value.title}</Text>
+                        {!!h.value.sub && (
+                          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{h.value.sub}</Text>
+                        )}
+                      </View>
+                      {h.value.locked && <AuroraIcon name="lock" size={12} color={pa.text} />}
+                    </Pressable>
+                  ))}
+                </View>
+              ))
+            )
+          ) : (
+            <>
           {/* THE PRIMARY LIST */}
           {SIDE_MENU_PRIMARY.map((r) => row(r, false))}
 
@@ -282,6 +390,9 @@ export default function AuroraSideMenu({
               <AuroraIcon name="verified" size={18} color={txt(C, C.amber)} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.amber) }}>Admin console</Text>
             </Pressable>
+          )}
+
+            </>
           )}
 
           {/* THE FOOTER — the same rows, smaller: about the account, not the

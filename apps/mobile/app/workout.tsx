@@ -700,16 +700,24 @@ export default function Workout() {
   // is the one moment in the app with no motion at all: a card appears fully
   // formed mid-list, or vanishes and everything under it teleports up.
   const addExercise = (name: string, kind?: WKind) => {
-    const clean = name.trim();
-    if (!clean) return;
+    addExercises([{ name, kind }]);
+  };
+  /** Add a whole set of movements at once, in the order they were chosen — the
+   *  picker's queue. One state commit and ONE layout animation, so six lifts
+   *  arrive together instead of six sheets opening and closing. */
+  const addExercises = (picks: { name: string; kind?: WKind }[]) => {
+    const clean = picks.map((p) => ({ ...p, name: p.name.trim() })).filter((p) => p.name);
+    if (!clean.length) return;
     animateListChange(reducedMotion);
     // SEEDED FROM LAST TIME. A lift you have done before arrives with its last
     // session's sets already queued and their numbers filled IN — chalk, not a
     // grey placeholder zero — so logging set one is a single tap instead of a
     // tap, a keyboard, a number and a dismissal. The default is the answer;
     // it is also, unlike a 0, a true statement about your training.
-    const last = lastByLift.get(clean);
-    setExercises((xs) => [...xs, seedFromLast(newExercise(clean, kind), last)]);
+    setExercises((xs) => [
+      ...xs,
+      ...clean.map((p) => seedFromLast(newExercise(p.name, p.kind), lastByLift.get(p.name))),
+    ]);
     setPickerOpen(false);
   };
   const removeExercise = (u: string) => {
@@ -1863,6 +1871,7 @@ export default function Workout() {
           visible={pickerOpen}
           onClose={() => setPickerOpen(false)}
           onPick={(name, kind) => addExercise(name, kind)}
+          onPickMany={(picks) => addExercises(picks)}
           title={t("workout.pickExercise")}
           // `count` is not decoration: the picker ranks the movements this
           // athlete actually trains above ones they have never touched.

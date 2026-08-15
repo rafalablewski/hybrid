@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, FlatList } from "react-native";
 import {
+  MIN_MISS_LENGTH,
   MOVEMENTS,
   exercisesByCategory,
   olympicSportsByCategory,
@@ -13,6 +14,8 @@ import {
   type BlockKind,
 } from "@hybrid/core";
 import { useExercises } from "../../lib/queries";
+import { noteSearchMiss } from "../../lib/search-misses";
+import { haptic } from "../../lib/haptics";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -95,10 +98,14 @@ function shapeHint(name: string, kind: BlockKind): string {
  * the single heaviest frame in the flow. Browsing by muscle group remains, for
  * the other question — "what should I do for chest today".
  */
-export default function ExercisePickerSheet({ visible, onClose, onPick, title, recent }: {
+export default function ExercisePickerSheet({ visible, onClose, onPick, onPickMany, title, recent }: {
   visible: boolean;
   onClose: () => void;
   onPick: (name: string, kind: BlockKind) => void;
+  /** Add SEVERAL at once, in the order they were chosen. Without it the queue
+   *  is not offered — a caller that can only take one movement must not show a
+   *  control that promises otherwise. */
+  onPickMany?: (picks: { name: string; kind: BlockKind }[]) => void;
   title: string;
   /** The athlete's own movements (the live logger's history), most recent first. */
   recent?: Entry[];
@@ -108,10 +115,16 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   const { catalog, aliases, aliasMap, categoryByName } = useExercises();
   const [query, setQuery] = useState("");
   const [room, setRoom] = useState<string | null>(null);
+  // THE QUEUE — names in the order they were chosen. Non-empty means the sheet
+  // is in multi mode: a tap toggles instead of adding-and-closing.
+  const [queue, setQueue] = useState<string[]>([]);
+  // Multi mode with nothing chosen yet: the athlete asked for it and the sheet
+  // has to stay in it, or the first tap would close the sheet under them.
+  const [selecting, setSelecting] = useState(false);
 
-  // A fresh open always lands clean: empty field, no room, keyboard up.
+  // A fresh open always lands clean: empty field, no room, no queue, keyboard up.
   useEffect(() => {
-    if (visible) { setQuery(""); setRoom(null); }
+    if (visible) { setQuery(""); setRoom(null); setQueue([]); setSelecting(false); }
   }, [visible]);
 
   /** The muscle-group / pattern rooms, and the sport rooms after them. */
@@ -186,25 +199,76 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   // one athlete's log ends up holding "deadlift" AND "Deadlift".
   const canAddCustom = useMemo(() => !!q && !exerciseNameTaken(names, q, aliases), [q, names, aliases]);
 
-  // A stable handler so every memoized row keeps its identity across keystrokes.
+  const multi = !!onPickMany && (selecting || queue.length > 0);
+
+  // Stable handlers so every memoized row keeps its identity across keystrokes.
   const pickRef = useRef(onPick);
   pickRef.current = onPick;
-  const pick = useCallback((name: string, kind: BlockKind) => pickRef.current(name, kind), []);
-  const close = () => { setQuery(""); setRoom(null); onClose(); };
+  const multiRef = useRef(multi);
+  multiRef.current = multi;
+  /** A tap: adds and closes, or — in multi mode — toggles the queue. */
+  const pick = useCallback((name: string, kind: BlockKind) => {
+    if (!multiRef.current) { pickRef.current(name, kind); return; }
+    haptic.light();
+    setQueue((qs) => (qs.includes(name) ? qs.filter((n) => n !== name) : [...qs, name]));
+  }, []);
+  /** A long press: starts the queue from this movement, wherever you are. */
+  const queueFrom = useCallback((name: string) => {
+    if (!onPickManyRef.current) return;
+    haptic.medium();
+    setSelecting(true);
+    setQueue((qs) => (qs.includes(name) ? qs : [...qs, name]));
+  }, []);
+  const onPickManyRef = useRef(onPickMany);
+  onPickManyRef.current = onPickMany;
+
+  const close = () => {
+    // THE VOCABULARY LOG. A query that found nothing is the app admitting it
+    // does not know a word this athlete uses — recorded here, on the way out,
+    // rather than per keystroke (which would file every prefix of every word).
+    if (q.length >= MIN_MISS_LENGTH && results.length === 0) noteSearchMiss(q, "empty");
+    setQuery(""); setRoom(null); setQueue([]); setSelecting(false);
+    onClose();
+  };
+
+  const addCustom = () => {
+    noteSearchMiss(q, "custom");
+    pick(q, inferBlockKind(q));
+  };
+
+  const commitQueue = () => {
+    const picks = queue.map((n) => byName.get(n)).filter((e): e is Entry => !!e).map((e) => ({ name: e.name, kind: e.kind }));
+    if (!picks.length) return;
+    haptic.success();
+    onPickManyRef.current?.(picks);
+  };
 
   /** Return adds the best match — never a stray custom spelling of a real lift. */
   const submit = () => {
     const best = results[0];
     if (best) pick(best.name, best.kind);
-    else if (canAddCustom) pick(q, inferBlockKind(q));
+    else if (canAddCustom) addCustom();
   };
 
   const rows = q ? results : roomData ? roomData.entries : recentTop;
   const listKey = q ? "q" : room ?? "home";
 
+  const queued = useMemo(() => new Set(queue), [queue]);
+  // The multi-select entry. Offered only where a list is actually showing, and
+  // only when the caller can take several — never a control that promises
+  // something the screen behind it cannot do.
+  const selectAction = onPickMany
+    ? {
+        label: multi ? t("w.train.picker.selectDone") : t("w.train.picker.select"),
+        on: multi,
+        onPress: () => { setSelecting((v) => !v); setQueue([]); },
+      }
+    : undefined;
   const renderItem = useCallback(
-    ({ item }: { item: Entry }) => <Row entry={item} onPick={pick} />,
-    [pick],
+    ({ item }: { item: Entry }) => (
+      <Row entry={item} onPick={pick} onLongPress={onPickMany ? queueFrom : undefined} queued={queued.has(item.name)} multi={multi} />
+    ),
+    [pick, queueFrom, queued, multi, onPickMany],
   );
 
   return (
@@ -241,10 +305,10 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 <Pressable onPress={() => setRoom(null)} hitSlop={8} style={{ paddingVertical: 8 }} accessibilityRole="button">
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("w.train.picker.all")}</Text>
                 </Pressable>
-                <Head label={roomData.label} count={roomData.entries.length} />
+                <Head label={roomData.label} count={roomData.entries.length} action={selectAction} />
               </>
             ) : recentTop.length > 0 ? (
-              <Head label={t("workout.yourLifts")} count={recentTop.length} />
+              <Head label={t("workout.yourLifts")} count={recentTop.length} action={selectAction} />
             ) : null
           }
           ListEmptyComponent={
@@ -258,7 +322,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
             <>
               {canAddCustom && (
                 <Pressable
-                  onPress={() => pick(q, inferBlockKind(q))}
+                  onPress={addCustom}
                   accessibilityRole="button"
                   style={{ marginTop: 16, borderRadius: RADIUS.pill, backgroundColor: C.lime, paddingVertical: 12, alignItems: "center" }}
                 >
@@ -284,20 +348,59 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
           }
         />
       </View>
+
+      {/* THE QUEUE BAR — the whole point of multi mode: the sheet stays open and
+          the set goes in at once, in the order it was chosen. It sits on the
+          panel, above the sheet's own bottom pad, so it never scrolls away
+          under the movement you are about to add. */}
+      {multi && (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
+          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
+            {queue.length ? t("w.train.picker.queued").replace("{n}", String(queue.length)) : t("w.train.picker.queueHint")}
+          </Text>
+          <Pressable
+            onPress={commitQueue}
+            disabled={!queue.length}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !queue.length }}
+            style={{ borderRadius: RADIUS.pill, backgroundColor: queue.length ? C.lime : "transparent", borderWidth: 1, borderColor: queue.length ? C.lime : C.line, paddingVertical: 10, paddingHorizontal: 18, opacity: queue.length ? 1 : 0.55 }}
+          >
+            <Text style={{ fontFamily: F.black, fontSize: fs.body, color: queue.length ? C.onAccent : C.ash }}>
+              {t("w.train.picker.addAll").replace("{n}", String(queue.length))}
+            </Text>
+          </Pressable>
+        </View>
+      )}
     </Sheet>
   );
 }
 
 const keyExtractor = (e: Entry) => e.name;
 
-/** A section label — display face left, its figure right (the Explore
- *  SectionHead grammar; never a marker on the left). */
-function Head({ label, count }: { label: string; count: number }) {
+/**
+ * A section label — display face left, its figure right (the Explore SectionHead
+ * grammar; never a marker on the left). The right slot takes META *or* a
+ * head-level CONTROL, which is where the multi-select entry lives: small mono
+ * uppercase, on the right of the same row, never a second row of chrome.
+ */
+function Head({ label, count, action }: {
+  label: string;
+  count: number;
+  action?: { label: string; on?: boolean; onPress: () => void };
+}) {
   const { palette: C } = useTheme();
   return (
-    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 8, marginBottom: 8 }}>
+    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 8, marginBottom: 8 }}>
       <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
+      {action ? (
+        <Pressable onPress={action.onPress} hitSlop={10} accessibilityRole="button" accessibilityState={{ selected: !!action.on }}>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: action.on ? txt(C, C.lime) : C.ash }}>
+            {action.label}
+          </Text>
+        </Pressable>
+      ) : (
+        <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
+      )}
     </View>
   );
 }
@@ -313,15 +416,25 @@ function Head({ label, count }: { label: string; count: number }) {
  * The GEAR line under the name is what makes a long result list scannable: the
  * eleven deadlifts differ by implement and muscle group, not by their names.
  */
-const Row = memo(function Row({ entry, onPick }: { entry: Entry; onPick: (name: string, kind: BlockKind) => void }) {
+const Row = memo(function Row({ entry, onPick, onLongPress, queued, multi }: {
+  entry: Entry;
+  onPick: (name: string, kind: BlockKind) => void;
+  onLongPress?: (name: string) => void;
+  queued?: boolean;
+  multi?: boolean;
+}) {
   const { palette: C } = useTheme();
   const tint = txt(C, kindColor(entry.kind, C));
   const hint = shapeHint(entry.name, entry.kind);
   const gear = exerciseGearLine(entry.name);
+  const lime = txt(C, C.lime);
   return (
     <Pressable
       onPress={() => onPick(entry.name, entry.kind)}
+      onLongPress={onLongPress ? () => onLongPress(entry.name) : undefined}
+      delayLongPress={280}
       accessibilityRole="button"
+      accessibilityState={multi ? { selected: !!queued } : undefined}
       accessibilityLabel={gear ? `${entry.name}, ${gear}` : entry.name}
       style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}
     >
@@ -338,7 +451,16 @@ const Row = memo(function Row({ entry, onPick }: { entry: Entry; onPick: (name: 
           <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: 2 }}>{gear}</Text>
         )}
       </View>
-      {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
+      {/* In multi mode the right slot says whether this one is IN — a checked
+          ring, not a checkbox column, so a single-pick sheet is unchanged and
+          nothing shifts sideways when the queue starts. */}
+      {multi ? (
+        <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: queued ? lime : C.line, backgroundColor: queued ? lime : "transparent", alignItems: "center", justifyContent: "center" }}>
+          {queued && <Text style={{ fontFamily: F.black, fontSize: 12, lineHeight: 14, color: C.onAccent }}>✓</Text>}
+        </View>
+      ) : (
+        !!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{hint}</Text>
+      )}
     </Pressable>
   );
 });

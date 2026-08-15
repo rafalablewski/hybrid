@@ -167,7 +167,7 @@ const BLANK_CREATE_FORM = {
 
 // The HYBRID Verified mark — the same quiet lime tick the verified-coach badge
 // uses, so "checked by us" reads identically wherever it appears in the app.
-export default function AuroraNutrition({ compact = false, root = false, onNavigateFull, onUpgrade, openFood, openSource }: {
+export default function AuroraNutrition({ compact = false, root = false, onNavigateFull, onUpgrade, openFood, openSource, openRecipe: openRecipeId }: {
   compact?: boolean;
   /** Rendered as a BOTTOM-NAV tab root (app/(tabs)/nutrition.tsx) rather than a
    *  pushed screen: there is nothing beneath it in the stack, so the masthead
@@ -177,6 +177,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   onUpgrade?: () => void;
   /** land directly on a verified product page — the deep-link entry (app/food/[id]) */
   openFood?: string;
+  /** Land on a recipe by id — the cross-app search's recipe results. */
+  openRecipe?: string;
   /** land directly on a verified source page (app/source/[id]) */
   openSource?: string;
 } = {}) {
@@ -585,7 +587,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   useEffect(() => {
     if (openFood && verifiedFood(openFood)) { setFoodPageId(openFood); setPageBack("home"); setView("food"); }
     else if (openSource && verifiedSource(openSource)) { setSourcePageId(openSource); setPageBack("home"); setView("source"); }
-  }, [openFood, openSource]);
+    else if (openRecipeId) { const r = recipeById(openRecipeId); if (r) openRecipe(r); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openFood, openSource, openRecipeId]);
 
   // Log a saved meal → opens the portion editor (default 1×), scaled by quantity.
   // ── QUICK ADD — the athlete's OWN foods, ranked for a typed phrase.
