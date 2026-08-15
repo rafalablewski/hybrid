@@ -568,7 +568,12 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
               </Text>
             ) : canEnrolProgram(data, p) ? (
               <SButton
-                label={enrolling === p.id ? t("w.coaches.starting") : t("w.coaches.start")}
+                // The idle word holds the width and the in-flight one overlays
+                // it (SButton's `busyLabel`, the small button's half of APill's
+                // commit state) — swapping the LABEL made "Start" become
+                // "Starting…" and the button grow under the finger.
+                label={t("w.coaches.start")}
+                busyLabel={enrolling === p.id ? t("w.coaches.starting") : undefined}
                 small
                 disabled={!!enrolling}
                 onPress={async () => {

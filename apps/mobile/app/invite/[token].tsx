@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { APill } from "../../components/aurora/kit";
-import { View, Text, ActivityIndicator } from "react-native";
+import { APill, AuroraScreen } from "../../components/aurora/kit";
+import { View, Text } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSession } from "../../lib/session";
@@ -47,31 +47,38 @@ export default function InviteClaim() {
     return () => clearTimeout(timer);
   }, [state, router]);
 
+  // The shell, not a hand-painted ink rectangle: this is a LANDING — the first
+  // screen an invited athlete ever sees — and it was one of the two surfaces in
+  // the app drawing its own flat background, so it arrived with no ambient
+  // field behind it and no entrance (the other was onboarding; both fixed in
+  // the same pass, and design-tokens.test.ts now fails a third).
   return (
-    <View style={{ flex: 1, backgroundColor: C.ink, alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, textAlign: "center" }}>
-        {state === "done" ? "You're connected ✓" : "Your coach invited you"}
-      </Text>
+    <AuroraScreen scroll={false} center>
+      <View style={{ alignItems: "center" }}>
+        <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, textAlign: "center" }}>
+          {state === "done" ? "You're connected ✓" : "Your coach invited you"}
+        </Text>
 
-      <LoadSwap loading={!ready}>
-        {() => !ready ? null : !session ? (
-        <>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", marginTop: 12, lineHeight: leading(fs.bodyLg) }}>
-            Create your free account or sign in to connect. Use the email your coach invited and you&apos;ll be linked automatically.
-          </Text>
-          <APill label="Sign in / Create account" onPress={() => router.replace("/login")} style={{ marginTop: 20 }} />
-        </>
-      ) : state === "error" ? (
-        <>
-          <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: txt(C, C.amber), textAlign: "center", marginTop: 12 }}>{msg}</Text>
-          <Pressable onPress={() => void claim()} style={{ marginTop: 16 }}>
-            <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>Try again</Text>
-          </Pressable>
-        </>
-      ) : (
-        <Loading />
-      )}
-      </LoadSwap>
-    </View>
+        <LoadSwap loading={!ready}>
+          {() => !ready ? null : !session ? (
+            <>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash, textAlign: "center", marginTop: 12, lineHeight: leading(fs.bodyLg) }}>
+                Create your free account or sign in to connect. Use the email your coach invited and you&apos;ll be linked automatically.
+              </Text>
+              <APill label="Sign in / Create account" onPress={() => router.replace("/login")} style={{ marginTop: 20 }} />
+            </>
+          ) : state === "error" ? (
+            <>
+              <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: txt(C, C.amber), textAlign: "center", marginTop: 12 }}>{msg}</Text>
+              <Pressable onPress={() => void claim()} style={{ marginTop: 16 }}>
+                <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>Try again</Text>
+              </Pressable>
+            </>
+          ) : (
+            <Loading />
+          )}
+        </LoadSwap>
+      </View>
+    </AuroraScreen>
   );
 }
