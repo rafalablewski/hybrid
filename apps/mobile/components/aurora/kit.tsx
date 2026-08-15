@@ -453,6 +453,100 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
 }
 
 /**
+ * THE CARD YOU CAN PRESS — ACard's surface, on a press target.
+ *
+ * ACard is a `View`. That one fact is what kept two of Today's cards
+ * hand-rolled long after the rest moved: `ChooserCard` and `StructureCard` are
+ * both a pressable card with a corner glow, and there was nothing in the kit
+ * that was both, so each drew ACard's box from memory — hairline, `C.line`,
+ * `RADIUS.card`, `C.ink2`, `overflow: hidden` — and neither could ever pick up
+ * the native glass, because the material is not a style property. Wrapping
+ * ACard in a PressScale was never the answer either: the scale would then run
+ * on a wrapper that is not the surface, so the shadow and the glass would sit
+ * still while the box inside them shrank.
+ *
+ * THE GLOW IS PART OF THE PRIMITIVE, not decoration a caller adds. It is two
+ * absolutely-filled layers under the content (a flat 5% wash, then a gradient
+ * blooming from the top-right corner), it was drawn identically in both cards,
+ * and it is the thing that needs `overflow: hidden` — so a caller who supplies
+ * `glow` and forgets to clip gets a rectangle of colour outside a rounded card.
+ * Passing the hue is the whole API; the geometry is not negotiable.
+ *
+ * ORDER MATTERS UNDER GLASS: the glass goes down first as the surface, the
+ * glow paints ON it, and the content sits on top. A glow under the glass would
+ * be a coloured card seen through frosting rather than a tint in the material.
+ *
+ * `solid` opts out of the glass exactly as on ACard, and `style` overrides the
+ * padding the same way (the rail cut sits at 16 rather than CARD_PAD, because
+ * it is a rail-width card, not a full-width one).
+ */
+export function APressCard({
+  children,
+  onPress,
+  a11yLabel,
+  glow,
+  solid,
+  style,
+}: {
+  children: ReactNode;
+  onPress: () => void;
+  /** The card's accessible name — normally its own title. */
+  a11yLabel: string;
+  /** Accent hue for the corner bloom. Omit for a plain pressable card. */
+  glow?: string;
+  solid?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette } = useTheme();
+  const glass = LIQUID_GLASS_SUPPORTED && !solid;
+  const flat = StyleSheet.flatten(style) as ViewStyle | undefined;
+  const radius = typeof flat?.borderRadius === "number" ? flat.borderRadius : RADIUS.card;
+  return (
+    <PressScale
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
+      style={[
+        {
+          backgroundColor: glass ? "transparent" : palette.ink2,
+          borderColor: palette.line,
+          borderWidth: 1,
+          borderRadius: RADIUS.card,
+          padding: CARD_PAD,
+          // THE CLIP RIDES WITH THE GLOW, and only with it. The glow bleeds to
+          // the card's own edges so it must be clipped — but on iOS
+          // `overflow: hidden` sets the layer's masksToBounds, which clips the
+          // SHADOW too. Setting it unconditionally would have handed every
+          // caller a `cardShadow()` that can never render: a primitive
+          // promising ACard's surface and then guaranteeing one part of it is
+          // dead. A glowing card trades the shadow for the clip (which is what
+          // both chooser cards already did, drawing neither); a plain one keeps
+          // the depth ACard has.
+          overflow: glow ? "hidden" : undefined,
+          ...cardShadow(),
+        },
+        style,
+      ]}
+    >
+      {glass && <GlassSurface radius={radius} />}
+      {glow ? (
+        <>
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${glow}0d` }]} />
+          <LinearGradient
+            pointerEvents="none"
+            colors={[`${glow}2b`, `${glow}00`]}
+            start={{ x: 1, y: 0 }}
+            end={{ x: 0.25, y: 0.8 }}
+            style={StyleSheet.absoluteFill}
+          />
+        </>
+      ) : null}
+      {children}
+    </PressScale>
+  );
+}
+
+/**
  * THE BUTTON'S VARIANTS.
  *
  * `outline` came across from lib/ui's retired `Button`, which was the other half

@@ -71,9 +71,9 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
+import { ACard, APressCard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import ExerciseWidgetRail from "./exercise-widget";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
@@ -946,7 +946,13 @@ export default function AuroraHome() {
             chooser above owns that state, and an empty card under it would be a
             second competing log CTA. */}
         {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
-          <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow() }}>
+          /* ACard, not a hand-drawn copy of it. This wrapper spelled out
+             ACard's exact base style — hairline, RADIUS.card, CARD_PAD, ink2,
+             cardShadow — which on iOS 26 is the ONE thing the copy cannot
+             reproduce: ACard drops a native Liquid Glass layer and a literal
+             View stays solid ink2, so this card was opaque between two glass
+             ones. */
+          <ACard style={{ marginTop: 16 }}>
             <DoneFloor
               rows={doneOnDay}
               planIds={fulfilledIds}
@@ -962,7 +968,7 @@ export default function AuroraHome() {
               onDone={() => setDoneOpen(true)}
               onRate={setRating}
             />
-          </View>
+          </ACard>
         )}
 
         {/* ═════ GROUP: RECOVER — how the body is answering. The daily
@@ -1277,15 +1283,17 @@ export default function AuroraHome() {
 // body stay neutral. Mirrored on web (aurora/today.tsx ChooserCard).
 function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
   return (
-    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20, overflow: "hidden" }}>
-      {/* path-accent glow blooming from the top-right corner (Go-Full anatomy) */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
-      <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
+    /* APressCard — the kit's pressable surface, carrying the Go-Full corner
+       glow. This drew ACard's box by hand (and so could never take the glass)
+       for one reason: ACard is a View, and there was nothing in the kit that
+       was a card AND a press target. There is now. The pad drops out
+       entirely — 20 was already CARD_PAD, spelled as a number. */
+    <APressCard onPress={onPress} a11yLabel={title} glow={accent}>
       <Text style={{ fontSize: 18, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "tight") }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 16 }} />
-    </PressScale>
+    </APressCard>
   );
 }
 
@@ -1297,15 +1305,17 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
 // Mirrored on web (aurora/today.tsx StructureCard).
 function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { C: P; width: number; glyph: string; accent: string; title: string; sub: string; cta: string; onPress: () => void }) {
   return (
-    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, overflow: "hidden" }}>
-      {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
-      <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
+    /* The same APressCard as ChooserCard above — which is the point, since
+       this IS ChooserCard at rail width. The two values that stay are the two
+       that are genuinely about being a rail card: the fixed `width`, and a 16
+       pad rather than CARD_PAD, because a 72%-wide card cannot spend 20 a
+       side. Everything else is now decided once, in the kit. */
+    <APressCard onPress={onPress} a11yLabel={title} glow={accent} style={{ width, padding: 16 }}>
       <Text style={{ fontSize: 15, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
-    </PressScale>
+    </APressCard>
   );
 }
 
@@ -1555,7 +1565,10 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     }
   };
   return (
-    <View style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, ...cardShadow() }}>
+    /* ACard, not a hand-drawn copy of it — see the DONE TODAY wrapper above.
+       This is the card the Heat row is clustered with, so the two were drawn
+       on different materials on iOS 26 while sitting one gap apart. */
+    <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same
@@ -1773,7 +1786,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           ) : null}
         </>
       ) : null}
-    </View>
+    </ACard>
   );
 }
 
