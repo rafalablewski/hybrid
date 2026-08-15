@@ -2338,8 +2338,12 @@ function Summary({
       : t("summary.todaysBests");
   const slides: SlideData[] = [
     { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }, firstEver },
-    { kind: "stat", eyebrow: t("summary.slide.time"), value: String(summary.minutes), unit: t("summary.minutes") },
+    // The two single-figure slides run in core figure-order.ts order too — the
+    // deck is paced, but it is still the session's figures one after another,
+    // and a story that leads with the clock while the overview slide before it
+    // leads with the tonnage is the same drift on a slower axis.
     { kind: "stat", eyebrow: t("summary.slide.load"), value: fmtTonnage(summary.volume, units), unit: t("summary.volumeMoved") },
+    { kind: "stat", eyebrow: t("summary.slide.time"), value: String(summary.minutes), unit: t("summary.minutes") },
     { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.noPrsYet"), right: "" }] },
     ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as SlideData] : []),
     ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), emoji: funFact.emoji, text: funFactText(funFact, units, t) } as SlideData] : []),

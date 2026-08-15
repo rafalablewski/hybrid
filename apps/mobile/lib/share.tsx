@@ -260,9 +260,11 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
             {slide.firstEver ? "First workout 🎉" : s.title || "Workout"}
           </Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} run={animate} />
-            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} run={animate} />
+            {/* The third card in this file, and it reads the same row the two
+                above it do — core figure-order.ts. */}
             <StoryStat label={t("summary.volumeMoved")} value={fmtTonnage(s.volume, units)} st={st} width={width} run={animate} />
+            <StoryStat label={t("summary.sets")} value={String(s.sets)} st={st} width={width} run={animate} />
+            <StoryStat label={t("summary.minutes")} value={String(s.minutes)} st={st} width={width} run={animate} />
           </View>
         </StoryShell>
       );
