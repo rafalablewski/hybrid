@@ -11,13 +11,13 @@ import {
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
-import { ADrawer, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
+import { ACard, ADrawer, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
 import PeriodRecords from "./period-records";
 import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, F, PressScale, cardShadow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 
 /**
  * THE ACTIVITY CARD — "This week" and everything the date filter turns it into,
@@ -313,12 +313,16 @@ export default function AuroraWeekVerdict({
           sheet. Shared because the Endurance section carries one too. ────── */}
       <RangeFilter range={range} sessions={sessions} onPick={pick} />
 
-      {/* The compartment below supplies the bottom padding while it is open, so
-          the card gives its own up rather than fencing the panel in. */}
-      <View style={{
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28,
-        paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD, ...cardShadow(),
-      }}>
+      {/* ACard, not a hand-drawn copy of it. This spelled out ACard's exact
+          base style (hairline, ink2, cardShadow, CARD_PAD) with the radius as
+          a literal 28 rather than RADIUS.card — and on iOS 26 that copy is
+          SOLID where the real one drops a native Liquid Glass layer, so
+          Today's largest card was the odd material out. Only the padding is
+          genuinely this card's own: the compartment below supplies the bottom
+          padding while it is open, so the card gives its own up rather than
+          fencing the panel in. (Yoga resolves the edge-specific padding over
+          ACard's shorthand, so passing all three is what overrides it.) */}
+      <ACard style={{ paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
           <View style={{ flex: 1 }}>
@@ -459,7 +463,7 @@ export default function AuroraWeekVerdict({
             {t("w.home.act.hint")}
           </Text>
         )}
-      </View>
+      </ACard>
 
       {/* RECORDS — the Progress cluster's block (b), which used to be a mono
           kicker in this card's foot. It is a SECTION of its own now
