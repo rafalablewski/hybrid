@@ -799,7 +799,7 @@ function HighlightGrid({
               return (
                 <Pressable key={key} onPress={() => onToggleHidden(key, false)} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, paddingLeft: 8, paddingRight: 12, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, backgroundColor: C.ink2 }}>
                   <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: fs.note, lineHeight: 17, color: C.ink }}>+</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: fs.note, lineHeight: leading(fs.note, "tight"), color: C.ink }}>+</Text>
                   </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{tile.k}</Text>
                 </Pressable>

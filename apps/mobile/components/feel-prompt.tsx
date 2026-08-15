@@ -17,7 +17,7 @@ import {
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
-import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
 
@@ -168,14 +168,14 @@ export function FeelPrompt({
               <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: reading.read === "nextDay" || reading.read === "sameDay" ? txt(C, C.lime) : C.ash }}>
                 {t(FEEL_READ_KEY[reading.read])}
               </Text>
-              <Text numberOfLines={3} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, lineHeight: 15, color: C.ash }}>{t(readNoteKey(reading.read, reading.fatigue))}</Text>
+              <Text numberOfLines={3} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano), color: C.ash }}>{t(readNoteKey(reading.read, reading.fatigue))}</Text>
             </View>
           )}
           {/* WHY THERE IS A SECOND ASK. An athlete who is told nothing assumes
               the app forgot they already answered. Say what the second read is
               for, once, at the moment the first one lands. */}
           {reading?.read === "immediate" && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: 15, color: C.ash, marginTop: 10 }}>{t("session.feel.nextRead")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano), color: C.ash, marginTop: 10 }}>{t("session.feel.nextRead")}</Text>
           )}
         </View>
       )}
@@ -196,7 +196,7 @@ export function FeelPrompt({
       )}
 
       {(failed || feel != null) && (
-        <Text numberOfLines={3} style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: 15, color: C.ash, marginTop: 12 }}>
+        <Text numberOfLines={3} style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano), color: C.ash, marginTop: 12 }}>
           {failed ? t("session.feel.retry") : t("session.feel.why")}
         </Text>
       )}

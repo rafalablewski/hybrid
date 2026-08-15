@@ -182,7 +182,7 @@ const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTra
 function SummaryCard({ C, label, value, color }: { C: Palette; label: string; value: number; color: string }) {
   return (
     <ACard style={{ flex: 1, minWidth: 140, padding: 16 }}>
-      <Text style={{ fontFamily: F.black, fontSize: 28, lineHeight: 32, color }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 28, lineHeight: leading(28, "tight"), color }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 4 }}>{label}</Text>
     </ACard>
   );

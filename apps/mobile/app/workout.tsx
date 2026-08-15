@@ -1635,7 +1635,7 @@ export default function Workout() {
                   hitSlop={8}
                   style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 2, marginTop: 2 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, lineHeight: 18, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>＋</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "tight"), color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>＋</Text>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>{t("workout.addSet")}</Text>
                 </Pressable>
                 {/* Popular-preset rail — one tap lays out the whole exercise. A

@@ -123,7 +123,7 @@ export default function AuroraUpgrade() {
       </View>
 
       <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: leading(fs.caption) }}>{t("w.account.upgrade.sheet-sub")}</Text>
 
       {/* benefits */}
       <View style={{ marginTop: 16 }}>
@@ -132,7 +132,7 @@ export default function AuroraUpgrade() {
             <Text style={{ fontSize: fs.note, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.t}</Text>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 1, lineHeight: leading(fs.body, "snug") }}>{b.d}</Text>
             </View>
           </View>
         ))}

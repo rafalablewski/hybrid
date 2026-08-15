@@ -420,7 +420,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
         {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
         {expandable && (
           <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: open ? C.lime : withAlpha(C.chalk, ALPHA.edge), backgroundColor: open ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, lineHeight: 15, color: open ? C.ink : C.ash }}>{open ? "−" : "+"}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, lineHeight: leading(fs.body, "tight"), color: open ? C.ink : C.ash }}>{open ? "−" : "+"}</Text>
           </View>
         )}
       </Pressable>

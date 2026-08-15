@@ -217,7 +217,28 @@ describe("leading and tracking", () => {
     // regex. Four more were left deliberately: their ratio is >0.09 from any
     // role, which means they are making a point (a 1.04 display, a 2.71 spacer)
     // rather than picking a leading.
-    expectAtMost(hits(/lineHeight:\s*\d/g), 74, "absolute lineHeight → leading(size, role)");
+    // 74 → 48, and the fontSize sweep is what unlocked it: the note above said
+    // the remainder "has no fs.* token on the same line", and 339 lines had just
+    // gained one. 26 of them turned out to be `leading(size, role)` exactly —
+    // round(size × ratio) reproduces the literal — so they are a pure rename.
+    //
+    // WHAT IS LEFT DOES NOT TOKENIZE, and it is worth saying why rather than
+    // leaving it to look like laziness. 23 of the 48 sit in a real cluster —
+    // ratio 1.036 to 1.125, TIGHTER than `tight` (1.15) — and they are all big
+    // FIGURES, where digits have no descenders to fill the box. That looked
+    // exactly like the trackFigure finding, so it got the same test: is there
+    // one ratio the cluster agrees on? There is not. The best candidate (1.10)
+    // reproduces only 10 of the 23 and errs by up to 6dp, and 6dp of line box
+    // under a 60dp numeral visibly moves its baseline.
+    //
+    // So these are hand-tuned per figure — a line box set to make a specific
+    // layout meet, not a leading picked off a ladder — which is the same shape
+    // as the ALPHA finding one rule down: an axis can be genuinely continuous,
+    // and inventing rungs for it would be worse than leaving it legible.
+    // The rest are 14 sites with no size on the line at all (each needs reading,
+    // not a regex) and the deliberate outliers the original note called out — a
+    // 2.71 spacer, a 1.04 display.
+    expectAtMost(hits(/lineHeight:\s*\d/g), 48, "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking names its token; a big figure derives it", () => {

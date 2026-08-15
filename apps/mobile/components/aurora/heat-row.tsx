@@ -12,7 +12,7 @@ import {
   type RecoveryReport,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
-import { fs, F, PressScale } from "../../lib/ui";
+import { leading, fs, F, PressScale } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useHeatSignalsQuery, useRevalidate } from "../../lib/queries";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -150,7 +150,7 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
             <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk }}>{clearance.withoutHeat.index.toFixed(2)}</Text>
           </View>
           <View style={{ height: 1, backgroundColor: C.line, marginVertical: 11 }} />
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: 18 }}>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>
             {t(verdictKey)}{" "}
             {t("w.recovery.heat.clearPairs").replace("{n}", String(clearance.withSamples.length + clearance.withoutSamples.length))}
           </Text>

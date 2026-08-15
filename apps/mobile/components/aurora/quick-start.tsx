@@ -155,7 +155,7 @@ function FavouriteCard({ C, width, r, t, onLaunch, onToggleFav }: { C: P; width:
       <View style={{ position: "absolute", top: 10, right: 10 }}>
         <Star C={C} on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onPress={onToggleFav} />
       </View>
-      <Text style={{ fontSize: fs.subtitle, lineHeight: 18, color: txt(C, accent) }}>{glyph}</Text>
+      <Text style={{ fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "tight"), color: txt(C, accent) }}>{glyph}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: tracking.display, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
       <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
