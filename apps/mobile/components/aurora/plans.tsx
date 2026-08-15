@@ -241,9 +241,9 @@ function GoalTileFace({ cover, pressed }: { cover: ReturnType<typeof goalCoverVi
       <View style={[StyleSheet.absoluteFill, { opacity: cover.ready ? 1 : 0.45 }]} pointerEvents="none">
         {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
             15% @ 46% → 0x26, then ink) — web parity: plans.tsx tile */}
-        <LinearGradient colors={[`${cover.accent}85`, `${cover.accent}26`, `${cover.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={[withAlpha(cover.accent, 0.52), withAlpha(cover.accent, 0.15), withAlpha(cover.accent, 0.0)]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
       </View>
-      <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc"]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
+      <LinearGradient colors={[withAlpha(TILE_INK, 0), withAlpha(TILE_INK, 0.8)]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} pointerEvents="none" />
       <Text
         pointerEvents="none"
         style={{ position: "absolute", top: -12, right: -10, fontSize: 96, lineHeight: 100, color: `rgba(255,255,255,${cover.ready ? 0.09 : 0.05})`, transform: [{ translateX: pressed ? -5 : 0 }, { translateY: pressed ? 4 : 0 }] }}
@@ -323,7 +323,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
               <ACard style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{p.tag}</Text>
-                  {p.hot && <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
+                  {p.hot && <View style={{ backgroundColor: withAlpha(C.lime, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
                 </View>
                 <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
                 <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>

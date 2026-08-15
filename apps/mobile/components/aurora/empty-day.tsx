@@ -5,6 +5,7 @@ import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, F, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { AuroraIcon } from "./icons";
+import { withAlpha } from "./field";
 
 // ── AURORA Empty day (mobile) ───────────────────────────────────────────────
 // THE one drawing for a day with nothing on it. There used to be three, all
@@ -60,7 +61,7 @@ export default function AEmptyDay({
   return (
     <View>
       <View style={{ alignItems: "center", gap: 7, paddingTop: 14, paddingBottom: 2, paddingHorizontal: 6 }}>
-        <EmptyGlyph copy={copy} color={copy.quiet ? `${C.ash}80` : `${C.ash}b3`} />
+        <EmptyGlyph copy={copy} color={copy.quiet ? withAlpha(C.ash, 0.5) : withAlpha(C.ash, 0.702)} />
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
           style={{ fontFamily: F.black, fontSize: 17, letterSpacing: tracking.display, color: copy.quiet ? C.ash : C.chalk, textAlign: "center" }}

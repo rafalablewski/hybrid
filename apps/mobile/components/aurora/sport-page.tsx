@@ -34,6 +34,7 @@ import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable }
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { APill, AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
+import { withAlpha } from "./field";
 
 const STORE_KEY = "hybrid.sport";
 /** The handoff the live logger reads when the transfer session is started. */
@@ -400,7 +401,7 @@ export default function AuroraSportPage() {
                   <Text style={{ ...mono(fs.micro), marginTop: 4 }}>{b.demand}</Text>
                 </View>
                 <View style={{ alignItems: "flex-end", maxWidth: 170 }}>
-                  <View style={{ backgroundColor: `${C.lime}29`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                  <View style={{ backgroundColor: withAlpha(C.lime, 0.16), borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
                     <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime) }}>{b.scheme}</Text>
                   </View>
                   <Text style={{ ...mono(fs.nano), marginTop: 6, textAlign: "right", lineHeight: leading(fs.nano) }}>
@@ -482,15 +483,15 @@ function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]
             borderRadius: RADIUS.mark,
             // Held, the finger's week is the lit one — the "this week" accent
             // would otherwise compete with the answer the athlete asked for.
-            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : `${C.lime}6b`,
+            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : withAlpha(C.lime, 0.42),
           }}
         />
       ))}
       {avg > 0 && (
-        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: (avg / max) * 110, borderTopWidth: 1, borderTopColor: `${C.ash}8c`, borderStyle: "dashed" }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: (avg / max) * 110, borderTopWidth: 1, borderTopColor: withAlpha(C.ash, 0.55), borderStyle: "dashed" }} />
       )}
       {held >= 0 && (
-        <View pointerEvents="none" style={{ position: "absolute", left: `${pos * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: `${C.ash}8c` }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: `${pos * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: withAlpha(C.ash, 0.55) }} />
       )}
       {readout}
     </View>
@@ -520,7 +521,7 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
         <Path d={d} fill="none" stroke={C.lime} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </Svg>
       {!!hit && (
-        <View pointerEvents="none" style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: `${C.ash}8c` }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: withAlpha(C.ash, 0.55) }} />
       )}
       {/* The PR dot is a View, not a circle: the path is stretched to the
           column's width and a circle inside a stretched viewBox is an ellipse. */}
@@ -577,8 +578,8 @@ function EffortSplitBar({
   // One hue at three densities — three HUES would imply three meanings; this is
   // one meaning (intensity) at three levels.
   const bands = [
-    { v: pct(split.easy), k: labels[0]!, bg: `${C.lime}61` },
-    { v: pct(split.moderate), k: labels[1]!, bg: `${C.lime}ad` },
+    { v: pct(split.easy), k: labels[0]!, bg: withAlpha(C.lime, 0.38) },
+    { v: pct(split.moderate), k: labels[1]!, bg: withAlpha(C.lime, 0.68) },
     { v: pct(split.hard), k: labels[2]!, bg: C.lime },
   ];
   // A zero band has no label to place, and a thin one must not collide with its

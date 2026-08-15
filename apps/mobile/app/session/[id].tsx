@@ -54,6 +54,7 @@ import { HeroNav } from "../../components/aurora/hero";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
 import { SessionEditSheet } from "../../components/session-edit";
 import PrAttestationPanel from "../../components/pr-attestation";
+import { withAlpha } from "../../components/aurora/field";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -354,7 +355,7 @@ function Trend({ points, series, t, units }: { points: E1rmPoint[]; series: numb
               flex: 1,
               height: 6 + ((v - min) / range) * 22,
               borderRadius: 2,
-              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.lime : `${C.lime}55`,
+              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.lime : withAlpha(C.lime, 0.333),
             }}
           />
         ))}
@@ -397,7 +398,7 @@ function PaceTrend({ points, series, t }: { points: PacePoint[]; series: number[
               flex: 1,
               height: 6 + ((max - v) / range) * 22,
               borderRadius: 2,
-              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.blue : `${C.blue}55`,
+              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.blue : withAlpha(C.blue, 0.333),
             }}
           />
         ))}

@@ -303,7 +303,7 @@ export function HeroBackground({
         <>
           {/* duotone accent wash over the fixed cover ink */}
           <LinearGradient
-            colors={[`${accent}85`, `${accent}26`, `${accent}00`]}
+            colors={[withAlpha(accent, 0.52), withAlpha(accent, 0.15), withAlpha(accent, 0.0)]}
             locations={[0, 0.46, 1]}
             start={mirrored ? { x: 0.1, y: 0 } : { x: 0.9, y: 0 }}
             end={mirrored ? { x: 0.8, y: 0.95 } : { x: 0.2, y: 0.95 }}
@@ -365,7 +365,7 @@ export function HeroBackground({
           under the hero starts from exactly the same colour. */}
       <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: scrimOpacity as never }]}>
         <LinearGradient
-          colors={story ? ["#0a0b0900", "#0a0b0999", HERO_TAKEOVER_INK] : ["#0c0d0c00", "#0c0d0ccc", HERO_INK]}
+          colors={story ? [withAlpha(HERO_TAKEOVER_INK, 0), withAlpha(HERO_TAKEOVER_INK, 0.6), HERO_TAKEOVER_INK] : [withAlpha(HERO_INK, 0), withAlpha(HERO_INK, 0.8), HERO_INK]}
           locations={[0, 0.95, 1]}
           start={{ x: 0, y: 0.4 }}
           end={{ x: 0, y: 1 }}
@@ -384,7 +384,7 @@ const BLEED = (() => {
   const head = BLEED_OVER / (BLEED_OVER + BLEED_FADE);
   const at = (f: number) => head + f * (1 - head);
   return {
-    colors: [HERO_INK, HERO_INK, `${HERO_INK}e6`, `${HERO_INK}9e`, `${HERO_INK}4d`, `${HERO_INK}00`] as [string, string, ...string[]],
+    colors: [HERO_INK, HERO_INK, withAlpha(HERO_INK, 0.9), withAlpha(HERO_INK, 0.62), withAlpha(HERO_INK, 0.302), withAlpha(HERO_INK, 0.0)] as [string, string, ...string[]],
     locations: [0, head, at(0.22), at(0.45), at(0.68), 1] as [number, number, ...number[]],
   };
 })();

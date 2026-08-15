@@ -29,7 +29,7 @@ export function CDivider({ label, tier, premium }: { label: string; tier?: strin
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{label}</Text>
-        {tier ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: premium ? `${pa.fill}73` : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
+        {tier ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: premium ? withAlpha(pa.fill, 0.45) : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
       </View>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
     </View>
@@ -54,7 +54,7 @@ export function WeightTrend({ points, color }: { points: WeightPoint[]; color: s
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 64, gap: series.length > 40 ? 1 : 2 }}>
         {series.map((v, i) => (
-          <View key={i} style={{ flex: 1, height: 6 + ((v - min) / range) * 58, borderRadius: 2, backgroundColor: i === series.length - 1 ? color : `${color}55` }} />
+          <View key={i} style={{ flex: 1, height: 6 + ((v - min) / range) * 58, borderRadius: 2, backgroundColor: i === series.length - 1 ? color : withAlpha(color, 0.333) }} />
         ))}
       </View>
       {points.length > 1 && (
@@ -146,7 +146,7 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
             </View>
           ) : null}
           {!full ? (
-            <Pressable onPress={onUpgrade} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: `${pa.fill}17`, borderWidth: 1, borderColor: `${pa.fill}4d`, borderRadius: RADIUS.field, padding: 16 }}>
+            <Pressable onPress={onUpgrade} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: withAlpha(pa.fill, 0.09), borderWidth: 1, borderColor: withAlpha(pa.fill, 0.302), borderRadius: RADIUS.field, padding: 16 }}>
               <Glyph name="spark" size={19} color={pa.text} strokeWidth={5} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.deepInsights")}</Text>
@@ -244,8 +244,8 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
 
       {step === 2 ? (
         <View style={{ marginTop: 24 }}>
-          <ACard solid style={{ alignItems: "center", paddingVertical: 20, backgroundColor: `${pa.fill}14`, borderColor: `${pa.fill}4d` }}>
-            <View style={{ backgroundColor: `${pa.fill}28`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
+          <ACard solid style={{ alignItems: "center", paddingVertical: 20, backgroundColor: withAlpha(pa.fill, 0.08), borderColor: withAlpha(pa.fill, 0.302) }}>
+            <View style={{ backgroundColor: withAlpha(pa.fill, 0.157), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
             <AHeading style={{ fontSize: fs.headline, marginTop: 16, textAlign: "center" }}>{t("w.recovery.nutrition.trialTitle")}</AHeading>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.trialSub")}</Text>
             <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, marginTop: 16 }}>$9.99<Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text></Text>

@@ -21,6 +21,7 @@ import AActionPair from "./action-pair";
 import ReceiptBlock from "./receipt-block";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
+import { withAlpha } from "./field";
 
 /** The card's own inner padding — what the full-bleed hairline inside it bleeds
  *  by to reach the card's edges. NOT the screen gutter (this rail lives on a
@@ -200,7 +201,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
             <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{day.dayOfMonth}</Text>
           </View>
         ) : selected ? (
-          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: `${C.chalk}4d`, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: withAlpha(C.chalk, 0.302), alignItems: "center", justifyContent: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{day.dayOfMonth}</Text>
           </View>
         ) : (
@@ -213,14 +214,14 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
           untrained day fills nothing — silence, never terracotta, because a
           logbook makes no promises. */}
       <View style={{ height: 12, alignItems: "center", justifyContent: "center" }}>
-        <View style={{ width: LOAD_W, height: LOAD_H, borderRadius: LOAD_H / 2, backgroundColor: `${C.chalk}1f`, overflow: "hidden" }}>
+        <View style={{ width: LOAD_W, height: LOAD_H, borderRadius: LOAD_H / 2, backgroundColor: withAlpha(C.chalk, 0.12), overflow: "hidden" }}>
           {day.load > 0 ? (
             <View
               style={{
                 width: `${Math.max(14, Math.round(day.load * 100))}%`,
                 height: "100%",
                 borderRadius: LOAD_H / 2,
-                backgroundColor: day.isToday ? C.lime : `${C.chalk}b3`,
+                backgroundColor: day.isToday ? C.lime : withAlpha(C.chalk, 0.702),
               }}
             />
           ) : null}

@@ -390,7 +390,7 @@ export function Spark({
             flex: 1,
             height: 4 + ((v - min) / range) * (height - 4),
             borderRadius: 2,
-            backgroundColor: i === series.length - 1 ? color : `${color}55`,
+            backgroundColor: i === series.length - 1 ? color : withAlpha(color, 0.333),
           }}
         />
       ))}
@@ -1552,7 +1552,7 @@ export function ACheckMark({ on, size = 20, accent }: { on: boolean; size?: numb
     <View
       style={{
         width: size, height: size, borderRadius: 999, alignItems: "center", justifyContent: "center",
-        borderWidth: on ? 0 : 1.5, borderColor: `${C.ash}b3`,
+        borderWidth: on ? 0 : 1.5, borderColor: withAlpha(C.ash, 0.702),
       }}
     >
       <Animated.View

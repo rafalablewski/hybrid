@@ -13,6 +13,7 @@ import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APill, ASegment, AHeading, ASub, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
+import { withAlpha } from "./field";
 
 /** AURORA onboarding — a stepped, rounded wizard now driven by the admin-editable
  *  question set: one question per step, then the recommended plan. */
@@ -182,7 +183,7 @@ function Choice({ active, title, sub, onPress }: { active: boolean; title: strin
   return (
     <Pressable
       onPress={onPress}
-      style={{ flexDirection: "row", alignItems: "center", gap: space.md, borderWidth: 1, borderColor: active ? palette.lime : palette.line, backgroundColor: active ? `${palette.lime}14` : palette.ink2, borderRadius: RADIUS.field, padding: 16 }}
+      style={{ flexDirection: "row", alignItems: "center", gap: space.md, borderWidth: 1, borderColor: active ? palette.lime : palette.line, backgroundColor: active ? withAlpha(palette.lime, 0.08) : palette.ink2, borderRadius: RADIUS.field, padding: 16 }}
     >
       {active && <AuroraIcon name="check" size={22} color={txt(palette, palette.lime)} />}
       <View style={{ flex: 1 }}>

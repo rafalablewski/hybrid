@@ -12,6 +12,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AStepper, RADIUS } from "./kit";
+import { withAlpha } from "./field";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const zoneColor = (id: string, C: Palette) =>
@@ -45,7 +46,7 @@ export default function AuroraVelocity() {
     .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel)).slice(-6).reverse(), [sessions, active]);
 
   const chip = (color: string, label: string) => (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
+    <View style={{ backgroundColor: withAlpha(color, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text>
     </View>
   );

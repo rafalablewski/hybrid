@@ -48,6 +48,7 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import DragHandle from "../drag-handle";
 import { useDragReorder } from "../../lib/use-drag-reorder";
 import { setLoggerPref } from "../../lib/logger-prefs";
+import { withAlpha } from "./field";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 
@@ -145,7 +146,7 @@ export default function AuroraBuilder() {
 
       {/* Ghost/dashed add affordance (the one-accent rule: lime stays reserved
           for Save) — same vocabulary as the Also-Today ghost ＋ tile. */}
-      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.ms, marginTop: 4, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 12 }}>
+      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.ms, marginTop: 4, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.467), borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 12 }}>
         <AuroraIcon name="add" size={18} color={C.ash} />
         <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.ash }}>{t("w.train.builder.addExercise")}</Text>
       </Pressable>
@@ -179,7 +180,7 @@ export default function AuroraBuilder() {
       ) : (
         // Free user at the template limit — more saved routines is Full.
         // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
-        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${pa.fill}55`, backgroundColor: `${pa.fill}14`, borderRadius: RADIUS.card, padding: 16 }}>
+        <View style={{ marginTop: 16, borderWidth: 1, borderColor: withAlpha(pa.fill, 0.333), backgroundColor: withAlpha(pa.fill, 0.08), borderRadius: RADIUS.card, padding: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
           <Pressable
@@ -459,17 +460,17 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 onPress={() => builder.cycleType(b.uid, i)}
                 accessibilityRole="button"
                 accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
-                style={{ width: 34, height: 38, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
+                style={{ width: 34, height: 38, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? withAlpha(accent, 0.12) : "transparent", alignItems: "center", justifyContent: "center" }}
               >
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
               </Pressable>
               {showLoad && (
-                <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+                <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
               )}
-              <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
-              <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+              <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
+              <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
               {velocity && (
-                <TextInput value={s.vel ?? ""} onChangeText={(v) => builder.updateSet(b.uid, i, "vel", v)} keyboardType="numeric" placeholder="0.50" placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+                <TextInput value={s.vel ?? ""} onChangeText={(v) => builder.updateSet(b.uid, i, "vel", v)} keyboardType="numeric" placeholder="0.50" placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
               )}
               <View style={{ width: 22, alignItems: "center", justifyContent: "center" }}>
                 <DragHandle
@@ -489,7 +490,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
           to the primary Save action, not a repeated per-card control. The rarer
           set types tuck into "Special ▾" (parity with the live logger). */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 6 }}>
-        <Pressable onPress={() => { animateListChange(reducedMotion); builder.addSet(b.uid); }} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
+        <Pressable onPress={() => { animateListChange(reducedMotion); builder.addSet(b.uid); }} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.467), borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
           <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.addSet")}</Text>
         </Pressable>
         <Pressable onPress={() => setSpecial((v) => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
@@ -509,7 +510,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
               onPress={() => { it.run(b.uid); setSpecial(false); }}
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
             >
-              <View style={{ width: 30, height: 30, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
+              <View style={{ width: 30, height: 30, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(it.c, 0.16) }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, it.c) }}>{it.badge}</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -571,7 +572,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={distDraft ?? displaySportDistance(b.distance, b.name)}
               onChangeText={(v) => { setDistDraft(v); builder.setField(b.uid, "distance", parseSportDistance(v, b.name)); }}
-              keyboardType="numeric" placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} placeholderTextColor={`${C.ash}88`} style={field}
+              keyboardType="numeric" placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
             />
           </View>
         )}
@@ -580,7 +581,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           <TextInput
             value={minDraft ?? (b.minutes == null ? "" : String(b.minutes))}
             onChangeText={(v) => { setMinDraft(v); builder.setField(b.uid, "minutes", num(v)); }}
-            keyboardType="numeric" placeholder="45" placeholderTextColor={`${C.ash}88`} style={field}
+            keyboardType="numeric" placeholder="45" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
           />
         </View>
       </View>
@@ -592,7 +593,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={inclineDraft ?? (b.incline == null ? "" : String(b.incline))}
               onChangeText={(v) => { setInclineDraft(v); builder.setField(b.uid, "incline", num(v)); }}
-              keyboardType="numeric" placeholder="1.5" placeholderTextColor={`${C.ash}88`} style={field}
+              keyboardType="numeric" placeholder="1.5" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
             />
           </View>
         )}
@@ -602,7 +603,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={b.stroke ?? ""}
               onChangeText={(v) => builder.setField(b.uid, "stroke", v || undefined)}
-              placeholder="Free" placeholderTextColor={`${C.ash}88`} style={field}
+              placeholder="Free" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
             />
           </View>
         )}
@@ -612,7 +613,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={elevDraft ?? (b.elevation == null ? "" : String(b.elevation))}
               onChangeText={(v) => { setElevDraft(v); builder.setField(b.uid, "elevation", num(v)); }}
-              keyboardType="numeric" placeholder="120" placeholderTextColor={`${C.ash}88`} style={field}
+              keyboardType="numeric" placeholder="120" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
             />
           </View>
         )}
@@ -621,7 +622,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           <TextInput
             value={zoneDraft ?? (b.zone == null ? "" : String(b.zone))}
             onChangeText={(v) => { setZoneDraft(v); builder.setField(b.uid, "zone", num(v)); }}
-            keyboardType="numeric" placeholder="2" placeholderTextColor={`${C.ash}88`} style={field}
+            keyboardType="numeric" placeholder="2" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
           />
         </View>
       </View>
@@ -654,7 +655,7 @@ function ConditioningEditor({ b, C, builder, field, label }: {
           const n = parseFloat(v);
           builder.setField(b.uid, key, v.trim() === "" || !Number.isFinite(n) ? undefined : n);
         }}
-        keyboardType="numeric" placeholder={ph} placeholderTextColor={`${C.ash}88`} style={field}
+        keyboardType="numeric" placeholder={ph} placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
       />
     </View>
   );
@@ -663,7 +664,7 @@ function ConditioningEditor({ b, C, builder, field, label }: {
       <View style={{ flexDirection: "row", gap: space.ms }}>
         <View style={{ flex: 1 }}>
           {label(t("w.train.blocks.format"))}
-          <TextInput value={b.format ?? ""} onChangeText={(v) => builder.setField(b.uid, "format", v || undefined)} placeholder="AMRAP" placeholderTextColor={`${C.ash}88`} style={field} />
+          <TextInput value={b.format ?? ""} onChangeText={(v) => builder.setField(b.uid, "format", v || undefined)} placeholder="AMRAP" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field} />
         </View>
         {numField("rounds", t("w.train.blocks.roundsCol"), "8")}
       </View>

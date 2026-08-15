@@ -6,6 +6,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { APill, ACard, RADIUS } from "./kit";
 import { QrMatrix } from "../coach-invite";
+import { withAlpha } from "./field";
 
 type Factor = { id: string; friendly_name?: string | null; status: string };
 type Enroll = { factorId: string; secret: string; uri: string };
@@ -106,7 +107,7 @@ export default function MfaSettings() {
       <ACard style={{ borderLeftWidth: 3, borderLeftColor: accent }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Authenticator app (TOTP)</Text>
-          <View style={{ backgroundColor: `${verified.length ? C.lime : C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
+          <View style={{ backgroundColor: withAlpha(verified.length ? C.lime : C.ash, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
             <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: tracking.label }}>
               {verified.length ? "on" : "off"}
             </Text>

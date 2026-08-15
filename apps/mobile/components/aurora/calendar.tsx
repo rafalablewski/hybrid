@@ -105,7 +105,7 @@ export default function AuroraCalendar() {
                     ));
                   }
                   setSelected(cell.date);
-                }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? `${C.lime}66` : C.line, backgroundColor: cellBg }}>
+                }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? withAlpha(C.lime, 0.4) : C.line, backgroundColor: cellBg }}>
                   {asg ? (
                     <View style={{ position: "absolute", top: 3, right: 3, flexDirection: "row", gap: 2 }}>
                       <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: C.violet }} />

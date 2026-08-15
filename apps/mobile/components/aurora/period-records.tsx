@@ -10,6 +10,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, tracking, F, PressScale as Pressable } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { withAlpha } from "./field";
 
 /**
  * RECORDS — the Progress cluster's own block. The TWIN of
@@ -252,10 +253,10 @@ export default function PeriodRecords({
               screen rather than on a card. Opacity is animated (not the
               gradient), so it runs on the native driver. */}
           <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeL }}>
-            <LinearGradient colors={[C.ink, `${C.ink}00`]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
+            <LinearGradient colors={[C.ink, withAlpha(C.ink, 0.0)]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
           </Animated.View>
           <Animated.View pointerEvents="none" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeR }}>
-            <LinearGradient colors={[`${C.ink}00`, C.ink]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
+            <LinearGradient colors={[withAlpha(C.ink, 0.0), C.ink]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
           </Animated.View>
         </View>
       )}

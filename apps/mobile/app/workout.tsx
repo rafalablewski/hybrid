@@ -1303,7 +1303,7 @@ export default function Workout() {
           // out of the label for that reason (the words around them never move).
           const clock = restTarget == null ? mmss(restNow) : done ? `+${mmss(restNow - restTarget)}` : mmss(remaining!);
           return (
-            <View style={{ backgroundColor: `${accent}14`, borderWidth: 1, borderColor: `${accent}44`, borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
+            <View style={{ backgroundColor: withAlpha(accent, 0.08), borderWidth: 1, borderColor: withAlpha(accent, 0.267), borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
@@ -1329,7 +1329,7 @@ export default function Workout() {
                     <Pressable
                       key={sec}
                       onPress={() => pickRest(sec)}
-                      style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: R.field, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? `${C.blue}22` : "transparent" }}
+                      style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: R.field, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? withAlpha(C.blue, 0.133) : "transparent" }}
                     >
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.blue) : C.ash }}>{sec < 120 ? `${sec}s` : `${sec / 60}m`}</Text>
                     </Pressable>
@@ -1522,7 +1522,7 @@ export default function Workout() {
                                     hitSlop={8}
                                     accessibilityRole="button"
                                     accessibilityLabel={t("workout.setOptions")}
-                                    style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.field, borderWidth: typeAccent ? 1 : 0, borderColor: typeAccent ?? "transparent", backgroundColor: typeAccent ? `${typeAccent}1f` : "transparent" }}
+                                    style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.field, borderWidth: typeAccent ? 1 : 0, borderColor: typeAccent ?? "transparent", backgroundColor: typeAccent ? withAlpha(typeAccent, 0.12) : "transparent" }}
                                   >
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>
                                       {typeAccent ? setTypeBadge(s, i) : t("workout.setTypeWorking").toUpperCase()}
@@ -1837,7 +1837,7 @@ export default function Workout() {
             <Pressable
               onPress={loadPrescribed}
               // free users see the sand "Full" upsell accent; athletes (already unlocked) keep lime — parity with the web logger
-              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: isAthlete ? C.lime : pa.fill, borderRadius: R.cta, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: `${isAthlete ? C.lime : pa.fill}14` }}
+              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: isAthlete ? C.lime : pa.fill, borderRadius: R.cta, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: withAlpha(isAthlete ? C.lime : pa.fill, 0.08) }}
             >
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: isAthlete ? txt(C, C.lime) : pa.text }}>✦ {t("train.start")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{!isAthlete ? t("train.premium") : recent.length > 0 ? t("train.aiReadiness") : t("train.aiCoach")}</Text>
@@ -2440,7 +2440,7 @@ function Summary({
         {!summary.guest && <SummaryNote sessionId={summary.sessionId} t={t} />}
 
         {summary.pending && (
-          <View style={{ backgroundColor: `${C.amber}14`, borderWidth: 1, borderColor: `${C.amber}55`, borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
+          <View style={{ backgroundColor: withAlpha(C.amber, 0.08), borderWidth: 1, borderColor: withAlpha(C.amber, 0.333), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>⟲ {t("summary.pendingSync")}</Text>
           </View>
         )}
@@ -2452,9 +2452,9 @@ function Summary({
             <Pressable
               onPress={shareNow}
               style={{
-                backgroundColor: `${C.lime}28`,
+                backgroundColor: withAlpha(C.lime, 0.157),
                 borderWidth: 1,
-                borderColor: `${C.lime}66`,
+                borderColor: withAlpha(C.lime, 0.4),
                 borderRadius: R.cta,
                 paddingVertical: 16,
                 alignItems: "center",
@@ -2463,7 +2463,7 @@ function Summary({
             >
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
             </Pressable>
-            <View style={{ backgroundColor: `${C.violet}14`, borderWidth: 1, borderColor: `${C.violet}55`, borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
+            <View style={{ backgroundColor: withAlpha(C.violet, 0.08), borderWidth: 1, borderColor: withAlpha(C.violet, 0.333), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✓ {t("summary.guestSaved")}</Text>
             </View>
             <Pressable
@@ -2493,9 +2493,9 @@ function Summary({
                 onPress={shareNow}
                 style={{
                   flex: 1,
-                  backgroundColor: `${C.lime}28`,
+                  backgroundColor: withAlpha(C.lime, 0.157),
                   borderWidth: 1,
-                  borderColor: `${C.lime}66`,
+                  borderColor: withAlpha(C.lime, 0.4),
                   borderRadius: R.cta,
                   paddingVertical: 16,
                   alignItems: "center",
@@ -2621,7 +2621,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
   // save through still lands here when it fails); logging/building stays free.
   if (!allowed || state === "upsell")
     return (
-      <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
+      <View style={{ borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), backgroundColor: withAlpha(C.lime, 0.08), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
         <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: tracking.label }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Mono>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
         <Pressable
@@ -2637,7 +2637,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
     return (
       <Pressable
         onPress={() => setOpen(true)}
-        style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
+        style={{ borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), backgroundColor: withAlpha(C.lime, 0.08), borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
       </Pressable>
@@ -2653,7 +2653,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
   };
 
   return (
-    <View style={{ borderWidth: 1, borderColor: `${C.lime}55`, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
+    <View style={{ borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), backgroundColor: withAlpha(C.lime, 0.08), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
       <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: tracking.label }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
       <TextInput
         value={name}
@@ -2767,7 +2767,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
         {MOODS.map((m) => {
           const on = mood === m.value;
           return (
-            <Pressable key={m.value} onPress={() => setMood(on ? null : m.value)} accessibilityLabel={t(m.labelKey)} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: on ? `${C.lime}1a` : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
+            <Pressable key={m.value} onPress={() => setMood(on ? null : m.value)} accessibilityLabel={t(m.labelKey)} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: on ? withAlpha(C.lime, 0.1) : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
               <Text style={{ fontSize: fs.note }}>{m.emoji}</Text>
             </Pressable>
           );
@@ -2893,7 +2893,7 @@ function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof 
     refreshBodyweight();
   };
   return (
-    <View style={{ backgroundColor: `${a}12`, borderWidth: 1, borderColor: `${a}44`, borderRadius: R.banner, padding: 16, marginBottom: 16 }}>
+    <View style={{ backgroundColor: withAlpha(a, 0.07), borderWidth: 1, borderColor: withAlpha(a, 0.267), borderRadius: R.banner, padding: 16, marginBottom: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, a), flex: 1 }}>⚖️ {t("w.train.logger.bwNudgeTitle")}</Text>
         <Pressable onPress={() => setDismissed(true)} hitSlop={8} accessibilityLabel={t("w.train.logger.bwNudgeDismiss")}>
@@ -2933,7 +2933,7 @@ function Cell({ value, onChange, done, active, keyboard = "numeric" }: { value: 
       value={value}
       onChangeText={onChange}
       keyboardType={keyboard}
-      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: active ? "transparent" : C.ink2, borderWidth: 1, borderColor: active ? `${C.lime}66` : C.line, borderRadius: R.field, paddingVertical: 10 }}
+      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: active ? "transparent" : C.ink2, borderWidth: 1, borderColor: active ? withAlpha(C.lime, 0.4) : C.line, borderRadius: R.field, paddingVertical: 10 }}
     />
   );
 }

@@ -13,6 +13,7 @@ import { APill, ACard , RADIUS} from "./kit";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { DoorRow } from "./week-verdict";
+import { withAlpha } from "./field";
 
 /**
  * BODY & PROGRESS (mobile) — the athlete's own measurements: standing height,
@@ -140,7 +141,7 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
           <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: trackFigure(40), color: C.chalk }}>{wv.value}<Text style={{ fontSize: fs.note, color: C.ash }}> {wv.unit}</Text></Text>
           {dstr && dir !== "flat" && (
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.inner, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.inner, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: withAlpha(dir === "down" ? C.red : C.lime, 0.157) }}>{dirArrow(dir)} {dstr} {units}</Text>
           )}
         </View>
       )}
@@ -151,7 +152,7 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
         </View>
         <View style={{ flexDirection: "row", gap: 5 }}>
           {Array.from({ length: report.cadenceOf }).map((_, i) => (
-            <View key={i} style={{ flex: 1, height: 7, borderRadius: 4, backgroundColor: i < report.cadence ? C.lime : `${C.ash}38` }} />
+            <View key={i} style={{ flex: 1, height: 7, borderRadius: 4, backgroundColor: i < report.cadence ? C.lime : withAlpha(C.ash, 0.22) }} />
           ))}
         </View>
       </View>
@@ -184,7 +185,7 @@ function Bars({ C, heights }: { C: Palette; heights: number[] }) {
     <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: H, marginTop: 2 }}>
       {heights.map((h, i) => {
         const last = i === heights.length - 1;
-        return <View key={i} style={{ flex: 1, height: Math.max(3, h * H), borderRadius: 2, backgroundColor: last ? C.lime : `${C.lime}44` }} />;
+        return <View key={i} style={{ flex: 1, height: Math.max(3, h * H), borderRadius: 2, backgroundColor: last ? C.lime : withAlpha(C.lime, 0.267) }} />;
       })}
     </View>
   );

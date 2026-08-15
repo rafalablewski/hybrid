@@ -10,6 +10,7 @@ import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import AuroraSideMenu from "./side-menu";
 import { StreakMark } from "./streak-mark";
+import { withAlpha } from "./field";
 
 /**
  * THE APP HEADER — mobile.
@@ -67,7 +68,7 @@ export function AppHeader({
           accessibilityRole="button"
           accessibilityLabel={t("nav.openMenu")}
           accessibilityState={{ expanded: menuOpen }}
-          style={{ width: APP_HEADER.tile.size, height: APP_HEADER.tile.size, borderRadius: APP_HEADER.tile.radius, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}
+          style={{ width: APP_HEADER.tile.size, height: APP_HEADER.tile.size, borderRadius: APP_HEADER.tile.radius, backgroundColor: withAlpha(C.lime, 0.133), borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}
         >
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
         </Pressable>

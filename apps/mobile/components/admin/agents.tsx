@@ -19,6 +19,7 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack, ASection , RADIUS} from "../aurora/kit";
 import { useConfirm } from "../aurora/confirm";
+import { withAlpha } from "../aurora/field";
 
 // Mobile "AI agents" builder — parity with apps/web/components/admin/agents.tsx.
 // Roster (GET /api/admin/agents) → select → editor (PATCH /[id]) with a live
@@ -651,7 +652,7 @@ function ToolToggle({ label, on, onPress }: { label: string; on: boolean; onPres
       style={{
         borderWidth: 1,
         borderColor: on ? palette.lime : palette.line,
-        backgroundColor: on ? `${palette.lime}1f` : palette.ink2,
+        backgroundColor: on ? withAlpha(palette.lime, 0.12) : palette.ink2,
         borderRadius: RADIUS.pill,
         paddingVertical: 6,
         paddingHorizontal: 12,
@@ -676,7 +677,7 @@ function Toggle({ on, onToggle, disabled }: { on: boolean; onToggle: () => void;
         borderRadius: RADIUS.pill,
         borderWidth: 1,
         borderColor: on ? palette.lime : palette.line,
-        backgroundColor: on ? `${palette.lime}33` : palette.ink2,
+        backgroundColor: on ? withAlpha(palette.lime, 0.2) : palette.ink2,
         padding: 2,
         alignItems: on ? "flex-end" : "flex-start",
         justifyContent: "center",

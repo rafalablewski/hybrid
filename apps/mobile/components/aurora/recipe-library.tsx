@@ -100,9 +100,9 @@ export function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe;
     >
       {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
           15% @ 46% → 0x26, then ink) — web parity: nutrition.tsx RecipeTile */}
-      <LinearGradient pointerEvents="none" colors={[`${tile.accent}85`, `${tile.accent}26`, `${tile.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient pointerEvents="none" colors={[withAlpha(tile.accent, 0.52), withAlpha(tile.accent, 0.15), withAlpha(tile.accent, 0.0)]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
       <Text pointerEvents="none" style={{ position: "absolute", top: -4, right: -6, fontSize: 78, lineHeight: 84 }}>{tile.glyph}</Text>
-      <LinearGradient pointerEvents="none" colors={["#0c0d0c00", "#0c0d0ca8", "#0c0d0c"]} locations={[0.34, 0.78, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient pointerEvents="none" colors={[withAlpha(TILE_INK, 0), withAlpha(TILE_INK, 0.66), TILE_INK]} locations={[0.34, 0.78, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       <Text style={{ alignSelf: "flex-end", fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
       <View>
         <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.subtitle, lineHeight: leading(16, "tight"), letterSpacing: tracking.display, color: "#fff" }}>{tile.title}</Text>
@@ -122,9 +122,9 @@ export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () =
   return (
     <View style={{ height: 150, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: TILE_INK, marginTop: 2 }}>
       {/* alpha-over-ink stops matching web's color-mix wash — web parity */}
-      <LinearGradient pointerEvents="none" colors={[`${cook.accent}85`, `${cook.accent}26`, `${cook.accent}00`]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient pointerEvents="none" colors={[withAlpha(cook.accent, 0.52), withAlpha(cook.accent, 0.15), withAlpha(cook.accent, 0.0)]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
       <Text pointerEvents="none" style={{ position: "absolute", top: -16, right: -10, fontSize: 118, lineHeight: 126 }}>{cook.glyph}</Text>
-      <LinearGradient pointerEvents="none" colors={["#0c0d0c00", "#0c0d0c8c", "#0c0d0c"]} locations={[0.38, 0.8, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+      <LinearGradient pointerEvents="none" colors={[withAlpha(TILE_INK, 0), withAlpha(TILE_INK, 0.55), TILE_INK]} locations={[0.38, 0.8, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={{ position: "absolute", top: 10, left: 10, right: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <HeroNav onPress={onBack} fromLabel={cook.title} material="glass" />
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: "rgba(255,255,255,0.85)" }}>{cook.count}</Text>
@@ -162,7 +162,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t(`w.recovery.nutrition.meal.${recipe.meal}`)}</Text>
           {recipe.highProtein && (
-            <View style={{ backgroundColor: `${C.lime}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
+            <View style={{ backgroundColor: withAlpha(C.lime, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.recipeFilter.highProtein")}</Text>
             </View>
           )}

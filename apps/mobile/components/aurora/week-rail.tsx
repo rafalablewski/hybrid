@@ -24,6 +24,7 @@ import ReceiptBlock from "./receipt-block";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
+import { withAlpha } from "./field";
 
 // ── AURORA Week rail (mobile) ───────────────────────────────────────────────
 // The date-anchored replacement for the count-based "Your plan today". A static
@@ -283,7 +284,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
             <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{day.dayOfMonth}</Text>
           </View>
         ) : selected ? (
-          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: `${C.chalk}4d`, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: withAlpha(C.chalk, 0.302), alignItems: "center", justifyContent: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{day.dayOfMonth}</Text>
           </View>
         ) : (
@@ -476,7 +477,7 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
           <LiftRow key={i} C={C} r={r} showSession={!multi} first={i === 0} />
         ))}
         {hasMore && !open && (
-          <LinearGradient pointerEvents="none" colors={[`${C.ink2}00`, C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 40 }} />
+          <LinearGradient pointerEvents="none" colors={[withAlpha(C.ink2, 0.0), C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 40 }} />
         )}
       </View>
       {hasMore && (

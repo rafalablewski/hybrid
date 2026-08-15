@@ -14,6 +14,7 @@ import { haptic } from "../../lib/haptics";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { createRtpProtocol, mutateRtpProtocol, fetchRtpProtocols, type RtpProtocol as RtpProtocolRow } from "../../lib/api";
+import { withAlpha } from "./field";
 
 /**
  * THE PROTOCOL (mobile) — declaring an injury, and living with one. The twin of
@@ -72,7 +73,7 @@ export function InjuryBody({
 // invisible — the first render of this figure had both at a whisper of ash and
 // the seven live regions disappeared into the body. The tracked areas carry a
 // real stroke and roughly three times the fill of the outline beneath them.
-const PICK_TONE = (C: Palette): AreaTone => ({ fill: C.ash, stroke: `${C.ash}9e`, fillOpacity: 0.3 });
+const PICK_TONE = (C: Palette): AreaTone => ({ fill: C.ash, stroke: withAlpha(C.ash, 0.62), fillOpacity: 0.3 });
 const PICKED_TONE = (C: Palette): AreaTone => ({ fill: C.chalk, stroke: C.chalk, fillOpacity: 0.9 });
 
 function Figure({
@@ -159,7 +160,7 @@ export function RiskBody({ byTissue, onPick }: { byTissue: Record<string, Tissue
   const { t } = useLang();
   const toneOf = (g: MuscleGroup): AreaTone => {
     const ti = byTissue[g];
-    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: `${C.ash}73`, fillOpacity: 0.2 };
+    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: withAlpha(C.ash, 0.45), fillOpacity: 0.2 };
     const hex = roleColor(C, riskRole(ti.band));
     return { fill: hex, stroke: hex, fillOpacity: 0.22 + 0.5 * Math.min(1, ti.risk / 100) };
   };
@@ -235,7 +236,7 @@ export function InjurySheet({
               style={{
                 flex: 1, alignItems: "center", borderRadius: RADIUS.pill, paddingVertical: 10,
                 borderWidth: 1, borderColor: on ? C.chalk : C.line,
-                backgroundColor: on ? `${C.chalk}1a` : "transparent",
+                backgroundColor: on ? withAlpha(C.chalk, 0.1) : "transparent",
               }}
             >
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: on ? C.chalk : C.ash }}>{t(INJURY_WHEN_KEY[wk])}</Text>
@@ -254,7 +255,7 @@ export function InjurySheet({
         accessibilityState={{ disabled: !area || busy }}
         style={{
           marginTop: 20, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center",
-          backgroundColor: area ? C.chalk : `${C.ash}38`,
+          backgroundColor: area ? C.chalk : withAlpha(C.ash, 0.22),
         }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: area ? C.ink : C.ash }}>{t("w.injury.openProtocol")}</Text>
@@ -365,7 +366,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                       flex: 1,
                       fontFamily: now ? F.black : F.reg,
                       fontSize: now ? fs.bodyLg : fs.body,
-                      color: now ? C.chalk : passed ? C.ash : `${C.ash}8c`,
+                      color: now ? C.chalk : passed ? C.ash : withAlpha(C.ash, 0.55),
                     }}>
                       {t(s.labelKey)}
                     </Text>

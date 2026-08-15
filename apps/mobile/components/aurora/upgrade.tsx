@@ -14,6 +14,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import Sheet from "./sheet";
 import { RADIUS } from "./kit";
+import { withAlpha } from "./field";
 
 // The Full toolkit, sold as one concise sheet (matches the web upgrade sheet).
 // Benefits come from the shared @hybrid/core FULL_BENEFITS so the paywall and
@@ -117,7 +118,7 @@ export default function AuroraUpgrade() {
     // so the CTA sits at the end of the read on both clients.
     <Sheet visible={open} onClose={close} onClosed={() => router.back()}>
       {/* badge */}
-      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(pa.fill, 0.14), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
       </View>
 

@@ -15,6 +15,7 @@ import { AuroraIcon } from "../aurora/icons";
 import { Intro, Banner, ErrorNote, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack , RADIUS} from "../aurora/kit";
 import { useConfirm } from "../aurora/confirm";
+import { withAlpha } from "../aurora/field";
 
 // Mobile Access (Governance) — parity with the web "access" section, which
 // renders <CoachApplications/> then <AdminAccess/>. Combined here into ONE body
@@ -254,7 +255,7 @@ export default function AdminAccess() {
                                     style={{
                                       borderWidth: 1,
                                       borderColor: on ? palette.lime : palette.line,
-                                      backgroundColor: on ? `${palette.lime}1c` : "transparent",
+                                      backgroundColor: on ? withAlpha(palette.lime, 0.11) : "transparent",
                                       borderRadius: RADIUS.pill,
                                       paddingVertical: 5,
                                       paddingHorizontal: 11,

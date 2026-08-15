@@ -11,6 +11,7 @@ import { AuroraIcon } from "./icons";
 import { DockRail, DockChip, CARD_PAD, GUTTER , RADIUS} from "./kit";
 import GroupMark from "./group-mark";
 import { FoodRow, IClose, IPlus, Glyph } from "./nutrition-kit";
+import { withAlpha } from "./field";
 
 /**
  * THE PANTRY (mobile) — the athlete's own saved foods, as a screen.
@@ -266,7 +267,7 @@ export function PantryScreen<T extends PantryFood>({
       ) : (
         /* The cap gates the ADD, never the library: every food already saved
            stays loggable, searchable and deletable at the cap. */
-        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: `${premium?.fill ?? C.lime}1f`, borderWidth: 1, borderColor: `${premium?.fill ?? C.lime}66`, borderRadius: RADIUS.pill, paddingVertical: 14 }}>
+        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: withAlpha(premium?.fill ?? C.lime, 0.12), borderWidth: 1, borderColor: withAlpha(premium?.fill ?? C.lime, 0.4), borderRadius: RADIUS.pill, paddingVertical: 14 }}>
           <Text style={{ color: premium?.text ?? txt(C, C.lime) }}>✦</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: premium?.text ?? txt(C, C.lime) }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
         </Pressable>

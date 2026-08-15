@@ -24,6 +24,7 @@ import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 import { useConfirm } from "./confirm";
+import { withAlpha } from "./field";
 
 type Ratings = Record<CheckinMetricKey, number>;
 
@@ -268,7 +269,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
     flex: 1, aspectRatio: 1, borderRadius: RADIUS.field, alignItems: "center" as const, justifyContent: "center" as const,
     borderWidth: 1,
     borderColor: sel ? (locked ? C.ash : C.lime) : C.line,
-    backgroundColor: sel ? (locked ? `${C.ash}24` : `${C.lime}1a`) : C.ink,
+    backgroundColor: sel ? (locked ? withAlpha(C.ash, 0.14) : withAlpha(C.lime, 0.1)) : C.ink,
     opacity: locked && !sel ? 0.35 : 1,
   });
 
@@ -293,7 +294,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
             key={i}
             style={{
               flex: 1, height: 5, borderRadius: RADIUS.pill,
-              backgroundColor: done || isAnswered(st) ? C.lime : i === step ? `${C.lime}59` : C.line,
+              backgroundColor: done || isAnswered(st) ? C.lime : i === step ? withAlpha(C.lime, 0.35) : C.line,
             }}
           />
         ))}
@@ -304,7 +305,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           the flow is live again so the muted tiles coming back to full colour is
           explained rather than merely observed. */}
       {locked || (editing && !done) ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingHorizontal: 12, paddingVertical: 12, borderRadius: RADIUS.field, backgroundColor: locked ? `${C.lime}14` : "transparent", borderWidth: 1, borderColor: locked ? `${C.lime}3d` : C.line }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingHorizontal: 12, paddingVertical: 12, borderRadius: RADIUS.field, backgroundColor: locked ? withAlpha(C.lime, 0.08) : "transparent", borderWidth: 1, borderColor: locked ? withAlpha(C.lime, 0.24) : C.line }}>
           <AuroraIcon name={locked ? "check-circle" : "edit"} size={20} color={locked ? txt(C, C.lime) : C.ash} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t(locked ? "w.recovery.checkins.savedTitle" : "w.recovery.checkins.edit")}</Text>
@@ -406,7 +407,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
             accessibilityRole="checkbox"
             accessibilityLabel={t("w.recovery.checkins.shareCoach")}
             accessibilityState={{ checked: !!(sharedWithCoach && paid), disabled: !paid || locked }}
-            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 16, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? `${C.lime}1a` : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
+            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 16, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? withAlpha(C.lime, 0.1) : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
           >
             {sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.lime)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
             <View style={{ flex: 1 }}>

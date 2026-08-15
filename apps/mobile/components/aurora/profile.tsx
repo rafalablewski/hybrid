@@ -41,6 +41,7 @@ import { NAV_HREF } from "../../lib/nav-href";
 import { AuroraIcon } from "./icons";
 import { StreakMark } from "./streak-mark";
 import { ArrowGlyph } from "./cta-label";
+import { withAlpha } from "./field";
 
 type P = ReturnType<typeof useTheme>["palette"];
 
@@ -235,7 +236,7 @@ export default function AuroraProfile() {
       {socialP && !sComplete && (
         /* an icon-tile ROW (tile + text + chevron), not a full-width card — it
            keeps the compact inset. See CARD_PAD for the variants that stay 16. */
-        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.card, padding: 16, marginBottom: 16 }}>
+        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: withAlpha(C.lime, 0.08), borderRadius: RADIUS.card, padding: 16, marginBottom: 16 }}>
           <View style={{ width: 44, height: 44, borderRadius: RADIUS.inner, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
           </View>
@@ -253,7 +254,7 @@ export default function AuroraProfile() {
           the avatar and name. */}
       <View style={{ height: 96, borderRadius: RADIUS.card, overflow: "hidden" }}>
         <LinearGradient
-          colors={[`${C.violet}66`, `${C.lime}33`, C.ink2]}
+          colors={[withAlpha(C.violet, 0.4), withAlpha(C.lime, 0.2), C.ink2]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}
@@ -492,8 +493,8 @@ export default function AuroraProfile() {
                       height: 60,
                       borderRadius: RADIUS.field,
                       borderWidth: 1,
-                      borderColor: a.earned ? `${C.lime}73` : C.line,
-                      backgroundColor: a.earned ? `${C.lime}1f` : C.ink2,
+                      borderColor: a.earned ? withAlpha(C.lime, 0.45) : C.line,
+                      backgroundColor: a.earned ? withAlpha(C.lime, 0.12) : C.ink2,
                       alignItems: "center",
                       justifyContent: "center",
                     }}
@@ -501,7 +502,7 @@ export default function AuroraProfile() {
                     <Text style={{ fontSize: 24, opacity: a.earned ? 1 : 0.38 }}>{a.icon}</Text>
                   </View>
                   <View style={{ width: 48, height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 8, overflow: "hidden" }}>
-                    <View style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, backgroundColor: a.earned ? C.lime : `${C.lime}99` }} />
+                    <View style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, backgroundColor: a.earned ? C.lime : withAlpha(C.lime, 0.6) }} />
                   </View>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.nano, color: C.ash, marginTop: 6, maxWidth: "100%", textAlign: "center" }}>{a.label}</Text>
                 </View>

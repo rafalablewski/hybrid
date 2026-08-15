@@ -483,7 +483,38 @@ describe("colour", () => {
     // lib/error-boundary-palette.test.ts, which is the half of that exemption
     // that was missing. The same #eae3d4 was drawing the web /terms and
     // /privacy pages and went with it.
-    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 75, "hex literal → a palette token");
+    // 75 → 61: the 12 eight-digit ones went to withAlpha() with the rest of the
+    // colour arithmetic — see the alpha rule below, which is the one that
+    // actually covers this axis.
+    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 61, "hex literal → a palette token");
+  });
+});
+
+describe("colour arithmetic", () => {
+  it("HARD — alpha is withAlpha(), never a hex suffix", () => {
+    // THE RULE ABOVE COULD NOT SEE THIS, which is the point of adding it. The
+    // hex-literal ratchet matches QUOTED hex, and 235 of the 247 hand-rolled
+    // alphas in this app were TEMPLATE literals — `${C.lime}55` — so 95% of the
+    // colour arithmetic in the codebase sat outside the one rule that was
+    // supposed to police colour. The 12 it could see looked like a rounding
+    // error on a tidy axis; the 235 it could not were the actual debt.
+    //
+    // AND THE DEBT WAS DRIFT: 45 distinct suffixes for what is really a handful
+    // of tints. Eight different values sat in the "barely-there wash" band
+    // alone — 0x12, 0x14, 0x1a, 0x1c, 0x1f, 0x22, 0x24, 0x26, which is 7% 8%
+    // 10% 11% 12% 13% 14% 15%. Nobody chose eight; each call site converted a
+    // percentage in its head and wrote down the byte. Expressed as
+    // withAlpha(C.lime, 0.08) the duplicates are finally legible as duplicates.
+    //
+    // The conversion was byte-identical by construction — withAlpha emits
+    // round(a * 255), so each decimal was picked as the shortest one that
+    // round-trips to the same byte, and every one of the 247 was verified
+    // against its removed form before this rule went HARD.
+    //
+    // Comment-blind: the sites fixed first are the ones that explain themselves.
+    const suffix = codeHits(/`\$\{(?:[^{}]|\{[^{}]*\})+\}[0-9a-fA-F]{2}`/g);
+    const eight = codeHits(/["'`]#[0-9a-fA-F]{8}["'`]/g);
+    expect([...suffix, ...eight], "hex alpha suffix → withAlpha(color, 0.xx)").toEqual([]);
   });
 });
 

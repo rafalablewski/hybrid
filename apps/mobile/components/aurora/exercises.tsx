@@ -23,6 +23,7 @@ import { leading, tracking, fs, space, F, PressScale, FIXED_FONT_SCALE } from ".
 import { AuroraScreen, ACard, RADIUS, ASearch } from "./kit";
 import AuroraExerciseMedia from "./exercise-media";
 import { AuroraIcon } from "./icons";
+import { withAlpha } from "./field";
 
 type SortMode = "smart" | "groups" | "az";
 
@@ -96,7 +97,7 @@ export default function AuroraExercises() {
           </View>
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: withAlpha(C.ash, 0.55) }}>›</Text>
         </PressScale>
         <PressScale
           onPress={() => {
@@ -164,7 +165,7 @@ export default function AuroraExercises() {
           {/* THIS BLOCK — the gradient band (Profile's cover wash + stat row). */}
           {summary.inRotation > 0 && (
             <View style={{ marginTop: 16, borderRadius: RADIUS.card, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
-              <LinearGradient colors={[`${C.violet}52`, `${C.lime}29`, C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={[withAlpha(C.violet, 0.32), withAlpha(C.lime, 0.16), C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
               <View pointerEvents="none" style={{ position: "absolute", top: -40, right: -28, width: 150, height: 150, borderRadius: 75, backgroundColor: C.lime, opacity: 0.16 }} />
               <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.ex.block")}</Text>

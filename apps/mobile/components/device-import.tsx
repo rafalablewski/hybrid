@@ -24,6 +24,7 @@ import { ToggleRow } from "./toggle-row";
 import { leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
+import { withAlpha } from "./aurora/field";
 
 /** Under the unattended floor — shown, but not switched on for you. */
 const brief = (i: DeviceImportItem): boolean => i.workout.durationMin < DEVICE_IMPORT_MIN_MIN;
@@ -243,7 +244,7 @@ export function DeviceImportSheet({
                       borderRadius: RADIUS.field,
                       padding: 16,
                       marginBottom: 10,
-                      backgroundColor: off ? C.ink2 : `${C.lime}12`,
+                      backgroundColor: off ? C.ink2 : withAlpha(C.lime, 0.07),
                       opacity: done ? 0.55 : 1,
                     }}
                   >

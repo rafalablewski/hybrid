@@ -5,6 +5,7 @@ import { haptic } from "../../lib/haptics";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, tracking, F } from "../../lib/ui";
 import { RADIUS } from "./kit";
+import { withAlpha } from "./field";
 
 /**
  * THE HELD CHART (mobile) — press a chart and it states the figure under your
@@ -225,7 +226,7 @@ export function ChartReadout({ read, side, when, note, C: palette }: {
         right: side === "right" ? 0 : undefined,
         alignItems: side === "right" ? "flex-end" : "flex-start",
         gap: 2, paddingHorizontal: 9, paddingVertical: 5, zIndex: 2,
-        borderRadius: RADIUS.inner, backgroundColor: `${C.ink}e0`, borderWidth: 1, borderColor: C.line,
+        borderRadius: RADIUS.inner, backgroundColor: withAlpha(C.ink, 0.88), borderWidth: 1, borderColor: C.line,
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4 }}>

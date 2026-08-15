@@ -7,6 +7,7 @@ import { Intro, ErrorNote, Input, PillBtn, FilterGroup, KV } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import AdminAnon from "./anon";
 import { useConfirm } from "../aurora/confirm";
+import { withAlpha } from "../aurora/field";
 
 // Paginated, searchable user directory + per-user management drawer. Mirrors
 // apps/web/components/admin/users.tsx and /api/admin/users[/:id]. Each user is a
@@ -320,7 +321,7 @@ function UserDetail({
             </View>
 
             {/* danger zone */}
-            <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: `${palette.red}44`, paddingTop: 16 }}>
+            <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: withAlpha(palette.red, 0.267), paddingTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
                 Danger zone
               </Text>

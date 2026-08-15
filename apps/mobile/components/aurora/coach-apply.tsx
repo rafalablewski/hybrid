@@ -7,6 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { withAlpha } from "./field";
 
 /** AURORA Become a coach — same verification-gated application flow (fetch,
  *  status card, form, submit) as the classic, in the rounded look. */
@@ -108,7 +109,7 @@ export default function AuroraCoachApply() {
               <Pressable
                 onPress={submit}
                 disabled={!canSubmit}
-                style={{ backgroundColor: canSubmit ? C.lime : `${C.lime}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
+                style={{ backgroundColor: canSubmit ? C.lime : withAlpha(C.lime, 0.333), borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
               >
                 {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.account.settings.coach-submit")}</Text>}
               </Pressable>

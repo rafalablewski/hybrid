@@ -18,6 +18,7 @@ import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 import Sheet from "./aurora/sheet";
 import { RADIUS } from "./aurora/kit";
+import { withAlpha } from "./aurora/field";
 
 /**
  * DEVICE MATCH — the sheet behind the summary's "Match the workout from your
@@ -168,7 +169,7 @@ export function DeviceMatchSheet({
                       borderRadius: best ? 20 : 16,
                       padding: best ? 18 : 13,
                       marginBottom: best ? 14 : 10,
-                      backgroundColor: best ? `${C.lime}14` : C.ink2,
+                      backgroundColor: best ? withAlpha(C.lime, 0.08) : C.ink2,
                       opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1,
                     }}
                   >

@@ -12,6 +12,7 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ACard, CardFoot, ActionPill , RADIUS} from "./kit";
 import { InjurySheet, RiskBody } from "./protocol";
+import { withAlpha } from "./field";
 
 /** The protocol's full span, so the status line can say "day 9 of 21" without
  *  the card needing the whole ladder. Matches engines/rtp.ts. */
@@ -96,7 +97,7 @@ export default function TissueCard({
   })();
 
   return (
-    <ACard solid style={{ marginTop: 16, borderColor: alert ? `${C.red}73` : C.line, backgroundColor: alert ? `${C.red}12` : undefined }}>
+    <ACard solid style={{ marginTop: 16, borderColor: alert ? withAlpha(C.red, 0.45) : C.line, backgroundColor: alert ? withAlpha(C.red, 0.07) : undefined }}>
       {/* HEAD — the subject, and how many tissues are on the worklist. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: alert ? txt(C, C.red) : C.chalk }}>{t("w.injury.tissue")}</Text>
@@ -190,7 +191,7 @@ export default function TissueCard({
           <View style={{ paddingBottom: 4 }}>
             <Rows rows={axis.rows} C={C} t={t} />
             {risk.awaitingBaseline.length > 0 && (
-              <View style={{ marginTop: 12, padding: 12, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, backgroundColor: `${C.ash}14` }}>
+              <View style={{ marginTop: 12, padding: 12, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.ash, 0.08) }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
               </View>
@@ -262,7 +263,7 @@ function Axis({ axis, C, t }: { axis: ReturnType<typeof tissueAxis>; C: Palette;
           ))}
         </View>
         {/* the flag line — where a tissue joins the worklist */}
-        <View style={{ position: "absolute", left: `${axis.flagLeftPct}%`, top: -8, height: 25, width: 1, backgroundColor: `${C.ash}80` }} />
+        <View style={{ position: "absolute", left: `${axis.flagLeftPct}%`, top: -8, height: 25, width: 1, backgroundColor: withAlpha(C.ash, 0.5) }} />
         {axis.rows.map((r) => (
           <View
             key={r.tissue}
@@ -278,7 +279,7 @@ function Axis({ axis, C, t }: { axis: ReturnType<typeof tissueAxis>; C: Palette;
               width: r.top ? 4 : 2,
               height: r.top ? 21 : 15,
               borderRadius: 2,
-              backgroundColor: r.top ? riskColor(r.band, C) : `${C.chalk}75`,
+              backgroundColor: r.top ? riskColor(r.band, C) : withAlpha(C.chalk, 0.46),
             }}
           />
         ))}
@@ -306,13 +307,13 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
         <Text style={{ ...head(C), width: 38, textAlign: "right" }}>{t("w.analyze.perf.colAcwr")}</Text>
       </View>
       {rows.map((r) => (
-        <View key={r.tissue} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: `${C.line}99` }}>
+        <View key={r.tissue} style={{ paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6) }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Text numberOfLines={1} style={{ fontFamily: r.flagged ? F.black : F.reg, fontSize: fs.caption, color: C.chalk, width: 62 }}>{t(INJURY_AREA_KEY[r.tissue])}</Text>
             {/* the row's own bar, on the axis scale, carrying the same flag line */}
-            <View style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: `${C.ash}29` }}>
+            <View style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: withAlpha(C.ash, 0.16) }}>
               <View style={{ position: "absolute", left: 0, top: 0, height: 5, width: `${r.leftPct}%`, borderRadius: RADIUS.mark, backgroundColor: r.risk > 0 ? riskColor(r.band, C) : "transparent" }} />
-              <View style={{ position: "absolute", left: "50%", top: -6, height: 17, width: 1, backgroundColor: `${C.ash}80` }} />
+              <View style={{ position: "absolute", left: "50%", top: -6, height: 17, width: 1, backgroundColor: withAlpha(C.ash, 0.5) }} />
             </View>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...num(C, r.flagged), width: 26, fontFamily: F.monoBold, color: r.flagged ? txt(C, C.red) : C.chalk }}>{r.risk}</Text>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...num(C, r.flagged), width: 44 }}>{r.probPct.toFixed(1)}%</Text>

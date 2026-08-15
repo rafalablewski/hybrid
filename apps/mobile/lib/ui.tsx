@@ -33,6 +33,7 @@ import { useTemplate } from "./template";
 import { auroraScrollClearance } from "./layout";
 import { useReducedMotion } from "./use-reduced-motion";
 import { RADIUS } from "../components/aurora/kit";
+import { withAlpha } from "../components/aurora/field";
 
 // ── Dynamic Type caps ────────────────────────────────────────────────────────
 // RN already scales every <Text> with the OS "Larger Text" / Dynamic Type
@@ -623,10 +624,10 @@ export function Chip({
   return (
     <View
       style={{
-        backgroundColor: `${fill}1f`,
+        backgroundColor: withAlpha(fill, 0.12),
         borderRadius: RADIUS.pill,
         borderWidth: tone === "outline" ? 1 : 0,
-        borderColor: `${fill}66`,
+        borderColor: withAlpha(fill, 0.4),
         paddingHorizontal: 11,
         paddingVertical: 3,
         alignSelf: "flex-start",

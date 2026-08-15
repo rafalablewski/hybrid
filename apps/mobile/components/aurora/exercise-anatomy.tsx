@@ -9,6 +9,7 @@ import AuroraExerciseMedia from "./exercise-media";
 import AuroraBodyMap from "./body-map";
 import Sheet from "./sheet";
 import { RADIUS } from "./kit";
+import { withAlpha } from "./field";
 
 /* ── muscle-activation bars ── */
 
@@ -126,7 +127,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
         accessibilityRole="button"
         style={{
           marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8,
-          borderWidth: 1, borderColor: `${C.lime}66`, backgroundColor: `${C.lime}14`,
+          borderWidth: 1, borderColor: withAlpha(C.lime, 0.4), backgroundColor: withAlpha(C.lime, 0.08),
           borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16,
         }}
       >

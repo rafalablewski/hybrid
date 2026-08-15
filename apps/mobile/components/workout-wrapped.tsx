@@ -73,6 +73,7 @@ import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../l
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
+import { withAlpha } from "./aurora/field";
 
 // `gold` is a THEME value, and this const is module scope — so it names the
 // one theme the app has rather than copying its hex. (The light theme was
@@ -390,7 +391,7 @@ export function WorkoutWrapped({
       >
         {/* ── REVEAL ── */}
         {cel && (
-          <Panel center glows={<><View pointerEvents="none" style={{ position: "absolute", top: "34%", left: "50%", marginLeft: -230, marginTop: -230, width: 460, height: 460 }}><Animated.View style={{ flex: 1, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}><LinearGradient colors={[`${GOLD}26`, "transparent", `${C.lime}1c`, "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 230 }} /></Animated.View></View></>}>
+          <Panel center glows={<><View pointerEvents="none" style={{ position: "absolute", top: "34%", left: "50%", marginLeft: -230, marginTop: -230, width: 460, height: 460 }}><Animated.View style={{ flex: 1, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}><LinearGradient colors={[withAlpha(GOLD, 0.15), "transparent", withAlpha(C.lime, 0.11), "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 230 }} /></Animated.View></View></>}>
             <View style={{ alignItems: "center" }}>
               {CONFETTI.map((c, i) => (
                 <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", top: -20, width: 7, height: 7, borderRadius: 2, backgroundColor: [C.lime, GOLD, C.blue, C.violet][c.ci], opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) }, { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) }] }} />
@@ -404,7 +405,7 @@ export function WorkoutWrapped({
         )}
 
         {/* ── HERO ── */}
-        <Panel glows={<><Glow size={panelH * 0.5} color={`${C.violet}22`} top={-40} right={-80} /><Glow size={panelH * 0.5} color={`${C.lime}14`} bottom={panelH * 0.2} left={-90} /></>}>
+        <Panel glows={<><Glow size={panelH * 0.5} color={withAlpha(C.violet, 0.133)} top={-40} right={-80} /><Glow size={panelH * 0.5} color={withAlpha(C.lime, 0.08)} bottom={panelH * 0.2} left={-90} /></>}>
           {eyebrow(t("session.wrapped.title"))}
           {/* SHARED ELEMENT (destination). The title the tapped row was showing
               flies here and scales up instead of the page re-rendering it.
@@ -435,7 +436,7 @@ export function WorkoutWrapped({
                device's name. Chip and mark are both chalk: the artwork can't be
                tinted, and a white logo next to lime text would read as two
                claims at once. See core/device-marks.ts. */
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: `${C.chalk}52`, borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.chalk, 0.32), borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
               {deviceMark ? (
                 <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
@@ -456,7 +457,7 @@ export function WorkoutWrapped({
         {/* The immediate read, for a session opened later that was never rated.
             The card says what a late answer is worth rather than pretending it
             is the in-the-gym reading. See core/feel-schedule.ts. */}
-        <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}12`} top={panelH * 0.05} left={-90} />}>
+        <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, 0.07)} top={panelH * 0.05} left={-90} />}>
           <FeelPrompt
             sessionId={session.id}
             minutes={receipt.durationMin}
@@ -480,7 +481,7 @@ export function WorkoutWrapped({
             style={{
               marginTop: 22, alignSelf: "stretch", flexDirection: "row", alignItems: "center",
               justifyContent: "space-between", gap: 12,
-              borderWidth: 1, borderColor: `${C.amber}55`, backgroundColor: `${C.amber}0d`,
+              borderWidth: 1, borderColor: withAlpha(C.amber, 0.333), backgroundColor: withAlpha(C.amber, 0.05),
               borderRadius: 20, paddingVertical: 13, paddingHorizontal: 16,
             }}
           >
@@ -494,7 +495,7 @@ export function WorkoutWrapped({
 
         {/* ── PREMIUM ── */}
         {wrapped.facts.length > 0 && (
-          <Panel center glows={<Glow size={panelH * 0.5} color={`${C.violet}14`} top={0} left={-100} />}>
+          <Panel center glows={<Glow size={panelH * 0.5} color={withAlpha(C.violet, 0.08)} top={0} left={-100} />}>
             {eyebrow(t("session.wrapped.premium"))}
             <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, marginTop: 8, marginBottom: 20 }}>{t("session.wrapped.premiumLead")}</Text>
             {wrapped.facts.map((f) => (
@@ -513,7 +514,7 @@ export function WorkoutWrapped({
 
         {/* ── THE DEVICE'S READ (matched) ── */}
         {device && (
-          <Panel center glows={<Glow size={panelH * 0.45} color={`${C.lime}14`} top={panelH * 0.06} right={-90} />}>
+          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, 0.08)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.device.panelTitle"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
@@ -560,7 +561,7 @@ export function WorkoutWrapped({
 
         {/* ── CONNECT A DEVICE ── */}
         {showDeviceAd && (
-          <Panel center glows={<Glow size={panelH * 0.45} color={`${C.violet}18`} top={panelH * 0.06} right={-90} />}>
+          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.violet, 0.094)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
             <View style={{ marginTop: 24, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
@@ -586,7 +587,7 @@ export function WorkoutWrapped({
         )}
 
         {/* ── SIGNATURE ── */}
-        <Panel center glows={<Glow size={panelH * 0.55} color={`${GOLD}14`} top={-panelH * 0.1} left={win.width / 2 - panelH * 0.275} />}>
+        <Panel center glows={<Glow size={panelH * 0.55} color={withAlpha(GOLD, 0.08)} top={-panelH * 0.1} left={win.width / 2 - panelH * 0.275} />}>
           <View style={{ alignItems: "center" }}>
             {eyebrow(t("session.wrapped.title"))}
             {signature.length >= SIGNATURE_MIN_BARS && (

@@ -18,6 +18,7 @@ import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
 import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
+import { withAlpha } from "./aurora/field";
 
 /**
  * "How did that feel?" — THE IMMEDIATE READ.
@@ -123,7 +124,7 @@ export function FeelPrompt({
               flex: 1, alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 2,
               borderRadius: 14, borderWidth: 1,
               borderColor: on ? C.lime : C.line,
-              backgroundColor: on ? `${C.lime}26` : compact ? C.ink2 : C.ink,
+              backgroundColor: on ? withAlpha(C.lime, 0.15) : compact ? C.ink2 : C.ink,
             }}
           >
             <Text style={{ fontSize: 21, opacity: on ? 1 : 0.55 }}>{l.emoji}</Text>

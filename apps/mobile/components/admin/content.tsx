@@ -14,6 +14,7 @@ import { leading, fs, space, Mono, Kicker, Chip, LoadSwap, F } from "../../lib/u
 import { useTheme, txt } from "../../lib/theme";
 import { FilterGroup, Stat, ErrorNote } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
+import { withAlpha } from "../aurora/field";
 
 // Mobile Capabilities & data — parity with apps/web/components/admin/content.tsx
 // (which tabs CapabilitiesScreen ⇄ DataNet). Capabilities come from @hybrid/core
@@ -98,13 +99,13 @@ function CapRow({ cap, color }: { cap: Capability; color: string }) {
       </View>
       <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>
       {cap.retiredBecause ? (
-        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: `${palette.red}12`, borderWidth: 1, borderColor: `${palette.red}40` }}>
+        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: withAlpha(palette.red, 0.07), borderWidth: 1, borderColor: withAlpha(palette.red, 0.25) }}>
           <Kicker color={palette.red}>Why it went</Kicker>
           <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), marginTop: 3 }}>{cap.retiredBecause}</Mono>
         </View>
       ) : null}
       {cap.blockedBy ? (
-        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: `${palette.amber}12`, borderWidth: 1, borderColor: `${palette.amber}40` }}>
+        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: withAlpha(palette.amber, 0.07), borderWidth: 1, borderColor: withAlpha(palette.amber, 0.25) }}>
           <Kicker color={palette.amber}>Needs</Kicker>
           <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), marginTop: 3 }}>{cap.blockedBy}</Mono>
         </View>

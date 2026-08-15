@@ -12,6 +12,7 @@ import { F, tracking, leading } from "../../lib/ui";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useFitnessLevel, type FitnessLevelRead } from "../../lib/use-fitness-level";
 import { ACard, CardFoot } from "./kit";
+import { withAlpha } from "./field";
 
 /**
  * YOUR LEVEL — the Performance card. The mobile twin of
@@ -216,7 +217,7 @@ function Working({ estimate, reach, figure, units }: {
           key={`${e.kind}-${e.lift}-${i}`}
           style={{
             flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12,
-            paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: `${C.line}99`,
+            paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6),
           }}
         >
           <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, flexShrink: 1 }}>

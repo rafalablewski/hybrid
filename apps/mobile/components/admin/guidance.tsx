@@ -5,6 +5,7 @@ import { leading, tracking, fs, space, Mono, Kicker, F, PressScale as Pressable 
 import { useTheme, txt } from "../../lib/theme";
 import { FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
+import { withAlpha } from "../aurora/field";
 
 // Clipboard: this Expo project has no expo-clipboard dependency (verified — not
 // in apps/mobile/package.json and no existing Clipboard import). So Copy is a
@@ -62,7 +63,7 @@ function Block({ b }: { b: GuideBlock }) {
 
   if (b.t === "note") {
     return (
-      <View style={{ borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: `${palette.amber}12`, borderRadius: 8, padding: 12 }}>
+      <View style={{ borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: withAlpha(palette.amber, 0.07), borderRadius: 8, padding: 12 }}>
         <Kicker color={palette.amber}>Note</Kicker>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 21, color: palette.chalk, marginTop: 4 }}>{b.text}</Text>
       </View>
@@ -116,9 +117,9 @@ function Block({ b }: { b: GuideBlock }) {
               width: 22,
               height: 22,
               borderRadius: 6,
-              backgroundColor: `${palette.lime}1f`,
+              backgroundColor: withAlpha(palette.lime, 0.12),
               borderWidth: 1,
-              borderColor: `${palette.lime}55`,
+              borderColor: withAlpha(palette.lime, 0.333),
               alignItems: "center",
               justifyContent: "center",
               marginTop: 1,

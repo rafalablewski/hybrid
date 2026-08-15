@@ -743,7 +743,7 @@ function Comp({ C, label, value, onExplain, explainLabel }: {
 
 function Mod({ C, label, value, onPress, last }: { C: Palette; label: string; value: string; onPress: () => void; last?: boolean }) {
   return (
-    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: `${C.line}99` }}>
+    <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: withAlpha(C.line, 0.6) }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
       <CtaLabel label={`${value} →`} color={C.ash} fontSize={fs.caption} font={F.mono} style={{ marginLeft: "auto", flexShrink: 1 }} />
     </Pressable>

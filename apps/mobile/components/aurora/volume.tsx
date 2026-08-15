@@ -1033,7 +1033,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 16 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
-          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: RADIUS.mark, backgroundColor: i === sets.length - 1 ? C.blue : `${C.blue}66` }} />
+          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: RADIUS.mark, backgroundColor: i === sets.length - 1 ? C.blue : withAlpha(C.blue, 0.4) }} />
         ))}
       </View>
     </View>
