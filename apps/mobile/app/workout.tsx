@@ -1071,6 +1071,9 @@ export default function Workout() {
   // Must stay ABOVE the early return below — hooks can't run conditionally.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const lastByLift = useMemo(() => lastStrengthByLift(prior.current), [restored]);
+  // Same reason, and it was NOT above the return: finishing a session dropped
+  // this hook from the render and blew up the summary handoff.
+  const insets = useSafeAreaInsets();
 
   if (phase === "done" && summary) return <Summary summary={summary} prior={prior.current} router={router} t={t} units={prefs.units} haptics={prefs.haptics} />;
 
@@ -1088,7 +1091,6 @@ export default function Workout() {
   const cursorTotal = cursorEx?.kind === "strength" ? cursorEx.sets.length : 0;
   const canLog = !!cursorSet && setIsLoggable(cursorSet);
   const queued = queuedSetCount(exercises.map((x) => ({ sets: x.kind === "strength" ? x.sets : undefined })));
-  const insets = useSafeAreaInsets();
   // THE LOGGER IS A COVER, so it stands in the WINDOW's insets — a native
   // SafeAreaView inside a fullScreenModal never applies its top edge, which is
   // how the header came to sit on the status bar. See lib/layout coverInsets.

@@ -42,9 +42,15 @@ export default defineConfig({
             "lib/health-quantities.test.ts",
             "lib/ui.test.ts",
             "lib/design-tokens.test.ts",
+            // Reads the shipped .ttf name tables as DATA (plus ui.tsx and
+            // swiftui.tsx as text), so it stays inside the boundary.
+            "lib/native-face.test.ts",
             "lib/error-boundary-palette.test.ts",
             "lib/search-surfaces.test.ts",
             "lib/event-pooling.test.ts",
+            // Reads every .tsx on the phone as TEXT to count brace depth, so
+            // it covers the whole app from inside the pure boundary.
+            "lib/hook-order.test.ts",
             // Greps source text for the label-swap pattern that resizes a
             // commit button, so it reads files as DATA like the two below.
             "lib/commit-state.test.ts",
@@ -68,6 +74,8 @@ export default defineConfig({
             "expo-haptics": stub("native.tsx"),
             "expo-router": stub("native.tsx"),
             "expo-secure-store": stub("native.tsx"),
+            "expo-file-system": stub("native.tsx"),
+            "expo-sharing": stub("native.tsx"),
             // LAST: a prefix alias, so every entry above wins over it.
             "react-native": "react-native-web",
           },

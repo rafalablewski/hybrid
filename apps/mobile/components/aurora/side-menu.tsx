@@ -144,6 +144,34 @@ export default function AuroraSideMenu({
     Animated.timing(anim, { toValue: 1, duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start();
   }, [open, reduced, anim]);
 
+  // ── CROSS-APP SEARCH ───────────────────────────────────────────────────────
+  // One index over everything the app holds, ranked by the shared engine. Built
+  // once per catalog + persona, not per keystroke: normalizing a few hundred
+  // names is the expensive half, scoring them is microseconds — which is why
+  // there is no debounce here either.
+  //
+  // These two memos sit ABOVE the closed-drawer early return, and must stay
+  // there: below it the component rendered 16 hooks closed and 18 open, so the
+  // first tap on the avatar threw "Rendered more hooks than during the previous
+  // render" and took the screen down. `everOpen` — not `open` — is what keeps
+  // the index off a render for a drawer nobody has touched.
+  const searchIndex = useMemo(
+    () =>
+      !everOpen
+        ? []
+        : buildGlobalSearchIndex({
+            label: (key, fallback) => { const v = t(key); return v === key ? fallback : v; },
+            screens: navForPersonaWithLocks(persona, NAV_ITEMS, access)
+              .filter(({ item }) => isEnabled(`nav.${item.id}`))
+              .map(({ item, locked }) => ({ id: item.id, locked })),
+            exercises: catalog,
+            aliasMap,
+          }),
+    [everOpen, t, persona, access, isEnabled, catalog, aliasMap],
+  );
+  const q = query.trim();
+  const found = useMemo(() => (q ? groupGlobalResults(searchGlobal(searchIndex, q, { limit: 40 })) : []), [q, searchIndex]);
+
   if (!open) return null;
 
   const label = (id: string, fallback: string) => { const k = `nav.${id}`; const v = t(k); return v === k ? fallback : v; };
@@ -169,28 +197,6 @@ export default function AuroraSideMenu({
     }
     goId(row.target.screen);
   };
-
-  // ── CROSS-APP SEARCH ───────────────────────────────────────────────────────
-  // One index over everything the app holds, ranked by the shared engine. Built
-  // once per catalog + persona, not per keystroke: normalizing a few hundred
-  // names is the expensive half, scoring them is microseconds — which is why
-  // there is no debounce here either.
-  const searchIndex = useMemo(
-    () =>
-      !everOpen
-        ? []
-        : buildGlobalSearchIndex({
-            label: (key, fallback) => { const v = t(key); return v === key ? fallback : v; },
-            screens: navForPersonaWithLocks(persona, NAV_ITEMS, access)
-              .filter(({ item }) => isEnabled(`nav.${item.id}`))
-              .map(({ item, locked }) => ({ id: item.id, locked })),
-            exercises: catalog,
-            aliasMap,
-          }),
-    [everOpen, t, persona, access, isEnabled, catalog, aliasMap],
-  );
-  const q = query.trim();
-  const found = useMemo(() => (q ? groupGlobalResults(searchGlobal(searchIndex, q, { limit: 40 })) : []), [q, searchIndex]);
 
   /** Where a result goes. A result that only reached the right SCREEN would be
    *  a broken promise — the athlete named the thing, so land on the thing. */

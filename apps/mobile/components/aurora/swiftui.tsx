@@ -34,6 +34,7 @@ import {
   tint,
 } from "@expo/ui/swift-ui/modifiers";
 import { useTheme } from "../../lib/theme";
+import { nativeFace } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
 import { ALPHA } from "@hybrid/core";
 
@@ -49,6 +50,16 @@ import { ALPHA } from "@hybrid/core";
  * treatment. The parity gap is tracked in `capabilities.ts` (`swiftui-kit`).
  * Native rendering needs an EAS/dev build to verify; the JS here is exercised
  * by typecheck + the iOS export bundle.
+ *
+ * TYPE RULE: every `font({ family })` in this file passes the family through
+ * `nativeFace()`. Callers keep handing these components `F.bold` / `F.mono`
+ * like any RN `<Text>`; the translation to the name Core Text knows
+ * ("Archivo-Bold") happens HERE, once, because SwiftUI does not go through the
+ * `UIFont.fontNames(forFamilyName:)` swizzle that makes expo-font's aliases
+ * work — and an unresolvable name in `Font.custom` silently draws San
+ * Francisco. `lib/ui.tsx` carries the map and the full story;
+ * `lib/native-face.test.ts` fails the build if a new leaf here passes a family
+ * straight through.
  *
  * Composition rule: a SwiftUI subtree must live entirely inside a `<Host>`, so
  * we only use SwiftUI for self-contained leaves (segment, button) and for a
@@ -303,8 +314,13 @@ export function GlassSatellite({
           ]}
         >
           <SwiftImage systemName={glyph} size={glyphSize} color={fg} />
+          {/* `nativeFace` because SwiftUI resolves through Core Text, which does
+              not know expo-font's aliases (see lib/ui.tsx). No family → the
+              SYSTEM face at that size, STATED: `Font.custom("")` is an
+              unresolvable name, which lands on the system face anyway and loses
+              the fact that it was asked for. */}
           {word ? (
-            <SwiftText modifiers={[font({ family: fontFamily ?? "", size: fontSize }), foregroundColor(fg)]}>{word}</SwiftText>
+            <SwiftText modifiers={[fontFamily ? font({ family: nativeFace(fontFamily), size: fontSize }) : font({ size: fontSize }), foregroundColor(fg)]}>{word}</SwiftText>
           ) : null}
         </HStack>
       </Button>
@@ -350,7 +366,7 @@ export function GlassSelectMenu<T extends string>({
       <Menu
         label={
           <HStack spacing={6} modifiers={[contentShape(shapes.rectangle())]}>
-            <SwiftText modifiers={[font({ family: fontFamily, size: fontSize }), foregroundColor(labelColor)]}>{label}</SwiftText>
+            <SwiftText modifiers={[font({ family: nativeFace(fontFamily), size: fontSize }), foregroundColor(labelColor)]}>{label}</SwiftText>
             <SwiftImage systemName="chevron.down" size={Math.round(fontSize * 0.8)} color={labelColor} />
           </HStack>
         }
@@ -455,7 +471,7 @@ export function GlassToolbarGroup<T extends string>({
               >
                 <SwiftImage systemName={toggleGlyph} size={14} color={toggleColor} />
                 {toggleReadout ? (
-                  <SwiftText modifiers={[font({ family: fontFamily, size: 11 }), foregroundColor(toggleColor)]}>{toggleReadout}</SwiftText>
+                  <SwiftText modifiers={[font({ family: nativeFace(fontFamily), size: 11 }), foregroundColor(toggleColor)]}>{toggleReadout}</SwiftText>
                 ) : null}
               </HStack>
             </Button>
@@ -691,7 +707,7 @@ export function NativeStepper({
         max={max}
         onValueChange={onChange}
         modifiers={[
-          ...(fontFamily ? [font({ family: fontFamily, size: fontSize })] : []),
+          ...(fontFamily ? [font({ family: nativeFace(fontFamily), size: fontSize })] : []),
           ...(fg ? [foregroundColor(fg)] : []),
           ...(tintColor ? [tint(tintColor)] : []),
         ]}
