@@ -1620,6 +1620,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 {t("w.recovery.nutrition.pt.thatIs").replace("{v}", `${formatAmount(equiv.amount)} ${equiv.symbol}`)}
               </Text>
             ) : null}
+            {/* WHERE THIS SIZE CAME FROM. A pack the athlete never typed needs to
+                say so — otherwise a 400 g that the food database published is
+                indistinguishable from one they set themselves, and there is no
+                way to know whether it is worth correcting. */}
+            {portionUnitActive.kind === "portion" && portionUnitActive.source ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.6, textTransform: "uppercase", color: C.ash, opacity: 0.85, textAlign: "center", marginTop: 6 }}>
+                {t(`w.recovery.nutrition.pt.src${portionUnitActive.source === "catalog" ? "Catalog" : portionUnitActive.source === "scanned" ? "Scanned" : "Typed"}`)}
+              </Text>
+            ) : null}
             {/* WHAT YOU USUALLY LOG. Learned from this athlete's own diary, so
                 a food no database has ever heard of still gets one-tap amounts
                 after a few weighings. Bare chips, not cards: they set the

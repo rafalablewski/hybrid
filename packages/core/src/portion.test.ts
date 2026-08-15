@@ -71,8 +71,8 @@ describe("portionUnits — the units the editor offers", () => {
 
   it("adds a unit per named portion, called what the athlete calls it", () => {
     const units = portionUnits(KEFIR);
-    expect(units.map((u) => u.id)).toEqual(["servings", "measure", "portion:0"]);
-    const bottle = portionUnit(units, "portion:0")!;
+    expect(units.map((u) => u.id)).toEqual(["servings", "measure", "portion:bottle|400"]);
+    const bottle = portionUnit(units, "portion:bottle|400")!;
     expect(bottle.portionLabel).toBe("bottle");
     expect(bottle.source).toBe("catalog");
     // One bottle is four servings of 100 g.
@@ -110,7 +110,18 @@ describe("portionUnits — the units the editor offers", () => {
 
   it("still honours the single pack the first cut stored", () => {
     const units = portionUnits({ serving: "100 g", packSize: 400, packLabel: "bottle" });
-    expect(portionUnit(units, "portion:0")!.portionLabel).toBe("bottle");
+    expect(portionUnit(units, "portion:bottle|400")!.portionLabel).toBe("bottle");
+  });
+
+  it("keys a portion by WHAT IT IS, so adding one cannot re-point the selection", () => {
+    const before = portionUnits({ serving: "100 g", portions: [{ label: "block", size: 200, source: "typed" }] });
+    // A smaller portion arrives and sorts in FRONT of the block.
+    const after = portionUnits({ serving: "100 g", portions: [
+      { label: "block", size: 200, source: "typed" },
+      { label: "slice", size: 25, source: "typed" },
+    ] });
+    const selected = before.at(-1)!.id;
+    expect(portionUnit(after, selected)!.portionLabel).toBe("block");
   });
 });
 
@@ -211,7 +222,7 @@ describe("portionQty — what the diary is asked to store", () => {
   const units = portionUnits(KEFIR);
   const servings = portionUnit(units, "servings")!;
   const measure = portionUnit(units, "measure")!;
-  const pack = portionUnit(units, "portion:0")!;
+  const pack = portionUnit(units, "portion:bottle|400")!;
 
   it("logs the weight off the scale, not a rounded serving", () => {
     // 35 g of cheese against a 100 g label.
@@ -278,7 +289,7 @@ describe("portionEquivalent — the line under the stepper", () => {
   });
 
   it("says what a pack weighs", () => {
-    expect(portionEquivalent(1, portionUnit(units, "portion:0")!, units)).toEqual({ amount: 400, symbol: "g" });
+    expect(portionEquivalent(1, portionUnit(units, "portion:bottle|400")!, units)).toEqual({ amount: 400, symbol: "g" });
   });
 
   it("stays quiet when the number is already the measure", () => {
@@ -309,7 +320,7 @@ describe("what the diary remembers", () => {
   const units = portionUnits(KEFIR);
   const servings = portionUnit(units, "servings")!;
   const measure = portionUnit(units, "measure")!;
-  const pack = portionUnit(units, "portion:0")!;
+  const pack = portionUnit(units, "portion:bottle|400")!;
   const words = { pack: "pack" };
 
   it("writes the amount in the unit it was entered in", () => {
@@ -319,7 +330,7 @@ describe("what the diary remembers", () => {
   });
 
   it("stores a CANONICAL token for an unnamed pack, never a translated word", () => {
-    const unnamed = portionUnit(portionUnits({ serving: "100 g", portions: [{ label: "", size: 400, source: "catalog" }] }), "portion:0")!;
+    const unnamed = portionUnit(portionUnits({ serving: "100 g", portions: [{ label: "", size: 400, source: "catalog" }] }), "portion:|400")!;
     expect(loggedPortionOf(1, unnamed)).toEqual({ amount: 1, amountUnit: "pack" });
   });
 

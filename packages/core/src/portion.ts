@@ -270,9 +270,12 @@ export function portionUnits(food: PortionFood): PortionUnit[] {
     initial: measure.perServing,
   });
 
-  foodPortions(food, measure).forEach((p, i) => {
+  for (const p of foodPortions(food, measure)) {
     out.push({
-      id: `portion:${i}`,
+      // Keyed by WHAT IT IS, not by where it sits: the list re-sorts by size
+      // whenever a portion is added, so an index would silently point at a
+      // different portion than the one the athlete had selected.
+      id: portionUnitId(p),
       kind: "portion",
       servingsPer: round(p.size / measure.perServing, 6),
       symbol: null,
@@ -282,9 +285,13 @@ export function portionUnits(food: PortionFood): PortionUnit[] {
       min: 0.5,
       initial: 1,
     });
-  });
+  }
   return out;
 }
+
+/** A portion's stable unit id. Exported so a caller can select one it just
+ *  wrote without waiting for a re-render to tell it the index. */
+export const portionUnitId = (p: FoodPortion): string => `portion:${p.label}|${p.size}`;
 
 export const portionUnit = (units: PortionUnit[], id: string): PortionUnit | undefined =>
   units.find((u) => u.id === id);
