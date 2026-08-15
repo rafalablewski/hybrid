@@ -215,3 +215,41 @@ describe("the activity card's marks", () => {
     expect(text).toContain("−75%");
   });
 });
+
+/**
+ * THE FALL SITS IN A WASH — the two marks are deliberately unequal.
+ *
+ * Toned text alone gave the rise and the fall the same visual weight, and equal
+ * weight is the one thing the pair must not have: a week's slip is the half that
+ * asks for a decision, so it reads as a dark stain the figure sits in while the
+ * rise is a bright figure glowing off the card.
+ *
+ * The assertion is that the maroon lands on the WORST column and on nothing
+ * else — a wash that spreads is a wash that has stopped meaning anything.
+ */
+describe("the fall's maroon wash", () => {
+  const columnFor = (prefix: string) =>
+    screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith(prefix));
+
+  it("backs the worst column at rest, before anything is pressed", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(58, 31, 25)"); // colors.maroon
+  });
+
+  it("does not back the rise, nor the columns that did not move", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    // The rise glows instead of staining; the flat columns carry nothing at all.
+    for (const prefix of ["Hours", "Tonnage", "Sessions"]) {
+      const bg = columnFor(prefix)!.style.backgroundColor;
+      expect(bg === "" || bg === "rgba(0, 0, 0, 0)", `${prefix} is washed — got "${bg}"`).toBe(true);
+    }
+  });
+
+  it("LIFTS under a finger rather than going paler", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    fireEvent.click(columnFor("Distance")!);
+    // A tone-alpha selection wash would have lightened it toward the card,
+    // reading as the mark being lifted off by the press.
+    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(78, 42, 32)"); // colors.maroonLit
+  });
+});

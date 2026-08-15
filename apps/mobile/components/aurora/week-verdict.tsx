@@ -85,13 +85,24 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE }
  * — 4 km last week against 1 km this week is the thing to look at on a week
  * whose hours went up, and now it is the thing that is lit.
  *
+ * THE TWO MARKS ARE NOT SYMMETRIC, deliberately. The rise is a bright figure
+ * that glows off the card; the fall is a dark stain the figure sits in — the
+ * maroon wash (core `colors.maroon`), which is the palette's only wash and
+ * exists for this one column. Toned text alone gave the two ends the same
+ * visual weight, and equal weight is the one thing the pair must not have: a
+ * week's slip has to be the heavier mark even when its percentage is the
+ * smaller one, because it is the half of the week that asks for a decision.
+ *
  * THE MARK IS NOT THE SELECTION, and the two channels are kept apart. The mark
- * is about the PERIOD and does not move: tone on the label and the figure, plus
- * the end's own signed percentage under it (a second, non-hue channel, since the
- * pair reads as one grey to a red-green athlete). Selection is about the FINGER:
- * the 9% wash and the 2px rail, which travel to whichever column is open —
- * including the untoned ones, which wash chalk so a middle column still
- * registers the press.
+ * is about the PERIOD and does not move: tone on the label and the figure, the
+ * end's own signed percentage under it (a second, non-hue channel, since the
+ * pair reads as one grey to a red-green athlete), and the fall's wash.
+ * Selection is about the FINGER and travels: the 2px rail, plus a 9% wash on
+ * whichever column is open — including the untoned ones, which wash chalk so a
+ * middle column still registers the press. The fall's column has a wash
+ * already, so it LIFTS (`maroonLit`) rather than taking a tone-alpha that would
+ * have made it go paler under the finger — a press must never read as the mark
+ * being lifted off.
  *
  * THE BREAKDOWN IS A SHEET, and this is the third and last shape it has taken.
  * It began as a second bordered, rounded card drawn INSIDE this one, with a
@@ -446,6 +457,20 @@ export default function AuroraWeekVerdict({
               f.metric === v.best ? "up" : f.metric === v.worst ? "down" : null;
             const col = dir ? dirColor(dir) : null;
             const delta = dir ? figureDeltaPct(f) : null;
+            // THE FALL SITS IN A WASH; THE RISE DOES NOT. The two marks are not
+            // symmetric and should not be: a rise is a bright figure that glows
+            // off the card, a fall is a dark stain the figure sits in. Toned
+            // text alone gave them the same weight, which is the one thing the
+            // pair must not have — a week's slip has to be the heavier mark
+            // even when its percentage is the smaller one.
+            //
+            // It LIFTS rather than lightens when opened. The tone-alpha wash the
+            // other columns use would have made the fall's column go PALER under
+            // a finger, so the press read as the mark being lifted off.
+            const wash = f.metric === v.worst
+              ? (isOpen ? C.maroonLit : C.maroon)
+              : isOpen ? withAlpha(col ?? C.chalk, col ? 0.09 : 0.06)
+                : "transparent";
             return (
               <Pressable
                 key={f.metric}
@@ -471,8 +496,10 @@ export default function AuroraWeekVerdict({
                   // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
                   // here: at 9% it reads as the column being lit rather than as
                   // a second surface laid over the card. An untoned column still
-                  // has to register the press, so it washes chalk.
-                  backgroundColor: isOpen ? withAlpha(col ?? C.chalk, col ? 0.09 : 0.06) : "transparent",
+                  // has to register the press, so it washes chalk. The FALL is
+                  // the exception — see `wash` above, it carries its maroon at
+                  // rest.
+                  backgroundColor: wash,
                 }}
               >
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: col ?? C.ash }}>
