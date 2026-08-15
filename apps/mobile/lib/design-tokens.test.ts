@@ -23,6 +23,20 @@ import { COVER_SCREENS } from "@hybrid/core";
  *
  * A ratchet is deliberately unglamorous: it does not fix anything, it just makes
  * the debt visible and stops it growing while the sweeps land.
+ *
+ * ── AND A CEILING IS RE-TIGHTENED WHEN IT MOVES, IN THE SAME CHANGE ────────
+ * A ratchet whose ceiling sits above its actual count is not a ratchet — it is
+ * a budget for more of the thing. An audit in Aug 2026 found 178 sites of that
+ * slack across seven rules: fontSize was at 489 with 427 sites, hex literals at
+ * 136 with 82, borderRadius at 507 with 459, and the ASearch convergence had
+ * quietly finished (10 → 3) with nobody lowering the number. Every one of them
+ * would have swallowed dozens of new violations in silence, which is the exact
+ * failure this file exists to prevent.
+ *
+ * The slack accumulates honestly — a sweep aimed at one rule removes sites the
+ * others were counting — so the discipline is: after ANY sweep, re-measure every
+ * ceiling, not just the one you meant to move. All seven are pinned to actual as
+ * of that audit.
  */
 
 const ROOT = join(__dirname, "..");
@@ -108,7 +122,7 @@ describe("type scale", () => {
   it("RATCHET — raw fontSize integers give way to fs.* rungs", () => {
     // The ladder has 13 named rungs. Every raw integer here is a call site that
     // decided for itself; ~37% of them land off the ladder entirely.
-    expectAtMost(hits(/fontSize:\s*\d+/g), 489, "raw fontSize → use an fs.* rung");
+    expectAtMost(hits(/fontSize:\s*\d+/g), 427, "raw fontSize → use an fs.* rung");
   });
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
@@ -168,7 +182,7 @@ describe("leading and tracking", () => {
     // regex. Four more were left deliberately: their ratio is >0.09 from any
     // role, which means they are making a point (a 1.04 display, a 2.71 spacer)
     // rather than picking a leading.
-    expectAtMost(hits(/lineHeight:\s*\d/g), 77, "absolute lineHeight → leading(size, role)");
+    expectAtMost(hits(/lineHeight:\s*\d/g), 74, "absolute lineHeight → leading(size, role)");
   });
 
   it("RATCHET — raw letterSpacing gives way to tracking.*", () => {
@@ -230,7 +244,7 @@ describe("leading and tracking", () => {
 describe("geometry", () => {
   it("RATCHET — raw borderRadius gives way to RADIUS.*", () => {
     // 36 distinct radii against a 5-rung vocabulary (mark/inner/field/card/pill).
-    expectAtMost(hits(/borderRadius:\s*\d/g), 507, "raw borderRadius → RADIUS.*");
+    expectAtMost(hits(/borderRadius:\s*\d/g), 459, "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -331,7 +345,7 @@ describe("meters", () => {
     // hid `Pill` from the chip merge — a wrong name invites a wrong merge as
     // readily as it hides a right one.
     const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm);
-    expectAtMost(decls, 9, "labelled proportion → AMeter");
+    expectAtMost(decls, 8, "labelled proportion → AMeter");
   });
 });
 
@@ -349,7 +363,7 @@ describe("fields", () => {
     // means restructuring the parent, so they are counted here rather than
     // rushed.
     const searches = hits(/placeholder=\{?["']?[^"'}]*[Ss]earch/g);
-    expectAtMost(searches, 10, "search field → <ASearch>");
+    expectAtMost(searches, 3, "search field → <ASearch>");
   });
 });
 
@@ -374,7 +388,7 @@ describe("loading", () => {
     // state into a fixed-size glyph slot so the word beside it can hold still.
     // A raise here bought a layout fix in four places; a raise for a spinner
     // standing in for a list still fails.
-    expectAtMost(hits(/<ActivityIndicator/g), 22, "content ActivityIndicator → <Loading />");
+    expectAtMost(hits(/<ActivityIndicator/g), 19, "content ActivityIndicator → <Loading />");
   });
 });
 
@@ -388,7 +402,7 @@ describe("colour", () => {
     // themed-screen uses became palette tokens and the Wrapped takeover's
     // became the named, deliberately fixed-dark HERO_TAKEOVER_INK /
     // HERO_TAKEOVER_RAISED.
-    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 136, "hex literal → a palette token");
+    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 82, "hex literal → a palette token");
   });
 });
 
