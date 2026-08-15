@@ -977,7 +977,8 @@ export function ASegment<T extends string>({
   options: { id: T; label: string; meta?: string | number }[];
   value: T;
   onPick: (v: T) => void;
-  /** What the control is standing ON. See TRACK ON A CARD below. */
+  /** What the control is standing ON: the screen's own ground, or any RAISED
+   *  surface — a card, a sheet panel, a settings group. See TRACK ON A CARD. */
   surface?: "screen" | "card";
 }) {
   const { palette } = useTheme();
@@ -994,6 +995,14 @@ export function ASegment<T extends string>({
   // six containers of the same weight. It is a step DOWN: on a raised card the
   // track is a WELL cut into it, which is also how the system control reads on
   // a grouped background. Same lens, same border, inverted ground.
+  //
+  // "CARD" MEANS ANY RAISED SURFACE, and the sweep that added this found three
+  // call sites that had been drawing an invisible track since before the prop
+  // existed: Settings' language switcher and the logger's four preference
+  // groups (both inside an `ACard`), and the heat sheet's modality switch (a
+  // Sheet panel, which is also ink2). A GLASS card hides it less completely
+  // than a solid one, which is exactly why it survived — it looked fine on the
+  // reviewer's iOS 26 phone and flat on everything else.
   const trackFill = surface === "card" ? palette.ink : palette.ink2;
   return (
     <LiquidSeg
