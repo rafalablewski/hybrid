@@ -27,7 +27,6 @@ import {
   outlierPrescription,
   loadTier,
   dayMaxPct,
-  dayPulse,
   dayLeadWords,
   stepWords,
   rpeMeaning,
@@ -616,25 +615,6 @@ describe("planCoverView — the full-bleed cover (Explore card ↔ detail hero)"
     expect(cover.duration).toBe("1 WEEK");
     expect(cover.metaParts[2]).toBeNull();
   });
-
-  it("builds one waveform bar per week with the week-1 NL matching the hero", () => {
-    const cover = planCoverView(goal, sovietPlan, SOVIET_OWL_8WK);
-    expect(cover.weekBars.map((b) => b.week)).toEqual(SOVIET_OWL_8WK.weeks.map((w) => w.index));
-    expect(cover.weekBars[0]!.value).toBe(656); // = week-1 NL, the hero's third column
-    expect(Math.max(...cover.weekBars.map((b) => b.value))).toBeGreaterThan(0);
-  });
-
-  it("has no waveform for a single-week program or without a program", () => {
-    expect(planCoverView(goal, sovietPlan).weekBars).toEqual([]);
-    expect(planCoverView(goal, { ...sovietPlan, weeks: 1 }, BB_PPL_6DAY).weekBars).toEqual([]);
-  });
-
-  it("falls back to item counts for non-NL disciplines (running weeks still get bars)", () => {
-    const runGoal = { name: "Running", icon: "➜", color: "#3c787e" };
-    const cover = planCoverView(runGoal, { name: "5K Beginner", weeks: 9, sessions: 4, tag: "Pace-based", desc: "Run." }, RUN_5K_BEGINNER_9WK);
-    expect(cover.weekBars.length).toBe(RUN_5K_BEGINNER_9WK.weeks.length);
-    expect(cover.weekBars.every((b) => b.value > 0)).toBe(true);
-  });
 });
 
 describe("goalCoverView — the goal-level cover (category screen hero)", () => {
@@ -767,23 +747,12 @@ describe("loadTier — the monochrome ink ramp", () => {
   });
 });
 
-describe("dayMaxPct + dayPulse — the day's load shape", () => {
+describe("dayMaxPct — the day's heaviest load", () => {
   const day = planProgramView(SOVIET_OWL_8WK).days[0]!;
   it("finds the heaviest % of the day", () => {
     const max = dayMaxPct(day);
     expect(max).not.toBeNull();
     for (const s of day.sessions) for (const l of s.lifts) for (const st of l.steps ?? []) if (st.pct != null) expect(st.pct).toBeLessThanOrEqual(max!);
-  });
-  it("draws one normalised bar per prescription with the top load hot", () => {
-    const bars = dayPulse(day);
-    expect(bars.length).toBeGreaterThan(0);
-    expect(bars.length).toBeLessThanOrEqual(14);
-    expect(Math.max(...bars.map((b) => b.h))).toBe(1);
-    expect(bars.every((b) => b.h >= 0.15 && b.h <= 1)).toBe(true);
-    expect(bars.some((b) => b.hot)).toBe(true);
-  });
-  it("is empty for a rest day", () => {
-    expect(dayPulse({ title: "Rest", kindLabel: "Rest", nl: 0, volume: null, sessions: [] })).toEqual([]);
   });
 });
 
