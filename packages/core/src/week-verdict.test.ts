@@ -192,8 +192,8 @@ describe("activityVerdict — other periods", () => {
   it("speaks in period-neutral words outside a week", () => {
     const month = resolveActivityRange("m:2026-07", NOW);
     const v: ActivityVerdict = {
-      range: month, figures: [], metric: "tonnage", direction: "up",
-      deltaPct: 30, cold: false, baselinePeriods: 3, baselineOf: 3,
+      range: month, figures: [], metric: "tonnage", best: "tonnage", worst: null,
+      direction: "up", deltaPct: 30, cold: false, baselinePeriods: 3, baselineOf: 3,
     };
     expect(verdictLeadKey(v)).toBe("w.home.act.upLeadP");
     expect(verdictLeadKey({ ...v, direction: "down" })).toBe("w.home.act.downLeadP");
@@ -205,8 +205,8 @@ describe("activityVerdict — other periods", () => {
 
 describe("verdict i18n key helpers", () => {
   const base: ActivityVerdict = {
-    range: d7(), figures: [], metric: null, direction: "flat", deltaPct: 0,
-    cold: false, baselinePeriods: 4, baselineOf: 4,
+    range: d7(), figures: [], metric: null, best: null, worst: null,
+    direction: "flat", deltaPct: 0, cold: false, baselinePeriods: 4, baselineOf: 4,
   };
 
   it("maps every state to its own sentence and working-out", () => {
