@@ -26,14 +26,15 @@ import {
   type BlockKind,
   type StrengthSet,
   type WeightUnit,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useRoutineBuilder, type EditableBlock } from "../../lib/use-routine-builder";
 import { useBodyweight } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
@@ -48,6 +49,7 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import DragHandle from "../drag-handle";
 import { useDragReorder } from "../../lib/use-drag-reorder";
 import { setLoggerPref } from "../../lib/logger-prefs";
+import { withAlpha } from "./field";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 
@@ -148,7 +150,7 @@ export default function AuroraBuilder() {
 
       {/* Ghost/dashed add affordance (the one-accent rule: lime stays reserved
           for Save) — same vocabulary as the Also-Today ghost ＋ tile. */}
-      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.ms, marginTop: 4, borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 12 }}>
+      <Pressable onPress={() => setPicker(true)} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: space.ms, marginTop: 4, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.467), borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 12 }}>
         <AuroraIcon name="add" size={18} color={C.ash} />
         <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.ash }}>{t("w.train.builder.addExercise")}</Text>
       </Pressable>
@@ -183,8 +185,8 @@ export default function AuroraBuilder() {
       ) : (
         // Free user at the template limit — more saved routines is Full.
         // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
-        <View style={{ marginTop: 16, borderWidth: 1, borderColor: `${pa.fill}55`, backgroundColor: `${pa.fill}14`, borderRadius: RADIUS.card, padding: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
+        <View style={{ marginTop: 16, borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.line), backgroundColor: withAlpha(pa.fill, ALPHA.wash), borderRadius: RADIUS.card, padding: 16 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
           <Pressable
             onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
@@ -197,7 +199,7 @@ export default function AuroraBuilder() {
 
       {b.routines.length > 0 && (
         <ACard style={{ marginTop: 20 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.train.logger.yourRoutines")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.train.logger.yourRoutines")}</Text>
           {b.routines.map((r, i) => (
             <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: i ? 12 : 10, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Pressable style={{ flex: 1 }} onPress={() => b.loadRoutine(r)}>
@@ -245,9 +247,9 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
       <View style={{ flexDirection: "row", alignItems: "baseline" }}>
         <RollingNumber
           value={String(sig.minutes)}
-          style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: -2, lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}
+          style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: trackFigure(52), lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}
         />
-        <Text style={{ fontFamily: F.mono, fontSize: 20, color: C.ash, letterSpacing: 0 }}> min</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, letterSpacing: tracking.normal }}> min</Text>
       </View>
       <View style={{ marginTop: 6 }}>
         <MetaLine
@@ -271,7 +273,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
 function Metric({ label, value, c, C }: { label: string; value: string; c?: string; C: Palette }) {
   return (
     <View style={{ marginRight: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
     </View>
   );
@@ -304,7 +306,7 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
 
   const field = { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 10, paddingVertical: 8, textAlign: "center" as const };
   const label = (s: string) => (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", marginBottom: 4 }}>{s}</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label, textTransform: "uppercase", marginBottom: 4 }}>{s}</Text>
   );
   return (
     <ACard style={{ marginBottom: 12 }}>
@@ -464,17 +466,17 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 onPress={() => builder.cycleType(b.uid, i)}
                 accessibilityRole="button"
                 accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
-                style={{ width: 34, height: 38, borderRadius: 12, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? `${accent}1f` : "transparent", alignItems: "center", justifyContent: "center" }}
+                style={{ width: 34, height: 38, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? withAlpha(accent, ALPHA.fill) : "transparent", alignItems: "center", justifyContent: "center" }}
               >
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
               </Pressable>
               {showLoad && (
-                <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+                <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
               )}
-              <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
-              <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+              <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
+              <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
               {velocity && (
-                <TextInput value={s.vel ?? ""} onChangeText={(v) => builder.updateSet(b.uid, i, "vel", v)} keyboardType="numeric" placeholder="0.50" placeholderTextColor={`${C.ash}88`} style={[field, { flex: 1 }]} />
+                <TextInput value={s.vel ?? ""} onChangeText={(v) => builder.updateSet(b.uid, i, "vel", v)} keyboardType="numeric" placeholder="0.50" placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
               )}
               <View style={{ width: 22, alignItems: "center", justifyContent: "center" }}>
                 <DragHandle
@@ -494,7 +496,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
           to the primary Save action, not a repeated per-card control. The rarer
           set types tuck into "Special ▾" (parity with the live logger). */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 6 }}>
-        <Pressable onPress={() => { animateListChange(reducedMotion); builder.addSet(b.uid); }} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: `${C.ash}77`, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
+        <Pressable onPress={() => { animateListChange(reducedMotion); builder.addSet(b.uid); }} style={{ borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(C.ash, 0.467), borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8 }}>
           <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.ash }}>{t("w.train.blocks.addSet")}</Text>
         </Pressable>
         <Pressable onPress={() => setSpecial((v) => !v)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
@@ -502,7 +504,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
         </Pressable>
       </View>
       {special && (
-        <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: 16, backgroundColor: C.ink, overflow: "hidden" }}>
+        <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, backgroundColor: C.ink, overflow: "hidden" }}>
           {[
             { run: builder.addWarmupSet, c: C.amber, badge: "W", label: t("workout.warmupSetTitle"), desc: t("workout.warmupSetDesc") },
             { run: builder.addWarmupRamp, c: C.amber, badge: "↗", label: t("workout.warmupRampTitle"), desc: t("workout.warmupRampDesc") },
@@ -514,7 +516,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
               onPress={() => { it.run(b.uid); setSpecial(false); }}
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
             >
-              <View style={{ width: 30, height: 30, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: `${it.c}29` }}>
+              <View style={{ width: 30, height: 30, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(it.c, ALPHA.solid) }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, it.c) }}>{it.badge}</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -527,12 +529,12 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
       )}
       {/* planned rest between working sets — prescription, 15 s steps */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>
-        <Pressable onPress={() => builder.bumpRest(b.uid, -15)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label, textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>
+        <Pressable onPress={() => builder.bumpRest(b.uid, -15)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: C.ash, fontSize: fs.note }}>−</Text>
         </Pressable>
         <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk, minWidth: 48, textAlign: "center" }}>{b.restSec ?? DEFAULT_REST_SEC} s</Text>
-        <Pressable onPress={() => builder.bumpRest(b.uid, 15)} accessibilityRole="button" accessibilityLabel={t("common.increase")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Pressable onPress={() => builder.bumpRest(b.uid, 15)} accessibilityRole="button" accessibilityLabel={t("common.increase")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: txt(C, C.lime), fontSize: fs.note }}>+</Text>
         </Pressable>
       </View>
@@ -576,7 +578,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={distDraft ?? displaySportDistance(b.distance, b.name)}
               onChangeText={(v) => { setDistDraft(v); builder.setField(b.uid, "distance", parseSportDistance(v, b.name)); }}
-              keyboardType="numeric" placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} placeholderTextColor={`${C.ash}88`} style={field}
+              keyboardType="numeric" placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
             />
           </View>
         )}
@@ -585,7 +587,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           <TextInput
             value={minDraft ?? (b.minutes == null ? "" : String(b.minutes))}
             onChangeText={(v) => { setMinDraft(v); builder.setField(b.uid, "minutes", num(v)); }}
-            keyboardType="numeric" placeholder="45" placeholderTextColor={`${C.ash}88`} style={field}
+            keyboardType="numeric" placeholder="45" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
           />
         </View>
       </View>
@@ -597,7 +599,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={inclineDraft ?? (b.incline == null ? "" : String(b.incline))}
               onChangeText={(v) => { setInclineDraft(v); builder.setField(b.uid, "incline", num(v)); }}
-              keyboardType="numeric" placeholder="1.5" placeholderTextColor={`${C.ash}88`} style={field}
+              keyboardType="numeric" placeholder="1.5" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
             />
           </View>
         )}
@@ -607,7 +609,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={b.stroke ?? ""}
               onChangeText={(v) => builder.setField(b.uid, "stroke", v || undefined)}
-              placeholder="Free" placeholderTextColor={`${C.ash}88`} style={field}
+              placeholder="Free" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
             />
           </View>
         )}
@@ -617,7 +619,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={elevDraft ?? (b.elevation == null ? "" : String(b.elevation))}
               onChangeText={(v) => { setElevDraft(v); builder.setField(b.uid, "elevation", num(v)); }}
-              keyboardType="numeric" placeholder="120" placeholderTextColor={`${C.ash}88`} style={field}
+              keyboardType="numeric" placeholder="120" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
             />
           </View>
         )}
@@ -626,7 +628,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           <TextInput
             value={zoneDraft ?? (b.zone == null ? "" : String(b.zone))}
             onChangeText={(v) => { setZoneDraft(v); builder.setField(b.uid, "zone", num(v)); }}
-            keyboardType="numeric" placeholder="2" placeholderTextColor={`${C.ash}88`} style={field}
+            keyboardType="numeric" placeholder="2" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
           />
         </View>
       </View>
@@ -659,7 +661,7 @@ function ConditioningEditor({ b, C, builder, field, label }: {
           const n = parseFloat(v);
           builder.setField(b.uid, key, v.trim() === "" || !Number.isFinite(n) ? undefined : n);
         }}
-        keyboardType="numeric" placeholder={ph} placeholderTextColor={`${C.ash}88`} style={field}
+        keyboardType="numeric" placeholder={ph} placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
       />
     </View>
   );
@@ -668,7 +670,7 @@ function ConditioningEditor({ b, C, builder, field, label }: {
       <View style={{ flexDirection: "row", gap: space.ms }}>
         <View style={{ flex: 1 }}>
           {label(t("w.train.blocks.format"))}
-          <TextInput value={b.format ?? ""} onChangeText={(v) => builder.setField(b.uid, "format", v || undefined)} placeholder="AMRAP" placeholderTextColor={`${C.ash}88`} style={field} />
+          <TextInput value={b.format ?? ""} onChangeText={(v) => builder.setField(b.uid, "format", v || undefined)} placeholder="AMRAP" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field} />
         </View>
         {numField("rounds", t("w.train.blocks.roundsCol"), "8")}
       </View>

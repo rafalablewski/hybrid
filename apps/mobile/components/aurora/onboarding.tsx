@@ -8,7 +8,7 @@ import {
   springs,
   states,
   type OnboardingQuestion,
-} from "@hybrid/core";
+  ALPHA,} from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
 import { useLang } from "../../lib/i18n";
@@ -472,7 +472,7 @@ function Choice({ active, title, sub, onPress }: { active: boolean; title: strin
           flexDirection: "row", alignItems: "center", gap: space.md,
           borderWidth: 1,
           borderColor: tint(palette.line, palette.lime),
-          backgroundColor: tint(palette.ink2, withAlpha(palette.lime, 0.08)),
+          backgroundColor: tint(palette.ink2, withAlpha(palette.lime, ALPHA.wash)),
           borderRadius: RADIUS.field,
           padding: space.lg,
         }}

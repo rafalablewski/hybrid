@@ -4,6 +4,8 @@ import { fs, space, F, Mono, PressScale, PressScale as Pressable, HIT_TARGET } f
 import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "../aurora/cta-label";
 import { ACard, AStat, cardStack, RADIUS, AChip } from "../aurora/kit";
+import { withAlpha } from "../aurora/field";
+import { ALPHA } from "@hybrid/core";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
 // share one look (matching the web console's lib/ui primitives). Section bodies
@@ -33,7 +35,7 @@ export function ErrorNote({ error, onDismiss }: { error: string | null; onDismis
   const { palette } = useTheme();
   if (!error) return null;
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: `${palette.amber}14`, borderRadius: 8, padding: 10, marginBottom: 12 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: withAlpha(palette.amber, ALPHA.wash), borderRadius: 8, padding: 10, marginBottom: 12 }}>
       <Mono color={palette.amber} style={{ flex: 1 }}>{error}</Mono>
       {onDismiss ? (
         <Pressable onPress={onDismiss} hitSlop={8}><Mono color={palette.ash}>Dismiss</Mono></Pressable>

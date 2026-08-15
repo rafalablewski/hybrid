@@ -5,7 +5,8 @@ import { AuroraIcon } from "./icons";
 import { GlassSatellite, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED, type SFSymbol } from "./swiftui";
 import { withAlpha } from "./field";
 import { useTheme } from "../../lib/theme";
-import { F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { F, fs, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { RADIUS } from "./kit";
 
 /**
  * ASATELLITE — the ONE neutral glass button, and the TWIN of
@@ -106,7 +107,7 @@ export default function ASatellite({
         alignItems: "center",
         justifyContent: "center",
         gap: 7,
-        borderRadius: 999,
+        borderRadius: RADIUS.pill,
         overflow: "hidden",
         // Transparent under the real material, so the glass is the fill rather
         // than a wash printed on top of it.
@@ -138,7 +139,7 @@ export default function ASatellite({
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
         numberOfLines={1}
-        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, marginTop: SATELLITE.captionGap }}
+        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: SATELLITE.captionGap }}
       >
         {caption.toUpperCase()}
       </Text>

@@ -6,7 +6,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F } from "../../lib/ui";
+import { leading, tracking, fs, F } from "../../lib/ui";
 import ReadinessFace from "./readiness-face";
 import Sheet from "./sheet";
 
@@ -65,7 +65,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <ReadinessFace feeling={e.feeling} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.8, color: txt(C, C[READINESS_FACE[e.feeling].accent]) }}>
+              <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking.display, color: txt(C, C[READINESS_FACE[e.feeling].accent]) }}>
                 {t(`w.recovery.readiness.${e.feeling}`)}
               </Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
@@ -115,7 +115,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
           {e.clearance && e.clearanceKey ? (
             <Block C={C} head={t("w.home.read.pairHead")}>
               <P C={C}>{t("w.home.read.pair").replace("{n}", String(Math.round(e.clearance.gapH)))}</P>
-              <Text style={{ fontFamily: F.black, fontSize: 15, color: C.chalk }}>{t(e.clearanceKey)}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t(e.clearanceKey)}</Text>
             </Block>
           ) : null}
 
@@ -149,8 +149,8 @@ function Block({ C, head, meta, children }: {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
-        <Text style={{ flex: 1, fontFamily: F.black, fontSize: 15, color: C.chalk }}>{head}</Text>
-        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{meta}</Text> : null}
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{head}</Text>
+        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{meta}</Text> : null}
       </View>
       {children}
     </View>
@@ -178,13 +178,16 @@ function Row({ C, row, t }: { C: Palette; row: ReadingInput; t: (k: string) => s
 /** One line of the arithmetic. The result line takes the rule and the weight. */
 function Step({ C, step, t }: { C: Palette; step: ReadingStep; t: (k: string) => string }) {
   const color = step.total ? C.chalk : C.ash;
-  const weight = step.total ? ("700" as const) : ("400" as const);
+  // The FACE carries the weight — see freshness-sheet's twin of this Step, and
+  // lib/ui.tsx `F`: each mono face is its own family, so a `fontWeight` on top
+  // of one asks for a weight that family does not hold.
+  const face = step.total ? F.monoBold : F.mono;
   return (
     <>
       {step.total ? <View style={{ height: 1, backgroundColor: C.line }} /> : null}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: weight, color }}>{t(step.key)}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: weight, color }}>{printValue(step.value, step.unit)}</Text>
+        <Text style={{ flex: 1, fontFamily: face, fontSize: fs.caption, color }}>{t(step.key)}</Text>
+        <Text style={{ fontFamily: face, fontSize: fs.caption, color }}>{printValue(step.value, step.unit)}</Text>
       </View>
     </>
   );

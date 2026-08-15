@@ -4,7 +4,7 @@ import { sketchBrief, sketchCoverage } from "@hybrid/core";
 import { fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn } from "./_kit";
-import { ACard, cardStack } from "../aurora/kit";
+import { ACard, cardStack , RADIUS} from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { useConfirm } from "../aurora/confirm";
 
@@ -226,8 +226,8 @@ function SketchCoverage() {
         {cov.drawn} of {cov.total} lifts drawn{cov.pattern > 0 ? `, ${cov.pattern} on a pattern stand-in` : ""} – {cov.pct}% covered.
         Every undrawn lift shows the procedural stick-figure demo until its sketch lands.
       </Mono>
-      <View style={{ height: 6, borderRadius: 3, backgroundColor: palette.ink, overflow: "hidden", marginTop: 12 }}>
-        <View style={{ height: "100%", width: `${cov.pct}%`, backgroundColor: palette.lime, borderRadius: 3 }} />
+      <View style={{ height: 6, borderRadius: RADIUS.mark, backgroundColor: palette.ink, overflow: "hidden", marginTop: 12 }}>
+        <View style={{ height: "100%", width: `${cov.pct}%`, backgroundColor: palette.lime, borderRadius: RADIUS.mark }} />
       </View>
 
       {worst.length > 0 ? (

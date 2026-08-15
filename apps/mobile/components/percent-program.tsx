@@ -30,6 +30,7 @@ import {
   type InkTier,
   type LoadColor,
   type LiftKind,
+  ALPHA,
 } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import MeasuredOutcome from "./measured-outcome";
@@ -38,7 +39,7 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../lib/ui";
 import { ACard, cardStack, withAlpha, ASection, DockRail, DockChip } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill, COVER_GUTTER } from "./plan-hero";
@@ -151,7 +152,7 @@ export default function PercentProgram({
                     accessibilityLabel={inp.label}
                     value={val}
                     onChangeText={(v) => (inp.kind === "number" ? onMaxChange(inp.key, v) : setVals((m) => ({ ...m, [inp.key]: v })))}
-                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.note, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, 0.25), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
+                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.note, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, ALPHA.edge), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
                   />
                 </View>
               );
@@ -184,7 +185,7 @@ export default function PercentProgram({
           tokens (RADIUS.card, cardStack), and neither copy could ever mount
           the glass. See card-surface.test.ts. */}
       <ACard style={cardStack}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{view.progression}</Text>
       </ACard>
 
@@ -244,11 +245,21 @@ const rowH = (l: ProgramLiftView) => (l.note ? 56 : 44);
 
 // Ink tier → text style: the monochrome intensity ramp. `top` (the day's
 // heaviest %) is the single accent; everything else is chalk at falling weight.
-function tierStyle(tier: InkTier, C: Palette): { color: string; fontWeight: "400" | "500" | "700"; opacity: number } {
-  if (tier === "top") return { color: txt(C, C.lime), fontWeight: "700", opacity: 1 };
-  if (tier === "high") return { color: C.chalk, fontWeight: "700", opacity: 0.92 };
-  if (tier === "mid") return { color: C.chalk, fontWeight: "500", opacity: 0.72 };
-  return { color: C.chalk, fontWeight: "400", opacity: 0.55 };
+//
+// The FACE, not a `fontWeight`. The ramp asked for four weights — 700/700/500/
+// 400 — from a family that holds exactly one: `F.mono` IS JetBrainsMono
+// _400Regular, registered under its own name (lib/ui.tsx). So the two heavy
+// tiers were asking for a weight the family cannot serve, which iOS resolves
+// out of the family and Android fakes. There are two mono faces, and the ramp
+// already has a second, finer channel — OPACITY — which is what actually
+// separated `mid` from `low` all along. So: the two heavy tiers take the bold
+// FACE, the two light ones the regular, and opacity keeps doing the rest.
+type TierStyle = { color: string; fontFamily: string; opacity: number };
+function tierStyle(tier: InkTier, C: Palette): TierStyle {
+  if (tier === "top") return { color: txt(C, C.lime), fontFamily: F.monoBold, opacity: 1 };
+  if (tier === "high") return { color: C.chalk, fontFamily: F.monoBold, opacity: 0.92 };
+  if (tier === "mid") return { color: C.chalk, fontFamily: F.mono, opacity: 0.72 };
+  return { color: C.chalk, fontFamily: F.mono, opacity: 0.55 };
 }
 
 // Group label for the merged header line — "Main — 3", "Accessories — 5".
@@ -310,7 +321,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
 function WeekHeader({ title, right, C }: { title: string; right: string | null; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: -0.3, color: C.chalk, flexShrink: 1 }}>{title}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
   );
@@ -382,7 +393,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: -0.3, color: C.chalk }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk }} numberOfLines={1}>
             {day.title}
             {!!day.kindLabel && <Text style={{ color: C.ash }}> — {day.kindLabel}</Text>}
           </Text>
@@ -394,8 +405,8 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
         </View>
         {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
         {expandable && (
-          <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: open ? C.lime : withAlpha(C.chalk, 0.25), backgroundColor: open ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 13, lineHeight: 15, color: open ? C.ink : C.ash }}>{open ? "−" : "+"}</Text>
+          <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: open ? C.lime : withAlpha(C.chalk, ALPHA.edge), backgroundColor: open ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, lineHeight: leading(fs.body, "tight"), color: open ? C.ink : C.ash }}>{open ? "−" : "+"}</Text>
           </View>
         )}
       </Pressable>
@@ -416,7 +427,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
 function SessionRule({ marker, color, volume, top, C }: { marker: string; color: string; volume: string | null; top: boolean; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, color) }}>{marker}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, color) }}>{marker}</Text>
       {!!volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{volume}</Text>}
     </View>
   );
@@ -463,18 +474,21 @@ function SessionBlock({ s, si, count, day, C, onLift }: { s: ProgramSessionView;
 function GroupRule({ label, C }: { label: string; C: Palette }) {
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
     </View>
   );
 }
 
 // The reps cell content — quiet notation (idea 06): the reps token leads, the
 // set multiplier steps back to ash ("4+1 ×4"; a single set is just "4").
-function RepsText({ reps, sets, style, C }: { reps: string; sets: number; style: { color: string; fontWeight: "400" | "500" | "700"; opacity: number }; C: Palette }) {
+function RepsText({ reps, sets, style, C }: { reps: string; sets: number; style: TierStyle; C: Palette }) {
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontVariant: ["tabular-nums"], ...style }}>
+    // No base `fontFamily` here: `style` is a TierStyle and always carries the
+    // tier's own face, so declaring one would only be the thing the spread
+    // overwrites. The nested ×N run names F.mono for itself.
+    <Text style={{ fontSize: fs.caption, fontVariant: ["tabular-nums"], ...style }}>
       {reps}
-      {sets > 1 && <Text style={{ color: C.ash, fontWeight: "400" }}> ×{sets}</Text>}
+      {sets > 1 && <Text style={{ fontFamily: F.mono, color: C.ash }}> ×{sets}</Text>}
     </Text>
   );
 }
@@ -502,7 +516,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
         <View style={{ width: MX_NAME }}>
           <View style={{ height: HDR_H, justifyContent: "center", paddingLeft: 16, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
             {!!label && (
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
                 {label}
               </Text>
             )}
@@ -533,7 +547,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
             <View>
               <View style={{ flexDirection: "row", height: HDR_H, alignItems: "center", borderBottomWidth: 1, borderBottomColor: hair(C) }}>
                 {cols.map((c) => (
-                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: 10, textAlign: "center", color: C.ash }}>
+                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: fs.nano, textAlign: "center", color: C.ash }}>
                     {c.load}
                   </Text>
                 ))}
@@ -590,13 +604,13 @@ function AccessoryRows({ lifts, label, C, onPress }: { lifts: ProgramLiftView[];
     <View>
       {(label || hasRpe) && (
         <View style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
             {label ?? ""}
           </Text>
           {hasRpe && (
             <>
-              <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 0.9 }}>Sets×Reps</Text>
-              <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: 0.9 }}>RPE</Text>
+              <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: tracking.label }}>Sets×Reps</Text>
+              <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: tracking.label }}>RPE</Text>
             </>
           )}
         </View>
@@ -668,7 +682,7 @@ function FallbackRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: bo
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <NameCell lift={lift} C={C} />
-      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: leading(fs.caption) }}>{lift.prescription}</Text>
+      <Text style={{ flex: 1.1, fontFamily: lift.intensity ? F.monoBold : F.mono, fontSize: fs.caption, color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: leading(fs.caption) }}>{lift.prescription}</Text>
     </Pressable>
   );
 }
@@ -696,13 +710,13 @@ function ExerciseSheet({ sel, onClose, C }: { sel: SheetSel | null; onClose: () 
         {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption), marginBottom: 10 }}>{lift.note}</Text>}
         {steps.map((st, i) => (
           <View key={i} style={{ ...row, borderTopWidth: i > 0 ? 1 : 0 }}>
-            <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
+            <Text style={{ width: 48, fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
             <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{st.kg ?? ""}</Text>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>{stepWords(st)}</Text>
           </View>
         ))}
         {!!lift.oneRm && (
-          <View style={{ ...row, borderTopColor: withAlpha(C.chalk, 0.12) }}>
+          <View style={{ ...row, borderTopColor: withAlpha(C.chalk, ALPHA.fill) }}>
             <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>1RM</Text>
             <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.oneRm}</Text>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>from your maxes</Text>

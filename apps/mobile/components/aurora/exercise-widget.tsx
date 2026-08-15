@@ -13,7 +13,8 @@ import {
   type ExerciseWidgetCard,
   type LoggedSession,
   type WeightUnit,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import HistoryStrip from "./history-strip";
 import { useChartScrub } from "./chart-scrub";
 import RailTail from "./rail-tail";
@@ -24,7 +25,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { GUTTER, RADIUS, withAlpha } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 
@@ -105,7 +106,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
 }) {
   const h = headline(card, units, t);
   const stroke = kindStroke(C, card.kind);
-  const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: -1, color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk } as const;
   const open = () => {
     armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
     onOpen(card.name);
@@ -151,7 +152,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
         <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={[heroStyle, read?.best ? { color: txt(C, C.lime) } : null]}>
           {read ? read.value : h.v}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? read.unit : h.u}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? read.unit : h.u}</Text>
       </View>
       <View {...scrub.bind} style={{ marginTop: "auto" }}>
         <HistoryStrip bars={exerciseStripBars(card)} color={stroke} held={scrub.index} />
@@ -166,7 +167,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
           visual channel and the metric name the text one, so nothing
           here is colour-only. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? when : h.label}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? when : h.label}</Text>
         {!read && <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />}
       </View>
     </Pressable>
@@ -236,7 +237,7 @@ export default function ExerciseWidgetRail({
           one-exit rule. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
         </Text>
       </View>
@@ -272,9 +273,9 @@ export default function ExerciseWidgetRail({
           onPress={() => setAdding(true)}
           accessibilityRole="button"
           accessibilityLabel={`${t("w.home.exw.addCard")} – ${t("w.home.exw.title")}`}
-          style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
+          style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, ALPHA.rim), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
         >
-          <Text style={{ fontSize: 18, color: C.ash }}>＋</Text>
+          <Text style={{ fontSize: fs.title, color: C.ash }}>＋</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.addCard")}</Text>
         </Pressable>
         {/* THE SEE-ALL DOOR (#365's exit) — the shared RailTail, so this rail's

@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, ActivityIndicator } from "react-native";
-import { isValidTotpCode } from "@hybrid/core";
+import { isValidTotpCode , ALPHA} from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { APill, ACard, RADIUS } from "./kit";
 import { QrMatrix } from "../coach-invite";
+import { withAlpha } from "./field";
 
 type Factor = { id: string; friendly_name?: string | null; status: string };
 type Enroll = { factorId: string; secret: string; uri: string };
@@ -100,14 +101,14 @@ export default function MfaSettings() {
 
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
         Two-factor authentication
       </Text>
       <ACard style={{ borderLeftWidth: 3, borderLeftColor: accent }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Authenticator app (TOTP)</Text>
-          <View style={{ backgroundColor: `${verified.length ? C.lime : C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: 0.9 }}>
+          <View style={{ backgroundColor: withAlpha(verified.length ? C.lime : C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: tracking.label }}>
               {verified.length ? "on" : "off"}
             </Text>
           </View>
@@ -128,7 +129,7 @@ export default function MfaSettings() {
             {verified.map((f) => (
               <View key={f.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{f.friendly_name || "Authenticator"}</Text>
-                <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? 0.5 : 1 }}>
+                <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? 0.5 : 1 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>Remove</Text>
                 </Pressable>
               </View>
@@ -149,7 +150,7 @@ export default function MfaSettings() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 10 }}>
                   Scan this with your authenticator, then enter the 6-digit code to confirm.
                 </Text>
-                <View style={{ alignItems: "flex-start", backgroundColor: "#fff", borderRadius: 12, padding: 6, alignSelf: "flex-start" }}>
+                <View style={{ alignItems: "flex-start", backgroundColor: "#fff", borderRadius: RADIUS.inner, padding: 6, alignSelf: "flex-start" }}>
                   <QrMatrix url={enroll.uri} size={168} />
                 </View>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8, marginBottom: 12 }}>
@@ -170,7 +171,7 @@ export default function MfaSettings() {
                     <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>Confirm</Text>
                   </Pressable>
                 </View>
-                <Pressable onPress={() => { setEnroll(null); setCode(""); }} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, marginTop: 10, alignSelf: "flex-start" }}>
+                <Pressable onPress={() => { setEnroll(null); setCode(""); }} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 6, marginTop: 10, alignSelf: "flex-start" }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>Cancel</Text>
                 </Pressable>
               </View>

@@ -11,14 +11,14 @@ import {
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
-import { ACard, withAlpha } from "./kit";
+import { ACard, withAlpha , RADIUS} from "./kit";
 import PeriodRecords from "./period-records";
 import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 
 /**
  * THE ACTIVITY CARD — "This week" and everything the date filter turns it into,
@@ -183,10 +183,10 @@ export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title
       }}
     >
       <View style={{
-        width: 32, height: 32, borderRadius: 16,
+        width: 32, height: 32, borderRadius: RADIUS.field,
         borderWidth: 1, borderColor: premium ? pa.text : C.line, alignItems: "center", justifyContent: "center",
       }}>
-        <Text style={{ fontSize: 13, color: glyphColor }}>{glyph}</Text>
+        <Text style={{ fontSize: fs.body, color: glyphColor }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
@@ -444,17 +444,17 @@ export default function AuroraWeekVerdict({
                   // The first column pulls its inset back off the card's edge so
                   // the labels still line up with everything above them.
                   flex: 1, paddingHorizontal: 5, paddingTop: 4, paddingBottom: 6,
-                  marginLeft: i === 0 ? -5 : 0, marginTop: -4, borderRadius: 12,
+                  marginLeft: i === 0 ? -5 : 0, marginTop: -4, borderRadius: RADIUS.inner,
                   // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
                   // here: at 9% it reads as the column being lit rather than as
                   // a second surface laid over the card.
                   backgroundColor: isOpen && col ? withAlpha(col, dir === "flat" ? 0.06 : 0.09) : "transparent",
                 }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: col ?? C.ash }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: col ?? C.ash }}>
                   {t(verdictLabelKey(f.metric))}
                 </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: -0.5, marginTop: 3, color: col ?? C.chalk }}>
+                <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: tracking.display, marginTop: 3, color: col ?? C.chalk }}>
                   {fmt(f.metric, f.value)}
                 </Text>
                 {/* THE RAIL — selection in a second channel, so the state does
@@ -474,7 +474,7 @@ export default function AuroraWeekVerdict({
             see the file header. */}
 
         {!hinted && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
             {t("w.home.act.hint")}
           </Text>
         )}
@@ -515,7 +515,7 @@ export default function AuroraWeekVerdict({
                 Not the sentence's: a fallen Hours column reads terracotta
                 whatever the week's headline was about. */}
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 30, letterSpacing: -0.5, color: openTone }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 30, letterSpacing: tracking.display, color: openTone }}>
                 {fmt(detail.metric, detail.total)}
               </Text>
               {openWhy && (
@@ -620,7 +620,7 @@ function MetricDetail({
     return bits.join(" – ");
   };
 
-  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase" as const };
+  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const };
 
   return (
     <>
@@ -643,7 +643,7 @@ function MetricDetail({
           <View style={{ flexDirection: "row", gap: 2, height: 6, marginTop: 12 }}>
             {detail.groups.map((g, i) => (
               <View key={g.id} style={{
-                flexGrow: Math.max(g.share, 0.02), flexBasis: 0, borderRadius: 999,
+                flexGrow: Math.max(g.share, 0.02), flexBasis: 0, borderRadius: RADIUS.pill,
                 backgroundColor: i === 0 ? C.chalk : i === 1 ? C.ash : C.line,
                 opacity: group && group !== g.id ? 0.35 : 1,
               }} />
@@ -663,14 +663,14 @@ function MetricDetail({
                   style={{
                     flexDirection: "row", alignItems: "center", gap: 8,
                     paddingHorizontal: 8, paddingVertical: 6, marginHorizontal: -8,
-                    backgroundColor: active ? C.ink2 : "transparent", borderRadius: 12,
+                    backgroundColor: active ? C.ink2 : "transparent", borderRadius: RADIUS.inner,
                   }}
                 >
-                  <Text style={{ fontSize: 13, width: 18, textAlign: "center" }}>{g.icon}</Text>
+                  <Text style={{ fontSize: fs.body, width: 18, textAlign: "center" }}>{g.icon}</Text>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>
                     {groupName(g)}
                   </Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{Math.round(g.share * 100)}%</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{Math.round(g.share * 100)}%</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, minWidth: 62, textAlign: "right" }}>
                     {fmtValue(detail.metric, g.value, g)}
                   </Text>
@@ -700,15 +700,15 @@ function MetricDetail({
                   accessibilityRole="button"
                   style={{
                     flexDirection: "row", alignItems: "center", gap: 10,
-                    paddingHorizontal: 8, paddingVertical: 8, marginHorizontal: -8, borderRadius: 12,
+                    paddingHorizontal: 8, paddingVertical: 8, marginHorizontal: -8, borderRadius: RADIUS.inner,
                   }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, width: 44 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, width: 44 }}>
                     {dateFmt(new Date(it.startedAt).getTime(), { day: "numeric", month: "short" })}
                   </Text>
                   <View style={{ flex: 1 }}>
                     <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{it.name}</Text>
-                    {!!line && <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 1 }}>{line}</Text>}
+                    {!!line && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{line}</Text>}
                   </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
                     {fmtValue(detail.metric, it.value, unitOf(it.groupId))}
@@ -720,7 +720,7 @@ function MetricDetail({
 
           {shownCount > ROWS_SHOWN && (
             <Pressable onPress={onAll} accessibilityRole="button" style={{ paddingVertical: 4, marginTop: 6 }}>
-              <Text style={{ ...kicker, fontSize: 10, color: C.ash }}>
+              <Text style={{ ...kicker, fontSize: fs.nano, color: C.ash }}>
                 {all ? t("w.home.act.showFewer") : t("w.home.act.showAll").replace("{n}", String(shownCount))}
               </Text>
             </Pressable>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { APill } from "./aurora/kit";
+import { APill , RADIUS} from "./aurora/kit";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import {
   DEVICE_IMPORT_DAYS,
@@ -12,7 +12,8 @@ import {
   planDeviceImport,
   type DeviceImportItem,
   type LoggedSession,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { healthKitAvailability, queryRecentDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
 import { importDeviceWorkouts, type DeviceImportLanded } from "../lib/api";
 import { FeelPrompt } from "./feel-prompt";
@@ -21,9 +22,10 @@ import { useLang } from "../lib/i18n";
 import { haptic } from "../lib/haptics";
 import { DeviceMark } from "./aurora/device-mark";
 import { ToggleRow } from "./toggle-row";
-import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { Loading, leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
+import { withAlpha } from "./aurora/field";
 
 /** Under the unattended floor — shown, but not switched on for you. */
 const brief = (i: DeviceImportItem): boolean => i.workout.durationMin < DEVICE_IMPORT_MIN_MIN;
@@ -182,7 +184,7 @@ export function DeviceImportSheet({
             {/* A manufacturer's mark reproduces solid only — never the accent. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, paddingRight: 10 }}>
               <DeviceMark provider="apple" form="mark" height={14} on="dark" label="" />
-              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>
                 {t(phase === "rate" ? "device.import.ratedTitle" : "device.import.title")}
               </Text>
             </View>
@@ -199,7 +201,12 @@ export function DeviceImportSheet({
           {phase === "unavailable" && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
           )}
-          {(phase === "loading" || phase === "importing") && <ActivityIndicator color={C.lime} style={{ marginVertical: 34 }} />}
+          {/* The LIST arriving is content, so it hands over as a skeleton; the
+              import itself is an action in flight, which is what a spinner is
+              for. One condition drew both and so drew the wrong one half the
+              time. */}
+          {phase === "loading" && <Loading />}
+          {phase === "importing" && <ActivityIndicator color={C.lime} style={{ marginVertical: 34 }} />}
           {phase === "error" && (
             <Pressable onPress={() => void load()} style={{ marginVertical: 24 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("session.device.error")}</Text>
@@ -240,10 +247,10 @@ export function DeviceImportSheet({
                       gap: 12,
                       borderWidth: 1,
                       borderColor: off ? C.line : C.lime,
-                      borderRadius: 16,
+                      borderRadius: RADIUS.field,
                       padding: 16,
                       marginBottom: 10,
-                      backgroundColor: off ? C.ink2 : `${C.lime}12`,
+                      backgroundColor: off ? C.ink2 : withAlpha(C.lime, ALPHA.wash),
                       opacity: done ? 0.55 : 1,
                     }}
                   >
@@ -284,7 +291,7 @@ export function DeviceImportSheet({
                           justifyContent: "center",
                         }}
                       >
-                        {!off && <Text style={{ fontFamily: F.black, fontSize: 13, color: C.onAccent }}>✓</Text>}
+                        {!off && <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>}
                       </View>
                     )}
                   </Pressable>
@@ -327,7 +334,7 @@ export function DeviceImportSheet({
                       <Text
                         maxFontSizeMultiplier={FIXED_FONT_SCALE}
                         numberOfLines={1}
-                        style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}
+                        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}
                       >
                         {l.title}
                       </Text>
@@ -356,7 +363,7 @@ export function DeviceImportSheet({
               looking for their Garmin should find the answer here. */}
           {(phase === "list" || phase === "unavailable") && (
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
                 {t("device.import.sources")}
               </Text>
               {DEVICE_IMPORT_PROVIDERS.map((p) => (

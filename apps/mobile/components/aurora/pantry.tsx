@@ -3,14 +3,16 @@ import { View, Text, TextInput } from "react-native";
 import {
   FOOD_ROLES, pantryShelves, pantryStats, roleCounts,
   type FoodRole, type PantryFood,
+  ALPHA,
 } from "@hybrid/core";
-import { fs, F, leading, tracking, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, leading, tracking, PressScale as Pressable , trackFigure} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { AuroraIcon } from "./icons";
-import { ACard, DockRail, DockChip, GUTTER } from "./kit";
+import { ACard, DockRail, DockChip, GUTTER , RADIUS} from "./kit";
 import GroupMark from "./group-mark";
 import { FoodRow, IClose, IPlus, Glyph } from "./nutrition-kit";
+import { withAlpha } from "./field";
 
 /**
  * THE PANTRY (mobile) — the athlete's own saved foods, as a screen.
@@ -66,7 +68,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
        the whole box was the kit spelled out. Only the leading gap is passed. */
     <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: -1.2, lineHeight: fs.stat, color: C.chalk }}>{stats.count}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: fs.stat, color: C.chalk }}>{stats.count}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.pn.savedFoods")}</Text>
           {stats.lead ? (
@@ -80,7 +82,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
       {/* THE MIX — one bar, a segment per shelf, in the shelf's own colour. It
           is the pantry's actual shape, and it is the legend for the chips
           below: the same five colours, in the same order. */}
-      <View style={{ flexDirection: "row", gap: 2, height: 8, marginTop: 18, borderRadius: 999, overflow: "hidden" }}>
+      <View style={{ flexDirection: "row", gap: 2, height: 8, marginTop: 18, borderRadius: RADIUS.pill, overflow: "hidden" }}>
         {FOOD_ROLES.filter((r) => counts[r] > 0).map((r) => (
           <View key={r} style={{ flex: counts[r], backgroundColor: RC[r], opacity: roleOpacity(r) }} />
         ))}
@@ -113,7 +115,7 @@ export function PantrySearchToggle({ open, onToggle }: { open: boolean; onToggle
       accessibilityState={{ expanded: open }}
       accessibilityLabel={open ? t("w.recovery.nutrition.clear") : t("w.recovery.nutrition.pn.searchPh")}
       hitSlop={8}
-      style={{ width: 44, height: 44, borderRadius: 16, borderWidth: 1, borderColor: open ? C.lime : C.line, alignItems: "center", justifyContent: "center" }}
+      style={{ width: 44, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: open ? C.lime : C.line, alignItems: "center", justifyContent: "center" }}
     >
       {open ? <IClose size={18} color={C.chalk} /> : <AuroraIcon name="search" size={18} color={C.chalk} />}
     </Pressable>
@@ -179,7 +181,7 @@ export function PantryScreen<T extends PantryFood>({
           the athlete reached for is still the top-right one. */}
       {searchOpen ? (
         <View style={{ marginTop: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}>
             <AuroraIcon name="search" size={17} color={C.ash} />
             <TextInput
               ref={inputRef}
@@ -212,7 +214,7 @@ export function PantryScreen<T extends PantryFood>({
            to draw and no label completeness to report, so it says what the
            screen is for and offers the one action that matters. */
         <View style={{ marginTop: 28, alignItems: "center", paddingHorizontal: 8 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, textAlign: "center" }}>{t("w.recovery.nutrition.pn.emptyTitle")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, textAlign: "center" }}>{t("w.recovery.nutrition.pn.emptyTitle")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, lineHeight: leading(fs.note, "relaxed"), textAlign: "center", marginTop: 8, maxWidth: 360 }}>{t("w.recovery.nutrition.yourProductsSub")}</Text>
         </View>
       ) : (
@@ -273,16 +275,16 @@ export function PantryScreen<T extends PantryFood>({
       {q.length >= 2 ? dbSlot : null}
 
       {canCreate ? (
-        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 14 }}>
+        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14 }}>
           <IPlus size={15} color={txt(C, C.lime)} strokeWidth={2.2} />
-          <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
         </Pressable>
       ) : (
         /* The cap gates the ADD, never the library: every food already saved
            stays loggable, searchable and deletable at the cap. */
-        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: `${premium?.fill ?? C.lime}1f`, borderWidth: 1, borderColor: `${premium?.fill ?? C.lime}66`, borderRadius: 999, paddingVertical: 14 }}>
+        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: withAlpha(premium?.fill ?? C.lime, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(premium?.fill ?? C.lime, ALPHA.rim), borderRadius: RADIUS.pill, paddingVertical: 14 }}>
           <Text style={{ color: premium?.text ?? txt(C, C.lime) }}>✦</Text>
-          <Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: premium?.text ?? txt(C, C.lime) }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: premium?.text ?? txt(C, C.lime) }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
         </Pressable>
       )}
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, textAlign: "center", marginTop: 10 }}>
@@ -294,7 +296,7 @@ export function PantryScreen<T extends PantryFood>({
 
 /** The undo bar a held delete puts on screen. Chromeless and centred — it is a
  *  message with one control in it, not a card carrying a thing. */
-export function UndoBar({ label, onUndo }: { label: string; onUndo: () => void }) {
+export function UndoToast({ label, onUndo }: { label: string; onUndo: () => void }) {
   const { t } = useLang();
   const C = useTheme().palette;
   return (

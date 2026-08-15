@@ -9,7 +9,8 @@ import {
   type Muscle,
 } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F } from "../../lib/ui";
+import { fs, tracking, F } from "../../lib/ui";
+import { RADIUS } from "./kit";
 
 const poly = (pts: { x: number; y: number }[]) => pts.map((q) => `${q.x},${q.y}`).join(" ");
 
@@ -44,12 +45,12 @@ export default function AuroraBodyMap({ name, t }: { name: string; t: (k: string
 function Shell({ C, map, selectedGlow, t, children }: { C: Palette; map: ExerciseBodyMap; selectedGlow: MuscleGlow | null; t: (k: string) => string; children: React.ReactNode }) {
   const shown = selectedGlow || map.glow[0];
   return (
-    <View style={{ marginTop: 12, borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
+    <View style={{ marginTop: 12, borderRadius: RADIUS.card, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
       {children}
       {/* caption — the selected muscle, or the top mover by default */}
       <View style={{ alignItems: "center", marginTop: 6, minHeight: 20 }}>
         {shown ? (
-          <Text style={{ fontSize: 13, color: C.chalk }}>
+          <Text style={{ fontSize: fs.body, color: C.chalk }}>
             <Text style={{ fontFamily: F.bold }}>{shown.short}</Text>
             <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>{`   ${shown.pct}%`}</Text>
           </Text>
@@ -68,8 +69,8 @@ function Shell({ C, map, selectedGlow, t, children }: { C: Palette; map: Exercis
 function Swatch({ C, label, opacity }: { C: Palette; label: string; opacity: number }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-      <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: C.lime, opacity, borderWidth: 1, borderColor: C.line }} />
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: C.ash }}>{label}</Text>
+      <View style={{ width: 11, height: 11, borderRadius: RADIUS.mark, backgroundColor: C.lime, opacity, borderWidth: 1, borderColor: C.line }} />
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
     </View>
   );
 }
@@ -77,7 +78,7 @@ function Swatch({ C, label, opacity }: { C: Palette; label: string; opacity: num
 function SideCol({ label, C, children }: { label: string; C: Palette; children: React.ReactNode }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
       <View style={{ width: "100%", aspectRatio: 1 }}>{children}</View>
     </View>
   );

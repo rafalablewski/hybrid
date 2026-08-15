@@ -1,7 +1,8 @@
 import { Component, type ReactNode } from "react";
 import { View, Text, ScrollView, Share, Platform } from "react-native";
 import { router, type ErrorBoundaryProps } from "expo-router";
-import { PressScale as Pressable } from "../lib/ui";
+import { fs, PressScale as Pressable } from "../lib/ui";
+import { RADIUS } from "./aurora/kit";
 
 // The render boundaries. In a production RN build, an uncaught render exception
 // unmounts the React tree → a blank white screen the user can only escape by
@@ -40,8 +41,19 @@ import { PressScale as Pressable } from "../lib/ui";
 
 const INK = "#0c0d0c";
 const INK2 = "#141614";
-const LINE = "#2a2d2a";
-const CHALK = "#eae3d4";
+// `line` and `chalk`, copied — and they had both gone STALE, which is what an
+// exemption with no guard does. LINE was #2a2d2a, the exact value tokens.ts
+// names as the one that "made every chart hairline draw in a different grey
+// than every border"; CHALK was #eae3d4, the GROUND colour of "Clay & Sage on
+// Oat" — a light theme superseded by Kyoto Hour and then deleted whole in Aug
+// 2026 — used here as TEXT. The one screen a user sees when everything else has
+// broken was drawn in two colours the app had retired.
+//
+// They stay literal (this file must not import the theme; see the header), and
+// error-boundary-palette.test.ts now fails if either drifts from the palette
+// again. Hardcoding is the point; hardcoding the WRONG value was the bug.
+const LINE = "#242724";
+const CHALK = "#f3f4ef";
 const ASH = "#8b8f86";
 const LIME = "#c6f84f";
 const MONO = Platform.OS === "ios" ? "Menlo" : "monospace";
@@ -67,21 +79,21 @@ function detailOf(error: Error, componentStack?: string | null): string {
 function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: () => void; onLeave?: () => void }) {
   return (
     <View style={{ flex: 1, backgroundColor: INK, alignItems: "center", justifyContent: "center", padding: 28 }}>
-      <Text style={{ color: CHALK, fontSize: 20, fontWeight: "800", textAlign: "center" }}>Something went wrong</Text>
-      <Text style={{ color: ASH, fontSize: 14, textAlign: "center", marginTop: 10, lineHeight: 20 }}>
+      <Text style={{ color: CHALK, fontSize: fs.heading, fontWeight: "800", textAlign: "center" }}>Something went wrong</Text>
+      <Text style={{ color: ASH, fontSize: fs.bodyLg, textAlign: "center", marginTop: 10, lineHeight: 20 }}>
         This screen hit an unexpected error. Your saved data is safe.
       </Text>
 
       {/* WHAT broke, on the device, in the tester's hands. Bounded and
           scrollable so a long stack can't push the actions off the screen. */}
       <ScrollView
-        style={{ alignSelf: "stretch", maxHeight: 190, marginTop: 18, borderWidth: 1, borderColor: LINE, borderRadius: 16, backgroundColor: INK2 }}
+        style={{ alignSelf: "stretch", maxHeight: 190, marginTop: 18, borderWidth: 1, borderColor: LINE, borderRadius: RADIUS.field, backgroundColor: INK2 }}
         // Stated on both axes: this is the DETAIL CARD's own inset, not the
         // screen gutter — and a bare `padding` here would silently claim to be
         // the latter (see apps/web/__tests__/screen-gutter.test.ts).
         contentContainerStyle={{ paddingVertical: 14, paddingHorizontal: 14 }}
       >
-        <Text selectable style={{ color: ASH, fontFamily: MONO, fontSize: 11, lineHeight: 17 }}>
+        <Text selectable style={{ color: ASH, fontFamily: MONO, fontSize: fs.micro, lineHeight: 17 }}>
           {detail}
         </Text>
       </ScrollView>
@@ -91,18 +103,18 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
           onPress={onRetry}
           accessibilityRole="button"
           accessibilityLabel="Try again"
-          style={{ backgroundColor: LIME, borderRadius: 999, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
+          style={{ backgroundColor: LIME, borderRadius: RADIUS.pill, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
         >
-          <Text style={{ color: INK, fontWeight: "800", fontSize: 15 }}>Try again</Text>
+          <Text style={{ color: INK, fontWeight: "800", fontSize: fs.note }}>Try again</Text>
         </Pressable>
         {!!onLeave && (
           <Pressable
             onPress={onLeave}
             accessibilityRole="button"
             accessibilityLabel="Back to Today"
-            style={{ borderWidth: 1, borderColor: LINE, borderRadius: 999, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
+            style={{ borderWidth: 1, borderColor: LINE, borderRadius: RADIUS.pill, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
           >
-            <Text style={{ color: CHALK, fontWeight: "700", fontSize: 15 }}>Back to Today</Text>
+            <Text style={{ color: CHALK, fontWeight: "700", fontSize: fs.note }}>Back to Today</Text>
           </Pressable>
         )}
       </View>
@@ -113,7 +125,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
         accessibilityLabel="Send the error details"
         style={{ marginTop: 14, minHeight: 44, justifyContent: "center", paddingHorizontal: 12 }}
       >
-        <Text style={{ color: ASH, fontFamily: MONO, fontSize: 12 }}>Send the details →</Text>
+        <Text style={{ color: ASH, fontFamily: MONO, fontSize: fs.caption }}>Send the details →</Text>
       </Pressable>
     </View>
   );

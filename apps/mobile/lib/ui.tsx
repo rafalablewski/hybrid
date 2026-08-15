@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, springs, springDurationMs, springToRN, durations, skeleton } from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, trackFigure, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -28,10 +28,12 @@ import { useNavScrollProps } from "./nav-scroll";
 // audit: every lineHeight in the app was an absolute dp (29 of them) and every
 // letterSpacing a fresh guess (18 of them). Use leading(fs.body) rather than a
 // number — an absolute line box is also why Dynamic Type could not work.
-export { fs, space, lh, leading, tracking };
+export { fs, space, lh, leading, tracking, trackFigure };
 import { useTemplate } from "./template";
 import { auroraScrollClearance } from "./layout";
 import { useReducedMotion } from "./use-reduced-motion";
+import { RADIUS } from "../components/aurora/kit";
+import { withAlpha } from "../components/aurora/field";
 
 // ── Dynamic Type caps ────────────────────────────────────────────────────────
 // RN already scales every <Text> with the OS "Larger Text" / Dynamic Type
@@ -622,10 +624,10 @@ export function Chip({
   return (
     <View
       style={{
-        backgroundColor: `${fill}1f`,
-        borderRadius: 999,
+        backgroundColor: withAlpha(fill, ALPHA.fill),
+        borderRadius: RADIUS.pill,
         borderWidth: tone === "outline" ? 1 : 0,
-        borderColor: `${fill}66`,
+        borderColor: withAlpha(fill, ALPHA.rim),
         paddingHorizontal: 11,
         paddingVertical: 3,
         alignSelf: "flex-start",

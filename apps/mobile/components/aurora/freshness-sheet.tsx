@@ -3,11 +3,12 @@ import { View, Text } from "react-native";
 import {
   FRESHNESS_COPY, FATIGUE_NORM_FLOOR,
   type FreshnessExplain, type FreshnessRow, type FreshnessStep,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, fs, F } from "../../lib/ui";
-import { withAlpha } from "./kit";
+import { leading, tracking, trackFigure, fs, F } from "../../lib/ui";
+import { withAlpha , RADIUS} from "./kit";
 import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -27,7 +28,7 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 /** A row's bar, painted from the ROW's own role — never re-derived here. */
 const rowPaint = (C: Palette, r: FreshnessRow) => {
   const paint = txt(C, roleColor(C, r.role));
-  return r.dim ? withAlpha(paint, 0.34) : paint;
+  return r.dim ? withAlpha(paint, ALPHA.line) : paint;
 };
 
 export default function FreshnessSheet({ explain, onClose }: {
@@ -54,7 +55,7 @@ export default function FreshnessSheet({ explain, onClose }: {
               rule as the headline above it, and the one sentence that says what
               it does to that headline. */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: txt(C, roleColor(C, e.role)) }}>{e.score}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: trackFigure(44), color: txt(C, roleColor(C, e.role)) }}>{e.score}</Text>
             <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>
               {t("w.home.fresh.rollup").replace("{n}", String(e.weightPct))}
             </Text>
@@ -119,8 +120,8 @@ function Block({ C, head, meta, children }: {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
-        <Text style={{ flex: 1, fontFamily: F.black, fontSize: 15, color: C.chalk }}>{head}</Text>
-        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{meta}</Text> : null}
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{head}</Text>
+        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{meta}</Text> : null}
       </View>
       {children}
     </View>
@@ -137,7 +138,7 @@ function Row({ C, row, label }: { C: Palette; row: FreshnessRow; label: string }
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
       <Text numberOfLines={1} style={{ flex: 1, fontFamily: row.top ? F.semi : F.reg, fontSize: fs.caption, color: row.top ? C.chalk : C.ash }}>{label}</Text>
-      <View style={{ width: 84, height: 6, borderRadius: 3, backgroundColor: C.ink, overflow: "hidden" }}>
+      <View style={{ width: 84, height: 6, borderRadius: RADIUS.mark, backgroundColor: C.ink, overflow: "hidden" }}>
         <View style={{ width: `${row.sharePct}%`, height: "100%", backgroundColor: rowPaint(C, row) }} />
       </View>
       <Text style={{ width: 34, textAlign: "right", fontFamily: F.mono, fontSize: fs.caption, color: row.top ? C.chalk : C.ash }}>{row.value}</Text>
@@ -149,13 +150,17 @@ function Row({ C, row, label }: { C: Palette; row: FreshnessRow; label: string }
 function Step({ C, step, t }: { C: Palette; step: FreshnessStep; t: (k: string) => string }) {
   const label = step.arg === null ? t(step.key) : t(step.key).replace("{n}", String(step.arg));
   const color = step.total ? C.chalk : C.ash;
-  const weight = step.total ? ("700" as const) : ("400" as const);
+  // The FACE carries the weight, not `fontWeight`: only two mono faces are
+  // loaded (400 and 700), each under its own family name, so a weight asked
+  // for on top of a face the family cannot serve is synthesized — or dropped
+  // for the system font. See lib/ui.tsx `F`.
+  const face = step.total ? F.monoBold : F.mono;
   return (
     <>
       {step.total ? <View style={{ height: 1, backgroundColor: C.line }} /> : null}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: weight, color }}>{label}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: weight, color }}>{step.value}</Text>
+        <Text style={{ flex: 1, fontFamily: face, fontSize: fs.caption, color }}>{label}</Text>
+        <Text style={{ fontFamily: face, fontSize: fs.caption, color }}>{step.value}</Text>
       </View>
     </>
   );

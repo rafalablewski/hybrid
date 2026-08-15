@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, type TypeRole, type SpaceToken } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, type TypeRole, type SpaceToken } from "./scale";
+import { ALPHA } from "./theme/tokens";
 
 /**
  * THE SCALE'S OWN GUARD.
@@ -103,10 +104,65 @@ describe("tracking", () => {
     expect(tracking.caps).toBeGreaterThan(tracking.label);
   });
 
+  it("trackFigure tightens proportionally, where the absolute rung cannot", () => {
+    // The whole point: -0.5 is -0.017em at 30dp and -0.007em at 68dp, so one
+    // absolute value cannot serve a 2.3x span. This one scales with the figure.
+    // Equal em across the span, to within the 0.1dp rounding — which at 30dp
+    // is worth ~0.002em, so `2` is the honest precision here, not `3`.
+    expect(trackFigure(30) / 30).toBeCloseTo(trackFigure(68) / 68, 2);
+    // And every figure in the band is tighter than the absolute rung would be.
+    for (const size of [30, 40, 46, 56, 68]) {
+      expect(trackFigure(size), `${size}dp`).toBeLessThan(tracking.display);
+    }
+  });
+
+  it("lands on what the biggest figures were already drawn at", () => {
+    // fs.stat carried -1.6 by hand at three sites before this existed; the
+    // constant was derived from that cluster, so it has to return it.
+    expect(trackFigure(fs.stat)).toBe(-1.6);
+    // Rounded to 0.1dp — RN takes fractional letterSpacing, and at this size
+    // the tenth is visible.
+    expect(trackFigure(46)).toBe(Math.round(46 * TRACK_FIGURE_EM * 10) / 10);
+  });
+
   it("codifies the two eyebrow trackings already in use", () => {
     // 0.9 (216 sites) and 1.2 (137 sites) at the time of the audit. Changing
     // either is a deliberate restyle of every kicker in the app, not a tweak.
     expect(tracking.label).toBe(0.9);
     expect(tracking.caps).toBe(1.2);
+  });
+});
+
+describe("ALPHA — the tint scale", () => {
+  it("rises, and splits into a surface family and a border family", () => {
+    expect(ALPHA.wash).toBeLessThan(ALPHA.fill);
+    expect(ALPHA.fill).toBeLessThan(ALPHA.solid);
+    expect(ALPHA.solid).toBeLessThan(ALPHA.edge);
+    expect(ALPHA.edge).toBeLessThan(ALPHA.line);
+    expect(ALPHA.line).toBeLessThan(ALPHA.rim);
+  });
+
+  it("keeps the SURFACE rungs close and lets the BORDER rungs breathe", () => {
+    // The two families tolerate different precision. A surface is a large area
+    // where a 4% shift is subtle but visible; a border is ONE PIXEL wide, where
+    // it is not. So the surface steps must stay tighter than the border steps —
+    // that asymmetry IS the scale, and flattening it would break the migration's
+    // guarantee that nothing moved by more than 0.04.
+    const surface = ALPHA.solid - ALPHA.wash;
+    const border = ALPHA.rim - ALPHA.edge;
+    expect(surface).toBeLessThan(border);
+    expect(ALPHA.fill - ALPHA.wash).toBeLessThanOrEqual(0.05);
+    expect(ALPHA.solid - ALPHA.fill).toBeLessThanOrEqual(0.05);
+  });
+
+  it("stops where the axis stops being a scale", () => {
+    // Nothing above ~0.45 has a rung, deliberately: the measured histogram runs
+    // CONTINUOUS from 0 to 1 because gradient ramps need arbitrary intermediate
+    // stops and scrims are tuned against the content behind them. A token set
+    // covering 71% of its axis honestly beats one covering 100% by pretending.
+    for (const v of Object.values(ALPHA)) {
+      expect(v).toBeGreaterThan(0);
+      expect(v).toBeLessThanOrEqual(0.45);
+    }
   });
 });

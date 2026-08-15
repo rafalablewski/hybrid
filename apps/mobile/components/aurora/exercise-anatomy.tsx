@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
+import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation , ALPHA} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import AuroraExerciseMedia from "./exercise-media";
 import AuroraBodyMap from "./body-map";
 import Sheet from "./sheet";
+import { RADIUS } from "./kit";
+import { withAlpha } from "./field";
 
 /* ── muscle-activation bars ── */
 
@@ -24,14 +26,14 @@ function MuscleBar({ C, m, t }: { C: Palette; m: MuscleActivation; t: (k: string
           {m.label}
         </Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: primary ? txt(C, C.lime) : C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: primary ? txt(C, C.lime) : C.ash }}>
             {t(`w.analyze.exp.anatomy.level.${m.level}`)}
           </Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{m.pct}%</Text>
         </View>
       </View>
-      <View style={{ height: 4, borderRadius: 3, backgroundColor: C.line, overflow: "hidden", marginTop: 5 }}>
-        <View style={{ height: "100%", borderRadius: 3, width: `${m.pct}%`, backgroundColor: barColor, opacity: primary ? 1 : 0.6 }} />
+      <View style={{ height: 4, borderRadius: RADIUS.mark, backgroundColor: C.line, overflow: "hidden", marginTop: 5 }}>
+        <View style={{ height: "100%", borderRadius: RADIUS.mark, width: `${m.pct}%`, backgroundColor: barColor, opacity: primary ? 1 : 0.6 }} />
       </View>
     </View>
   );
@@ -41,7 +43,7 @@ function Group({ C, label, rows, t }: { C: Palette; label: string; rows: MuscleA
   if (rows.length === 0) return null;
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       {rows.map((m) => <MuscleBar key={m.muscle} C={C} m={m} t={t} />)}
     </View>
   );
@@ -60,7 +62,7 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
 
       {/* muscles worked */}
       <View style={{ marginTop: 20 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.exp.anatomy.muscles")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.exp.anatomy.muscles")}</Text>
         {/* the front/back body-map — the visual, then the ranked bars below */}
         <AuroraBodyMap name={name} t={t} />
         <Group C={C} label={t("w.analyze.exp.anatomy.primary")} rows={a.primary} t={t} />
@@ -69,17 +71,17 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
 
       {/* stabilizers */}
       <View style={{ marginTop: 20 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.exp.anatomy.stabilizers")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.exp.anatomy.stabilizers")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
           {a.stabilizers.map((sName) => (
-            <Text key={sName} style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>{sName}</Text>
+            <Text key={sName} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash, paddingVertical: 5, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>{sName}</Text>
           ))}
         </View>
       </View>
 
       {/* how it's done */}
       <View style={{ marginTop: 24 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.exp.anatomy.howto")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.exp.anatomy.howto")}</Text>
         <View style={{ marginTop: 12, gap: 10 }}>
           {a.cues.map((cue, i) => (
             <View key={cue} style={{ flexDirection: "row", gap: 10, alignItems: "flex-start" }}>
@@ -125,19 +127,19 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
         accessibilityRole="button"
         style={{
           marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8,
-          borderWidth: 1, borderColor: `${C.lime}66`, backgroundColor: `${C.lime}14`,
-          borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16,
+          borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), backgroundColor: withAlpha(C.lime, ALPHA.wash),
+          borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16,
         }}
       >
         <Svg viewBox="0 0 16 16" width={13} height={13}><Path d="M5 3.5v9l7-4.5-7-4.5Z" fill={txt(C, C.lime)} /></Svg>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.9, color: txt(C, C.lime) }}>{t("w.analyze.exp.anatomy.title")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, color: txt(C, C.lime) }}>{t("w.analyze.exp.anatomy.title")}</Text>
       </Pressable>
 
       <Sheet visible={open} onClose={() => setOpen(false)} scroll={false}>
             <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, flexShrink: 1 }}>
-                <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>{t("w.analyze.exp.anatomy.title")}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{meta}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: C.chalk }}>{t("w.analyze.exp.anatomy.title")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{meta}</Text>
               </View>
               <Pressable onPress={() => setOpen(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel={t("w.analyze.exp.anatomy.close")}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>✕</Text>

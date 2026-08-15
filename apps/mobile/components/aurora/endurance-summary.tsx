@@ -7,8 +7,9 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, cardShadow, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, cardShadow, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useActivityRange, useRangeLabels } from "./range-filter";
+import { RADIUS } from "./kit";
 
 /**
  * THE ENDURANCE LEAD — the section's opener, as a SENTENCE. The TWIN of
@@ -97,7 +98,7 @@ export default function AuroraEnduranceSummary({
     d === "down" ? txt(C, C.red) : d === "up" ? txt(C, C.lime) : C.ash;
   const tone = dirColor(enduranceDirection(w, "minutes"));
 
-  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase" as const };
+  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const };
 
   /* AN EMPTY PERIOD KEEPS ITS PLACE AND DROPS ITS CHROME.
    *
@@ -126,7 +127,7 @@ export default function AuroraEnduranceSummary({
   return (
     <View style={{ marginTop: 20 }}>
       <View style={{
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16,
+        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
         padding: 14, ...cardShadow(),
       }}>
         {/* The window, said once. There is no filter here, so this line is what

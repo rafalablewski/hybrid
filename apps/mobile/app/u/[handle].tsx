@@ -36,7 +36,7 @@ import type {
   UserPageTabId,
 } from "@hybrid/core";
 import { F, Loading, LoadSwap, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, ASection, ASegment, cardStack } from "../../components/aurora/kit";
+import { AuroraScreen, ACard, ASection, ASegment, cardStack , RADIUS} from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -192,7 +192,7 @@ export default function UserScreen() {
           {/* The earned level, as one word — gated server-side by the same
               privacy rule as the stats, and never carrying the ratio behind it. */}
           {data.fitnessLevel ? (
-            <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: levelInk(C, data.fitnessLevel.accent), borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3, marginTop: 6 }}>
+            <View style={{ alignSelf: "flex-start", borderWidth: 1, borderColor: levelInk(C, data.fitnessLevel.accent), borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3, marginTop: 6 }}>
               <Text style={{ ...label, fontFamily: F.monoBold, color: levelInk(C, data.fitnessLevel.accent) }}>{t(LEVEL_KEY[data.fitnessLevel.level])}</Text>
             </View>
           ) : null}
@@ -537,7 +537,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
         {coach.specialties.length > 0 || coach.sports.length > 0 ? (
           <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
             {[...coach.specialties, ...coach.sports].map((s) => (
-              <View key={s} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
+              <View key={s} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS.pill, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}>
                 <Text style={{ color: C.chalk, fontSize: fs.caption }}>{s}</Text>
               </View>
             ))}
@@ -638,7 +638,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
             multiline
             placeholder={t("w.coaches.reviewPlaceholder")}
             placeholderTextColor={C.ash}
-            style={{ minHeight: 56, padding: 10, borderRadius: 12, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: fs.caption }}
+            style={{ minHeight: 56, padding: 10, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: fs.caption }}
           />
           <View style={{ marginTop: 8, alignSelf: "flex-start" }}>
             <SButton label={t("w.coaches.submitReview")} small onPress={async () => {

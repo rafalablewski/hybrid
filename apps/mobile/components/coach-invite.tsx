@@ -5,12 +5,13 @@ import { fs, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { getCoachInvites, createCoachInvite, revokeCoachInvite, type CoachInviteRow } from "../lib/api";
 import { ACard, cardStack, APill } from "./aurora/kit";
+import { colors } from "@hybrid/core";
 
 /** Render a QR code as a grid of Views from the qrcode module matrix — no native
  *  dependency (keeps the iOS export green), so a client can scan it to onboard.
  *  Exported so the MFA (TOTP) enrolment reuses the exact same renderer for the
  *  otpauth QR — no new QR/svg dependency. */
-export function QrMatrix({ url, size = 200, dark = "#0c0d0c", light = "#ffffff" }: { url: string; size?: number; dark?: string; light?: string }) {
+export function QrMatrix({ url, size = 200, dark = colors.ink, light = "#ffffff" }: { url: string; size?: number; dark?: string; light?: string }) {
   let n = 0;
   let data: Uint8Array | null = null;
   try {

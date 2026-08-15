@@ -5,7 +5,7 @@ import { ago, searchSports, sportIndex, sportIndexMeta, type LoggedSession, type
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable , tracking} from "../../lib/ui";
 import { AuroraScreen, RADIUS, AMarkTile } from "./kit";
 import { useListMotion } from "../../lib/list-motion";
 
@@ -66,7 +66,7 @@ export default function AuroraSport() {
         </Text>
       </View>
       {e.hasTransfer && showTransfer && (
-        <Text style={{ ...mono(fs.nano, txt(C, C.lime)), textTransform: "uppercase", letterSpacing: 1 }}>{t("w.train.sportPage.transfer")}</Text>
+        <Text style={{ ...mono(fs.nano, txt(C, C.lime)), textTransform: "uppercase", letterSpacing: tracking.label }}>{t("w.train.sportPage.transfer")}</Text>
       )}
       <Text style={mono(fs.body)}>→</Text>
     </Pressable>
@@ -77,7 +77,7 @@ export default function AuroraSport() {
       <View style={{ marginTop: space.xxl }}>
         <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md, marginBottom: space.xs }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
-          {!!meta && <Text style={{ ...mono(fs.micro), textTransform: "uppercase", letterSpacing: 1.2 }}>{meta}</Text>}
+          {!!meta && <Text style={{ ...mono(fs.micro), textTransform: "uppercase", letterSpacing: tracking.caps }}>{meta}</Text>}
         </View>
         {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} showTransfer={showTransfer} />)}
       </View>

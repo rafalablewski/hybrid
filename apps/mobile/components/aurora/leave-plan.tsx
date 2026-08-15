@@ -4,8 +4,10 @@ import { leavePlan } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { ACard, RADIUS } from "./kit";
+import { withAlpha } from "./field";
+import { ALPHA } from "@hybrid/core";
 
 /** The active enrolled season, as the leave flow needs it (from fetchMacrocycle). */
 export type EnrolledSeason = { macroId: string; planId: string | null; goal: string; startedAt: string | null };
@@ -47,7 +49,7 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
   const option = (selected: boolean, tone: string, title: string, sub: string, pick: () => void) => (
     <Pressable
       accessibilityRole="radio" accessibilityState={{ selected }} onPress={pick}
-      style={{ flexDirection: "row", gap: 10, alignItems: "flex-start", padding: 12, borderRadius: RADIUS.field, backgroundColor: selected ? `${tone}1a` : C.ink, borderWidth: 1, borderColor: selected ? tone : C.line, marginTop: 8 }}
+      style={{ flexDirection: "row", gap: 10, alignItems: "flex-start", padding: 12, borderRadius: RADIUS.field, backgroundColor: selected ? withAlpha(tone, ALPHA.fill) : C.ink, borderWidth: 1, borderColor: selected ? tone : C.line, marginTop: 8 }}
     >
       <Text style={{ fontFamily: F.bold, color: txt(C, tone), width: 16 }}>{selected ? "✓" : ""}</Text>
       <View style={{ flex: 1 }}>
@@ -66,7 +68,7 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
 
   return (
     <ACard style={{ marginTop: 20 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.train.plans.leavePlan")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.red) }}>{t("w.train.plans.leavePlan")}</Text>
       <View style={{ marginTop: 10 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{t("w.train.plans.leaveExplain")}</Text>
           {option(!wipe, C.lime, t("w.train.plans.leaveKeep"), t("w.train.plans.leaveKeepSub"), () => setWipe(false))}
@@ -82,7 +84,7 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
             </View>
           )}
           {error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{t("w.train.plans.leaveError")}</Text>}
-          <Pressable onPress={leave} disabled={!armed || busy} accessibilityRole="button" style={{ backgroundColor: armed && !busy ? C.red : `${C.red}55`, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 16 }}>
+          <Pressable onPress={leave} disabled={!armed || busy} accessibilityRole="button" style={{ backgroundColor: armed && !busy ? C.red : withAlpha(C.red, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 16 }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}</Text>}
           </Pressable>
           <Pressable onPress={() => { setOpen(false); setWipe(false); setConfirmText(""); setError(false); }} accessibilityRole="button" style={{ alignItems: "center", paddingVertical: 12 }}>

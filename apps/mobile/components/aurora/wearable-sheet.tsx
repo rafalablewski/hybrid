@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import type { WearableExplain, WearableRow } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, fs, F } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, F } from "../../lib/ui";
 import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -54,7 +54,7 @@ export default function WearableSheet({ explain, onClose }: {
         <View style={{ gap: 22 }}>
           {/* THE FIGURE — the same signed number the card prints. */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: -1, color: txt(C, roleColor(C, totalRole)) }}>
+            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: trackFigure(44), color: txt(C, roleColor(C, totalRole)) }}>
               {signed(e.total)}
             </Text>
             <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>
@@ -98,7 +98,7 @@ export default function WearableSheet({ explain, onClose }: {
 function Block({ C, head, children }: { C: Palette; head: string; children: ReactNode }) {
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: 15, color: C.chalk, marginBottom: 10 }}>{head}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, marginBottom: 10 }}>{head}</Text>
       {children}
     </View>
   );
@@ -108,8 +108,8 @@ function LedgerLine({ C, label, value, total }: { C: Palette; label: string; val
   const color = total ? C.chalk : C.ash;
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-      <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: total ? "700" : "400", color }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: total ? "700" : "400", color }}>{value}</Text>
+      <Text style={{ flex: 1, fontFamily: total ? F.monoBold : F.mono, fontSize: fs.caption, color }}>{label}</Text>
+      <Text style={{ fontFamily: total ? F.monoBold : F.mono, fontSize: fs.caption, color }}>{value}</Text>
     </View>
   );
 }
@@ -139,12 +139,12 @@ function Row({ C, row, t, age }: {
             : t("w.home.wearable.notMeasured")}
         </Text>
         {provenance ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.8, color: C.ash, marginTop: 2 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 2 }}>
             {provenance}
           </Text>
         ) : null}
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, roleColor(C, row.role)) }}>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, roleColor(C, row.role)) }}>
         {row.measured ? signed(row.points) : "—"}
       </Text>
     </View>

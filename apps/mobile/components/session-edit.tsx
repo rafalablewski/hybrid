@@ -12,12 +12,12 @@ import {
 import { patchSessionEdit } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
-import { leading, F, fs, space, PressScale as Pressable } from "../lib/ui";
+import { leading, tracking, F, fs, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 
 const labelStyle = (C: Palette) =>
-  ({ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
+  ({ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
 const fieldStyle = (C: Palette) =>
   ({
     fontFamily: F.mono,

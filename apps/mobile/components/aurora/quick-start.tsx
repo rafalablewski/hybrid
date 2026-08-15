@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { routineSummary, type SessionBlock } from "@hybrid/core";
+import { routineSummary, type SessionBlock , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { withAlpha, ASection } from "./kit";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { withAlpha, ASection , RADIUS} from "./kit";
 import Sheet from "./sheet";
 import { CtaLabel } from "./cta-label";
 
@@ -107,9 +107,9 @@ export default function QuickStartSheet({
         <Pressable
           onPress={() => { onClose(); onBuildNew(); }}
           accessibilityRole="button"
-          style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 16, paddingVertical: 12, alignItems: "center" }}
+          style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center" }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
         </Pressable>
       </View>
     </Sheet>
@@ -141,7 +141,7 @@ function decor(id: string, C: P): { glyph: string; accent: string } {
 function Star({ C, on, label, onPress }: { C: P; on: boolean; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={8} style={{ padding: 2 }}>
-      <Text style={{ fontSize: 14, color: on ? C.amber : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+      <Text style={{ fontSize: fs.bodyLg, color: on ? C.amber : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
     </Pressable>
   );
 }
@@ -149,16 +149,16 @@ function Star({ C, on, label, onPress }: { C: P; on: boolean; label: string; onP
 function FavouriteCard({ C, width, r, t, onLaunch, onToggleFav }: { C: P; width: number; r: QuickRoutine; t: (k: string) => string; onLaunch: () => void; onToggleFav: () => void }) {
   const { glyph, accent } = decor(r.id, C);
   return (
-    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, overflow: "hidden" }}>
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, 0.05) }]} />
+    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, overflow: "hidden" }}>
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, ALPHA.wash) }]} />
       <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.18), withAlpha(accent, 0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <View style={{ position: "absolute", top: 10, right: 10 }}>
         <Star C={C} on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onPress={onToggleFav} />
       </View>
-      <Text style={{ fontSize: 16, lineHeight: 18, color: txt(C, accent) }}>{glyph}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 15, letterSpacing: -0.3, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
-      <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
+      <Text style={{ fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "tight"), color: txt(C, accent) }}>{glyph}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: tracking.display, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
+      <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
     </Pressable>
   );
 }
@@ -167,15 +167,15 @@ function RoutineRow({ C, first, r, t, onLaunch, onToggleFav }: { C: P; first: bo
   const { glyph, accent } = decor(r.id, C);
   return (
     <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 2, borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderTopColor: C.line }}>
-      <View style={{ width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(accent, 0.13), borderWidth: 1, borderColor: withAlpha(accent, 0.26) }}>
-        <Text style={{ fontSize: 15, color: txt(C, accent) }}>{glyph}</Text>
+      <View style={{ width: 36, height: 36, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(accent, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(accent, ALPHA.edge) }}>
+        <Text style={{ fontSize: fs.note, color: txt(C, accent) }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>{metaLine(r.blocks, t)}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{metaLine(r.blocks, t)}</Text>
       </View>
       <Star C={C} on={!!r.favourite} label={r.favourite ? t("w.home.quickStart.removeFav") : t("w.home.quickStart.addFav")} onPress={onToggleFav} />
-      <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>›</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>›</Text>
     </Pressable>
   );
 }

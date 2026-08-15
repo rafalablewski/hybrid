@@ -24,7 +24,7 @@ import {
   type WeightUnit,
 } from "@hybrid/core";
 import { colors } from "@hybrid/core";
-import { F, fs, leading, tracking, PressScale as Pressable } from "../lib/ui";
+import { F, fs, leading, tracking, PressScale as Pressable , trackFigure} from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { runShare, toggleSavedPost, useFeedSaved } from "../lib/feed-actions";
@@ -156,9 +156,9 @@ function FooterLine({ stats, tier, units }: { stats: FeedStat[]; tier?: FeedDeta
         return (
           <View key={s.key} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             {p.device ? <WatchGlyph color={C.ash} /> : null}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", color: C.chalk }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: C.chalk }}>
               {p.value}
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "400", letterSpacing: tracking.caps, color: C.ash }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>
                 {` ${(p.unit ?? t(p.unitKey!)).toUpperCase()}`}
               </Text>
             </Text>
@@ -184,7 +184,7 @@ function Qualifier({ of }: { of: { deltaPct?: number; firstEver?: boolean } }) {
   const q = cardQualifier(of);
   if (!q) return null;
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", letterSpacing: q.kind === "first" ? tracking.caps : undefined, color: q.kind === "delta" ? txt(C, colors.lime) : C.ash }}>
+    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: q.kind === "first" ? tracking.caps : undefined, color: q.kind === "delta" ? txt(C, colors.lime) : C.ash }}>
       {q.kind === "delta" ? q.text : t(q.labelKey).toUpperCase()}
     </Text>
   );
@@ -244,7 +244,7 @@ function TopSets({ sets, units }: { sets: NonNullable<FeedDetail["sets"]>; units
             style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingVertical: 5, borderBottomWidth: i === sets.length - 1 ? 0 : 1, borderBottomColor: C.line }}
           >
             <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{l.name}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "600", color: C.chalk }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: C.chalk }}>
               {l.sets} × {l.reps}
               {load ? <Text style={{ color: C.ash }}>{` — ${load.value} ${load.unit}`}</Text> : null}
             </Text>
@@ -280,7 +280,7 @@ function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
       ) : null}
       {fig ? (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: tracking.display, color: C.chalk }}>{fig.value}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{fig.value}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: C.ash }}>{fig.unit}</Text>
           {/* THE ONE QUALIFIER, at the far edge of the figure's own line. The
               tier chip used to hold this slot and has gone to the footer:

@@ -5,14 +5,16 @@ import {
   fmtMetricValue, fmtMetricDelta, unitToKg, isDecimalInput,
   latestHeightCm, fmtHeight, displayHeight, storeHeightCm, heightUnitFor,
   type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { sapi } from "../../lib/social-api";
 import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard } from "./kit";
+import { APill, ACard , RADIUS} from "./kit";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { DoorRow } from "./week-verdict";
+import { withAlpha } from "./field";
 
 /**
  * BODY & PROGRESS (mobile) — the athlete's own measurements: standing height,
@@ -84,7 +86,7 @@ export default function BodyProgress({
   const report = has ? weeklyReport(metrics!, Date.now()) : null;
   const heightCm = metrics ? latestHeightCm(metrics) : null;
 
-  const head = { fontFamily: F.black, fontSize: 18, color: C.chalk } as const;
+  const head = { fontFamily: F.black, fontSize: fs.title, color: C.chalk } as const;
 
   return (
     <>
@@ -96,7 +98,7 @@ export default function BodyProgress({
           measurement grid. */}
       <ACard solid style={{ marginTop: 16 }}>
         <Text style={head}>{t("w.account.profile.priv-body-t")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 3, marginBottom: 12 }}>{t("w.account.profile.priv-body-s")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3, marginBottom: 12 }}>{t("w.account.profile.priv-body-s")}</Text>
         <HeightRow C={C} units={units} heightCm={heightCm} onSaved={settle} />
         <LogForm C={C} units={units} form={form} setField={setField} onSave={save} busy={busy} />
         {/* With nothing logged yet there is no trends card below, so the way
@@ -108,7 +110,7 @@ export default function BodyProgress({
         <ACard solid style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
             <Text style={head}>{t("w.account.profile.priv-trends")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {trends.map((tr) => <MetricTile key={tr.def.key} C={C} tr={tr} units={units} />)}
@@ -134,24 +136,24 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
   const dstr = d != null ? fmtMetricDelta(BODY_METRIC_DEFS[0], d, units) : null;
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 16 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking.display, lineHeight: leading(fs.headline, "tight"), color: C.chalk, marginTop: 8, marginBottom: 16 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
       {wv && (
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 40, fontWeight: "600", letterSpacing: -1, color: C.chalk }}>{wv.value}<Text style={{ fontSize: 15, color: C.ash }}> {wv.unit}</Text></Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: trackFigure(40), color: C.chalk }}>{wv.value}<Text style={{ fontSize: fs.note, color: C.ash }}> {wv.unit}</Text></Text>
           {dstr && dir !== "flat" && (
-            <Text style={{ fontFamily: F.mono, fontSize: 13, fontWeight: "600", overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.inner, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: withAlpha(dir === "down" ? C.red : C.lime, ALPHA.solid) }}>{dirArrow(dir)} {dstr} {units}</Text>
           )}
         </View>
       )}
       <View style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-cadence")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-cadence")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 5 }}>
           {Array.from({ length: report.cadenceOf }).map((_, i) => (
-            <View key={i} style={{ flex: 1, height: 7, borderRadius: 4, backgroundColor: i < report.cadence ? C.lime : `${C.ash}38` }} />
+            <View key={i} style={{ flex: 1, height: 7, borderRadius: 4, backgroundColor: i < report.cadence ? C.lime : withAlpha(C.ash, ALPHA.edge) }} />
           ))}
         </View>
       </View>
@@ -165,12 +167,12 @@ function MetricTile({ C, tr, units }: { C: Palette; tr: MetricTrend; units: "kg"
   const dstr = tr.delta != null ? fmtMetricDelta(tr.def, tr.delta, units) : null;
   // Two columns with a 9px gutter inside a 16px-padded card.
   return (
-    <View style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 6 }}>
+    <View style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 6 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t(tr.def.labelKey)}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "600", color: dirColorM(C, tr.direction) }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t(tr.def.labelKey)}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: dirColorM(C, tr.direction) }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</Text>
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: 22, fontWeight: "600", letterSpacing: -0.5, color: C.chalk }}>{value}<Text style={{ fontSize: 11, color: C.ash }}> {unit}</Text></Text>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.headline, letterSpacing: tracking.display, color: C.chalk }}>{value}<Text style={{ fontSize: fs.micro, color: C.ash }}> {unit}</Text></Text>
       <Bars C={C} heights={sparkHeights(tr.series)} />
     </View>
   );
@@ -184,7 +186,7 @@ function Bars({ C, heights }: { C: Palette; heights: number[] }) {
     <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: H, marginTop: 2 }}>
       {heights.map((h, i) => {
         const last = i === heights.length - 1;
-        return <View key={i} style={{ flex: 1, height: Math.max(3, h * H), borderRadius: 2, backgroundColor: last ? C.lime : `${C.lime}44` }} />;
+        return <View key={i} style={{ flex: 1, height: Math.max(3, h * H), borderRadius: 2, backgroundColor: last ? C.lime : withAlpha(C.lime, ALPHA.edge) }} />;
       })}
     </View>
   );
@@ -251,9 +253,9 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
   };
 
   return (
-    <View style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, marginBottom: 10 }}>
+    <View style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, marginBottom: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
-        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-height-t")}</Text>
+        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-height-t")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: heightCm != null ? lime : C.ash }}>
           {heightCm != null ? fmtHeight(heightCm, units) : t("w.account.profile.priv-height-none")}
         </Text>
@@ -266,7 +268,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
           placeholder="0"
           placeholderTextColor={C.ash}
           accessibilityLabel={`${t("w.account.profile.priv-height-t")} (${unit})`}
-          style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -1, color: C.chalk, paddingVertical: 2 }}
+          style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: tracking.display, color: C.chalk, paddingVertical: 2 }}
         />
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{unit}</Text>
         {/* The save appears only when there is a CHANGE to save — a stored
@@ -277,7 +279,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
             disabled={busy || parsed == null}
             accessibilityRole="button"
             accessibilityLabel={t("common.save")}
-            style={{ borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? 0.6 : 1 }}
+            style={{ borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? 0.6 : 1 }}
           >
             {busy ? <ActivityIndicator color={parsed == null ? C.ash : C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: parsed == null ? C.ash : C.onAccent }}>{t("common.save")}</Text>}
           </Pressable>
@@ -295,13 +297,13 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
 // quiet mono suffix. Empty reads as a muted "0" placeholder.
 function MetricInput({ C, label, unit, value, onChange }: { C: Palette; label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
-    <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12 }}>
+    <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: C.lime }} />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+        <View style={{ width: 9, height: 9, borderRadius: RADIUS.mark, backgroundColor: C.lime }} />
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, marginTop: 2 }}>
-        <TextInput value={value} onChangeText={(v) => { if (isDecimalInput(v)) onChange(v); }} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: -1, color: C.chalk, paddingVertical: 2 }} />
+        <TextInput value={value} onChangeText={(v) => { if (isDecimalInput(v)) onChange(v); }} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={`${label} (${unit})`} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: tracking.display, color: C.chalk, paddingVertical: 2 }} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 6 }}>{unit}</Text>
       </View>
     </View>

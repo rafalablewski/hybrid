@@ -15,6 +15,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ASub, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
+import { ALPHA } from "@hybrid/core";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const statusColor = (s: string, C: Palette) =>
@@ -64,7 +65,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
       onPress={onPress}
       disabled={opts?.disabled}
       style={{
-        backgroundColor: opts?.filled ? withAlpha(C.lime, 0.12) : "transparent",
+        backgroundColor: opts?.filled ? withAlpha(C.lime, ALPHA.fill) : "transparent",
         borderWidth: 1,
         borderColor: opts?.filled ? C.lime : C.line,
         borderRadius: RADIUS.pill,
@@ -84,7 +85,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{t("w.account.connections.title")}</Text>
-          <View style={{ backgroundColor: withAlpha(statusColor(status, C), 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
+          <View style={{ backgroundColor: withAlpha(statusColor(status, C), ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, statusColor(status, C)), textTransform: "lowercase" }}>{statusLabel}</Text>
           </View>
         </View>
@@ -196,7 +197,7 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
       onPress={onPress}
       disabled={busy}
       style={{
-        backgroundColor: filled ? withAlpha(C.lime, 0.12) : "transparent",
+        backgroundColor: filled ? withAlpha(C.lime, ALPHA.fill) : "transparent",
         borderWidth: 1,
         borderColor: filled ? C.lime : C.line,
         borderRadius: RADIUS.pill,

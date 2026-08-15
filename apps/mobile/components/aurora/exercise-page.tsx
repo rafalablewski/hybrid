@@ -16,6 +16,7 @@ import {
   type ExercisePeriod,
   type ScrubMode,
   type WeightUnit,
+  colors,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
@@ -24,16 +25,17 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking, trackFigure} from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub } from "./chart-scrub";
-import { AuroraScreen, ASegment } from "./kit";
+import { AuroraScreen, ASegment , RADIUS} from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
 
 // Chart-only raw hexes (mirror web exercise-page): the CVD-validated deep
 // chartreuse/sand pair for stacked tonnage, and the lime landscape ramp.
 const DEEP_BASE = "#84a01e", DEEP_HARD = "#bd871e";
-const RAMP = ["#33420f", "#4c6414", "#6f8f1c", "#9cc32d", "#c6f84f"];
+// The ramp climbs TO the accent — its last stop is the token, not a copy of it.
+const RAMP = ["#33420f", "#4c6414", "#6f8f1c", "#9cc32d", colors.lime];
 
 const PERIODS: { id: ExercisePeriod; key: string }[] = [
   { id: "8w", key: "w.analyze.ex.period8w" },
@@ -212,7 +214,7 @@ function TonnageChart({ C, weeks, units, t, held }: { C: Palette; weeks: { baseK
       <View style={{ flexDirection: "row", gap: 16, marginTop: 8 }}>
         {[{ c: DEEP_BASE, l: t("w.analyze.ex.tonnageBase") }, { c: DEEP_HARD, l: t("w.analyze.ex.tonnageHard") }].map((i) => (
           <View key={i.l} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: i.c }} />
+            <View style={{ width: 9, height: 9, borderRadius: RADIUS.mark, backgroundColor: i.c }} />
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{i.l}</Text>
           </View>
         ))}
@@ -311,10 +313,10 @@ function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 16, paddingBottom: 6 }}>
       {slide.cells.map((cell, i) => (
-        <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: 16, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, letterSpacing: 0.9 }}>{i + 1}RM</Text>
-          <Text style={{ fontFamily: F.black, fontSize: 16, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
+        <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: RADIUS.field, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{i + 1}RM</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
         </View>
       ))}
     </View>
@@ -478,7 +480,7 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{tile.cur}</Text>
               {!tile.same && <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: txt(C, tile.good ? C.blue : C.red) }}>{tile.good ? "▲" : "▼"}</Text>}
             </View>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
           </View>
         ))}
       </View>
@@ -517,7 +519,7 @@ function ConsistencyHeat({ C, slide, foot, t }: { C: Palette; slide: SlideOf<"co
         {stats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
           </View>
         ))}
       </View>
@@ -531,7 +533,7 @@ function ConsistencyDots({ C, weekly, foot }: { C: Palette; weekly: number[]; fo
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 24 }}>
       {weekly.map((w, i) => (
-        <View key={i} style={{ width: 9, height: 9, borderRadius: 999, backgroundColor: w > 0 ? C.lime : C.line, opacity: w > 0 ? steps[Math.min(w, 3)]! + 0.12 : 1 }} />
+        <View key={i} style={{ width: 9, height: 9, borderRadius: RADIUS.pill, backgroundColor: w > 0 ? C.lime : C.line, opacity: w > 0 ? steps[Math.min(w, 3)]! + 0.12 : 1 }} />
       ))}
       <Text style={{ width: "100%", marginTop: 12, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{foot}</Text>
     </View>
@@ -618,7 +620,7 @@ export default function AuroraExercisePage() {
   // rather than a page that re-fetches. `hidden` masks the real text only while
   // the clone is inbound; every degraded path (no provider, failed measurement,
   // Reduce Motion) returns false and shows it immediately.
-  const heroStyle = { fontFamily: F.black, fontSize: 48, letterSpacing: -1, lineHeight: 52, color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.black, fontSize: 48, letterSpacing: trackFigure(48), lineHeight: 52, color: C.chalk } as const;
   const heroShared = useSharedElementTarget(SHARED_ELEMENTS.exerciseHero, hero.v, heroStyle);
 
   useEffect(() => {
@@ -695,7 +697,7 @@ export default function AuroraExercisePage() {
             <TickerDelta deltaPct={hero.deltaPct ?? null} improving={hero.improving ?? null} size={fs.caption} />
           </View>
         </View>
-        <Text style={{ marginTop: 10, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{hero.label}</Text>
+        <Text style={{ marginTop: 10, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{hero.label}</Text>
       </Animated.View>
 
       {!showAll ? (
@@ -725,7 +727,7 @@ export default function AuroraExercisePage() {
           {slides.map((slide, i) => (
             <View key={slide.kind} style={{ borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line, paddingTop: i === 0 ? 6 : 22, paddingBottom: 24 }}>
               {i > 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash, marginBottom: 16 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 16 }}>
                   {slideHero(slide, units, t).label}
                 </Text>
               ) : null}
@@ -740,7 +742,7 @@ export default function AuroraExercisePage() {
         accessibilityRole="button"
         style={{ alignSelf: "center", paddingVertical: 8, paddingHorizontal: 12, marginTop: 16 }}
       >
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
           {showAll ? t("w.analyze.exp.less") : t("w.analyze.exp.allStats")}
         </Text>
       </Pressable>
@@ -750,7 +752,7 @@ export default function AuroraExercisePage() {
         {substats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
-            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{st.l}</Text>
+            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{st.l}</Text>
           </View>
         ))}
       </View>
@@ -759,7 +761,7 @@ export default function AuroraExercisePage() {
           the retired dashboard lives IN the slide pager above). */}
       {s.kind === "strength" && s.bestSet && (
         <View style={{ marginTop: 16, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</Text></Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</Text>
           {s.velocity && (

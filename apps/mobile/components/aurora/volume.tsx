@@ -13,14 +13,15 @@ import {
   type MuscleVolumeStatus, type VolumeZone, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
   type LandmarkFactor, type LandmarkSource, type WeightUnit,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ADrawer, AHeading, ASection, CardFoot, RADIUS, withAlpha } from "./kit";
 import { HeroAccessory } from "./hero";
 import Sheet from "./sheet";
@@ -256,7 +257,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 46, lineHeight: 50, letterSpacing: -1.6, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: 50, letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
             </View>
@@ -264,7 +265,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
               {rows.map((r) => (
                 <View key={r.muscle} style={{ flex: 1 }}>
                   <ShapeColumn s={r} color={zoneColor(r.zone)} dim={false} />
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.7, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
                 </View>
               ))}
             </View>
@@ -323,9 +324,9 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
       {/* ── HERO — the whole week as one number and one shape ─────────────── */}
       <ACard solid style={{ marginTop: 16, paddingBottom: 16 }}>
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
           {customized && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.vol.customised")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.vol.customised")}</Text>
           )}
         </View>
 
@@ -334,7 +335,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 10 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 68, lineHeight: 74, letterSpacing: -2.5, color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: 68, lineHeight: 74, letterSpacing: trackFigure(68), color: C.chalk }}>{summary.inRange}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, marginLeft: 4 }}>/{summary.total}</Text>
             </View>
             <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: 21, color: C.ash, marginTop: -2, maxWidth: 240 }}>{t("w.analyze.vol.heroCaption")}</Text>
@@ -354,7 +355,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
                     style={{ flex: 1, alignItems: "center" }}
                   >
                     <ShapeColumn s={r} color={zoneColor(r.zone)} dim={picked !== null && !on} />
-                    <Text style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: on ? C.chalk : C.ash }}>
+                    <Text style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: on ? C.chalk : C.ash }}>
                       {label.slice(0, 3).toUpperCase()}
                     </Text>
                   </Pressable>
@@ -445,7 +446,7 @@ function ByMuscle({ flat, rows, ml, zoneColor, targetFor, history, open, setOpen
     <Panel flat={flat}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
       </View>
 
       <View style={{ marginTop: 4 }}>
@@ -495,9 +496,9 @@ function ShapeColumn({ s, color, dim }: { s: MuscleVolumeStatus; color: string; 
   return (
     <View style={{ width: "100%", height: H, borderRadius: 7, backgroundColor: C.ink, overflow: "hidden", opacity: dim ? 0.35 : 1 }}>
       {/* the productive band, lit through the whole column width */}
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.bandStart), height: pct(g.bandEnd - g.bandStart), backgroundColor: withAlpha(C.lime, 0.13) }} />
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.bandStart), height: pct(g.bandEnd - g.bandStart), backgroundColor: withAlpha(C.lime, ALPHA.fill) }} />
       {/* the territory past the ceiling */}
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), top: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), top: 0, backgroundColor: withAlpha(C.red, ALPHA.solid) }} />
       {/* this week */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: pct(g.x), backgroundColor: color, opacity: 0.9, borderTopLeftRadius: 7, borderTopRightRadius: 7 }} />
       {/* the ceiling reads as a NOTCH in the column, so it survives the fill */}
@@ -517,11 +518,11 @@ function Prescription({ flat, title, why, items, color, ml, unit }: {
     <Panel flat={flat}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{unit}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{unit}</Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
         {items.map((s) => (
-          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 8, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, 0.35), backgroundColor: withAlpha(color, 0.1) }}>
+          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 8, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, ALPHA.line), backgroundColor: withAlpha(color, ALPHA.fill) }}>
             <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{ml(s.muscle)}</Text>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: txt(C, color) }}>{deltaLabel(s)}</Text>
           </View>
@@ -540,7 +541,7 @@ function Toggle({ on, label, onPress }: { on: boolean; label: string; onPress: (
       onPress={() => { haptic.light(); onPress(); }}
       accessibilityRole="switch"
       accessibilityState={{ checked: on }}
-      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, 0.12) : "transparent" }}
+      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent" }}
     >
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{label}</Text>
     </Pressable>
@@ -583,7 +584,7 @@ function BlockCard({ flat, lead, block, ramp, on }: {
                 <View style={{ width: "100%", height: 56, backgroundColor: C.ink, borderRadius: 7, overflow: "hidden" }}>
                   <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: pct(c.height), backgroundColor: c.kind === "deload" ? C.blue : C.lime, opacity: c.current ? 0.95 : 0.32, borderTopLeftRadius: 7, borderTopRightRadius: 7 }} />
                 </View>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: c.current ? C.chalk : C.ash }}>{c.week}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: c.current ? C.chalk : C.ash }}>{c.week}</Text>
               </View>
             ))}
           </View>
@@ -689,7 +690,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
               accessibilityLabel={`${t(r.labelKey)}${meta ? `, ${meta}` : ""}`}
-              style={{ flexDirection: "row", alignItems: "center", gap: space.ms, height: RUNG_H, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: 10, backgroundColor: on ? withAlpha(C.chalk, 0.05) : "transparent" }}
+              style={{ flexDirection: "row", alignItems: "center", gap: space.ms, height: RUNG_H, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: 10, backgroundColor: on ? withAlpha(C.chalk, ALPHA.wash) : "transparent" }}
             >
               {/* One segment of the spine. Lit means the layer contributed; full
                   strength means it is the layer that named the numbers. */}
@@ -717,7 +718,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk }}>{Math.round(done.score * 100)}%</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.knownAbout")}</Text>
         </View>
-        <View style={{ height: 3, borderRadius: 999, backgroundColor: C.ink, marginTop: 10, overflow: "hidden" }}>
+        <View style={{ height: 3, borderRadius: RADIUS.pill, backgroundColor: C.ink, marginTop: 10, overflow: "hidden" }}>
           <View style={{ width: pct(done.score), height: "100%", backgroundColor: C.lime }} />
         </View>
 
@@ -733,7 +734,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
               accessibilityLabel={`${t("w.analyze.vol.nextUp")}: ${t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}`}
               style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14 }}
             >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.nextUp")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.nextUp")}</Text>
               <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
             </Pressable>
@@ -938,8 +939,8 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
         <View style={{ height: 11, borderRadius: 6, backgroundColor: C.ink, overflow: "hidden" }}>
           {/* The track is itself the key: the productive band lit, the territory
               past the ceiling tinted, so the zones read even on an empty rail. */}
-          <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, 0.13) }} />
-          <View style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
+          <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, ALPHA.fill) }} />
+          <View style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, ALPHA.solid) }} />
           <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(g.x), backgroundColor: color, opacity: 0.9, borderRadius: 6 }} />
           {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
           <View style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
@@ -957,7 +958,7 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
               <View style={{ position: "absolute", left: 0, width: pct(region.from), top: 0, bottom: 0, backgroundColor: withAlpha(C.ink, 0.76) }} />
               <View style={{ position: "absolute", left: pct(region.to), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.ink, 0.76) }} />
               {/* Caliper edges, so the lit slice reads even when it is empty. */}
-              <View pointerEvents="none" style={{ position: "absolute", left: pct(region.from), width: pct(region.to - region.from), top: 0, bottom: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: withAlpha(C.chalk, 0.45) }} />
+              <View pointerEvents="none" style={{ position: "absolute", left: pct(region.from), width: pct(region.to - region.from), top: 0, bottom: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.rim) }} />
             </>
           )}
         </View>
@@ -980,8 +981,8 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
               accessibilityLabel={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
               style={{ flex: 1, opacity: zone && !on ? 0.4 : 1 }}
             >
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: on ? txt(C, C.lime) : C.ash }}>
-                {BAND_LABEL[k]} <Text style={{ fontSize: 11, color: C.chalk }}>{sc[k]}</Text>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: on ? txt(C, C.lime) : C.ash }}>
+                {BAND_LABEL[k]} <Text style={{ fontSize: fs.micro, color: C.chalk }}>{sc[k]}</Text>
               </Text>
             </Pressable>
           );
@@ -1030,10 +1031,10 @@ function MuscleHistory({ sets }: { sets: number[] }) {
   // element must not restyle it.
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash, marginTop: 16 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 16 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
-          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: 3, backgroundColor: i === sets.length - 1 ? C.blue : `${C.blue}66` }} />
+          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: RADIUS.mark, backgroundColor: i === sets.length - 1 ? C.blue : withAlpha(C.blue, ALPHA.rim) }} />
         ))}
       </View>
     </View>

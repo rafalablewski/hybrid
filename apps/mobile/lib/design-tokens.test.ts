@@ -23,6 +23,20 @@ import { COVER_SCREENS } from "@hybrid/core";
  *
  * A ratchet is deliberately unglamorous: it does not fix anything, it just makes
  * the debt visible and stops it growing while the sweeps land.
+ *
+ * ── AND A CEILING IS RE-TIGHTENED WHEN IT MOVES, IN THE SAME CHANGE ────────
+ * A ratchet whose ceiling sits above its actual count is not a ratchet — it is
+ * a budget for more of the thing. An audit in Aug 2026 found 178 sites of that
+ * slack across seven rules: fontSize was at 489 with 427 sites, hex literals at
+ * 136 with 82, borderRadius at 507 with 459, and the ASearch convergence had
+ * quietly finished (10 → 3) with nobody lowering the number. Every one of them
+ * would have swallowed dozens of new violations in silence, which is the exact
+ * failure this file exists to prevent.
+ *
+ * The slack accumulates honestly — a sweep aimed at one rule removes sites the
+ * others were counting — so the discipline is: after ANY sweep, re-measure every
+ * ceiling, not just the one you meant to move. All seven are pinned to actual as
+ * of that audit.
  */
 
 const ROOT = join(__dirname, "..");
@@ -106,9 +120,84 @@ describe("type scale", () => {
   });
 
   it("RATCHET — raw fontSize integers give way to fs.* rungs", () => {
-    // The ladder has 13 named rungs. Every raw integer here is a call site that
-    // decided for itself; ~37% of them land off the ladder entirely.
-    expectAtMost(hits(/fontSize:\s*\d+/g), 489, "raw fontSize → use an fs.* rung");
+    // 427 → 89, and the split is the whole point of stopping there.
+    //
+    // 339 of them — 79% — were ALREADY a rung and simply were not saying so:
+    // 77 at 10, 39 at 11, 38 at 18, 32 at 12, 32 at 13 … Renaming those is a
+    // pure rename, verified exact against the scale before it ran, so not one
+    // pixel moved. That is consistency for free and it is done.
+    //
+    // (The old note here said "~37% land off the ladder entirely". Measured, it
+    // was 20%. Corrected rather than left — a guard that misstates its own
+    // subject is how a ceiling drifts out of touch with its count.)
+    //
+    // WHAT IS LEFT IS NOT THE SAME KIND OF WORK, which is why it is left:
+    //
+    //   58 sit BETWEEN rungs, all within 2dp of one — 16 at 17, 16 at 24, 7 at
+    //     28, 6 at 19, 5 at 21. These are real drift and the two clusters of 16
+    //     are almost certainly one decision each, copied. But fontSize is the
+    //     most visible property there is: moving a 17dp label to 16 is 6%
+    //     smaller, and 24 → 22 is 9% off a heading. That is a RESTYLE of
+    //     specific screens, not a rename, and it wants eyes on a device.
+    //
+    //   17 sit between 30 and 46, in the gap above `display` and below `stat`.
+    //     Same argument, larger steps.
+    //
+    //   11 sit ABOVE `stat`, up to 118dp. The scale's own header calls this out:
+    //     "The ladder ends at `stat` on purpose: there is no rung above it, so a
+    //     figure larger than 46 is a design smell, not a missing token." These
+    //     are the story/cover figures. Snapping them to 46 would be absurd and
+    //     adding rungs would bless them; either way it is a design conversation,
+    //     not a sweep.
+    //
+    //   1 was RENAMED AND PUT BACK. home.tsx's plan-card title took fs.headline
+    //     cleanly, and that tripped hub-masthead.test.ts, which bans the rung
+    //     anywhere in a hub screen so none re-grows a title of its own. It is a
+    //     CARD title, not the hub's head, so the ban is a false positive there —
+    //     but the guard is load-bearing and a rename is not worth weakening it
+    //     for. It sits as a raw 22 and is counted here, which is the honest
+    //     place for a site that has no rung it is allowed to name.
+    expectAtMost(hits(/fontSize:\s*\d+/g), 87, "raw fontSize → use an fs.* rung");
+  });
+
+  it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
+    // THE FONT BUG THIS RULE EXISTS FOR. `F` names six loaded faces and each is
+    // registered under its OWN family name — "JetBrainsMono_400Regular",
+    // "Archivo_700Bold". So `fontFamily: F.mono` declares a family with exactly
+    // one face in it, and asking that family for 700 asks for a weight it does
+    // not have: iOS falls back toward the system face, Android smears a
+    // synthetic bold onto the regular. Either way the label stops being our
+    // font, and it does so NEXT TO labels that got it right — which is what
+    // "the font is inconsistent" looks like from the outside.
+    //
+    // There is nothing to gain by it: F.monoBold and F.bold/F.black ARE the
+    // heavier faces, so every site had a token sitting right there.
+    //
+    // 103 → 0, in two passes: the FOOD domain first (the meal pages were the
+    // worst of it at 31 sites, several stacked inside one sheet), then the
+    // remaining 72 across 28 files. THE DECLARED FACE WON: where a family was
+    // already named it stayed, and only `F.mono` — the sole *regular* of a
+    // pair — was promoted to `F.monoBold`, which is what iOS was resolving to
+    // anyway. A weight that VARIES becomes a varying face, not a varying
+    // weight: `fontFamily: on ? F.monoBold : F.mono`. Text with NO family at
+    // all (two coach rows, drawing in the platform UI font) got one.
+    //
+    // The one thing that could not simply be renamed was percent-program's ink
+    // ramp: four weights (700/700/500/400) off a family holding one face. It
+    // has a second, finer channel — opacity — which is what actually separated
+    // its tiers, so the two heavy tiers took the bold face and opacity kept
+    // doing the rest.
+    //
+    // THE ONE EXEMPTION, and it is a real one: components/error-boundary.tsx.
+    // It is deliberately provider-free — "no theme, i18n, session or app font:
+    // any of those may be the thing that failed, and a fallback that needs the
+    // broken thing is not a fallback". A crash fallback that named F.* would
+    // draw nothing at all when the font load is what threw. Platform font,
+    // platform weight, on purpose.
+    //
+    // Comment-blind: the files fixed first are the ones that write down why.
+    const sites = codeHits(/fontWeight:/g).filter((h) => !h.startsWith("components/error-boundary.tsx"));
+    expect(sites, "fontWeight → pick the FACE (F.mono/F.monoBold, F.reg/F.semi/F.bold/F.black)").toEqual([]);
   });
 });
 
@@ -128,24 +217,110 @@ describe("leading and tracking", () => {
     // regex. Four more were left deliberately: their ratio is >0.09 from any
     // role, which means they are making a point (a 1.04 display, a 2.71 spacer)
     // rather than picking a leading.
-    expectAtMost(hits(/lineHeight:\s*\d/g), 77, "absolute lineHeight → leading(size, role)");
+    // 74 → 48, and the fontSize sweep is what unlocked it: the note above said
+    // the remainder "has no fs.* token on the same line", and 339 lines had just
+    // gained one. 26 of them turned out to be `leading(size, role)` exactly —
+    // round(size × ratio) reproduces the literal — so they are a pure rename.
+    //
+    // WHAT IS LEFT DOES NOT TOKENIZE, and it is worth saying why rather than
+    // leaving it to look like laziness. 23 of the 48 sit in a real cluster —
+    // ratio 1.036 to 1.125, TIGHTER than `tight` (1.15) — and they are all big
+    // FIGURES, where digits have no descenders to fill the box. That looked
+    // exactly like the trackFigure finding, so it got the same test: is there
+    // one ratio the cluster agrees on? There is not. The best candidate (1.10)
+    // reproduces only 10 of the 23 and errs by up to 6dp, and 6dp of line box
+    // under a 60dp numeral visibly moves its baseline.
+    //
+    // So these are hand-tuned per figure — a line box set to make a specific
+    // layout meet, not a leading picked off a ladder — which is the same shape
+    // as the ALPHA finding one rule down: an axis can be genuinely continuous,
+    // and inventing rungs for it would be worse than leaving it legible.
+    // The rest are 14 sites with no size on the line at all (each needs reading,
+    // not a regex) and the deliberate outliers the original note called out — a
+    // 2.71 spacer, a 1.04 display.
+    expectAtMost(hits(/lineHeight:\s*\d/g), 48, "absolute lineHeight → leading(size, role)");
   });
 
-  it("RATCHET — raw letterSpacing gives way to tracking.*", () => {
-    // 18 distinct values, of which 0.9 and 1.2 are the same eyebrow drawn twice.
-    // 480 → 459: the nutrition trio (nutrition-kit, nutrition-panels, pantry)
-    // took its 0.9 / 1.2 / -0.5 to tracking.label / .caps / .display, which is
-    // every site in them that HAS a token. What is left there is -1, -1.2, -1.6
-    // — display tightenings with no rung to land on, and a ratchet is not the
-    // place to invent one.
-    expectAtMost(hits(/letterSpacing:\s*-?\d/g), 459, "raw letterSpacing → tracking.*");
+  it("HARD — tracking names its token; a big figure derives it", () => {
+    // 432 → 0. THE SHAPE OF THE ANSWER, because it is not one rule:
+    //
+    //   SMALL TYPE takes an ABSOLUTE rung. The eyebrows live at 10–13dp, a band
+    //     narrow enough that one dp value works across all of it, and the app
+    //     has exactly two: tracking.label (0.9) and tracking.caps (1.2). 298
+    //     sites already were those numbers and now say so; 24 more were
+    //     stragglers either side (0.4 … 0.8 under, 1.4 / 2 / 3 over) and snapped
+    //     to the nearer.
+    //
+    //   TITLES take tracking.display (-0.5), and that was the contested call.
+    //     Two tightenings were in force at the same sizes: the token at -0.019
+    //     … -0.031em, and a raw -0.3 group at -0.013 … -0.023em. The token wins
+    //     because it IS the token — 51 call sites plus two core contracts (the
+    //     app-header wordmark, the hub masthead's title), and hub-masthead
+    //     chose it deliberately over the -1 that shipped before it. A house
+    //     value that has already survived one argument is the house value.
+    //
+    //   BIG FIGURES DERIVE IT — trackFigure(size), and this is the part an
+    //     absolute could not do. They run 30–68dp, a 2.3× span, where -0.5 is
+    //     -0.017em at the bottom and -0.007em at the top: nothing at all. Which
+    //     is why every one of them hand-multiplied its own value instead, and
+    //     why `letterSpacing: -1` appeared at 20dp AND at 48dp. In em those
+    //     twelve spellings collapse onto -0.035em, so that is the constant, and
+    //     trackFigure is leading()'s twin — same argument, one axis over.
+    //
+    // THE BOUNDARY IS THE SCALE'S OWN: fs.hero (34) is documented as
+    // "mastheads / cover titles" and fs.stat (46) as "the one hero figure on a
+    // screen". Titles up to hero take the rung; figures from stat take the
+    // function. The four sites sitting at fs.stat under tracking.display moved
+    // with it, and a 32dp food NAME moved back — it is a title that happened to
+    // be large, not a figure.
+    //
+    // TWO EXEMPTIONS, both because the app's TYPE SCALE does not govern them:
+    //
+    //   lib/share.tsx — a branded card captured to a PNG at an arbitrary width.
+    //     Its sizes are `width * 0.072`, fractions of the canvas rather than
+    //     rungs of the app ladder, so its tracking belongs to that card's own
+    //     system.
+    //
+    //   The one-time-code fields (login.tsx, mfa-settings.tsx) — letterSpacing
+    //     at 8 and 3 is doing SEMANTIC work: it says the characters are
+    //     discrete digits, to be read one at a time. A rung would delete the
+    //     thing the spacing is saying.
+    //
+    // Both are narrow and named. A third wanting to be added is the signal that
+    // the rule is wrong, not that the call site is.
+    const OWN_SCALE = ["lib/share.tsx", "components/aurora/login.tsx", "components/aurora/mfa-settings.tsx"];
+    const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
+    expect(raw, "letterSpacing → tracking.label/.caps/.display, or trackFigure(size)").toEqual([]);
   });
 });
 
 describe("geometry", () => {
   it("RATCHET — raw borderRadius gives way to RADIUS.*", () => {
-    // 36 distinct radii against a 5-rung vocabulary (mark/inner/field/card/pill).
-    expectAtMost(hits(/borderRadius:\s*\d/g), 507, "raw borderRadius → RADIUS.*");
+    // 459 → 166. 293 sites were ALREADY a rung — 122 at 999, 75 at 16, 57 at 12,
+    // 28 at 3, 13 at 28 — and simply were not saying so. Verified exact against
+    // RADIUS before the rewrite ran, so nothing moved. `999` alone was a quarter
+    // of the debt: the pill idiom, spelled as a sentinel 122 times.
+    //
+    // WHAT IS LEFT IS MOSTLY NOT DRIFT, and this axis differs from the type ones
+    // in a way that matters. A radius is frequently DERIVED rather than chosen:
+    //
+    //   A CIRCLE is `borderRadius = size / 2`, and there were 41 sites where the
+    //     radius is provably half a width or height ON THE SAME LINE — r115 on
+    //     230, r75 on 150, r85 on 170, r44 on 88, r42 on 84 — with more where
+    //     the dimension sits a line away or is computed. Snapping those to
+    //     RADIUS.card would not be a restyle, it would be a BUG: the circles
+    //     stop being circles. There is no rung for "half of whatever this is",
+    //     and there should not be one.
+    //
+    //   A CONCENTRIC corner is `parent - pad`, which the kit already exposes as
+    //     concentric(). Those small values (4, 5, 6, 8, 10) are the arithmetic
+    //     of a nested surface, not a choice from a ladder.
+    //
+    // So the remainder needs reading site by site — is this a circle, a
+    // concentric inset, or a genuine off-ladder choice — and only the third kind
+    // is sweepable. That is a different job from the rename and is not attempted
+    // here.
+    expectAtMost(hits(/borderRadius:\s*\d/g), 162, "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -195,10 +370,22 @@ describe("touch targets", () => {
     // by RETIRING four hand-rolled rails (History and Plans, both clients) and
     // it carries a stricter guard of its own than this one —
     // apps/web/__tests__/dock-rail.test.ts, which checks both clients together.
-    const SANCTIONED = /\bDockChip\b/;
+    // AND THE RULE WAS COUNTING ITS OWN ANSWER. `APill`, `AChip` and
+    // `ActionPill` are the shared primitives this ratchet exists to drive call
+    // sites TOWARDS — the comment above names two of them as the destination —
+    // and their declarations in kit.tsx were being reported as violations of
+    // themselves. `GlassPillRow` is a native SwiftUI leaf owned by swiftui.tsx
+    // under the one-owner rule below, not a hand-rolled chip.
+    //
+    // That is not a cosmetic miscount: a ratchet whose floor is the number of
+    // canonical components can NEVER reach zero, so it can never graduate to
+    // HARD, which is the entire point of the mechanism. 9 → 5, and the 5 are
+    // real: LaneOrderChip, DayChip (twice — the logbook rail and the week rail
+    // draw the same object separately), MetaPill, PlanDockPill.
+    const SANCTIONED = /\b(?:DockChip|APill|AChip|ActionPill|GlassPillRow)\b/;
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    expectAtMost(decls, 9, "chip-shaped component → Chip, AChip or DockChip");
+    expectAtMost(decls, 5, "chip-shaped component → Chip, AChip or DockChip");
   });
 });
 
@@ -225,10 +412,14 @@ describe("section headers", () => {
     // only because "Header" contains "Head", and admitting it by raising the
     // ceiling would spend a RATCHET on the very kind of component the ratchet
     // exists to produce.
-    const SANCTIONED = /\bAppHeader\b/;
+    // ASection and AHeading join AppHeader as exemptions, for a stronger reason
+    // than his: they are what this rule points AT. The canonical section head
+    // was being counted as a hand-rolled section head, which put a floor under
+    // the ratchet at the size of the design system and made zero unreachable.
+    const SANCTIONED = /\b(?:AppHeader|ASection|AHeading)\b/;
     const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Section|Head|SubHead)[A-Za-z]*\s*\(/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    expectAtMost(decls, 8, "section-header component → ASection");
+    expectAtMost(decls, 6, "section-header component → ASection");
   });
 });
 
@@ -245,8 +436,24 @@ describe("meters", () => {
     // are (RailSurface, FaceStroke, Rule), because the same misnaming is what
     // hid `Pill` from the chip merge — a wrong name invites a wrong merge as
     // readily as it hides a right one.
-    const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm);
-    expectAtMost(decls, 9, "labelled proportion → AMeter");
+    // AMeter itself was in this count — the answer, filed as a violation of
+    // itself, putting a floor under the ratchet that made zero unreachable.
+    //
+    // `UndoBar` was too, and it is not a meter at all: it is the pantry's undo
+    // TOAST. This rule's own comment argues that "a wrong name invites a wrong
+    // merge as readily as it hides a right one", and that is exactly what had
+    // happened, so it is now `UndoToast` — the code moved, not the rule.
+    //
+    // 8 → 6. What remains are the vertical COLUMN charts the comment above
+    // already calls "a different object, with real differences" — StackBar,
+    // MuscleBar, DayBars, VolumeBars, EffortSplitBar, MuscleBarFill. They stay
+    // counted rather than exempted because "is this a column chart or a
+    // labelled proportion" is a judgement per site, and a pinned ceiling keeps
+    // them visible without pretending the question is settled.
+    const SANCTIONED = /\bAMeter\b/;
+    const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm)
+      .filter((site) => !SANCTIONED.test(lineAt(site)));
+    expectAtMost(decls, 6, "labelled proportion → AMeter");
   });
 });
 
@@ -264,7 +471,7 @@ describe("fields", () => {
     // means restructuring the parent, so they are counted here rather than
     // rushed.
     const searches = hits(/placeholder=\{?["']?[^"'}]*[Ss]earch/g);
-    expectAtMost(searches, 10, "search field → <ASearch>");
+    expectAtMost(searches, 3, "search field → <ASearch>");
   });
 });
 
@@ -289,7 +496,23 @@ describe("loading", () => {
     // state into a fixed-size glyph slot so the word beside it can hold still.
     // A raise here bought a layout fix in four places; a raise for a spinner
     // standing in for a list still fails.
-    expectAtMost(hits(/<ActivityIndicator/g), 22, "content ActivityIndicator → <Loading />");
+    // 19 → 17, and THE 17 ARE THE FLOOR rather than a target. Reading all
+    // nineteen, three were still content-shaped — a centred spinner in a 40pt
+    // block while a coach list arrived, and two `phase === "loading"` spinners
+    // waiting on the watch's workouts — and those are now <Loading />. One of
+    // them was drawing the wrong thing half the time: `(phase === "loading" ||
+    // phase === "importing")` put ONE spinner behind two different meanings,
+    // the list arriving (content) and the import running (an action), so it is
+    // split — which is why this went to 17 and not 16: the split KEEPS a
+    // legitimate spinner for the importing half.
+    //
+    // The remaining 17 are all the permitted kind: a spinner inside a button
+    // while it saves, scans, exports, deletes or subscribes. THIS RATCHET IS
+    // NOT AIMING AT ZERO — in-flight actions will always want a spinner, so its
+    // floor is legitimate usage, not debt. Do not force it down; check that a
+    // new one sits inside a control, and raise it if that buys a layout fix
+    // (see the four that did).
+    expectAtMost(hits(/<ActivityIndicator/g), 17, "content ActivityIndicator → <Loading />");
   });
 });
 
@@ -303,7 +526,89 @@ describe("colour", () => {
     // themed-screen uses became palette tokens and the Wrapped takeover's
     // became the named, deliberately fixed-dark HERO_TAKEOVER_INK /
     // HERO_TAKEOVER_RAISED.
-    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 136, "hex literal → a palette token");
+    // 82 → 75, and the small number is the finding rather than a shortfall.
+    // Only 13 of the 82 duplicated a token at all — this axis is NOT mostly
+    // drift, unlike the type and geometry ones. What the rest actually are:
+    //
+    //   43 are #fff / #000 / #ffffff. Pure white and pure black are NOT in the
+    //     palette — `chalk` is #f3f4ef, a cool off-white — so they are gradient
+    //     stops, scrims and ink on cover art, not colours that lost their name.
+    //     (8 of them ARE text, and might want chalk; that is a look, not a
+    //     rename, so it is left.)
+    //   12 are ink with an alpha suffix inside a LinearGradient stop
+    //     (#0c0d0c00 … #0c0d0ccc). Those want withAlpha(), a separate job.
+    //   6 are the exercise-page anatomy RAMP — derived shades climbing to the
+    //     accent. Its last stop was the accent's hex and now names it.
+    //
+    // THE ONE THING THIS SWEEP ACTUALLY FOUND was not in this count at all: the
+    // CRASH FALLBACK's hardcoded palette had gone stale in two places. It is
+    // exempt from this rule by design (provider-free — see its header), and an
+    // exemption with nothing watching it is exactly how its LINE drifted to the
+    // #2a2d2a that tokens.ts names as the stale hairline, and its CHALK to
+    // #eae3d4 — the GROUND colour of "Clay & Sage on Oat", a light theme
+    // deleted whole in Aug 2026 — used as TEXT. The screen a user sees only
+    // when everything else has broken was the last one painted in a retired
+    // theme. Both corrected, still literal, and now held by
+    // lib/error-boundary-palette.test.ts, which is the half of that exemption
+    // that was missing. The same #eae3d4 was drawing the web /terms and
+    // /privacy pages and went with it.
+    // 75 → 61: the 12 eight-digit ones went to withAlpha() with the rest of the
+    // colour arithmetic — see the alpha rule below, which is the one that
+    // actually covers this axis.
+    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 61, "hex literal → a palette token");
+  });
+});
+
+describe("colour arithmetic", () => {
+  it("RATCHET — a tint names its rung; a ramp keeps its own stops", () => {
+    // Converting the hex suffixes made the alphas readable, and reading them
+    // showed 58 distinct values doing two jobs. ALPHA (packages/core/src/theme/
+    // tokens.ts) names the six rungs those two jobs actually need — wash / fill
+    // / solid for tinted SURFACES, edge / line / rim for tinted BORDERS — and
+    // 230 sites now say which one they mean.
+    //
+    // The scale was derived from the histogram, not chosen: 82 of the 230 did
+    // not move at all, 112 moved by 2% or less, and exactly ONE moved by more
+    // than 4% (the worst shift in the whole migration is 0.040). Two families
+    // rather than one because they tolerate different precision — a surface is
+    // a large area where 4% is visible, a hairline is one pixel where it is not.
+    //
+    // WHAT KEEPS A RAW NUMBER, and this is why the rule is a ratchet and not
+    // HARD: the histogram is CONTINUOUS from 0 to 1, not clustered. Above ~0.45
+    // it is scrims tuned against specific content, and inside a LinearGradient
+    // every stop is a position on a ramp that has to read as smooth. Neither is
+    // a palette choice, and snapping them to rungs would be inventing a scale
+    // where none exists. The remaining count is those two things, and it should
+    // fall only if one of them turns out to be a tint in disguise — NOT by
+    // adding rungs until the number reaches zero.
+    expectAtMost(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 119,
+      "a tint → ALPHA.*; a ramp stop or scrim may keep its number");
+  });
+
+  it("HARD — alpha is withAlpha(), never a hex suffix", () => {
+    // THE RULE ABOVE COULD NOT SEE THIS, which is the point of adding it. The
+    // hex-literal ratchet matches QUOTED hex, and 235 of the 247 hand-rolled
+    // alphas in this app were TEMPLATE literals — `${C.lime}55` — so 95% of the
+    // colour arithmetic in the codebase sat outside the one rule that was
+    // supposed to police colour. The 12 it could see looked like a rounding
+    // error on a tidy axis; the 235 it could not were the actual debt.
+    //
+    // AND THE DEBT WAS DRIFT: 45 distinct suffixes for what is really a handful
+    // of tints. Eight different values sat in the "barely-there wash" band
+    // alone — 0x12, 0x14, 0x1a, 0x1c, 0x1f, 0x22, 0x24, 0x26, which is 7% 8%
+    // 10% 11% 12% 13% 14% 15%. Nobody chose eight; each call site converted a
+    // percentage in its head and wrote down the byte. Expressed as
+    // withAlpha(C.lime, 0.08) the duplicates are finally legible as duplicates.
+    //
+    // The conversion was byte-identical by construction — withAlpha emits
+    // round(a * 255), so each decimal was picked as the shortest one that
+    // round-trips to the same byte, and every one of the 247 was verified
+    // against its removed form before this rule went HARD.
+    //
+    // Comment-blind: the sites fixed first are the ones that explain themselves.
+    const suffix = codeHits(/`\$\{(?:[^{}]|\{[^{}]*\})+\}[0-9a-fA-F]{2}`/g);
+    const eight = codeHits(/["'`]#[0-9a-fA-F]{8}["'`]/g);
+    expect([...suffix, ...eight], "hex alpha suffix → withAlpha(color, 0.xx)").toEqual([]);
   });
 });
 
@@ -338,7 +643,16 @@ describe("presentation", () => {
     // A ratchet rather than a HARD rule, because a handful of these are
     // legitimately not pills (today's chartreuse day-disc). It may only ever
     // fall.
-    const found = hits(/backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*(?:999|RADIUS\.pill|1[0-9]\b|2[0-9]\b)|borderRadius:\s*(?:999|RADIUS\.pill|1[0-9]\b|2[0-9]\b)[^\n]*backgroundColor:\s*(?:C|palette)\.lime/g);
+    // THE RADIUS ALTERNATION MUST NAME THE TOKENS TOO. This pattern was written
+    // against raw integers (999, 1x, 2x), so when the borderRadius sweep renamed
+    // those to RADIUS.* the guard simply stopped seeing two of its own sites and
+    // the count fell 31 → 29 with nothing fixed. A rename must never be able to
+    // shrink another rule's coverage; `inner` (12) and `field` (16) are the two
+    // rungs inside the old 1x/2x range, so they are spelled here as well.
+    const RAD = String.raw`(?:999|RADIUS\.(?:pill|inner|field)|1[0-9]\b|2[0-9]\b)`;
+    const found = hits(new RegExp(
+      String.raw`backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*${RAD}` +
+      String.raw`|borderRadius:\s*${RAD}[^\n]*backgroundColor:\s*(?:C|palette)\.lime`, "g"));
     expectAtMost(found, 31, "hand-rolled lime pill → <APill />");
   });
 

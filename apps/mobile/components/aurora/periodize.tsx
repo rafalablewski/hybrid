@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { currentPhase, type Macrocycle } from "@hybrid/core";
+import { currentPhase, type Macrocycle , ALPHA} from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, space, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { LeavePlanSection, type EnrolledSeason } from "./leave-plan";
+import { withAlpha } from "./field";
 
 /** AURORA Periodize — the enrolled macrocycle: phase timeline + load/recovery
  *  microcycles, reusing the exact currentPhase engine + macrocycle API. */
@@ -54,13 +55,13 @@ export default function AuroraPeriodize() {
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", gap: 3, height: 12, borderRadius: 6, overflow: "hidden" }}>
           {macro.blocks.map((b) => (
-            <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === current.key ? b.color : `${b.color}40` }} />
+            <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === current.key ? b.color : withAlpha(b.color, ALPHA.edge) }} />
           ))}
         </View>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.md, marginTop: 12 }}>
           {macro.blocks.map((b) => (
             <View key={b.key} style={{ flexDirection: "row", alignItems: "center", gap: space.xs }}>
-              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: b.color }} />
+              <View style={{ width: 10, height: 10, borderRadius: RADIUS.mark, backgroundColor: b.color }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: b.key === current.key ? C.chalk : C.ash }}>{b.label}</Text>
             </View>
           ))}
@@ -78,7 +79,7 @@ export default function AuroraPeriodize() {
             {b.micros.map((m) => (
               <View
                 key={m.week}
-                style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: RADIUS.field, backgroundColor: m.week === week ? `${C.lime}1a` : C.ink, borderWidth: 1, borderColor: m.week === week ? C.lime : C.line }}
+                style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: RADIUS.field, backgroundColor: m.week === week ? withAlpha(C.lime, ALPHA.fill) : C.ink, borderWidth: 1, borderColor: m.week === week ? C.lime : C.line }}
               >
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: m.kind === "recovery" ? C.ash : C.chalk }}>W{m.week}</Text>
                 <View style={{ height: 4, borderRadius: 2, marginTop: 4, width: "70%", backgroundColor: m.kind === "recovery" ? C.ash : b.color, opacity: 0.4 + (m.intensity / 100) * 0.6 }} />

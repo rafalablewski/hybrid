@@ -5,13 +5,15 @@ import {
   fitLoadVelocityProfile, lvPointsFromSessions, liftsWithVelocity, bestPointPerLoad, velocityAtLoad,
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES,
   type LoggedSession, type LoadVelocityProfile, type LVPoint,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AStepper, RADIUS } from "./kit";
+import { withAlpha } from "./field";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const zoneColor = (id: string, C: Palette) =>
@@ -45,7 +47,7 @@ export default function AuroraVelocity() {
     .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel)).slice(-6).reverse(), [sessions, active]);
 
   const chip = (color: string, label: string) => (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
+    <View style={{ backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text>
     </View>
   );
@@ -75,19 +77,19 @@ export default function AuroraVelocity() {
       </View>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vel.est1rm")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.analyze.vel.est1rm")}</Text>
         <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, marginTop: 6 }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<Text style={{ fontSize: fs.title, color: C.ash }}> kg</Text></Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{resolved ? `${t("w.analyze.vel.mvtPrefix")} ${mvt} m/s – v₀ ${profile.v0.toFixed(2)} – r² ${profile.r2.toFixed(2)} – ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</Text>
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vel.profile")} – {active}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.analyze.vel.profile")} – {active}</Text>
         <View style={{ marginTop: 10 }}><Plot points={points} profile={profile} /></View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}><Text style={{ color: txt(C, C.lime) }}>●</Text> {t("w.analyze.vel.measured")} – <Text style={{ color: C.ash }}>—</Text> {t("w.analyze.vel.fit")}</Text>
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.vel.aiLoad")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.analyze.vel.aiLoad")}</Text>
         <View style={{ alignItems: "center", marginVertical: 12 }}>
           <AStepper
             tone="hero"
@@ -111,11 +113,11 @@ export default function AuroraVelocity() {
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.analyze.vel.zones")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.analyze.vel.zones")}</Text>
         <View style={{ marginTop: 8 }}>
           {VELOCITY_ZONES.slice().reverse().map((z) => (
             <View key={z.id} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: zoneColor(z.id, C) }} />
+              <View style={{ width: 10, height: 10, borderRadius: RADIUS.mark, backgroundColor: zoneColor(z.id, C) }} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{z.label}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{z.focus}</Text>
@@ -127,7 +129,7 @@ export default function AuroraVelocity() {
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.analyze.vel.recentSets")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.analyze.vel.recentSets")}</Text>
         <View style={{ marginTop: 8 }}>
           {recentSets.length === 0 ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vel.noVelSetsPre")} {active} {t("w.analyze.vel.noVelSetsTail")}</Text> : recentSets.map((r, i) => {
             const z = velocityZone(r.vel);
@@ -164,7 +166,7 @@ function Plot({ points, profile }: { points: LVPoint[]; profile: LoadVelocityPro
     for (let i = 0; i <= 28; i++) { const l = minL + ((profile.estimated1rm - minL) * i) / 28; line.push({ load: l, velocity: velocityAtLoad(profile, l) }); }
   }
   return (
-    <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: H, borderWidth: 1, borderColor: C.line, borderRadius: 12, backgroundColor: C.ink, overflow: "hidden" }}>
+    <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: H, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, backgroundColor: C.ink, overflow: "hidden" }}>
       {w > 0 && line.map((p, i) => <View key={`l${i}`} style={{ position: "absolute", left: X(p.load) - 1.5, top: Y(p.velocity) - 1.5, width: 3, height: 3, borderRadius: 2, backgroundColor: C.violet }} />)}
       {w > 0 && points.map((p, i) => <View key={`p${i}`} style={{ position: "absolute", left: X(p.load) - 4, top: Y(p.velocity) - 4, width: 8, height: 8, borderRadius: 4, backgroundColor: C.lime }} />)}
     </View>

@@ -7,7 +7,7 @@ import { API_BASE } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { useTheme } from "../lib/theme";
 import { fs, F, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen } from "../components/aurora/kit";
+import { AuroraScreen , RADIUS} from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 import { NAV_HREF } from "../lib/nav-href";
 
@@ -56,7 +56,7 @@ export default function HelpCenter() {
     <AuroraScreen hero={{ rank: "title", title: t("help.title"), eyebrow: t("nav.group.account") }}>
       <Text style={{ marginTop: 12, fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("help.intro")}</Text>
 
-      <View style={{ marginTop: 18, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 28, overflow: "hidden" }}>
+      <View style={{ marginTop: 18, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden" }}>
         {HELP_ROWS.map((row, i) => (
           <Pressable
             key={row.id}
@@ -65,7 +65,7 @@ export default function HelpCenter() {
             accessibilityLabel={t(row.titleKey)}
             style={{ flexDirection: "row", alignItems: "center", gap: 14, paddingVertical: 16, paddingHorizontal: 18, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}
           >
-            <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 32, height: 32, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
               <AuroraIcon name={row.icon} size={16} color={C.chalk} />
             </View>
             <View style={{ flex: 1 }}>
