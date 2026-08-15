@@ -21,7 +21,7 @@ import { useLang } from "../lib/i18n";
 import { fs, space, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
-import { APill, ASearch } from "./aurora/kit";
+import { APill, ASearch, AMarkTile } from "./aurora/kit";
 import { DeviceMark } from "./aurora/device-mark";
 import { DeviceImportSheet } from "./device-import";
 import { healthKitAvailability } from "../lib/healthkit";
@@ -99,7 +99,10 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
   const sportRow = (s: OlympicSport, hint: string) => (
     <Pressable key={s.name} onPress={() => pickSport(s.name)} accessibilityRole="button" accessibilityLabel={s.name}
       style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
-      <Text style={{ fontSize: fs.subtitle, width: 22, textAlign: "center" }}>{s.icon}</Text>
+      {/* The same 40dp square the exercise picker's rows wear — this sheet is
+          that sheet's twin (pick a sport / pick a lift), and it had been the one
+          drawing bare glyphs. */}
+      <AMarkTile><Text style={{ fontSize: 17 }}>{s.icon}</Text></AMarkTile>
       <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{s.name}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{hint}</Text>
     </Pressable>
@@ -237,7 +240,9 @@ function LogSheet({ sport, date, onClose, onSaved }: { sport: string | null; dat
   return (
     <Sheet visible={!!sport} onClose={close}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}>
-            {!!meta && <Text style={{ fontSize: fs.heading }}>{meta.icon}</Text>}
+            {/* 36dp — the card/sheet-header rung, the same one the logger's
+                exercise card and the Builder's block card take. */}
+            {!!meta && <AMarkTile size={36}><Text style={{ fontSize: 17 }}>{meta.icon}</Text></AMarkTile>}
             <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{name}</Text>
             <Pressable onPress={close} hitSlop={10}><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text></Pressable>
           </View>

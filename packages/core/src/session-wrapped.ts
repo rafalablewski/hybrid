@@ -25,6 +25,7 @@ import { blockBestE1rm, e1rmSeries, cardioDiscipline, formatSportPace, isCardio 
 import { volumeByMuscle } from "./engines/records";
 import { bwAt, type BodyweightInput } from "./bodyweight";
 import { doneReceipt } from "./done-receipt";
+import { orderFigures } from "./figure-order";
 import { fmtWeight, fmtTonnage, type WeightUnit } from "./units";
 import { formatSportDistance } from "./olympic-sports";
 import { sessionEnergy, type EnergyEstimate } from "./energy";
@@ -300,19 +301,36 @@ export function sessionWrapped(
     elevation > 0 ? { labelKey: "session.wrapped.elevation", value: `${Math.round(elevation)} m` } : null;
 
   // ---- BASICS (free) — four tiles, chosen for the discipline. -------------
-  // The ORDER is the priority order: the first four that have something true to
-  // say win, so a swim never falls back to "1 set" just to fill a slot.
-  const wanted: (WrappedStat | null)[] =
+  // TWO SEPARATE DECISIONS, and they used to be one line of code doing both.
+  //
+  // WHICH four: a priority list per discipline — the first four that have
+  // something true to say win, so a swim never falls back to "1 set" just to
+  // fill a slot, and a lifting day doesn't spend a tile on pace. That judgement
+  // is this file's, and it is unchanged.
+  //
+  // WHAT ORDER they then read in: the app's, not this file's (figure-order.ts).
+  // Five disciplines had five sequences here — strength opened on sets,
+  // endurance on distance, a sport on minutes — so the same session's tonnage
+  // sat in a different corner of the grid depending on what it was called, and
+  // none of it agreed with the Progress card or the feed. Priority picks the
+  // four; the reading order lays them out.
+  const wanted: [string, WrappedStat | null][] =
     discipline === "strength"
-      ? [sets, repsStat, volume, minutes, kcal, avgHr]
+      ? [["sets", sets], ["reps", repsStat], ["tonnage", volume], ["hours", minutes], ["kcal", kcal], ["hr", avgHr]]
       : discipline === "endurance"
-        ? [distance, minutes, pace, kcal, avgHr, elevationStat, effortStat]
+        ? [["distance", distance], ["hours", minutes], ["pace", pace], ["kcal", kcal], ["hr", avgHr], ["elevation", elevationStat], ["effort", effortStat]]
         : discipline === "sport"
-          ? [minutes, kcal, avgHr, effortStat, distance]
+          ? [["hours", minutes], ["kcal", kcal], ["hr", avgHr], ["effort", effortStat], ["distance", distance]]
           : discipline === "conditioning"
-            ? [minutes, roundsStat, kcal, avgHr, effortStat]
-            : [minutes, distance, volume, kcal, avgHr, pace, sets];
-  const basics = wanted.filter((s): s is WrappedStat => s != null).slice(0, 4);
+            ? [["hours", minutes], ["rounds", roundsStat], ["kcal", kcal], ["hr", avgHr], ["effort", effortStat]]
+            : [["hours", minutes], ["distance", distance], ["tonnage", volume], ["kcal", kcal], ["hr", avgHr], ["pace", pace], ["sets", sets]];
+  // The four that made the cut, still in PRIORITY order — the headline below
+  // falls back to the top of this list, and "the most important figure we have"
+  // is a priority question. Reading the fallback off the laid-out row instead
+  // would quietly redefine it as "whichever figure sorts first", which is not
+  // the same claim and not one this file gets to make by accident.
+  const chosen = wanted.filter((w): w is [string, WrappedStat] => w[1] != null).slice(0, 4);
+  const basics = orderFigures(chosen, ([key]) => key).map(([, s]) => s);
 
   // ---- HEADLINE — the one number the hero shows. --------------------------
   const headline =
@@ -324,7 +342,7 @@ export function sessionWrapped(
           ? { value: volume.value, labelKey: "summary.volumeMoved" }
           : minutes
             ? { value: `${receipt.durationMin} min`, labelKey: "summary.minutes" }
-            : (basics[0] ?? { value: "—", labelKey: "session.wrapped.basics" });
+            : (chosen[0]?.[1] ?? { value: "—", labelKey: "session.wrapped.basics" });
 
   // ---- FACTS (premium) — real derived analytics only. ---------------------
   const facts: WrappedFact[] = [];

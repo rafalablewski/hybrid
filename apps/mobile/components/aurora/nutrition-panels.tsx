@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SC
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard, AHeading, RADIUS } from "./kit";
+import { APill, ACard, ASection, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { Glyph } from "./nutrition-kit";
 import { withAlpha } from "./field";
@@ -207,7 +207,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
 
       {step === 0 ? (
         <View style={{ marginTop: 24 }}>
-          <AHeading style={{ fontSize: fs.title }}>{t("w.recovery.nutrition.pickGoal")}</AHeading>
+          <ASection title={t("w.recovery.nutrition.pickGoal")} style={{ marginTop: 0, marginBottom: 0 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickGoalSub")}</Text>
           {GOAL_OPTS.map((o) => choice(goal === o.id, o.label, o.sub, () => setGoal(o.id)))}
           {primary(t("w.recovery.nutrition.continue"), () => setStep(1))}
@@ -216,7 +216,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
 
       {step === 1 ? (
         <View style={{ marginTop: 24 }}>
-          <AHeading style={{ fontSize: fs.title }}>{t("w.recovery.nutrition.pickActivity")}</AHeading>
+          <ASection title={t("w.recovery.nutrition.pickActivity")} style={{ marginTop: 0, marginBottom: 0 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickActivitySub")}</Text>
           {MACT.map((a) => choice(activity === a.id, t(a.labelKey), t(a.subKey), () => setActivity(a.id)))}
           <ACard solid style={{ marginTop: 4 }}>
@@ -246,7 +246,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
         <View style={{ marginTop: 24 }}>
           <ACard solid style={{ alignItems: "center", paddingVertical: 20, backgroundColor: `${pa.fill}14`, borderColor: `${pa.fill}4d` }}>
             <View style={{ backgroundColor: `${pa.fill}28`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
-            <AHeading style={{ fontSize: 22, marginTop: 16, textAlign: "center" }}>{t("w.recovery.nutrition.trialTitle")}</AHeading>
+            <ASection title={t("w.recovery.nutrition.trialTitle")} style={{ marginTop: 16, marginBottom: 0, justifyContent: "center" }} titleStyle={{ fontSize: fs.headline, lineHeight: leading(fs.headline, "snug"), textAlign: "center" }} />
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.trialSub")}</Text>
             <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk, marginTop: 16 }}>$9.99<Text style={{ fontFamily: F.mono, fontSize: 13, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text></Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3 }}>{t("w.recovery.nutrition.trialNote")}</Text>

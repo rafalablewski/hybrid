@@ -24,17 +24,46 @@ const strengthSession = (id: string, startedAt: string, load: number): LoggedSes
 });
 
 describe("sessionWrapped", () => {
-  it("returns the free basics: sets, reps, volume, time", () => {
+  it("lays the free basics out in the app's one figure order", () => {
     const s = strengthSession("s1", "2026-01-10T10:00:00.000Z", 60);
     const w = sessionWrapped(s, [s], { units: "kg" });
-    const labels = w.basics.map((b) => b.labelKey);
-    expect(labels).toContain("summary.sets");
-    expect(labels).toContain("session.wrapped.reps");
-    expect(labels).toContain("summary.volumeMoved");
-    expect(labels).toContain("summary.minutes");
+    // The discipline's priority list picks these four (sets, reps, volume,
+    // time); figure-order.ts decides the sequence they read in, so a lifting
+    // day's tonnage sits where it sits on every other surface rather than in
+    // whichever corner this file's priority list happened to leave it.
+    expect(w.basics.map((b) => b.labelKey)).toEqual([
+      "summary.volumeMoved",
+      "summary.sets",
+      "session.wrapped.reps",
+      "summary.minutes",
+    ]);
     // 3 logged sets, 15 reps total.
     expect(w.basics.find((b) => b.labelKey === "summary.sets")?.value).toBe("3");
     expect(w.basics.find((b) => b.labelKey === "session.wrapped.reps")?.value).toBe("15");
+  });
+
+  it("takes the headline fallback off the PRIORITY list, not off the laid-out row", () => {
+    // A circuit with no clock and no tonnage: bodyweight sets (no load, and no
+    // bodyweight supplied to scale them) beside a run. Every branch above the
+    // fallback misses — not endurance-with-distance, not mixed-with-volume, no
+    // minutes — so the hero comes from the discipline's priority list.
+    const circuit = {
+      id: "m1",
+      title: "Circuit",
+      startedAt: "2026-01-10T10:00:00.000Z",
+      blocks: [
+        { kind: "strength", name: "Push-up", sets: [{ load: "", reps: "20" }, { load: "", reps: "20" }] },
+        { kind: "cardio", name: "Running", discipline: "running", distance: 3 },
+      ],
+    } as unknown as LoggedSession;
+    const w = sessionWrapped(circuit, [circuit], { units: "kg" });
+
+    // The ROW reads in figure order — sets before the distance.
+    expect(w.basics.map((b) => b.labelKey)).toEqual(["summary.sets", "session.distance"]);
+    // The HERO is the mixed priority list's top, which is the distance. Reading
+    // it off `basics[0]` instead would headline "2 sets" over "3 km" — a claim
+    // about what the session was ABOUT, quietly decided by a sort.
+    expect(w.headline.labelKey).toBe("session.distance");
   });
 
   it("surfaces premium facts including est-1RM and the muscle split", () => {

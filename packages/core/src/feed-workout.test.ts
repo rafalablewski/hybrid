@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { feedWorkoutView } from "./feed-workout";
-import { topSetLines } from "./feed-card";
+import { sessionStats, topSetLines } from "./feed-card";
 import type { LoggedSession } from "./engines";
 
 const set = (load: string, reps: string, over: Record<string, unknown> = {}) => ({ load, reps, ...over });
@@ -96,11 +96,17 @@ describe("the opened post", () => {
     expect(v.exercises[0]!.summary).toContain("5.4");
   });
 
-  it("carries the whole ledger of figures — mins, tonnage, sets, reps, distance, pace", () => {
+  it("carries the whole ledger of figures — tonnage, sets, reps, mins, distance, pace", () => {
     const v = feedWorkoutView(session());
-    // The CARD's row leads, unchanged, so the post can't contradict the row.
-    expect(v.stats.slice(0, 3).map((s) => s.key)).toEqual(["duration", "volume", "sets"]);
-    expect(v.stats.map((s) => s.key)).toEqual(["duration", "volume", "sets", "distance", "reps", "pace"]);
+    // Card and post read in the app's ONE figure order (figure-order.ts), so
+    // opening a post is the card with more of it, not a second layout: the
+    // extras are SORTED IN beside their own kind rather than appended, which is
+    // why reps lands next to sets instead of after the distance.
+    expect(v.stats.map((s) => s.key)).toEqual(["volume", "sets", "reps", "duration", "distance", "pace"]);
+    // Every figure the card carried is still here, and still says the same thing.
+    for (const key of sessionStats(session()).map((s) => s.key)) {
+      expect(v.stats.some((s) => s.key === key), `${key} survived the extension`).toBe(true);
+    }
     expect(v.totals.minutes).toBe(64);
     expect(v.totals.sets).toBe(7);
     // 5 + 5 + 6 warm-up/working/drop squat reps, 8 + 8 RDL, 10 split squat.

@@ -154,7 +154,7 @@ export default function AuroraTrends({ top, unified = false }: {
       {/* Standing alone the title is the HERO's (below); embedded — a hub tab,
           or inside the unified Performance page — the host owns the head, so
           only the sub-line renders here. */}
-      {(top || unified) && <AHeading style={{ fontSize: fs.display }}>{t("w.analyze.trends.title")}</AHeading>}
+      {(top || unified) && <AHeading>{t("w.analyze.trends.title")}</AHeading>}
       <ASub style={{ marginTop: top || unified ? 10 : 0 }}>{t("w.analyze.trends.subtitle")}</ASub>
 
       {!trained ? (
@@ -220,9 +220,9 @@ export default function AuroraTrends({ top, unified = false }: {
                 {/* The header mirrors the ROW: what the row's second line shows,
                     the header's second line sorts. */}
                 <Text style={{ marginTop: 5 }}>
-                  <Col k="sessions" label={t("w.analyze.trends.colFreq")} />
-                  <Text style={colHead}> – </Text>
                   <Col k="volume" label={t("w.analyze.trends.colVolume")} />
+                  <Text style={colHead}> – </Text>
+                  <Col k="sessions" label={t("w.analyze.trends.colFreq")} />
                 </Text>
               </View>
               <Col k="topWeight" label={t("w.analyze.trends.colHeaviest")} style={{ width: 78, textAlign: "right" }} />
@@ -237,7 +237,10 @@ export default function AuroraTrends({ top, unified = false }: {
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{r.name}</Text>
                   <Text numberOfLines={1} style={[meta, { marginTop: 5 }]}>
-                    {`${r.sessions}× – ${r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)}`}
+                    {/* Volume before the session count — core figure-order.ts.
+                        The header above sorts these two in the same sequence,
+                        which is the whole point of the mirror. */}
+                    {`${r.kind === "cardio" ? `${r.volume} km` : fmtTonnage(r.volume, units)} – ${r.sessions}×`}
                   </Text>
                 </View>
                 <Text style={{ width: 78, textAlign: "right", fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk }}>

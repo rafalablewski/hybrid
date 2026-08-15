@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, useEntrance, HubDissolve, cardShadow, 
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName, type HeroRank } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -447,6 +447,74 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
       ]}
     >
       {glass && <GlassSurface radius={radius} />}
+      {children}
+    </View>
+  );
+}
+
+/**
+ * THE MARK TILE — the box a THING's mark sits in: a lift's implement, a room's
+ * body map, a sport's glyph.
+ *
+ * It is SQUARE (`RADIUS.mark`), and that is the entire job. A PERSON's avatar is
+ * a circle (components/social-kit `Avatar`, radius 999), so the shape carries the
+ * noun and nothing has to be read to tell a barbell from a face.
+ *
+ * The box lives here because it kept being redrawn: SIX surfaces each owned a
+ * copy — the picker's rows, the picker's own Rooms grid one scroll below them,
+ * the Exercises browser and the pin sheet at 40/12, the logger's card header and
+ * the Builder's block header with no box at all — and squaring them one at a
+ * time is how a sheet ends up showing two radii.
+ * `AuroraExerciseAvatar` (aurora/exercise-media) wraps this with the lift's mark
+ * already inside; reach for the tile directly only when the CONTENT is something
+ * else (a body map, a catalogue emoji).
+ *
+ * FOUR SIZES, AND NO FIFTH. The ladder is set by what the tile sits beside, so
+ * a new surface picks the rung its neighbours already use rather than measuring
+ * one of its own — which is how this drifted to six different boxes the first
+ * time:
+ *   40  a LIST ROW — the exercise picker, the Exercises browser, the pin sheet,
+ *       the Sports index, the quick-log sport picker.
+ *   36  a FULL-WIDTH CARD or SHEET HEADER — the logger's exercise card, the
+ *       Builder's block card, the quick-log sport sheet.
+ *   28  a COMPACT ROW — the exercise sheet's Order block.
+ *   24  a RAIL CARD's header, where the card itself is only 150–200 wide —
+ *       Today's exercise favourites and the Other-sports lanes.
+ * A SECTION HEAD takes none of them: a marker before a heading is the thing the
+ * no-decorative-dot rule exists to stop (see aurora/endurance-lanes).
+ */
+export function AMarkTile({ size = 40, label, children, style }: {
+  size?: number;
+  /**
+   * a11y label. Give one only where the tile SAYS something its row does not —
+   * the logger's cards label it with the block's kind. In a picker or browser row
+   * the pressable already announces the name, so the tile stays silent rather
+   * than making VoiceOver read it twice.
+   */
+  label?: string;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette } = useTheme();
+  return (
+    <View
+      accessibilityRole={label ? "image" : undefined}
+      accessibilityLabel={label}
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: RADIUS.mark,
+          backgroundColor: palette.ink,
+          borderWidth: 1,
+          borderColor: palette.line,
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
       {children}
     </View>
   );
@@ -1163,6 +1231,15 @@ export function ASegment<T extends string>({
  * This is a stopgap, not a destination: a screen with a title to establish
  * should take a `hero` and let the Hero System own its rail, collapse and
  * metadata. AHeading exists for the surfaces that genuinely have no stack.
+ *
+ * IT TAKES NO `fontSize`, and packages/core/src/aurora-head.test.ts fails the
+ * build if a caller passes one. That is not pedantry about a token: the rung
+ * here is computed by `heroTitleType`, which STEPS A LONG TITLE DOWN a rung so
+ * it takes two lines instead of three. A caller who pins the size defeats the
+ * step-down and gets the broken masthead the ramp exists to prevent — which is
+ * how Train shipped a hand-typed 28 beside Performance and Feed at 26. A head
+ * that genuinely wants the cover rung asks for it by NAME, through `rank`; a
+ * heading below screen level is not this component at all (use ASection).
  */
 /**
  * THE SECTION HEAD — the one cluster label, to the standard CLAUDE.md already
@@ -1345,9 +1422,20 @@ export function ASection({
   );
 }
 
-export function AHeading({ children, style }: { children: ReactNode; style?: TextStyle }) {
+export function AHeading({
+  children,
+  style,
+  /** The hero rank this head stands in for. `cover` is the splash rung (the
+   *  welcome screen's one big line); everything else is a screen title. */
+  rank = "title",
+}: {
+  children: ReactNode;
+  /** Position and colour only — a `fontSize` here is a build failure. */
+  style?: TextStyle;
+  rank?: Extract<HeroRank, "title" | "cover">;
+}) {
   const { palette } = useTheme();
-  const type = heroTitleType(typeof children === "string" ? children : "", "title");
+  const type = heroTitleType(typeof children === "string" ? children : "", rank);
   return (
     <Text
       accessibilityRole="header"

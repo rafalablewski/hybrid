@@ -295,7 +295,8 @@ export interface WeekChapter {
   isCurrent: boolean;
   /** Mon..Sun, always 7 entries. */
   days: WeekChapterDay[];
-  totals: { sessions: number; volume: number; prs: number };
+  /** figure-order.ts's reading order, same as the chips that render them. */
+  totals: { volume: number; sessions: number; prs: number };
   /** newest first. */
   sessions: LoggedSession[];
 }

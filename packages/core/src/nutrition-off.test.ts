@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalizeOffProduct, normalizeOffResults, offSearchUrl, offBarcodeUrl, isLikelyBarcode } from "./nutrition-off";
+import { normalizeOffProduct, normalizeOffResults, offSearchUrl, offBarcodeUrl, isLikelyBarcode, parsePackQuantity, offPortions } from "./nutrition-off";
 
 describe("normalizeOffProduct", () => {
   it("prefers per-serving nutriments when present", () => {
@@ -83,5 +83,60 @@ describe("url builders + barcode check", () => {
     expect(isLikelyBarcode("737628064502")).toBe(true);
     expect(isLikelyBarcode("12345")).toBe(false);
     expect(isLikelyBarcode("greek yogurt")).toBe(false);
+  });
+});
+
+describe("the pack the catalog already published", () => {
+  it("reads a printed net quantity", () => {
+    expect(parsePackQuantity("400 ml")).toEqual([{ size: 400, unit: "ml" }]);
+    expect(parsePackQuantity("500g")).toEqual([{ size: 500, unit: "g" }]);
+  });
+
+  it("normalizes to the two units a scale and a carton are marked in", () => {
+    expect(parsePackQuantity("1 kg")).toEqual([{ size: 1000, unit: "g" }]);
+    expect(parsePackQuantity("1,5 l")).toEqual([{ size: 1500, unit: "ml" }]);
+    expect(parsePackQuantity("33 cl")).toEqual([{ size: 330, unit: "ml" }]);
+  });
+
+  it("gives a multipack BOTH the single and the whole thing", () => {
+    // Somebody drinks 250 ml; somebody else bought 1.5 l.
+    expect(parsePackQuantity("6 x 250 ml")).toEqual([
+      { size: 250, unit: "ml" },
+      { size: 1500, unit: "ml" },
+    ]);
+  });
+
+  it("refuses what it cannot read", () => {
+    expect(parsePackQuantity("")).toEqual([]);
+    expect(parsePackQuantity("family size")).toEqual([]);
+    expect(parsePackQuantity("2 pieces")).toEqual([]); // a count is not a measure
+  });
+
+  it("DROPS a pack stated in the wrong measure for the food", () => {
+    // 400 ml on a food whose serving is in grams needs a density we don't have.
+    expect(offPortions({ quantity: "400 ml" }, "g")).toEqual([]);
+    expect(offPortions({ quantity: "400 ml" }, "ml")).toEqual([{ label: "", size: 400, source: "catalog" }]);
+  });
+
+  it("prefers OFF's own parsed pair, and still reads the string for multipacks", () => {
+    const out = offPortions({ product_quantity: 250, product_quantity_unit: "ml", quantity: "6 x 250 ml" }, "ml");
+    expect(out.map((p) => p.size)).toEqual([250, 1500]);
+  });
+
+  it("carries the pack onto the normalized hit", () => {
+    const hit = normalizeOffProduct({
+      product_name: "Kefir",
+      quantity: "400 g",
+      nutriments: { "energy-kcal_100g": 50, proteins_100g: 3, carbohydrates_100g: 4, fat_100g: 2 },
+    })!;
+    expect(hit.portions).toEqual([{ label: "", size: 400, source: "catalog" }]);
+  });
+
+  it("leaves a product that never stated one with nothing", () => {
+    const hit = normalizeOffProduct({
+      product_name: "Loose spinach",
+      nutriments: { "energy-kcal_100g": 23, proteins_100g: 3, carbohydrates_100g: 1, fat_100g: 0 },
+    })!;
+    expect(hit.portions).toEqual([]);
   });
 });

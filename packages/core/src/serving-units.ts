@@ -52,6 +52,9 @@ export const SERVING_UNITS: ServingUnit[] = [
   { id: "oz", kind: "mass", base: 28.349523125, symbol: "oz" },
   { id: "lb", kind: "mass", base: 453.59237, symbol: "lb" },
   { id: "ml", kind: "volume", base: 1, symbol: "ml" },
+  // Centilitres: how a European drinks label states its size ("33 cl"), and so
+  // how the food database publishes a pack quantity for half the continent.
+  { id: "cl", kind: "volume", base: 10, symbol: "cl" },
   { id: "l", kind: "volume", base: 1_000, symbol: "l" },
   // US customary — the measures a recipe is written in.
   { id: "floz", kind: "volume", base: 29.5735295625, symbol: "fl oz" },
@@ -74,6 +77,7 @@ const ALIASES: Record<string, string> = {
   oz: "oz", ounce: "oz", ounces: "oz",
   lb: "lb", lbs: "lb", pound: "lb", pounds: "lb",
   ml: "ml", millilitre: "ml", millilitres: "ml", milliliter: "ml", milliliters: "ml",
+  cl: "cl", centilitre: "cl", centilitres: "cl", centiliter: "cl", centiliters: "cl",
   l: "l", litre: "l", litres: "l", liter: "l", liters: "l",
   floz: "floz", "fl oz": "floz", fluidounce: "floz",
   cup: "cup", cups: "cup",

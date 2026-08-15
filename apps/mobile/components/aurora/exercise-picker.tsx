@@ -21,7 +21,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS, ASearch, AChip } from "./kit";
 import Sheet from "./sheet";
-import AuroraExerciseMedia from "./exercise-media";
+import { AuroraExerciseAvatar } from "./exercise-media";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 
@@ -447,13 +447,12 @@ const Row = memo(function Row({ entry, onPick, onLongPress, queued, multi }: {
       accessibilityLabel={gear ? `${entry.name}, ${gear}` : entry.name}
       style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}
     >
-      {/* The tile carries the lift's DRAWN demo once it exists, and until then
-          its IMPLEMENT (core: exercise-marks). Sports keep their glyph. */}
-      <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-        {entry.icon
-          ? <Text style={{ fontSize: 17 }}>{entry.icon}</Text>
-          : <AuroraExerciseMedia name={entry.name} variant="thumb" size={24} tint={tint} />}
-      </View>
+      {/* The shared SQUARE exercise avatar — a lift is a THING (an implement, a
+          drawing, a piece of the catalogue), not a face, so it takes the square
+          and a person keeps the circle. It carries the drawn demo once it
+          exists and the implement mark until then; sports keep their glyph.
+          The box is the kit's: six surfaces drew their own before it existed. */}
+      <AuroraExerciseAvatar name={entry.name} icon={entry.icon} tint={tint} glyph={24} />
       <View style={{ flex: 1 }}>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{entry.name}</Text>
         {!!gear && (

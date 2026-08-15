@@ -139,6 +139,24 @@ export function moveItemTo<T>(arr: T[], from: number, to: number): T[] {
   return next;
 }
 
+/**
+ * Where row `k` ends up if the item at `from` is dropped at `to` — the same
+ * move `moveItemTo` performs, asked one row at a time and WITHOUT performing it.
+ *
+ * It is what lets a drag show its answer before the finger is up: a reorderable
+ * list parts under the held card by translating each row from where it is to
+ * the slot this returns (apps/mobile/lib/use-drag-reorder `part`). Lives here,
+ * beside the move it predicts, because the two must never disagree — a preview
+ * that opens the gap in the wrong place is worse than no preview, and the
+ * off-by-one only bites in one of the two directions.
+ */
+export function displacedIndex(k: number, from: number, to: number): number {
+  if (k === from) return to;
+  if (from < to) return k > from && k <= to ? k - 1 : k;
+  if (from > to) return k >= to && k < from ? k + 1 : k;
+  return k;
+}
+
 export interface WarmupStep {
   /** load in kg */
   load: number;

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { foodLogSignals, parseDerivedEntryId } from "@hybrid/core";
+import { foodLogSignals, parseDerivedEntryId, rescaleLoggedAmount } from "@hybrid/core";
 
 // Edit (quantity) or delete a single logged entry. Both keep the mirrored
 // Signals in lock-step: a quantity edit rescales them, a delete removes them.
@@ -94,7 +94,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       /* duplicate — skip */
     }
   }
-  const log = await prisma.foodLog.update({ where: { id }, data: { qty, signalIds } });
+  // The AMOUNT moves with the quantity, by the same ratio. Not re-derived: the
+  // ratio between them is fixed for a given food and unit, so scaling is exact,
+  // while a re-derivation could disagree with what the athlete originally
+  // entered — and then the row and the total would tell two different stories
+  // about one meal. Entries with no amount (or a database that predates the
+  // columns) simply keep the quantity edit.
+  const prevAmount = (existing as { amount?: number | null }).amount ?? null;
+  const amount = rescaleLoggedAmount(prevAmount, existing.qty, qty);
+  let log;
+  try {
+    log = await prisma.foodLog.update({ where: { id }, data: { qty, signalIds, ...(amount != null ? { amount } : {}) } });
+  } catch {
+    log = await prisma.foodLog.update({ where: { id }, data: { qty, signalIds } });
+  }
   return NextResponse.json({ ok: true, log });
 }
 

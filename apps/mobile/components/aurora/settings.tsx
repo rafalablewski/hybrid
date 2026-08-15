@@ -401,7 +401,7 @@ export default function AuroraSettings({ landOn }: {
   // ── LIST ── screen title, profile header, search, grouped category tiles.
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: fs.display, marginBottom: 16 }}>{t("w.account.settings.title")}</AHeading>
+      <AHeading style={{ marginBottom: 16 }}>{t("w.account.settings.title")}</AHeading>
       {/* Profile header — tappable → Edit profile, with a completeness ring
           around the avatar (a clay accent ring + a proportional bar, since RN has no
           inline SVG here), the % + "add a photo & bio" nudge, the FREE/FULL pill,

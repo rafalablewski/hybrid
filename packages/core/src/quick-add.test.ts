@@ -259,3 +259,53 @@ describe("quickAddVocab", () => {
     expect(v.protein).toEqual(QUICK_ADD_VOCAB.protein);
   });
 });
+
+describe("an amount converts through the food's OWN measure", () => {
+  const food = (servingLabel: string, servingGrams?: number | null): QuickAddCandidate => ({
+    id: "1", name: "Kefir", servingLabel, servingGrams: servingGrams ?? null,
+    facts: { kcal: 50, protein: 3, carbs: 4, fat: 2, satFat: null, sugar: null, fiber: null, salt: null },
+    source: "product",
+  });
+  const qty = (phrase: string, c: QuickAddCandidate) => resolveQuickAdd(parseQuickAdd(phrase), [c])[0]!;
+
+  it("reads millilitres against a food sold by volume", () => {
+    const m = qty("kefir 400ml", food("250 ml"));
+    expect(m.qty).toBe(1.6);
+    expect(m.needsPortion).toBe(false);
+  });
+
+  it("REFUSES millilitres against a food sold by weight", () => {
+    // This used to silently become 400 g at water density, with nothing on
+    // screen admitting the density had been invented.
+    const m = qty("kefir 400ml", food("100 g"));
+    expect(m.needsPortion).toBe(true);
+  });
+
+  it("REFUSES grams against a food sold by volume", () => {
+    expect(qty("kefir 400g", food("250 ml")).needsPortion).toBe(true);
+  });
+
+  it("normalizes the unit the athlete actually typed", () => {
+    expect(qty("kefir 1.5kg", food("100 g")).qty).toBe(15);
+    expect(qty("kefir 33cl", food("100 ml")).qty).toBe(3.3);
+    expect(qty("kefir 1l", food("250 ml")).qty).toBe(4);
+  });
+
+  it("still recovers a weight from the label when no weight was recorded", () => {
+    expect(qty("kefir 200g", food("100 g")).qty).toBe(2);
+  });
+
+  it("prefers a RECORDED serving weight over the label", () => {
+    expect(qty("kefir 60g", food("1 scoop", 30)).qty).toBe(2);
+  });
+
+  it("opens the editor for a food it cannot measure at all", () => {
+    expect(qty("kefir 200g", food("1 slice")).needsPortion).toBe(true);
+  });
+
+  it("leaves a bare count alone", () => {
+    const m = qty("2 kefir", food("250 ml"));
+    expect(m.qty).toBe(2);
+    expect(m.needsPortion).toBe(false);
+  });
+});

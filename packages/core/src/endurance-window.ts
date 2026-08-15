@@ -89,8 +89,12 @@ export interface EnduranceTotals {
  * the verdict card's own (see `enduranceLead`) — but they remain the domain of
  * `enduranceDeltaPct` / `enduranceDirection`, which the sentence's working-out
  * asks about TIME, and they define `EnduranceMetric`.
+ *
+ * ORDER IS figure-order.ts's — efforts (the session count), then time, then
+ * distance. It read efforts/distance/minutes, which did not even match the
+ * `EnduranceTotals` shape a few lines above it, let alone the rest of the app.
  */
-export const ENDURANCE_METRICS = ["efforts", "distance", "minutes"] as const;
+export const ENDURANCE_METRICS = ["efforts", "minutes", "distance"] as const;
 export type EnduranceMetric = (typeof ENDURANCE_METRICS)[number];
 
 export interface EnduranceWindow {
