@@ -71,8 +71,14 @@ export default function AuroraTrain() {
 
   return (
     <AuroraScreen>
-      <AHeading style={{ fontSize: 28 }}>{t("train.title")}</AHeading>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>{t("train.intro")}</Text>
+      {/* THE HEAD, and nothing under it. Performance and Feed state their title
+          and go straight to the content; Train used to slip an intro paragraph
+          between the title and today's session, which is the one screen where a
+          sentence of instruction earns its place least — the hero below it says
+          "Start session" on a button. The heading takes no size override either,
+          so it sits on the hero's `title` rung (AHeading → fs.display) exactly
+          as the other two screens' heads do. */}
+      <AHeading>{t("train.title")}</AHeading>
 
       {/* Resume a workout left in progress — kept above the adaptive slot. */}
       {draft && (
