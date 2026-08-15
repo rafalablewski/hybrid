@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { fireEvent, screen } from "@testing-library/react";
 import { addLocalDays, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { renderScreen } from "./render";
 
@@ -91,5 +92,68 @@ describe("the activity card's figure row", () => {
     // travel with the number.
     expect(text).toContain("1.0 t");
     expect(text).toContain("25 km");
+  });
+});
+
+/**
+ * THE BREAKDOWN IS A SHEET, and the thing this pins is that it is not in the
+ * CARD.
+ *
+ * It used to unfold inside the card, under the figure row: groups, a share bar,
+ * five session rows and a "show all", several hundred points of it, appearing
+ * in the middle of Today and shoving Records, the exercise rail and the whole
+ * Endurance cluster off the fold — with no dismissal but pressing the same
+ * column again, well off-screen by then. A sheet comes up OVER the screen and
+ * moves nothing.
+ *
+ * So the assertion is a NEGATIVE one on the card's own subtree and a positive
+ * one on the document: a breakdown that ever renders back inside `container` is
+ * the drawer growing back.
+ */
+describe("the activity card's breakdown", () => {
+  const openTonnage = () => {
+    const column = screen
+      .getAllByRole("button")
+      .find((b) => (b.getAttribute("aria-label") ?? "").startsWith("Tonnage"));
+    expect(column, "the Tonnage column is not a button").toBeTruthy();
+    fireEvent.click(column!);
+  };
+
+  /** Everything rendered OUTSIDE the card — i.e. the sheet, which a Modal
+   *  portals to a sibling of the render container rather than into the tree it
+   *  was written in. Reading it separately is what makes "not in the card" a
+   *  real assertion rather than a spelling of "nowhere". */
+  const sheetText = (container: Element, baseElement: Element) =>
+    Array.from(baseElement.children)
+      .filter((el) => el !== container)
+      .map((el) => el.textContent ?? "")
+      .join(" ");
+
+  it("stays out of the card until a column is pressed, and then opens over it", () => {
+    const { container, baseElement } = renderScreen(<AuroraWeekVerdict sessions={sessions} units="kg" />);
+
+    // At rest: the card is the sentence and the four figures, and there is no
+    // sheet at all.
+    expect(container.textContent ?? "").not.toContain("Where the tonnage came from");
+    expect(sheetText(container, baseElement)).toBe("");
+
+    openTonnage();
+
+    // The panel is in the sheet, and the card is untouched — no drawer, so
+    // nothing below it on Today moved.
+    expect(sheetText(container, baseElement)).toContain("Where the tonnage came from");
+    expect(container.textContent ?? "").not.toContain("Where the tonnage came from");
+  });
+
+  it("restates the figure it is decomposing — the column is behind the scrim", () => {
+    const { container, baseElement } = renderScreen(<AuroraWeekVerdict sessions={sessions} units="kg" />);
+    openTonnage();
+    const sheet = sheetText(container, baseElement);
+
+    // The sheet is titled with the column's own label and opens on the total
+    // that column printed, through the same formatter — the card it came from
+    // is under the scrim by then.
+    expect(sheet).toContain("Tonnage");
+    expect(sheet).toContain("1.0 t");
   });
 });
