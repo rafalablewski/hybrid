@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { KCAL_OVER_TOLERANCE, gapFigure, nutritionFigures, nutritionGap, wouldOvershoot, type MacroTotals } from "./nutrition-gap";
+import { KCAL_OVER_TOLERANCE, figureText, gapFigure, nutritionFigures, nutritionGap, wouldOvershoot, type MacroTotals } from "./nutrition-gap";
 
 const have: MacroTotals = { kcal: 2488, protein: 142, carbs: 268, fat: 71 };
 const want = { kcal: 3100, protein: 190, carbs: 320, fat: 86 };
@@ -134,5 +134,32 @@ describe("gapFigure — one figure against one target", () => {
     expect(gapFigure(2000, 2000).over).toBe(false);
     expect(gapFigure(2003, 2000).over).toBe(false);
     expect(gapFigure(2200, 2000).over).toBe(true);
+  });
+});
+
+describe("figureText — one spelling for every screen that states a figure", () => {
+  it("is have/want, no spaces and no unit", () => {
+    expect(figureText(118, 150)).toBe("118/150");
+    expect(figureText(1675, 2325)).toBe("1675/2325");
+  });
+
+  it("rounds BOTH halves, because an overridden target is taken exactly as typed", () => {
+    // resolveTargets passes ov.kcal through unrounded, so 2325.5 is reachable;
+    // two call sites used to interpolate the target raw.
+    expect(figureText(1674.6, 2325.5)).toBe("1675/2326");
+  });
+
+  it("states the amount alone when no target is set", () => {
+    for (const w of [null, undefined, 0, Number.NaN]) expect(figureText(118, w)).toBe("118");
+  });
+
+  it("never puts NaN or a negative amount on the glass", () => {
+    expect(figureText(Number.NaN, 150)).toBe("0/150");
+    expect(figureText(-12, 150)).toBe("0/150");
+  });
+
+  it("spells exactly what gapFigure measured", () => {
+    const f = gapFigure(118, 150);
+    expect(figureText(f.have, f.want)).toBe("118/150");
   });
 });

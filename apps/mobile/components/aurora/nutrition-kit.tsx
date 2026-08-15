@@ -5,7 +5,7 @@ import { SvgXml } from "react-native-svg";
 import {
   springs, springToRN,
   NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
-  PICKER_SOURCES, pickerSourceLabelKey,
+  PICKER_SOURCES, pickerSourceLabelKey, figureText,
   type GapFigure, type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
 } from "@hybrid/core";
@@ -443,11 +443,7 @@ export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
           </Text>
           <View style={{ marginTop: space.xxs }}>
             <RollingNumber
-              value={
-                item.figure.want == null
-                  ? String(Math.round(item.figure.have))
-                  : `${Math.round(item.figure.have)}/${Math.round(item.figure.want)}`
-              }
+              value={figureText(item.figure.have, item.figure.want)}
               maxFontSizeMultiplier={FIXED_FONT_SCALE}
               style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: item.tone }}
             />

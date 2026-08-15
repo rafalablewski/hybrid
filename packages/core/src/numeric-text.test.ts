@@ -88,3 +88,39 @@ describe("numericRolls", () => {
     expect(numericRolls("80", "80")).toBe(false);
   });
 });
+
+describe("the nutrition ledger's figure — a have/want string that rolls", () => {
+  // The ledger states `118/150` and hands the WHOLE string to RollingNumber.
+  // Two things have to hold for that to read as one event rather than noise:
+  // the separator must not travel, and the untouched target must not either.
+  it("rolls the digits that changed and leaves the separator alone", () => {
+    const { cells, dir } = numericDiff("118/150", "133/150");
+    const bySlash = cells.find((c) => c.char === "/")!;
+    expect(bySlash.rolls).toBe(false);
+    expect(bySlash.changed).toBe(false);
+    // the target's three digits kept their identity
+    expect(cells.slice(-3).every((c) => !c.changed)).toBe(true);
+    // the two that moved are in the amount
+    expect(cells.filter((c) => c.changed && c.rolls).map((c) => c.char)).toEqual(["3", "3"]);
+    expect(dir).toBe(1);
+  });
+
+  it("keeps the separator in its own column when the amount grows a digit", () => {
+    const { cells } = numericDiff("98/150", "105/150");
+    const slash = cells.find((c) => c.char === "/")!;
+    // aligned from the right, "/" still meets a "/" — the target does not shift
+    expect(slash.prev).toBe("/");
+    expect(cells.slice(-3).every((c) => !c.changed)).toBe(true);
+  });
+
+  it("does not roll on the first render of a figure", () => {
+    expect(numericRolls(null, "118/150")).toBe(false);
+    expect(numericRolls("118/150", "118/150")).toBe(false);
+    expect(numericRolls("118/150", "133/150")).toBe(true);
+  });
+
+  it("falls back to a swap when the figure changes shape (no target → a target)", () => {
+    // `—` becoming a number is one thing replaced by another, not a value moving
+    expect(numericRolls("—", "1675/2325")).toBe(false);
+  });
+});

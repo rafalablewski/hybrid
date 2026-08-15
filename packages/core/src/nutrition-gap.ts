@@ -91,6 +91,29 @@ export function gapFigure(
 }
 
 /**
+ * THE FIGURE'S ONE SPELLING — `have/want`, both rounded, no spaces, no unit.
+ *
+ * Five surfaces state a logged figure against its target and, before this, four
+ * of them spelled it differently: the ledger wrote `118/150`, the hub's macro
+ * meters `118 / 150 g`, the hub's ring `1675 / 2325`, the Today sheet
+ * `1675 / 2325 kcal today`. A reader crossing two screens has to work out
+ * whether the `g` and the spaces mean something. They do not.
+ *
+ * The UNIT is the label's job (a macro is grams, kcal says kcal), so the figure
+ * carries none. Both halves are ROUNDED here rather than at each call site: an
+ * overridden target is taken exactly as typed (nutrition-targets.ts), so a
+ * target of 2325.5 would otherwise reach the glass wherever a call site
+ * interpolated it raw — as two of them did.
+ *
+ * No target is not a target of zero: with none, the figure states the amount
+ * alone, and its caller draws no track.
+ */
+export function figureText(have: number, want?: number | null): string {
+  const h = Math.round(Number.isFinite(have) ? Math.max(0, have) : 0);
+  return usable(want) ? `${h}/${Math.round(want)}` : String(h);
+}
+
+/**
  * The day's four figures, whether or not there is a target behind them.
  *
  * This is what a RECORD of a day needs — the diary lists what was eaten and
