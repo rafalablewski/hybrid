@@ -69,3 +69,47 @@ export const brand = {
   tagline: "Strength & conditioning for hybrid athletes",
   web: "app.hybrid.app",
 } as const;
+
+/**
+ * TINT STRENGTHS — the alpha rungs, for `withAlpha(colour, ALPHA.fill)`.
+ *
+ * Derived from 350 hand-rolled alphas, not invented. Once the colour arithmetic
+ * was converted from hex suffixes to withAlpha() the values became readable as
+ * a set for the first time, and the set turned out to be 58 distinct numbers
+ * doing two jobs — eight of them inside the single band 7%–15%. Nobody chose
+ * eight; each call site converted a percentage in its head and wrote the byte.
+ *
+ * TWO FAMILIES, because they tolerate completely different precision:
+ *
+ *   SURFACES (wash / fill / solid) are large areas, where a 4% shift is subtle
+ *     but visible — so the rungs are close together, and the migration moved
+ *     only 7 of 156 sites by more than 2%.
+ *
+ *   BORDERS (edge / line / rim) are ONE PIXEL wide. A 5% alpha shift on a
+ *     hairline is not perceptible, so these can be coarser and still land.
+ *
+ * WHAT DELIBERATELY HAS NO RUNG, and this is the real finding: the alphas above
+ * ~0.45, and every stop inside a LinearGradient. The full histogram is
+ * CONTINUOUS from 0 to 1 rather than clustered, because a gradient ramp needs
+ * arbitrary intermediate stops to read as smooth and a scrim is tuned against
+ * the specific content behind it. Those are COMPOSITION, not a palette choice,
+ * and snapping them to a ladder would be inventing a scale where none exists.
+ * A token set that covers 71% of its axis honestly beats one that covers 100%
+ * by pretending.
+ */
+export const ALPHA = {
+  /** the faintest tinted surface — a hint of accent behind a row */
+  wash: 0.08,
+  /** the standard tinted fill — a selected chip, an active card */
+  fill: 0.12,
+  /** the strongest tinted fill; still a tint, not a colour */
+  solid: 0.16,
+  /** the quietest tinted hairline */
+  edge: 0.25,
+  /** the standard tinted border */
+  line: 0.33,
+  /** a border that has to hold against a busy ground */
+  rim: 0.42,
+} as const;
+
+export type TintRole = keyof typeof ALPHA;

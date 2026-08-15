@@ -3,11 +3,12 @@ import { View, Text, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 import RailTail from "./rail-tail";
-import { GUTTER } from "./kit";
+import { GUTTER , RADIUS} from "./kit";
+import { withAlpha } from "./field";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
 // the web rail: live marketplace (/api/coaches) with the shared placeholder
@@ -31,10 +32,10 @@ function initials(name: string) {
 function Stat({ C, value, label, first, star }: { C: Palette; value: string; label: string; first?: boolean; star?: boolean }) {
   return (
     <View style={{ flex: 1, paddingTop: 10, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line, paddingLeft: first ? 0 : 12 }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: 13, color: C.chalk }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>
         {star ? <Text style={{ color: C.gold }}>★ </Text> : null}{value}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: `${C.ash}b3`, marginTop: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: withAlpha(C.ash, 0.702), marginTop: 4 }}>{label}</Text>
     </View>
   );
 }
@@ -78,7 +79,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
       {!headerless && (
         <View style={{ marginBottom: 10 }}>
           <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: 17 }}>{t("w.explore.coaches")}</Text>
-          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 12 }}>{t("w.explore.coachSwipe")}</Text>
+          <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.caption }}>{t("w.explore.coachSwipe")}</Text>
         </View>
       )}
 
@@ -94,15 +95,15 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
             ...(c.years ? [{ value: `${c.years}y`, label: t("w.explore.coachCoaching") }] : []),
           ];
           return (
-            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${t("w.explore.coachOpen")} ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, overflow: "hidden", ...cardShadow }}>
+            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${t("w.explore.coachOpen")} ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, overflow: "hidden", ...cardShadow }}>
               {/* accent wash — the coach's colour bleeding in from the top corner
                   (a diagonal fade stands in for the web's radial gradient). */}
-              <LinearGradient colors={[`${accent}24`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
-              <Text style={{ position: "absolute", top: 14, right: 14, color: `${C.ash}8c`, fontFamily: F.mono, fontSize: 16 }}>›</Text>
+              <LinearGradient colors={[withAlpha(accent, 0.14), withAlpha(accent, 0.0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
+              <Text style={{ position: "absolute", top: 14, right: 14, color: withAlpha(C.ash, 0.55), fontFamily: F.mono, fontSize: fs.subtitle }}>›</Text>
 
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingRight: 16 }}>
-                <View style={{ width: 46, height: 46, borderRadius: 999, borderWidth: 1.5, borderColor: accent, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ color: accentText, fontFamily: F.mono, fontWeight: "700", fontSize: 13 }}>{initials(c.name)}</Text>
+                <View style={{ width: 46, height: 46, borderRadius: RADIUS.pill, borderWidth: 1.5, borderColor: accent, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ color: accentText, fontFamily: F.monoBold, fontSize: fs.body }}>{initials(c.name)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
                   {/* Name in the display face, so the person leads the card
@@ -110,10 +111,10 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
                   {/* Name + check as row siblings: nested inside one truncating
                       Text the ✓ would be the first thing ellipsized away. */}
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ color: C.chalk, fontFamily: F.black, fontSize: 16, flexShrink: 1 }}>{c.name}</Text>
-                    {c.verified ? <Text style={{ color: accentText, fontSize: 12, marginLeft: 4 }}>✓</Text> : null}
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle, flexShrink: 1 }}>{c.name}</Text>
+                    {c.verified ? <Text style={{ color: accentText, fontSize: fs.caption, marginLeft: 4 }}>✓</Text> : null}
                   </View>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, fontWeight: "600", letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ marginTop: 5, fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
                 </View>
               </View>
 
@@ -121,11 +122,11 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
               <View style={{ marginTop: 12, minHeight: 58 }}>
                 {c.quote ? (
                   <>
-                    <Text numberOfLines={2} style={{ fontSize: 13, lineHeight: 19.5, color: C.chalk }}>“{c.quote}”</Text>
-                    <Text style={{ marginTop: 5, fontFamily: F.mono, fontSize: 10, color: `${C.ash}b3` }}>— {t("w.explore.coachReview")}</Text>
+                    <Text numberOfLines={2} style={{ fontSize: fs.body, lineHeight: 19.5, color: C.chalk }}>“{c.quote}”</Text>
+                    <Text style={{ marginTop: 5, fontFamily: F.mono, fontSize: fs.nano, color: withAlpha(C.ash, 0.702) }}>— {t("w.explore.coachReview")}</Text>
                   </>
                 ) : (
-                  <Text numberOfLines={3} style={{ fontSize: 13, lineHeight: 19.5, color: C.ash }}>{c.headline}</Text>
+                  <Text numberOfLines={3} style={{ fontSize: fs.body, lineHeight: 19.5, color: C.ash }}>{c.headline}</Text>
                 )}
               </View>
 

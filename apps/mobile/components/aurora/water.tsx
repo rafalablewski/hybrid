@@ -147,7 +147,7 @@ export default function WaterCard({
             <AuroraIcon name="add" size={13} color={txt(C, C.lime)} />
             <Text
               maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.caption, color: txt(C, C.lime) }}
+              style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime) }}
             >
               {formatVolume(p.ml, units)}
             </Text>

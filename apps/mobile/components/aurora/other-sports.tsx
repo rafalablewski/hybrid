@@ -8,7 +8,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { GUTTER, RADIUS, AMarkTile } from "./kit";
 import { useChartScrub } from "./chart-scrub";
 import HistoryStrip from "./history-strip";
@@ -88,7 +88,7 @@ export default function AuroraOtherSports({
             denominator, set in mono uppercase as though it were a measurement.
             No parent, no quote. Mirrors web other-sports.tsx. */}
         {parentage.enduranceMinutes > 0 && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
             {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.enduranceMinutes, u))}
           </Text>
         )}
@@ -122,7 +122,7 @@ export default function AuroraOtherSports({
               paddingHorizontal: 10,
             }}
           >
-            <Text style={{ fontSize: 18, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
+            <Text style={{ fontSize: fs.title, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: C.ash, textAlign: "center", lineHeight: leading(fs.micro) }}>
               {expanded ? t("w.home.other.fewer") : t("w.home.other.all")} {expanded ? `−${rest}` : `+${rest}`}
             </Text>
@@ -169,13 +169,13 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
         {/* 24dp — the RAIL-CARD rung (see AMarkTile). The tile is smaller here
             than on a full-width header because the card is only 150 wide and
             the sport's name has to survive beside it. */}
-        <AMarkTile size={24}><Text style={{ fontSize: 13 }}>{lane.icon}</Text></AMarkTile>
+        <AMarkTile size={24}><Text style={{ fontSize: fs.body }}>{lane.icon}</Text></AMarkTile>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{lane.sport}</Text>
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: -0.5, color: C.chalk }}>{lane.efforts}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.other.efforts")}
         </Text>
       </View>
@@ -190,10 +190,10 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
         {/* A held week reads as a duration too, so it brings its own units and
             the readout adds none — same figure the resting footer shows. */}
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: read?.best ? txt(C, C.lime) : C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: read?.best ? txt(C, C.lime) : C.ash }}>
           {read ? (read.unit ? `${read.value} ${read.unit}` : read.value) : time}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
           {read ? t("chart.weekOf").replace("{date}", fmtWeekDate(read.weekStart)) : ago(lane.lastAt)}
         </Text>
       </View>

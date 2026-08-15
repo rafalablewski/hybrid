@@ -5,7 +5,8 @@ import {
   kgToUnit, fmtTonnage, fmtWeight, normalizeAuthRole,
   analyticsScopesFor, resolveAnalyticsScope, analyticsScopeLabelKey, analyticsScopePrivacyKey,
   type LoggedSession, type AnalyticsScope,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { fetchRoster, type RosterRow } from "../../lib/api";
@@ -15,8 +16,9 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, AStat, ASub, ASegment, AMeter } from "./kit";
+import { leading, tracking, fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
+import { AuroraScreen, ACard, AStat, ASub, ASegment, AMeter , RADIUS} from "./kit";
+import { withAlpha } from "./field";
 
 /**
  * AURORA Analytics — the 3-scope dashboard (Athlete / Coach / Operator), now
@@ -64,7 +66,7 @@ function AFrame({ title, kicker, children }: { title: string; kicker?: string; c
     <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
-        {!!kicker && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{kicker}</Text>}
+        {!!kicker && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{kicker}</Text>}
       </View>
       <View style={{ marginTop: 12 }}>{children}</View>
     </ACard>
@@ -78,7 +80,7 @@ function PrivacyNote({ scope, accent }: { scope: AnalyticsScope; accent: string 
   const C = useTheme().palette;
   const { t } = useLang();
   return (
-    <View style={{ marginTop: 16, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
+    <View style={{ marginTop: 16, paddingVertical: 10, paddingHorizontal: 12, borderRadius: RADIUS.field, backgroundColor: withAlpha(accent, ALPHA.wash), borderLeftWidth: 3, borderLeftColor: accent }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
     </View>
   );
@@ -103,7 +105,7 @@ function Bars({ data, color, highlightLast }: { data: { label: string; v: number
     <>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 96, gap: 5 }}>
         {data.map((d, i) => (
-          <View key={i} style={{ flex: 1, height: 6 + (d.v / max) * 84, borderRadius: 3, backgroundColor: highlightLast && i === data.length - 1 ? color : `${color}66` }} />
+          <View key={i} style={{ flex: 1, height: 6 + (d.v / max) * 84, borderRadius: RADIUS.mark, backgroundColor: highlightLast && i === data.length - 1 ? color : withAlpha(color, ALPHA.rim) }} />
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
@@ -125,7 +127,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
       <View>
         <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line }}>
           {head.map((h, i) => (
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{h}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{h}</Text>
           ))}
         </View>
         {rows.map((r, i) => (

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
-import { FUNNEL, FULL_BENEFITS } from "@hybrid/core";
+import { FUNNEL, FULL_BENEFITS , ALPHA} from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull, restorePurchases, fetchFullPrice } from "../../lib/iap";
@@ -9,10 +9,12 @@ import { LegalLinks } from "../legal-links";
 import { supabase } from "../../lib/supabase";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import Sheet from "./sheet";
+import { RADIUS } from "./kit";
+import { withAlpha } from "./field";
 
 // The Full toolkit, sold as one concise sheet (matches the web upgrade sheet).
 // Benefits come from the shared @hybrid/core FULL_BENEFITS so the paywall and
@@ -116,21 +118,21 @@ export default function AuroraUpgrade() {
     // so the CTA sits at the end of the read on both clients.
     <Sheet visible={open} onClose={close} onClosed={() => router.back()}>
       {/* badge */}
-      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
+      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(pa.fill, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
       </View>
 
-      <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: leading(fs.caption) }}>{t("w.account.upgrade.sheet-sub")}</Text>
 
       {/* benefits */}
       <View style={{ marginTop: 16 }}>
         {BENEFITS.map((b, i) => (
           <View key={b.t} style={{ flexDirection: "row", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-            <Text style={{ fontSize: 15, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
+            <Text style={{ fontSize: fs.note, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.t}</Text>
-              <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.t}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 1, lineHeight: leading(fs.body, "snug") }}>{b.d}</Text>
             </View>
           </View>
         ))}
@@ -138,10 +140,10 @@ export default function AuroraUpgrade() {
 
       {/* price */}
       <View style={{ alignItems: "center", marginTop: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: -0.5, color: C.chalk }}>
-          {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking.display, color: C.chalk }}>
+          {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: 0.9 }}>{t("w.account.upgrade.trial-note")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3, letterSpacing: tracking.label }}>{t("w.account.upgrade.trial-note")}</Text>
       </View>
 
       {!!error && (
@@ -149,7 +151,7 @@ export default function AuroraUpgrade() {
       )}
 
       {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}
-      <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
+      <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: RADIUS.field, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
         {busy ? <ActivityIndicator color={pa.ink} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.account.upgrade.start-trial")}</Text>}
       </Pressable>
       {/* Restore Purchases — required by Apple for auto-renewable subscriptions */}

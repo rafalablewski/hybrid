@@ -26,14 +26,16 @@ import {
   type SportPageModel,
   type SportStore,
   type SportWeek,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { APill, AuroraScreen, GUTTER, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
+import { withAlpha } from "./field";
 
 const STORE_KEY = "hybrid.sport";
 /** The handoff the live logger reads when the transfer session is started. */
@@ -123,7 +125,7 @@ export default function AuroraSportPage() {
   };
 
   const mono = (size: number, color = C.ash) => ({ fontFamily: F.mono, fontSize: size, color });
-  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: 1.2 });
+  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: tracking.caps });
   const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
   const u = durationUnits(t);
@@ -209,7 +211,7 @@ export default function AuroraSportPage() {
         <View style={{ flex: 1 }}>
           <Text style={label()}>{primaryLabel}</Text>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: space.ms }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: -1 }}>{m.primary.value}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
             {!!m.primary.unit && <Text style={{ ...mono(fs.note), marginBottom: 6 }}>{m.primary.unit}</Text>}
           </View>
           {!!m.primary.delta && (
@@ -375,7 +377,7 @@ export default function AuroraSportPage() {
                     accessibilityState={{ selected: on }}
                     style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : C.ink2 }}
                   >
-                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: 0.8, color: on ? C.onAccent : C.ash }}>{l.toUpperCase()}</Text>
+                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: tracking.label, color: on ? C.onAccent : C.ash }}>{l.toUpperCase()}</Text>
                   </Pressable>
                 );
               })}
@@ -400,7 +402,7 @@ export default function AuroraSportPage() {
                   <Text style={{ ...mono(fs.micro), marginTop: 4 }}>{b.demand}</Text>
                 </View>
                 <View style={{ alignItems: "flex-end", maxWidth: 170 }}>
-                  <View style={{ backgroundColor: `${C.lime}29`, borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                  <View style={{ backgroundColor: withAlpha(C.lime, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
                     <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime) }}>{b.scheme}</Text>
                   </View>
                   <Text style={{ ...mono(fs.nano), marginTop: 6, textAlign: "right", lineHeight: leading(fs.nano) }}>
@@ -479,18 +481,18 @@ function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]
           style={{
             flex: 1,
             height: Math.max(3, (w.value / max) * 110),
-            borderRadius: 3,
+            borderRadius: RADIUS.mark,
             // Held, the finger's week is the lit one — the "this week" accent
             // would otherwise compete with the answer the athlete asked for.
-            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : `${C.lime}6b`,
+            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : withAlpha(C.lime, ALPHA.rim),
           }}
         />
       ))}
       {avg > 0 && (
-        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: (avg / max) * 110, borderTopWidth: 1, borderTopColor: `${C.ash}8c`, borderStyle: "dashed" }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: 0, right: 0, bottom: (avg / max) * 110, borderTopWidth: 1, borderTopColor: withAlpha(C.ash, 0.55), borderStyle: "dashed" }} />
       )}
       {held >= 0 && (
-        <View pointerEvents="none" style={{ position: "absolute", left: `${pos * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: `${C.ash}8c` }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: `${pos * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: withAlpha(C.ash, 0.55) }} />
       )}
       {readout}
     </View>
@@ -520,7 +522,7 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
         <Path d={d} fill="none" stroke={C.lime} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </Svg>
       {!!hit && (
-        <View pointerEvents="none" style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: `${C.ash}8c` }} />
+        <View pointerEvents="none" style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: withAlpha(C.ash, 0.55) }} />
       )}
       {/* The PR dot is a View, not a circle: the path is stretched to the
           column's width and a circle inside a stretched viewBox is an ellipse. */}
@@ -531,7 +533,7 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
           left: `${(pr[0] / W) * 100}%`,
           top: `${(pr[1] / H) * 100}%`,
           width: 9, height: 9, marginLeft: -4.5, marginTop: -4.5,
-          borderRadius: 999, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink,
+          borderRadius: RADIUS.pill, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink,
         }}
       />
       {!!hit && (
@@ -542,7 +544,7 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
             left: `${(hit[0] / W) * 100}%`,
             top: `${(hit[1] / H) * 100}%`,
             width: 13, height: 13, marginLeft: -6.5, marginTop: -6.5,
-            borderRadius: 999, backgroundColor: C.chalk, borderWidth: 2, borderColor: C.ink,
+            borderRadius: RADIUS.pill, backgroundColor: C.chalk, borderWidth: 2, borderColor: C.ink,
           }}
         />
       )}
@@ -577,8 +579,8 @@ function EffortSplitBar({
   // One hue at three densities — three HUES would imply three meanings; this is
   // one meaning (intensity) at three levels.
   const bands = [
-    { v: pct(split.easy), k: labels[0]!, bg: `${C.lime}61` },
-    { v: pct(split.moderate), k: labels[1]!, bg: `${C.lime}ad` },
+    { v: pct(split.easy), k: labels[0]!, bg: withAlpha(C.lime, ALPHA.rim) },
+    { v: pct(split.moderate), k: labels[1]!, bg: withAlpha(C.lime, 0.68) },
     { v: pct(split.hard), k: labels[2]!, bg: C.lime },
   ];
   // A zero band has no label to place, and a thin one must not collide with its
@@ -586,14 +588,14 @@ function EffortSplitBar({
   const shown = bands.filter((b) => b.v > 0);
   return (
     <View>
-      <View style={{ flexDirection: "row", gap: 2, height: 12, borderRadius: 999, overflow: "hidden" }}>
+      <View style={{ flexDirection: "row", gap: 2, height: 12, borderRadius: RADIUS.pill, overflow: "hidden" }}>
         {bands.map((b) => <View key={b.k} style={{ width: `${b.v}%`, backgroundColor: b.bg }} />)}
       </View>
       <View style={{ flexDirection: "row", gap: 2, marginTop: space.md }}>
         {shown.map((b, i) => (
           <View key={b.k} style={{ flexBasis: `${b.v}%`, flexGrow: 0, flexShrink: 1, minWidth: 58, alignItems: i === shown.length - 1 ? "flex-end" : "flex-start" }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{b.v}%</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1, marginTop: 4 }}>{b.k}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label, marginTop: 4 }}>{b.k}</Text>
           </View>
         ))}
       </View>

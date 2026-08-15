@@ -1,7 +1,9 @@
 import { View, Text } from "react-native";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { RADIUS } from "./kit";
+import { withAlpha } from "./field";
+import { ALPHA } from "@hybrid/core";
 
 // ── AURORA Action pair (mobile) ─────────────────────────────────────────────
 // A PRIMARY AND A SECONDARY ON ONE BASELINE — SwiftUI's `.borderedProminent`
@@ -74,15 +76,15 @@ export default function AActionPair({ actions, align = "center" }: {
             paddingVertical: 11,
             paddingHorizontal: a.prominent ? 20 : 17,
             borderRadius: RADIUS.pill,
-            backgroundColor: a.prominent ? C.lime : `${C.chalk}17`,
-            ...(a.prominent ? {} : { borderWidth: 1, borderColor: `${C.chalk}26` }),
+            backgroundColor: a.prominent ? C.lime : withAlpha(C.chalk, ALPHA.wash),
+            ...(a.prominent ? {} : { borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.solid) }),
             ...(a.prominent ? startGlow(C.lime, pressed) : { opacity: pressed ? 0.7 : 1 }),
           })}
         >
           <Text
             maxFontSizeMultiplier={FIXED_FONT_SCALE}
             numberOfLines={1}
-            style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: -0.2, color: a.prominent ? C.onAccent : txt(C, C.chalk) }}
+            style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: tracking.display, color: a.prominent ? C.onAccent : txt(C, C.chalk) }}
           >
             {a.label}
           </Text>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import { ALL_MUSCLES, searchMissSummary, topSearchMisses } from "@hybrid/core";
-import { fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
+import { leading, fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
@@ -376,7 +376,7 @@ function SearchMisses() {
         <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }}>Searched, not found</Text>
         <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{`${misses.length} on this device`}</Mono>
       </View>
-      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: 16 }}>
+      <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 6, lineHeight: leading(fs.micro) }}>
         Each one is a nickname to add, or a movement the catalog is missing.
       </Mono>
       <View style={{ marginTop: 12, gap: 8 }}>

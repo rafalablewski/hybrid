@@ -11,16 +11,18 @@ import {
   type LogbookDay,
   type LoggedSession,
   type WeightUnit,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import AEmptyDay from "./empty-day";
 import AActionPair from "./action-pair";
 import ReceiptBlock from "./receipt-block";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
+import { withAlpha } from "./field";
 
 /** The card's own inner padding — what the full-bleed hairline inside it bleeds
  *  by to reach the card's edges. NOT the screen gutter (this rail lives on a
@@ -119,7 +121,7 @@ export default function AuroraLogbookRail({
           History that briefly replaced it went with the card's exit entirely —
           this screen has one door into the log, and it is not up here. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: -0.5, color: C.chalk }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: tracking.display, color: C.chalk }}>
           {t("w.home.logbook.title")}
         </Text>
       </View>
@@ -190,21 +192,21 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${a11yLoad}`}
       style={{ width: DAY_W, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
           hairline disc (preview cue); otherwise a bare tonal number (chalk when
           the day holds training, ash when it doesn't). */}
       <View style={{ height: 28, alignItems: "center", justifyContent: "center" }}>
         {day.isToday ? (
           <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.onAccent }}>{day.dayOfMonth}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{day.dayOfMonth}</Text>
           </View>
         ) : selected ? (
-          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: `${C.chalk}4d`, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{day.dayOfMonth}</Text>
+          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{day.dayOfMonth}</Text>
           </View>
         ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
         )}
       </View>
       {/* LOAD slot — the ✓'s pixels, spent on how much instead of whether. The
@@ -213,14 +215,14 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
           untrained day fills nothing — silence, never terracotta, because a
           logbook makes no promises. */}
       <View style={{ height: 12, alignItems: "center", justifyContent: "center" }}>
-        <View style={{ width: LOAD_W, height: LOAD_H, borderRadius: LOAD_H / 2, backgroundColor: `${C.chalk}1f`, overflow: "hidden" }}>
+        <View style={{ width: LOAD_W, height: LOAD_H, borderRadius: LOAD_H / 2, backgroundColor: withAlpha(C.chalk, ALPHA.fill), overflow: "hidden" }}>
           {day.load > 0 ? (
             <View
               style={{
                 width: `${Math.max(14, Math.round(day.load * 100))}%`,
                 height: "100%",
                 borderRadius: LOAD_H / 2,
-                backgroundColor: day.isToday ? C.lime : `${C.chalk}b3`,
+                backgroundColor: day.isToday ? C.lime : withAlpha(C.chalk, 0.702),
               }}
             />
           ) : null}

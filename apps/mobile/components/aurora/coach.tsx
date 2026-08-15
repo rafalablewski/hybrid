@@ -9,6 +9,7 @@ import {
   personalTrainingLog,
   localTodayKey,
   formatStrengthPr,
+  ALPHA,
 } from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
@@ -35,7 +36,7 @@ import {
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable , tracking} from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASection, RADIUS, AChip } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -48,6 +49,7 @@ import CoachInvite from "../coach-invite";
 import CoachDiet from "../coach-diet";
 import { useFeatureFlag } from "../../lib/flags";
 import { CtaLabel } from "./cta-label";
+import { withAlpha } from "./field";
 
 const personName = (p?: Person) => p?.name || p?.email?.split("@")[0] || "Athlete";
 
@@ -101,7 +103,7 @@ export default function AuroraCoach() {
   };
 
   const sectionLabel = (text: string) => (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 20, marginBottom: 10 }}>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 20, marginBottom: 10 }}>
       {text}
     </Text>
   );
@@ -187,7 +189,7 @@ export default function AuroraCoach() {
             <ACard key={l.id} style={{ marginTop: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{personName(l.client)}</Text>
-                <View style={{ backgroundColor: `${C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+                <View style={{ backgroundColor: withAlpha(C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.teams.coach.pending")}</Text>
                 </View>
               </View>
@@ -323,7 +325,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
   const field = { fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 } as const;
   const sectionLabel = (text: string, accent = false) => (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: accent ? txt(C, C.lime) : C.ash, marginTop: 20, marginBottom: 10 }}>{text}</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: accent ? txt(C, C.lime) : C.ash, marginTop: 20, marginBottom: 10 }}>{text}</Text>
   );
   const selChip = (key: string, lbl: string, selected: boolean, onPress: () => void) => (
     <AChip key={key} label={lbl} selected={selected} onPress={onPress} />
@@ -340,7 +342,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       {/* Roster TAGS */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs, marginBottom: 16 }}>
         {tags.map((tg) => (
-          <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${C.ash}1f`, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingLeft: 12, paddingRight: 8, paddingVertical: 5 }}>
+          <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(C.ash, ALPHA.fill), borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingLeft: 12, paddingRight: 8, paddingVertical: 5 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{tg}</Text>
             <Pressable accessibilityLabel={`${t("w.teams.coach.removeTag")} ${tg}`} onPress={() => saveTags(tags.filter((x) => x !== tg))} hitSlop={6}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.ash, lineHeight: fs.note }}>×</Text>
@@ -356,15 +358,15 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           placeholderTextColor={C.ash}
           accessibilityLabel={t("w.teams.coach.addTagLabel")}
           autoCapitalize="none"
-          style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, minWidth: 96 }}
+          style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6, minWidth: 96 }}
         />
       </View>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginBottom: 10 }}>{t("w.teams.coach.diet")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime), marginBottom: 10 }}>{t("w.teams.coach.diet")}</Text>
       <CoachDiet linkId={link.id} />
 
       <View style={{ marginTop: 16 }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginBottom: 10 }}>{t("w.teams.coach.coachingNotes")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginBottom: 10 }}>{t("w.teams.coach.coachingNotes")}</Text>
       <ACard>
         <TextInput
           value={body}
@@ -390,7 +392,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           {/* PROGRAMMING — assign a saved template + generate a periodized week */}
           {sectionLabel(t("w.teams.coach.programming"))}
           <ACard>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.assignWorkout")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.teams.coach.assignWorkout")}</Text>
             {templates.length === 0 ? (
               <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8 }}>{t("w.teams.coach.noTemplates")}</Text>
             ) : (
@@ -407,7 +409,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           </ACard>
 
           <ACard style={{ marginTop: 12 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.generatePeriodizedWeek")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.teams.coach.generatePeriodizedWeek")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, lineHeight: leading(fs.caption) }}>
               {sessions.length === 0
                 ? t("w.teams.coach.genEmptyHint")
@@ -447,7 +449,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{new Date(a.date).toLocaleDateString()}</Text>
                 </View>
-                <View style={{ backgroundColor: `${a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+                <View style={{ backgroundColor: withAlpha(a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash) }}>{a.status}</Text>
                 </View>
               </View>
@@ -472,7 +474,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                 {c.note ? <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6, lineHeight: leading(fs.bodyLg) }}>{c.note}</Text> : null}
                 {c.coachReply ? (
                   <View style={{ marginTop: 10, paddingLeft: 10 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.teams.coach.yourReply")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.teams.coach.yourReply")}</Text>
                     <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 4, lineHeight: leading(fs.bodyLg) }}>{c.coachReply}</Text>
                   </View>
                 ) : replyFor === c.id ? (
@@ -503,7 +505,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           {notes.map((n) => (
             <ACard key={n.id} style={{ marginTop: 12 }}>
               {n.private && (
-                <View style={{ alignSelf: "flex-start", backgroundColor: `${C.ash}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+                <View style={{ alignSelf: "flex-start", backgroundColor: withAlpha(C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.teams.coach.private")}</Text>
                 </View>
               )}
@@ -513,7 +515,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
 
           {sessions.length > 0 && <ClientWeek sessions={sessions} t={t} />}
 
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginTop: 20, marginBottom: 10 }}>{t("w.teams.coach.recentSessions")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime), marginTop: 20, marginBottom: 10 }}>{t("w.teams.coach.recentSessions")}</Text>
           {sessions.length === 0 ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.teams.coach.noSessions")}</Text>
           ) : (
@@ -553,7 +555,7 @@ function ClientWeek({ sessions, t }: { sessions: LoggedSession[]; t: (k: string)
   const hasPrev = r.prevSessions > 0 || r.prevVolume > 0;
   return (
     <>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginTop: 20, marginBottom: 10 }}>{t("w.teams.coach.thisWeek")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime), marginTop: 20, marginBottom: 10 }}>{t("w.teams.coach.thisWeek")}</Text>
       <ACard>
         {r.sessions === 0 ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("recap.noneThisWeek")}</Text>
@@ -594,7 +596,7 @@ function Metric({ label, value, color }: { label: string; value: string; color: 
   return (
     <View>
       <Text style={{ fontFamily: F.black, fontSize: fs.heading, color }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 0.9, textTransform: "uppercase", marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label, textTransform: "uppercase", marginTop: 2 }}>{label}</Text>
     </View>
   );
 }

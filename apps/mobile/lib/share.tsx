@@ -5,6 +5,7 @@ import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
 import { C, F, fs, Kicker } from "./ui";
+import { withAlpha } from "../components/aurora/field";
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -35,16 +36,16 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
     <View
       ref={ref}
       collapsable={false}
-      style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 18, padding: 20 }}
+      style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), borderRadius: 18, padding: 20 }}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, letterSpacing: -1 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, letterSpacing: -1 }}>
           {brand.name}
           <Text style={{ color: C.lime }}>.</Text>
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.lime, letterSpacing: 2 }}>{t("welcome.tagline")}</Text>
       </View>
-      <Text style={{ fontFamily: F.bold, fontSize: 18, color: C.chalk, marginTop: 14 }}>{stats.title || "Workout"}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 14 }}>{stats.title || "Workout"}</Text>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
         {/* Core figure-order.ts — the same sequence the summary the athlete
             just closed used, so the shared card isn't a third arrangement. */}
@@ -57,10 +58,10 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
           <Kicker>{t("summary.todaysBests")}</Kicker>
           {stats.bests.slice(0, 4).map((b) => (
             <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-              <Text style={{ fontFamily: F.semi, fontSize: 14, color: C.chalk }}>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>
                 {b.pr ? "🏆 " : ""}{b.name}
               </Text>
-              <Text style={{ fontFamily: F.bold, fontSize: 14, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.weight, units)}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.weight, units)}</Text>
             </View>
           ))}
         </View>
@@ -82,7 +83,7 @@ export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: str
       style={{ width, height: Math.round((width * 16) / 9), backgroundColor: C.ink, padding: width * 0.09, justifyContent: "space-between" }}
     >
       {/* Lime glow disc — the Aurora membrane look on the dark backdrop. */}
-      <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: `${C.lime}22` }} />
+      <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: withAlpha(C.lime, 0.133) }} />
       <View>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: C.chalk, letterSpacing: -1 }}>
@@ -351,10 +352,10 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
       <View
         ref={ref}
         collapsable={false}
-        style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: `${C.lime}55`, borderRadius: 18, padding: 20 }}
+        style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), borderRadius: 18, padding: 20 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, letterSpacing: -1 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, letterSpacing: -1 }}>
             {brand.name}
             <Text style={{ color: C.lime }}>.</Text>
           </Text>
@@ -366,22 +367,22 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
           <Stat label={t("recap.prs")} value={String(recap.prs.length)} />
         </View>
         <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, flexDirection: "row", justifyContent: "space-between" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
             {recap.activeDays} {t("recap.activeDays")}
           </Text>
           {recap.distanceKm > 0 && (
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
               {recap.distanceKm} km
             </Text>
           )}
           {recap.topMuscle && (
-            <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
               {t("recap.top")} {MUSCLE_LABEL[recap.topMuscle.muscle] ?? recap.topMuscle.muscle}
             </Text>
           )}
         </View>
         {hasPrev && (
-          <Text style={{ fontFamily: F.bold, fontSize: 12, color: recap.volumeDelta >= 0 ? C.lime : C.amber, marginTop: 10 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: recap.volumeDelta >= 0 ? C.lime : C.amber, marginTop: 10 }}>
             {signed(Math.round(kgToUnit(recap.volumeDelta, units)))} {units} – {signed(recap.sessionsDelta)} {t("w.teams.coach.sessionsWord")} {t("recap.vsLastWeek")}
           </Text>
         )}
@@ -405,7 +406,7 @@ export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, uni
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: 26, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );

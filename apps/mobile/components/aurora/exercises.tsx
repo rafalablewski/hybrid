@@ -19,10 +19,11 @@ import { animateListChange } from "../../lib/list-motion";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { AuroraScreen, ACard, RADIUS, ASearch } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 import { AuroraIcon } from "./icons";
+import { withAlpha } from "./field";
 
 type SortMode = "smart" | "groups" | "az";
 
@@ -94,8 +95,8 @@ export default function AuroraExercises() {
               its IMPLEMENT mark (core: exercise-marks) */}
           <AuroraExerciseAvatar name={e.name} glyph={24} tint={e.staple ? txt(C, C.lime) : C.ash} />
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: `${C.ash}8c` }}>›</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: e.stale ? C.accentText.amber : C.ash }}>{days(e)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: withAlpha(C.ash, 0.55) }}>›</Text>
         </PressScale>
         <PressScale
           onPress={() => {
@@ -112,14 +113,14 @@ export default function AuroraExercises() {
           style={{ paddingVertical: 12, paddingLeft: 12, paddingRight: 2 }}
         >
           {/* Amber TEXT tone, not the fill — the accent-text channel. */}
-          <Text style={{ fontSize: 15, color: on ? txt(C, C.amber) : C.ash, opacity: locked ? 0.25 : on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+          <Text style={{ fontSize: fs.note, color: on ? txt(C, C.amber) : C.ash, opacity: locked ? 0.25 : on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
         </PressScale>
       </View>
     );
   };
 
   const Card = ({ list }: { list: ExerciseBrowseEntry[] }) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 4 }}>
       {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} />)}
     </View>
   );
@@ -154,7 +155,7 @@ export default function AuroraExercises() {
                   accessibilityState={{ selected: on }}
                   style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}
                 >
-                  <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                  <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                 </PressScale>
               );
             })}
@@ -163,18 +164,18 @@ export default function AuroraExercises() {
           {/* THIS BLOCK — the gradient band (Profile's cover wash + stat row). */}
           {summary.inRotation > 0 && (
             <View style={{ marginTop: 16, borderRadius: RADIUS.card, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
-              <LinearGradient colors={[`${C.violet}52`, `${C.lime}29`, C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={[withAlpha(C.violet, 0.32), withAlpha(C.lime, 0.16), C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
               <View pointerEvents="none" style={{ position: "absolute", top: -40, right: -28, width: 150, height: 150, borderRadius: 75, backgroundColor: C.lime, opacity: 0.16 }} />
               <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.ex.block")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.ex.block")}</Text>
                 <View style={{ flexDirection: "row", gap: 24, marginTop: 8 }}>
                   {[
                     { v: `${summary.inRotation}`, k: t("w.analyze.ex.inRotation") },
                     { v: `${summary.weekSessions}`, k: t("w.analyze.ex.weekSessions") },
                   ].map((s) => (
                     <View key={s.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-                      <Text style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.5, color: C.chalk }}>{s.v}</Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{s.k}</Text>
+                      <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{s.v}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{s.k}</Text>
                     </View>
                   ))}
                 </View>
@@ -187,8 +188,8 @@ export default function AuroraExercises() {
               <View key={sec.bucket}>
                 {/* Explore's SectionHead — 18px black title, mono count at the baseline. */}
                 <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-                  <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{t(sec.labelKey)}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{sec.entries.length}</Text>
+                  <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{t(sec.labelKey)}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{sec.entries.length}</Text>
                 </View>
                 <Card list={sec.entries} />
               </View>

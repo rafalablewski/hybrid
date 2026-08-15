@@ -5,15 +5,15 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HERO, HERO_INK, HERO_INLINE_TITLE, SHARED_ELEMENTS, heroGeometry, heroRailPin, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram } from "@hybrid/core";
+import { HERO, HERO_INK, HERO_INLINE_TITLE, SHARED_ELEMENTS, heroGeometry, heroRailPin, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram , ALPHA} from "@hybrid/core";
 import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
 import { useSharedSurfaceTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
-import { leading, fs, F, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { leading, tracking, fs, F, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { AuroraField, withAlpha } from "./aurora/kit";
+import { AuroraField, withAlpha , RADIUS} from "./aurora/kit";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./aurora/hero";
 import { haptic } from "../lib/haptics";
 
@@ -44,7 +44,7 @@ export function PlanDockPill({ state, idleLabel, busyLabel, doneLabel, onPress }
       accessibilityRole="button"
       style={{
         height: 50,
-        borderRadius: 999,
+        borderRadius: RADIUS.pill,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: done ? C.ink2 : C.lime,
@@ -87,7 +87,7 @@ const BLEED = (() => {
   const head = BLEED_OVER / (BLEED_OVER + BLEED_FADE);
   const at = (f: number) => head + f * (1 - head);
   return {
-    colors: [COVER_INK, COVER_INK, `${COVER_INK}e6`, `${COVER_INK}9e`, `${COVER_INK}4d`, `${COVER_INK}00`] as [string, string, ...string[]],
+    colors: [COVER_INK, COVER_INK, withAlpha(COVER_INK, 0.9), withAlpha(COVER_INK, 0.62), withAlpha(COVER_INK, 0.302), withAlpha(COVER_INK, 0.0)] as [string, string, ...string[]],
     locations: [0, head, at(0.22), at(0.45), at(0.68), 1] as [number, number, ...number[]],
   };
 })();
@@ -357,8 +357,8 @@ export function CoverScreen({
               {cover.stats.length > 0 && (
                 <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 16, marginBottom: 16 }}>
                   {cover.stats.map((s) => (
-                    <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.18), paddingTop: 10 }}>
-                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: -0.5, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                    <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 10 }}>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: tracking.display, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: wide ? 12 : 14, color: C.ash }}>{s.unit}</Text>}
                       </Text>
@@ -414,7 +414,7 @@ export function CoverScreen({
               // color-mix(accent 52%, ink) ≈ accent @ 0x85 over the ink base,
               // 15% ≈ 0x26 at the 46% stop, then pure ink (library: 34%/10% →
               // 0x57/0x1a). Web parity: cover-hero.tsx layer 1.
-              colors={library ? [`${accent}57`, `${accent}1a`, `${accent}00`] : [`${accent}85`, `${accent}26`, `${accent}00`]}
+              colors={library ? [withAlpha(accent, 0.34), withAlpha(accent, 0.1), withAlpha(accent, 0.0)] : [withAlpha(accent, 0.52), withAlpha(accent, 0.15), withAlpha(accent, 0.0)]}
               locations={[0, 0.46, 1]}
               start={mirrored ? { x: 0.1, y: 0 } : { x: 0.9, y: 0 }}
               end={mirrored ? { x: 0.8, y: 0.95 } : { x: 0.2, y: 0.95 }}
@@ -438,7 +438,7 @@ export function CoverScreen({
                 title, so the poster's wash is untouched) so the bleed band
                 underneath starts from exactly the same colour. */}
             <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { opacity: scrimFade }]}>
-              <LinearGradient colors={["#0c0d0c00", "#0c0d0ccc", COVER_INK]} locations={[0, 0.95, 1]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+              <LinearGradient colors={[withAlpha(COVER_INK, 0), withAlpha(COVER_INK, 0.8), COVER_INK]} locations={[0, 0.95, 1]} start={{ x: 0, y: 0.4 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
             </Animated.View>
             {/* the art — parallax drift against the frame. On the goal emblem it
                 IS the subject: bigger, brighter, deeper. */}
@@ -488,7 +488,7 @@ export function CoverScreen({
               </View>
               <HeroTitle title={cover.title} rank="cover" style={{ maxWidth: "88%" } as never} />
               {blurbOnFace ? (
-                <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: `rgba(255,255,255,${HERO.alpha.dim})`, maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
+                <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: 18, color: `rgba(255,255,255,${HERO.alpha.dim})`, maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
               ) : (
                 <View style={{ marginTop: 8 }}>
                   <HeroMetadata parts={cover.metaParts} />

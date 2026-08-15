@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { ago, until } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Kicker, Loading, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, Mono, Kicker, Loading, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Stat, ErrorNote, FilterGroup, PillBtn } from "./_kit";
-import { ACard, cardStack } from "../aurora/kit";
+import { ACard, cardStack , RADIUS} from "../aurora/kit";
 
 // Mobile "Agent HQ" command center — parity with apps/web/components/admin/
 // agent-hq.tsx (+ agent-runs.tsx as the Reports tab). recharts is web-only, so
@@ -272,7 +272,7 @@ function OrgChart({ agents }: { agents: AgentLite[] }) {
   return (
     <View style={{ gap: space.md }}>
       {groups.out.map((g) => (
-        <View key={g.head.id} style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 12 }}>
+        <View key={g.head.id} style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 12 }}>
           <Node a={g.head} head />
           {g.reports.length > 0 && (
             <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: palette.line, gap: space.sm }}>
@@ -282,7 +282,7 @@ function OrgChart({ agents }: { agents: AgentLite[] }) {
         </View>
       ))}
       {groups.independents.length > 0 && (
-        <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 12 }}>
+        <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 12 }}>
           <Kicker color={palette.ash}>Independent</Kicker>
           <View style={{ marginTop: 8, gap: space.sm }}>
             {groups.independents.map((r) => <Node key={r.id} a={r} />)}
@@ -402,8 +402,8 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
         {actual ? `actual ${actual.value}${pct != null ? ` – ${pct}% of target` : ""}` : "no actual logged"}
       </Mono>
       {target != null && actual && (
-        <View style={{ height: 5, borderRadius: 3, backgroundColor: palette.ink2, marginTop: 5, overflow: "hidden" }}>
-          <View style={{ height: "100%", width: `${Math.min(100, Math.max(0, pct ?? 0))}%`, backgroundColor: onTarget ? palette.lime : palette.amber, borderRadius: 3 }} />
+        <View style={{ height: 5, borderRadius: RADIUS.mark, backgroundColor: palette.ink2, marginTop: 5, overflow: "hidden" }}>
+          <View style={{ height: "100%", width: `${Math.min(100, Math.max(0, pct ?? 0))}%`, backgroundColor: onTarget ? palette.lime : palette.amber, borderRadius: RADIUS.mark }} />
         </View>
       )}
       <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, alignItems: "center" }}>
@@ -609,7 +609,7 @@ function DigestTab() {
         <Kicker color={palette.amber}>Daily digest – last 24h</Kicker>
         <PillBtn label="Send to Slack" busyLabel="Sending…" busy={busy} outline color={palette.chalk} disabled={busy} onPress={send} />
       </View>
-      <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
+      <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 16 }}>
         <Mono color={error ? palette.amber : palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{error ?? (d ? d.text : "Loading…")}</Mono>
       </View>
       <Mono color={sent ? palette.lime : palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
@@ -676,8 +676,8 @@ function CostTab() {
                             <Mono color={palette.ash} style={{ fontSize: fs.micro, flex: 1 }} numberOfLines={1}>{p.name}</Mono>
                             <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{fmtUsd(p.cost)} – {p.runs}r</Mono>
                           </View>
-                          <View style={{ height: 6, borderRadius: 3, backgroundColor: palette.line, overflow: "hidden", marginTop: 2 }}>
-                            <View style={{ width: `${Math.max(3, Math.round((p.cost / max) * 100))}%`, height: "100%", backgroundColor: palette.violet, borderRadius: 3 }} />
+                          <View style={{ height: 6, borderRadius: RADIUS.mark, backgroundColor: palette.line, overflow: "hidden", marginTop: 2 }}>
+                            <View style={{ width: `${Math.max(3, Math.round((p.cost / max) * 100))}%`, height: "100%", backgroundColor: palette.violet, borderRadius: RADIUS.mark }} />
                           </View>
                         </View>
                       ));
@@ -772,7 +772,7 @@ function Reports() {
                       <Mono color={palette.chalk} style={{ fontSize: fs.micro }}>{s.output}</Mono>
                     </View>
                   ))}
-                  <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
+                  <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 16 }}>
                     <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: leading(fs.body) }}>{r.output || "(no output)"}</Mono>
                   </View>
                   <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 8 }}>
@@ -835,7 +835,7 @@ function Mini({ label, value }: { label: string; value: string }) {
   const { palette } = useTheme();
   return (
     <View style={{ flex: 1, backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 10, padding: 10 }}>
-      <Mono color={palette.ash} style={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9 }}>{label}</Mono>
+      <Mono color={palette.ash} style={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label }}>{label}</Mono>
       <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: palette.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );

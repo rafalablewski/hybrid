@@ -12,13 +12,15 @@ import {
   type AgentDefinition,
   type AgentStatus,
   type Kpi,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { leading, fs, space, Mono, Kicker, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, Mono, Kicker, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
-import { ACard, cardStack, ASection } from "../aurora/kit";
+import { ACard, cardStack, ASection , RADIUS} from "../aurora/kit";
 import { useConfirm } from "../aurora/confirm";
+import { withAlpha } from "../aurora/field";
 
 // Mobile "AI agents" builder — parity with apps/web/components/admin/agents.tsx.
 // Roster (GET /api/admin/agents) → select → editor (PATCH /[id]) with a live
@@ -377,7 +379,7 @@ function Editor({
         <Mono color={palette.lime} style={{ marginBottom: 8 }}>{showPrompt ? "▾ hide" : "▸ show"} generated prompt</Mono>
       </Pressable>
       {showPrompt && (
-        <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
+        <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 16 }}>
           <Mono color={palette.chalk} style={{ fontSize: fs.micro, lineHeight: leading(fs.micro) }}>{preview}</Mono>
         </View>
       )}
@@ -444,14 +446,14 @@ function RunPanel({ draft, dirty, onError }: { draft: AgentDefinition; dirty: bo
         <View style={{ marginTop: 12 }}>
           {run.steps.map((s, i) => (
             <View key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: palette.violet }}>
-              <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9 }}>
+              <Mono color={palette.violet} style={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label }}>
                 ↳ delegated to {s.role} — {s.agent}
               </Mono>
               <Mono color={palette.ash} style={{ fontSize: fs.micro, marginVertical: 2 }}>"{s.task}"</Mono>
               <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption) }}>{s.output}</Mono>
             </View>
           ))}
-          <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 16 }}>
+          <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 16 }}>
             <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: leading(fs.body) }}>{run.output || "(no output)"}</Mono>
           </View>
           {run.usage && (run.usage.input > 0 || run.usage.output > 0) && (
@@ -513,7 +515,7 @@ function Schedules({ agentId, onError }: { agentId: string; onError: (e: string 
   return (
     <View style={{ gap: space.sm }}>
       {schedules.map((s) => (
-        <View key={s.id} style={{ flexDirection: "row", gap: space.sm, backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 10 }}>
+        <View key={s.id} style={{ flexDirection: "row", gap: space.sm, backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 10 }}>
           <Toggle on={s.enabled} onToggle={() => toggle(s)} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ flexDirection: "row", gap: space.xs }}>
@@ -562,7 +564,7 @@ function History({ agentId }: { agentId: string }) {
       {runs.map((r) => {
         const open = openId === r.id;
         return (
-          <View key={r.id} style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 12 }}>
+          <View key={r.id} style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 12 }}>
             <Pressable onPress={() => setOpenId(open ? null : r.id)}>
               <View style={{ flexDirection: "row", gap: space.xs, flexWrap: "wrap", alignItems: "center" }}>
                 <Chip color={r.status === "ok" ? palette.lime : palette.red}>{r.status}</Chip>
@@ -618,7 +620,7 @@ function KpiList({ items, onChange }: { items: Kpi[]; onChange: (v: Kpi[]) => vo
   return (
     <View style={{ gap: space.ms }}>
       {items.map((k, i) => (
-        <View key={i} style={{ borderWidth: 1, borderColor: palette.line, borderRadius: 12, padding: 10 }}>
+        <View key={i} style={{ borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.inner, padding: 10 }}>
           <Input label="metric" value={k.metric} onChangeText={(v) => onChange(items.map((x, j) => (j === i ? { ...x, metric: v } : x)))} style={{ marginBottom: 6 }} />
           <Input label="target (text)" value={k.target} onChangeText={(v) => onChange(items.map((x, j) => (j === i ? { ...x, target: v } : x)))} style={{ marginBottom: 6 }} />
           <Input
@@ -651,8 +653,8 @@ function ToolToggle({ label, on, onPress }: { label: string; on: boolean; onPres
       style={{
         borderWidth: 1,
         borderColor: on ? palette.lime : palette.line,
-        backgroundColor: on ? `${palette.lime}1f` : palette.ink2,
-        borderRadius: 999,
+        backgroundColor: on ? withAlpha(palette.lime, ALPHA.fill) : palette.ink2,
+        borderRadius: RADIUS.pill,
         paddingVertical: 6,
         paddingHorizontal: 12,
       }}
@@ -673,17 +675,17 @@ function Toggle({ on, onToggle, disabled }: { on: boolean; onToggle: () => void;
       style={{
         width: 44,
         height: 26,
-        borderRadius: 999,
+        borderRadius: RADIUS.pill,
         borderWidth: 1,
         borderColor: on ? palette.lime : palette.line,
-        backgroundColor: on ? `${palette.lime}33` : palette.ink2,
+        backgroundColor: on ? withAlpha(palette.lime, ALPHA.solid) : palette.ink2,
         padding: 2,
         alignItems: on ? "flex-end" : "flex-start",
         justifyContent: "center",
         opacity: disabled ? 0.5 : 1,
       }}
     >
-      <View style={{ width: 18, height: 18, borderRadius: 999, backgroundColor: on ? palette.lime : palette.ash }} />
+      <View style={{ width: 18, height: 18, borderRadius: RADIUS.pill, backgroundColor: on ? palette.lime : palette.ash }} />
     </Pressable>
   );
 }

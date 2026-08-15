@@ -8,15 +8,18 @@ import {
   type DeviceWorkout,
   type LoggedSession,
   type RankedDeviceWorkout,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
-import { leading, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { Loading, leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 import Sheet from "./aurora/sheet";
+import { RADIUS } from "./aurora/kit";
+import { withAlpha } from "./aurora/field";
 
 /**
  * DEVICE MATCH — the sheet behind the summary's "Match the workout from your
@@ -130,7 +133,7 @@ export function DeviceMatchSheet({
           {phase === "unavailable" && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
           )}
-          {phase === "loading" && <ActivityIndicator color={C.lime} style={{ marginVertical: 30 }} />}
+          {phase === "loading" && <Loading />}
           {phase === "error" && (
             <Pressable onPress={() => void load()} style={{ marginVertical: 24 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("session.device.error")}</Text>
@@ -167,7 +170,7 @@ export function DeviceMatchSheet({
                       borderRadius: best ? 20 : 16,
                       padding: best ? 18 : 13,
                       marginBottom: best ? 14 : 10,
-                      backgroundColor: best ? `${C.lime}14` : C.ink2,
+                      backgroundColor: best ? withAlpha(C.lime, ALPHA.wash) : C.ink2,
                       opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1,
                     }}
                   >
@@ -179,14 +182,14 @@ export function DeviceMatchSheet({
                         </Text>
                       </View>
                       {best && (
-                        <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
-                          <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: 0.9, color: C.onAccent, textTransform: "uppercase" }}>
+                        <View style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
+                          <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: tracking.label, color: C.onAccent, textTransform: "uppercase" }}>
                             ✓ {t("session.device.best")}
                           </Text>
                         </View>
                       )}
                       {!best && linked && (
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, color: txt(C, C.lime), textTransform: "uppercase" }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: txt(C, C.lime), textTransform: "uppercase" }}>
                           {t("session.device.matchedChip")}
                         </Text>
                       )}
@@ -203,7 +206,7 @@ export function DeviceMatchSheet({
                       </Text>
                     )}
                     {best && busyUuid == null && (
-                      <View style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 11, alignItems: "center" }}>
+                      <View style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.inner, paddingVertical: 11, alignItems: "center" }}>
                         <CtaLabel label={`${t("session.device.matchCta")} →`} color={C.onAccent} fontSize={13} font={F.black} />
                       </View>
                     )}

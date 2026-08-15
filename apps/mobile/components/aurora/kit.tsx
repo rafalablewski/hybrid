@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, useEntrance, HubDissolve, cardShadow, 
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName, type HeroRank } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName, type HeroRank , ALPHA} from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -390,7 +390,7 @@ export function Spark({
             flex: 1,
             height: 4 + ((v - min) / range) * (height - 4),
             borderRadius: 2,
-            backgroundColor: i === series.length - 1 ? color : `${color}55`,
+            backgroundColor: i === series.length - 1 ? color : withAlpha(color, ALPHA.line),
           }}
         />
       ))}
@@ -599,10 +599,10 @@ export function APressCard({
       {glass && <GlassSurface radius={radius} />}
       {glow ? (
         <>
-          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${glow}0d` }]} />
+          <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(glow, ALPHA.wash) }]} />
           <LinearGradient
             pointerEvents="none"
-            colors={[`${glow}2b`, `${glow}00`]}
+            colors={[withAlpha(glow, 0.17), withAlpha(glow, 0.0)]}
             start={{ x: 1, y: 0 }}
             end={{ x: 0.25, y: 0.8 }}
             style={StyleSheet.absoluteFill}
@@ -773,7 +773,7 @@ export function APill({
           minHeight: HIT_TARGET,
           opacity: disabled ? 0.5 : 1,
           borderWidth: variant === "soft" || outline ? 1 : 0,
-          borderColor: outline && color ? withAlpha(color, 0.45) : palette.line,
+          borderColor: outline && color ? withAlpha(color, ALPHA.rim) : palette.line,
           overflow: "hidden",
           // Fill the wrapper, whatever the wrapper turned out to be. A no-op
           // when it is content-sized, which is the common case.
@@ -865,7 +865,7 @@ export function AChip({
         borderRadius: RADIUS.pill,
         borderWidth: 1,
         borderColor: selected ? tint : palette.line,
-        backgroundColor: selected ? withAlpha(tint, 0.16) : "transparent",
+        backgroundColor: selected ? withAlpha(tint, ALPHA.solid) : "transparent",
       }}
     >
       <Text
@@ -1201,7 +1201,7 @@ export function ASegment<T extends string>({
             {o.meta == null ? null : (
               <Text
                 maxFontSizeMultiplier={MAX_FONT_SCALE}
-                style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.nano, color: palette.ash }}
+                style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: palette.ash }}
               >
                 {o.meta}
               </Text>
@@ -1813,7 +1813,7 @@ export function ACheckMark({ on, size = 20, accent }: { on: boolean; size?: numb
     <View
       style={{
         width: size, height: size, borderRadius: 999, alignItems: "center", justifyContent: "center",
-        borderWidth: on ? 0 : 1.5, borderColor: `${C.ash}b3`,
+        borderWidth: on ? 0 : 1.5, borderColor: withAlpha(C.ash, 0.702),
       }}
     >
       <Animated.View
@@ -2043,8 +2043,8 @@ export function CardFoot({
           <Text
             numberOfLines={1}
             style={{
-              fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600",
-              textTransform: "uppercase", letterSpacing: tracking.label,
+              fontFamily: F.monoBold, fontSize: fs.micro
+, textTransform: "uppercase", letterSpacing: tracking.label,
               // Ash, always. Nothing in a footer leaves the card, so nothing
               // here may take the accent.
               color: C.ash, flexShrink: 1,
@@ -2080,7 +2080,7 @@ export function ActionPill({ label, onPress }: { label: string; onPress: () => v
         borderWidth: 1, borderColor: C.line, backgroundColor: "transparent",
       }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: tracking.label, color: C.chalk }}>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.chalk }}>
         {label}
       </Text>
     </Pressable>

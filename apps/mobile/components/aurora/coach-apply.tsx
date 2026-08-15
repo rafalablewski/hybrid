@@ -5,8 +5,10 @@ import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { Loading, leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
+import { withAlpha } from "./field";
+import { ALPHA } from "@hybrid/core";
 
 /** AURORA Become a coach — same verification-gated application flow (fetch,
  *  status card, form, submit) as the classic, in the rounded look. */
@@ -58,20 +60,18 @@ export default function AuroraCoachApply() {
 
       {isCoach ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime) }}>{t("w.account.settings.coach-already-verified")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.account.settings.coach-already-verified")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>
             {t("w.account.settings.coach-already-verified-body")}
           </Text>
         </ACard>
       ) : loading ? (
-        <View style={{ paddingVertical: 40, alignItems: "center" }}>
-          <ActivityIndicator color={C.lime} />
-        </View>
+        <Loading />
       ) : (
         <>
           {existing && (
             <ACard style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, statusColor(existing.status)) }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, statusColor(existing.status)) }}>
                 {t("w.account.settings.coach-app-label")} {t(`w.account.settings.coach-st-${existing.status}`)}
               </Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>{t(`w.account.settings.coach-status-${existing.status}`)}</Text>
@@ -87,13 +87,13 @@ export default function AuroraCoachApply() {
                 {[1, 2, 3].map((n) => (
                   <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 }}>
                     <View style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                      <Text style={{ fontFamily: F.black, fontSize: 11, color: C.onAccent }}>{n}</Text>
+                      <Text style={{ fontFamily: F.black, fontSize: fs.micro, color: C.onAccent }}>{n}</Text>
                     </View>
                     <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t(`w.account.settings.coach-step-${n}`)}</Text>
                   </View>
                 ))}
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash }}>{t("w.account.settings.coach-your-background")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.account.settings.coach-your-background")}</Text>
               <TextInput
                 value={credentials}
                 onChangeText={setCredentials}
@@ -108,7 +108,7 @@ export default function AuroraCoachApply() {
               <Pressable
                 onPress={submit}
                 disabled={!canSubmit}
-                style={{ backgroundColor: canSubmit ? C.lime : `${C.lime}55`, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
+                style={{ backgroundColor: canSubmit ? C.lime : withAlpha(C.lime, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
               >
                 {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.account.settings.coach-submit")}</Text>}
               </Pressable>

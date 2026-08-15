@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, SHARED_ELEMENTS } from "@hybrid/core";
+import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, SHARED_ELEMENTS , ALPHA} from "@hybrid/core";
 import { useSharedSurfaceSource, useSharedSurfaceTarget } from "../../lib/shared-element";
 import { useSessionsQuery } from "../../lib/queries";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -9,8 +9,8 @@ import { useRefreshOnFocus } from "../../lib/query";
 import { fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, AHeading, withAlpha } from "./kit";
+import { fs, space, tracking, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
+import { AuroraScreen, ACard, AHeading, withAlpha , RADIUS} from "./kit";
 import { AuroraIcon } from "./icons";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
@@ -62,7 +62,7 @@ export default function AuroraCalendar() {
   const navBtn = { minWidth: 40, height: 40, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center" as const, justifyContent: "center" as const };
 
   const chip = (color: string, labelText: string) => (
-    <View style={{ backgroundColor: withAlpha(color, 0.14), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3, alignSelf: "flex-start" }}>
+    <View style={{ backgroundColor: withAlpha(color, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3, alignSelf: "flex-start" }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, color) }}>{labelText}</Text>
     </View>
   );
@@ -98,17 +98,17 @@ export default function AuroraCalendar() {
                     // frozen at press time, drawn selected (that is what the
                     // tap made it).
                     armDay(SHARED_ELEMENTS.calendarDay, cellRefs.current[cell.date], (
-                      <View style={{ flex: 1, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.lime, backgroundColor: cellBg }}>
+                      <View style={{ flex: 1, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: C.lime, backgroundColor: cellBg }}>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: isToday ? txt(C, C.lime) : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
                         {day ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.nano, color: C.onAccent, backgroundColor: C.lime, borderRadius: 4, paddingHorizontal: 3, marginTop: 1 }}>{day.count}</Text> : null}
                       </View>
                     ));
                   }
                   setSelected(cell.date);
-                }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: 12, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? `${C.lime}66` : C.line, backgroundColor: cellBg }}>
+                }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? withAlpha(C.lime, ALPHA.rim) : C.line, backgroundColor: cellBg }}>
                   {asg ? (
                     <View style={{ position: "absolute", top: 3, right: 3, flexDirection: "row", gap: 2 }}>
-                      <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: C.violet }} />
+                      <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: C.violet }} />
                     </View>
                   ) : null}
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: isToday ? txt(C, C.lime) : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
@@ -126,7 +126,7 @@ export default function AuroraCalendar() {
       {/* key={selected}: the destination hook claims once per mount, so the
           detail section must be a fresh mount for each day it describes. */}
       <DayDetail key={selected}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
         {new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
       </Text>
 
@@ -136,7 +136,7 @@ export default function AuroraCalendar() {
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 6 }}>
             <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
             {a.status === "completed" ? chip(C.lime, t("w.analyze.cal.done")) : (
-              <Pressable accessibilityRole="button" accessibilityLabel={t("w.analyze.cal.markDone")} onPress={() => markDone(a.id)} style={{ backgroundColor: withAlpha(C.lime, 0.14), borderWidth: 1, borderColor: withAlpha(C.lime, 0.4), borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t("w.analyze.cal.markDone")} onPress={() => markDone(a.id)} style={{ backgroundColor: withAlpha(C.lime, ALPHA.solid), borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.analyze.cal.markDone")}</Text>
               </Pressable>
             )}

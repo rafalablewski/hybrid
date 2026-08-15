@@ -13,17 +13,19 @@ import {
   checkinSteps,
   FEELS,
   type CheckinSessionRef,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 import { useConfirm } from "./confirm";
+import { withAlpha } from "./field";
 
 type Ratings = Record<CheckinMetricKey, number>;
 
@@ -265,10 +267,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
    *  selection drops to a neutral outline and the unpicked options fade back, so
    *  the row shows what was answered instead of inviting another answer. */
   const tile = (sel: boolean) => ({
-    flex: 1, aspectRatio: 1, borderRadius: 16, alignItems: "center" as const, justifyContent: "center" as const,
+    flex: 1, aspectRatio: 1, borderRadius: RADIUS.field, alignItems: "center" as const, justifyContent: "center" as const,
     borderWidth: 1,
     borderColor: sel ? (locked ? C.ash : C.lime) : C.line,
-    backgroundColor: sel ? (locked ? `${C.ash}24` : `${C.lime}1a`) : C.ink,
+    backgroundColor: sel ? (locked ? withAlpha(C.ash, ALPHA.solid) : withAlpha(C.lime, ALPHA.fill)) : C.ink,
     opacity: locked && !sel ? 0.35 : 1,
   });
 
@@ -292,8 +294,8 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           <View
             key={i}
             style={{
-              flex: 1, height: 5, borderRadius: 999,
-              backgroundColor: done || isAnswered(st) ? C.lime : i === step ? `${C.lime}59` : C.line,
+              flex: 1, height: 5, borderRadius: RADIUS.pill,
+              backgroundColor: done || isAnswered(st) ? C.lime : i === step ? withAlpha(C.lime, ALPHA.line) : C.line,
             }}
           />
         ))}
@@ -304,7 +306,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           the flow is live again so the muted tiles coming back to full colour is
           explained rather than merely observed. */}
       {locked || (editing && !done) ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 16, backgroundColor: locked ? `${C.lime}14` : "transparent", borderWidth: 1, borderColor: locked ? `${C.lime}3d` : C.line }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingHorizontal: 12, paddingVertical: 12, borderRadius: RADIUS.field, backgroundColor: locked ? withAlpha(C.lime, ALPHA.wash) : "transparent", borderWidth: 1, borderColor: locked ? withAlpha(C.lime, ALPHA.edge) : C.line }}>
           <AuroraIcon name={locked ? "check-circle" : "edit"} size={20} color={locked ? txt(C, C.lime) : C.ash} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t(locked ? "w.recovery.checkins.savedTitle" : "w.recovery.checkins.edit")}</Text>
@@ -357,7 +359,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
         </View>
       ) : isDetails ? (
         <>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 16 }}>
             {t("w.recovery.checkins.step")} {steps.length} / {steps.length} — {t("w.recovery.checkins.detailsStep")}
           </Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("w.recovery.checkins.reviewTitle")}</Text>
@@ -380,14 +382,14 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                   // colour and still tapping through to its question, it read as
                   // "edit any of this whenever" — which is exactly what the Edit
                   // button is for. Muted here, restored the moment Edit is pressed.
-                  style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderStyle: on ? "solid" : "dashed", borderColor: C.line, borderRadius: 16, paddingVertical: 12, opacity: locked ? 0.45 : on ? 1 : 0.6 }}
+                  style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderStyle: on ? "solid" : "dashed", borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, opacity: locked ? 0.45 : on ? 1 : 0.6 }}
                 >
                   {on ? (
                     <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} scale={0.76} />
                   ) : (
-                    <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>–</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>–</Text>
                   )}
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t(m.labelKey)}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t(m.labelKey)}</Text>
                 </Pressable>
               );
             })}
@@ -406,7 +408,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
             accessibilityRole="checkbox"
             accessibilityLabel={t("w.recovery.checkins.shareCoach")}
             accessibilityState={{ checked: !!(sharedWithCoach && paid), disabled: !paid || locked }}
-            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 16, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? `${C.lime}1a` : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
+            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 16, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? withAlpha(C.lime, ALPHA.fill) : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
           >
             {sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.lime)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
             <View style={{ flex: 1 }}>
@@ -456,10 +458,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           const def = FEELS.find((f) => f.value === val);
           return (
             <View style={{ alignItems: "center" }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16 }}>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 16 }}>
                 {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t("w.recovery.checkins.effort")}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
               <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, maxWidth: 260 }}>{sess.title}</Text>
               <Text style={{ fontFamily: F.bold, fontSize: fs.title, marginTop: 20, color: def && touched ? txt(C, C[def.tone as "lime"] ?? C.chalk) : C.ash }}>
                 {touched && def ? t(def.labelKey) : t("w.recovery.checkins.notAnswered")}
@@ -472,7 +474,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                     <Pressable key={f.value} onPress={() => answerEffort(sess.id, f.value)} disabled={locked}
                       accessibilityRole="radio" accessibilityLabel={`${sess.title}: ${t(f.labelKey)}`} accessibilityState={{ selected: sel, disabled: locked }}
                       style={tile(sel)}>
-                      <Text style={{ fontSize: 22 }}>{f.emoji}</Text>
+                      <Text style={{ fontSize: fs.headline }}>{f.emoji}</Text>
                     </Pressable>
                   );
                 })}
@@ -505,10 +507,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           const touched = answered.has(m.key);
           return (
             <View style={{ alignItems: "center" }}>
-              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 16 }}>
+              <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 16 }}>
                 {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t(m.labelKey)}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: -0.5, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t(m.questionKey)}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t(m.questionKey)}</Text>
               {/* Untouched, the face is a placeholder, not a reading — dimmed,
                   and captioned "Not answered" rather than "Okay". */}
               <View style={{ marginTop: 24, marginBottom: 4, opacity: touched ? 1 : 0.3 }}><ReadinessFace feeling={feeling} scale={2.5} /></View>

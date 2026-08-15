@@ -58,6 +58,7 @@ import {
   type Equipment,
   type ScheduledDay,
   type LogbookDay,
+  ALPHA,
 } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
@@ -71,7 +72,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, APressCard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
@@ -113,6 +114,7 @@ import { HeatRow } from "./heat-row";
 import AuroraPerformance from "./performance";
 import FeedView from "../feed-view";
 import { CAME_FROM_GUEST_KEY } from "../../lib/guest";
+import { withAlpha } from "./field";
 
 type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
@@ -780,8 +782,8 @@ export default function AuroraHome() {
               doneFloor={doneFloor}
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
             </View>
             {/* the chooser as a snap slider — the exercise-widget rail's idiom:
                 one card ≈ 72% wide so the next path peeks in from the right,
@@ -841,6 +843,13 @@ export default function AuroraHome() {
             ) : null}
             {plan ? (
               <>
+                {/* NOT `fs.headline`, deliberately — hub-masthead.test.ts bans that
+                    rung anywhere in a hub screen, to stop one re-growing a title
+                    of its own. This is a CARD title, not the hub's head, so the
+                    ban is a false positive here; but the guard is load-bearing
+                    and a rename is not worth weakening it for. Left as a raw 22
+                    and counted in the fontSize ratchet, which is the honest
+                    place for a site that has no rung it may name. */}
                 <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
                 {/* One anchor — "how far in" — carried by a thin bar, not four
                     overlapping restatements of the same position. */}
@@ -873,15 +882,15 @@ export default function AuroraHome() {
                             <LiftRow key={i} r={r} i={i + 1} />
                           ))}
                           <LinearGradient colors={["transparent", "transparent", C.ink2]} locations={[0, 0.16, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
-                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-                            <CtaLabel label={`${t("w.home.today.showAllLifts")} ${rows.length} ${t("w.home.today.liftsWord")} →`} color={txt(C, C.lime)} fontSize={12} font={F.mono} style={{ fontWeight: "600" }} />
+                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: withAlpha(C.lime, ALPHA.solid), borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+                            <CtaLabel label={`${t("w.home.today.showAllLifts")} ${rows.length} ${t("w.home.today.liftsWord")} →`} color={txt(C, C.lime)} fontSize={12} font={F.monoBold} />
                           </Pressable>
                         </View>
                       )}
                       {liftsOpen && rows.slice(1).map((r, i) => <LiftRow key={i} r={r} i={i + 1} />)}
                       {many && liftsOpen && (
                         <Pressable onPress={() => setLiftsOpen(false)} hitSlop={6} style={{ marginTop: 12, alignSelf: "center" }}>
-                          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.home.today.hideLifts")}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.today.hideLifts")}</Text>
                         </Pressable>
                       )}
                     </>
@@ -890,9 +899,9 @@ export default function AuroraHome() {
                 {!isAthlete && (
                   <Pressable
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
-                    style={{ marginTop: 12, padding: 12, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: `${pa.fill}66` }}
+                    style={{ marginTop: 12, padding: 12, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(pa.fill, ALPHA.rim) }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: 12, lineHeight: 16, color: C.ash }}><Text style={{ color: pa.text }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption, "snug"), color: C.ash }}><Text style={{ color: pa.text }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
                   </Pressable>
                 )}
                 {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
@@ -903,7 +912,7 @@ export default function AuroraHome() {
                     plan: on a plan the four "Train your way" cards aren't shown, so
                     this is the on-plan door to a saved routine (a session off-plan). */}
                 <Pressable onPress={() => setQuickStartOpen(true)} style={{ marginTop: 10, paddingVertical: 2, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.violet) }}>⚡ {t("w.home.today.quickStartLink")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet) }}>⚡ {t("w.home.today.quickStartLink")}</Text>
                 </Pressable>
               </>
             ) : initialLoad ? (
@@ -1168,7 +1177,7 @@ export default function AuroraHome() {
             characters in PL/DE it would collide with the title on a phone. Same
             anatomy the rail's own built-in header uses. */}
         <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</Text>
         </View>
         <CoachRail onOpen={() => router.push("/coaches")} headerless bleed />
@@ -1235,8 +1244,8 @@ export default function AuroraHome() {
               onPress={() => { setDoneOpen(false); router.push(`/session/${s.id}`); }}
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}
             >
-              <View style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: `${C.lime}2e`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: F.black, fontSize: 14, color: txt(C, C.lime) }}>✓</Text>
+              <View style={{ width: 30, height: 30, borderRadius: RADIUS.pill, backgroundColor: withAlpha(C.lime, ALPHA.solid), borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✓</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
@@ -1245,7 +1254,7 @@ export default function AuroraHome() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
             </Pressable>
           ))}
-          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" }}>
+          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 16, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="calendar" size={15} color={C.ash} />
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.home.today.doneCalendar")}</Text>
           </Pressable>
@@ -1275,10 +1284,10 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
        was a card AND a press target. There is now. The pad drops out
        entirely — 20 was already CARD_PAD, spelled as a number. */
     <APressCard onPress={onPress} a11yLabel={title} glow={accent}>
-      <Text style={{ fontSize: 18, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text style={{ fontSize: fs.title, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "tight") }}>{sub}</Text>
-      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 16 }} />
+      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 16 }} />
     </APressCard>
   );
 }
@@ -1297,10 +1306,10 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
        pad rather than CARD_PAD, because a 72%-wide card cannot spend 20 a
        side. Everything else is now decided once, in the kit. */
     <APressCard onPress={onPress} a11yLabel={title} glow={accent} style={{ width, padding: 16 }}>
-      <Text style={{ fontSize: 15, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text style={{ fontSize: fs.note, lineHeight: leading(fs.note, "tight"), color: txt(C, accent) }}>{glyph}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
-      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: 1.2, textTransform: "uppercase", marginTop: 12 }} />
+      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
     </APressCard>
   );
 }
@@ -1559,7 +1568,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same
             sentence twice. */}
-        <Text style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: -0.3, color: C.chalk }}>
+        <Text style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk }}>
           {t(shownFeeling ? "w.home.today.glanceReadiness" : "w.recovery.readiness.title")}
         </Text>
         {/* Mono meta on the right, per the Explore SectionHead standard: the
@@ -1575,22 +1584,22 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
              window shuts. Chalk, not the accent: the accent is the "go" colour,
              and this undoes a go. */
           <Pressable onPress={undo} disabled={busy} accessibilityRole="button" accessibilityLabel={t("w.home.today.readUndoA11y")} hitSlop={10} style={{ opacity: busy ? 0.5 : 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.chalk }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.chalk }}>
               {t("w.home.today.readUndo")}
             </Text>
           </Pressable>
         ) : !isToday && dayLabel ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text>
         ) : asking ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: txt(C, C.lime) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>
             {t("session.feel.promptRecovery")}
           </Text>
         ) : gate.reason === "dayFull" && isToday ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
             {dayReads.length} / {MAX_READS_PER_DAY}
           </Text>
         ) : held && gate.opensAt != null ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
             {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
           </Text>
         ) : null}
@@ -1610,7 +1619,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             proportional: a status reading must never outrank the Start action */}
         <Text style={{
           fontFamily: shownFeeling ? F.black : F.reg, fontSize: fs.display, lineHeight: 27, letterSpacing: shownFeeling ? -1 : -0.2,
-          color: shownFeeling ? txt(C, C[READINESS_FACE[shownFeeling].accent]) : `${C.ash}8c`,
+          color: shownFeeling ? txt(C, C[READINESS_FACE[shownFeeling].accent]) : withAlpha(C.ash, 0.55),
         }}>
           {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}
         </Text>
@@ -1652,9 +1661,9 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           const accent = txt(C, C[READINESS_FACE[key].accent]);
           return (
             <PressScale key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
-              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
+              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? withAlpha(accent, ALPHA.rim) : "transparent", backgroundColor: on ? withAlpha(accent, ALPHA.fill) : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
               <ReadinessFace feeling={key} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
             </PressScale>
           );
         })}
@@ -1680,7 +1689,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             accessibilityState={{ expanded: readsOpen }}
             style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
           >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
               {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
             </Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length}</Text>
@@ -1725,7 +1734,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             onPress={() => setFollowUpOpen(true)}
             accessibilityRole="button"
             accessibilityLabel={done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, backgroundColor: done.complete || asking ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete || asking ? C.line : `${txt(C, C.lime)}42` }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: RADIUS.field, backgroundColor: done.complete || asking ? "transparent" : withAlpha(txt(C, C.lime), ALPHA.wash), borderWidth: 1, borderColor: done.complete || asking ? C.line : withAlpha(txt(C, C.lime), ALPHA.edge) }}
           >
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>
@@ -1742,7 +1751,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
                 <View
                   key={i}
                   accessibilityLabel={st.kind === "metric" ? t(metricLabelKey(st.key)) : st.session.title}
-                  style={{ width: 7, height: 7, borderRadius: 999, backgroundColor: stepAnswered(st, metrics) ? txt(C, C.lime) : C.line }}
+                  style={{ width: 7, height: 7, borderRadius: RADIUS.pill, backgroundColor: stepAnswered(st, metrics) ? txt(C, C.lime) : C.line }}
                 />
               ))}
             </View>

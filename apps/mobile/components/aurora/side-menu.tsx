@@ -23,6 +23,7 @@ import {
   type SideMenuRow,
   type TodayTabId,
   type NavGroup,
+  ALPHA,
 } from "@hybrid/core";
 import { NAV_HREF } from "../../lib/nav-href";
 import { WEB_APP_URL } from "../../lib/api";
@@ -36,11 +37,12 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { track } from "../../lib/track";
 import { useExercises } from "../../lib/queries";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
-import { ASearch } from "./kit";
+import { fs, F, PressScale as Pressable , tracking} from "../../lib/ui";
+import { ASearch , RADIUS} from "./kit";
 import { AuroraIcon } from "./icons";
 import { SETTINGS_ROUTES } from "./settings";
 import { HubGlyph } from "./today-tabs";
+import { withAlpha } from "./field";
 
 /**
  * THE SIDE MENU (mobile) — the drawer behind the Today header's avatar, the
@@ -299,10 +301,10 @@ export default function AuroraSideMenu({
               the list's first row: the header is the FACE, the row is the
               destination, and people reach for both. */}
           <Pressable onPress={() => goId("profile")} accessibilityRole="button" style={{ marginBottom: 18 }}>
-            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: `${C.lime}22`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+            <View style={{ width: 46, height: 46, borderRadius: 23, backgroundColor: withAlpha(C.lime, ALPHA.fill), borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{initials}</Text>
             </View>
-            <Text numberOfLines={1} style={{ marginTop: 10, fontFamily: F.black, fontSize: fs.heading, letterSpacing: -0.4, color: C.chalk }}>{name || t("nav.you")}</Text>
+            <Text numberOfLines={1} style={{ marginTop: 10, fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: C.chalk }}>{name || t("nav.you")}</Text>
             <Text style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
               {[role.toUpperCase(), entitlement === "paid" ? "FULL" : "FREE"].join(" – ")}
             </Text>
@@ -320,7 +322,7 @@ export default function AuroraSideMenu({
             ) : (
               found.map((g) => (
                 <View key={g.kind} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash, paddingTop: 12, paddingBottom: 2 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, paddingTop: 12, paddingBottom: 2 }}>
                     {t(`nav.searchKind.${g.kind}`)}
                   </Text>
                   {g.hits.map((h) => (
@@ -360,7 +362,7 @@ export default function AuroraSideMenu({
                 style={{ flexDirection: "row", alignItems: "center", gap: 14, marginTop: 10, paddingVertical: 12, paddingHorizontal: 4 }}
               >
                 <View style={{ width: 24, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 20, lineHeight: 22, color: C.ash }}>{toolsOpen ? "−" : "＋"}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.heading, lineHeight: 22, color: C.ash }}>{toolsOpen ? "−" : "＋"}</Text>
                 </View>
                 <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.ash }}>{t("nav.allTools")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{toolCount}</Text>
@@ -371,7 +373,7 @@ export default function AuroraSideMenu({
                   {groups.map(({ group, items }) => (
                     <View key={group} style={{ marginBottom: 10 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 10, paddingBottom: 4 }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{items.length + (group === "train" ? extras.length : 0)}</Text>
                       </View>
                       {items.map(({ item, locked }) => tool(item.id, locked))}
@@ -388,12 +390,12 @@ export default function AuroraSideMenu({
             <Pressable
               onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "sidemenu" }); goHref("/upgrade"); }}
               accessibilityRole="button"
-              style={{ marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: `${pa.fill}80`, borderRadius: 22, padding: 16, overflow: "hidden" }}
+              style={{ marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(pa.fill, 0.5), borderRadius: 22, padding: 16, overflow: "hidden" }}
             >
-              <View pointerEvents="none" style={{ position: "absolute", top: -50, right: -40, width: 150, height: 150, borderRadius: 75, backgroundColor: `${pa.fill}24` }} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 2, color: pa.text }}>{t("w.home.pillnav.upgradeKicker")}</Text>
-              <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, marginTop: 6, letterSpacing: -0.4 }}>{t("nav.upgrade")}</Text>
-              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: pa.fill, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+              <View pointerEvents="none" style={{ position: "absolute", top: -50, right: -40, width: 150, height: 150, borderRadius: 75, backgroundColor: withAlpha(pa.fill, ALPHA.solid) }} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: pa.text }}>{t("w.home.pillnav.upgradeKicker")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 6, letterSpacing: tracking.display }}>{t("nav.upgrade")}</Text>
+              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 7 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: pa.ink }}>{t("w.home.pillnav.goFull")}</Text>
               </View>
             </Pressable>
@@ -403,7 +405,7 @@ export default function AuroraSideMenu({
           {role === "admin" && (
             <Pressable onPress={() => goHref("/admin")} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 11, marginTop: 14, paddingVertical: 10, paddingHorizontal: 4 }}>
               <AuroraIcon name="verified" size={18} color={txt(C, C.amber)} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 1.2, textTransform: "uppercase", color: txt(C, C.amber) }}>Admin console</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.amber) }}>Admin console</Text>
             </Pressable>
           )}
 

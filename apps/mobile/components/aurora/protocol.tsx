@@ -5,15 +5,17 @@ import {
   INJURY_FIGURES, INJURY_VIEWBOX, INJURY_AREA_KEY, INJURY_AREA_HINT_KEY,
   INJURY_WHEN, INJURY_WHEN_KEY, nearestInjuryArea, injuryTouchPoint, injuryDateFor,
   rtpView, riskRole, type InjuryWhen, type InjuryFigure, type MuscleGroup, type TissueRisk,
+  ALPHA,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor, type Palette } from "../../lib/theme";
-import { fs, space, leading, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, space, leading, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { ACard, ACheckMark, RADIUS } from "./kit";
 import { haptic } from "../../lib/haptics";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { createRtpProtocol, mutateRtpProtocol, fetchRtpProtocols, type RtpProtocol as RtpProtocolRow } from "../../lib/api";
+import { withAlpha } from "./field";
 
 /**
  * THE PROTOCOL (mobile) — declaring an injury, and living with one. The twin of
@@ -59,7 +61,7 @@ export function InjuryBody({
       {INJURY_FIGURES.map((fig) => (
         <View key={fig.side} style={{ flex: 1, alignItems: "center" }}>
           <Figure fig={fig} C={C} toneOf={toneOf} selected={selected} onSelect={onSelect} labelOf={labelOf} height={height} />
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 2 }}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 2 }}>
             {t(`w.analyze.exp.anatomy.map.${fig.side}`)}
           </Text>
         </View>
@@ -72,7 +74,7 @@ export function InjuryBody({
 // invisible — the first render of this figure had both at a whisper of ash and
 // the seven live regions disappeared into the body. The tracked areas carry a
 // real stroke and roughly three times the fill of the outline beneath them.
-const PICK_TONE = (C: Palette): AreaTone => ({ fill: C.ash, stroke: `${C.ash}9e`, fillOpacity: 0.3 });
+const PICK_TONE = (C: Palette): AreaTone => ({ fill: C.ash, stroke: withAlpha(C.ash, 0.62), fillOpacity: 0.3 });
 const PICKED_TONE = (C: Palette): AreaTone => ({ fill: C.chalk, stroke: C.chalk, fillOpacity: 0.9 });
 
 function Figure({
@@ -159,7 +161,7 @@ export function RiskBody({ byTissue, onPick }: { byTissue: Record<string, Tissue
   const { t } = useLang();
   const toneOf = (g: MuscleGroup): AreaTone => {
     const ti = byTissue[g];
-    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: `${C.ash}73`, fillOpacity: 0.2 };
+    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: withAlpha(C.ash, ALPHA.rim), fillOpacity: 0.2 };
     const hex = roleColor(C, riskRole(ti.band));
     return { fill: hex, stroke: hex, fillOpacity: 0.22 + 0.5 * Math.min(1, ti.risk / 100) };
   };
@@ -214,13 +216,13 @@ export function InjurySheet({
       {/* THE READBACK — the choice said in words, so a highlight is never the
           only confirmation. It holds its height so nothing jumps. */}
       <View accessibilityLiveRegion="polite" style={{ minHeight: 54, marginTop: 14, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: area ? C.chalk : C.ash }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: area ? C.chalk : C.ash }}>
           {area ? t(INJURY_AREA_KEY[area]) : t("w.injury.pickNone")}
         </Text>
         {area ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t(INJURY_AREA_HINT_KEY[area])}</Text> : null}
       </View>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: C.ash, marginTop: 18, marginBottom: 8 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 18, marginBottom: 8 }}>
         {t("w.injury.whenTitle")}
       </Text>
       <View style={{ flexDirection: "row", gap: 6 }}>
@@ -235,7 +237,7 @@ export function InjurySheet({
               style={{
                 flex: 1, alignItems: "center", borderRadius: RADIUS.pill, paddingVertical: 10,
                 borderWidth: 1, borderColor: on ? C.chalk : C.line,
-                backgroundColor: on ? `${C.chalk}1a` : "transparent",
+                backgroundColor: on ? withAlpha(C.chalk, ALPHA.fill) : "transparent",
               }}
             >
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: on ? C.chalk : C.ash }}>{t(INJURY_WHEN_KEY[wk])}</Text>
@@ -254,7 +256,7 @@ export function InjurySheet({
         accessibilityState={{ disabled: !area || busy }}
         style={{
           marginTop: 20, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center",
-          backgroundColor: area ? C.chalk : `${C.ash}38`,
+          backgroundColor: area ? C.chalk : withAlpha(C.ash, ALPHA.edge),
         }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: area ? C.ink : C.ash }}>{t("w.injury.openProtocol")}</Text>
@@ -263,7 +265,7 @@ export function InjurySheet({
         {t("w.injury.protocolNote")}
       </Text>
       <Pressable onPress={onClose} accessibilityRole="button" style={{ alignSelf: "center", marginTop: 14, paddingVertical: 6, paddingHorizontal: 10 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.injury.cancel")}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.injury.cancel")}</Text>
       </Pressable>
     </Sheet>
   );
@@ -294,7 +296,7 @@ export function RtpPanel() {
   if (active.length === 0) return null;
   return (
     <View style={{ gap: 12, marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 1.2, color: txt(C, C.red) }}>{t("w.rtp.protocol")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.red) }}>{t("w.rtp.protocol")}</Text>
       {active.map((p) => <Protocol key={p.id} p={p} onChange={refresh} />)}
     </View>
   );
@@ -339,7 +341,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
     <ACard accent={accent}>
       {/* WHAT AND HOW LONG — the two facts a protocol is about. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 20, letterSpacing: -0.3, color: C.chalk }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: C.chalk }}>
           {t(INJURY_AREA_KEY[p.tissue as MuscleGroup] ?? p.tissue)}
         </Text>
         {v.days != null ? (
@@ -370,7 +372,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                   <View
                     style={{
                       position: "absolute", left: now ? 4 : 6, top: now ? 5 : 7,
-                      width: now ? 14 : 10, height: now ? 14 : 10, borderRadius: 999,
+                      width: now ? 14 : 10, height: now ? 14 : 10, borderRadius: RADIUS.pill,
                       backgroundColor: passed ? accent : now ? C.ink2 : C.line,
                       borderWidth: now ? 3 : 0, borderColor: accent,
                     }}
@@ -382,7 +384,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                       flex: 1,
                       fontFamily: now ? F.black : F.reg,
                       fontSize: now ? fs.bodyLg : fs.body,
-                      color: now ? C.chalk : passed ? C.ash : `${C.ash}8c`,
+                      color: now ? C.chalk : passed ? C.ash : withAlpha(C.ash, 0.55),
                     }}>
                       {t(s.labelKey)}
                     </Text>
@@ -427,7 +429,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                             {v.blockedCount === 1 ? t("w.rtp.gateToGo") : `${v.blockedCount} ${t("w.rtp.gatesToGo")}`}
                           </Text>
                           <Pressable onPress={() => setOverrideOpen((o) => !o)} hitSlop={8} accessibilityRole="button" accessibilityState={{ expanded: overrideOpen }}>
-                            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.rtp.override")}</Text>
+                            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.rtp.override")}</Text>
                           </Pressable>
                         </View>
                       )}
@@ -448,7 +450,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                             accessibilityRole="button"
                             style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.red, paddingHorizontal: 13, paddingVertical: 9, opacity: reason.trim() ? 1 : 0.4 }}
                           >
-                            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: txt(C, C.red) }}>{t("w.rtp.force")}</Text>
+                            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.red) }}>{t("w.rtp.force")}</Text>
                           </Pressable>
                         </View>
                       ) : null}
@@ -515,4 +517,4 @@ const fmtDay = (iso: string) => {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 };
 
-const quiet = { fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600" as const, textTransform: "uppercase" as const, letterSpacing: 0.9 };
+const quiet = { fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase" as const, letterSpacing: tracking.label };

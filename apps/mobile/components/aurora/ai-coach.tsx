@@ -5,6 +5,8 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
+import { withAlpha } from "./field";
+import { ALPHA } from "@hybrid/core";
 
 /** AURORA AI coach — same /api/ai-coach call (server-side Claude, engine
  *  fallback) and rendered note as the classic, in the rounded look.
@@ -32,7 +34,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
   }, [ask]);
 
   const chip = (label: string, color: string) => (
-    <View style={{ backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+    <View style={{ backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, color) }}>{label}</Text>
     </View>
   );
@@ -71,7 +73,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
     <AuroraScreen hero={{ rank: "title", title: t("w.home.today.aiCoach") }}>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{t("w.home.aicoach.todaysNote")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk }}>{t("w.home.aicoach.todaysNote")}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>
           {t("w.home.aicoach.intro")}
         </Text>

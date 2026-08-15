@@ -8,8 +8,9 @@ import {
 import { GUTTER } from "./kit";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, F, PressScale as Pressable , tracking} from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
+import { withAlpha } from "./field";
 
 /**
  * RECORDS — the Progress cluster's own block. The TWIN of
@@ -70,12 +71,12 @@ function PrCell({ pr, units, t, width, onOpen }: {
   const proof = strengthPrProof(pr, units);
   const body = (
     <>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
         {pr.lift}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.display, fontWeight: "800", letterSpacing: -0.8, marginTop: 7, color: txt(C, C.lime) }}>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.display, letterSpacing: tracking.display, marginTop: 7, color: txt(C, C.lime) }}>
         {value}
-        <Text style={{ fontSize: fs.caption, fontWeight: "600", letterSpacing: 0.4 }}> {unit}</Text>
+        <Text style={{ fontSize: fs.caption, letterSpacing: tracking.label }}> {unit}</Text>
       </Text>
       <Text numberOfLines={1} style={{ marginTop: 6, fontFamily: F.reg, fontSize: fs.micro, color: C.ash }}>
         {proof.kind === "climb" ? (
@@ -188,7 +189,7 @@ export default function PeriodRecords({
           a block that is a celebration, not an inbox. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.act.recordsTitle")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: C.ash }}>{windowName}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{windowName}</Text>
       </View>
 
       {prs.length < 3 ? (
@@ -248,10 +249,10 @@ export default function PeriodRecords({
               screen rather than on a card. Opacity is animated (not the
               gradient), so it runs on the native driver. */}
           <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeL }}>
-            <LinearGradient colors={[C.ink, `${C.ink}00`]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
+            <LinearGradient colors={[C.ink, withAlpha(C.ink, 0.0)]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
           </Animated.View>
           <Animated.View pointerEvents="none" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeR }}>
-            <LinearGradient colors={[`${C.ink}00`, C.ink]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
+            <LinearGradient colors={[withAlpha(C.ink, 0.0), C.ink]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
           </Animated.View>
         </View>
       )}

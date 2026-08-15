@@ -35,6 +35,7 @@ import {
 } from "@expo/ui/swift-ui/modifiers";
 import { useTheme } from "../../lib/theme";
 import { RADIUS, withAlpha } from "./kit";
+import { ALPHA } from "@hybrid/core";
 
 /**
  * AURORA × SwiftUI — the native iOS layer of the shared kit.
@@ -91,7 +92,7 @@ export function GlassSurface({ radius = RADIUS.card, tintColor }: { radius?: num
     <View pointerEvents="none" style={[StyleSheet.absoluteFill, { borderRadius: radius, overflow: "hidden" }]}>
       {/* Visible floor for iOS < 26 / pre-mount. Low opacity so the ambient
           field blobs show through and the glass reads as coloured, not grey. */}
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(palette.ink2, 0.28) }]} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(palette.ink2, ALPHA.edge) }]} />
       <Host style={StyleSheet.absoluteFill} pointerEvents="none">
         <RoundedRectangle
           cornerRadius={radius}

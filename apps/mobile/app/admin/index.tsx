@@ -1,11 +1,11 @@
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { Kicker, Mono, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, Kicker, Mono, F, PressScale as Pressable , tracking} from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useSession } from "../../lib/session";
 import { AuroraIcon } from "../../components/aurora/icons";
 import { ADMIN_SECTIONS, ADMIN_GROUPS } from "../../components/admin/sections";
-import { AuroraScreen, AHeading } from "../../components/aurora/kit";
+import { AuroraScreen, AHeading , RADIUS} from "../../components/aurora/kit";
 
 // The mobile admin console home — a grouped springboard of every admin section
 // (parity with the web sidebar). Tapping a tile opens app/admin/[section].
@@ -29,7 +29,7 @@ export default function AdminHome() {
 
       {ADMIN_GROUPS.map((group) => (
         <View key={group} style={{ marginBottom: 18 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.6, textTransform: "uppercase", color: palette.ash, marginBottom: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: palette.ash, marginBottom: 8 }}>
             {group}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 }}>
@@ -44,7 +44,7 @@ export default function AdminHome() {
                     backgroundColor: palette.ink2,
                     borderWidth: 1,
                     borderColor: palette.line,
-                    borderRadius: 16,
+                    borderRadius: RADIUS.field,
                     paddingVertical: 16,
                     paddingHorizontal: 8,
                     alignItems: "center",

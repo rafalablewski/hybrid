@@ -153,7 +153,7 @@ export default function CopyDaySheet({
                 accessibilityLabel={t("w.recovery.nutrition.copyConfirm").replace("{n}", String(plan.entries.length)).replace("{kcal}", String(plan.kcal))}
                 style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: space.md, opacity: busy ? 0.6 : 1 }}
               >
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.onAccent }}>
                   {t("w.recovery.nutrition.copyConfirm").replace("{n}", String(plan.entries.length)).replace("{kcal}", String(plan.kcal))}
                 </Text>
               </PressScale>
@@ -187,7 +187,7 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
     >
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
-        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", fontWeight: on ? "700" : "500", color: on ? C.onAccent : C.ash }}
+        style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}
       >
         {label}
       </Text>

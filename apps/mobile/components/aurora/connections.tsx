@@ -7,6 +7,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ASub, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
+import { ALPHA } from "@hybrid/core";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const statusColor = (s: string, C: Palette) =>
@@ -30,7 +31,7 @@ export default function AuroraConnections() {
   useEffect(() => { load(); }, []);
 
   const chip = (color: string, label: string) => (
-    <View style={{ backgroundColor: withAlpha(color, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
+    <View style={{ backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color), textTransform: "lowercase" }}>{label}</Text>
     </View>
   );

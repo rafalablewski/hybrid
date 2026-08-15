@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { durations } from "@hybrid/core";
+import { durations , ALPHA} from "@hybrid/core";
 import { haptic } from "../../lib/haptics";
 import { AURORA_NAV_BAR_HEIGHT } from "../../lib/layout";
 import { useTheme } from "../../lib/theme";
-import { F, fs } from "../../lib/ui";
+import { F, fs, tracking } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { withAlpha } from "./field";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { RADIUS } from "./kit";
 
 /**
  * THE TOAST — one small glass chip for a one-line outcome ("Following",
@@ -87,13 +88,13 @@ export function ToastHost() {
       <Animated.View
         accessibilityLiveRegion={kind === "error" ? "assertive" : "polite"}
         style={{
-          borderRadius: 999,
+          borderRadius: RADIUS.pill,
           overflow: "hidden",
           paddingHorizontal: 16,
           paddingVertical: 9,
           backgroundColor: LIQUID_GLASS_SUPPORTED ? "transparent" : withAlpha(C.ink2, 0.92),
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: withAlpha("#ffffff", 0.16),
+          borderColor: withAlpha("#ffffff", ALPHA.solid),
           opacity: shown,
           transform: reduced ? [] : [{ translateY: shown.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
         }}
@@ -105,7 +106,7 @@ export function ToastHost() {
         ) : (
           <BlurView intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
         )}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: 0.9, textTransform: "uppercase", color: kind === "error" ? C.red : C.chalk }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: kind === "error" ? C.red : C.chalk }}>
           {msg}
         </Text>
       </Animated.View>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef } from "@hybrid/core";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef , ALPHA} from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -20,6 +20,7 @@ import FetchError from "./fetch-error";
 import { AuroraIcon } from "./icons";
 import { ViewSwitcher, AgendaView, WeeksView, TimelineView, TrendView, type ViewCtx } from "./history-views";
 import type { ComponentType } from "react";
+import { withAlpha } from "./field";
 
 // Compile-checked view→component table: adding a HistoryViewId without wiring
 // its component here is a type error, not a silent fall-back.
@@ -56,8 +57,8 @@ function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: str
           {tags.map((slug) => {
             const k = tagLabelKey(slug);
             return (
-              <View key={slug} style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}45`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: lime }}>#{k ? t(k) : slug}</Text>
+              <View key={slug} style={{ backgroundColor: withAlpha(C.lime, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.edge), borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>#{k ? t(k) : slug}</Text>
               </View>
             );
           })}
@@ -124,7 +125,7 @@ export default function AuroraHistory() {
     [sessions, units, bw, schedule, prCounts, router],
   );
 
-  const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: `${color}1f`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
+  const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
   // Only archived sessions still render as the classic swipe list (restore /
   // delete live behind the swipe); live history renders the merged layouts.
@@ -321,7 +322,7 @@ function SwipeCard({ C, busy, actions, children }: {
               key={a.key}
               onPress={() => { animate(false); a.onPress(); }}
               disabled={busy}
-              style={{ width: TILE, alignItems: "center", justifyContent: "center", gap: 4, backgroundColor: `${a.color}26`, opacity: busy ? 0.5 : 1 }}
+              style={{ width: TILE, alignItems: "center", justifyContent: "center", gap: 4, backgroundColor: withAlpha(a.color, ALPHA.solid), opacity: busy ? 0.5 : 1 }}
             >
               <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, a.color) }}>{a.label}</Text>
             </Pressable>

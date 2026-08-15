@@ -18,7 +18,7 @@ import { noteSearchMiss } from "../../lib/search-misses";
 import { haptic } from "../../lib/haptics";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, fs, space, F, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS, ASearch, AChip } from "./kit";
 import Sheet from "./sheet";
 import { AuroraExerciseAvatar } from "./exercise-media";
@@ -399,12 +399,12 @@ function Head({ label, count, action }: {
   const { palette: C } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 8, marginBottom: 8 }}>
-      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
+      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
         {action && (
           <Pressable onPress={action.onPress} hitSlop={10} accessibilityRole="button" accessibilityState={{ selected: !!action.on }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: action.on ? txt(C, C.lime) : C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: action.on ? txt(C, C.lime) : C.ash }}>
               {action.label}
             </Text>
           </Pressable>
@@ -464,7 +464,7 @@ const Row = memo(function Row({ entry, onPick, onLongPress, queued, multi }: {
           nothing shifts sideways when the queue starts. */}
       {multi ? (
         <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: queued ? lime : C.line, backgroundColor: queued ? lime : "transparent", alignItems: "center", justifyContent: "center" }}>
-          {queued && <Text style={{ fontFamily: F.black, fontSize: 12, lineHeight: 14, color: C.onAccent }}>✓</Text>}
+          {queued && <Text style={{ fontFamily: F.black, fontSize: fs.caption, lineHeight: leading(fs.caption, "tight"), color: C.onAccent }}>✓</Text>}
         </View>
       ) : (
         !!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{hint}</Text>

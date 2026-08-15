@@ -264,7 +264,7 @@ export default function AuroraTrends({ top, unified = false }: {
                 style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingTop: 10, paddingBottom: 13, borderTopWidth: 1, borderTopColor: C.line }}
               >
                 <View style={{ width: 32, alignItems: "center", justifyContent: "center" }}>
-                  <Text style={{ fontSize: 18, color: C.ash }}>{allRows ? "−" : "＋"}</Text>
+                  <Text style={{ fontSize: fs.title, color: C.ash }}>{allRows ? "−" : "＋"}</Text>
                 </View>
                 <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
                   {allRows ? t("w.analyze.trends.fewerRows") : t("w.analyze.trends.allRows")}
