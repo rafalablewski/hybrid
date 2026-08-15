@@ -39,6 +39,7 @@ import { useExercises } from "../../lib/queries";
 import { fs, F, PressScale as Pressable } from "../../lib/ui";
 import { ASearch } from "./kit";
 import { AuroraIcon } from "./icons";
+import { SETTINGS_ROUTES } from "./settings";
 import { HubGlyph } from "./today-tabs";
 
 /**
@@ -123,6 +124,10 @@ export default function AuroraSideMenu({
   const reduced = useReducedMotion();
   const [toolsOpen, setToolsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  // The index costs a few hundred name normalizations. The drawer is MOUNTED on
+  // every tab root and opened on far fewer of them, so it is built on the first
+  // open and kept — never on a Today render for a drawer nobody touched.
+  const [everOpen, setEverOpen] = useState(false);
   const { catalog, aliasMap } = useExercises();
 
   const panelW = Math.min(SIDE_MENU_WIDTH, Math.round(screenW * 0.86));
@@ -131,6 +136,7 @@ export default function AuroraSideMenu({
   const anim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!open) { setToolsOpen(false); setQuery(""); return; }
+    setEverOpen(true);
     anim.setValue(reduced ? 1 : 0);
     if (reduced) return;
     Animated.timing(anim, { toValue: 1, duration: 320, easing: Easing.bezier(0.22, 1, 0.36, 1), useNativeDriver: true }).start();
@@ -169,15 +175,17 @@ export default function AuroraSideMenu({
   // there is no debounce here either.
   const searchIndex = useMemo(
     () =>
-      buildGlobalSearchIndex({
-        label: (key, fallback) => { const v = t(key); return v === key ? fallback : v; },
-        screens: navForPersonaWithLocks(persona, NAV_ITEMS, access)
-          .filter(({ item }) => isEnabled(`nav.${item.id}`))
-          .map(({ item, locked }) => ({ id: item.id, locked })),
-        exercises: catalog,
-        aliasMap,
-      }),
-    [t, persona, access, isEnabled, catalog, aliasMap],
+      !everOpen
+        ? []
+        : buildGlobalSearchIndex({
+            label: (key, fallback) => { const v = t(key); return v === key ? fallback : v; },
+            screens: navForPersonaWithLocks(persona, NAV_ITEMS, access)
+              .filter(({ item }) => isEnabled(`nav.${item.id}`))
+              .map(({ item, locked }) => ({ id: item.id, locked })),
+            exercises: catalog,
+            aliasMap,
+          }),
+    [everOpen, t, persona, access, isEnabled, catalog, aliasMap],
   );
   const q = query.trim();
   const found = useMemo(() => (q ? groupGlobalResults(searchGlobal(searchIndex, q, { limit: 40 })) : []), [q, searchIndex]);
@@ -191,7 +199,14 @@ export default function AuroraSideMenu({
       goId(r.id);
       return;
     }
-    if (r.kind === "setting") { goHref("/settings"); return; }
+    if (r.kind === "setting") {
+      // A few settings live on their own screen; sending those through
+      // /settings?cat= would land the athlete on a page that only bounces them
+      // onward.
+      const own = SETTINGS_ROUTES[r.id as keyof typeof SETTINGS_ROUTES];
+      goHref(own ? (own as Href) : { pathname: "/settings", params: { cat: r.id } });
+      return;
+    }
     if (r.kind === "exercise") { goHref({ pathname: "/exercise", params: { name: r.id } }); return; }
     if (r.kind === "sport") { goHref({ pathname: "/sport-page", params: { name: r.id } }); return; }
     if (r.kind === "plan") { goHref({ pathname: "/plans", params: r.parentId ? { goal: r.parentId, plan: r.id } : { goal: r.id } }); return; }

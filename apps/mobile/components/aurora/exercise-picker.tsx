@@ -206,6 +206,8 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, onPickMa
   pickRef.current = onPick;
   const multiRef = useRef(multi);
   multiRef.current = multi;
+  const onPickManyRef = useRef(onPickMany);
+  onPickManyRef.current = onPickMany;
   /** A tap: adds and closes, or — in multi mode — toggles the queue. */
   const pick = useCallback((name: string, kind: BlockKind) => {
     if (!multiRef.current) { pickRef.current(name, kind); return; }
@@ -219,8 +221,6 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, onPickMa
     setSelecting(true);
     setQueue((qs) => (qs.includes(name) ? qs : [...qs, name]));
   }, []);
-  const onPickManyRef = useRef(onPickMany);
-  onPickManyRef.current = onPickMany;
 
   const close = () => {
     // THE VOCABULARY LOG. A query that found nothing is the app admitting it
@@ -237,7 +237,13 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, onPickMa
   };
 
   const commitQueue = () => {
-    const picks = queue.map((n) => byName.get(n)).filter((e): e is Entry => !!e).map((e) => ({ name: e.name, kind: e.kind }));
+    // A queued CUSTOM movement is not in the catalog — resolve its kind the way
+    // a single custom add does rather than dropping it, which is what a
+    // catalog-only lookup did: the athlete queued five and got four.
+    const picks = queue.map((name) => {
+      const known = byName.get(name);
+      return { name, kind: known?.kind ?? inferBlockKind(name) };
+    });
     if (!picks.length) return;
     haptic.success();
     onPickManyRef.current?.(picks);
@@ -259,7 +265,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, onPickMa
   // something the screen behind it cannot do.
   const selectAction = onPickMany
     ? {
-        label: multi ? t("w.train.picker.selectDone") : t("w.train.picker.select"),
+        label: multi ? t("w.train.picker.selectCancel") : t("w.train.picker.select"),
         on: multi,
         onPress: () => { setSelecting((v) => !v); setQueue([]); },
       }
@@ -300,7 +306,9 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, onPickMa
           // No trailing pad here: the Sheet's panel owns the one pad under the
           // last row (core: sheetPadBottom), and a second one is a dead band.
           ListHeaderComponent={
-            q ? null : roomData ? (
+            q ? (
+              results.length > 0 ? <Head label={t("w.train.picker.results")} count={results.length} action={selectAction} /> : null
+            ) : roomData ? (
               <>
                 <Pressable onPress={() => setRoom(null)} hitSlop={8} style={{ paddingVertical: 8 }} accessibilityRole="button">
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>← {t("w.train.picker.all")}</Text>
@@ -392,15 +400,16 @@ function Head({ label, count, action }: {
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 8, marginBottom: 8 }}>
       <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{label}</Text>
-      {action ? (
-        <Pressable onPress={action.onPress} hitSlop={10} accessibilityRole="button" accessibilityState={{ selected: !!action.on }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: action.on ? txt(C, C.lime) : C.ash }}>
-            {action.label}
-          </Text>
-        </Pressable>
-      ) : (
+      <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
-      )}
+        {action && (
+          <Pressable onPress={action.onPress} hitSlop={10} accessibilityRole="button" accessibilityState={{ selected: !!action.on }}>
+            <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: action.on ? txt(C, C.lime) : C.ash }}>
+              {action.label}
+            </Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }

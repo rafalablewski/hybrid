@@ -32,6 +32,17 @@ const LANGUAGES: { id: Lang; label: string }[] = [
  *  reads as one system instead of a rainbow — the hue no longer encodes
  *  anything. Red is kept ONLY for the destructive `danger` section, where it is
  *  a real semantic warning. Mirrors web's TONE for parity. */
+/** Settings categories that live on their OWN screen rather than as a sub-page
+ *  here. Exported so anything routing to a setting (the cross-app search) sends
+ *  the athlete to the real screen instead of a settings page that would only
+ *  bounce them onward. `subscription` drills in to the inline Mode section
+ *  (Simple/Full toggle), parity with web; its Full CTA routes on to /upgrade. */
+export const SETTINGS_ROUTES: Partial<Record<SettingsCategoryId, string>> = {
+  account: "/profile-edit",
+  logger: "/logger-settings",
+  coaching: "/coach-apply",
+};
+
 const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "red" | "ash"> = {
   account: "ash", preferences: "ash", logger: "ash", notifications: "ash",
   privacy: "ash", coaching: "ash", security: "ash", subscription: "ash",
@@ -45,7 +56,13 @@ const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "r
  * (logger / coaching / subscription). Keeps every existing control + the shared
  * account logic (useAccountSettings) so web ↔ mobile stay in lockstep.
  */
-export default function AuroraSettings() {
+export default function AuroraSettings({ landOn }: {
+  /** Land on one category rather than the list — the cross-app search's setting
+   *  results. A result that only reached the settings ROOT would be a broken
+   *  promise: the athlete named the setting. Categories that live on their own
+   *  screen (see ROUTES) are routed there by the caller instead. */
+  landOn?: SettingsCategoryId;
+} = {}) {
   // Survivors of a filter MOVE to their new positions; only arrivals fade.
   const refilter = useListMotion();
   const { palette: C } = useTheme();
@@ -61,7 +78,7 @@ export default function AuroraSettings() {
   const personaChoice = useClientPersonaChoice() ?? (paid ? "athlete" : "casual");
   const isClient = role === "client";
   // Drill-in navigation: null = the category list; a category id = its sub-page.
-  const [cat, setCat] = useState<SettingsCategoryId | null>(null);
+  const [cat, setCat] = useState<SettingsCategoryId | null>(landOn ?? null);
   const [query, setQuery] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
@@ -311,13 +328,7 @@ export default function AuroraSettings() {
   };
 
   // Rows that navigate to a dedicated screen instead of a drill-in sub-view.
-  const ROUTES: Partial<Record<SettingsCategoryId, string>> = {
-    account: "/profile-edit",
-    logger: "/logger-settings",
-    coaching: "/coach-apply",
-    // `subscription` drills in to the inline Mode section (Simple/Full toggle),
-    // parity with web; the Full upgrade CTA there routes on to /upgrade.
-  };
+  const ROUTES = SETTINGS_ROUTES;
 
   // A short current-value summary shown on the right of each category row.
   const summary = (id: SettingsCategoryId): string => {

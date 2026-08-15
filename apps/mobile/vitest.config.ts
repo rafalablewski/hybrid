@@ -42,6 +42,7 @@ export default defineConfig({
             "lib/health-quantities.test.ts",
             "lib/ui.test.ts",
             "lib/design-tokens.test.ts",
+            "lib/search-surfaces.test.ts",
             "lib/event-pooling.test.ts",
             // Greps source text for the label-swap pattern that resizes a
             // commit button, so it reads files as DATA like the two below.
