@@ -14,7 +14,7 @@ import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } fr
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
-import { leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { Loading, leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 import Sheet from "./aurora/sheet";
@@ -133,7 +133,7 @@ export function DeviceMatchSheet({
           {phase === "unavailable" && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
           )}
-          {phase === "loading" && <ActivityIndicator color={C.lime} style={{ marginVertical: 30 }} />}
+          {phase === "loading" && <Loading />}
           {phase === "error" && (
             <Pressable onPress={() => void load()} style={{ marginVertical: 24 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("session.device.error")}</Text>

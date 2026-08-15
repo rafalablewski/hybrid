@@ -115,7 +115,7 @@ import {
   CDivider, WeightTrend, NutritionNudgeLine, SummaryDashboard, OnboardingGoal, QuadTile, Cell,
 } from "./nutrition-panels";
 import TargetSheet, { TargetMismatchLine } from "./target-sheet";
-import { PantryScreen, PantrySearchToggle, UndoBar, UNDO_MS } from "./pantry";
+import { PantryScreen, PantrySearchToggle, UndoToast, UNDO_MS } from "./pantry";
 import GroupMark from "./group-mark";
 import { RollingNumber } from "./rolling-number";
 import { withAlpha } from "./field";
@@ -2922,7 +2922,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         ) : null}
       />
       {pendingDelete ? (
-        <UndoBar label={t("w.recovery.nutrition.pn.deleted").replace("{v}", pendingDelete.name)} onUndo={undoDeleteProduct} />
+        <UndoToast label={t("w.recovery.nutrition.pn.deleted").replace("{v}", pendingDelete.name)} onUndo={undoDeleteProduct} />
       ) : null}
       </>
       )}

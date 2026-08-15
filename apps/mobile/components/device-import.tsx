@@ -22,7 +22,7 @@ import { useLang } from "../lib/i18n";
 import { haptic } from "../lib/haptics";
 import { DeviceMark } from "./aurora/device-mark";
 import { ToggleRow } from "./toggle-row";
-import { leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
+import { Loading, leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 import { withAlpha } from "./aurora/field";
@@ -201,7 +201,12 @@ export function DeviceImportSheet({
           {phase === "unavailable" && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
           )}
-          {(phase === "loading" || phase === "importing") && <ActivityIndicator color={C.lime} style={{ marginVertical: 34 }} />}
+          {/* The LIST arriving is content, so it hands over as a skeleton; the
+              import itself is an action in flight, which is what a spinner is
+              for. One condition drew both and so drew the wrong one half the
+              time. */}
+          {phase === "loading" && <Loading />}
+          {phase === "importing" && <ActivityIndicator color={C.lime} style={{ marginVertical: 34 }} />}
           {phase === "error" && (
             <Pressable onPress={() => void load()} style={{ marginVertical: 24 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("session.device.error")}</Text>

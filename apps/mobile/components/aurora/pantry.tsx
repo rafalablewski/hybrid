@@ -282,7 +282,7 @@ export function PantryScreen<T extends PantryFood>({
 
 /** The undo bar a held delete puts on screen. Chromeless and centred — it is a
  *  message with one control in it, not a card carrying a thing. */
-export function UndoBar({ label, onUndo }: { label: string; onUndo: () => void }) {
+export function UndoToast({ label, onUndo }: { label: string; onUndo: () => void }) {
   const { t } = useLang();
   const C = useTheme().palette;
   return (

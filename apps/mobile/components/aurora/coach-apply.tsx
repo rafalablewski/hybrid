@@ -5,7 +5,7 @@ import { applyForCoach, fetchCoachApplication, type CoachApplication } from "../
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
+import { Loading, leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { withAlpha } from "./field";
 import { ALPHA } from "@hybrid/core";
@@ -66,9 +66,7 @@ export default function AuroraCoachApply() {
           </Text>
         </ACard>
       ) : loading ? (
-        <View style={{ paddingVertical: 40, alignItems: "center" }}>
-          <ActivityIndicator color={C.lime} />
-        </View>
+        <Loading />
       ) : (
         <>
           {existing && (

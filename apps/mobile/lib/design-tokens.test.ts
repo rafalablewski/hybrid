@@ -370,10 +370,22 @@ describe("touch targets", () => {
     // by RETIRING four hand-rolled rails (History and Plans, both clients) and
     // it carries a stricter guard of its own than this one —
     // apps/web/__tests__/dock-rail.test.ts, which checks both clients together.
-    const SANCTIONED = /\bDockChip\b/;
+    // AND THE RULE WAS COUNTING ITS OWN ANSWER. `APill`, `AChip` and
+    // `ActionPill` are the shared primitives this ratchet exists to drive call
+    // sites TOWARDS — the comment above names two of them as the destination —
+    // and their declarations in kit.tsx were being reported as violations of
+    // themselves. `GlassPillRow` is a native SwiftUI leaf owned by swiftui.tsx
+    // under the one-owner rule below, not a hand-rolled chip.
+    //
+    // That is not a cosmetic miscount: a ratchet whose floor is the number of
+    // canonical components can NEVER reach zero, so it can never graduate to
+    // HARD, which is the entire point of the mechanism. 9 → 5, and the 5 are
+    // real: LaneOrderChip, DayChip (twice — the logbook rail and the week rail
+    // draw the same object separately), MetaPill, PlanDockPill.
+    const SANCTIONED = /\b(?:DockChip|APill|AChip|ActionPill|GlassPillRow)\b/;
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    expectAtMost(decls, 9, "chip-shaped component → Chip, AChip or DockChip");
+    expectAtMost(decls, 5, "chip-shaped component → Chip, AChip or DockChip");
   });
 });
 
@@ -400,10 +412,14 @@ describe("section headers", () => {
     // only because "Header" contains "Head", and admitting it by raising the
     // ceiling would spend a RATCHET on the very kind of component the ratchet
     // exists to produce.
-    const SANCTIONED = /\bAppHeader\b/;
+    // ASection and AHeading join AppHeader as exemptions, for a stronger reason
+    // than his: they are what this rule points AT. The canonical section head
+    // was being counted as a hand-rolled section head, which put a floor under
+    // the ratchet at the size of the design system and made zero unreachable.
+    const SANCTIONED = /\b(?:AppHeader|ASection|AHeading)\b/;
     const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Section|Head|SubHead)[A-Za-z]*\s*\(/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    expectAtMost(decls, 8, "section-header component → ASection");
+    expectAtMost(decls, 6, "section-header component → ASection");
   });
 });
 
@@ -420,8 +436,24 @@ describe("meters", () => {
     // are (RailSurface, FaceStroke, Rule), because the same misnaming is what
     // hid `Pill` from the chip merge — a wrong name invites a wrong merge as
     // readily as it hides a right one.
-    const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm);
-    expectAtMost(decls, 8, "labelled proportion → AMeter");
+    // AMeter itself was in this count — the answer, filed as a violation of
+    // itself, putting a floor under the ratchet that made zero unreachable.
+    //
+    // `UndoBar` was too, and it is not a meter at all: it is the pantry's undo
+    // TOAST. This rule's own comment argues that "a wrong name invites a wrong
+    // merge as readily as it hides a right one", and that is exactly what had
+    // happened, so it is now `UndoToast` — the code moved, not the rule.
+    //
+    // 8 → 6. What remains are the vertical COLUMN charts the comment above
+    // already calls "a different object, with real differences" — StackBar,
+    // MuscleBar, DayBars, VolumeBars, EffortSplitBar, MuscleBarFill. They stay
+    // counted rather than exempted because "is this a column chart or a
+    // labelled proportion" is a judgement per site, and a pinned ceiling keeps
+    // them visible without pretending the question is settled.
+    const SANCTIONED = /\bAMeter\b/;
+    const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm)
+      .filter((site) => !SANCTIONED.test(lineAt(site)));
+    expectAtMost(decls, 6, "labelled proportion → AMeter");
   });
 });
 
@@ -464,7 +496,23 @@ describe("loading", () => {
     // state into a fixed-size glyph slot so the word beside it can hold still.
     // A raise here bought a layout fix in four places; a raise for a spinner
     // standing in for a list still fails.
-    expectAtMost(hits(/<ActivityIndicator/g), 19, "content ActivityIndicator → <Loading />");
+    // 19 → 17, and THE 17 ARE THE FLOOR rather than a target. Reading all
+    // nineteen, three were still content-shaped — a centred spinner in a 40pt
+    // block while a coach list arrived, and two `phase === "loading"` spinners
+    // waiting on the watch's workouts — and those are now <Loading />. One of
+    // them was drawing the wrong thing half the time: `(phase === "loading" ||
+    // phase === "importing")` put ONE spinner behind two different meanings,
+    // the list arriving (content) and the import running (an action), so it is
+    // split — which is why this went to 17 and not 16: the split KEEPS a
+    // legitimate spinner for the importing half.
+    //
+    // The remaining 17 are all the permitted kind: a spinner inside a button
+    // while it saves, scans, exports, deletes or subscribes. THIS RATCHET IS
+    // NOT AIMING AT ZERO — in-flight actions will always want a spinner, so its
+    // floor is legitimate usage, not debt. Do not force it down; check that a
+    // new one sits inside a control, and raise it if that buys a layout fix
+    // (see the four that did).
+    expectAtMost(hits(/<ActivityIndicator/g), 17, "content ActivityIndicator → <Loading />");
   });
 });
 
