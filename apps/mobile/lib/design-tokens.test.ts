@@ -712,12 +712,16 @@ describe("presentation", () => {
     // THREE exemptions, and none is a bottom sheet — each is a different
     // presentation with no panel to drag:
     //   • tour.tsx — a full-screen coach-mark overlay.
-    //   • feed-menu.tsx — the post's ⋯ menu, a small card ANCHORED to the glyph
-    //     that opened it. It has to be a Modal for a reason Sheet can't solve:
-    //     drawn inline it would be clipped by the feed's FlatList (and by the
-    //     row itself on Android), so it renders in its own native window and is
-    //     placed from the anchor's measured rect. Presenting it as a sheet is
-    //     what this change REVERSED — see the file header.
+    //   • hold-menu.tsx — the app's ONE anchored menu card: the post's ⋯ menu
+    //     and the long-press that deletes a saved food, a saved meal, a recent
+    //     or a remembered pack. It has to be a Modal for a reason Sheet can't
+    //     solve: drawn inline it would be clipped by the list it sits in (and by
+    //     the row itself on Android), so it renders in its own native window and
+    //     is placed from the anchor's measured rect. Presenting it as a sheet is
+    //     what an earlier change REVERSED — see the file header. It moved out of
+    //     feed-menu.tsx when the hold arrived, so the two could not draw two
+    //     cards; feed-menu.tsx now holds no Modal of its own and is no longer
+    //     exempt.
     //   • side-menu.tsx — the side DRAWER behind the Today header's avatar. It
     //     is anchored to the LEFT edge and full-height; Sheet is bottom-anchored
     //     with vertical detents, so there is no panel here for its drag,
@@ -727,7 +731,7 @@ describe("presentation", () => {
     // `codeHits`, not `hits`: a `<Modal` inside a comment is prose, not a
     // presentation, and the files most likely to describe one are the very
     // files that were converted off it.
-    const EXEMPT = ["components/aurora/sheet.tsx", "components/tour.tsx", "components/feed-menu.tsx", "components/aurora/side-menu.tsx"];
+    const EXEMPT = ["components/aurora/sheet.tsx", "components/tour.tsx", "components/hold-menu.tsx", "components/aurora/side-menu.tsx"];
     const raw = codeHits(/<Modal\b/g).filter((h) => !EXEMPT.some((f) => h.startsWith(f)));
     expect(raw).toEqual([]);
   });

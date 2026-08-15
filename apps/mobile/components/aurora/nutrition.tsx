@@ -41,7 +41,8 @@ import {
   portionUnits, portionUnit, portionMeasure, portionQty, portionAmount, portionStep, portionEquivalent,
   loggedPortionOf, loggedAmountLabel, loggedAmountShown, stepLoggedPortion, rescaleLoggedAmount,
   parseFoodPortions, dedupePortions, usualAmounts, usualLogPortion, MAX_FOOD_PORTIONS,
-  formatAmount, parsePackSize, type PortionUnit, type FoodPortion,
+  foodPortions, removeFoodPortion, namedPortionUnits, oneOfPortion,
+  formatAmount, parsePackSize, type PortionUnit, type FoodPortion, type PortionSource,
   trainingEnergyOnDay,
   localDayKey,
   localTodayKey,
@@ -111,8 +112,9 @@ import BarcodeScanSheet from "./barcode-scan";
 import {
   Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceSwitch, PickerDoor, DayGap, MacroLedger, MACRO_FILL, PICKER_EDGE, BLOCK,
   IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock, IBarcode,
-  presetGlyph, macroKcal,
+  presetGlyph, macroKcal, savedFoodMenu, packMenu, type RowPortion,
 } from "./nutrition-kit";
+import { HoldMenu, type HoldMenuItem } from "../hold-menu";
 import {
   collectionTitle, CollectionRail, RecipeShelf, RecipeTile, CookPlate, RecipeCard,
 } from "./recipe-library";
@@ -174,13 +176,62 @@ type QuickFood = { key: string; name: string; subname?: string | null; serving: 
 // Small stroke icons for the redesigned flows (close, chevron, barcode, trash,
 // restart, star, bolt, plus-box) — inline react-native-svg so the mockup chrome
 // renders exactly, at the same monoline weight as the rest of the surface.
+/**
+ * A saved food's portions, COMPLETE.
+ *
+ * Every read of a product's packs goes through this rather than the shorter
+ * `parseFoodPortions(p.portions)` that used to be written at each site, because
+ * that spelling silently DROPS the legacy pack: a food saved before the list
+ * existed keeps its bottle in the `packSize`/`packLabel` columns, and only
+ * core's `foodPortions` folds those back in. The two spellings disagreed in
+ * exactly the way that is hardest to notice — the pantry row offered the bottle
+ * (it read the row) and the portion editor did not (it read the parsed list).
+ */
+const productPortions = (p: FoodProductRow): FoodPortion[] =>
+  foodPortions({
+    serving: p.servingLabel,
+    servingGrams: p.servingGrams,
+    portions: parseFoodPortions(p.portions),
+    packSize: p.packSize,
+    packLabel: p.packLabel,
+  });
+
+/** What it takes to name a food's packs — the three fields a saved product, a
+ *  recent and a search hit all already carry. */
+type PackedFood = { serving?: string | null; servingGrams?: number | null; portions?: FoodPortion[] | null };
+/** …and what it takes to log one of them. */
+type LoggablePack = PackedFood & MicroFacts
+  & { name: string; subname?: string | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null };
+
+/**
+ * A PACK BEING TYPED — one row of the Create Food form's pack list.
+ *
+ * The form used to offer exactly ONE, and the data model has held a LIST since
+ * portions shipped, because real foods have several: a cheese has a slice and a
+ * block, a bread has a slice and a loaf, and the kefir this feature was asked
+ * for has a bottle and a glass. One field could only ever record whichever the
+ * athlete happened to type first, and the second one had to be found later, at
+ * the bottom of the portion editor, one food at a time.
+ *
+ * `key` is a stable identity for the row, minted here rather than derived from
+ * the values: the fields are edited keystroke by keystroke, so a key made of
+ * size-plus-label changes under the finger and remounts the input being typed
+ * into. `source` rides along so a size the CATALOG published stays marked as
+ * the catalog's until somebody changes it — the form shows the whole truth
+ * about the food's packs now, and the whole truth includes where each came from.
+ */
+type CreatePack = { key: string; size: string; label: string; source: PortionSource };
+let packKeySeq = 0;
+const newPackKey = () => `pk${++packKeySeq}`;
+const packRow = (p: FoodPortion): CreatePack => ({ key: newPackKey(), size: formatAmount(p.size), label: p.label, source: p.source });
+
 const BLANK_CREATE_FORM = {
   name: "", subname: "", serving: "", unit: "gram",
   kcal: "", carbs: "", protein: "", fat: "",
   satFat: "", sugar: "", fiber: "", salt: "",
-  // The container this comes in, and what to call it — so the whole bottle is
-  // one tap in the portion editor rather than arithmetic (core/portion.ts).
-  packSize: "", packLabel: "",
+  // The containers this comes in, and what to call each — so the whole bottle
+  // is one tap on the row rather than arithmetic (core/portion.ts).
+  packs: [] as CreatePack[],
 };
 
 // The HYBRID Verified mark — the same quiet lime tick the verified-coach badge
@@ -279,15 +330,28 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       unit: parsedServing.unit ?? "serving",
       kcal: num(p.kcal), carbs: num(p.carbs), protein: num(p.protein), fat: num(p.fat),
       satFat: num(p.satFat), sugar: num(p.sugar), fiber: num(p.fiber), salt: num(p.salt),
-      // The pack fields edit the food's TYPED portion; catalog and scanned ones
-      // are not shown here, because this form is where the athlete states what
-      // they know and not where they overwrite what the database published.
-      packSize: (() => { const own = parseFoodPortions(p.portions).find((x) => x.source === "typed"); return own ? formatAmount(own.size) : ""; })(),
-      packLabel: parseFoodPortions(p.portions).find((x) => x.source === "typed")?.label ?? "",
+      // EVERY pack the food has, whatever put it there — the athlete's, the
+      // catalog's, a scan's, and the single one the legacy columns still hold.
+      // The form used to show only the typed one, on the argument that this is
+      // where the athlete states what they know rather than where they overwrite
+      // what the database published. That was right about authorship and wrong
+      // about the screen: a pack you cannot SEE is a pack you cannot correct or
+      // remove, and a wrong 6-pack net quantity is exactly the thing somebody
+      // opens this form to fix. Each row still says where it came from.
+      packs: productPortions(p).map(packRow),
     });
     setShowPanelFields([p.satFat, p.sugar, p.fiber, p.salt].some((v) => v != null));
     setView("create");
   };
+  // The Create form's pack list — grow it, type into it, take a row off it. A
+  // row EDITED becomes the athlete's own: correcting a size the catalog
+  // published is exactly the moment their figure starts outranking it, which is
+  // the tie-break core's SOURCE_RANK already encodes.
+  const addPack = () => setCreateForm((s) => s.packs.length >= MAX_FOOD_PORTIONS ? s : ({ ...s, packs: [...s.packs, { key: newPackKey(), size: "", label: "", source: "typed" }] }));
+  const setPack = (key: string, patch: Partial<Pick<CreatePack, "size" | "label">>) =>
+    setCreateForm((s) => ({ ...s, packs: s.packs.map((p) => p.key === key ? { ...p, ...patch, source: "typed" } : p) }));
+  const removePack = (key: string) => setCreateForm((s) => ({ ...s, packs: s.packs.filter((p) => p.key !== key) }));
+
   // Add a saved product to the meal being composed (or bump its serving count if
   // already added); remove / re-count keep the summed macros in sync.
   const addMealComp = (p: FoodProductRow) => setMealComps((xs) => {
@@ -339,6 +403,22 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   });
   const isFavorite = (key: string) => favorites.some((x) => x.key === key);
   const toggleFavorite = (q: QuickFood) => setFavorites((xs) => { const next = xs.some((x) => x.key === q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; AsyncStorage.setItem("hybrid.nutrition.favorites", JSON.stringify(next)).catch(() => {}); return next; });
+  /**
+   * FORGET A RECENT. The MRU is written on every log and could never be edited,
+   * so one mistyped quick entry sat at the top of the picker for the next twenty
+   * meals — and the athlete's own recents are exactly where the app claims to be
+   * remembering FOR them. Held, like everything else that was remembered.
+   *
+   * It also drops the food's HOURS with it (`logs`), because a habit is the
+   * thing being forgotten: leaving the stamps behind would keep ranking a food
+   * to the top of this hour after it was taken off the list.
+   */
+  const forgetRecent = (key: string) => setRecent((xs) => {
+    const next = xs.filter((x) => x.key !== key);
+    AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {});
+    haptic.warning();
+    return next;
+  });
   const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -644,9 +724,24 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const [portionText, setPortionText] = useState("1");
   const [packMsg, setPackMsg] = useState("");
   const openPortion = (base: NonNullable<typeof portion>) => {
-    // Opens on ONE SERVING — what the label states — whatever units the food
-    // also supports. The unit switch is an offer, never a surprise.
-    setPortionUnitId("servings"); setPortionText("1"); setPackMsg("");
+    // OPENS ON THE FOOD'S OWN MEASURE when it has one, and on servings when it
+    // does not.
+    //
+    // It used to open on servings always, on the argument that the unit switch
+    // is an offer and never a surprise. Nothing about that is given up here: a
+    // measure's `initial` IS one serving's worth (100 for a "100 g" food), so
+    // the sheet opens on exactly the same PORTION it always did — only the unit
+    // the number is expressed in changes, and the equivalent line under the
+    // stepper states the other reading. What it costs is the tap it used to take
+    // to say "grams" before a weight could be typed, on the single most common
+    // thing anybody does on this screen: putting the food on a scale. It also
+    // brings the learned amounts on screen at once, since those are offered on
+    // the measure — a second tap saved for the foods logged most often.
+    const units = portionUnits({ serving: base.serving, servingGrams: base.servingGrams, portions: base.portions });
+    const measure = portionUnit(units, "measure");
+    setPortionUnitId(measure ? "measure" : "servings");
+    setPortionText(formatAmount(measure ? measure.initial : 1));
+    setPackMsg("");
     setPortion(base);
   };
   const portionUnitList = useMemo(
@@ -704,7 +799,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     if (!p?.productId || packSize == null) return;
     setPackMsg("");
     const next = dedupePortions([...(p.portions ?? []), { label: "", size: packSize, source: "typed" }]);
-    const ok = await updateFoodProduct(p.productId, { portions: next });
+    // The sheet's list is the FOLDED one (productPortions), so writing it back
+    // carries a legacy pack into `portions` — and the legacy pair is cleared in
+    // the same PATCH so it cannot fold itself in a second time at the next read.
+    const ok = await updateFoodProduct(p.productId, { portions: next, packSize: null });
     if (!ok) { setPackMsg(t("w.recovery.nutrition.pt.packFailed")); return; }
     setProducts((xs) => xs.map((x) => x.id === p.productId ? { ...x, portions: next } : x));
     setPortion((cur) => cur ? { ...cur, portions: next } : cur);
@@ -885,18 +983,32 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     load(); loadLogs(); revalidate.recovery();
   };
   // Log a product (saved food) from the picker → portion editor.
-  const logProduct = (p: FoodProductRow) => openPortion({ productId: p.id, name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, portions: parseFoodPortions(p.portions), verifiedId: p.verifiedId });
+  const logProduct = (p: FoodProductRow) => openPortion({ productId: p.id, name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, portions: productPortions(p), verifiedId: p.verifiedId });
 
   // Save the Create form → products OR meals API (one blend form, two targets),
   // carrying the personal subname, then return to the picker Personal tab.
-  /** The Create form's optional pack, as ONE portion the athlete typed. Empty
-   *  when they left it blank, or when the serving they chose has no measure to
-   *  state a size in. */
-  const typedCreatePortion = (): FoodPortion[] => {
+  /**
+   * The Create form's packs, as portions.
+   *
+   * NULL means THE FORM HAS NOTHING TO SAY, which is not the same as "no packs"
+   * and must not be written as one: a serving with no measure ("1 slice") states
+   * its sizes in a unit that does not exist, so the form does not show the list
+   * at all — and an edit that then wrote `[]` would silently delete the packs a
+   * scan had recorded, on a screen where the athlete only changed the name.
+   *
+   * A blank row is skipped rather than refused. It is what an ＋ pressed one too
+   * many times leaves behind, and refusing to save over it would be the form
+   * blocking on its own affordance.
+   */
+  const createPortions = (): FoodPortion[] | null => {
     const label = createForm.serving.trim() ? composeServingLabel(createForm.serving, createForm.unit) : null;
-    const size = parsePackSize(createForm.packSize);
-    if (!label || size == null || !portionMeasure({ serving: label })) return [];
-    return [{ label: createForm.packLabel.trim().slice(0, 24), size, source: "typed" }];
+    if (!label || !portionMeasure({ serving: label })) return null;
+    const out: FoodPortion[] = [];
+    for (const p of createForm.packs) {
+      const size = parsePackSize(p.size);
+      if (size != null) out.push({ label: p.label.trim().slice(0, 24), size, source: p.source });
+    }
+    return dedupePortions(out);
   };
 
   const submitCreateFood = async () => {
@@ -932,12 +1044,16 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // scanned portions are carried through untouched — this form states what the
     // athlete knows, it does not overwrite what the database published.
     if (editingProduct) {
-      const own = typedCreatePortion();
-      const kept = parseFoodPortions(editingProduct.portions).filter((x) => x.source !== "typed");
+      // The pack LIST on the form is the food's whole truth about its packs
+      // (that is why the form now shows every one of them, whatever its source),
+      // so it is written whole — and the legacy pair is cleared with it, since
+      // a pack still sitting in those two columns would fold itself back in at
+      // the next read and undo a removal made here.
+      const packs = createPortions();
       const ok = await updateFoodProduct(editingProduct.id, {
         name: createForm.name.trim(), subname: subname ?? null,
         servingLabel: composedLabel, servingGrams: servingGrams ?? null,
-        portions: dedupePortions([...kept, ...own]),
+        ...(packs ? { portions: packs, packSize: null } : {}),
         ...macros, ...panelFields,
       });
       if (!ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
@@ -952,11 +1068,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros, ...panelFields })
       : await createFoodProduct({
           name: createForm.name.trim(), subname, servingLabel: composedLabel, servingGrams,
-          // A pack typed here is ONE portion, source "typed". It is stated in
-          // the SERVING'S own measure, so a label with no measure at all
-          // ("1 slice") carries none — a size with no unit is a number nobody
-          // can read back.
-          portions: typedCreatePortion(),
+          // The packs are stated in the SERVING'S own measure, so a label with
+          // no measure at all ("1 slice") carries none — a size with no unit is
+          // a number nobody can read back.
+          portions: createPortions() ?? [],
           ...macros, ...panelFields,
         });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
@@ -1039,9 +1154,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // Food form (openCreate("product")) is the primary one and has been since the
   // de-clutter pass — and two forms writing the same row is how a field lands
   // on one of them and not the other.
-  const removeProduct = async (id: string) => { setProducts((xs) => xs.filter((x) => x.id !== id)); await deleteFoodProduct(id); };
+  // The picker's own fire-and-forget delete is GONE with it. It dropped a saved
+  // food with no undo while the pantry's identical gesture held the row for six
+  // seconds — one food, two deletes, and only one of them survivable. Both doors
+  // are `askDeleteProduct` now.
 
-  // ── PANTRY — swipe to delete, with a real undo ───────────────────────────
+  // ── PANTRY — hold (or swipe) to delete, with a real undo ─────────────────
   // The row leaves immediately but the DELETE is HELD for UNDO_MS. Undoing a
   // completed delete would have to re-create the product, which mints a new id
   // and quietly breaks every recipe ingredient pointing at the old one, so the
@@ -1081,18 +1199,24 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   };
   useEffect(() => () => { const p = pendingRef.current; if (p) { clearTimeout(p.timer); void deleteFoodProduct(p.product.id); } }, []);
 
-  // ⊕ on a pantry row — log ONE serving to the current meal, now. The row body
-  // still opens the portion editor for a quantity and the full panel; this is
+  // ⊕ ON A SAVED FOOD — log it to the current meal, NOW. The row body still
+  // opens the portion editor for a different amount and the full panel; this is
   // the tap for the food you eat the same way every time.
-  const logOneServing = async (p: FoodProductRow) => {
-    setFoodMsg("");
+  //
+  // It is the same on both doors now. The pantry's ⊕ logged, and the picker's ⊕
+  // on the very same food opened a sheet — one control, two meanings, on two
+  // lists an athlete moves between without noticing which one they are on.
+  // `say` is the only thing that differs, because the two screens carry their
+  // confirmation on different lines.
+  const logOneServing = async (p: FoodProductRow, say: (v: string) => void = setFoodMsg) => {
+    say("");
     // THE HABIT, IF THERE IS ONE. A food this athlete has weighed the same way
     // three times or more logs THAT, not a serving they have never once eaten —
     // and the row says "usually 35 g" beside the ⊕, so the tap does what the
     // line above it claims. No habit, or a food whose measure has moved out
     // from under it, falls back to the one serving this always logged.
     const habit = usualLogPortion(
-      { serving: p.servingLabel, servingGrams: p.servingGrams, portions: parseFoodPortions(p.portions) },
+      { serving: p.servingLabel, servingGrams: p.servingGrams, portions: productPortions(p) },
       usualFor(p),
     );
     const ok = await logEntry({
@@ -1103,7 +1227,100 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       qty: habit?.qty ?? 1,
       amount: habit?.amount ?? null, amountUnit: habit?.amountUnit ?? null,
     });
-    if (ok) { setFoodMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
+    if (ok) { say(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
+  };
+
+  // ── THE PACKS, ON THE ROW ────────────────────────────────────────────────
+  //
+  // A food that states what its container holds should be loggable AS that
+  // container in one tap. It took five — picker, source, row, the bottle on the
+  // unit switch, Log — four of which exist to answer a question the food already
+  // answered when the pack was recorded. The row states them and logs them.
+
+  /** The food's packs, localized for a row: "Whole bottle", "400 g". */
+  const rowPortions = useCallback((food: PackedFood): RowPortion[] => {
+    const measure = portionMeasure(food);
+    if (!measure) return [];
+    return namedPortionUnits(food).map((u) => ({
+      id: u.id,
+      label: t("w.recovery.nutrition.pt.wholePack").replace("{v}", u.portionLabel?.trim() || t("w.recovery.nutrition.pt.pack")),
+      size: `${formatAmount(u.servingsPer * measure.perServing)} ${measure.unit}`,
+    }));
+  }, [t]);
+
+  /** Log ONE of a named portion — the whole bottle — straight into the current
+   *  meal. Same write the portion editor makes at amount 1 on that unit
+   *  (core `oneOfPortion`), so the diary row reads "1 bottle" and not "4". */
+  const logWholePortion = async (food: LoggablePack, unitId: string): Promise<boolean> => {
+    const units = portionUnits({ serving: food.serving, servingGrams: food.servingGrams, portions: food.portions });
+    const unit = portionUnit(units, unitId);
+    // A pack that has just been removed under the finger is not an error worth
+    // a message — the chip it was on is already gone.
+    if (!unit) return false;
+    const one = oneOfPortion(unit);
+    const ok = await logEntry({
+      name: food.name, subname: food.subname ?? null, source: mealType,
+      kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat,
+      satFat: food.satFat, sugar: food.sugar, fiber: food.fiber, salt: food.salt,
+      verifiedId: food.verifiedId ?? null,
+      ...one,
+    });
+    if (!ok) return false;
+    pushRecent({
+      key: `${food.name}|${food.serving ?? ""}`, name: food.name, subname: food.subname ?? null, serving: food.serving ?? "",
+      kcal: food.kcal, protein: food.protein, carbs: food.carbs, fat: food.fat,
+      satFat: food.satFat, sugar: food.sugar, fiber: food.fiber, salt: food.salt,
+      servingGrams: food.servingGrams ?? null, verifiedId: food.verifiedId ?? null, portions: food.portions ?? null,
+    });
+    loadLogs(); refetch(); revalidate.recovery();
+    return true;
+  };
+
+  /** The pantry's ⊕-on-a-pack, and the picker's. Each sets its own screen's
+   *  confirmation line, because the two screens have different ones. */
+  const logProductPortion = async (p: FoodProductRow, unitId: string, say: (v: string) => void) => {
+    say("");
+    const ok = await logWholePortion(
+      { name: p.name, subname: p.subname, serving: p.servingLabel, servingGrams: p.servingGrams, portions: productPortions(p),
+        kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat,
+        satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, verifiedId: p.verifiedId },
+      unitId,
+    );
+    if (ok) say(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType)));
+  };
+
+  /**
+   * FORGET A PACK — the half that was missing.
+   *
+   * Four sources could put a unit on the switch and nothing could take one off:
+   * a bottle typed as 400 when the scale said 450, a catalog net quantity for
+   * the multipack somebody does not buy. It writes the FOLDED list back (so a
+   * legacy pack is genuinely gone rather than gone until the next read) and
+   * clears the legacy pair in the same PATCH.
+   */
+  const removeProductPortion = async (p: FoodProductRow, unitId: string) => {
+    const next = removeFoodPortion(productPortions(p), unitId);
+    const before = products;
+    const patched = { ...p, portions: next, packSize: null, packLabel: null } as FoodProductRow;
+    setProducts((xs) => xs.map((x) => x.id === p.id ? patched : x));
+    // The open portion editor is looking at the same food: leaving its unit
+    // switch showing a pack that no longer exists would be the screen and the
+    // database disagreeing while the athlete watches.
+    setPortion((cur) => cur?.productId === p.id ? { ...cur, portions: next } : cur);
+    // A stepper left counting a unit that no longer exists would keep the number
+    // and lose its meaning, so it falls back to where the sheet opens — the
+    // food's own measure — reading one serving's worth, exactly as it would have
+    // if the sheet had been opened a second later.
+    if (portionUnitId === unitId) {
+      const left = portionUnits({ serving: p.servingLabel, servingGrams: p.servingGrams, portions: next });
+      const fallback = portionUnit(left, "measure") ?? left[0]!;
+      setPortionUnitId(fallback.id);
+      setPortionText(formatAmount(fallback.initial));
+    }
+    haptic.warning();
+    if (await updateFoodProduct(p.id, { portions: next, packSize: null })) return;
+    setProducts(before);
+    setFoodMsg(t("w.recovery.nutrition.pt.packFailed"));
   };
 
   // ── THE ONE FIELD. `foodQuery` is now the picker's ONLY input: quick add and
@@ -1596,9 +1813,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         // portion, from the measure unit — which is where the athlete has just
         // typed what the container holds. The catalog, a scan and their own logs
         // all get here without a control; this is the fallback.
+        // A PACK THE SIZE OF ONE SERVING is not offered. The editor opens on the
+        // measure now (reading one serving's worth), so without this the control
+        // would greet every gram-labelled food with "remember 100 g as the whole
+        // pack" before the athlete has typed anything — and a pack equal to the
+        // serving names nothing the stepper could not already log as 1.
         const canRememberPortion =
           !!portion.productId && !!measure && portionUnitId === "measure" &&
           namedPortions.length < MAX_FOOD_PORTIONS && portionTyped > 0 &&
+          Math.abs(portionTyped - perServing) > 0.01 &&
           !namedPortions.some((u) => Math.abs(u.servingsPer * perServing - portionTyped) < 0.01);
         return (
           <View>
@@ -1664,17 +1887,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                   const label = u.kind === "portion"
                     ? t("w.recovery.nutrition.pt.wholePack").replace("{v}", portionUnitLabel(u))
                     : portionUnitLabel(u);
-                  return (
-                    <Pressable
-                      key={u.id}
-                      onPress={() => switchPortionUnit(u.id)}
-                      accessibilityRole="radio"
-                      accessibilityState={{ selected: on }}
-                      // A portion says how big it is on the chip, so picking
-                      // between "bottle" and "block" is not a memory test.
-                      accessibilityLabel={u.kind === "portion" && measure ? `${label}, ${formatAmount(u.servingsPer * perServing)} ${measure.symbol}` : label}
-                      style={{ minWidth: 84, alignItems: "center", borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, ALPHA.wash) : "transparent", borderRadius: RADIUS.pill, paddingVertical: 9, paddingHorizontal: 14 }}
-                    >
+                  // A portion says how big it is on the chip, so picking between
+                  // "bottle" and "block" is not a memory test.
+                  const a11y = u.kind === "portion" && measure ? `${label}, ${formatAmount(u.servingsPer * perServing)} ${measure.symbol}` : label;
+                  const chip = (
+                    <View style={{ minWidth: 84, alignItems: "center", borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, ALPHA.wash) : "transparent", borderRadius: RADIUS.pill, paddingVertical: 9, paddingHorizontal: 14 }}>
                       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
                         {label}
                       </Text>
@@ -1683,6 +1900,38 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                           {formatAmount(u.servingsPer * perServing)} {measure.symbol}
                         </Text>
                       ) : null}
+                    </View>
+                  );
+                  // HOLD A PACK TO TAKE IT OFF THE SWITCH. This is where a wrong
+                  // pack is SEEN — the chip states its size right under the word
+                  // — so it is where the correction belongs, rather than three
+                  // screens away in the form. Only on a saved food, and only on
+                  // a pack: servings and the measure are read off the food's own
+                  // label and there is nothing there to remove.
+                  const product = u.kind === "portion" && portion.productId ? products.find((x) => x.id === portion.productId) : undefined;
+                  if (product) {
+                    return (
+                      <HoldMenu
+                        key={u.id}
+                        items={packMenu(t)}
+                        onSelect={() => { void removeProductPortion(product, u.id); }}
+                        onPress={() => switchPortionUnit(u.id)}
+                        a11yLabel={a11y}
+                        a11yRole="radio"
+                      >
+                        {chip}
+                      </HoldMenu>
+                    );
+                  }
+                  return (
+                    <Pressable
+                      key={u.id}
+                      onPress={() => switchPortionUnit(u.id)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: on }}
+                      accessibilityLabel={a11y}
+                    >
+                      {chip}
                     </Pressable>
                   );
                 })}
@@ -1849,15 +2098,29 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           // Carried so STARRING one keeps the whole food — a favourite is stored
           // as this shape, and a stripped copy loses the serving weight (and so
           // the gram conversion), the micros and the verified provenance.
-          satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, portions: parseFoodPortions(p.portions), verifiedId: p.verifiedId }));
+          satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, portions: productPortions(p), verifiedId: p.verifiedId }));
     const sourceCounts: Record<PickerSourceKey, number> = {
       recent: recent.length, favorites: favorites.length, meals: meals.length, personal: products.length,
     };
     // ONE row renderer, used by both groups of the hour split below.
     const recentRow = (food: QuickFood) => {
               const prodId = food.key.startsWith("p:") ? food.key.slice(2) : null;
+      const product = prodId ? products.find((x) => x.id === prodId) ?? null : null;
       const days = usualDays.get(food.key);
       const isRecent = foodTab === "recent";
+      // WHAT THE HOLD OFFERS DEPENDS ON WHAT THE ROW IS. A saved food is a row
+      // in the database — it edits and it deletes. A recent and a favourite are
+      // per-device lists, and the only honest verb for either is FORGET: they
+      // hold no food of their own, and deleting the entry from one of them must
+      // not be dressed up as deleting the food.
+      const menu: HoldMenuItem[] = product
+        ? savedFoodMenu(t)
+        : [{ key: "forget", label: t(isRecent ? "w.recovery.nutrition.hold.forget" : "w.recovery.nutrition.hold.unstar"), destructive: true }];
+      const runMenu = (key: string) => {
+        if (product && key === "edit") { openEditProduct(product); return; }
+        if (product && key === "delete") { askDeleteProduct(product.id); return; }
+        if (isRecent) forgetRecent(food.key); else toggleFavorite(food);
+      };
       return (
         <FoodRow
           key={food.key} C={C}
@@ -1874,11 +2137,31 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           // serving, so re-logging it needs no question answering —
           // the portion editor is still one tap away on the row body,
           // for the evening the amount is different.
-          onAdd={() => { const p = prodId ? products.find((x) => x.id === prodId) : null; if (p) logProduct(p); else if (isRecent) relogRecent(food); else logQuickFood(food); }}
-          onOpen={isRecent && !prodId ? () => logQuickFood(food) : undefined}
+          // ⊕ LOGS, on every row of every source. It used to open the portion
+          // sheet for a saved food and log outright for a recent — the same
+          // glyph meaning two different things one tab apart.
+          onAdd={() => { if (product) void logOneServing(product, setMealMsg); else if (isRecent) relogRecent(food); else logQuickFood(food); }}
+          // …and the BODY opens the editor, on every row of every source.
+          onOpen={product ? () => logProduct(product) : () => logQuickFood(food)}
           starred={isFavorite(food.key)}
           onStar={() => toggleFavorite(food)}
-          onDelete={prodId ? () => removeProduct(prodId) : undefined}
+          // The SWIPE and the HOLD fire the same delete now. It used to be the
+          // bare `removeProduct` — the one path in the app that dropped a saved
+          // food with no undo, while the pantry's identical swipe held it.
+          onDelete={product ? () => askDeleteProduct(product.id) : isRecent ? () => forgetRecent(food.key) : undefined}
+          menu={menu}
+          onMenu={runMenu}
+          // THE PACKS. A recent carries the food's portions with it (that is why
+          // QuickFood stores them), so the whole bottle is one tap here too —
+          // but it is only REMOVABLE where there is a row to write it back to.
+          portions={rowPortions(food)}
+          onLogPortion={(unitId) => {
+            if (product) { void logProductPortion(product, unitId, setMealMsg); return; }
+            setMealMsg("");
+            void logWholePortion(food, unitId).then((ok) => { if (ok) setMealMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); });
+          }}
+          portionMenu={product ? packMenu(t) : undefined}
+          onPortionMenu={product ? (unitId) => { void removeProductPortion(product, unitId); } : undefined}
         />
       );
     };
@@ -2046,6 +2329,18 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </View>
           ) : null}
 
+          {/* THE UNDO FOLLOWS THE DELETE. This screen deletes saved foods now —
+              the hold's menu and the swipe both run `askDeleteProduct`, which
+              holds the row for six seconds so the food that comes back is the
+              food that left rather than a new id every recipe ingredient has
+              stopped pointing at. A held delete with the bar only on the OTHER
+              screen would be a promise made where nobody can see it. */}
+          {pendingDelete ? (
+            <View style={{ paddingHorizontal: PICKER_EDGE }}>
+              <UndoToast label={t("w.recovery.nutrition.pn.deleted").replace("{v}", pendingDelete.name)} onUndo={undoDeleteProduct} />
+            </View>
+          ) : null}
+
           {/* THE FOUR SOURCES, on the app's ONE segmented control — the same
               track, lens and spring as the Today hub, the This-week filter and
               the Trends switcher one tap away, with the counts riding ASegment's
@@ -2071,6 +2366,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                   meta={`${Math.round(m.kcal)} kcal  –  ${Math.round(m.protein)}P ${Math.round(m.carbs)}C ${Math.round(m.fat)}F`}
                   onAdd={() => logMeal(m)}
                   onDelete={() => removeMeal(m.id)}
+                  menu={[{ key: "delete", label: t("w.recovery.nutrition.deleteMeal"), destructive: true }]}
+                  onMenu={() => removeMeal(m.id)}
                 />
               ))
             ) : foods.length === 0 ? (
@@ -2283,19 +2580,61 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           </View>
         ) : null}
 
-        {/* THE PACK — the whole bottle/tub, in the serving's own measure, plus
-            the athlete's word for it. Optional, and only offered when the
-            serving above can be measured at all: asking how many grams are in
-            a pack of "1 slice" is a question with no answer. */}
+        {/* THE PACKS — the whole bottle, the glass, the tub, each in the
+            serving's own measure with the athlete's word for it. A LIST, because
+            real foods have several: the kefir is a 400 ml bottle AND a 250 ml
+            glass, and a form with one field could only ever record whichever was
+            typed first. Only offered when the serving above can be measured at
+            all: asking how many grams are in a pack of "1 slice" is a question
+            with no answer.
+
+            The ＋ is BARE and it GROWS IN PLACE — the exit rule's grammar. A ring
+            here would promise a screen that does not exist. */}
         {!isMeal && createMeasure ? (
-          <View style={{ marginTop: 16 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.recovery.nutrition.pt.packSize")}</Text>
-              <TextInput value={createForm.packSize} onChangeText={(v) => setCF({ packSize: v })} keyboardType="decimal-pad" placeholder="—" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.pt.packSize")} style={{ width: 56, textAlign: "right", fontFamily: F.mono, fontSize: fs.note, color: C.chalk, borderBottomWidth: 1, borderBottomColor: C.line, paddingBottom: 2 }} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{createMeasure.unit}</Text>
-              <TextInput value={createForm.packLabel} onChangeText={(v) => setCF({ packLabel: v })} maxLength={24} placeholder={t("w.recovery.nutrition.pt.packName")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.pt.packName")} style={{ flexShrink: 1, minWidth: 92, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, borderBottomWidth: 1, borderBottomColor: C.line, paddingBottom: 2 }} />
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: leading(fs.nano) }}>{t("w.recovery.nutrition.pt.packHint")}</Text>
+          <View style={{ marginTop: 24 }}>
+            <GroupMark label={t("w.recovery.nutrition.pt.packs")} mt={0} />
+            {createForm.packs.map((pk) => (
+              <View key={pk.key} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
+                <TextInput
+                  value={pk.size}
+                  onChangeText={(v) => setPack(pk.key, { size: v })}
+                  keyboardType="decimal-pad"
+                  placeholder="—"
+                  placeholderTextColor={C.ash}
+                  accessibilityLabel={t("w.recovery.nutrition.pt.packSize")}
+                  style={{ width: 62, textAlign: "right", fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk }}
+                />
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{createMeasure.unit}</Text>
+                <TextInput
+                  value={pk.label}
+                  onChangeText={(v) => setPack(pk.key, { label: v })}
+                  maxLength={24}
+                  placeholder={t("w.recovery.nutrition.pt.packName")}
+                  placeholderTextColor={C.ash}
+                  accessibilityLabel={t("w.recovery.nutrition.pt.packName")}
+                  style={{ flex: 1, minWidth: 0, fontFamily: F.mono, fontSize: fs.note, color: C.chalk }}
+                />
+                {/* WHERE THIS SIZE CAME FROM. A pack the athlete never typed has
+                    to say so — otherwise a 400 the food database published is
+                    indistinguishable from one they set, and there is no way to
+                    know whether it is worth correcting. */}
+                {pk.source !== "typed" ? (
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, opacity: 0.85 }}>
+                    {t(`w.recovery.nutrition.pt.src${pk.source === "catalog" ? "Catalog" : "Scanned"}`)}
+                  </Text>
+                ) : null}
+                <Pressable onPress={() => removePack(pk.key)} accessibilityLabel={t("w.recovery.nutrition.hold.removePack")} hitSlop={8} style={{ padding: 2 }}>
+                  <Text style={{ fontSize: fs.subtitle, color: C.ash }}>×</Text>
+                </Pressable>
+              </View>
+            ))}
+            {createForm.packs.length < MAX_FOOD_PORTIONS ? (
+              <Pressable onPress={addPack} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 14 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>＋</Text>
+                <CtaLabel label={t("w.recovery.nutrition.pt.addPack")} color={C.ash} fontSize={fs.nano} font={F.mono} style={{ textTransform: "uppercase", letterSpacing: tracking.label }} />
+              </Pressable>
+            ) : null}
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4, lineHeight: leading(fs.nano) }}>{t("w.recovery.nutrition.pt.packHint")}</Text>
           </View>
         ) : null}
 
@@ -3285,6 +3624,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         onOpen={logProduct}
         usualFor={usualFor}
         onDelete={askDeleteProduct}
+        onEdit={openEditProduct}
+        // The packs, as one-tap amounts on the row — and held, to take one off.
+        portionsFor={(p) => rowPortions({ serving: p.servingLabel, servingGrams: p.servingGrams, portions: productPortions(p) })}
+        onLogPortion={(p, unitId) => { void logProductPortion(p, unitId, setFoodMsg); }}
+        onRemovePortion={(p, unitId) => { void removeProductPortion(p, unitId); }}
         onCreate={() => canSaveAnotherProduct ? openCreate("product") : (onUpgrade ? onUpgrade() : router.push("/upgrade"))}
         canCreate={canSaveAnotherProduct}
         full={full}

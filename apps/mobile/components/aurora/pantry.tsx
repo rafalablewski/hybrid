@@ -11,7 +11,7 @@ import { useLang } from "../../lib/i18n";
 import { AuroraIcon } from "./icons";
 import { ACard, DockRail, DockChip, GUTTER , RADIUS} from "./kit";
 import GroupMark from "./group-mark";
-import { FoodRow, IClose, IPlus, Glyph } from "./nutrition-kit";
+import { FoodRow, IClose, IPlus, Glyph, savedFoodMenu, packMenu, type RowPortion } from "./nutrition-kit";
 import { withAlpha } from "./field";
 
 /**
@@ -123,8 +123,9 @@ export function PantrySearchToggle({ open, onToggle }: { open: boolean; onToggle
 }
 
 export function PantryScreen<T extends PantryFood>({
-  items, query, onQuery, searchOpen, onSearchOpen, onLogOne, onOpen, onDelete,
+  items, query, onQuery, searchOpen, onSearchOpen, onLogOne, onOpen, onDelete, onEdit,
   onCreate, canCreate, full, limit, msg, dbSlot, searchHint, premium, usualFor,
+  portionsFor, onLogPortion, onRemovePortion,
 }: {
   items: T[];
   /** Shared with the food-database search, so ONE field asks both questions. */
@@ -145,6 +146,17 @@ export function PantryScreen<T extends PantryFood>({
   /** the row body — the portion editor, for a quantity and the full panel. */
   onOpen: (f: T) => void;
   onDelete: (id: string) => void;
+  /** HOLD THE ROW → Edit. The form used to be reachable only from the bottom of
+   *  the portion sheet, which meant opening the food to log it in order to say
+   *  that its numbers were wrong. */
+  onEdit: (f: T) => void;
+  /** THE PACKS THIS FOOD COMES IN, as one-tap amounts on the row. Empty for a
+   *  food with none, which is most of them — a row grows chips only when the
+   *  athlete (or the catalog, or a scan) recorded a container. */
+  portionsFor?: (f: T) => RowPortion[];
+  onLogPortion?: (f: T, unitId: string) => void;
+  /** hold a pack → remove it. The other half of remembering one. */
+  onRemovePortion?: (f: T, unitId: string) => void;
   onCreate: () => void;
   canCreate: boolean;
   full: boolean;
@@ -165,6 +177,8 @@ export function PantryScreen<T extends PantryFood>({
   const shelves = useMemo(() => pantryShelves(items, { query, role }), [items, query, role]);
   const matches = shelves.reduce((n, s) => n + s.items.length, 0);
   const q = query.trim();
+  const menu = savedFoodMenu(t);
+  const packRows = packMenu(t);
 
   const foodMeta = (f: T) => {
     const usual = usualFor?.(f);
@@ -260,6 +274,12 @@ export function PantryScreen<T extends PantryFood>({
                       onAdd={() => onLogOne(f)}
                       onOpen={() => onOpen(f)}
                       onDelete={() => onDelete(f.id)}
+                      menu={menu}
+                      onMenu={(key) => (key === "edit" ? onEdit(f) : onDelete(f.id))}
+                      portions={portionsFor?.(f)}
+                      onLogPortion={onLogPortion ? (unitId) => onLogPortion(f, unitId) : undefined}
+                      portionMenu={onRemovePortion ? packRows : undefined}
+                      onPortionMenu={onRemovePortion ? (unitId) => onRemovePortion(f, unitId) : undefined}
                     />
                   ))}
                 </View>
@@ -268,6 +288,18 @@ export function PantryScreen<T extends PantryFood>({
           )}
         </>
       )}
+
+      {/* THE GESTURE, SAID ONCE. A hold is only discoverable because the phone
+          trained the reflex, and that reflex is worth one quiet line the first
+          time somebody stands in front of their own food library — the swipe
+          this screen has always had was never told to anybody at all. Once, at
+          the end of the list, in the meta voice; not on every row, and not in
+          the picker, which shows the same foods a tab away. */}
+      {matches > 0 ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 16, marginHorizontal: 2, lineHeight: leading(fs.nano) }}>
+          {t("w.recovery.nutrition.hold.hint")}
+        </Text>
+      ) : null}
 
       {/* The database is the FALLBACK, so it sits under the athlete's own
           foods: a food you already saved should never be answered by a

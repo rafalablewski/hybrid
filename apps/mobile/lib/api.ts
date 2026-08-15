@@ -756,6 +756,11 @@ export async function createFoodProduct(
 export async function updateFoodProduct(
   id: string,
   patch: { name?: string; subname?: string | null; servingLabel?: string; servingGrams?: number | null; portions?: FoodPortion[] }
+    /** Clear-only, and the last write these two ever take: a food saved before
+     *  `portions` existed keeps its pack in the legacy columns, which core folds
+     *  back in at read time — so a pack deleted from the list alone would return
+     *  on the next load. Send `packSize: null` alongside the new list. */
+    & { packSize?: null }
     & Partial<MicroFacts> & { kcal?: number; protein?: number; carbs?: number; fat?: number },
 ): Promise<boolean> {
   try {

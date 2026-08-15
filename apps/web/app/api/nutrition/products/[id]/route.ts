@@ -75,7 +75,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if ("fat" in b) data.fat = int(b.fat, 500) ?? 0;
   if ("kcal" in b) data.kcal = int(b.kcal, 10000) ?? 0;
   if (Object.keys(data).length === 0 && !("portions" in b) && !("servingGrams" in b)
-      && !PANEL_FIELDS.some((k) => k in b))
+      && !("packSize" in b) && !PANEL_FIELDS.some((k) => k in b))
     return NextResponse.json({ error: "nothing to update" }, { status: 400 });
 
   // The panel, the serving weight and the portions are all LATER migrations, so
@@ -86,6 +86,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if ("servingGrams" in b) late.servingGrams = panel(b.servingGrams);
   for (const k of PANEL_FIELDS) if (k in b) late[k] = panel(b[k]);
   if ("portions" in b) late.portions = parseFoodPortions(b.portions) as unknown as Prisma.InputJsonValue;
+  // THE LEGACY PACK PAIR — CLEAR-ONLY, and the one write left on it. Nothing
+  // stores a size in these columns any more (`portions` is the list), but a food
+  // saved before the list existed still keeps its pack here, and core's
+  // foodPortions folds it back in at READ time. So without a way to clear them,
+  // deleting that pack lasts exactly until the next load. A value is ignored
+  // rather than honoured: this is a migration path closing, not a field
+  // reopening for writes.
+  if ("packSize" in b) { late.packSize = null; late.packLabel = null; }
 
   try {
     const product = await prisma.foodProduct.update({ where: { id }, data: { ...data, ...late } });

@@ -17,6 +17,10 @@ import {
   portionUnit,
   portionUnits,
   parseFoodPortions,
+  portionUnitId,
+  namedPortionUnits,
+  oneOfPortion,
+  removeFoodPortion,
   usualAmounts,
   usualLogPortion,
 } from "./portion";
@@ -170,6 +174,70 @@ describe("where a portion came from", () => {
     expect(parseFoodPortions(null)).toEqual([]);
     expect(parseFoodPortions("[]")).toEqual([]);
     expect(parseFoodPortions({})).toEqual([]);
+  });
+});
+
+describe("removeFoodPortion — taking a pack back off a food", () => {
+  const bottle = { label: "bottle", size: 400, source: "catalog" as const };
+  const glass = { label: "glass", size: 250, source: "typed" as const };
+
+  it("drops the portion its unit id names and leaves the rest", () => {
+    expect(removeFoodPortion([bottle, glass], portionUnitId(bottle))).toEqual([glass]);
+  });
+
+  it("removes by identity, not by position — the list re-sorts on every write", () => {
+    // Sorted smallest-first, `glass` is index 0 and `bottle` index 1; adding a
+    // 100 g portion would move both. The id survives that, an index would not.
+    const after = removeFoodPortion([bottle, glass, { label: "", size: 100, source: "typed" }], portionUnitId(glass));
+    expect(after.map((p) => p.label)).toEqual(["", "bottle"]);
+  });
+
+  it("is a no-op for an id no portion holds", () => {
+    expect(removeFoodPortion([bottle], "portion:tub|900")).toEqual([bottle]);
+    expect(removeFoodPortion([bottle], "measure")).toEqual([bottle]);
+  });
+
+  it("empties the switch when the last pack goes", () => {
+    expect(removeFoodPortion([bottle], portionUnitId(bottle))).toEqual([]);
+    expect(portionUnits({ serving: "100 g", portions: [] }).some((u) => u.kind === "portion")).toBe(false);
+  });
+
+  it("takes the food's whole folded list, legacy pack included", () => {
+    // What the caller must pass: `foodPortions` folds the legacy column in, so
+    // filtering the STORED list alone would delete a legacy pack only until the
+    // next read (the caller clears packSize/packLabel in the same write).
+    const legacy = { serving: "100 g", portions: [bottle], packSize: 250, packLabel: "glass" };
+    const folded = foodPortions(legacy);
+    expect(folded).toHaveLength(2);
+    expect(removeFoodPortion(folded, "portion:glass|250")).toEqual([bottle]);
+  });
+});
+
+describe("namedPortionUnits — the packs a row can offer", () => {
+  it("is the packs alone: not servings, not the measure", () => {
+    expect(namedPortionUnits(KEFIR).map((u) => u.portionLabel)).toEqual(["bottle"]);
+  });
+
+  it("is empty for a food that has none", () => {
+    expect(namedPortionUnits({ serving: "100 g" })).toEqual([]);
+    expect(namedPortionUnits({})).toEqual([]);
+  });
+});
+
+describe("oneOfPortion — the whole bottle, in one tap", () => {
+  it("writes the quantity the macros scale by AND the portion as entered", () => {
+    const bottle = namedPortionUnits(KEFIR)[0]!;
+    expect(oneOfPortion(bottle)).toEqual({ qty: 4, amount: 1, amountUnit: "bottle" });
+  });
+
+  it("falls back to the canonical pack token when the container has no name", () => {
+    const pack = namedPortionUnits({ serving: "100 g", portions: [{ label: "", size: 150, source: "typed" }] })[0]!;
+    expect(oneOfPortion(pack)).toEqual({ qty: 1.5, amount: 1, amountUnit: "pack" });
+  });
+
+  it("agrees with the sheet: one of a unit is what the stepper would log at 1", () => {
+    const bottle = namedPortionUnits(KEFIR)[0]!;
+    expect(oneOfPortion(bottle).qty).toBe(portionQty(1, bottle));
   });
 });
 

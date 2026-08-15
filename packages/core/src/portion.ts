@@ -296,6 +296,46 @@ export const portionUnitId = (p: FoodPortion): string => `portion:${p.label}|${p
 export const portionUnit = (units: PortionUnit[], id: string): PortionUnit | undefined =>
   units.find((u) => u.id === id);
 
+/** Just the food's named portions, as units — what a row offers as one-tap
+ *  amounts. Servings and the measure are not packs: they are what the label
+ *  states and what a scale reads, and neither is a thing you can hold. */
+export const namedPortionUnits = (food: PortionFood): PortionUnit[] =>
+  portionUnits(food).filter((u) => u.kind === "portion");
+
+/**
+ * DROP A PORTION — the counterpart to remembering one, and the half that was
+ * missing.
+ *
+ * Every one of the four sources could ADD a pack to a food and nothing could
+ * take one off it: a bottle typed as 400 when the scale said 450, a catalog net
+ * quantity for the multipack when the athlete buys singles, a scan that read
+ * the outer carton. A wrong unit on the switch is worse than a missing one,
+ * because logging "1 bottle" through it writes a wrong number into the day and
+ * nothing on screen admits where it came from.
+ *
+ * Removal is by UNIT ID rather than by index for the same reason selection is
+ * (`portionUnits`): the list re-sorts by size on every write, so an index names
+ * a different portion than the one the athlete was holding.
+ *
+ * ONE CAVEAT THE CALLER MUST HONOUR: a food saved before the list existed keeps
+ * its pack in the legacy `packSize`/`packLabel` columns, which `foodPortions`
+ * folds back in at READ time. Filtering the stored list alone would therefore
+ * delete that pack for exactly as long as it takes to reload. So pass the
+ * FOLDED list in (what `foodPortions(food)` returned) and clear the legacy pair
+ * in the same write — see the pantry's removePortion.
+ */
+export function removeFoodPortion(portions: readonly FoodPortion[], unitId: string): FoodPortion[] {
+  return dedupePortions(portions.filter((p) => portionUnitId(p) !== unitId));
+}
+
+/** One of a unit, ready to log — the whole bottle in a single tap, without the
+ *  portion editor being opened to press one chip and then Log. Returns the
+ *  quantity the macros scale by AND the portion as entered, so the diary row
+ *  reads "1 bottle" rather than "4". */
+export function oneOfPortion(unit: PortionUnit): { qty: number; amount: number; amountUnit: string } {
+  return { qty: portionQty(1, unit), ...loggedPortionOf(1, unit) };
+}
+
 /**
  * The quantity a diary entry gets: how many SERVINGS this amount of this unit
  * is. Rounded to four places — enough that 35 g of a 3-gram serving stays

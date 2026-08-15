@@ -834,51 +834,96 @@ export function APill({
  * The selected state carries BOTH a tinted fill and a coloured border, never
  * colour alone — selection that is signalled only by hue fails WCAG 1.4.1, and
  * `accessibilityState.selected` carries it to VoiceOver besides.
+ *
+ * ── `tone="action"`: THE CHIP THAT DOES THE THING ──────────────────────────
+ * A filter narrows the list below it and reports a selection. Some chips are
+ * not that: the packs on a food row ("Whole bottle 400 g") LOG, on the spot, and
+ * there is no state for them to be in afterwards. Such a chip wears the accent's
+ * RIM at rest — the ⊕'s own grammar at chip size, so what goes reads as going —
+ * and reports no selection, because announcing `selected: false` on a control
+ * with no selection to have tells VoiceOver there is one here to be found.
+ *
+ * It is a tone on this component rather than a sixth hand-rolled pill in the
+ * app, which is what the chip ratchet in lib/design-tokens.test.ts exists to
+ * prevent — and the 44dp floor above is exactly the thing a row-level chip
+ * drawn by hand would have missed.
  */
 export function AChip({
   label,
   selected,
   onPress,
+  onLongPress,
+  delayLongPress,
   accent,
   count,
+  meta,
+  tone = "filter",
 }: {
   label: string;
   selected?: boolean;
   onPress: () => void;
+  /** The hold, for a chip whose host offers one (components/hold-menu.tsx). */
+  onLongPress?: () => void;
+  delayLongPress?: number;
   /** Overrides the accent for a facet that owns a hue (a squad's colour). */
   accent?: string;
   /** A trailing tally, rendered inside the same pill ("Following 12"). */
   count?: number;
+  /** A trailing FIGURE in the meta voice — "400 g" beside "Whole bottle".
+   *  Unlike `count` it is not part of the label's own claim, so it stays ash. */
+  meta?: string;
+  tone?: "filter" | "action";
 }) {
   const { palette } = useTheme();
   const tint = txt(palette, accent ?? palette.lime) ?? palette.lime;
+  const acts = tone === "action";
   return (
     <PressScale
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={delayLongPress}
       accessibilityRole="button"
-      accessibilityLabel={count != null ? `${label} ${count}` : label}
-      accessibilityState={{ selected: !!selected }}
+      accessibilityLabel={[label, count != null ? String(count) : null, meta].filter(Boolean).join(" ")}
+      accessibilityState={acts ? undefined : { selected: !!selected }}
       style={{
         minHeight: HIT_TARGET,
         justifyContent: "center",
         paddingHorizontal: space.lg,
         borderRadius: RADIUS.pill,
         borderWidth: 1,
-        borderColor: selected ? tint : palette.line,
-        backgroundColor: selected ? withAlpha(tint, ALPHA.solid) : "transparent",
+        borderColor: acts ? withAlpha(tint, ALPHA.rim) : selected ? tint : palette.line,
+        backgroundColor: selected && !acts ? withAlpha(tint, ALPHA.solid) : "transparent",
       }}
     >
-      <Text
-        maxFontSizeMultiplier={MAX_FONT_SCALE}
-        numberOfLines={1}
-        style={{ fontFamily: F.bold, fontSize: fs.body, color: selected ? tint : palette.ash }}
-      >
-        {label}
-        {count != null ? `  ${count}` : ""}
-      </Text>
+      {/* The meta gets a row of its own rather than the pill becoming one: a
+          `flexDirection: "row"` on the container above would re-centre the label
+          on every one of the 37 chips that have never passed a meta. */}
+      {meta ? (
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+          {chipLabel(label, count, selected || acts ? tint : palette.ash)}
+          <Text
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+            numberOfLines={1}
+            style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}
+          >
+            {meta}
+          </Text>
+        </View>
+      ) : chipLabel(label, count, selected || acts ? tint : palette.ash)}
     </PressScale>
   );
 }
+
+const chipLabel = (label: string, count: number | undefined, color: string) => (
+  <Text
+    maxFontSizeMultiplier={MAX_FONT_SCALE}
+    numberOfLines={1}
+    style={{ fontFamily: F.bold, fontSize: fs.body, color }}
+  >
+    {label}
+    {count != null ? `  ${count}` : ""}
+  </Text>
+);
 
 /* ── the dock rail ───────────────────────────────────────────────────────── */
 

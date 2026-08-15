@@ -1,13 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { View, Text, Modal, Animated, useWindowDimensions } from "react-native";
+import { useRef, useState } from "react";
+import { View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import { colors, durations, feedMenuActions, type FeedMenuAction, type Relation } from "@hybrid/core";
-import { F, fs, PressScale } from "../lib/ui";
-import { useTheme, txt } from "../lib/theme";
+import { feedMenuActions, type FeedMenuAction, type Relation } from "@hybrid/core";
+import { PressScale } from "../lib/ui";
+import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { useReducedMotion } from "../lib/use-reduced-motion";
 import { haptic } from "../lib/haptics";
-import { GUTTER, RADIUS } from "./aurora/kit";
+import { AnchoredMenu, type HoldMenuAnchor } from "./hold-menu";
 import { GlassContextMenu, GlassMenuButton, LIQUID_GLASS_RENDERED } from "./aurora/swiftui";
 import { toast } from "./aurora/toast";
 import { follow as apiFollow, unfollow as apiUnfollow, blockUser, reportTarget } from "../lib/social-api";
@@ -44,10 +43,14 @@ import { follow as apiFollow, unfollow as apiUnfollow, blockUser, reportTarget }
  * Android), so it renders in a transparent Modal, its own native window, and
  * is placed from the anchor's window rect. It hangs off the anchor's RIGHT
  * edge and FLIPS above the glyph when there isn't room below.
+ *
+ * THAT CARD IS NOT THIS FILE'S ANY MORE. It is `AnchoredMenu` in
+ * components/hold-menu.tsx — the same window, placement, flip and grows-out-of-
+ * the-anchor motion, now shared with the long-press menu that deletes a saved
+ * food, a saved meal, a recent and a remembered pack. The ⋯ and the hold are one
+ * control reached two ways, and a second copy of the card is how they would
+ * drift apart.
  */
-
-/** The ⋯'s rect in WINDOW coordinates, from `measureInWindow`. */
-interface FeedMenuAnchor { x: number; y: number; w: number; h: number }
 
 export interface FeedMenuTriggerProps {
   /** For the {h} interpolation in follow/mute/block. */
@@ -91,13 +94,6 @@ function More({ color }: { color: string }) {
 }
 
 const FOLLOWING: Relation[] = ["following", "friend", "close"];
-
-/** One row's height at this type size, used only to decide whether the card
- *  fits below the glyph. An estimate is enough: being a few px out flips the
- *  card one press early, never off the screen. */
-const ROW_H = 40;
-const CARD_PAD = 5;
-const GAP = 6;
 
 /** The rows AND the one handler behind every renderer of this menu — the ⋯
  *  trigger (native or card) and the card's long-press context menu all read
@@ -188,7 +184,7 @@ export function FeedMenuTrigger(props: FeedMenuTriggerProps) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const { actions, items, run } = useFeedMenu(props);
-  const [anchor, setAnchor] = useState<FeedMenuAnchor | null>(null);
+  const [anchor, setAnchor] = useState<HoldMenuAnchor | null>(null);
   const moreRef = useRef<View>(null);
 
   if (actions.length === 0) return null;
@@ -231,107 +227,15 @@ export function FeedMenuTrigger(props: FeedMenuTriggerProps) {
           <More color={C.ash} />
         </PressScale>
       </View>
-      <FeedMenuCard
+      {/* Hangs off the ⋯'s RIGHT edge — the glyph sits at the row's right end,
+          so a card growing to the left is the one that stays on screen. */}
+      <AnchoredMenu
         anchor={anchor}
         items={items}
+        side="right"
         onClose={() => setAnchor(null)}
         onSelect={(key) => { setAnchor(null); run(key); }}
       />
     </>
-  );
-}
-
-/** The anchored RN card (every platform where the system menu doesn't render). */
-function FeedMenuCard({
-  anchor, items, onClose, onSelect,
-}: {
-  anchor: FeedMenuAnchor | null;
-  items: { key: string; label: string; destructive?: boolean }[];
-  onClose: () => void;
-  onSelect: (key: string) => void;
-}) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const { width: screenW, height: screenH } = useWindowDimensions();
-  const reduced = useReducedMotion();
-  const open = anchor != null;
-
-  // GROWS OUT OF THE GLYPH rather than appearing: it scales 0.92 → 1 FROM THE
-  // ANCHOR'S CORNER while it fades, which is the motion the system menu makes
-  // on iOS 26 (§13's table asks for exactly this) and the reason the two paths
-  // now read as the same control. It used to drop 6dp and fade — a card
-  // arriving beside the glyph rather than out of it.
-  //
-  // The corner is set by transformOrigin, and the corner is the whole point: a
-  // menu scaling from its own centre grows in two directions and detaches from
-  // the thing that opened it. The card hangs off the ⋯'s right edge and flips
-  // above when there is no room below, so the origin follows on both axes.
-  //
-  // Under Reduce Motion the scale is dropped and the fade carries it alone —
-  // feedback, not motion, never nothing.
-  const enter = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!open) { enter.setValue(0); return; }
-    Animated.timing(enter, { toValue: 1, duration: reduced ? 90 : durations.fast, useNativeDriver: true }).start();
-  }, [open, enter, reduced]);
-
-  if (!open) return null;
-
-  // Right-aligned to the glyph, clamped inside the screen gutter so the card
-  // can never sit under the bezel.
-  const right = Math.max(GUTTER, screenW - (anchor.x + anchor.w));
-  const cardH = items.length * ROW_H + CARD_PAD * 2;
-  const below = anchor.y + anchor.h + GAP;
-  // FLIP when the card would run off the bottom.
-  const fitsBelow = below + cardH < screenH - 24;
-  const place = fitsBelow
-    ? { top: below }
-    : { top: Math.max(24, anchor.y - GAP - cardH) };
-
-  const lift = { shadowColor: "#000", shadowOpacity: 0.34, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 8 } as const;
-
-  return (
-    <Modal transparent visible animationType="none" onRequestClose={onClose} statusBarTranslucent>
-      {/* A transparent full-screen catcher, so a press ANYWHERE — including on
-          another post — closes the menu. Without it the only way out is the
-          glyph itself, and a menu you have to aim at to dismiss is a trap.
-          noScale: a scrim must not shrink under the finger. */}
-      <PressScale noScale onPress={onClose} style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={t("common.close")}>
-        <View style={{ flex: 1 }} />
-      </PressScale>
-      <Animated.View
-        accessibilityViewIsModal
-        style={{
-          position: "absolute",
-          right,
-          ...place,
-          minWidth: 210,
-          maxWidth: screenW - GUTTER * 2,
-          backgroundColor: C.ink2,
-          borderWidth: 1,
-          borderColor: C.line,
-          borderRadius: RADIUS.inner + 2,
-          padding: CARD_PAD,
-          opacity: enter,
-          transformOrigin: `right ${fitsBelow ? "top" : "bottom"}`,
-          transform: reduced
-            ? []
-            : [{ scale: enter.interpolate({ inputRange: [0, 1], outputRange: [0.92, 1] }) }],
-          ...lift,
-        }}
-      >
-        {items.map((a) => (
-          <PressScale key={a.key} onPress={() => onSelect(a.key)} accessibilityRole="menuitem">
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 9, borderRadius: RADIUS.inner - 2 }}>
-              {/* Destructive rows draw in the AA-guarded red text channel —
-                  the same channel every other glyph in the row is held to. */}
-              <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.body, color: a.destructive ? txt(C, colors.red) : C.chalk }}>
-                {a.label}
-              </Text>
-            </View>
-          </PressScale>
-        ))}
-      </Animated.View>
-    </Modal>
   );
 }
