@@ -694,6 +694,16 @@ model FoodProduct {
    * the serving's weight in grams when known — enables per-100 g comparison
    */
   servingGrams Float?
+  /**
+   * the WHOLE container, in the serving's own measure (grams for a food sold by
+   * weight, millilitres for one sold by volume) — so "add the whole bottle" is
+   * one tap instead of arithmetic. See packages/core/src/portion.ts.
+   */
+  packSize     Float?
+  /**
+   * what the athlete calls that container — "bottle", "tub", "pack"
+   */
+  packLabel    String?
   kcal         Int
   protein      Int // grams per serving
   carbs        Int // grams per serving

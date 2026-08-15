@@ -38,6 +38,8 @@ import {
   parseServing,
   servingGrams as servingGramsOf,
   unitById,
+  portionUnits, portionUnit, portionMeasure, portionQty, portionAmount, portionStep, portionEquivalent,
+  formatAmount, parsePackSize, type PortionUnit, type PortionUnitId,
   trainingEnergyOnDay,
   localDayKey,
   localTodayKey,
@@ -63,7 +65,7 @@ import {
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
-  fetchFoodProducts, createFoodProduct, deleteFoodProduct, searchFoods,
+  fetchFoodProducts, createFoodProduct, updateFoodProduct, deleteFoodProduct, searchFoods,
   getNutritionPrefs, saveNutritionPrefs as apiSaveNutritionPrefs,
   fetchFoodLogs, createFoodLog, updateFoodLogQty, scaleFoodLog, deleteFoodLog,
   fetchWaterLogs, logWater, deleteSignal,
@@ -146,10 +148,19 @@ const exactGrams = (label: string | null | undefined): number | null => {
   const g = servingGramsOf(parseServing(label));
   return g && !g.assumed ? g.grams : null;
 };
+/** The servings unit every food has — core's own definition of the half-serving
+ *  grid, borrowed by the Diary's row stepper so the two cannot drift apart. */
+const SERVINGS_UNIT: PortionUnit = portionUnits({})[0]!;
+/** One press of the Diary row's −/+, in servings, capped where it always was. */
+const entryStep = (shown: number, direction: number): number => portionStep(shown, SERVINGS_UNIT, direction, 50);
 // A locally-persisted food the picker can re-log (Recent MRU + Favorites) — the
 // same macro shape the portion editor writes, kept per-device so the two tabs
 // work without a backend change.
 type QuickFood = { key: string; name: string; subname?: string | null; serving: string; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts & { verified?: VerifiedStamp; verifiedId?: string | null; servingGrams?: number | null }
+  /** the container this food comes in, carried so re-logging a Recent still
+   *  offers "the whole bottle" — a recent is a food PLUS its serving, and a
+   *  copy that dropped the pack would quietly lose a unit the pantry row had */
+  & { packSize?: number | null; packLabel?: string | null }
   /** WHEN this exact (food, serving) was logged — epoch ms, capped. Written
    *  on every log; read by usualAtHour so the picker can open on what this
    *  athlete actually eats at this time of day. Per-device, like the MRU
@@ -163,6 +174,9 @@ const BLANK_CREATE_FORM = {
   name: "", subname: "", serving: "", unit: "gram",
   kcal: "", carbs: "", protein: "", fat: "",
   satFat: "", sugar: "", fiber: "", salt: "",
+  // The container this comes in, and what to call it — so the whole bottle is
+  // one tap in the portion editor rather than arithmetic (core/portion.ts).
+  packSize: "", packLabel: "",
 };
 
 // The HYBRID Verified mark — the same quiet lime tick the verified-coach badge
@@ -558,15 +572,76 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     loadLogs(); refetch(); revalidate.recovery();
   };
 
-  // ── Portion & quantity — logging any food/meal opens a sheet where a
-  //    serving × quantity stepper scales the macros LIVE before they're written.
+  // ── Portion & quantity — logging any food/meal opens a sheet where an
+  //    amount × unit stepper scales the macros LIVE before they're written.
   //    One editor for an OFF search hit (offers Save too), a saved food, or a
   //    saved meal, so scaling isn't just for the database.
+  //
+  //    THE NUMBER HAS A UNIT (core/portion.ts). It used to count servings and
+  //    nothing else, so a food saved the way a label is written — "100 g" —
+  //    could be logged as 1 or 1.5 servings and never as the 35 g the scale
+  //    read, nor as the whole 400 ml bottle. Every unit the food can honestly
+  //    be measured in is offered instead, and each converts through the same
+  //    multiplication, so the diary still stores exactly what it stored before:
+  //    per-serving macros with a quantity.
   const [portion, setPortion] = useState<
-    ({ name: string; subname?: string | null; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; offFood?: FoodHit; servingGrams?: number | null; verified?: VerifiedStamp; verifiedId?: string | null } & MicroFacts) | null
+    ({ name: string; subname?: string | null; subtitle?: string; serving: string; kcal: number; protein: number; carbs: number; fat: number; offFood?: FoodHit; servingGrams?: number | null; verified?: VerifiedStamp; verifiedId?: string | null } & MicroFacts
+      /** the saved product this came from, when it is one — the pack size is
+       *  written back to it, so it must be a row and not a copy */
+      & { productId?: string | null; packSize?: number | null; packLabel?: string | null }) | null
   >(null);
-  const [qty, setQty] = useState(1);
-  const openPortion = (base: NonNullable<typeof portion>) => { setQty(1); setPortion(base); };
+  const [portionUnitId, setPortionUnitId] = useState<PortionUnitId>("servings");
+  // The amount is TEXT, not a number: a half-typed "0." has to survive the
+  // keystroke it takes to become "0.35", which a numeric state would round away.
+  const [portionText, setPortionText] = useState("1");
+  const [packMsg, setPackMsg] = useState("");
+  const openPortion = (base: NonNullable<typeof portion>) => {
+    // Opens on ONE SERVING — what the label states — whatever units the food
+    // also supports. The unit switch is an offer, never a surprise.
+    setPortionUnitId("servings"); setPortionText("1"); setPackMsg("");
+    setPortion(base);
+  };
+  const portionUnitList = useMemo(
+    () => portionUnits({ serving: portion?.serving, servingGrams: portion?.servingGrams, packSize: portion?.packSize, packLabel: portion?.packLabel }),
+    [portion],
+  );
+  // A unit the food stopped offering (the sheet reopened on a different food)
+  // falls back to servings, which every food has.
+  const portionUnitActive: PortionUnit = portionUnit(portionUnitList, portionUnitId) ?? portionUnitList[0]!;
+  const portionTyped = parseFloat(portionText.replace(",", "."));
+  const portionQtyValue = portionQty(portionTyped, portionUnitActive);
+  // Switching unit keeps the PORTION, not the number: 1 serving becomes 100 g,
+  // not 1 g. Anything else would silently change what is about to be logged.
+  const switchPortionUnit = (id: PortionUnitId) => {
+    const next = portionUnit(portionUnitList, id);
+    if (!next || id === portionUnitId) return;
+    const carried = portionAmount(portionQtyValue, next);
+    setPortionUnitId(id);
+    setPortionText(formatAmount(carried > 0 ? carried : next.initial));
+    haptic.light();
+  };
+  const stepPortion = (d: number) => setPortionText(formatAmount(portionStep(portionTyped, portionUnitActive, d)));
+  /** The caption under the stepper: the measure's own symbol, the athlete's word
+   *  for their container, or the generic "servings". */
+  const portionUnitLabel = (u: PortionUnit): string =>
+    u.symbol ?? (u.id === "pack" ? (u.packLabel || t("w.recovery.nutrition.pt.pack")) : t("w.recovery.nutrition.servings"));
+
+  // Record the pack from the amount on screen — the athlete weighed the tub
+  // once, and from now on it is one tap. PATCHes the saved row rather than
+  // re-creating it: a new id breaks every recipe ingredient pointing at the old
+  // one (the same trap the pantry's held delete exists to avoid).
+  const rememberPack = async (size: number) => {
+    const p = portion;
+    const packSize = parsePackSize(size);
+    if (!p?.productId || packSize == null) return;
+    setPackMsg("");
+    const ok = await updateFoodProduct(p.productId, { packSize });
+    if (!ok) { setPackMsg(t("w.recovery.nutrition.pt.packFailed")); return; }
+    setProducts((xs) => xs.map((x) => x.id === p.productId ? { ...x, packSize } : x));
+    setPortion((cur) => cur ? { ...cur, packSize } : cur);
+    const measure = portionUnit(portionUnitList, "measure");
+    setPackMsg(t("w.recovery.nutrition.pt.packSaved").replace("{v}", `${formatAmount(packSize)} ${measure?.symbol ?? ""}`.trim()));
+  };
 
   // ── Product pages (parity with web). A verified item gets its OWN screen and
   //    its business gets one too. The portion SHEET stays the fast path to
@@ -688,7 +763,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // today's intake by meal, and the food is remembered in the Recent MRU.
   const commitPortion = async () => {
     if (!portion) return;
-    const q = qty > 0 ? qty : 1;
+    // An empty field is not a portion of nothing — it is a field nobody has
+    // finished typing in, so the editor's own opening amount stands.
+    const q = portionQtyValue > 0 ? portionQtyValue : portionQty(portionUnitActive.initial, portionUnitActive);
     setMealMsg(""); setFoodMsg("");
     if (!(await logEntry({
       name: portion.name, subname: portion.subname ?? portion.subtitle ?? null, source: mealType,
@@ -701,6 +778,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat,
       satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt,
       servingGrams: portion.servingGrams, verified: portion.verified, verifiedId: portion.verifiedId ?? null,
+      packSize: portion.packSize ?? null, packLabel: portion.packLabel ?? null,
     });
     setMealMsg(`${portion.name} +${Math.round(portion.kcal * q)} kcal`);
     setPortion(null);
@@ -708,7 +786,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   };
 
   // Re-log a Recent/Favorite food → opens the portion editor (default 1×).
-  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat, sugar: q.sugar, fiber: q.fiber, salt: q.salt, servingGrams: q.servingGrams, verified: q.verified, verifiedId: q.verifiedId });
+  const logQuickFood = (q: QuickFood) => openPortion({ name: q.name, subname: q.subname, subtitle: q.subname || q.serving, serving: q.serving, kcal: q.kcal, protein: q.protein, carbs: q.carbs, fat: q.fat, satFat: q.satFat, sugar: q.sugar, fiber: q.fiber, salt: q.salt, servingGrams: q.servingGrams, packSize: q.packSize, packLabel: q.packLabel, verified: q.verified, verifiedId: q.verifiedId });
   // One-tap re-log of a Recent food at 1× to the current meal (the Today sheet's
   // fast path — no portion editor). Same signals + meal attribution as the picker.
   const relogRecent = async (q: QuickFood) => {
@@ -719,7 +797,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     load(); loadLogs(); revalidate.recovery();
   };
   // Log a product (saved food) from the picker → portion editor.
-  const logProduct = (p: FoodProductRow) => openPortion({ name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, verifiedId: p.verifiedId });
+  const logProduct = (p: FoodProductRow) => openPortion({ productId: p.id, name: p.name, subname: p.subname, subtitle: p.subname || p.servingLabel, serving: p.servingLabel || `1 ${t("w.recovery.nutrition.serving")}`, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, packSize: p.packSize, packLabel: p.packLabel, verifiedId: p.verifiedId });
 
   // Save the Create form → products OR meals API (one blend form, two targets),
   // carrying the personal subname, then return to the picker Personal tab.
@@ -751,7 +829,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const servingGrams = derivedGrams && !derivedGrams.assumed ? derivedGrams.grams : undefined;
     const res = isMeal
       ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros, ...panelFields })
-      : await createFoodProduct({ name: createForm.name.trim(), subname, servingLabel: composedLabel, servingGrams, ...macros, ...panelFields });
+      : await createFoodProduct({
+          name: createForm.name.trim(), subname, servingLabel: composedLabel, servingGrams,
+          // The pack is stated in the SERVING'S own measure, so a label with no
+          // measure at all ("1 slice") carries no pack either — a size with no
+          // unit is a number nobody can read back.
+          packSize: composedLabel && portionMeasure({ serving: composedLabel }) ? parsePackSize(createForm.packSize) : null,
+          packLabel: createForm.packLabel.trim() || null,
+          ...macros, ...panelFields,
+        });
     if (res.status === 403) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     if (!res.ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
     setCreateForm(BLANK_CREATE_FORM);
@@ -1346,9 +1432,16 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // tiles, which is taller than a small phone's sheet on its own.
     <Sheet visible={!!portion} onClose={() => setPortion(null)} title={portion?.name} sub={portion?.subtitle}>
       {portion ? (() => {
-        const q = qty > 0 ? qty : 1;
+        const q = portionQtyValue > 0 ? portionQtyValue : portionQty(portionUnitActive.initial, portionUnitActive);
         const sc = (v: number) => Math.round(v * q);
-        const step = (d: number) => setQty((x) => Math.max(0.5, Math.min(50, Math.round((x + d) * 2) / 2)));
+        const equiv = portionEquivalent(portionTyped, portionUnitActive, portionUnitList);
+        const measure = portionUnit(portionUnitList, "measure");
+        // The pack is offered for a SAVED food that can be measured and has no
+        // pack yet, from the measure unit — which is where the athlete has just
+        // typed what the container holds.
+        const canRememberPack =
+          !!portion.productId && !!measure && portionUnitId === "measure" &&
+          !portionUnit(portionUnitList, "pack") && portionTyped > 0;
         return (
           <View>
             {portion.verified ? (() => {
@@ -1388,14 +1481,58 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               );
             })() : null}
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{t("w.recovery.nutrition.perLabel")} {portion.serving}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 16, marginTop: 16 }}>
-              <Pressable onPress={() => step(-0.5)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 24, fontWeight: "700", lineHeight: 26, color: txt(C, C.lime) }}>–</Text></Pressable>
-              <View style={{ alignItems: "center" }}>
-                <TextInput value={String(qty)} onChangeText={(v) => { const n = parseFloat(v); setQty(Number.isFinite(n) && n >= 0 ? n : 0); }} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.quantity")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.black, fontSize: 30, letterSpacing: -1, color: C.chalk, padding: 0 }} />
-                <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.servings")}</Text>
+
+            {/* THE UNIT SWITCH. Only drawn when the food HAS a choice: a single
+                chip reading "servings" would be a control that decides nothing.
+                Mode chips, because one is always on and the number below
+                changes meaning with it. */}
+            {portionUnitList.length > 1 ? (
+              <View accessibilityRole="radiogroup" accessibilityLabel={t("w.recovery.nutrition.pt.measuredIn")} style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
+                {portionUnitList.map((u) => {
+                  const on = u.id === portionUnitActive.id;
+                  return (
+                    <Pressable
+                      key={u.id}
+                      onPress={() => switchPortionUnit(u.id)}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: on }}
+                      style={{ flex: 1, alignItems: "center", borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? `${C.lime}14` : "transparent", borderRadius: 999, paddingVertical: 9, paddingHorizontal: 8 }}
+                    >
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.caption, letterSpacing: 0.6, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
+                        {u.id === "pack" ? t("w.recovery.nutrition.pt.wholePack").replace("{v}", portionUnitLabel(u)) : portionUnitLabel(u)}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
-              <Pressable onPress={() => step(0.5)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 22, fontWeight: "700", lineHeight: 24, color: txt(C, C.lime) }}>+</Text></Pressable>
+            ) : null}
+
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 16, marginTop: 16 }}>
+              <Pressable onPress={() => stepPortion(-1)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 24, fontWeight: "700", lineHeight: 26, color: txt(C, C.lime) }}>–</Text></Pressable>
+              <View style={{ alignItems: "center" }}>
+                <TextInput value={portionText} onChangeText={setPortionText} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.pt.amount")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.black, fontSize: 30, letterSpacing: -1, color: C.chalk, padding: 0 }} />
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>{portionUnitLabel(portionUnitActive)}</Text>
+              </View>
+              <Pressable onPress={() => stepPortion(1)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 44, borderRadius: 12, borderWidth: 1, borderColor: `${C.lime}6b`, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 22, fontWeight: "700", lineHeight: 24, color: txt(C, C.lime) }}>+</Text></Pressable>
             </View>
+            {/* What that amount is in the food's other terms — a bottle in
+                millilitres, a serving count in grams. Only ever ADDS a fact:
+                it is silent when the number on screen is already the measure. */}
+            {equiv ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", marginTop: 8 }}>
+                {t("w.recovery.nutrition.pt.thatIs").replace("{v}", `${formatAmount(equiv.amount)} ${equiv.symbol}`)}
+              </Text>
+            ) : null}
+            {/* Weigh the tub once, and the whole thing is a unit from then on.
+                Chromeless — it changes this food, it does not go anywhere. */}
+            {canRememberPack ? (
+              <Pressable onPress={() => rememberPack(portionTyped)} accessibilityRole="button" style={{ alignSelf: "center", marginTop: 10, paddingVertical: 4 }}>
+                <CtaLabel label={t("w.recovery.nutrition.pt.setPack").replace("{v}", `${formatAmount(portionTyped)} ${measure!.symbol}`)} color={txt(C, C.lime)} fontSize={fs.nano} font={F.mono} style={{ textTransform: "uppercase", letterSpacing: 0.9 }} />
+              </Pressable>
+            ) : null}
+            {packMsg ? (
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: leading(fs.nano) }}>{packMsg}</Text>
+            ) : null}
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 20 }}>
               <Text style={{ fontFamily: F.black, fontSize: 48, letterSpacing: -1.6, color: C.chalk }}>{sc(portion.kcal)}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>kcal</Text>
@@ -1490,7 +1627,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           // Carried so STARRING one keeps the whole food — a favourite is stored
           // as this shape, and a stripped copy loses the serving weight (and so
           // the gram conversion), the micros and the verified provenance.
-          satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, verifiedId: p.verifiedId }));
+          satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt, servingGrams: p.servingGrams, packSize: p.packSize, packLabel: p.packLabel, verifiedId: p.verifiedId }));
     const sourceCounts: Record<PickerSourceKey, number> = {
       recent: recent.length, favorites: favorites.length, meals: meals.length, personal: products.length,
     };
@@ -1807,6 +1944,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       </View>
     );
     const approx = macroKcal(createForm.protein, createForm.carbs, createForm.fat);
+    // The measure THIS serving can be poured or weighed in — the unit the pack
+    // size below is stated in. A food whose serving is a bare count ("1 slice")
+    // has none, and is not asked how big its pack is: the answer would have no
+    // unit to be in (core/portion.ts).
+    const createMeasure = portionMeasure({
+      serving: createForm.serving.trim() ? composeServingLabel(createForm.serving, createForm.unit) : null,
+    });
     const compList = compQuery.trim() ? products.filter((p) => p.name.toLowerCase().includes(compQuery.trim().toLowerCase()) || (p.subname ?? "").toLowerCase().includes(compQuery.trim().toLowerCase())) : products;
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
@@ -1912,6 +2056,22 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <Pressable onPress={() => setUnitPicker(true)} style={{ flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{unitLabel(createForm.unit)}</Text><IChevDown size={13} color={C.ash} />
             </Pressable>
+          </View>
+        ) : null}
+
+        {/* THE PACK — the whole bottle/tub, in the serving's own measure, plus
+            the athlete's word for it. Optional, and only offered when the
+            serving above can be measured at all: asking how many grams are in
+            a pack of "1 slice" is a question with no answer. */}
+        {!isMeal && createMeasure ? (
+          <View style={{ marginTop: 16 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.recovery.nutrition.pt.packSize")}</Text>
+              <TextInput value={createForm.packSize} onChangeText={(v) => setCF({ packSize: v })} keyboardType="decimal-pad" placeholder="—" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.pt.packSize")} style={{ width: 56, textAlign: "right", fontFamily: F.mono, fontSize: 15, color: C.chalk, borderBottomWidth: 1, borderBottomColor: C.line, paddingBottom: 2 }} />
+              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{createMeasure.unit}</Text>
+              <TextInput value={createForm.packLabel} onChangeText={(v) => setCF({ packLabel: v })} maxLength={24} placeholder={t("w.recovery.nutrition.pt.packName")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.pt.packName")} style={{ flexShrink: 1, minWidth: 92, fontFamily: F.mono, fontSize: 15, color: C.chalk, borderBottomWidth: 1, borderBottomColor: C.line, paddingBottom: 2 }} />
+            </View>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: leading(fs.nano) }}>{t("w.recovery.nutrition.pt.packHint")}</Text>
           </View>
         ) : null}
 
@@ -2944,9 +3104,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{l.derived ? `${time} — ` : ""}{Math.round(l.kcal * l.qty)} kcal — {Math.round(l.protein * l.qty)}P {Math.round(l.carbs * l.qty)}C {Math.round(l.fat * l.qty)}F</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Pressable onPress={() => stepEntry(l, Math.max(0.5, Math.round((shown - 0.5) * 2) / 2))} accessibilityLabel={t("w.recovery.nutrition.decrease")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>−</Text></Pressable>
-            <Text style={{ minWidth: 26, textAlign: "center", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{l.derived ? `×${shown}` : shown}</Text>
-            <Pressable onPress={() => stepEntry(l, Math.min(50, Math.round((shown + 0.5) * 2) / 2))} accessibilityLabel={t("w.recovery.nutrition.increase")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>+</Text></Pressable>
+            {/* The half-serving grid is a floor, not a magnet: an entry logged
+                as 35 g of a 100 g serving is 0.35, and rounding it onto the
+                grid on the first press would throw away a weight somebody
+                measured. Same rule as the portion editor's stepper. */}
+            <Pressable onPress={() => stepEntry(l, entryStep(shown, -1))} accessibilityLabel={t("w.recovery.nutrition.decrease")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>−</Text></Pressable>
+            <Text style={{ minWidth: 26, textAlign: "center", fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{l.derived ? `×${shown}` : formatAmount(shown)}</Text>
+            <Pressable onPress={() => stepEntry(l, entryStep(shown, 1))} accessibilityLabel={t("w.recovery.nutrition.increase")} hitSlop={6} style={{ width: 26, height: 26, borderRadius: 12, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.mono, fontSize: 15, lineHeight: 17, color: C.chalk }}>+</Text></Pressable>
           </View>
           <Pressable onPress={() => deleteLogEntry(l.id)} accessibilityLabel={t("w.recovery.nutrition.deleteEntry")} hitSlop={6} style={{ padding: 4 }}><ITrash size={17} color={C.ash} /></Pressable>
         </View>

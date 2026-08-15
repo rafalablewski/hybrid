@@ -660,7 +660,7 @@ export async function favouriteRoutine(id: string, favourite: boolean): Promise<
 // four macros, so the panel survives the whole round-trip: search → portion
 // editor → log → diary, and library → log.
 export type SavedMealRow = { id: string; name: string; subname: string | null; emoji: string | null; kcal: number; protein: number; carbs: number; fat: number } & MicroFacts;
-export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; servingGrams?: number | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts;
+export type FoodProductRow = { id: string; name: string; subname: string | null; servingLabel: string; servingGrams?: number | null; packSize?: number | null; packLabel?: string | null; kcal: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts;
 
 export async function fetchSavedMeals(): Promise<SavedMealRow[]> {
   try {
@@ -735,7 +735,7 @@ export async function fetchFoodProducts(): Promise<FoodProductRow[]> {
 }
 
 export async function createFoodProduct(
-  product: { name: string; subname?: string | null; servingLabel?: string; servingGrams?: number; kcal?: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts,
+  product: { name: string; subname?: string | null; servingLabel?: string; servingGrams?: number; packSize?: number | null; packLabel?: string | null; kcal?: number; protein: number; carbs: number; fat: number; verifiedId?: string | null } & MicroFacts,
 ): Promise<{ ok: boolean; status: number | null }> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, {
@@ -746,6 +746,25 @@ export async function createFoodProduct(
     return { ok: res.ok, status: res.status };
   } catch {
     return { ok: false, status: null };
+  }
+}
+
+// Amend a saved food — today, the pack it comes in. A food already in the
+// pantry has to be able to gain a pack size WITHOUT being deleted and
+// recreated: a new id breaks every recipe ingredient pointing at the old one.
+export async function updateFoodProduct(
+  id: string,
+  patch: { packSize?: number | null; packLabel?: string | null },
+): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(patch),
+    });
+    return res.ok;
+  } catch {
+    return false;
   }
 }
 
