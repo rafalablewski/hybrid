@@ -71,7 +71,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
     <AuroraScreen hero={{ rank: "title", title: t("w.home.today.aiCoach") }}>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk }}>{t("w.home.aicoach.todaysNote")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk }}>{t("w.home.aicoach.todaysNote")}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>
           {t("w.home.aicoach.intro")}
         </Text>

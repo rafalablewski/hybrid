@@ -385,7 +385,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                   {on ? (
                     <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} scale={0.76} />
                   ) : (
-                    <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>–</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>–</Text>
                   )}
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t(m.labelKey)}</Text>
                 </Pressable>
@@ -459,7 +459,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 16 }}>
                 {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t("w.recovery.checkins.effort")}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t("w.recovery.checkins.qEffort")}</Text>
               <Text numberOfLines={2} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, maxWidth: 260 }}>{sess.title}</Text>
               <Text style={{ fontFamily: F.bold, fontSize: fs.title, marginTop: 20, color: def && touched ? txt(C, C[def.tone as "lime"] ?? C.chalk) : C.ash }}>
                 {touched && def ? t(def.labelKey) : t("w.recovery.checkins.notAnswered")}
@@ -472,7 +472,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                     <Pressable key={f.value} onPress={() => answerEffort(sess.id, f.value)} disabled={locked}
                       accessibilityRole="radio" accessibilityLabel={`${sess.title}: ${t(f.labelKey)}`} accessibilityState={{ selected: sel, disabled: locked }}
                       style={tile(sel)}>
-                      <Text style={{ fontSize: 22 }}>{f.emoji}</Text>
+                      <Text style={{ fontSize: fs.headline }}>{f.emoji}</Text>
                     </Pressable>
                   );
                 })}
@@ -508,7 +508,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               <Text style={{ alignSelf: "flex-start", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 16 }}>
                 {t("w.recovery.checkins.step")} {step + 1} / {steps.length} — {t(m.labelKey)}
               </Text>
-              <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t(m.questionKey)}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16, maxWidth: 280 }}>{t(m.questionKey)}</Text>
               {/* Untouched, the face is a placeholder, not a reading — dimmed,
                   and captioned "Not answered" rather than "Okay". */}
               <View style={{ marginTop: 24, marginBottom: 4, opacity: touched ? 1 : 0.3 }}><ReadinessFace feeling={feeling} scale={2.5} /></View>

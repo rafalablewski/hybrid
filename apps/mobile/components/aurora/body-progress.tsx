@@ -84,7 +84,7 @@ export default function BodyProgress({
   const report = has ? weeklyReport(metrics!, Date.now()) : null;
   const heightCm = metrics ? latestHeightCm(metrics) : null;
 
-  const head = { fontFamily: F.black, fontSize: 18, color: C.chalk } as const;
+  const head = { fontFamily: F.black, fontSize: fs.title, color: C.chalk } as const;
 
   return (
     <>
@@ -96,7 +96,7 @@ export default function BodyProgress({
           measurement grid. */}
       <ACard solid style={{ marginTop: 16 }}>
         <Text style={head}>{t("w.account.profile.priv-body-t")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 3, marginBottom: 12 }}>{t("w.account.profile.priv-body-s")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 3, marginBottom: 12 }}>{t("w.account.profile.priv-body-s")}</Text>
         <HeightRow C={C} units={units} heightCm={heightCm} onSaved={settle} />
         <LogForm C={C} units={units} form={form} setField={setField} onSave={save} busy={busy} />
         {/* With nothing logged yet there is no trends card below, so the way
@@ -108,7 +108,7 @@ export default function BodyProgress({
         <ACard solid style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 10 }}>
             <Text style={head}>{t("w.account.profile.priv-trends")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-trends-sub")}</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {trends.map((tr) => <MetricTile key={tr.def.key} C={C} tr={tr} units={units} />)}
@@ -134,20 +134,20 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
   const dstr = d != null ? fmtMetricDelta(BODY_METRIC_DEFS[0], d, units) : null;
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 22, letterSpacing: tracking.display, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 16 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-report-kicker")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking.display, lineHeight: 25, color: C.chalk, marginTop: 8, marginBottom: 16 }}>{t(BODY_VERDICT_KEY[report.verdict])}</Text>
       {wv && (
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: trackFigure(40), color: C.chalk }}>{wv.value}<Text style={{ fontSize: 15, color: C.ash }}> {wv.unit}</Text></Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: trackFigure(40), color: C.chalk }}>{wv.value}<Text style={{ fontSize: fs.note, color: C.ash }}> {wv.unit}</Text></Text>
           {dstr && dir !== "flat" && (
-            <Text style={{ fontFamily: F.monoBold, fontSize: 13, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
           )}
         </View>
       )}
       <View style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 8 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-cadence")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-cadence")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{report.cadence} / {report.cadenceOf} {t("w.account.profile.priv-days")}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 5 }}>
           {Array.from({ length: report.cadenceOf }).map((_, i) => (
@@ -167,10 +167,10 @@ function MetricTile({ C, tr, units }: { C: Palette; tr: MetricTrend; units: "kg"
   return (
     <View style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 6 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t(tr.def.labelKey)}</Text>
-        <Text style={{ fontFamily: F.monoBold, fontSize: 11, color: dirColorM(C, tr.direction) }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t(tr.def.labelKey)}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: dirColorM(C, tr.direction) }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</Text>
       </View>
-      <Text style={{ fontFamily: F.monoBold, fontSize: 22, letterSpacing: tracking.display, color: C.chalk }}>{value}<Text style={{ fontSize: 11, color: C.ash }}> {unit}</Text></Text>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.headline, letterSpacing: tracking.display, color: C.chalk }}>{value}<Text style={{ fontSize: fs.micro, color: C.ash }}> {unit}</Text></Text>
       <Bars C={C} heights={sparkHeights(tr.series)} />
     </View>
   );

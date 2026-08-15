@@ -64,7 +64,7 @@ function Block({ b }: { b: GuideBlock }) {
     return (
       <View style={{ borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: `${palette.amber}12`, borderRadius: 8, padding: 12 }}>
         <Kicker color={palette.amber}>Note</Kicker>
-        <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 21, color: palette.chalk, marginTop: 4 }}>{b.text}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 21, color: palette.chalk, marginTop: 4 }}>{b.text}</Text>
       </View>
     );
   }
@@ -72,8 +72,8 @@ function Block({ b }: { b: GuideBlock }) {
   if (b.t === "term") {
     return (
       <View style={{ paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: palette.line }}>
-        <Text style={{ fontFamily: F.bold, fontSize: 15, color: txt(palette, palette.lime), marginBottom: 3 }}>{b.term}</Text>
-        <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 21, color: palette.chalk }}>{b.text}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(palette, palette.lime), marginBottom: 3 }}>{b.term}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 21, color: palette.chalk }}>{b.text}</Text>
       </View>
     );
   }
@@ -98,7 +98,7 @@ function Block({ b }: { b: GuideBlock }) {
               borderBottomColor: palette.line,
             }}
           >
-            <Text style={{ fontFamily: F.reg, fontSize: 14, color: palette.chalk, flex: 1 }}>{r.goal}</Text>
+            <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.chalk, flex: 1 }}>{r.goal}</Text>
             <Mono color={palette.lime} style={{ fontSize: fs.caption, textAlign: "right", flexShrink: 1 }}>{r.path}</Mono>
           </View>
         ))}
@@ -126,7 +126,7 @@ function Block({ b }: { b: GuideBlock }) {
           >
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(palette, palette.lime) }}>{i + 1}</Text>
           </View>
-          <Text style={{ fontFamily: F.reg, fontSize: 14, lineHeight: 21, color: palette.chalk, flex: 1 }}>{it}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 21, color: palette.chalk, flex: 1 }}>{it}</Text>
         </View>
       ))}
     </View>
@@ -153,7 +153,7 @@ function Cmd({ lines }: { lines: string }) {
   return (
     <View style={{ position: "relative" }}>
       <View style={{ backgroundColor: palette.ink, borderWidth: 1, borderColor: palette.line, borderRadius: 10, padding: 12, paddingRight: 64 }}>
-        <Mono color={palette.chalk} style={{ fontSize: 13, lineHeight: 20 }}>{lines}</Mono>
+        <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 20 }}>{lines}</Mono>
       </View>
       <Pressable
         onPress={copy}

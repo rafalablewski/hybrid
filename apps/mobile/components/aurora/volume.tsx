@@ -256,7 +256,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 46, lineHeight: 50, letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: 50, letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
             </View>
@@ -981,7 +981,7 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
               style={{ flex: 1, opacity: zone && !on ? 0.4 : 1 }}
             >
               <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: on ? txt(C, C.lime) : C.ash }}>
-                {BAND_LABEL[k]} <Text style={{ fontSize: 11, color: C.chalk }}>{sc[k]}</Text>
+                {BAND_LABEL[k]} <Text style={{ fontSize: fs.micro, color: C.chalk }}>{sc[k]}</Text>
               </Text>
             </Pressable>
           );

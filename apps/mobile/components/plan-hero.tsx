@@ -488,7 +488,7 @@ export function CoverScreen({
               </View>
               <HeroTitle title={cover.title} rank="cover" style={{ maxWidth: "88%" } as never} />
               {blurbOnFace ? (
-                <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: 13, lineHeight: 18, color: `rgba(255,255,255,${HERO.alpha.dim})`, maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
+                <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: 18, color: `rgba(255,255,255,${HERO.alpha.dim})`, maxWidth: "88%", marginTop: 8 }}>{cover.blurb}</Text>
               ) : (
                 <View style={{ marginTop: 8 }}>
                   <HeroMetadata parts={cover.metaParts} />

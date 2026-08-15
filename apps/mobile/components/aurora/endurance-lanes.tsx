@@ -151,7 +151,7 @@ export default function AuroraEnduranceLanes({
           }}
         >
           <View style={{ width: 32, height: 32, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontSize: 18, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
+            <Text style={{ fontSize: fs.title, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
           </View>
           <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
             {expanded ? t("w.home.end.fewer") : t("w.home.end.allSports")}
@@ -194,7 +194,7 @@ export function LaneOrderChip({ order, onPress }: { order: LaneOrder; onPress: (
         paddingHorizontal: 9, paddingVertical: 4,
       }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
         {t(ORDER_KEY[order])}
       </Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>⌄</Text>
@@ -381,10 +381,10 @@ function EffortsTile({ lane }: { lane: EnduranceLane }) {
   return (
     <Tile w={126} label={t("endurance.efforts")}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: tracking.display, color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{lane.efforts}</Text>
       </View>
       <View style={{ gap: 3, marginTop: "auto" }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 13, color: C.chalk }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>
           {formatDuration(lane.minutes, durationUnits(t))}
         </Text>
       </View>
@@ -423,10 +423,10 @@ function DistanceTile({ lane }: { lane: EnduranceLane }) {
       foot={read ? weekLabel(t, read.weekStart) : ""}
     >
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: tracking.display, color: read?.best ? txt(C, C.lime) : C.chalk }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: read?.best ? txt(C, C.lime) : C.chalk }}>
           {read ? read.value : lane.distanceKm}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? read.unit : "km"}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? read.unit : "km"}</Text>
       </View>
       <View ref={scrub.plotRef} style={{ marginTop: "auto" }}>
         <HistoryStrip bars={volumeBars(lane.weeks)} color={C.blue} held={scrub.index} />
@@ -466,7 +466,7 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
       // about the window, not about the lane's all-time figure above.
       foot={read ? weekLabel(t, read.weekStart) : t("w.home.end.window8")}
       footRight={delta ? (
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 10, color: txt(C, delta.faster ? C.lime : C.red) }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, delta.faster ? C.lime : C.red) }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </Text>
       ) : undefined}
@@ -475,7 +475,7 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
           window. It used to print the newest trend point, which made this the
           third distinct scope in a rail of five cards. Held, it answers for the
           scrubbed week and the foot says which. */}
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: tracking.display, color: read?.best ? txt(C, C.lime) : C.chalk }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: read?.best ? txt(C, C.lime) : C.chalk }}>
         {read ? `${read.value} ${read.unit}` : formatDisciplinePace(lane.paceAllTime ?? lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
       </Text>
       <View ref={scrub.plotRef} style={{ marginTop: "auto" }}>
@@ -503,8 +503,8 @@ function Leg({ label, pct, c }: { label: string; pct: number; c: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <View style={{ width: 6, height: 6, borderRadius: 2, backgroundColor: c }} />
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{label}</Text>
-      <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: 10, color: C.chalk }}>{pct}%</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{label}</Text>
+      <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{pct}%</Text>
     </View>
   );
 }

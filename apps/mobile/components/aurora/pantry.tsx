@@ -198,7 +198,7 @@ export function PantryScreen<T extends PantryFood>({
            to draw and no label completeness to report, so it says what the
            screen is for and offers the one action that matters. */
         <View style={{ marginTop: 28, alignItems: "center", paddingHorizontal: 8 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, textAlign: "center" }}>{t("w.recovery.nutrition.pn.emptyTitle")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, textAlign: "center" }}>{t("w.recovery.nutrition.pn.emptyTitle")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, lineHeight: leading(fs.note, "relaxed"), textAlign: "center", marginTop: 8, maxWidth: 360 }}>{t("w.recovery.nutrition.yourProductsSub")}</Text>
         </View>
       ) : (

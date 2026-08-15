@@ -80,13 +80,13 @@ export default function ExerciseFavouritesSheet({
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line, opacity: locked ? 0.45 : 1 }}
       >
         <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: tracking.display, color: on ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.body, letterSpacing: tracking.display, color: on ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
         </View>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
         {/* The pinned star rides the amber TEXT tone, not the fill (the
             accent-text channel). */}
-        <Text style={{ fontSize: 15, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+        <Text style={{ fontSize: fs.note, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
       </Pressable>
     );
   };
@@ -99,8 +99,8 @@ export default function ExerciseFavouritesSheet({
 
   const head = (label: string, count: number) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, marginBottom: 10, marginHorizontal: 2 }}>
-      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: tracking.display, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
+      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
     </View>
   );
 

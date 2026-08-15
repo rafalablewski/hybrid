@@ -53,7 +53,7 @@ export default function AuroraExerciseMedia({
   const note = m.status === "pending" ? t("w.analyze.exp.media.pending") : m.status === "pattern" ? t("w.analyze.exp.media.pattern") : null;
   const credit = m.asset?.credit;
   const openHref = m.asset?.kind === "link" ? m.asset.href : m.asset?.kind === "clip" ? m.asset.src : null;
-  const tag = { fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase" as const, color: C.ash };
+  const tag = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase" as const, color: C.ash };
 
   return (
     <View style={{ borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingVertical: 10, paddingHorizontal: 16 }}>

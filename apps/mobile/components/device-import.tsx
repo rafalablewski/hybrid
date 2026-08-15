@@ -182,7 +182,7 @@ export function DeviceImportSheet({
             {/* A manufacturer's mark reproduces solid only — never the accent. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, paddingRight: 10 }}>
               <DeviceMark provider="apple" form="mark" height={14} on="dark" label="" />
-              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>
                 {t(phase === "rate" ? "device.import.ratedTitle" : "device.import.title")}
               </Text>
             </View>
@@ -284,7 +284,7 @@ export function DeviceImportSheet({
                           justifyContent: "center",
                         }}
                       >
-                        {!off && <Text style={{ fontFamily: F.black, fontSize: 13, color: C.onAccent }}>✓</Text>}
+                        {!off && <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>✓</Text>}
                       </View>
                     )}
                   </Pressable>
@@ -327,7 +327,7 @@ export function DeviceImportSheet({
                       <Text
                         maxFontSizeMultiplier={FIXED_FONT_SCALE}
                         numberOfLines={1}
-                        style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}
+                        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}
                       >
                         {l.title}
                       </Text>

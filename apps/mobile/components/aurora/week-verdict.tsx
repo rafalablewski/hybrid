@@ -158,7 +158,7 @@ export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title
         width: 32, height: 32, borderRadius: 16,
         borderWidth: 1, borderColor: premium ? pa.text : C.line, alignItems: "center", justifyContent: "center",
       }}>
-        <Text style={{ fontSize: 13, color: glyphColor }}>{glyph}</Text>
+        <Text style={{ fontSize: fs.body, color: glyphColor }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
@@ -586,11 +586,11 @@ function MetricDetail({
                     backgroundColor: active ? C.ink2 : "transparent", borderRadius: 12,
                   }}
                 >
-                  <Text style={{ fontSize: 13, width: 18, textAlign: "center" }}>{g.icon}</Text>
+                  <Text style={{ fontSize: fs.body, width: 18, textAlign: "center" }}>{g.icon}</Text>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>
                     {groupName(g)}
                   </Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{Math.round(g.share * 100)}%</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{Math.round(g.share * 100)}%</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, minWidth: 62, textAlign: "right" }}>
                     {fmtValue(detail.metric, g.value, g)}
                   </Text>
@@ -623,12 +623,12 @@ function MetricDetail({
                     paddingHorizontal: 8, paddingVertical: 8, marginHorizontal: -8, borderRadius: 12,
                   }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, width: 44 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, width: 44 }}>
                     {dateFmt(new Date(it.startedAt).getTime(), { day: "numeric", month: "short" })}
                   </Text>
                   <View style={{ flex: 1 }}>
                     <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{it.name}</Text>
-                    {!!line && <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, marginTop: 1 }}>{line}</Text>}
+                    {!!line && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 1 }}>{line}</Text>}
                   </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
                     {fmtValue(detail.metric, it.value, unitOf(it.groupId))}
@@ -640,7 +640,7 @@ function MetricDetail({
 
           {shownCount > ROWS_SHOWN && (
             <Pressable onPress={onAll} accessibilityRole="button" style={{ paddingVertical: 4, marginTop: 6 }}>
-              <Text style={{ ...kicker, fontSize: 10, color: C.ash }}>
+              <Text style={{ ...kicker, fontSize: fs.nano, color: C.ash }}>
                 {all ? t("w.home.act.showFewer") : t("w.home.act.showAll").replace("{n}", String(shownCount))}
               </Text>
             </Pressable>

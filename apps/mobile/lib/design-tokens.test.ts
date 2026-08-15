@@ -120,9 +120,44 @@ describe("type scale", () => {
   });
 
   it("RATCHET — raw fontSize integers give way to fs.* rungs", () => {
-    // The ladder has 13 named rungs. Every raw integer here is a call site that
-    // decided for itself; ~37% of them land off the ladder entirely.
-    expectAtMost(hits(/fontSize:\s*\d+/g), 427, "raw fontSize → use an fs.* rung");
+    // 427 → 89, and the split is the whole point of stopping there.
+    //
+    // 339 of them — 79% — were ALREADY a rung and simply were not saying so:
+    // 77 at 10, 39 at 11, 38 at 18, 32 at 12, 32 at 13 … Renaming those is a
+    // pure rename, verified exact against the scale before it ran, so not one
+    // pixel moved. That is consistency for free and it is done.
+    //
+    // (The old note here said "~37% land off the ladder entirely". Measured, it
+    // was 20%. Corrected rather than left — a guard that misstates its own
+    // subject is how a ceiling drifts out of touch with its count.)
+    //
+    // WHAT IS LEFT IS NOT THE SAME KIND OF WORK, which is why it is left:
+    //
+    //   58 sit BETWEEN rungs, all within 2dp of one — 16 at 17, 16 at 24, 7 at
+    //     28, 6 at 19, 5 at 21. These are real drift and the two clusters of 16
+    //     are almost certainly one decision each, copied. But fontSize is the
+    //     most visible property there is: moving a 17dp label to 16 is 6%
+    //     smaller, and 24 → 22 is 9% off a heading. That is a RESTYLE of
+    //     specific screens, not a rename, and it wants eyes on a device.
+    //
+    //   17 sit between 30 and 46, in the gap above `display` and below `stat`.
+    //     Same argument, larger steps.
+    //
+    //   11 sit ABOVE `stat`, up to 118dp. The scale's own header calls this out:
+    //     "The ladder ends at `stat` on purpose: there is no rung above it, so a
+    //     figure larger than 46 is a design smell, not a missing token." These
+    //     are the story/cover figures. Snapping them to 46 would be absurd and
+    //     adding rungs would bless them; either way it is a design conversation,
+    //     not a sweep.
+    //
+    //   1 was RENAMED AND PUT BACK. home.tsx's plan-card title took fs.headline
+    //     cleanly, and that tripped hub-masthead.test.ts, which bans the rung
+    //     anywhere in a hub screen so none re-grows a title of its own. It is a
+    //     CARD title, not the hub's head, so the ban is a false positive there —
+    //     but the guard is load-bearing and a rename is not worth weakening it
+    //     for. It sits as a raw 22 and is counted here, which is the honest
+    //     place for a site that has no rung it is allowed to name.
+    expectAtMost(hits(/fontSize:\s*\d+/g), 89, "raw fontSize → use an fs.* rung");
   });
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {

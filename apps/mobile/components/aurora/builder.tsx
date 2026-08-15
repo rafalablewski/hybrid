@@ -243,7 +243,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
           value={String(sig.minutes)}
           style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: trackFigure(52), lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}
         />
-        <Text style={{ fontFamily: F.mono, fontSize: 20, color: C.ash, letterSpacing: tracking.normal }}> min</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, letterSpacing: tracking.normal }}> min</Text>
       </View>
       <View style={{ marginTop: 6 }}>
         <MetaLine

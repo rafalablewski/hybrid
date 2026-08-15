@@ -96,7 +96,7 @@ function CapRow({ cap, color }: { cap: Capability; color: string }) {
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, flex: 1 }}>{cap.title}</Text>
         <Chip color={palette.ash}>{cap.area}</Chip>
       </View>
-      <Mono color={palette.chalk} style={{ fontSize: 13, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>
+      <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>
       {cap.retiredBecause ? (
         <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: `${palette.red}12`, borderWidth: 1, borderColor: `${palette.red}40` }}>
           <Kicker color={palette.red}>Why it went</Kicker>

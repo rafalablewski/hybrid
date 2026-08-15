@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, ScrollView, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { LEADERBOARD_METRICS, seedPerson, userPagePath, type LeaderboardMetric } from "@hybrid/core";
-import { LoadSwap, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
+import { fs, LoadSwap, F, useScreenBottomPad, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -32,7 +32,7 @@ export default function LeaderboardScreen() {
       <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
       <View style={{ flex: 1 }}>
         <Text style={{ color: C.chalk, fontFamily: F.bold }}>{r.isMe ? t("w.social.you") : r.displayName || `@${r.handle}`}</Text>
-        <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>@{r.handle}</Text>
+        <Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.mono }}>@{r.handle}</Text>
       </View>
       <Text style={{ fontFamily: F.monoBold, color: r.value > 0 ? C.lime : C.ash }}>{r.label}</Text>
     </Pressable>

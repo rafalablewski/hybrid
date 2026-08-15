@@ -117,20 +117,20 @@ export default function AuroraUpgrade() {
     <Sheet visible={open} onClose={close} onClosed={() => router.back()}>
       {/* badge */}
       <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
       </View>
 
-      <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 12, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: 18 }}>{t("w.account.upgrade.sheet-sub")}</Text>
 
       {/* benefits */}
       <View style={{ marginTop: 16 }}>
         {BENEFITS.map((b, i) => (
           <View key={b.t} style={{ flexDirection: "row", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-            <Text style={{ fontSize: 15, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
+            <Text style={{ fontSize: fs.note, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{b.t}</Text>
-              <Text style={{ fontFamily: F.reg, fontSize: 13, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.t}</Text>
+              <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 1, lineHeight: 17 }}>{b.d}</Text>
             </View>
           </View>
         ))}
@@ -139,9 +139,9 @@ export default function AuroraUpgrade() {
       {/* price */}
       <View style={{ alignItems: "center", marginTop: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking.display, color: C.chalk }}>
-          {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: 14, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
+          {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: txt(C, C.lime), marginTop: 3, letterSpacing: tracking.label }}>{t("w.account.upgrade.trial-note")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3, letterSpacing: tracking.label }}>{t("w.account.upgrade.trial-note")}</Text>
       </View>
 
       {!!error && (

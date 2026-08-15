@@ -202,7 +202,7 @@ export function RangeFilter({
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE}
               numberOfLines={1}
               style={{
-                fontFamily: on ? F.monoBold : F.mono, fontSize: 11,
+                fontFamily: on ? F.monoBold : F.mono, fontSize: fs.micro,
                 color: on ? C.chalk : C.ash, paddingHorizontal: 2,
               }}
             >

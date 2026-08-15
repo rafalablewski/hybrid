@@ -163,8 +163,8 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
   );
   const head = (label: string, count: number) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, marginBottom: 10, marginHorizontal: 2 }}>
-      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: tracking.display, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
+      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
     </View>
   );
   const customAdd = q.length > 0 && !exact && (
@@ -209,7 +209,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 return (
                   <Pressable key={p.id} onPress={() => { setView(p.id); setRoom(null); }} accessibilityRole="button" accessibilityState={{ selected: on }}
                     style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
-                    <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                    <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                   </Pressable>
                 );
               })}
@@ -266,10 +266,10 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
                               : roomBodyMark(r.entries.map((e) => e.name))
                                 ? <AuroraBodyMark names={r.entries.map((e) => e.name)} size={32} color={txt(C, c)} silhouette={C.line} />
-                                : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: tracking.display, color: txt(C, c) }}>{initials(r.label)}</Text>}
+                                : <Text style={{ fontFamily: F.black, fontSize: fs.body, letterSpacing: tracking.display, color: txt(C, c) }}>{initials(r.label)}</Text>}
                           </View>
                           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
-                          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
                         </Pressable>
                       );
                     })}

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator, type StyleProp, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
-import { Loading, LoadSwap, F, PressScale as Pressable } from "../lib/ui";
+import { fs, Loading, LoadSwap, F, PressScale as Pressable } from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, AChip, ASearch } from "../components/aurora/kit";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -52,7 +52,7 @@ function Storefront() {
       {() => {
         if (!data) return null;
         if (!data.isCoach) return <Empty title={t("w.coaches.coachesOnly")} sub={t("w.coaches.coachesOnlySub")} />;
-        const inp = { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 14, marginBottom: 12 } as const;
+        const inp = { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: fs.bodyLg, marginBottom: 12 } as const;
 
         return (
           <View>
@@ -64,8 +64,8 @@ function Storefront() {
               <TextInput value={form.specialties} onChangeText={(v) => setForm({ ...form, specialties: v })} placeholder={t("w.coaches.specialties")} placeholderTextColor={C.ash} style={inp} />
               <TextInput value={form.sports} onChangeText={(v) => setForm({ ...form, sports: v })} placeholder={t("w.coaches.sports")} placeholderTextColor={C.ash} style={inp} />
               <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder={t("w.coaches.pricingNote")} placeholderTextColor={C.ash} style={inp} />
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.acceptingClients")}</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel={t("w.coaches.acceptingClients")} /></View>
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: 13 }}>{t("w.coaches.autoAccept")}</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel={t("w.coaches.autoAccept")} /></View>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: fs.body }}>{t("w.coaches.acceptingClients")}</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel={t("w.coaches.acceptingClients")} /></View>
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: fs.body }}>{t("w.coaches.autoAccept")}</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel={t("w.coaches.autoAccept")} /></View>
               <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { notify(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
             </ACard>
 
@@ -73,7 +73,7 @@ function Storefront() {
             <ACard style={cardStack}>
               {programs.length === 0 ? <Empty title={t("w.coaches.noPrograms")} sub={t("w.coaches.noProgramsSub")} /> : programs.map((p) => (
                 <View key={p.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                  <View><Text style={{ color: C.chalk, fontFamily: F.semi }}>{p.name}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{p.goal ?? "—"}</Text></View>
+                  <View><Text style={{ color: C.chalk, fontFamily: F.semi }}>{p.name}</Text><Text style={{ color: C.ash, fontSize: fs.caption }}>{p.goal ?? "—"}</Text></View>
                   <SButton label={p.published ? `${t("w.coaches.published")} ✓` : t("w.coaches.publish")} ghost={!p.published} small onPress={async () => { await patchProgram(p.id, { published: !p.published }); load(); }} />
                 </View>
               ))}
@@ -86,7 +86,7 @@ function Storefront() {
                   {enroll.incoming.map((e: EnrollmentRow) => (
                     <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
                       <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
-                      <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontFamily: F.semi }}>{e.client?.displayName || `@${e.client?.handle}`}</Text><Text style={{ color: C.ash, fontSize: 12 }}>{e.programName} – {e.status}</Text></View>
+                      <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontFamily: F.semi }}>{e.client?.displayName || `@${e.client?.handle}`}</Text><Text style={{ color: C.ash, fontSize: fs.caption }}>{e.programName} – {e.status}</Text></View>
                       {e.status === "requested" && <View style={{ flexDirection: "row", gap: 6 }}><SButton label={t("w.coaches.accept")} small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "accept" }); load(); }} /><SButton label={t("w.coaches.decline")} ghost small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "decline" }); load(); }} /></View>}
                     </View>
                   ))}
@@ -156,10 +156,10 @@ function CoachRow({ c, C, t, onOpen, cardStack }: { c: CoachCard; C: Palette; t:
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <Avatar url={c.avatarUrl} name={c.name} handle={c.handle} size={52} />
             <View style={{ flex: 1 }}>
-              <Text style={{ color: C.chalk, fontFamily: F.bold }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}{!c.acceptingClients ? <Text style={{ color: C.ash, fontSize: 11 }}> – {t("w.coaches.full")}</Text> : null}</Text>
-              <Text style={{ color: C.ash, fontSize: 13 }}>{c.headline || c.specialties.join(" – ") || `@${c.handle}`}</Text>
+              <Text style={{ color: C.chalk, fontFamily: F.bold }}>{c.name || `@${c.handle}`}{c.coachVerified ? <Text style={{ color: txt(C, C.blue) }}> ✓</Text> : null}{!c.acceptingClients ? <Text style={{ color: C.ash, fontSize: fs.micro }}> – {t("w.coaches.full")}</Text> : null}</Text>
+              <Text style={{ color: C.ash, fontSize: fs.body }}>{c.headline || c.specialties.join(" – ") || `@${c.handle}`}</Text>
               <View style={{ flexDirection: "row", gap: 12, marginTop: 4, alignItems: "center" }}>
-                <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>{c.programs} {c.programs === 1 ? t("w.coaches.program") : t("w.coaches.programsWord")}</Text>
+                <Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.mono }}>{c.programs} {c.programs === 1 ? t("w.coaches.program") : t("w.coaches.programsWord")}</Text>
                 <Stars rating={c.rating} size={12} />
               </View>
             </View>

@@ -117,7 +117,7 @@ export default function DoneFloor({
           accessibilityLabel={countLabel}
           style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 2 }}
         >
-          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
+          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
           <ArrowGlyph size={14} color={quiet} />
         </Pressable>
       ) : (
@@ -143,7 +143,7 @@ export default function DoneFloor({
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Pressable onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
                 <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, 0.16) }}>
-                  <Text style={{ fontSize: 18 }}>{sessionIcon(s)}</Text>
+                  <Text style={{ fontSize: fs.title }}>{sessionIcon(s)}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
@@ -153,7 +153,7 @@ export default function DoneFloor({
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
                 </View>
                 {onPlanRow ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
                 ) : null}
               </Pressable>
               {ask ? (
@@ -165,7 +165,7 @@ export default function DoneFloor({
                   accessibilityHint={t("session.feel.rateUnrated")}
                   style={{ paddingVertical: 8, paddingLeft: 4 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
                 </Pressable>
               ) : null}
             </View>

@@ -197,14 +197,14 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
       <View style={{ height: 28, alignItems: "center", justifyContent: "center" }}>
         {day.isToday ? (
           <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 14, color: C.onAccent }}>{day.dayOfMonth}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{day.dayOfMonth}</Text>
           </View>
         ) : selected ? (
           <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: `${C.chalk}4d`, alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 15, color: C.chalk }}>{day.dayOfMonth}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{day.dayOfMonth}</Text>
           </View>
         ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: 15, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
         )}
       </View>
       {/* LOAD slot — the ✓'s pixels, spent on how much instead of whether. The

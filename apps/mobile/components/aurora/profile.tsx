@@ -240,8 +240,8 @@ export default function AuroraProfile() {
             <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.chalk }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</Text>
-            <Text style={{ color: C.ash, fontSize: 13, marginTop: 2, lineHeight: 18 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</Text>
+            <Text style={{ color: C.ash, fontSize: fs.body, marginTop: 2, lineHeight: 18 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</Text>
           </View>
           <ArrowGlyph size={16} color={txt(C, C.lime)} />
         </Pressable>
@@ -322,7 +322,7 @@ export default function AuroraProfile() {
       {/* BIO + quiet HYBRID ID line. */}
       <View style={{ marginTop: 8, paddingHorizontal: 0 }}>
         {!!bioText && (
-          <Text style={{ fontFamily: F.reg, fontSize: 14, color: C.chalk, opacity: 0.9, lineHeight: 20 }}>{bioText}</Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, opacity: 0.9, lineHeight: 20 }}>{bioText}</Text>
         )}
         <View style={{ marginTop: bioText ? 6 : 0, gap: 2 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}><Text style={{ opacity: 0.75 }}>HYBRID ID</Text>{"  "}{athleteId(email || name || "")}</Text>
@@ -334,7 +334,7 @@ export default function AuroraProfile() {
             LEAVES, so it takes the arrow; it is a door, so it wears no card. */}
         {socialP?.profile?.handle ? (
           <Pressable onPress={() => router.push(userPagePath(socialP.profile.handle))} style={{ alignSelf: "flex-start", marginTop: 10 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 13, color: txt(C, C.lime) }}>{t("w.user.viewAsOthers")}  ›</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.user.viewAsOthers")}  ›</Text>
           </Pressable>
         ) : null}
       </View>
@@ -380,7 +380,7 @@ export default function AuroraProfile() {
               <View style={{ flexDirection: "row", gap: 24, marginTop: 8 }}>
                 {[{ v: `${thisWeek.count}`, k: t("w.account.profile.id-sessions") }, { v: fmtTonnage(thisWeek.vol, prefs.units), k: t("w.account.profile.spec-tonnage") }].map((s) => (
                   <View key={s.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, letterSpacing: tracking.display }}>{s.v}</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, letterSpacing: tracking.display }}>{s.v}</Text>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{s.k}</Text>
                   </View>
                 ))}
@@ -797,9 +797,9 @@ function HighlightGrid({
               return (
                 <Pressable key={key} onPress={() => onToggleHidden(key, false)} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, paddingLeft: 8, paddingRight: 12, borderWidth: 1, borderColor: C.line, borderRadius: 12, backgroundColor: C.ink2 }}>
                   <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: 15, lineHeight: 17, color: C.ink }}>+</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: fs.note, lineHeight: 17, color: C.ink }}>+</Text>
                   </View>
-                  <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{tile.k}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{tile.k}</Text>
                 </Pressable>
               );
             })}
@@ -811,7 +811,7 @@ function HighlightGrid({
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label, flex: 1 }}>{editMode ? t("w.account.profile.ov-edit-hint") : t("w.account.profile.ov-hint")}</Text>
         {editMode && (
           <Pressable onPress={() => setEditMode(false)} accessibilityRole="button" style={{ backgroundColor: C.chalk, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 20 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: 11, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ink }}>{t("w.account.profile.ov-done")}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ink }}>{t("w.account.profile.ov-done")}</Text>
           </Pressable>
         )}
       </View>

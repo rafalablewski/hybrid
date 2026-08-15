@@ -162,8 +162,8 @@ export default function Notifications() {
             )}
             {it.actionable && (
               <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                <Pressable onPress={() => respond(it, true)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.pill, backgroundColor: C.lime }}><Text style={{ fontFamily: F.bold, fontSize: 12, color: C.onAccent }}>{it.social?.kind === "enroll_request" ? "Accept" : "Approve"}</Text></Pressable>
-                <Pressable onPress={() => respond(it, false)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line }}><Text style={{ fontFamily: F.bold, fontSize: 12, color: C.chalk }}>{it.social?.kind === "enroll_request" ? "Decline" : "Deny"}</Text></Pressable>
+                <Pressable onPress={() => respond(it, true)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.pill, backgroundColor: C.lime }}><Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.onAccent }}>{it.social?.kind === "enroll_request" ? "Accept" : "Approve"}</Text></Pressable>
+                <Pressable onPress={() => respond(it, false)} style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line }}><Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>{it.social?.kind === "enroll_request" ? "Decline" : "Deny"}</Text></Pressable>
               </View>
             )}
           </View>

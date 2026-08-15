@@ -8,7 +8,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import { useTheme } from "../lib/theme";
-import { F, FIXED_FONT_SCALE } from "../lib/ui";
+import { fs, F, FIXED_FONT_SCALE } from "../lib/ui";
 import { withAlpha } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import { FeelPrompt } from "./feel-prompt";
@@ -75,12 +75,12 @@ export default function FeelSheet({
         <>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18 }}>
             <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(C.blue, 0.16) }}>
-              <Text style={{ fontSize: 18 }}>{sessionIcon(session)}</Text>
+              <Text style={{ fontSize: fs.title }}>{sessionIcon(session)}</Text>
             </View>
             <Text
               maxFontSizeMultiplier={FIXED_FONT_SCALE}
               numberOfLines={1}
-              style={{ flex: 1, fontFamily: F.black, fontSize: 18, color: C.chalk }}
+              style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}
             >
               {session.title}
             </Text>

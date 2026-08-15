@@ -109,7 +109,7 @@ export default function QuickStartSheet({
           accessibilityRole="button"
           style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 16, paddingVertical: 12, alignItems: "center" }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: 12, letterSpacing: tracking.label, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
         </Pressable>
       </View>
     </Sheet>
@@ -141,7 +141,7 @@ function decor(id: string, C: P): { glyph: string; accent: string } {
 function Star({ C, on, label, onPress }: { C: P; on: boolean; label: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} hitSlop={8} style={{ padding: 2 }}>
-      <Text style={{ fontSize: 14, color: on ? C.amber : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+      <Text style={{ fontSize: fs.bodyLg, color: on ? C.amber : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
     </Pressable>
   );
 }
@@ -155,9 +155,9 @@ function FavouriteCard({ C, width, r, t, onLaunch, onToggleFav }: { C: P; width:
       <View style={{ position: "absolute", top: 10, right: 10 }}>
         <Star C={C} on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onPress={onToggleFav} />
       </View>
-      <Text style={{ fontSize: 16, lineHeight: 18, color: txt(C, accent) }}>{glyph}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 15, letterSpacing: tracking.display, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
+      <Text style={{ fontSize: fs.subtitle, lineHeight: 18, color: txt(C, accent) }}>{glyph}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: tracking.display, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
       <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
     </Pressable>
   );
@@ -168,14 +168,14 @@ function RoutineRow({ C, first, r, t, onLaunch, onToggleFav }: { C: P; first: bo
   return (
     <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 2, borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderTopColor: C.line }}>
       <View style={{ width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(accent, 0.13), borderWidth: 1, borderColor: withAlpha(accent, 0.26) }}>
-        <Text style={{ fontSize: 15, color: txt(C, accent) }}>{glyph}</Text>
+        <Text style={{ fontSize: fs.note, color: txt(C, accent) }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{r.name}</Text>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: 11, color: C.ash, marginTop: 2 }}>{metaLine(r.blocks, t)}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{metaLine(r.blocks, t)}</Text>
       </View>
       <Star C={C} on={!!r.favourite} label={r.favourite ? t("w.home.quickStart.removeFav") : t("w.home.quickStart.addFav")} onPress={onToggleFav} />
-      <Text style={{ fontFamily: F.mono, fontSize: 16, color: C.ash }}>›</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>›</Text>
     </Pressable>
   );
 }

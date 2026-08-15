@@ -1,6 +1,6 @@
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { Kicker, Mono, F, PressScale as Pressable , tracking} from "../../lib/ui";
+import { fs, Kicker, Mono, F, PressScale as Pressable , tracking} from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useSession } from "../../lib/session";
 import { AuroraIcon } from "../../components/aurora/icons";
@@ -29,7 +29,7 @@ export default function AdminHome() {
 
       {ADMIN_GROUPS.map((group) => (
         <View key={group} style={{ marginBottom: 18 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: palette.ash, marginBottom: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: palette.ash, marginBottom: 8 }}>
             {group}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 }}>

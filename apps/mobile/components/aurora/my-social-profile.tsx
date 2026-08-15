@@ -18,7 +18,7 @@ import { HeroNav } from "./hero";
 
 type FieldKey = "name" | "handle" | "displayName" | "bio" | "email" | "visibility";
 
-const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: 15 } as const);
+const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: fs.note } as const);
 
 export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const C = useTheme().palette;
@@ -108,28 +108,28 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
 
               {editing === "handle" && (<>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: 15 }}>@</Text>
+                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.note }}>@</Text>
                   <TextInput value={form.handle} onChangeText={(v) => setForm({ ...form, handle: v })} placeholder={t("w.profile.handlePlaceholder")} placeholderTextColor={C.ash} autoCapitalize="none" autoFocus style={{ ...inp, flex: 1 }} />
                 </View>
                 {form.handle.length > 0 && (
-                  <Text style={{ fontFamily: F.mono, fontSize: 12, color: feedbackColor, marginTop: 8 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: feedbackColor, marginTop: 8 }}>
                     {!fmtValid ? `✕ ${t("w.profile.handleRule")}` : avail === "taken" ? `✕ ${t("w.profile.handleTaken").replace("{h}", hNorm)}` : avail === "checking" ? t("w.profile.checking") : `✓ ${isMine ? t("w.profile.yourHandle") : t("w.profile.handleAvailable").replace("{h}", hNorm)}`}
                   </Text>
                 )}
-                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
+                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 8 }}>{err}</Text>}
                 <SButton label={claimed ? t("common.save") : t("w.profile.claimHandle")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
               {editing === "displayName" && (<>
                 <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder={t("w.profile.optional")} placeholderTextColor={C.ash} autoFocus style={inp} />
-                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 8 }}>{err}</Text>}
+                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 8 }}>{err}</Text>}
                 <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
               {editing === "bio" && (<>
                 <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline maxLength={280} placeholder={t("w.profile.bioPlaceholder")} placeholderTextColor={C.ash} autoFocus style={{ ...inp, minHeight: 96, textAlignVertical: "top" }} />
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: bioLen >= 280 ? C.red : C.ash, textAlign: "right", marginTop: 6 }}>{bioLen}/280</Text>
-                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: bioLen >= 280 ? C.red : C.ash, textAlign: "right", marginTop: 6 }}>{bioLen}/280</Text>
+                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 4 }}>{err}</Text>}
                 <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
@@ -137,7 +137,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
                 <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
                   {(["public", "followers", "private"] as const).map((v) => <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
                 </View>
-                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: 13, marginTop: 4 }}>{err}</Text>}
+                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 4 }}>{err}</Text>}
                 <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
             </ACard>
@@ -157,9 +157,9 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
         // (not a <Component/>) so the rows aren't remounted on every parent render.
         const fieldRow = ({ rk, label, value, muted, first }: { rk: FieldKey; label: string; value: string; muted: boolean; first?: boolean }): ReactNode => (
           <Pressable key={rk} onPress={() => setEditing(rk)} accessibilityRole="button" accessibilityLabel={label} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 16, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}>
-            <Text style={{ width: 96, color: C.ash, fontSize: 13 }}>{label}</Text>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: 14 }}>{value}</Text>
-            <Text style={{ color: C.ash, fontSize: 18 }}>›</Text>
+            <Text style={{ width: 96, color: C.ash, fontSize: fs.body }}>{label}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, color: muted ? C.ash : C.chalk, fontSize: fs.bodyLg }}>{value}</Text>
+            <Text style={{ color: C.ash, fontSize: fs.title }}>›</Text>
           </Pressable>
         );
 
@@ -171,7 +171,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
                 <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
                   <View style={{ width: 53, height: 53, borderRadius: 27, borderWidth: 2.5, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
-                    {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: 22, color: lime }}>{initials}</Text>}
+                    {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: lime }}>{initials}</Text>}
                   </View>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>

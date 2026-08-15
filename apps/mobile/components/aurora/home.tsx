@@ -792,8 +792,8 @@ export default function AuroraHome() {
               doneFloor={doneFloor}
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
             </View>
             {/* the chooser as a snap slider — the exercise-widget rail's idiom:
                 one card ≈ 72% wide so the next path peeks in from the right,
@@ -853,6 +853,14 @@ export default function AuroraHome() {
             ) : null}
             {plan ? (
               <>
+                {/* NOT `fs.headline`, deliberately — hub-masthead.test.ts bans
+                    that rung anywhere in a hub screen, to stop one re-growing a
+                    title of its own. This is a CARD title, not the hub's head,
+                    so the ban is a false positive here; but the guard is
+                    load-bearing and a rename is not worth weakening it for.
+                    Left as a raw 22 and counted in the fontSize ratchet, which
+                    is the honest place for a site that has no rung it may
+                    name. */}
                 <Text style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, marginTop: 8 }}>{plan.planName}</Text>
                 {/* One anchor — "how far in" — carried by a thin bar, not four
                     overlapping restatements of the same position. */}
@@ -893,7 +901,7 @@ export default function AuroraHome() {
                       {liftsOpen && rows.slice(1).map((r, i) => <LiftRow key={i} r={r} i={i + 1} />)}
                       {many && liftsOpen && (
                         <Pressable onPress={() => setLiftsOpen(false)} hitSlop={6} style={{ marginTop: 12, alignSelf: "center" }}>
-                          <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.home.today.hideLifts")}</Text>
+                          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.today.hideLifts")}</Text>
                         </Pressable>
                       )}
                     </>
@@ -904,7 +912,7 @@ export default function AuroraHome() {
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
                     style={{ marginTop: 12, padding: 12, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: `${pa.fill}66` }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: 12, lineHeight: 16, color: C.ash }}><Text style={{ color: pa.text }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 16, color: C.ash }}><Text style={{ color: pa.text }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
                   </Pressable>
                 )}
                 {/* Primary action anchored at the BOTTOM of the plan card, below the note. */}
@@ -915,7 +923,7 @@ export default function AuroraHome() {
                     plan: on a plan the four "Train your way" cards aren't shown, so
                     this is the on-plan door to a saved routine (a session off-plan). */}
                 <Pressable onPress={() => setQuickStartOpen(true)} style={{ marginTop: 10, paddingVertical: 2, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 12, color: txt(C, C.violet) }}>⚡ {t("w.home.today.quickStartLink")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet) }}>⚡ {t("w.home.today.quickStartLink")}</Text>
                 </Pressable>
               </>
             ) : initialLoad ? (
@@ -1174,7 +1182,7 @@ export default function AuroraHome() {
             characters in PL/DE it would collide with the title on a phone. Same
             anatomy the rail's own built-in header uses. */}
         <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</Text>
         </View>
         <CoachRail onOpen={() => router.push("/coaches")} headerless bleed />
@@ -1244,7 +1252,7 @@ export default function AuroraHome() {
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}
             >
               <View style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: `${C.lime}2e`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: F.black, fontSize: 14, color: txt(C, C.lime) }}>✓</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✓</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
@@ -1281,7 +1289,7 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
       {/* path-accent glow blooming from the top-right corner (Go-Full anatomy) */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
-      <Text style={{ fontSize: 18, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
+      <Text style={{ fontSize: fs.title, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "tight") }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 16 }} />
@@ -1301,8 +1309,8 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
       {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: `${accent}0d` }]} />
       <LinearGradient pointerEvents="none" colors={[`${accent}2b`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
-      <Text style={{ fontSize: 15, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: 18, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text style={{ fontSize: fs.note, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
     </PressScale>

@@ -49,7 +49,7 @@ function Shell({ C, map, selectedGlow, t, children }: { C: Palette; map: Exercis
       {/* caption — the selected muscle, or the top mover by default */}
       <View style={{ alignItems: "center", marginTop: 6, minHeight: 20 }}>
         {shown ? (
-          <Text style={{ fontSize: 13, color: C.chalk }}>
+          <Text style={{ fontSize: fs.body, color: C.chalk }}>
             <Text style={{ fontFamily: F.bold }}>{shown.short}</Text>
             <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>{`   ${shown.pct}%`}</Text>
           </Text>
@@ -69,7 +69,7 @@ function Swatch({ C, label, opacity }: { C: Palette; label: string; opacity: num
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: C.lime, opacity, borderWidth: 1, borderColor: C.line }} />
-      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
     </View>
   );
 }

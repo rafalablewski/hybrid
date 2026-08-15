@@ -125,7 +125,7 @@ function NutrientCard({ stat, units }: { stat: NutrientStat; units: WeightUnit }
   return (
     <ACard style={{ marginTop: space.md }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md }}>
-        <Text accessibilityRole="header" maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.black, fontSize: 18, color: C.chalk, flexShrink: 1 }}>
+        <Text accessibilityRole="header" maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, flexShrink: 1 }}>
           {label}
         </Text>
         {stat.trend && stat.trend.direction !== "flat" ? (

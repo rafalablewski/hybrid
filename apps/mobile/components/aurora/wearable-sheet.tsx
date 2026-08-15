@@ -98,7 +98,7 @@ export default function WearableSheet({ explain, onClose }: {
 function Block({ C, head, children }: { C: Palette; head: string; children: ReactNode }) {
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: 15, color: C.chalk, marginBottom: 10 }}>{head}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, marginBottom: 10 }}>{head}</Text>
       {children}
     </View>
   );

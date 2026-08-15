@@ -1,7 +1,7 @@
 import { Component, type ReactNode } from "react";
 import { View, Text, ScrollView, Share, Platform } from "react-native";
 import { router, type ErrorBoundaryProps } from "expo-router";
-import { PressScale as Pressable } from "../lib/ui";
+import { fs, PressScale as Pressable } from "../lib/ui";
 
 // The render boundaries. In a production RN build, an uncaught render exception
 // unmounts the React tree → a blank white screen the user can only escape by
@@ -67,8 +67,8 @@ function detailOf(error: Error, componentStack?: string | null): string {
 function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: () => void; onLeave?: () => void }) {
   return (
     <View style={{ flex: 1, backgroundColor: INK, alignItems: "center", justifyContent: "center", padding: 28 }}>
-      <Text style={{ color: CHALK, fontSize: 20, fontWeight: "800", textAlign: "center" }}>Something went wrong</Text>
-      <Text style={{ color: ASH, fontSize: 14, textAlign: "center", marginTop: 10, lineHeight: 20 }}>
+      <Text style={{ color: CHALK, fontSize: fs.heading, fontWeight: "800", textAlign: "center" }}>Something went wrong</Text>
+      <Text style={{ color: ASH, fontSize: fs.bodyLg, textAlign: "center", marginTop: 10, lineHeight: 20 }}>
         This screen hit an unexpected error. Your saved data is safe.
       </Text>
 
@@ -81,7 +81,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
         // the latter (see apps/web/__tests__/screen-gutter.test.ts).
         contentContainerStyle={{ paddingVertical: 14, paddingHorizontal: 14 }}
       >
-        <Text selectable style={{ color: ASH, fontFamily: MONO, fontSize: 11, lineHeight: 17 }}>
+        <Text selectable style={{ color: ASH, fontFamily: MONO, fontSize: fs.micro, lineHeight: 17 }}>
           {detail}
         </Text>
       </ScrollView>
@@ -93,7 +93,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
           accessibilityLabel="Try again"
           style={{ backgroundColor: LIME, borderRadius: 999, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
         >
-          <Text style={{ color: INK, fontWeight: "800", fontSize: 15 }}>Try again</Text>
+          <Text style={{ color: INK, fontWeight: "800", fontSize: fs.note }}>Try again</Text>
         </Pressable>
         {!!onLeave && (
           <Pressable
@@ -102,7 +102,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
             accessibilityLabel="Back to Today"
             style={{ borderWidth: 1, borderColor: LINE, borderRadius: 999, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
           >
-            <Text style={{ color: CHALK, fontWeight: "700", fontSize: 15 }}>Back to Today</Text>
+            <Text style={{ color: CHALK, fontWeight: "700", fontSize: fs.note }}>Back to Today</Text>
           </Pressable>
         )}
       </View>
@@ -113,7 +113,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
         accessibilityLabel="Send the error details"
         style={{ marginTop: 14, minHeight: 44, justifyContent: "center", paddingHorizontal: 12 }}
       >
-        <Text style={{ color: ASH, fontFamily: MONO, fontSize: 12 }}>Send the details →</Text>
+        <Text style={{ color: ASH, fontFamily: MONO, fontSize: fs.caption }}>Send the details →</Text>
       </Pressable>
     </View>
   );

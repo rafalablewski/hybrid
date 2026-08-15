@@ -185,7 +185,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: pa.text }}>{t("train.aiCoach")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: pa.text }}>{t("w.home.today.unlockFullBtn")}</Text>
         </View>
-        <Text style={{ fontFamily: F.black, fontSize: 22, lineHeight: 25, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, lineHeight: 25, color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }} numberOfLines={3}>{t("train.aiLockedBlurb")}</Text>
       </ACard>
     </PressScale>
@@ -255,5 +255,5 @@ function ListRow({
 }
 
 function Chevron({ C }: { C: Palette }) {
-  return <Text style={{ fontFamily: F.reg, fontSize: 18, color: C.ash, opacity: 0.7 }}>›</Text>;
+  return <Text style={{ fontFamily: F.reg, fontSize: fs.title, color: C.ash, opacity: 0.7 }}>›</Text>;
 }

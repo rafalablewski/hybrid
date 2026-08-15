@@ -122,7 +122,7 @@ export default function AuroraOtherSports({
               paddingHorizontal: 10,
             }}
           >
-            <Text style={{ fontSize: 18, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
+            <Text style={{ fontSize: fs.title, color: C.ash }}>{expanded ? "−" : "＋"}</Text>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: C.ash, textAlign: "center", lineHeight: leading(fs.micro) }}>
               {expanded ? t("w.home.other.fewer") : t("w.home.other.all")} {expanded ? `−${rest}` : `+${rest}`}
             </Text>
@@ -166,12 +166,12 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
   const body = (
     <>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-        <Text style={{ fontSize: 13 }}>{lane.icon}</Text>
+        <Text style={{ fontSize: fs.body }}>{lane.icon}</Text>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{lane.sport}</Text>
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 26, letterSpacing: tracking.display, color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{lane.efforts}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
           {t("w.home.other.efforts")}
         </Text>
@@ -187,10 +187,10 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>
         {/* A held week reads as a duration too, so it brings its own units and
             the readout adds none — same figure the resting footer shows. */}
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: read?.best ? txt(C, C.lime) : C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: read?.best ? txt(C, C.lime) : C.ash }}>
           {read ? (read.unit ? `${read.value} ${read.unit}` : read.value) : time}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
           {read ? t("chart.weekOf").replace("{date}", fmtWeekDate(read.weekStart)) : ago(lane.lastAt)}
         </Text>
       </View>

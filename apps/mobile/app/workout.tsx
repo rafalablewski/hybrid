@@ -1467,12 +1467,12 @@ export default function Workout() {
                                 on the right. */}
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
                               {grip}
-                              <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
+                              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
                               </Text>
                               <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 8 }}>
                                 {prefs.restTimer && (
-                                  <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>
+                                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
                                     {t("w.train.blocks.rest")} {Math.floor(prefs.restSeconds / 60)}:{String(prefs.restSeconds % 60).padStart(2, "0")}
                                   </Text>
                                 )}
@@ -1488,8 +1488,8 @@ export default function Workout() {
                                       hitSlop={6}
                                       style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: set ? withAlpha(C.amber, 0.5) : C.line, backgroundColor: set ? withAlpha(C.amber, 0.1) : "transparent" }}
                                     >
-                                      <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: set ? txt(C, C.amber) : C.ash }}>{prefs.rpeAsRir ? "RIR" : "RPE"}</Text>
-                                      <Text style={{ fontFamily: F.monoBold, fontSize: 10, color: set ? txt(C, C.amber) : C.ash }}>{rpeShown || "–"}</Text>
+                                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: set ? txt(C, C.amber) : C.ash }}>{prefs.rpeAsRir ? "RIR" : "RPE"}</Text>
+                                      <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: set ? txt(C, C.amber) : C.ash }}>{rpeShown || "–"}</Text>
                                     </Pressable>
                                   );
                                 })()}
@@ -1544,7 +1544,7 @@ export default function Workout() {
                                   keyboardType="numeric"
                                   placeholder="0"
                                   placeholderTextColor={C.ash}
-                                  style={{ fontFamily: F.black, fontSize: 46, letterSpacing: trackFigure(46), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                  style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(46), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                 />
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{bw ? measureLabel : unitLabel}</Text>
                               </Pressable>
@@ -1559,7 +1559,7 @@ export default function Workout() {
                                       keyboardType="numeric"
                                       placeholder="0"
                                       placeholderTextColor={C.ash}
-                                      style={{ fontFamily: F.black, fontSize: 46, letterSpacing: trackFigure(46), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                      style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(46), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                     />
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{measureLabel}</Text>
                                   </Pressable>
@@ -1634,7 +1634,7 @@ export default function Workout() {
                   hitSlop={8}
                   style={{ flexDirection: "row", alignItems: "center", gap: 9, paddingVertical: 12, paddingHorizontal: 2, marginTop: 2 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: 16, lineHeight: 18, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>＋</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, lineHeight: 18, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>＋</Text>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: addSetIsNext(x.sets) ? C.chalk : C.ash }}>{t("workout.addSet")}</Text>
                 </Pressable>
                 {/* Popular-preset rail — one tap lays out the whole exercise. A
@@ -2108,11 +2108,11 @@ function ExerciseSheet({
             {/* Flat totals — big number over a small mono label, no boxes. */}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
               <View>
-                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t("workout.totalVolume")}</Text>
               </View>
               <View>
-                <Text style={{ fontFamily: F.black, fontSize: 26, letterSpacing: tracking.display, color: C.chalk }}>{setLine}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{setLine}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
               </View>
             </View>
@@ -2121,7 +2121,7 @@ function ExerciseSheet({
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 24, marginBottom: 12 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{`${t("workout.barSpeed")} (m/s)`}</Text>
               {ls.meanVel != null && (
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.chalk }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</Text>
               )}
             </View>
             {/* The chart IS the selector: each set is a column — value above its
@@ -2148,10 +2148,10 @@ function ExerciseSheet({
                         keyboardType="numeric"
                         placeholder="0.00"
                         placeholderTextColor={C.ash}
-                        style={{ fontFamily: F.monoBold, fontSize: 13, color: C.chalk, textAlign: "center", minWidth: 46, padding: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.chalk, 0.55), marginBottom: 6 }}
+                        style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk, textAlign: "center", minWidth: 46, padding: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.chalk, 0.55), marginBottom: 6 }}
                       />
                     ) : (
-                      <Text style={{ fontFamily: F.mono, fontSize: 11, color: v != null ? C.chalk : C.ash, marginBottom: 8 }}>{v != null ? String(v) : "–"}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: v != null ? C.chalk : C.ash, marginBottom: 8 }}>{v != null ? String(v) : "–"}</Text>
                     )}
                     <View style={{ alignSelf: "stretch", marginHorizontal: 10, height: h, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: on ? txt(C, C.lime) : v != null ? withAlpha(C.chalk, 0.4) : withAlpha(C.line, 1) }} />
                   </Pressable>
@@ -2763,12 +2763,12 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
         style={{ minHeight: 44, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 8, textAlignVertical: "top" }}
       />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: 11, color: C.ash }}>{t("w.train.note.mood-q")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.train.note.mood-q")}</Text>
         {MOODS.map((m) => {
           const on = mood === m.value;
           return (
             <Pressable key={m.value} onPress={() => setMood(on ? null : m.value)} accessibilityLabel={t(m.labelKey)} style={{ width: 32, height: 32, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: on ? `${C.lime}1a` : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
-              <Text style={{ fontSize: 15 }}>{m.emoji}</Text>
+              <Text style={{ fontSize: fs.note }}>{m.emoji}</Text>
             </Pressable>
           );
         })}
@@ -2779,7 +2779,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
           const k = tagLabelKey(tg.slug);
           return (
             <Pressable key={tg.slug} onPress={() => toggleTag(tg.slug)} style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5, backgroundColor: on ? C.lime : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: 11, color: on ? C.onAccent : C.ash }}>#{k ? t(k) : tg.slug}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: on ? C.onAccent : C.ash }}>#{k ? t(k) : tg.slug}</Text>
             </Pressable>
           );
         })}

@@ -237,7 +237,7 @@ export default function AuroraSideMenu({
                 style={{ flexDirection: "row", alignItems: "center", gap: 14, marginTop: 10, paddingVertical: 12, paddingHorizontal: 4 }}
               >
                 <View style={{ width: 24, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: 20, lineHeight: 22, color: C.ash }}>{toolsOpen ? "−" : "＋"}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.heading, lineHeight: 22, color: C.ash }}>{toolsOpen ? "−" : "＋"}</Text>
                 </View>
                 <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.ash }}>{t("nav.allTools")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{toolCount}</Text>
@@ -269,7 +269,7 @@ export default function AuroraSideMenu({
             >
               <View pointerEvents="none" style={{ position: "absolute", top: -50, right: -40, width: 150, height: 150, borderRadius: 75, backgroundColor: `${pa.fill}24` }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: pa.text }}>{t("w.home.pillnav.upgradeKicker")}</Text>
-              <Text style={{ fontFamily: F.black, fontSize: 20, color: C.chalk, marginTop: 6, letterSpacing: tracking.display }}>{t("nav.upgrade")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 6, letterSpacing: tracking.display }}>{t("nav.upgrade")}</Text>
               <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: pa.fill, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: pa.ink }}>{t("w.home.pillnav.goFull")}</Text>
               </View>

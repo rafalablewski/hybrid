@@ -57,7 +57,7 @@ function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: str
             const k = tagLabelKey(slug);
             return (
               <View key={slug} style={{ backgroundColor: `${C.lime}14`, borderWidth: 1, borderColor: `${C.lime}45`, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: 10, color: lime }}>#{k ? t(k) : slug}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime }}>#{k ? t(k) : slug}</Text>
               </View>
             );
           })}

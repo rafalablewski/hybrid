@@ -22,7 +22,7 @@ import { useTheme, txt } from "../../lib/theme";
 // touch (guarded by apps/web/__tests__/press-feedback.test.ts). `noScale` —
 // the pill already lives inside a parent that animates its width on selection,
 // and a second scale on the same node fights it.
-import { F, PressScale , tracking} from "../../lib/ui";
+import { fs, F, PressScale , tracking} from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
 import { GlassPillRow, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { withAlpha } from "./kit";
@@ -64,7 +64,7 @@ import { HubGlyph } from "./today-tabs";
 // permanently on screen while detached. RETURN's whole value is the motion, and
 // a control that vanishes without one has simply disappeared.
 
-const LABEL = { fontFamily: F.bold, fontSize: 14, letterSpacing: tracking.display } as const;
+const LABEL = { fontFamily: F.bold, fontSize: fs.bodyLg, letterSpacing: tracking.display } as const;
 
 /**
  * Drive the shared dock engine off the nav-scroll signal.

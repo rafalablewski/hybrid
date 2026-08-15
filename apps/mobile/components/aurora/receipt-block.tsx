@@ -56,7 +56,7 @@ export default function ReceiptBlock({
   // A supporting label, for the figures whose unit can't name them. Uppercase
   // mono — the house grammar for a label, and the only casing that is correct
   // in every language (lowercasing "Höhenmeter" would not be German).
-  const suffix = { fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash } as const;
+  const suffix = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash } as const;
 
   return (
     <View>
@@ -78,7 +78,7 @@ export default function ReceiptBlock({
           >
             {hero.figure}
           </Text>
-          {!!hero.unit && <Text style={{ fontFamily: F.bold, fontSize: 16, color: C.ash }}>{hero.unit}</Text>}
+          {!!hero.unit && <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.ash }}>{hero.unit}</Text>}
           {/* a hero whose unit can't name it (a bare count, a climb) keeps its label */}
           {!!hero.needsLabel && <Text style={suffix}>{t(hero.labelKey)}</Text>}
         </View>

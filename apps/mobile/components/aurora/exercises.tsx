@@ -113,7 +113,7 @@ export default function AuroraExercises() {
           style={{ paddingVertical: 12, paddingLeft: 12, paddingRight: 2 }}
         >
           {/* Amber TEXT tone, not the fill — the accent-text channel. */}
-          <Text style={{ fontSize: 15, color: on ? txt(C, C.amber) : C.ash, opacity: locked ? 0.25 : on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+          <Text style={{ fontSize: fs.note, color: on ? txt(C, C.amber) : C.ash, opacity: locked ? 0.25 : on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
         </PressScale>
       </View>
     );
@@ -155,7 +155,7 @@ export default function AuroraExercises() {
                   accessibilityState={{ selected: on }}
                   style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}
                 >
-                  <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                  <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                 </PressScale>
               );
             })}
@@ -174,7 +174,7 @@ export default function AuroraExercises() {
                     { v: `${summary.weekSessions}`, k: t("w.analyze.ex.weekSessions") },
                   ].map((s) => (
                     <View key={s.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-                      <Text style={{ fontFamily: F.black, fontSize: 18, letterSpacing: tracking.display, color: C.chalk }}>{s.v}</Text>
+                      <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{s.v}</Text>
                       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{s.k}</Text>
                     </View>
                   ))}
@@ -188,8 +188,8 @@ export default function AuroraExercises() {
               <View key={sec.bucket}>
                 {/* Explore's SectionHead — 18px black title, mono count at the baseline. */}
                 <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-                  <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: tracking.display, color: C.chalk }}>{t(sec.labelKey)}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, color: C.ash }}>{sec.entries.length}</Text>
+                  <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{t(sec.labelKey)}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{sec.entries.length}</Text>
                 </View>
                 <Card list={sec.entries} />
               </View>

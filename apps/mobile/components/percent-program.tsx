@@ -328,7 +328,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
 function WeekHeader({ title, right, C }: { title: string; right: string | null; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: tracking.display, color: C.chalk, flexShrink: 1 }}>{title}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
   );
@@ -405,7 +405,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: 16, letterSpacing: tracking.display, color: C.chalk }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk }} numberOfLines={1}>
             {day.title}
             {!!day.kindLabel && <Text style={{ color: C.ash }}> — {day.kindLabel}</Text>}
           </Text>
@@ -419,7 +419,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
         {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
         {expandable && (
           <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: open ? C.lime : withAlpha(C.chalk, 0.25), backgroundColor: open ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: 13, lineHeight: 15, color: open ? C.ink : C.ash }}>{open ? "−" : "+"}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.body, lineHeight: 15, color: open ? C.ink : C.ash }}>{open ? "−" : "+"}</Text>
           </View>
         )}
       </Pressable>
@@ -560,7 +560,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
             <View>
               <View style={{ flexDirection: "row", height: HDR_H, alignItems: "center", borderBottomWidth: 1, borderBottomColor: hair(C) }}>
                 {cols.map((c) => (
-                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: 10, textAlign: "center", color: C.ash }}>
+                  <Text key={c.load} style={{ width: MX_COL, fontFamily: F.mono, fontSize: fs.nano, textAlign: "center", color: C.ash }}>
                     {c.load}
                   </Text>
                 ))}

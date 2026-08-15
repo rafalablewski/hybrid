@@ -437,7 +437,7 @@ function Full({ top }: { top?: ReactNode }) {
                 return (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 12, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: withAlpha(tint, 0.12), borderWidth: 1, borderColor: withAlpha(tint, 0.34) }}>
                     <ReadinessFace feeling={adj.feeling} scale={0.5} />
-                    <Text style={{ fontFamily: F.monoBold, fontSize: 11, color: txt(C, tint) }}>{label}</Text>
+                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, tint) }}>{label}</Text>
                   </View>
                 );
               })()}

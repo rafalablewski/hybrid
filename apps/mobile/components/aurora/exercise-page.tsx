@@ -312,9 +312,9 @@ function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 16, paddingBottom: 6 }}>
       {slide.cells.map((cell, i) => (
         <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: 16, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash, letterSpacing: tracking.label }}>{i + 1}RM</Text>
-          <Text style={{ fontFamily: F.black, fontSize: 16, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{i + 1}RM</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
         </View>
       ))}
     </View>

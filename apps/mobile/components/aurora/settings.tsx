@@ -399,7 +399,7 @@ export default function AuroraSettings() {
               <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
             ) : (
               <LinearGradient colors={[C.lime, C.blue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: F.black, fontSize: 22, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
               </LinearGradient>
             )}
           </View>

@@ -178,7 +178,7 @@ export function UserRecipeShelf({
   return (
     <View style={[{ marginTop: space.xl }, style]}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, marginHorizontal: 2, marginBottom: space.xs }}>
-        <Text accessibilityRole="header" maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>
+        <Text accessibilityRole="header" maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>
           {t("w.recovery.nutrition.myRecipes")}
         </Text>
         {recipes.length > 0 ? (
@@ -332,7 +332,7 @@ export function UserRecipeEditor({
           placeholderTextColor={C.ash}
           accessibilityLabel={t("w.recovery.nutrition.recipeName")}
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ ...field, fontFamily: F.black, fontSize: 22 }}
+          style={{ ...field, fontFamily: F.black, fontSize: fs.headline }}
         />
         <TextInput
           value={recipe.note ?? ""}
@@ -355,7 +355,7 @@ export function UserRecipeEditor({
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
             <StepButton label="−" onPress={() => onChange(scaleRecipeTo(recipe, totals.servings - 1))} disabled={totals.servings <= 1} />
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.black, fontSize: 22, color: C.chalk, minWidth: 28, textAlign: "center", fontVariant: ["tabular-nums"] }}>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, minWidth: 28, textAlign: "center", fontVariant: ["tabular-nums"] }}>
               {totals.servings}
             </Text>
             <StepButton label="+" onPress={() => onChange(scaleRecipeTo(recipe, totals.servings + 1))} disabled={totals.servings >= MAX_RECIPE_SERVINGS} />
@@ -366,7 +366,7 @@ export function UserRecipeEditor({
       {/* INGREDIENTS */}
       <ACard style={{ marginTop: space.lg }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md }}>
-          <Text accessibilityRole="header" maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>
+          <Text accessibilityRole="header" maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>
             {t("w.recovery.nutrition.recipeIngredients")}
           </Text>
           {recipe.ingredients.length > 0 ? (

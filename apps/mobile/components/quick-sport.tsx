@@ -106,7 +106,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
         {suggested.map((name) => (
           <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
-            <Text style={{ fontSize: 26 }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
+            <Text style={{ fontSize: fs.display }}>{olympicSport(name)?.icon ?? "🏃"}</Text>
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{shortSport(name)}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label, marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
           </Pressable>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { F, PressScale as Pressable , tracking} from "../lib/ui";
+import { fs, F, PressScale as Pressable , tracking} from "../lib/ui";
 import { AuroraScreen, ACard, cardStack, ASearch } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -22,7 +22,7 @@ function Row({ p, onChanged, onOpen }: { p: PersonCard; onChanged: () => void; o
         <Avatar url={p.avatarUrl} name={p.displayName} handle={p.handle} size={42} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: C.chalk, fontFamily: F.bold }}>{p.displayName || `@${p.handle}`}{p.coachVerified ? <Text style={{ color: txt(C, C.lime) }}> ✓</Text> : null}</Text>
-          <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>@{p.handle}{p.reason ? ` – ${p.reason}` : p.isCoach ? ` – ${t("w.social.reasonCoach")}` : ""}</Text>
+          <Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.mono }}>@{p.handle}{p.reason ? ` – ${p.reason}` : p.isCoach ? ` – ${t("w.social.reasonCoach")}` : ""}</Text>
         </View>
       </Pressable>
       {rel !== "self" && (rel === "requested"
@@ -62,7 +62,7 @@ export default function DiscoverScreen() {
         <ACard style={cardStack}>{results.length === 0 ? <Empty title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { armPerson(h); if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
       ) : (
         <>
-          <Text style={{ color: C.ash, fontSize: 12, textTransform: "uppercase", letterSpacing: tracking.label, marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</Text>
+          <Text style={{ color: C.ash, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: tracking.label, marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</Text>
           <ACard style={cardStack}>{sugg.length === 0 ? <Empty title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { armPerson(h); if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
         </>
       )}

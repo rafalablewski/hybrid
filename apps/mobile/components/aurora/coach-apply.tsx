@@ -87,7 +87,7 @@ export default function AuroraCoachApply() {
                 {[1, 2, 3].map((n) => (
                   <View key={n} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 4 }}>
                     <View style={{ width: 20, height: 20, borderRadius: 6, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                      <Text style={{ fontFamily: F.black, fontSize: 11, color: C.onAccent }}>{n}</Text>
+                      <Text style={{ fontFamily: F.black, fontSize: fs.micro, color: C.onAccent }}>{n}</Text>
                     </View>
                     <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t(`w.account.settings.coach-step-${n}`)}</Text>
                   </View>

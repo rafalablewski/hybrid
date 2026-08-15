@@ -135,7 +135,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
   return (
     <>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 28, marginBottom: 10, marginHorizontal: 2 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 18, color: C.chalk }}>{t("w.recovery.nutrition.hubTitle")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.recovery.nutrition.hubTitle")}</Text>
       </View>
 
       {/* ── DIARY — the lead tile, target vs logged over the last week ── */}

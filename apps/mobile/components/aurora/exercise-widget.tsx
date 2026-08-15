@@ -104,7 +104,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
 }) {
   const h = headline(card, units, t);
   const stroke = kindStroke(C, card.kind);
-  const heroStyle = { fontFamily: F.mono, fontSize: 26, letterSpacing: tracking.display, color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk } as const;
   const open = () => {
     armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
     onOpen(card.name);
@@ -140,7 +140,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
         <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={[heroStyle, read?.best ? { color: txt(C, C.lime) } : null]}>
           {read ? read.value : h.v}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? read.unit : h.u}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? read.unit : h.u}</Text>
       </View>
       <View {...scrub.bind} style={{ marginTop: "auto" }}>
         <HistoryStrip bars={exerciseStripBars(card)} color={stroke} held={scrub.index} />
@@ -155,7 +155,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
           visual channel and the metric name the text one, so nothing
           here is colour-only. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: 10, color: C.ash }}>{read ? when : h.label}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? when : h.label}</Text>
         {!read && <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />}
       </View>
     </Pressable>
@@ -263,7 +263,7 @@ export default function ExerciseWidgetRail({
           accessibilityLabel={`${t("w.home.exw.addCard")} – ${t("w.home.exw.title")}`}
           style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
         >
-          <Text style={{ fontSize: 18, color: C.ash }}>＋</Text>
+          <Text style={{ fontSize: fs.title, color: C.ash }}>＋</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.addCard")}</Text>
         </Pressable>
         {/* THE SEE-ALL DOOR (#365's exit) — the shared RailTail, so this rail's
