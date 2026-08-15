@@ -41,7 +41,8 @@
  *            is for — so a scan carries its pack size with it.
  *   learned  What the athlete actually logs, over and over (`usualAmounts`).
  *            This is the answer for the deli counter and the homemade loaf,
- *            which no catalog has ever heard of.
+ *            which no catalog has ever heard of. NOT a `PortionSource`: see
+ *            the note at the end of this list.
  *   typed    They told us. Correct as a fallback, wrong as the only route.
  *
  * A LIST rather than one pack, because real foods have several: a cheese has a
@@ -69,11 +70,15 @@ import { parseServing, servingGrams, unitById, type Serving } from "./serving-un
 /** Where a portion came from. Kept ON the portion, because a size the catalog
  *  published and one the athlete corrected are not the same claim, and the tie
  *  between them has to break the same way every time. */
-export type PortionSource = "catalog" | "scanned" | "learned" | "typed";
+export type PortionSource = "catalog" | "scanned" | "typed";
 
 /** The athlete's own beats a scan, which beats what the catalog published: each
- *  step down is a step further from the pack actually in their hand. */
-const SOURCE_RANK: Record<PortionSource, number> = { typed: 3, scanned: 2, catalog: 1, learned: 0 };
+ *  step down is a step further from the pack actually in their hand.
+ *
+ *  THERE IS NO "learned" HERE, deliberately. A learned amount is not a named
+ *  portion — see the module note — so a fourth rank would be a value nothing
+ *  can ever hold, sitting in the type inviting somebody to write it. */
+const SOURCE_RANK: Record<PortionSource, number> = { typed: 3, scanned: 2, catalog: 1 };
 
 export interface FoodPortion {
   /** what to call it — "bottle", "slice", "tub". EMPTY means the generic pack,

@@ -84,7 +84,7 @@ describe("portionUnits — the units the editor offers", () => {
       serving: "100 g",
       portions: [
         { label: "block", size: 200, source: "catalog" },
-        { label: "slice", size: 25, source: "learned" },
+        { label: "slice", size: 25, source: "typed" },
       ],
     });
     expect(units.filter((u) => u.kind === "portion").map((u) => u.portionLabel)).toEqual(["slice", "block"]);
@@ -384,5 +384,16 @@ describe("formatAmount", () => {
     expect(formatAmount(35)).toBe("35");
     expect(formatAmount(0.35)).toBe("0.35");
     expect(formatAmount(1.5)).toBe("1.5");
+  });
+});
+
+describe("the sources that are actually reachable", () => {
+  it("has no source nothing can produce", () => {
+    // "learned" was in this union for one commit and nothing ever wrote it: a
+    // learned amount is a prefill, not a named portion. A value the type allows
+    // and no code can create is an invitation to write it by accident.
+    expect(parseFoodPortions([{ label: "x", size: 10, source: "learned" }])[0]!.source).toBe("typed");
+    expect(parseFoodPortions([{ label: "x", size: 10, source: "catalog" }])[0]!.source).toBe("catalog");
+    expect(parseFoodPortions([{ label: "x", size: 10, source: "scanned" }])[0]!.source).toBe("scanned");
   });
 });

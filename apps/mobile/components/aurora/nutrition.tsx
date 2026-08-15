@@ -775,13 +775,25 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   };
   // A phrase whose quantity could NOT be computed opens the portion editor
   // instead of logging a number nobody worked out.
-  const portionForQuickAdd = (m: QuickAddMatch) => openPortion({
-    name: m.candidate.name, subname: m.candidate.subname, subtitle: m.candidate.servingLabel,
-    serving: m.candidate.servingLabel,
-    kcal: m.candidate.facts.kcal, protein: m.candidate.facts.protein, carbs: m.candidate.facts.carbs, fat: m.candidate.facts.fat,
-    satFat: m.candidate.facts.satFat, sugar: m.candidate.facts.sugar, fiber: m.candidate.facts.fiber, salt: m.candidate.facts.salt,
-    verifiedId: m.candidate.verifiedId ?? undefined,
-  });
+  //
+  // A match that IS one of the saved foods is routed back through the product
+  // itself. The ranked candidate is a projection — it carries the macros and
+  // the serving weight, and not the portions or the row id — so opening the
+  // editor from it would drop the bottle unit and the "remember as the whole
+  // pack" control on the picker's own primary path, which is the one people
+  // actually use. Everything else opens on what the candidate holds.
+  const portionForQuickAdd = (m: QuickAddMatch) => {
+    const saved = products.find((x) => x.id === m.candidate.id);
+    if (saved) { logProduct(saved); return; }
+    openPortion({
+      name: m.candidate.name, subname: m.candidate.subname, subtitle: m.candidate.servingLabel,
+      serving: m.candidate.servingLabel,
+      servingGrams: m.candidate.servingGrams,
+      kcal: m.candidate.facts.kcal, protein: m.candidate.facts.protein, carbs: m.candidate.facts.carbs, fat: m.candidate.facts.fat,
+      satFat: m.candidate.facts.satFat, sugar: m.candidate.facts.sugar, fiber: m.candidate.facts.fiber, salt: m.candidate.facts.salt,
+      verifiedId: m.candidate.verifiedId ?? undefined,
+    });
+  };
 
   const logMeal = (m: SavedMealRow) => openPortion({ name: m.name, subname: m.subname, subtitle: m.subname || t("w.recovery.nutrition.savedMeal"), serving: `1 ${t("w.recovery.nutrition.serving")}`, kcal: m.kcal, protein: m.protein, carbs: m.carbs, fat: m.fat, satFat: m.satFat, sugar: m.sugar, fiber: m.fiber, salt: m.salt });
 
