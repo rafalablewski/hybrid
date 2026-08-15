@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { View, Text, Animated, PanResponder } from "react-native";
+import { View, Text, Animated, PanResponder, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
@@ -298,31 +298,6 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
   // flag printed "50 kcal left" at 2 050 logged.
   const isOver = left < 0;
   const tone = gap.kcal.over ? txt(C, C.amber) : C.chalk;
-  const macros = gap.macros.filter((m) => m.figure.want != null);
-  /**
-   * THE FOUR FIGURES OF THE DAY, as one list — energy first, then the macros
-   * that have a target. One list because they are drawn as one row: energy is
-   * not a different KIND of thing from protein here, it is the first of four
-   * answers to "how much of what I planned have I logged".
-   *
-   * `kcal` is the unit itself, not a translated noun: it is what every row of
-   * the list below this block already says, and it is the same word in all
-   * three locales. The macros keep their translated names.
-   *
-   * OVER is flagged on the ENERGY alone, in SAND — the hub's rule, and the one
-   * a macro's own full track already states without needing a colour. Carbs are
-   * DRAWN in sand, so a sand carb figure would say nothing anyway.
-   */
-  const ledger: { key: string; label: string; figure: GapFigure; fill: string; tone: string }[] = [
-    { key: "kcal", label: "kcal", figure: gap.kcal, fill: gap.kcal.over ? C.amber : C.lime, tone },
-    ...macros.map((m) => ({
-      key: m.key,
-      label: t(`w.recovery.nutrition.${m.key}`),
-      figure: m.figure,
-      fill: C[MACRO_FILL[m.key]],
-      tone: C.chalk,
-    })),
-  ];
   return (
     <View style={{ paddingHorizontal: PICKER_EDGE }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
@@ -353,61 +328,134 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
           </View>
         ) : null}
       </View>
-      {/* ── THE LEDGER — every logged figure in ONE line, in ONE form ────────
-          `KCAL 0/2325   PROTEIN 0/150   CARBS 0/250   FAT 0/70`.
+      {/* The day's four figures. The picker DROPS a macro nobody set a target
+          for: this block's subject is the gap, and a figure with nothing to be
+          short of has no place in it. (The diary keeps it — see MacroLedger.) */}
+      <MacroLedger C={C} figures={gap} onlyTargeted style={{ marginTop: space.ms }} />
+    </View>
+  );
+}
 
-          The day's energy used to be stated in a different vocabulary from its
-          own macros, one line apart: a SENTENCE ("0 of 2325 logged") over a
-          full-width track, then the three macros as `0/150` three-up. Same day,
-          same question — what is logged against what was planned — asked twice
-          in two forms, which reads as two unrelated readouts and makes the eye
-          do the conversion. Energy is simply the first column of the macro row
-          now, and every figure is `have/want`.
-
-          The head STACKS (label over figure) instead of taking AMeter's own
-          label-left/value-right row. That row is right at three columns and
-          impossible at four: the widest phone leaves ~75dp a column, and
-          "Protein 145/150" wants ~100 — so the shared head would have
-          ellipsised the label on every column carrying a three-digit target,
-          and "Kohlenhydrate" on all of them in German. The TRACK below each
-          figure is still the shared `AMeter`; only the readout above it is laid
-          out for four-up.
-
-          The ROW owns its top step, and it has to: the block's `space.ms` used
-          to arrive from the energy AMeter's own `marginTop`, and the first
-          thing under the hero figure is now a label rather than a track. Same
-          number, stated where it is decided. */}
-      <View style={{ flexDirection: "row", gap: space.md, marginTop: space.ms }}>
-        {ledger.map((item) => (
-          <View
-            key={item.key}
-            style={{ flex: 1 }}
-            // The four columns read as four figures, not as eight labels and
-            // four progress bars: each states its own sentence and the AMeter
-            // inside it is collapsed into that.
-            accessible
-            accessibilityLabel={`${item.label} – ${t("w.recovery.nutrition.pick.ofTarget")
-              .replace("{a}", String(Math.round(item.figure.have)))
-              .replace("{b}", String(Math.round(item.figure.want ?? 0)))}`}
+/**
+ * THE LEDGER — a day's figures in ONE line, in ONE form.
+ *
+ *     KCAL 1675/2325   PROTEIN 118/150   CARBS 186/250   FAT 52/70
+ *
+ * ── WHY IT IS ONE COMPONENT ────────────────────────────────────────────────
+ * Two screens show these four numbers, and they said them in three dialects.
+ * The picker stated energy as a SENTENCE ("1675 of 2325 logged") over a
+ * full-width track and the macros as a ratio three-up; the diary's day card
+ * said `P 118/150g` under single-letter labels, on a 4dp bar of its own, with
+ * energy split off again into a big mono figure with a slashed target. Same
+ * day, same question — how much of what I planned have I logged — asked three
+ * ways, which is how a reader ends up doing conversions the app should have
+ * done. There is one form now, and it lives here.
+ *
+ * ── THE HEAD STACKS, AND THAT IS A WIDTH FACT ──────────────────────────────
+ * `AMeter` draws its own head as one row (label left, value right). That is
+ * right at three columns and impossible at four: four columns leave ~80dp each
+ * on a 393dp phone and ~76 on an SE, while "Protein 118/150" wants ~102 — so
+ * the shared head would have ellipsised the label on every column carrying a
+ * three-digit target, and "Kohlenhydrate" on all of them in German. So the
+ * readout stacks and the TRACK stays the shared AMeter: only the head above it
+ * is laid out for four-up.
+ *
+ * ── THE FIGURE ROLLS ───────────────────────────────────────────────────────
+ * These are the numbers the picker exists to move — log a food and all four
+ * change under your thumb. The hero above them rolled, the meal total beside it
+ * rolled, the meter fills travelled, and the ledger jump-cut, so one event read
+ * as two. The whole `have/want` string goes through `RollingNumber`: only the
+ * changed digits travel, the "/" is punctuation and stays put, and a target
+ * that changes rolls too.
+ *
+ * ── A FIGURE WITH NO TARGET STILL HAPPENED ─────────────────────────────────
+ * `want: null` means nobody set a target, never that the target is zero. Such a
+ * column states the amount and draws NO track — a bar at 0 % reads as "you have
+ * eaten none of your carbs" when the truth is "you have no carb target". Which
+ * columns survive is the caller's call, and the two callers differ honestly:
+ * the picker is about the GAP so it drops them (`onlyTargeted`), the diary is a
+ * RECORD of the day so it keeps them.
+ */
+export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
+  C: ReturnType<typeof useTheme>["palette"];
+  /** the day's figures — `nutritionGap` (picker) or `nutritionFigures` (diary) */
+  figures: NutritionGap;
+  /** drop a macro that has no target instead of reporting the amount alone */
+  onlyTargeted?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { t } = useLang();
+  const macros = onlyTargeted ? figures.macros.filter((m) => m.figure.want != null) : figures.macros;
+  /**
+   * Energy first, then the macros — one list, because they are drawn as one
+   * row: energy is not a different KIND of thing from protein here, it is the
+   * first of four answers to the same question.
+   *
+   * `kcal` is the unit itself rather than a translated noun. It is what every
+   * food row on the picker already says, and it is the same word in all three
+   * locales; the macros keep their translated names.
+   *
+   * OVER is flagged on the ENERGY alone, in SAND — the hub's rule. A macro past
+   * its own target says so with a full track, and carbs are DRAWN in sand, so a
+   * sand carb figure would say nothing at all.
+   */
+  const items: { key: string; label: string; figure: GapFigure; fill: string; tone: string }[] = [
+    {
+      key: "kcal",
+      label: "kcal",
+      figure: figures.kcal,
+      fill: figures.kcal.over ? C.amber : C.lime,
+      tone: figures.kcal.over ? txt(C, C.amber) : C.chalk,
+    },
+    ...macros.map((m) => ({
+      key: m.key,
+      label: t(`w.recovery.nutrition.${m.key}`),
+      figure: m.figure,
+      fill: C[MACRO_FILL[m.key]],
+      tone: C.chalk,
+    })),
+  ];
+  return (
+    <View style={[{ flexDirection: "row", gap: space.md }, style]}>
+      {items.map((item) => (
+        <View
+          key={item.key}
+          style={{ flex: 1 }}
+          // A column reads as ONE figure, not as a label plus a number plus a
+          // progress bar: the AMeter inside is collapsed into this sentence.
+          // The retired "{a} of {b} logged" line lives on here, which is the
+          // one place a sentence beats a ratio.
+          accessible
+          accessibilityLabel={
+            item.figure.want == null
+              ? `${item.label} ${Math.round(item.figure.have)}`
+              : `${item.label} – ${t("w.recovery.nutrition.pick.ofTarget")
+                  .replace("{a}", String(Math.round(item.figure.have)))
+                  .replace("{b}", String(Math.round(item.figure.want)))}`
+          }
+        >
+          <Text
+            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            numberOfLines={1}
+            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
           >
-            <Text
+            {item.label}
+          </Text>
+          <View style={{ marginTop: space.xxs }}>
+            <RollingNumber
+              value={
+                item.figure.want == null
+                  ? String(Math.round(item.figure.have))
+                  : `${Math.round(item.figure.have)}/${Math.round(item.figure.want)}`
+              }
               maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              numberOfLines={1}
-              style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
-            >
-              {item.label}
-            </Text>
-            <Text
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
-              numberOfLines={1}
-              style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: item.tone, marginTop: space.xxs }}
-            >
-              {`${Math.round(item.figure.have)}/${Math.round(item.figure.want ?? 0)}`}
-            </Text>
-            <AMeter pct={item.figure.pct} color={item.fill} />
+              style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: item.tone }}
+            />
           </View>
-        ))}
-      </View>
+          {/* No target, no track. The amount is the whole statement. */}
+          {item.figure.want != null ? <AMeter pct={item.figure.pct} color={item.fill} /> : null}
+        </View>
+      ))}
     </View>
   );
 }
