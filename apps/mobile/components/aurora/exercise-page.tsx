@@ -26,7 +26,7 @@ import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub } from "./chart-scrub";
-import { AuroraScreen } from "./kit";
+import { AuroraScreen, ASegment } from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
 
@@ -672,15 +672,18 @@ export default function AuroraExercisePage() {
           lifts only; cardio/custom names render nothing). */}
       <AuroraExerciseAnatomy name={name} />
 
-      <View style={{ flexDirection: "row", gap: 16, marginTop: 16, paddingHorizontal: 2 }}>
-        {PERIODS.map((p) => {
-          const on = period === p.id;
-          return (
-            <Pressable key={p.id} onPress={() => setPeriod(p.id)} hitSlop={8} style={{ paddingVertical: 4, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: on ? C.chalk : C.ash }}>{t(p.key)}</Text>
-            </Pressable>
-          );
-        })}
+      {/* THE PERIOD — the window every figure below it is computed over, so it
+          is the most consequential control on the screen and it used to be the
+          quietest: four mono words at fs.micro on a 2dp chartreuse border, with
+          a 4dp tap height propped up by hitSlop. It is the shared segmented
+          control now, like the range switch on Statistics, which asks the same
+          question of the same data. */}
+      <View style={{ marginTop: 16, paddingHorizontal: 2 }}>
+        <ASegment
+          options={PERIODS.map((p) => ({ id: p.id, label: t(p.key) }))}
+          value={period}
+          onPick={setPeriod}
+        />
       </View>
 
       {/* HERO — one number, paired with the visible chart */}

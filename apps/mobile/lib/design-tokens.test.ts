@@ -541,29 +541,26 @@ describe("presentation", () => {
     expect(byHand).toEqual([]);
   });
 
-  it("RATCHET — the underline selection rule gives way to the shared control", () => {
+  it("HARD — the underline selection rule gives way to the shared control", () => {
     // THE SAME DEFECT, SPELLED WITHOUT THE ROLE — and the reason the rule above
     // is not the whole guard. A hand-drawn tab row that never sets
-    // `accessibilityRole` is invisible to it, and two survive: the period
-    // switches in `trends.tsx` and `exercise-page.tsx`. Both are a row of
-    // labels with a 2dp CHARTREUSE bottom border under the selected one, which
-    // is a segmented control with the track taken off, and the accent spent on
-    // a control that goes nowhere.
+    // `accessibilityRole` is invisible to it, and writing this one found two
+    // that nobody had counted: the period switches in `trends.tsx` and
+    // `exercise-page.tsx`. Both were a row of labels with a 2dp CHARTREUSE
+    // bottom border under the selected one — a segmented control with the track
+    // taken off, and the accent spent on a control that goes nowhere.
     //
-    // They are a ratchet rather than a HARD zero because neither is a straight
-    // swap: the Trends one shares a band row WITH ITS SECTION LABEL (label
-    // left, switch right — a head-level control, not a full-width switch), so
-    // dropping a track in changes that row's whole shape. That is a design
-    // decision, and a guard is not the place to make one.
+    // It shipped as a RATCHET at 2 for one honest reason: the Trends switch
+    // shares a band row WITH ITS SECTION LABEL, so dropping a track in changes
+    // that row's shape, and that is a design decision a guard has no business
+    // making. The decision was made — the label keeps its natural width, the
+    // track takes the rest of the row — so the ceiling is zero and this is HARD,
+    // exactly as the ratchet said it would be.
     //
     // The pattern is deliberately narrow — width 2 AND a colour ternary on the
     // same line — so it catches the SELECTED/not idiom and leaves plain 2dp
-    // dividers alone. When these two land, this graduates to HARD.
-    expectAtMost(
-      codeHits(/borderBottomWidth:\s*2\b[^\n]*borderBottomColor:[^\n]*\?/g),
-      2,
-      "underline selection rule → ASegment (or a deliberate head-level control)",
-    );
+    // dividers alone.
+    expect(codeHits(/borderBottomWidth:\s*2\b[^\n]*borderBottomColor:[^\n]*\?/g)).toEqual([]);
   });
 
   it("HARD — a COVER pads itself; no native SafeAreaView inside a fullScreenModal", () => {
