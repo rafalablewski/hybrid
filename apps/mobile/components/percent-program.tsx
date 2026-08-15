@@ -42,7 +42,7 @@ import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
-import { withAlpha, ASection, GUTTER, CARD_PAD } from "./aurora/kit";
+import { ACard, cardStack, withAlpha, ASection, GUTTER } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
 
@@ -183,10 +183,14 @@ export default function PercentProgram({
         <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} />
       </View>
 
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: CARD_PAD, marginBottom: 12 }}>
+      {/* ACard + cardStack. This spelled the kit's box out by hand with the
+          radius as a literal 28 and the run gap as a literal 12 — both are
+          tokens (RADIUS.card, cardStack), and neither copy could ever mount
+          the glass. See card-surface.test.ts. */}
+      <ACard style={cardStack}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{view.progression}</Text>
-      </View>
+      </ACard>
 
       <MeasuredOutcome planId={plan.id} />
 
@@ -281,9 +285,13 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
   const allProse = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
 
   if (allProse) {
-    const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, overflow: "hidden" as const, marginBottom: 12 };
     return (
-      <View style={card}>
+      /* A ROW-LIST CARD: the rows run to the card's own edges and carry their
+         own 16 inset plus the hairlines between them, so this one takes
+         `padding: 0` and keeps the clip. That pad is the only thing about it
+         that was ever bespoke — the fill, the hairline, the radius and the
+         run gap were all the kit's, written out. */
+      <ACard style={[cardStack, { padding: 0, overflow: "hidden" }]}>
         <WeekHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} />
         {days.map((day, di) => {
           const lifts = day.sessions.flatMap((s) => s.lifts);
@@ -300,7 +308,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
             </View>
           );
         })}
-      </View>
+      </ACard>
     );
   }
 
@@ -385,7 +393,12 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
   const words = dayLeadWords(day);
   const right = dayContentSummary(day);
   return (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, overflow: "hidden", marginBottom: 12 }}>
+    /* ACard, not APressCard: what presses here is the HEADER ROW, which
+       collapses back to a header when the day is open — the card itself is
+       not a tap target, and making it one would put the whole expanded day's
+       tables inside the press. Same row-list treatment as the week card
+       above: `padding: 0`, because every row already insets itself by 16. */
+    <ACard style={[cardStack, { padding: 0, overflow: "hidden" }]}>
       <Pressable
         disabled={!expandable}
         onPress={onToggle}
@@ -420,7 +433,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
           ))}
         </Collapse>
       )}
-    </View>
+    </ACard>
   );
 }
 
