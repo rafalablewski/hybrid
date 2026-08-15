@@ -30,7 +30,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
+import { ACard, APressCard, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -80,10 +80,12 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
   const prs = ctx.prs(s.id);
   const h = sessionHeadline(s, ctx.units, ctx.bw(s.startedAt));
   return (
-    <Pressable
-      onPress={() => ctx.onOpen(s.id)}
-      style={{ borderRadius: RADIUS.card, padding: CARD_PAD, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
-    >
+    /* APressCard — a card that IS the tap target, which is exactly the shape
+       ACard could not supply until this branch, and exactly why this one was
+       hand-drawn. It also gains an accessible NAME: the bare Pressable had
+       neither role nor label, so VoiceOver read the whole card's text as one
+       run and never announced it as a button. */
+    <APressCard onPress={() => ctx.onOpen(s.id)} a11yLabel={sessionTitleText(s.title, t)}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: -0.5, color: C.chalk }}>
         {h.value}
         <Text style={{ fontSize: fs.bodyLg, letterSpacing: 0, color: C.ash }}> {unitOf(h, t)}</Text>
@@ -97,7 +99,7 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
           </>
         )}
       </Text>
-    </Pressable>
+    </APressCard>
   );
 }
 
@@ -241,7 +243,10 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
   return (
     <View style={{ gap: 12, marginTop: 12 }}>
       {weeks.map((w) => (
-        <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, 0.3) : C.line }}>
+        /* The current week keeps its lime-tinted hairline — that is the one
+           value here that is genuinely this card's, so it is the one thing
+           passed. Everything else was the kit's, written out. */
+        <ACard key={w.startKey} style={w.isCurrent ? { borderColor: withAlpha(C.lime, 0.3) } : undefined}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
             {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: 1.2, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
@@ -293,7 +298,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
               </Pressable>
             );
           })}
-        </View>
+        </ACard>
       ))}
     </View>
   );
@@ -358,13 +363,17 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const hasData = ctx.sessions.length > 0;
   const maxVal = Math.max(1, ...buckets.buckets.map((b) => b.value));
 
-  const cardStyle = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD } as const;
+  /* `cardStyle` is gone: it was ACard's base style hoisted into a const and
+     spread into two Views, which is the copy one step further along — the
+     values were shared, so they looked deliberate, and neither shape could
+     mount the glass. Both are ACard now, and each passes only what is its
+     own. */
   const Mini = ({ label, value }: { label: string; value: string }) => (
     /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
-    <View style={{ ...cardStyle, flex: 1, padding: 16 }}>
+    <ACard style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: -0.5, marginTop: 4, color: C.chalk }}>{value}</Text>
-    </View>
+    </ACard>
   );
 
   return (
@@ -388,7 +397,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
         })}
       </View>
 
-      <View style={cardStyle}>
+      <ACard>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("w.analyze.stats.sessions")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
@@ -403,7 +412,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
             </View>
           ))}
         </View>
-      </View>
+      </ACard>
 
       <View style={{ flexDirection: "row", gap: 10 }}>
         <Mini label={t("w.analyze.stats.activeDays")} value={hasData ? String(buckets.activeDays) : "—"} />

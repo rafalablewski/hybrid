@@ -18,7 +18,7 @@ import {
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS } from "./kit";
+import { RADIUS, ASegment } from "./kit";
 import { CtaLabel } from "./cta-label";
 import ReceiptBlock from "./receipt-block";
 import { usePlanOverrides } from "../../lib/plan-overrides";
@@ -449,29 +449,35 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: day.status === "missed" ? txt(C, C.red) : C.ash, marginTop: 5, lineHeight: leading(fs.caption) }}>{t(`w.home.rail.${day.status}Note`)}</Text>
       ) : null}
 
-      {/* session toggle — an underlined text switch (no boxed segment), only when
-          the day holds more than one training. Label = time-of-day or "Training N". */}
+      {/* SESSION TOGGLE — only when the day holds more than one training.
+          Label = time-of-day, or "Training N" when the plan gives no clock.
+
+          It was an underlined text switch, on the reasoning that a boxed
+          segment inside a card is a second surface. Two things were wrong with
+          that. The rule was CHARTREUSE — the app's one "go" colour, on the one
+          control here that goes nowhere, while the card's real actions (Start,
+          Do it now) wear the same green a few rows below; and it was the last
+          hand-drawn tab row in the app, so this card changed its contents by a
+          gesture no other screen used.
+
+          It is `ASegment` on the shared track now, with `surface="card"`: the
+          track recesses into the card instead of sitting on it, because the
+          card is already ink2 and a raised track would have been invisible
+          against it. The rows below take a real step (12) rather than the 4
+          that only worked because an underline's descender pad was doing the
+          spacing. */}
       {multi && (
-        <View accessibilityRole="tablist" style={{ flexDirection: "row", gap: 20, marginTop: 16, marginBottom: 2 }}>
-          {sessions.map((s, i) => {
-            const on = i === activeIdx;
-            return (
-              <Pressable
-                key={i}
-                onPress={() => setActive(i)}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={sessionLabel(s, t)}
-                style={{ paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}
-              >
-                <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: on ? "600" : "400", letterSpacing: 0.9, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
-              </Pressable>
-            );
-          })}
+        <View style={{ marginTop: 16 }}>
+          <ASegment
+            surface="card"
+            options={sessions.map((s, i) => ({ id: String(i), label: sessionLabel(s, t) }))}
+            value={String(activeIdx)}
+            onPick={(v) => setActive(Number(v))}
+          />
         </View>
       )}
 
-      <View style={{ position: "relative", marginTop: multi ? 4 : 8 }}>
+      <View style={{ position: "relative", marginTop: multi ? 12 : 8 }}>
         {shown.map((r, i) => (
           <LiftRow key={i} C={C} r={r} showSession={!multi} first={i === 0} />
         ))}
