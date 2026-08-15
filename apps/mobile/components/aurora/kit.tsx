@@ -468,6 +468,20 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
  * `AuroraExerciseAvatar` (aurora/exercise-media) wraps this with the lift's mark
  * already inside; reach for the tile directly only when the CONTENT is something
  * else (a body map, a catalogue emoji).
+ *
+ * FOUR SIZES, AND NO FIFTH. The ladder is set by what the tile sits beside, so
+ * a new surface picks the rung its neighbours already use rather than measuring
+ * one of its own — which is how this drifted to six different boxes the first
+ * time:
+ *   40  a LIST ROW — the exercise picker, the Exercises browser, the pin sheet,
+ *       the Sports index, the quick-log sport picker.
+ *   36  a FULL-WIDTH CARD or SHEET HEADER — the logger's exercise card, the
+ *       Builder's block card, the quick-log sport sheet.
+ *   28  a COMPACT ROW — the exercise sheet's Order block.
+ *   24  a RAIL CARD's header, where the card itself is only 150–200 wide —
+ *       Today's exercise favourites and the Other-sports lanes.
+ * A SECTION HEAD takes none of them: a marker before a heading is the thing the
+ * no-decorative-dot rule exists to stop (see aurora/endurance-lanes).
  */
 export function AMarkTile({ size = 40, label, children, style }: {
   size?: number;
