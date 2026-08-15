@@ -5,8 +5,11 @@ import { fs, F } from "../lib/ui";
 // Grip handle — press and drag to reorder the row/card it sits in. Built on
 // PanResponder (no gesture-handler dep, matching SwipeRow). Its own responder is
 // created once; live callbacks are read through a ref so a parent re-render
-// mid-drag can't strand a stale closure. Shared by the live logger's exercise
-// cards + set rows and the Builder's block cards + set ledger.
+// mid-drag can't strand a stale closure. It belongs to the BUILDER (block cards
+// + set ledger) — the screen where a session is ARRANGED. The live logger used
+// to carry it too and no longer does: a grip at the head of every exercise card
+// and every set row advertised an arranging gesture on the screen where you DO
+// the session, and it read as a handle where the lift's own avatar belongs.
 export default function DragHandle({ onStart, onMove, onEnd, color, size = fs.subtitle }: {
   onStart: () => void;
   onMove: (dy: number) => void;

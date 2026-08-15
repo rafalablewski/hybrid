@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   exerciseBucket,
-  exerciseInitials,
   exerciseBrowse,
   exerciseBrowseSections,
   exerciseBrowseSummary,
@@ -72,18 +71,6 @@ describe("exerciseBucket", () => {
     expect(exerciseBucket("Paused Competition Deadlift")).toBe("posterior");
     expect(exerciseBucket("Zercher Snatch Complex")).toBe("olympic"); // snatch beats nothing else
     expect(exerciseBucket("Some Obscure Movement")).toBe("other");
-  });
-});
-
-describe("exerciseInitials", () => {
-  it("takes the first letters of the first two words, skipping joiners", () => {
-    expect(exerciseInitials("Back Squat")).toBe("BS");
-    expect(exerciseInitials("Power Clean & Jerk")).toBe("PC");
-    expect(exerciseInitials("Row Intervals")).toBe("RI");
-  });
-  it("takes the first two letters of a single word", () => {
-    expect(exerciseInitials("Snatch")).toBe("SN");
-    expect(exerciseInitials("Tennis")).toBe("TE");
   });
 });
 

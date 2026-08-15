@@ -5,7 +5,7 @@ import {
   activeDisciplines, enduranceLanes, orderLanes, nextLaneOrder, zonePercents,
   paceDelta, formatPaceDelta, paceDeltaArrow, paceTrendPoints, volumeBars, formatDisciplinePace,
   laneVolumeReading, lanePaceReading,
-  DISCIPLINE_META, LANE_CAP, ago, durationUnits, formatDuration,
+  LANE_CAP, ago, durationUnits, formatDuration,
   type CardioDiscipline, type EnduranceLane, type LaneOrder, type LoggedSession,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -221,9 +221,15 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
           compound labels per lane saying it card by card, and still ended up
           with four different windows in five cards. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>
-          {DISCIPLINE_META[lane.discipline].emoji} {t(lane.labelKey)}
-        </Text>
+        {/* NO MARK ON THIS ONE, and that is the rule rather than an omission.
+            The head above says it follows the Explore SectionHead grammar, and
+            that grammar's whole point is that nothing sits to the LEFT of the
+            title — a marker before a heading is what the no-decorative-dot rule
+            exists to stop. The sweep that gave every sport a square tile
+            therefore takes the discipline emoji OFF here instead of boxing it:
+            a tile before a section label would have been the same violation,
+            drawn more deliberately. The lane's own tiles carry the identity. */}
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t(lane.labelKey)}</Text>
         <Text
           numberOfLines={1}
           maxFontSizeMultiplier={FIXED_FONT_SCALE}

@@ -115,14 +115,14 @@ function todayFeelingOf(list: { weekOf: string; energy: number | null; sleep: nu
 }
 import { useRevalidate } from "../lib/queries";
 import ExercisePickerSheet from "../components/aurora/exercise-picker";
-import AuroraExerciseMedia from "../components/aurora/exercise-media";
+import { AuroraExerciseAvatar } from "../components/aurora/exercise-media";
 import { ArrowGlyph } from "../components/aurora/cta-label";
 import { RollingNumber } from "../components/aurora/rolling-number";
 import Sheet from "../components/aurora/sheet";
 import { useConfirm } from "../components/aurora/confirm";
 import { FeelPrompt } from "../components/feel-prompt";
 import SwipeRow from "../components/swipe-row";
-import DragHandle from "../components/drag-handle";
+import HoldDragRow from "../components/hold-drag-row";
 import { useDragReorder } from "../lib/use-drag-reorder";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
@@ -384,15 +384,17 @@ export default function Workout() {
   const [paused, setPaused] = useState(false);
   const pausedAt = useRef(0);
 
-  // Hold-and-drag reorder of exercise cards (the grip handle) — on the SHARED
-  // mechanic (lib/use-drag-reorder.ts), not the private copy it used to be.
-  // That copy predated the hook and was a near line-for-line duplicate of it
-  // (the same nearest-centre drop, the same pickup/commit haptics), so it
-  // silently missed both upgrades the hook has since received: the animated
-  // commit, so the app's LARGEST reorder was the one still teleporting its
-  // neighbours into their new slots, and the pickup lift. One group ("") — the
-  // exercise list is a single list.
-  const exDrag = useDragReorder((_g, from, to) => moveExerciseTo(from, to));
+  // NO GRIP ON THE CARDS. Reorder exists — it lives in the exercise sheet's
+  // Order block, where you HOLD a lift and drag it (ExerciseSheet below) — but
+  // nothing on this screen advertises it. The ⠿ used to sit at the head of every
+  // exercise card and every set row, ahead of the lift's own avatar, so the card
+  // header read as a handle rather than as the lift, and the ledger was indented
+  // for a gesture nobody reaches for mid-set. Moving it into the sheet costs a
+  // long-press to get there and buys back both columns.
+  //
+  // The card's long-press is what OPENS that sheet, which is also why a
+  // hold-and-drag could not simply be moved onto the cards themselves: the two
+  // gestures are the same gesture.
 
   const startedAt = useRef(new Date());
   const prior = useRef<LoggedSession[]>([]);
@@ -716,7 +718,9 @@ export default function Workout() {
     animateListChange(reducedMotion);
     setExercises((xs) => xs.filter((x) => x.uid !== u));
   };
-  // Drop reorder (hold the grip handle and drag): move from one index to another.
+  // Reorder — driven ONLY from the exercise sheet's Order block (hold a lift and
+  // drag it). The cards on the logger itself carry no handle: see the note by
+  // the drag comment above.
   const moveExerciseTo = (from: number, to: number) => setExercises((xs) => moveItemTo(xs, from, to));
   const rename = (u: string, name: string) =>
     setExercises((xs) =>
@@ -871,11 +875,6 @@ export default function Workout() {
     setRestNow(0);
     restFired.current = false;
   };
-  // Drag-to-reorder SET ROWS (grip on each row), grouped per exercise — a drag
-  // never crosses into another exercise's ledger.
-  const setDrag = useDragReorder(
-    (group, from, to) => setExercises((xs) => xs.map((x) => (x.uid === group ? { ...x, sets: moveItemTo(x.sets, from, to) } : x))),
-  );
 
   const pickRest = (sec: number) => {
     setRestTarget((cur) => (cur === sec ? null : sec));
@@ -1341,17 +1340,12 @@ export default function Workout() {
         })()}
 
         {exercises.map((x, xi) => {
-          const dragging = exDrag.dragKey === exDrag.key("", xi);
           return (
-          <Animated.View
-            key={x.uid}
-            onLayout={exDrag.onRowLayout("", xi)}
-            style={exDrag.rowStyle("", xi)}
-          >
+          <View key={x.uid}>
           {/* Press-and-hold anywhere on a strength card opens its exercise
               sheet (user-picked entry, review round 3). A bare long-press
               wrapper: taps still fall through to the card's own controls, and
-              interactive children (inputs, buttons, grips) own their touches. */}
+              interactive children (inputs, buttons) own their touches. */}
           <Pressable
             onLongPress={x.kind === "strength" ? () => {
               haptic.medium();
@@ -1361,19 +1355,18 @@ export default function Workout() {
           >
           <ACard style={cardStack}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: 10 }}>
-              <DragHandle onStart={() => exDrag.begin("", xi, exercises.length)} onMove={exDrag.move} onEnd={exDrag.end} color={dragging ? C.chalk : C.ash} />
-              {/* The lift's IMPLEMENT, tinted by modality — it carries both
-                  what the old mono "STRENGTH" word said (via the tint) and the
-                  gear it takes (via the drawing), and becomes the hand-drawn
-                  demo once that lift is drawn. */}
-              <View accessibilityRole="image" accessibilityLabel={x.kind}>
-                {/* Ash, not the modality tint. On a LIST that mixes kinds the
-                    tint is doing real work; here every card is the exercise
-                    you are doing and the fields below already say which kind
-                    it is — so it was just spending the accent. Chartreuse now
-                    appears once on this screen, on Log set. */}
-                <AuroraExerciseMedia name={x.name} variant="thumb" size={20} tint={C.ash} />
-              </View>
+              {/* The lift's SQUARE avatar (shared — exercise-media): it carries
+                  both what the old mono "STRENGTH" word said and the gear the
+                  lift takes, and becomes the hand-drawn demo once that lift is
+                  drawn. Square because a lift is a thing; a PERSON's avatar is
+                  the circle (social-kit `Avatar`).
+
+                  Ash, not the modality tint. On a LIST that mixes kinds the
+                  tint is doing real work; here every card is the exercise you
+                  are doing and the fields below already say which kind it is —
+                  so it was just spending the accent. Chartreuse appears once on
+                  this screen, on Log set. */}
+              <AuroraExerciseAvatar name={x.name} size={36} glyph={20} tint={C.ash} label={x.kind} />
               {ssLabels[xi] && (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
               )}
@@ -1441,19 +1434,11 @@ export default function Workout() {
                   const total = x.sets.length;
                   const planned = !addSetIsNext(x.sets); // a queue sits below → show "of N"
                   return x.sets.map((s, i) => {
-                    const lifted = setDrag.dragKey === setDrag.key(x.uid, i);
                     const focus = setFocus(x.sets, i);
                     const st = setType(s);
                     const typeAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
-                    const grip = (
-                      <DragHandle onStart={() => setDrag.begin(x.uid, i, x.sets.length)} onMove={setDrag.move} onEnd={setDrag.end} color={lifted ? C.chalk : C.ash} size={fs.note} />
-                    );
                     return (
-                      <Animated.View
-                        key={s.uid ?? i}
-                        onLayout={setDrag.onRowLayout(x.uid, i)}
-                        style={setDrag.rowStyle(x.uid, i)}
-                      >
+                      <View key={s.uid ?? i}>
                       <SwipeRow label={t("w.analyze.hist.delete")} onDelete={() => removeSet(x.uid, i)} background="transparent">
                         {focus === "active" ? (
                           // FLAT active section — no inner card (the exercise card
@@ -1462,11 +1447,9 @@ export default function Workout() {
                           // second border/tint. De-greened: the only lime left in
                           // the loop is the Log CTA itself.
                           <View style={{ paddingVertical: 12 }}>
-                            {/* Label row — grip on the left (matching the recede
-                                rows), kicker, planned-rest hint, then the type badge
-                                on the right. */}
+                            {/* Label row — kicker, planned-rest hint, then the
+                                type badge on the right. */}
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                              {grip}
                               <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 1.2, textTransform: "uppercase", color: C.ash }}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
                               </Text>
@@ -1604,7 +1587,6 @@ export default function Workout() {
                             // Quiet ledger row — a plain hairline-separated line,
                             // not a boxed mini-card (no card-in-card).
                             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6), opacity: focus === "done" ? 0.62 : 0.72 }}>
-                              {grip}
                               <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{setTypeBadge(s, i)}</Text>
                               <Pressable style={{ flex: 1 }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{summary}</Text>
@@ -1614,7 +1596,7 @@ export default function Workout() {
                           );
                         })()}
                       </SwipeRow>
-                      </Animated.View>
+                      </View>
                     );
                   });
                 })()}
@@ -1793,7 +1775,7 @@ export default function Workout() {
             )}
           </ACard>
           </Pressable>
-          </Animated.View>
+          </View>
           );
         })}
 
@@ -1875,10 +1857,12 @@ export default function Workout() {
           return (
             <ExerciseSheet
               x={x}
+              all={exercises}
               last={x ? (() => { const l = lastByLift.get(x.name); return l ? blockSummary(l) : undefined; })() : undefined}
               units={prefs.units}
               bodyweightKg={bodyweightKg}
               onVel={(u, i, v) => setSetField(u, i, "vel", v)}
+              onReorder={moveExerciseTo}
               onClose={() => setSheetUid(null)}
               t={t}
             />
@@ -2063,23 +2047,32 @@ export default function Workout() {
  */
 function ExerciseSheet({
   x,
+  all,
   last,
   units,
   bodyweightKg,
   onVel,
+  onReorder,
   onClose,
   t,
 }: {
   x: WExercise | null;
+  /** The whole board — the Order block reorders it, the rest reads only `x`. */
+  all: WExercise[];
   last?: string;
   units: WeightUnit;
   bodyweightKg?: number | null;
   onVel: (u: string, i: number, v: string) => void;
+  onReorder: (from: number, to: number) => void;
   onClose: () => void;
   t: (k: string) => string;
 }) {
   const C = useTheme().palette;
   const [sel, setSel] = useState(0);
+  const reduced = useReducedMotion();
+  // The drag's own commit animates inside the hook; the a11y actions below go
+  // straight to onReorder, so they animate here.
+  const exDrag = useDragReorder((_g, from, to) => onReorder(from, to));
   // Re-anchor the selection to the active (first un-banked) set whenever the
   // sheet opens for a different exercise.
   const anchored = useRef<string | null>(null);
@@ -2174,9 +2167,78 @@ function ExerciseSheet({
       })()
     : null;
 
+  /**
+   * ORDER — the board, reordered by HOLDING a lift and dragging it.
+   *
+   * Reorder used to live on the logger itself, as a ⠿ at the head of every
+   * exercise card and every set row: a handle in front of the lift's own name,
+   * on the screen where you are training rather than arranging. It was dropped
+   * with the grips, and this is where it comes back — one place, one list, and
+   * no chrome on the cards behind it. There is nothing to reorder unless the
+   * session has two lifts, so below that the block does not exist.
+   *
+   * The rows are deliberately INERT: a mark, a position, a name, a set count.
+   * Nothing here is tappable, which is exactly what lets the whole row be the
+   * handle (see components/hold-drag-row). The lift you opened the sheet on
+   * reads in chalk so you can see where you are in the order you are changing.
+   */
+  const order = x && all.length > 1
+    ? (
+      <View style={{ marginTop: 28 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 6 }}>
+          <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: 18, letterSpacing: -0.3, color: C.chalk }}>{t("workout.orderTitle")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: 0.9, color: C.ash }}>{all.length}</Text>
+        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, lineHeight: leading(fs.micro, "snug"), marginBottom: 10 }}>{t("workout.orderHint")}</Text>
+        {all.map((e, i) => {
+          const here = e.uid === x.uid;
+          const nudge = (dir: -1 | 1) => {
+            const to = i + dir;
+            if (to < 0 || to >= all.length) return;
+            animateListChange(reduced);
+            haptic.selection();
+            onReorder(i, to);
+          };
+          return (
+            <HoldDragRow
+              key={e.uid}
+              drag={exDrag}
+              index={i}
+              count={all.length}
+              accessible
+              accessibilityLabel={`${exDrag.slotOf("", i) + 1}. ${e.name}`}
+              accessibilityActions={[
+                { name: "moveUp", label: t("workout.moveUp") },
+                { name: "moveDown", label: t("workout.moveDown") },
+              ]}
+              onAccessibilityAction={(ev) => nudge(ev.nativeEvent.actionName === "moveUp" ? -1 : 1)}
+              // Opaque, because a lifted row travels OVER its neighbours: the
+              // sheet's own panel colour, so at rest it is invisible.
+              style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 10, paddingHorizontal: 2, backgroundColor: C.ink2 }}
+            >
+              {/* The PREVIEWED position, not the current one: while a card is
+                  held the list has already parted around it, and a row sitting
+                  in the slot the gap opened while still printing its old number
+                  contradicts the gap beside it. */}
+              <Text style={{ width: 16, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{exDrag.slotOf("", i) + 1}</Text>
+              <AuroraExerciseAvatar name={e.name} size={28} />
+              <Text numberOfLines={1} style={{ flex: 1, fontFamily: here ? F.bold : F.reg, fontSize: fs.bodyLg, color: here ? C.chalk : C.ash }}>{e.name}</Text>
+              {e.kind === "strength" && (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
+                  {`${e.sets.length} ${t("workout.setsWord")}`}
+                </Text>
+              )}
+            </HoldDragRow>
+          );
+        })}
+      </View>
+    )
+    : null;
+
   return (
     <Sheet visible={!!x} onClose={onClose} title={x?.name} sub={last ? `${t("workout.lastTime")} – ${last}` : undefined}>
       {body}
+      {order}
     </Sheet>
   );
 }
