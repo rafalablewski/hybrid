@@ -226,7 +226,43 @@ const newPackKey = () => `pk${++packKeySeq}`;
 const packRow = (p: FoodPortion): CreatePack => ({ key: newPackKey(), size: formatAmount(p.size), label: p.label, source: p.source });
 
 const BLANK_CREATE_FORM = {
-  name: "", subname: "", serving: "", unit: "gram",
+  name: "",
+  subname: "",
+  /**
+   * 100, NOT BLANK — the number a food label is actually written per, and the
+   * one this module's own doctrine uses as its example ("a food saved the way a
+   * label is written — Kefir, 100 g, 50 kcal", core/portion.ts).
+   *
+   * Blank was not a neutral default, it was a broken one. The serving row still
+   * DISPLAYED "per 1 Grams" through the field's placeholder, but every reader of
+   * the serving guarded on the text being non-empty — so a fresh form had no
+   * measure, which meant THE PACKS BLOCK DID NOT RENDER AT ALL until a number
+   * was typed into a field that already looked filled in. The one flow that
+   * exists to record a pack at creation time could not reach the control.
+   *
+   * It was wrong on the way out too: a food saved without touching the field
+   * went to the database as the column default "1 serving" while the screen had
+   * said grams, so it arrived with no measure and could never be weighed or
+   * carry a pack — the screen and the store describing two different foods.
+   */
+  serving: "100",
+  /**
+   * "g", THE REGISTRY ID — not "gram", which is only an ALIAS.
+   *
+   * `unitById` (what `composeServingLabel` and the form's own `unitLabel` both
+   * call) matches ids exactly; the alias table is read by `parseServing`, on the
+   * way IN from free text. So the default resolved to nothing at both ends: the
+   * serving row printed the raw string ("per 1 gram", where every other unit
+   * prints a symbol), and the composer fell through to its `serving` fallback
+   * and stored "1 serving". Every food created without opening the unit picker
+   * was therefore saved as a COUNT — no measure, so it could never be weighed,
+   * and no measure means no pack, on a screen whose whole subject is packs.
+   *
+   * Picking Grams by hand always worked, because the picker writes ids straight
+   * off SERVING_UNITS. Only the default was wrong, which is why it survived: the
+   * one path nobody clicks through when testing the thing they just built.
+   */
+  unit: "g",
   kcal: "", carbs: "", protein: "", fat: "",
   satFat: "", sugar: "", fiber: "", salt: "",
   // The containers this comes in, and what to call each — so the whole bottle
@@ -289,7 +325,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const [quickLog, setQuickLog] = useState(false); // the Quick Log sheet
   // Create form (blend: title plate + macro hero) — one form for a PRODUCT or a
   // MEAL. Name + the personal Subname on the plate; serving + unit (products
-  // only) compose the stored servingLabel, e.g. 100 + "gram" → "100 gram".
+  // only) compose the stored servingLabel, e.g. 100 + "g" → "100 g".
   const [createMode, setCreateMode] = useState<"product" | "meal">("product");
   const [createForm, setCreateForm] = useState(BLANK_CREATE_FORM);
   // The label panel is OPTIONAL and folded away by default — most foods a user
@@ -1001,8 +1037,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
    * blocking on its own affordance.
    */
   const createPortions = (): FoodPortion[] | null => {
-    const label = createForm.serving.trim() ? composeServingLabel(createForm.serving, createForm.unit) : null;
-    if (!label || !portionMeasure({ serving: label })) return null;
+    const label = composeServingLabel(createForm.serving, createForm.unit);
+    if (!portionMeasure({ serving: label })) return null;
     const out: FoodPortion[] = [];
     for (const p of createForm.packs) {
       const size = parsePackSize(p.size);
@@ -1025,7 +1061,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const macros = useComps
       ? { kcal: compTotals.kcal || undefined, protein: compTotals.protein, carbs: compTotals.carbs, fat: compTotals.fat }
       : { kcal: num(createForm.kcal) || undefined, protein: num(createForm.protein), carbs: num(createForm.carbs), fat: num(createForm.fat) };
-    const serving = createForm.serving.trim();
+
     // A BLANK panel field stays undefined, not 0 — leaving "sugars" empty means
     // "I don't know", and writing a zero there would invent a fact.
     const opt = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n >= 0 ? n : undefined; };
@@ -1036,8 +1072,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // though ounces convert exactly. An ASSUMED (volume) conversion is
     // deliberately not stored: writing a guessed weight into the measured
     // field would make it indistinguishable from one somebody weighed.
-    const composedLabel = serving ? composeServingLabel(serving, createForm.unit) : undefined;
-    const derivedGrams = composedLabel ? servingGramsOf(parseServing(composedLabel)) : null;
+    // ALWAYS composed, so what the serving row SHOWS is what the row stores. It
+    // used to be skipped when the field was blank, which sent the food to the
+    // database as the column default "1 serving" while the screen had said
+    // grams — a food that arrived with no measure and could never be weighed or
+    // carry a pack. `composeServingLabel` reads a blank as the 1 the field's own
+    // placeholder displays.
+    const composedLabel = composeServingLabel(createForm.serving, createForm.unit);
+    const derivedGrams = servingGramsOf(parseServing(composedLabel));
     const servingGrams = derivedGrams && !derivedGrams.assumed ? derivedGrams.grams : undefined;
     // EDITING: the same fields, through PATCH, so the row keeps its id and every
     // recipe ingredient pointing at it keeps working. The food's catalog and
@@ -2466,9 +2508,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // size below is stated in. A food whose serving is a bare count ("1 slice")
     // has none, and is not asked how big its pack is: the answer would have no
     // unit to be in (core/portion.ts).
-    const createMeasure = portionMeasure({
-      serving: createForm.serving.trim() ? composeServingLabel(createForm.serving, createForm.unit) : null,
-    });
+    // Composed UNCONDITIONALLY. `composeServingLabel` already reads a blank or
+    // unparseable quantity as 1 — the same 1 the field shows as its placeholder
+    // — so guarding on the text being non-empty only made the block vanish while
+    // the row above it still read "per 1 Grams".
+    const createMeasure = portionMeasure({ serving: composeServingLabel(createForm.serving, createForm.unit) });
     const compList = compQuery.trim() ? products.filter((p) => p.name.toLowerCase().includes(compQuery.trim().toLowerCase()) || (p.subname ?? "").toLowerCase().includes(compQuery.trim().toLowerCase())) : products;
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
