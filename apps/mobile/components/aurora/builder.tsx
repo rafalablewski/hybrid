@@ -85,9 +85,12 @@ export default function AuroraBuilder() {
   // pushes down move together, rather than the new one appearing fully formed
   // in space that was already made for it. (The reorder commit gets this from
   // useDragReorder, which animates every reorderable list in the app.)
-  const add = (name: string, kind?: BlockKind) => {
+  const add = (name: string, kind?: BlockKind) => addMany([{ name, kind }]);
+  /** The picker's queue: a whole block of a routine in one commit. */
+  const addMany = (picks: { name: string; kind?: BlockKind }[]) => {
+    if (!picks.length) return;
     animateListChange(reducedMotion);
-    b.addExercise(name, kind);
+    for (const p of picks) b.addExercise(p.name, p.kind);
     setPicker(false);
   };
   const removeRoutine = (id: string) => {
@@ -155,6 +158,7 @@ export default function AuroraBuilder() {
         visible={picker}
         onClose={() => setPicker(false)}
         onPick={(name, kind) => add(name, kind)}
+        onPickMany={(picks) => addMany(picks)}
         title={t("w.train.builder.pickExercise")}
       />
 

@@ -16,3 +16,26 @@ export const FUNNEL = {
 } as const;
 
 export type FunnelEvent = (typeof FUNNEL)[keyof typeof FUNNEL];
+
+/**
+ * Search events. These exist to answer ONE question the app cannot otherwise
+ * see: which words do athletes use that the search does not know? A query that
+ * finds nothing looks, from the outside, exactly like a query for something
+ * that does not exist — and the athlete's next move (typing a custom exercise
+ * name) is where their own history quietly splits in two.
+ *
+ * Both carry the raw query, trimmed. They are the only events in the app that
+ * do, and it is deliberate: the words ARE the finding. The local backlog
+ * (@hybrid/core search-misses) is what makes this useful before a provider is
+ * wired, since track() no-ops until then.
+ */
+export const SEARCH = {
+  /** A real query matched nothing. props: { client, query } */
+  miss: "search_miss",
+  /** A movement was created by hand instead of picked. props: { client, query } */
+  customAdd: "search_custom_add",
+  /** The cross-app search ran. props: { client, results } */
+  global: "search_global",
+} as const;
+
+export type SearchEvent = (typeof SEARCH)[keyof typeof SEARCH];

@@ -1,6 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { View, Text, TextInput, ScrollView, KeyboardAvoidingView } from "react-native";
 import {
+  buildExerciseIndex,
+  searchExerciseIndex,
   olympicSport,
   olympicSportsByCategory,
   suggestedSports,
@@ -10,6 +12,7 @@ import {
   cardioPace,
   cardioDiscipline,
   type LoggedSession,
+  type OlympicSport,
 } from "@hybrid/core";
 import { createSession } from "../lib/api";
 import { saveGuestSession } from "../lib/guest";
@@ -18,7 +21,7 @@ import { useLang } from "../lib/i18n";
 import { fs, space, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
-import { APill, AMarkTile } from "./aurora/kit";
+import { APill, ASearch, AMarkTile } from "./aurora/kit";
 import { DeviceMark } from "./aurora/device-mark";
 import { DeviceImportSheet } from "./device-import";
 import { healthKitAvailability } from "../lib/healthkit";
@@ -68,12 +71,42 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
   const { session: account } = useSession();
   const canImport = !!account && healthKitAvailability() !== "wrong-platform";
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return olympicSportsByCategory()
-      .map((g) => ({ ...g, sports: q ? g.sports.filter((s) => s.name.toLowerCase().includes(q)) : g.sports }))
-      .filter((g) => g.sports.length > 0);
-  }, [query]);
+  // BROWSE is grouped by category; SEARCH is one ranked list. Same engine as the
+  // exercise picker (@hybrid/core ranked-search) — this used to be its own
+  // `name.includes(q)`, which is why "swiming" or "bike" found nothing here
+  // while the picker two screens away handled both.
+  const groups = useMemo(() => olympicSportsByCategory().filter((g) => g.sports.length > 0), []);
+  const index = useMemo(
+    () => buildExerciseIndex(groups.flatMap((g) => g.sports.map((s) => s.name))),
+    [groups],
+  );
+  // The sports this athlete actually logs lead the list, exactly as their lifts
+  // do in the exercise picker.
+  const uses = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const s of sessions) for (const b of s.blocks) if (olympicSport(b.name)) out[b.name] = (out[b.name] ?? 0) + 1;
+    return out;
+  }, [sessions]);
+  const results = useMemo(
+    () => (query.trim() ? searchExerciseIndex(index, query, { limit: 30, uses }).map((h) => olympicSport(h.name)!).filter(Boolean) : []),
+    [query, index, uses],
+  );
+
+  const pickSport = (name: string) => { setPickerOpen(false); setQuery(""); setSheetSport(name); };
+  // A searched row has lost its category heading, so it carries its own: the
+  // distance unit where there is one, else the sport's family.
+  const sportHint = (s: OlympicSport) => (sportTracksDistance(s.name) ? sportDistanceUnit(s.name) : s.category);
+  const sportRow = (s: OlympicSport, hint: string) => (
+    <Pressable key={s.name} onPress={() => pickSport(s.name)} accessibilityRole="button" accessibilityLabel={s.name}
+      style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
+      {/* The same 40dp square the exercise picker's rows wear — this sheet is
+          that sheet's twin (pick a sport / pick a lift), and it had been the one
+          drawing bare glyphs. */}
+      <AMarkTile><Text style={{ fontSize: 17 }}>{s.icon}</Text></AMarkTile>
+      <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{s.name}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{hint}</Text>
+    </Pressable>
+  );
 
   const card = { flexGrow: 1, flexBasis: "45%", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 16 } as const;
 
@@ -127,32 +160,27 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text>
               </Pressable>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 16 }}>
-              <AuroraIcon name="search" size={18} color={C.ash} />
-              <TextInput value={query} onChangeText={setQuery} placeholder={t("w.home.quickSport.search")} placeholderTextColor={C.ash} autoFocus style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }} />
-            </View>
+            <ASearch
+              value={query}
+              onChange={setQuery}
+              placeholder={t("w.home.quickSport.search")}
+              autoFocus
+              onSubmit={() => { const top = results[0]; if (top) pickSport(top.name); }}
+            />
             {/* paddingVertical only — the Sheet's own bottom pad sits below. */}
-            <ScrollView style={{ flex: 1, marginTop: 6 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8 }}>
-              {filtered.map((g) => (
-                <View key={g.category} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
-                  {g.sports.map((s) => {
-                    const hint = sportTracksDistance(s.name) ? sportDistanceUnit(s.name) : g.category;
-                    return (
-                      <Pressable key={s.name} onPress={() => { setPickerOpen(false); setQuery(""); setSheetSport(s.name); }} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 11, paddingHorizontal: 4 }}>
-                        {/* Same 40dp square the exercise picker's rows wear —
-                            this sheet is that sheet's twin (pick a sport / pick
-                            a lift) and had been the one drawing bare glyphs. */}
-                        <AMarkTile><Text style={{ fontSize: 17 }}>{s.icon}</Text></AMarkTile>
-                        <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{s.name}</Text>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{hint}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              ))}
-              {filtered.length === 0 && (
-                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 28 }}>No sports match “{query}”.</Text>
+            <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={{ paddingVertical: 8 }}>
+              {query.trim() ? (
+                results.map((s) => sportRow(s, sportHint(s)))
+              ) : (
+                groups.map((g) => (
+                  <View key={g.category} style={{ marginBottom: 6 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: 1.2, marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
+                    {g.sports.map((s) => sportRow(s, sportHint(s)))}
+                  </View>
+                ))
+              )}
+              {query.trim() !== "" && results.length === 0 && (
+                <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, textAlign: "center", marginTop: 28 }}>{t("w.train.picker.noMatch")}</Text>
               )}
             </ScrollView>
       </Sheet>
