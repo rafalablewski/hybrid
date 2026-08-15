@@ -14,15 +14,22 @@ import { olympicSport } from "./olympic-sports";
 // one line and it is wrong in four separate ways, all of which an athlete meets
 // within the first three seconds of adding a lift:
 //
-//  1. NO RANK. Typing "deadlift" returned all eleven deadlifts in catalog order,
-//     with the plain barbell Deadlift somewhere in the middle. The one lift the
-//     query names must be the first row, every time.
-//  2. ONE CONTIGUOUS STRING. "db bench" matched nothing, because no name
-//     contains that substring — while "DB Bench Press" sits right there. Tokens
-//     must match independently, in any order.
-//  3. NO VOCABULARY. Athletes type "rdl", "ohp", "bp", "pullups", "dumbell".
-//     None of those are substrings of anything. They are also what people
-//     actually type.
+//  1. NO RANK — the order was alphabetical-within-section, i.e. an accident.
+//     "curl" put Barbell Curl SEVENTH, behind Reverse Curl, Reverse Wrist Curl,
+//     Wrist Curl, Lying Leg Curl and Nordic Curl. "press" put Overhead Press
+//     TWENTIETH of 29. Where the right lift did come first ("deadlift",
+//     "squat") it was luck of the alphabet, not relevance. The lift the query
+//     names must be the first row, every time — and the other ten deadlifts
+//     have to be ordered too, or the list is just as hard to read.
+//  2. ONE CONTIGUOUS STRING. "bench db" found nothing (order mattered);
+//     "dumbbell bench" found only Incline Dumbbell Bench Press and missed
+//     DB Bench Press (the catalog spells the implement both ways); "trap bar"
+//     missed Trap-Bar Deadlift, on a hyphen. Tokens must match independently,
+//     in any order, through punctuation.
+//  3. NO VOCABULARY. "rdl", "ohp", "bp", "t2b", "military press", "pullups",
+//     "bent over row", "hamstrings" — every one of them returned NOTHING, or
+//     (worse) the wrong lift: "rdl" found only Single-Leg RDL and never the
+//     Romanian Deadlift it stands for. They are also what people actually type.
 //  4. NO SLACK. One transposed letter ("deadlfit") produced an empty list and an
 //     offer to create a custom exercise called "deadlfit" — a dead end that
 //     silently pollutes the log with a junk movement name.

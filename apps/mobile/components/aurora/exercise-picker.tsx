@@ -68,9 +68,11 @@ function shapeHint(name: string, kind: BlockKind): string {
  *     up to 60 rows were re-created as raw elements (no component identity, so
  *     nothing could bail out), and a spring LayoutAnimation was queued before
  *     each character's setState. Typing "deadlift" queued eight of them.
- *  3. THE ANSWER WAS NOT AT THE TOP. `name.includes(q)` in catalog order gave
- *     eleven deadlifts with the plain barbell Deadlift somewhere in the middle,
- *     and no help at all for "db bench", "rdl", "pullups" or a typo.
+ *  3. THE ANSWER WAS NOT AT THE TOP. `name.includes(q)` ordered results
+ *     alphabetically-within-section, i.e. by accident: "curl" put Barbell Curl
+ *     seventh, "press" put Overhead Press twentieth of 29. And it found nothing
+ *     at all for "rdl", "ohp", "pullups", "hamstrings" or a typo, nothing for
+ *     "bench db" (order mattered), and the wrong lift for "dumbbell bench".
  *
  * What replaces it:
  *
