@@ -749,12 +749,14 @@ export async function createFoodProduct(
   }
 }
 
-// Amend a saved food — today, the portions it comes in. A food already in the
-// pantry has to be able to gain a portion WITHOUT being deleted and recreated:
-// a new id breaks every recipe ingredient pointing at the old one.
+// Amend a saved food. Editing has to be possible AT ALL: delete-and-recreate
+// mints a new id and breaks every recipe ingredient pointing at the old one, so
+// without this a typo in a serving label was permanent for anything a recipe
+// used. Only the keys sent are changed.
 export async function updateFoodProduct(
   id: string,
-  patch: { portions?: FoodPortion[] },
+  patch: { name?: string; subname?: string | null; servingLabel?: string; servingGrams?: number | null; portions?: FoodPortion[] }
+    & Partial<MicroFacts> & { kcal?: number; protein?: number; carbs?: number; fat?: number },
 ): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products/${id}`, {

@@ -18,6 +18,7 @@ import {
   portionUnits,
   parseFoodPortions,
   usualAmounts,
+  usualLogPortion,
 } from "./portion";
 
 /** The kefir on the shelf: a 100 g label, a 400 g bottle the catalog knows about. */
@@ -406,5 +407,24 @@ describe("the sources that are actually reachable", () => {
     expect(parseFoodPortions([{ label: "x", size: 10, source: "learned" }])[0]!.source).toBe("typed");
     expect(parseFoodPortions([{ label: "x", size: 10, source: "catalog" }])[0]!.source).toBe("catalog");
     expect(parseFoodPortions([{ label: "x", size: 10, source: "scanned" }])[0]!.source).toBe("scanned");
+  });
+});
+
+describe("usualLogPortion — what a one-tap ⊕ should write", () => {
+  const usual = { amount: 35, unit: "g", times: 4 };
+
+  it("logs the habit, converted to the diary's quantity", () => {
+    expect(usualLogPortion({ serving: "100 g" }, usual))
+      .toEqual({ qty: 0.35, amount: 35, amountUnit: "g" });
+  });
+
+  it("has nothing to say without a habit", () => {
+    expect(usualLogPortion({ serving: "100 g" }, null)).toBeNull();
+  });
+
+  it("declines when the food's measure moved out from under the habit", () => {
+    // The serving was edited from grams to a bare count, or to millilitres.
+    expect(usualLogPortion({ serving: "1 slice" }, usual)).toBeNull();
+    expect(usualLogPortion({ serving: "250 ml" }, usual)).toBeNull();
   });
 });

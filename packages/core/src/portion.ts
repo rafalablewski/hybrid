@@ -512,6 +512,27 @@ export function usualAmounts(
     .slice(0, opts?.limit ?? 3);
 }
 
+/**
+ * The habit, ready to log — what a one-tap ⊕ should actually write for a food
+ * the athlete keeps weighing.
+ *
+ * Null when there is no habit, or when the food's measure has moved out from
+ * under it (its serving was edited from grams to a count, say). Falling back to
+ * "one serving" in that case is deliberate and happens in the caller: a tap
+ * that logged nothing because the amount could not be converted would be a
+ * control that silently stopped working.
+ */
+export function usualLogPortion(
+  food: PortionFood,
+  usual: UsualAmount | null | undefined,
+): { qty: number; amount: number; amountUnit: string } | null {
+  if (!usual) return null;
+  const measure = portionMeasure(food);
+  if (!measure || measure.unit !== usual.unit || measure.perServing <= 0) return null;
+  const qty = round(usual.amount / measure.perServing, 4);
+  return qty > 0 ? { qty, amount: usual.amount, amountUnit: usual.unit } : null;
+}
+
 /** Accent-folded, case-folded — the same fold the pantry and the picker apply,
  *  so "Twaróg" and "twarog" are one food here too. */
 const foldPortionName = (s: string): string =>

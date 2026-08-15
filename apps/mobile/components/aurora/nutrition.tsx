@@ -40,7 +40,7 @@ import {
   unitById,
   portionUnits, portionUnit, portionMeasure, portionQty, portionAmount, portionStep, portionEquivalent,
   loggedPortionOf, loggedAmountLabel, loggedAmountShown, stepLoggedPortion, rescaleLoggedAmount,
-  parseFoodPortions, dedupePortions, usualAmounts, MAX_FOOD_PORTIONS,
+  parseFoodPortions, dedupePortions, usualAmounts, usualLogPortion, MAX_FOOD_PORTIONS,
   formatAmount, parsePackSize, type PortionUnit, type FoodPortion,
   trainingEnergyOnDay,
   localDayKey,
@@ -251,7 +251,39 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // `name` seeds the form from the picker's unmatched query: the door says
   // "New food: zupa", so arriving at an empty Name field would be the screen
   // forgetting the word it just quoted back.
-  const openCreate = (mode: "product" | "meal", name = "") => { setCreateMode(mode); setMealComps([]); setCreateForm({ ...BLANK_CREATE_FORM, name }); setView("create"); };
+  const openCreate = (mode: "product" | "meal", name = "") => { setCreateMode(mode); setMealComps([]); setEditingProduct(null); setCreateForm({ ...BLANK_CREATE_FORM, name }); setView("create"); };
+
+  // ── EDITING A SAVED FOOD — the same form, prefilled, saving with PATCH.
+  //    A second form would drift from the first (the de-clutter pass deleted an
+  //    inline builder for exactly that reason), and delete-and-recreate is not
+  //    an option: a new id breaks every recipe ingredient pointing at the old
+  //    one. So a typo in a serving label used to be permanent for any food a
+  //    recipe used.
+  const [editingProduct, setEditingProduct] = useState<FoodProductRow | null>(null);
+  const openEditProduct = (p: FoodProductRow) => {
+    const parsedServing = parseServing(p.servingLabel);
+    const num = (v: number | null | undefined) => (v == null ? "" : String(v));
+    setCreateMode("product");
+    setMealComps([]);
+    setEditingProduct(p);
+    setCreateForm({
+      name: p.name, subname: p.subname ?? "",
+      // The serving is stored as text and read back through the same parser
+      // that wrote it, so the form reopens on the quantity and unit the athlete
+      // actually chose rather than on a re-guess of their label.
+      serving: String(parsedServing.qty),
+      unit: parsedServing.unit ?? "serving",
+      kcal: num(p.kcal), carbs: num(p.carbs), protein: num(p.protein), fat: num(p.fat),
+      satFat: num(p.satFat), sugar: num(p.sugar), fiber: num(p.fiber), salt: num(p.salt),
+      // The pack fields edit the food's TYPED portion; catalog and scanned ones
+      // are not shown here, because this form is where the athlete states what
+      // they know and not where they overwrite what the database published.
+      packSize: (() => { const own = parseFoodPortions(p.portions).find((x) => x.source === "typed"); return own ? formatAmount(own.size) : ""; })(),
+      packLabel: parseFoodPortions(p.portions).find((x) => x.source === "typed")?.label ?? "",
+    });
+    setShowPanelFields([p.satFat, p.sugar, p.fiber, p.salt].some((v) => v != null));
+    setView("create");
+  };
   // Add a saved product to the meal being composed (or bump its serving count if
   // already added); remove / re-count keep the summed macros in sync.
   const addMealComp = (p: FoodProductRow) => setMealComps((xs) => {
@@ -649,6 +681,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     () => portion ? usualAmounts(logs, portion.name) : [],
     [logs, portion],
   );
+  /** The one amount a food is usually logged at — what the pantry row prints
+   *  beside its ⊕, and what that ⊕ then writes. */
+  const usualFor = useCallback(
+    (f: { name: string }) => usualAmounts(logs, f.name)[0] ?? null,
+    [logs],
+  );
 
   // Record a portion from the amount on screen — the athlete weighed the tub
   // once, and from now on it is one tap. The LAST of the four sources (the
@@ -858,7 +896,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const submitCreateFood = async () => {
     if (!createForm.name.trim()) return;
     const isMeal = createMode === "meal";
-    if (isMeal ? !canSaveAnotherMeal : !canSaveAnotherProduct) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
+    // An EDIT is not a new save, so it never meets the free cap: the cap gates
+    // how many foods you keep, not whether you may fix one you already have.
+    if (!editingProduct && (isMeal ? !canSaveAnotherMeal : !canSaveAnotherProduct)) { onUpgrade ? onUpgrade() : router.push("/upgrade"); return; }
     const num = (v: string) => { const n = parseFloat(v); return Number.isFinite(n) && n > 0 ? n : 0; };
     const subname = createForm.subname.trim() || undefined;
     // A meal composed from products takes its macros from the summed components;
@@ -881,6 +921,27 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const composedLabel = serving ? composeServingLabel(serving, createForm.unit) : undefined;
     const derivedGrams = composedLabel ? servingGramsOf(parseServing(composedLabel)) : null;
     const servingGrams = derivedGrams && !derivedGrams.assumed ? derivedGrams.grams : undefined;
+    // EDITING: the same fields, through PATCH, so the row keeps its id and every
+    // recipe ingredient pointing at it keeps working. The food's catalog and
+    // scanned portions are carried through untouched — this form states what the
+    // athlete knows, it does not overwrite what the database published.
+    if (editingProduct) {
+      const own = typedCreatePortion();
+      const kept = parseFoodPortions(editingProduct.portions).filter((x) => x.source !== "typed");
+      const ok = await updateFoodProduct(editingProduct.id, {
+        name: createForm.name.trim(), subname: subname ?? null,
+        servingLabel: composedLabel, servingGrams: servingGrams ?? null,
+        portions: dedupePortions([...kept, ...own]),
+        ...macros, ...panelFields,
+      });
+      if (!ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return; }
+      setEditingProduct(null);
+      setCreateForm(BLANK_CREATE_FORM);
+      setShowPanelFields(false);
+      loadLibrary();
+      setFoodTab("personal"); setView("add");
+      return;
+    }
     const res = isMeal
       ? await createSavedMeal({ name: createForm.name.trim(), subname, ...macros, ...panelFields })
       : await createFoodProduct({
@@ -1019,11 +1080,22 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // the tap for the food you eat the same way every time.
   const logOneServing = async (p: FoodProductRow) => {
     setFoodMsg("");
+    // THE HABIT, IF THERE IS ONE. A food this athlete has weighed the same way
+    // three times or more logs THAT, not a serving they have never once eaten —
+    // and the row says "usually 35 g" beside the ⊕, so the tap does what the
+    // line above it claims. No habit, or a food whose measure has moved out
+    // from under it, falls back to the one serving this always logged.
+    const habit = usualLogPortion(
+      { serving: p.servingLabel, servingGrams: p.servingGrams, portions: parseFoodPortions(p.portions) },
+      usualFor(p),
+    );
     const ok = await logEntry({
       name: p.name, subname: p.subname, source: mealType,
       kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat,
       satFat: p.satFat, sugar: p.sugar, fiber: p.fiber, salt: p.salt,
-      verifiedId: p.verifiedId, qty: 1,
+      verifiedId: p.verifiedId,
+      qty: habit?.qty ?? 1,
+      amount: habit?.amount ?? null, amountUnit: habit?.amountUnit ?? null,
     });
     if (ok) { setFoodMsg(t("w.recovery.nutrition.recipeLogged").replace("{v}", partLabel(mealType))); loadLogs(); refetch(); revalidate.recovery(); }
   };
@@ -1680,6 +1752,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               facts={{ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }}
               per100={per100g({ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }, portion.servingGrams)}
             />
+            {/* EDITING THE FOOD ITSELF, from the sheet that just showed you it
+                was wrong. A door, not a card: it leaves for the form. */}
+            {portion.productId ? (
+              <Pressable
+                onPress={() => { const p = products.find((x) => x.id === portion.productId); setPortion(null); if (p) openEditProduct(p); }}
+                accessibilityRole="button"
+                style={{ alignSelf: "center", marginTop: 14, paddingVertical: 4 }}
+              >
+                <CtaLabel label={`${t("w.recovery.nutrition.pt.editThisFood")} →`} color={C.ash} fontSize={fs.nano} font={F.mono} style={{ textTransform: "uppercase", letterSpacing: 0.9 }} />
+              </Pressable>
+            ) : null}
             <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
               {portion.offFood ? <Pressable onPress={() => { const ff = portion.offFood; setPortion(null); if (ff) saveFood(ff); }} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.saveToFoods")}</Text></Pressable> : null}
               <Pressable onPress={commitPortion} style={{ flex: 1, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, alignItems: "center" }}><Text style={{ fontFamily: F.mono, fontWeight: "700", fontSize: fs.body, color: C.onAccent }}>{t("w.recovery.nutrition.logToMeal").replace("{meal}", partLabel(mealType))}</Text></Pressable>
@@ -2080,8 +2163,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const compList = compQuery.trim() ? products.filter((p) => p.name.toLowerCase().includes(compQuery.trim().toLowerCase()) || (p.subname ?? "").toLowerCase().includes(compQuery.trim().toLowerCase())) : products;
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
-        {screenHead(isMeal ? t("w.recovery.nutrition.createMeal") : t("w.recovery.nutrition.createFood"), () => setView("add"), {
-          right: (
+        {screenHead(editingProduct ? t("w.recovery.nutrition.pt.editFood") : isMeal ? t("w.recovery.nutrition.createMeal") : t("w.recovery.nutrition.createFood"), () => { setEditingProduct(null); setView("add"); }, {
+          // No label-scan while EDITING: that control overwrites the form from a
+          // photo, which is the opposite of the gesture somebody makes when they
+          // have opened a food to correct one field of it.
+          right: editingProduct ? undefined : (
             <Pressable onPress={scanIntoCreate} accessibilityLabel={t(scanning ? "w.recovery.nutrition.scanning" : "w.recovery.nutrition.scanLabel")} hitSlop={8} style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}>
               <Glyph name="scan" size={19} color={pa.text} strokeWidth={5} />
             </Pressable>
@@ -2202,7 +2288,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         ) : null}
 
         <Pressable onPress={submitCreateFood} style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, backgroundColor: C.lime, borderRadius: 999, paddingVertical: 16, marginTop: 28 }}>
-          <IPlus size={18} color={C.onAccent} strokeWidth={2.4} /><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{isMeal ? t("w.recovery.nutrition.saveMeal") : t("w.recovery.nutrition.saveProduct")}</Text>
+          <IPlus size={18} color={C.onAccent} strokeWidth={2.4} /><Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{editingProduct ? t("w.recovery.nutrition.pt.saveChanges") : isMeal ? t("w.recovery.nutrition.saveMeal") : t("w.recovery.nutrition.saveProduct")}</Text>
         </Pressable>
 
         <Sheet visible={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")}>
@@ -3165,6 +3251,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         onSearchOpen={setPantrySearch}
         onLogOne={logOneServing}
         onOpen={logProduct}
+        usualFor={usualFor}
         onDelete={askDeleteProduct}
         onCreate={() => canSaveAnotherProduct ? openCreate("product") : (onUpgrade ? onUpgrade() : router.push("/upgrade"))}
         canCreate={canSaveAnotherProduct}
