@@ -15,7 +15,7 @@ export default function AuroraWelcome() {
     <AuroraScreen scroll={false} center>
       <View style={{ alignItems: "center", marginBottom: 40 }}>
         <AuroraMark size={72} />
-        <AHeading style={{ marginTop: 28, textAlign: "center", fontSize: 32 }}>
+        <AHeading rank="cover" style={{ marginTop: 28, textAlign: "center" }}>
           {t("welcome.aurora.headline")}
         </AHeading>
         <ASub style={{ marginTop: 12, textAlign: "center" }}>

@@ -18,7 +18,7 @@ import { track } from "../../lib/track";
 import { leading, fs, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { APill, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
+import { APill, AuroraScreen, ACard, RADIUS, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
 import type { AuroraIconName } from "@hybrid/core";
@@ -70,16 +70,18 @@ export default function AuroraTrain() {
   const prescribedDone = isAthlete && !!doneToday;
 
   return (
-    <AuroraScreen>
-      {/* THE HEAD, and nothing under it. Performance and Feed state their title
-          and go straight to the content; Train used to slip an intro paragraph
-          between the title and today's session, which is the one screen where a
-          sentence of instruction earns its place least — the hero below it says
-          "Start session" on a button. The heading takes no size override either,
-          so it sits on the hero's `title` rung (AHeading → fs.display) exactly
-          as the other two screens' heads do. */}
-      <AHeading>{t("train.title")}</AHeading>
-
+    // THE HEAD IS THE HERO SYSTEM'S, as it is on Performance and Feed. Train
+    // hand-rolled its own — an AHeading with a typed 28 that opted out of the
+    // rung the kit computes — and then slipped an intro paragraph between the
+    // title and today's session. That is the one screen where a sentence of
+    // instruction earns its place least: the card directly below it carries a
+    // "Start session" button. Both are gone, and handing the shell over buys
+    // the collapse track and the rail Train was the last root screen without.
+    //
+    // `back={false}` because Train is a ROOT tab: the rail keeps its leading
+    // slot empty rather than drawing a pop button with nothing under it, and
+    // the title's y is identical to a pushed screen's either way.
+    <AuroraScreen hero={{ rank: "title", title: t("train.title") }} back={false}>
       {/* Resume a workout left in progress — kept above the adaptive slot. */}
       {draft && (
         <ACard style={{ marginTop: 16 }}>
@@ -149,11 +151,14 @@ export default function AuroraTrain() {
       </View>
 
       {/* Build a reusable routine. */}
+      {/* NO FOOTNOTE. This trailed a line promising the summary "lands in
+          History and on the web for the deep dive" — a web client retired in
+          Aug 2026, so it sent athletes somewhere that no longer exists, in
+          three languages. It was also the same restatement the intro was: the
+          screen ends on the control, not on prose about what happens next. */}
       <PressScale onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>＋ {t("train.buildRoutine")}</Text>
       </PressScale>
-
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12, lineHeight: leading(fs.caption, "relaxed") }}>{t("train.finishedNote")}</Text>
     </AuroraScreen>
   );
 }
