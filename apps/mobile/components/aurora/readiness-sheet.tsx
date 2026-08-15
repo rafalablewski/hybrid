@@ -178,13 +178,16 @@ function Row({ C, row, t }: { C: Palette; row: ReadingInput; t: (k: string) => s
 /** One line of the arithmetic. The result line takes the rule and the weight. */
 function Step({ C, step, t }: { C: Palette; step: ReadingStep; t: (k: string) => string }) {
   const color = step.total ? C.chalk : C.ash;
-  const weight = step.total ? ("700" as const) : ("400" as const);
+  // The FACE carries the weight — see freshness-sheet's twin of this Step, and
+  // lib/ui.tsx `F`: each mono face is its own family, so a `fontWeight` on top
+  // of one asks for a weight that family does not hold.
+  const face = step.total ? F.monoBold : F.mono;
   return (
     <>
       {step.total ? <View style={{ height: 1, backgroundColor: C.line }} /> : null}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: weight, color }}>{t(step.key)}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: weight, color }}>{printValue(step.value, step.unit)}</Text>
+        <Text style={{ flex: 1, fontFamily: face, fontSize: fs.caption, color }}>{t(step.key)}</Text>
+        <Text style={{ fontFamily: face, fontSize: fs.caption, color }}>{printValue(step.value, step.unit)}</Text>
       </View>
     </>
   );

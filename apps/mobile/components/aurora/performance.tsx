@@ -354,7 +354,7 @@ function Full({ top }: { top?: ReactNode }) {
                   {t("w.home.cockpit.capability").replace("{n}", String(capability.weeks))}
                 </Text>
                 {capability.pct !== null && (
-                  <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.subtitle, fontWeight: "700", color: txt(C, capability.pct >= 0 ? C.lime : C.amber) }}>
+                  <Text style={{ marginLeft: "auto", fontFamily: F.monoBold, fontSize: fs.subtitle, color: txt(C, capability.pct >= 0 ? C.lime : C.amber) }}>
                     {capability.pct > 0 ? "+" : ""}{capability.pct}%
                   </Text>
                 )}
@@ -437,7 +437,7 @@ function Full({ top }: { top?: ReactNode }) {
                 return (
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 12, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: withAlpha(tint, 0.12), borderWidth: 1, borderColor: withAlpha(tint, 0.34) }}>
                     <ReadinessFace feeling={adj.feeling} scale={0.5} />
-                    <Text style={{ fontFamily: F.mono, fontSize: 11, fontWeight: "600", color: txt(C, tint) }}>{label}</Text>
+                    <Text style={{ fontFamily: F.monoBold, fontSize: 11, color: txt(C, tint) }}>{label}</Text>
                   </View>
                 );
               })()}
@@ -458,7 +458,7 @@ function Full({ top }: { top?: ReactNode }) {
                       {t(verdictReadiness.doorKey).replace("{n}", String(verdictReadiness.deficit))}
                     </Text>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.chalk }}>
+                      <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.chalk }}>
                         {t(readinessReasonsKey(verdictReadiness.reasons)).replace("{n}", String(verdictReadiness.reasons))}
                       </Text>
                       <AuroraIcon name="chevron-down" size={12} color={C.ash} style={whyOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
@@ -668,7 +668,7 @@ function LedgerRow({
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
       <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: swatch ?? "transparent" }} />
       <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: strong ? C.chalk : C.ash }} numberOfLines={2}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: strong ? "700" : "400", color: strong ? C.chalk : tint ?? C.ash }}>{value}</Text>
+      <Text style={{ fontFamily: strong ? F.monoBold : F.mono, fontSize: fs.caption, color: strong ? C.chalk : tint ?? C.ash }}>{value}</Text>
     </View>
   );
 }

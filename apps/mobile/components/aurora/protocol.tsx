@@ -263,7 +263,7 @@ export function InjurySheet({
         {t("w.injury.protocolNote")}
       </Text>
       <Pressable onPress={onClose} accessibilityRole="button" style={{ alignSelf: "center", marginTop: 14, paddingVertical: 6, paddingHorizontal: 10 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.injury.cancel")}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.injury.cancel")}</Text>
       </Pressable>
     </Sheet>
   );
@@ -410,7 +410,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                             {v.blockedCount === 1 ? t("w.rtp.gateToGo") : `${v.blockedCount} ${t("w.rtp.gatesToGo")}`}
                           </Text>
                           <Pressable onPress={() => setOverrideOpen((o) => !o)} hitSlop={8} accessibilityRole="button" accessibilityState={{ expanded: overrideOpen }}>
-                            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.rtp.override")}</Text>
+                            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash }}>{t("w.rtp.override")}</Text>
                           </Pressable>
                         </View>
                       )}
@@ -431,7 +431,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                             accessibilityRole="button"
                             style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.red, paddingHorizontal: 13, paddingVertical: 9, opacity: reason.trim() ? 1 : 0.4 }}
                           >
-                            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "700", color: txt(C, C.red) }}>{t("w.rtp.force")}</Text>
+                            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.red) }}>{t("w.rtp.force")}</Text>
                           </Pressable>
                         </View>
                       ) : null}
@@ -498,4 +498,4 @@ const fmtDay = (iso: string) => {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 };
 
-const quiet = { fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600" as const, textTransform: "uppercase" as const, letterSpacing: 0.9 };
+const quiet = { fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase" as const, letterSpacing: 0.9 };

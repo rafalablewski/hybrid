@@ -209,7 +209,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                 return (
                   <Pressable key={p.id} onPress={() => { setView(p.id); setRoom(null); }} accessibilityRole="button" accessibilityState={{ selected: on }}
                     style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent" }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", fontWeight: on ? "700" : "400", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
+                    <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 11, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>{p.label}</Text>
                   </Pressable>
                 );
               })}

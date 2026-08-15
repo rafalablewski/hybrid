@@ -28,13 +28,13 @@ export default function LeaderboardScreen() {
 
   const renderRow = ({ item: r }: { item: any }) => (
     <Pressable onPress={() => { if (!r.isMe && r.handle) { armPerson(r.handle); seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
-      <Text style={{ width: 28, textAlign: "center", fontFamily: F.bold, fontWeight: "800", color: r.rank <= 3 ? C.amber : C.ash, fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</Text>
+      <Text style={{ width: 28, textAlign: "center", fontFamily: F.bold, color: r.rank <= 3 ? C.amber : C.ash, fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</Text>
       <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
       <View style={{ flex: 1 }}>
-        <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "600" }}>{r.isMe ? t("w.social.you") : r.displayName || `@${r.handle}`}</Text>
+        <Text style={{ color: C.chalk, fontFamily: F.bold }}>{r.isMe ? t("w.social.you") : r.displayName || `@${r.handle}`}</Text>
         <Text style={{ color: C.ash, fontSize: 12, fontFamily: F.mono }}>@{r.handle}</Text>
       </View>
-      <Text style={{ fontFamily: F.mono, fontWeight: "700", color: r.value > 0 ? C.lime : C.ash }}>{r.label}</Text>
+      <Text style={{ fontFamily: F.monoBold, color: r.value > 0 ? C.lime : C.ash }}>{r.label}</Text>
     </Pressable>
   );
 

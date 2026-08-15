@@ -111,7 +111,7 @@ describe("type scale", () => {
     expectAtMost(hits(/fontSize:\s*\d+/g), 489, "raw fontSize → use an fs.* rung");
   });
 
-  it("RATCHET — weight is a FACE (F.*), never a `fontWeight`", () => {
+  it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
     // THE FONT BUG THIS RULE EXISTS FOR. `F` names six loaded faces and each is
     // registered under its OWN family name — "JetBrainsMono_400Regular",
     // "Archivo_700Bold". So `fontFamily: F.mono` declares a family with exactly
@@ -124,14 +124,31 @@ describe("type scale", () => {
     // There is nothing to gain by it: F.monoBold and F.bold/F.black ARE the
     // heavier faces, so every site had a token sitting right there.
     //
-    // 103 → 72. The whole FOOD domain is clear (nutrition + its kit, panels,
-    // quick-add, pantry, recipes, water, copy-day, freshness) — the meal pages
-    // were the worst of it at 31 sites, several inside one sheet. A weight that
-    // varies (`on ? "700" : "500"`) becomes a varying face, not a varying
-    // weight: `fontFamily: on ? F.monoBold : F.mono`.
+    // 103 → 0, in two passes: the FOOD domain first (the meal pages were the
+    // worst of it at 31 sites, several stacked inside one sheet), then the
+    // remaining 72 across 28 files. THE DECLARED FACE WON: where a family was
+    // already named it stayed, and only `F.mono` — the sole *regular* of a
+    // pair — was promoted to `F.monoBold`, which is what iOS was resolving to
+    // anyway. A weight that VARIES becomes a varying face, not a varying
+    // weight: `fontFamily: on ? F.monoBold : F.mono`. Text with NO family at
+    // all (two coach rows, drawing in the platform UI font) got one.
+    //
+    // The one thing that could not simply be renamed was percent-program's ink
+    // ramp: four weights (700/700/500/400) off a family holding one face. It
+    // has a second, finer channel — opacity — which is what actually separated
+    // its tiers, so the two heavy tiers took the bold face and opacity kept
+    // doing the rest.
+    //
+    // THE ONE EXEMPTION, and it is a real one: components/error-boundary.tsx.
+    // It is deliberately provider-free — "no theme, i18n, session or app font:
+    // any of those may be the thing that failed, and a fallback that needs the
+    // broken thing is not a fallback". A crash fallback that named F.* would
+    // draw nothing at all when the font load is what threw. Platform font,
+    // platform weight, on purpose.
     //
     // Comment-blind: the files fixed first are the ones that write down why.
-    expectAtMost(codeHits(/fontWeight:/g), 72, "fontWeight → pick the FACE (F.mono/F.monoBold, F.reg/F.semi/F.bold/F.black)");
+    const sites = codeHits(/fontWeight:/g).filter((h) => !h.startsWith("components/error-boundary.tsx"));
+    expect(sites, "fontWeight → pick the FACE (F.mono/F.monoBold, F.reg/F.semi/F.bold/F.black)").toEqual([]);
   });
 });
 

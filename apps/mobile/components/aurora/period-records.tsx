@@ -73,9 +73,9 @@ function PrCell({ pr, units, t, width, onOpen }: {
       <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: C.ash }}>
         {pr.lift}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.display, fontWeight: "800", letterSpacing: -0.8, marginTop: 7, color: txt(C, C.lime) }}>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.display, letterSpacing: -0.8, marginTop: 7, color: txt(C, C.lime) }}>
         {value}
-        <Text style={{ fontSize: fs.caption, fontWeight: "600", letterSpacing: 0.4 }}> {unit}</Text>
+        <Text style={{ fontSize: fs.caption, letterSpacing: 0.4 }}> {unit}</Text>
       </Text>
       <Text numberOfLines={1} style={{ marginTop: 6, fontFamily: F.reg, fontSize: fs.micro, color: C.ash }}>
         {proof.kind === "climb" ? (

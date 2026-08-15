@@ -256,11 +256,21 @@ const rowH = (l: ProgramLiftView) => (l.note ? 56 : 44);
 
 // Ink tier → text style: the monochrome intensity ramp. `top` (the day's
 // heaviest %) is the single accent; everything else is chalk at falling weight.
-function tierStyle(tier: InkTier, C: Palette): { color: string; fontWeight: "400" | "500" | "700"; opacity: number } {
-  if (tier === "top") return { color: txt(C, C.lime), fontWeight: "700", opacity: 1 };
-  if (tier === "high") return { color: C.chalk, fontWeight: "700", opacity: 0.92 };
-  if (tier === "mid") return { color: C.chalk, fontWeight: "500", opacity: 0.72 };
-  return { color: C.chalk, fontWeight: "400", opacity: 0.55 };
+//
+// The FACE, not a `fontWeight`. The ramp asked for four weights — 700/700/500/
+// 400 — from a family that holds exactly one: `F.mono` IS JetBrainsMono
+// _400Regular, registered under its own name (lib/ui.tsx). So the two heavy
+// tiers were asking for a weight the family cannot serve, which iOS resolves
+// out of the family and Android fakes. There are two mono faces, and the ramp
+// already has a second, finer channel — OPACITY — which is what actually
+// separated `mid` from `low` all along. So: the two heavy tiers take the bold
+// FACE, the two light ones the regular, and opacity keeps doing the rest.
+type TierStyle = { color: string; fontFamily: string; opacity: number };
+function tierStyle(tier: InkTier, C: Palette): TierStyle {
+  if (tier === "top") return { color: txt(C, C.lime), fontFamily: F.monoBold, opacity: 1 };
+  if (tier === "high") return { color: C.chalk, fontFamily: F.monoBold, opacity: 0.92 };
+  if (tier === "mid") return { color: C.chalk, fontFamily: F.mono, opacity: 0.72 };
+  return { color: C.chalk, fontFamily: F.mono, opacity: 0.55 };
 }
 
 // Group label for the merged header line — "Main — 3", "Accessories — 5".
@@ -484,11 +494,14 @@ function GroupRule({ label, C }: { label: string; C: Palette }) {
 
 // The reps cell content — quiet notation (idea 06): the reps token leads, the
 // set multiplier steps back to ash ("4+1 ×4"; a single set is just "4").
-function RepsText({ reps, sets, style, C }: { reps: string; sets: number; style: { color: string; fontWeight: "400" | "500" | "700"; opacity: number }; C: Palette }) {
+function RepsText({ reps, sets, style, C }: { reps: string; sets: number; style: TierStyle; C: Palette }) {
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontVariant: ["tabular-nums"], ...style }}>
+    // No base `fontFamily` here: `style` is a TierStyle and always carries the
+    // tier's own face, so declaring one would only be the thing the spread
+    // overwrites. The nested ×N run names F.mono for itself.
+    <Text style={{ fontSize: fs.caption, fontVariant: ["tabular-nums"], ...style }}>
       {reps}
-      {sets > 1 && <Text style={{ color: C.ash, fontWeight: "400" }}> ×{sets}</Text>}
+      {sets > 1 && <Text style={{ fontFamily: F.mono, color: C.ash }}> ×{sets}</Text>}
     </Text>
   );
 }
@@ -682,7 +695,7 @@ function FallbackRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: bo
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "flex-start", paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <NameCell lift={lift} C={C} />
-      <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: lift.intensity ? "600" : "400", color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: leading(fs.caption) }}>{lift.prescription}</Text>
+      <Text style={{ flex: 1.1, fontFamily: lift.intensity ? F.monoBold : F.mono, fontSize: fs.caption, color: lift.intensity ? txt(C, loadHex(C, lift.intensity)) : C.chalk, textAlign: "right", lineHeight: leading(fs.caption) }}>{lift.prescription}</Text>
     </Pressable>
   );
 }
@@ -710,7 +723,7 @@ function ExerciseSheet({ sel, onClose, C }: { sel: SheetSel | null; onClose: () 
         {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption), marginBottom: 10 }}>{lift.note}</Text>}
         {steps.map((st, i) => (
           <View key={i} style={{ ...row, borderTopWidth: i > 0 ? 1 : 0 }}>
-            <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
+            <Text style={{ width: 48, fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
             <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{st.kg ?? ""}</Text>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>{stepWords(st)}</Text>
           </View>

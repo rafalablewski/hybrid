@@ -464,7 +464,7 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
                 accessibilityLabel={sessionLabel(s, t)}
                 style={{ paddingBottom: 8, borderBottomWidth: 2, borderBottomColor: on ? C.lime : "transparent" }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: 12, fontWeight: on ? "600" : "400", letterSpacing: 0.9, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
+                <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: 12, letterSpacing: 0.9, color: on ? txt(C, C.lime) : C.ash }}>{sessionLabel(s, t)}</Text>
               </Pressable>
             );
           })}

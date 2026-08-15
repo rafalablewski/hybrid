@@ -1489,7 +1489,7 @@ export default function Workout() {
                                       style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999, borderWidth: 1, borderColor: set ? withAlpha(C.amber, 0.5) : C.line, backgroundColor: set ? withAlpha(C.amber, 0.1) : "transparent" }}
                                     >
                                       <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: 0.9, color: set ? txt(C, C.amber) : C.ash }}>{prefs.rpeAsRir ? "RIR" : "RPE"}</Text>
-                                      <Text style={{ fontFamily: F.mono, fontSize: 10, fontWeight: "700", color: set ? txt(C, C.amber) : C.ash }}>{rpeShown || "–"}</Text>
+                                      <Text style={{ fontFamily: F.monoBold, fontSize: 10, color: set ? txt(C, C.amber) : C.ash }}>{rpeShown || "–"}</Text>
                                     </Pressable>
                                   );
                                 })()}
@@ -1587,7 +1587,7 @@ export default function Workout() {
                                       accessibilityState={{ selected: on }}
                                       style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 999, borderWidth: 1, borderColor: on ? C.chalk : C.line, backgroundColor: on ? withAlpha(C.chalk, 0.12) : C.ink2 }}
                                     >
-                                      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: on ? "700" : "400", color: on ? C.chalk : C.ash }}>{prefs.rpeAsRir ? step.rir : val}</Text>
+                                      <Text style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: fs.caption, color: on ? C.chalk : C.ash }}>{prefs.rpeAsRir ? step.rir : val}</Text>
                                     </Pressable>
                                   );
                                 })}
@@ -2148,7 +2148,7 @@ function ExerciseSheet({
                         keyboardType="numeric"
                         placeholder="0.00"
                         placeholderTextColor={C.ash}
-                        style={{ fontFamily: F.mono, fontSize: 13, fontWeight: "700", color: C.chalk, textAlign: "center", minWidth: 46, padding: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.chalk, 0.55), marginBottom: 6 }}
+                        style={{ fontFamily: F.monoBold, fontSize: 13, color: C.chalk, textAlign: "center", minWidth: 46, padding: 0, paddingBottom: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.chalk, 0.55), marginBottom: 6 }}
                       />
                     ) : (
                       <Text style={{ fontFamily: F.mono, fontSize: 11, color: v != null ? C.chalk : C.ash, marginBottom: 8 }}>{v != null ? String(v) : "–"}</Text>

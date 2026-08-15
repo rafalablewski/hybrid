@@ -176,7 +176,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
         {week.map((d, i) => (
           <View key={d.key} style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 8, paddingBottom: 8, borderRadius: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: d.isToday ? C.lime : C.line }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(WEEKDAY_LABEL_KEYS[i]!).slice(0, 1)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: d.isToday ? lime : d.future ? C.ash : C.chalk }}>{d.dayNum}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: d.isToday ? lime : d.future ? C.ash : C.chalk }}>{d.dayNum}</Text>
             <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: d.dot === 2 ? C.lime : d.dot === 1 ? withAlpha(C.lime, 0.45) : "transparent" }} />
           </View>
         ))}
@@ -281,7 +281,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
               >
                 <View style={{ width: 32, alignItems: "center" }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase" }}>{fmtWeekday(key)}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, fontWeight: "700" }}>{Number(key.slice(8, 10))}</Text>
+                  <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{Number(key.slice(8, 10))}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} ref={(r) => { titleRefs.current[s.id] = r; }} numberOfLines={1} style={titleStyle}>{sessionTitleText(s.title, t)}</Text>
@@ -324,7 +324,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
             <View style={{ position: "absolute", left: -56, top: 0, width: 48, alignItems: "center" }}>
               <View style={{ width: item.level >= 3 ? 13 : 10, height: item.level >= 3 ? 13 : 10, borderRadius: 7, backgroundColor: item.shape === "cardio" ? C.blue : C.lime, borderWidth: 3, borderColor: C.ink, marginBottom: 5 }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", textTransform: "uppercase" }}>{fmtWeekday(item.dateKey)}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: item.isToday ? lime : C.chalk, fontWeight: "700" }}>{Number(item.dateKey.slice(8, 10))}</Text>
+              <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: item.isToday ? lime : C.chalk }}>{Number(item.dateKey.slice(8, 10))}</Text>
             </View>
             <View style={{ gap: 8 }}>
               {item.sessions.map((s) => <SessionCard key={s.id} C={C} s={s} ctx={ctx} />)}

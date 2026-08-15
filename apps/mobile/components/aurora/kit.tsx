@@ -1782,7 +1782,7 @@ export function CardFoot({
           <Text
             numberOfLines={1}
             style={{
-              fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600",
+              fontFamily: F.monoBold, fontSize: fs.micro,
               textTransform: "uppercase", letterSpacing: tracking.label,
               // Ash, always. Nothing in a footer leaves the card, so nothing
               // here may take the accent.
@@ -1819,7 +1819,7 @@ export function ActionPill({ label, onPress }: { label: string; onPress: () => v
         borderWidth: 1, borderColor: C.line, backgroundColor: "transparent",
       }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, fontWeight: "600", textTransform: "uppercase", letterSpacing: tracking.label, color: C.chalk }}>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.chalk }}>
         {label}
       </Text>
     </Pressable>

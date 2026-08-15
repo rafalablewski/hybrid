@@ -314,7 +314,7 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
               <View style={{ position: "absolute", left: 0, top: 0, height: 5, width: `${r.leftPct}%`, borderRadius: 3, backgroundColor: r.risk > 0 ? riskColor(r.band, C) : "transparent" }} />
               <View style={{ position: "absolute", left: "50%", top: -6, height: 17, width: 1, backgroundColor: `${C.ash}80` }} />
             </View>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...num(C, r.flagged), width: 26, fontWeight: "700", color: r.flagged ? txt(C, C.red) : C.chalk }}>{r.risk}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...num(C, r.flagged), width: 26, fontFamily: F.monoBold, color: r.flagged ? txt(C, C.red) : C.chalk }}>{r.risk}</Text>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...num(C, r.flagged), width: 44 }}>{r.probPct.toFixed(1)}%</Text>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...num(C, r.flagged), width: 38 }}>{r.acwr == null ? "—" : r.acwr.toFixed(2)}</Text>
           </View>
@@ -331,7 +331,7 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
 function Watch({ C, label, value, color }: { C: Palette; label: string; value: string; color?: string }) {
   return (
     <View style={{ flex: 1, backgroundColor: C.ink2, paddingVertical: 10, paddingHorizontal: 8, alignItems: "center" }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: color ?? C.chalk }}>{value}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: color ?? C.chalk }}>{value}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: 0.9, color: C.ash, marginTop: 2 }}>{label}</Text>
     </View>
   );

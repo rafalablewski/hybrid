@@ -86,7 +86,7 @@ export default function AuroraVolumeModel() {
                     {ml(c.muscle)} <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{FIELD_LABEL[FIELDS.indexOf(c.field)]}</Text>
                   </Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c.was} →</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.body, fontWeight: "700", color: txt(C, C.lime), minWidth: 32, textAlign: "right" }}>{c.now}</Text>
+                  <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime), minWidth: 32, textAlign: "right" }}>{c.now}</Text>
                 </View>
               ))}
             </View>

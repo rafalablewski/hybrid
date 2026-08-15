@@ -193,7 +193,7 @@ export function HeroEyebrow({ label, tone, accent, onDark = true, mark }: { labe
   const text = mark ? `${mark} ${label}` : label;
   if (tone === "solid") {
     return (
-      <Text style={[metaStyle("#0d0e0d"), { alignSelf: "flex-start", fontWeight: "700", backgroundColor: chipTint(accent), paddingHorizontal: 12, paddingVertical: 5, borderRadius: HERO.radius.chip, overflow: "hidden" }]}>
+      <Text style={[metaStyle("#0d0e0d"), { alignSelf: "flex-start", fontFamily: F.monoBold, backgroundColor: chipTint(accent), paddingHorizontal: 12, paddingVertical: 5, borderRadius: HERO.radius.chip, overflow: "hidden" }]}>
         {text}
       </Text>
     );
@@ -215,7 +215,7 @@ export function HeroMetadata({ parts, onDark = true }: { parts: (string | null |
 export function HeroAccessory({ label, onPress, active, onDark = true }: { label: string; onPress?: () => void; active?: boolean; onDark?: boolean }) {
   const { palette: C } = useTheme();
   const fg = active ? C.lime : onDark ? `rgba(255,255,255,${HERO.alpha.dim})` : C.ash;
-  const body = <Text style={[metaStyle(fg), { fontWeight: "600" }]}>{label}</Text>;
+  const body = <Text style={[metaStyle(fg), { fontFamily: F.monoBold }]}>{label}</Text>;
   if (!onPress) return body;
   return (
     <PressScale

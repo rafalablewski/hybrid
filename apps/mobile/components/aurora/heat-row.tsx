@@ -143,7 +143,7 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 7 }}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber) }}>{t("w.recovery.heat.clearWith")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, fontWeight: "700", color: txt(C, C.amber) }}>{clearance.withHeat.index.toFixed(2)}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, C.amber) }}>{clearance.withHeat.index.toFixed(2)}</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.recovery.heat.clearWithout")}</Text>

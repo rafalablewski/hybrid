@@ -108,8 +108,8 @@ function LedgerLine({ C, label, value, total }: { C: Palette; label: string; val
   const color = total ? C.chalk : C.ash;
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-      <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, fontWeight: total ? "700" : "400", color }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: total ? "700" : "400", color }}>{value}</Text>
+      <Text style={{ flex: 1, fontFamily: total ? F.monoBold : F.mono, fontSize: fs.caption, color }}>{label}</Text>
+      <Text style={{ fontFamily: total ? F.monoBold : F.mono, fontSize: fs.caption, color }}>{value}</Text>
     </View>
   );
 }
@@ -144,7 +144,7 @@ function Row({ C, row, t, age }: {
           </Text>
         ) : null}
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.caption, fontWeight: "700", color: txt(C, roleColor(C, row.role)) }}>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, roleColor(C, row.role)) }}>
         {row.measured ? signed(row.points) : "—"}
       </Text>
     </View>

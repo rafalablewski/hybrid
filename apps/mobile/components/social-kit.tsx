@@ -43,7 +43,7 @@ export function Avatar({ url, name, handle, size = 44, shared }: { url?: string 
     ? <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2 }} />
     : (
       <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: C.chalk, fontFamily: F.bold, fontWeight: "700", fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
+        <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
       </View>
     );
   // A SOURCE registers itself under the person's handle, so a door only has to
@@ -87,10 +87,10 @@ export function SButton({ label, onPress, ghost, tone, small, disabled, full, bu
   return (
     <Pressable onPress={onPress} disabled={disabled} style={{ paddingVertical: small ? 7 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: 999, borderWidth: 1, borderColor: ghost ? C.line : t, backgroundColor: ghost ? "transparent" : t, opacity: disabled ? 0.5 : 1, alignSelf: full ? "stretch" : undefined, alignItems: full ? "center" : undefined }}>
       <View>
-        <Text style={{ color: ghost ? C.chalk : C.onAccent, fontFamily: F.bold, fontWeight: "700", fontSize: small ? 12 : 13, opacity: busyLabel ? 0 : 1 }}>{label}</Text>
+        <Text style={{ color: ghost ? C.chalk : C.onAccent, fontFamily: F.bold, fontSize: small ? 12 : 13, opacity: busyLabel ? 0 : 1 }}>{label}</Text>
         {busyLabel ? (
           <View style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0, alignItems: "center", justifyContent: "center" }}>
-            <Text numberOfLines={1} style={{ color: ghost ? C.chalk : C.onAccent, fontFamily: F.bold, fontWeight: "700", fontSize: small ? 12 : 13 }}>{busyLabel}</Text>
+            <Text numberOfLines={1} style={{ color: ghost ? C.chalk : C.onAccent, fontFamily: F.bold, fontSize: small ? 12 : 13 }}>{busyLabel}</Text>
           </View>
         ) : null}
       </View>
