@@ -1,9 +1,16 @@
 /**
- * THE HOOK-ORDER SCANNER — the analysis behind `hook-order.test.ts`.
+ * THE HOOK-ORDER SCANNER — the analysis behind the two guards that use it.
  *
- * It lives in its own module rather than inside the test because it is the
- * thing being trusted: a guard whose detector is wrong is worse than no guard,
- * so the detector is importable and has its own fixtures in the test beside it.
+ * It lives in core, and in its own module rather than inside a test, for two
+ * reasons. It is the thing being TRUSTED: a guard whose detector is wrong is
+ * worse than no guard, so it is importable and carries its own fixtures
+ * (hook-order.test.ts, beside it). And it has TWO callers — the phone's guard
+ * (apps/mobile/lib/hook-order.test.ts) and the admin panel's
+ * (apps/web/__tests__/hook-order.test.ts) — so a copy in one app's lib would
+ * have had the other app importing across a package boundary to reach it.
+ *
+ * It is pure text analysis over source read as data: no React, no react-native,
+ * nothing to run. That is what lets it sit in core beside the engines.
  *
  * What it looks for is one shape: a `use…()` call in a component's TOP-LEVEL
  * body that sits BELOW an early `return`. React counts hooks per render and
@@ -92,7 +99,7 @@ export function findHooksAfterEarlyReturn(src: string, file = ""): HookOrderFind
   let inGuardBlock = false;
 
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    const line = lines[i] ?? "";
     const startDepth = depth;
     for (const ch of line) {
       if (ch === "{") depth++;
@@ -122,7 +129,7 @@ export function findHooksAfterEarlyReturn(src: string, file = ""): HookOrderFind
         findings.push({
           file,
           line: i + 1,
-          hook: m[0].replace(/\s*(?:<[^<>()]*>)?\s*\($/, ""),
+          hook: (m[0] ?? "").replace(/\s*(?:<[^<>()]*>)?\s*\($/, ""),
           returnLine: earlyReturn + 1,
         });
       }

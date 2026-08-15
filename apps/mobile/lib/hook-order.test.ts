@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { findHooksAfterEarlyReturn, blankLiterals } from "./hook-order";
+import { findHooksAfterEarlyReturn } from "@hybrid/core";
 
 /**
- * THE HOOK-ORDER GUARD.
+ * THE HOOK-ORDER GUARD — the phone.
  *
  * The side menu crashed the app the first time anyone tapped their avatar:
  *
@@ -28,7 +28,14 @@ import { findHooksAfterEarlyReturn, blankLiterals } from "./hook-order";
  *
  * There is no ESLint in this repo to carry `react-hooks/rules-of-hooks`, so the
  * check is a source scan in the idiom of the guards beside it (app-header,
- * expo-alignment): read the tree as DATA, fail on the shape.
+ * expo-alignment): read the tree as DATA, fail on the shape. The detector is
+ * shared — @hybrid/core hook-order.ts, with its fixtures in core beside it,
+ * because an empty result is what a broken scanner returns too. The admin panel
+ * runs the same scanner over its own tree (apps/web/__tests__/hook-order.test.ts).
+ *
+ * test/side-menu.render.test.tsx covers the same bug from the other side: it
+ * mounts the drawer shut and opens it, which is the only sequence in which the
+ * fault is visible at all. This one is what keeps every OTHER screen honest.
  */
 
 const MOBILE = resolve(__dirname, "..");
@@ -44,101 +51,20 @@ function tsxFiles(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-describe("the hook-order detector", () => {
-  it("catches a hook stranded below an early return", () => {
-    const found = findHooksAfterEarlyReturn(`
-export default function Drawer({ open }: { open: boolean }) {
-  const [q, setQ] = useState("");
-  if (!open) return null;
-  const index = useMemo(() => build(q), [q]);
-  return <View>{index}</View>;
-}
-`);
-    expect(found).toHaveLength(1);
-    expect(found[0].hook).toBe("useMemo");
-  });
-
-  it("catches the guard clause spelled as a block", () => {
-    const found = findHooksAfterEarlyReturn(`
-function Screen({ open }) {
-  if (!open) {
-    return null;
-  }
-  const insets = useSafeAreaInsets();
-  return <View style={insets} />;
-}
-`);
-    expect(found.map((f) => f.hook)).toEqual(["useSafeAreaInsets"]);
-  });
-
-  it("passes the same component once its hooks are hoisted", () => {
-    expect(
-      findHooksAfterEarlyReturn(`
-export default function Drawer({ open }: { open: boolean }) {
-  const [q, setQ] = useState("");
-  const index = useMemo(() => build(q), [q]);
-  if (!open) return null;
-  return <View>{index}</View>;
-}
-`),
-    ).toEqual([]);
-  });
-
-  it("does not flag a hook in a nested callback, which is a different thing", () => {
-    // A custom hook called inside a child component's body, or a `use…` name
-    // inside a render callback, is not part of THIS component's hook list.
-    expect(
-      findHooksAfterEarlyReturn(`
-function Screen({ open }) {
-  const C = useTheme();
-  if (!open) return null;
-  const row = (r) => {
-    const x = useless(r);
-    return <Text>{x}</Text>;
-  };
-  return <View>{row(1)}</View>;
-}
-`),
-    ).toEqual([]);
-  });
-
-  it("does not carry a return across a scope it has left", () => {
-    // The provider returns; the exported hook below is a NEW top-level scope.
-    expect(
-      findHooksAfterEarlyReturn(`
-export function LangProvider({ children }) {
-  return <Ctx.Provider>{children}</Ctx.Provider>;
-}
-
-export function useLang() {
-  const ctx = useContext(LangCtx);
-  return ctx;
-}
-`),
-    ).toEqual([]);
-  });
-
-  it("counts braces in code, never in comments or strings", () => {
-    // An unbalanced brace inside a string would desync the depth count and
-    // silently blind the scan from that line on.
-    const blanked = blankLiterals('const a = "{{{"; // }}}\nconst b = `${x}`;');
-    expect(blanked.split("\n")[0]).not.toContain("{");
-    expect(blanked).toHaveLength('const a = "{{{"; // }}}\nconst b = `${x}`;'.length);
-    expect(
-      findHooksAfterEarlyReturn(`
-function Screen({ open }) {
-  const label = "if (x) return null; {";
-  const memo = useMemo(() => 1, []);
-  return <Text>{label}</Text>;
-}
-`),
-    ).toEqual([]);
-  });
-});
-
 describe("the hook-order guard — no component may skip its own hooks", () => {
+  const files = tsxFiles(MOBILE);
+
+  it("reads a real tree — a scan of nothing passes trivially", () => {
+    // The guard below asserts an EMPTY list. If the walker ever stopped
+    // finding files (a moved directory, a renamed folder) it would keep
+    // passing while checking nothing at all.
+    expect(files.length).toBeGreaterThan(80);
+    expect(files.some((f) => f.endsWith("components/aurora/side-menu.tsx"))).toBe(true);
+    expect(files.some((f) => f.endsWith("app/workout.tsx"))).toBe(true);
+  });
+
   it("keeps every hook above every early return, on every screen", () => {
-    const offenders = tsxFiles(MOBILE).flatMap((f) =>
+    const offenders = files.flatMap((f) =>
       findHooksAfterEarlyReturn(readFileSync(f, "utf8"), f.slice(MOBILE.length + 1)),
     );
     expect(
