@@ -10,7 +10,7 @@ import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SC
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard, ASection, AMeter, RADIUS } from "./kit";
+import { APill, ACard, ACheckMark, ASection, AMeter, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import { Glyph } from "./nutrition-kit";
 import { withAlpha } from "./field";
@@ -204,11 +204,17 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
      to 2 and taking a pixel off the padding to compensate — so picking an option
      nudged its label; web meanwhile faked the same second border with a shadow
      ring, on a row it had built at the CARD radius. One control, two shapes and
-     two techniques. Now both read the standard. */
+     two techniques. Now both read the standard.
+     THE MARK came later, from the same standard: the picked state was drawn
+     here as a private 22dp circle that filled in one frame, so the two wizards
+     ticked an option with two different glyphs. It is the kit's `ACheckMark`
+     on both — the box scales up from the centre and the tick draws over the
+     last third of that fill, which is the difference between a row being
+     MARKED and two pictures being swapped. */
   const choice = (on: boolean, label: string, sub: string, onPress: () => void) => (
     <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: on ? withAlpha(C.lime, ALPHA.wash) : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16, marginBottom: 10 }}>
       <View style={{ flex: 1 }}><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{sub}</Text></View>
-      <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={C.onAccent} /> : null}</View>
+      <ACheckMark on={on} size={22} />
     </Pressable>
   );
   const primary = (label: string, onPress: () => void) => (

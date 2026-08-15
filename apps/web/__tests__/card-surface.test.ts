@@ -86,10 +86,9 @@ const RATCHET: Record<string, number> = {
   "components/aurora/logbook-rail.tsx": 1,
   "components/aurora/week-rail.tsx": 1,
   "components/aurora/quick-start.tsx": 1,
-  // Profile / settings / onboarding.
+  // Profile / settings.
   "components/aurora/profile.tsx": 1,
   "components/aurora/settings.tsx": 1,
-  "components/aurora/onboarding.tsx": 1,
   // The analytics + detail screens.
   "components/aurora/progress.tsx": 1,
   "components/aurora/sport-page.tsx": 1,
@@ -251,6 +250,10 @@ describe("the surfaces this rule was written for stay on the kit", () => {
     "components/aurora/history-views.tsx",
     "components/aurora/nutrition.tsx",
     "components/aurora/pantry.tsx",
+    // The recommended-plan card — the payoff of the whole wizard, and the one
+    // card a brand-new athlete sees first. It was drawn by hand, so on iOS 26
+    // the app introduced itself with the only opaque card in the product.
+    "components/aurora/onboarding.tsx",
   ];
 
   for (const f of CLEARED) {

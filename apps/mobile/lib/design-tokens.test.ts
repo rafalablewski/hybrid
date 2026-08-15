@@ -320,7 +320,7 @@ describe("geometry", () => {
     // concentric inset, or a genuine off-ladder choice — and only the third kind
     // is sweepable. That is a different job from the rename and is not attempted
     // here.
-    expectAtMost(hits(/borderRadius:\s*\d/g), 163, "raw borderRadius → RADIUS.*");
+    expectAtMost(hits(/borderRadius:\s*\d/g), 162, "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -902,5 +902,95 @@ describe("presentation", () => {
       });
     }
     expect(bad).toEqual([]);
+  });
+});
+
+describe("screens", () => {
+  /**
+   * HARD — EVERY SCREEN SITS ON THE AURORA FIELD.
+   *
+   * The motion audit ran four waves across this app and reached the onboarding
+   * wizard in none of them, which nothing noticed for one structural reason:
+   * the screen never asked for the shell. It painted `backgroundColor: ink` on
+   * a bare SafeAreaView of its own, so it was the only route in the product
+   * with no ambient field behind it and no fade+rise on entry — and BECAUSE it
+   * held no shared component, every sweep that worked by touching the shared
+   * ones passed straight over it. A screen that opts out of the scaffold opts
+   * out of everything the scaffold is later taught.
+   *
+   * So the rule is about REACH, not about a style: a route must arrive at
+   * `AuroraScreen` (or the hero shell it dispatches to), or render the field
+   * itself if it genuinely owns its own scaffold — the live logger and Today
+   * both do, legitimately, and both carry `useEntrance` with it.
+   *
+   * The check follows a route's DEFAULT IMPORTS one hop, because half the
+   * routes here are a five-line re-export of the component that is the actual
+   * screen (`app/onboarding.tsx` → `components/aurora/onboarding.tsx`). One
+   * hop, and default imports only: a named import is a part, not the screen.
+   */
+  it("HARD — a route reaches the Aurora shell, or draws the field itself", () => {
+    // The two that are not screens, and are exempt in writing rather than by
+    // being quietly skipped:
+    //   • index — the entry GATE. It decides where you are going and renders a
+    //     flat holding view for the frame it takes to decide; a field and an
+    //     entrance there would animate a screen nobody is meant to see.
+    //   • upgrade — the paywall route is a TRANSPARENT pane for the shared
+    //     Sheet to present over (see app/_layout.tsx). It has no background of
+    //     its own on purpose: the screen behind it is the background.
+    const EXEMPT = new Set(["app/index.tsx", "app/upgrade.tsx"]);
+    const SHELL = /AuroraScreen|HeroScreen|AuroraField/;
+
+    const routes = FILES.filter(
+      (f) => f.path.startsWith("app/") && f.path.endsWith(".tsx") && !/_layout|\+not-found/.test(f.path),
+    );
+    // A regex that matches nothing reads exactly like a clean codebase.
+    expect(routes.length).toBeGreaterThan(40);
+
+    const byPath = new Map(FILES.map((f) => [f.path.split("\\").join("/"), f.text]));
+    /** `../components/aurora/onboarding` from `app/onboarding.tsx`, as a repo
+     *  path — with the extension the import omits put back. */
+    const resolve = (from: string, spec: string): string | undefined => {
+      const dir = from.slice(0, from.lastIndexOf("/"));
+      const parts = `${dir}/${spec}`.split("/");
+      const out: string[] = [];
+      for (const p of parts) {
+        if (p === "." || p === "") continue;
+        else if (p === "..") out.pop();
+        else out.push(p);
+      }
+      const base = out.join("/");
+      return [`${base}.tsx`, `${base}/index.tsx`].find((c) => byPath.has(c));
+    };
+
+    const bad: string[] = [];
+    for (const { path, text } of routes) {
+      if (EXEMPT.has(path)) continue;
+      let reach = text;
+      for (const m of text.matchAll(/^import\s+[A-Z][A-Za-z0-9_]*(?:\s*,\s*\{[^}]*\})?\s+from\s+"(\.[^"]+)"/gm)) {
+        const target = resolve(path, m[1]!);
+        if (target) reach += `\n${byPath.get(target)}`;
+      }
+      if (!SHELL.test(reach)) bad.push(path);
+    }
+    expect(bad, `\na screen off the shell — render it inside <AuroraScreen>:\n  ${bad.join("\n  ")}\n`).toEqual([]);
+  });
+
+  it("HARD — a screen that draws its own scaffold draws the ENTRANCE with it", () => {
+    // The other half of the same rule. Opting out of AuroraScreen is allowed —
+    // Today and the live logger both have real reasons — but the shell is a
+    // PAIR: the field behind the screen and the fade+rise the content enters
+    // on. Onboarding is the proof that half of it is easy to miss; it rendered
+    // neither, and its own header comment described a "stepped, rounded
+    // wizard" as though that were a scaffold.
+    //
+    // `app/workout.tsx` is exempt and is the one case where the omission is
+    // right: the logger is a COVER (@hybrid/core COVER_SCREENS), presented by
+    // the navigator with its own rise from the bottom edge. A second entrance
+    // inside it would play over the presentation.
+    const EXEMPT = new Set(["app/workout.tsx"]);
+    const owns = FILES.filter((f) => /<AuroraField\b/.test(f.text) && !EXEMPT.has(f.path));
+    expect(owns.length).toBeGreaterThan(2);
+    const bad = owns.filter((f) => !/useEntrance\b/.test(f.text)).map((f) => f.path);
+    expect(bad, `\nowns its scaffold but not its entrance:\n  ${bad.join("\n  ")}\n`).toEqual([]);
   });
 });
