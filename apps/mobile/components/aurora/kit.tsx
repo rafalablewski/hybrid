@@ -460,10 +460,11 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
  * a circle (components/social-kit `Avatar`, radius 999), so the shape carries the
  * noun and nothing has to be read to tell a barbell from a face.
  *
- * The box lives here because it kept being redrawn: the logger's card header, the
- * picker's rows, the picker's own Rooms grid one scroll below them, the Exercises
- * browser and the pin sheet each owned a copy — four at 40/12, one with no box at
- * all — and squaring them one at a time is how a sheet ends up showing two radii.
+ * The box lives here because it kept being redrawn: SIX surfaces each owned a
+ * copy — the picker's rows, the picker's own Rooms grid one scroll below them,
+ * the Exercises browser and the pin sheet at 40/12, the logger's card header and
+ * the Builder's block header with no box at all — and squaring them one at a
+ * time is how a sheet ends up showing two radii.
  * `AuroraExerciseAvatar` (aurora/exercise-media) wraps this with the lift's mark
  * already inside; reach for the tile directly only when the CONTENT is something
  * else (a body map, a catalogue emoji).

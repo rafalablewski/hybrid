@@ -153,7 +153,7 @@ function Loop({ frames, cycleMs, poster, alt, active }: { frames: string[]; cycl
  * A lift is a THING — an implement, a drawing, a piece of the catalogue — not a
  * face, so it takes the square and a PERSON keeps the circle.
  *
- * The box is the kit's, not this file's and certainly not the call site's: five
+ * The box is the kit's, not this file's and certainly not the call site's: six
  * surfaces drew their own before the tile existed. This is now the ONLY way a
  * lift is pictured in a row or a header — `variant="thumb"` is still offered for
  * a surface that genuinely owns its own frame, but nothing takes it today, so
