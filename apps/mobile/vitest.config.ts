@@ -45,6 +45,9 @@ export default defineConfig({
             "lib/error-boundary-palette.test.ts",
             "lib/search-surfaces.test.ts",
             "lib/event-pooling.test.ts",
+            // Reads every .tsx on the phone as TEXT to count brace depth, so
+            // it covers the whole app from inside the pure boundary.
+            "lib/hook-order.test.ts",
             // Greps source text for the label-swap pattern that resizes a
             // commit button, so it reads files as DATA like the two below.
             "lib/commit-state.test.ts",
