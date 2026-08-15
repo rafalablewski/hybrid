@@ -513,9 +513,16 @@ export function APressCard({
           borderWidth: 1,
           borderRadius: RADIUS.card,
           padding: CARD_PAD,
-          // The glow bleeds to the card's own edges, so the clip is the
-          // primitive's job rather than each caller's.
-          overflow: "hidden",
+          // THE CLIP RIDES WITH THE GLOW, and only with it. The glow bleeds to
+          // the card's own edges so it must be clipped — but on iOS
+          // `overflow: hidden` sets the layer's masksToBounds, which clips the
+          // SHADOW too. Setting it unconditionally would have handed every
+          // caller a `cardShadow()` that can never render: a primitive
+          // promising ACard's surface and then guaranteeing one part of it is
+          // dead. A glowing card trades the shadow for the clip (which is what
+          // both chooser cards already did, drawing neither); a plain one keeps
+          // the depth ACard has.
+          overflow: glow ? "hidden" : undefined,
           ...cardShadow(),
         },
         style,

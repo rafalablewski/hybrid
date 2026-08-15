@@ -142,8 +142,12 @@ function stripComments(src: string): string {
 function styleObjects(src: string): { text: string; at: number }[] {
   const out: { text: string; at: number }[] = [];
   // `style={{…}}`, `style: {…}` (a StyleSheet entry or a spread-in const), and
-  // `= { backgroundColor…` (percent-program hoists its card into a const).
-  const re = /style\s*=\s*\{\s*\{|style:\s*\{|=\s*\{\s*backgroundColor/g;
+  // a card HOISTED INTO A CONST, which is the copy one step further along —
+  // both files that did it were caught only because their object happened to
+  // open on `backgroundColor`. The alternation lists every property a card
+  // object plausibly opens with, so the detector does not depend on the order
+  // the author happened to type them in.
+  const re = /style\s*=\s*\{\s*\{|style:\s*\{|=\s*\{\s*(?:backgroundColor|borderRadius|borderWidth|borderColor|padding)/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(src))) {
     const open = src.lastIndexOf("{", m.index + m[0].length - 1);
