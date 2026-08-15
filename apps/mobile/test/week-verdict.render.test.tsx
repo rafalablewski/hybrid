@@ -157,3 +157,61 @@ describe("the activity card's breakdown", () => {
     expect(sheet).toContain("1.0 t");
   });
 });
+
+/**
+ * THE PERIOD'S TWO ENDS, MARKED — the row carries the win AND the slip.
+ *
+ * The colour on this row used to follow the SENTENCE, which is one slot. A week
+ * whose training time climbed while its distance collapsed put chartreuse on
+ * Hours and left Distance looking exactly like the two columns that did not move
+ * — the biggest fact about the week rendered in the styling of "nothing
+ * happened". So the fixture below is precisely that week, and the assertion is
+ * that BOTH ends are marked: core's `best` on Hours, `worst` on Distance.
+ *
+ * The a11y label is what it asserts on, because that is the one channel a test
+ * can read AND the one an athlete who cannot separate the two hues depends on.
+ */
+const longLift = (weeks: number): LoggedSession => {
+  const started = noonWeeksAgo(weeks);
+  return { ...lift(weeks), completedAt: new Date(started + 90 * 60000).toISOString() };
+};
+
+/** Time up a third, distance down three quarters, tonnage and count flat. */
+const bothEnds: LoggedSession[] = [
+  longLift(0), run(0, 1),
+  lift(1), run(1, 4),
+  lift(2), run(2, 4),
+  lift(3), run(3, 4),
+  lift(4), run(4, 4),
+];
+
+describe("the activity card's marks", () => {
+  const labelStarting = (prefix: string) =>
+    screen.getAllByRole("button")
+      .map((b) => b.getAttribute("aria-label") ?? "")
+      .find((l) => l.startsWith(prefix)) ?? "";
+
+  it("marks the riser and the faller at rest, not just the sentence's metric", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+
+    expect(labelStarting("Hours")).toContain("biggest rise this period");
+    expect(labelStarting("Distance")).toContain("biggest drop this period");
+  });
+
+  it("leaves the columns between the ends unmarked", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+
+    // A mark on every column is the same as a mark on none.
+    for (const prefix of ["Tonnage", "Sessions"]) {
+      expect(labelStarting(prefix)).not.toContain("biggest");
+    }
+  });
+
+  it("prints each end's own move beside it — the working-out for the colour", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("+33%");
+    expect(text).toContain("−75%");
+  });
+});

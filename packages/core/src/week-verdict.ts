@@ -42,6 +42,14 @@
  *     is named. A card that finds something wrong every week is a card people
  *     stop reading, so "tracking with your average" has to be a state it can
  *     actually reach.
+ *
+ * THE SENTENCE IS ONE SLOT; THE PERIOD HAS TWO ENDS. `metric` can only name the
+ * biggest move, so the week that headlines "+50% training time" is silent about
+ * the distance that halved underneath it — and the row of figures below, which
+ * holds both facts, had no way to say so. `best` and `worst` rank the ends
+ * separately (biggest riser, biggest faller, same threshold and same baseline
+ * gates), so the columns can carry the win and the slip at once while the
+ * sentence stays a sentence about one thing.
  */
 import type { LoggedSession } from "./engines/session";
 import type { BodyweightInput } from "./bodyweight";
@@ -124,6 +132,24 @@ export interface ActivityVerdict {
   figures: VerdictFigure[];
   /** The metric the sentence is about; null when flat or cold. */
   metric: VerdictMetric | null;
+  /**
+   * THE PERIOD'S TWO ENDS — the figure that rose furthest above its baseline and
+   * the one that fell furthest below it. Either is null when nothing moved that
+   * way past the threshold, and BOTH are null when the card is cold.
+   *
+   * These are what the columns are TONED by. `metric` names the one measure the
+   * sentence is about, which is a single slot and therefore silent about the
+   * other three: a week that headlines "+50% training time" says nothing about
+   * the distance that halved underneath it. Ranking the ends separately lets the
+   * row carry both halves of the week at once — the win in chartreuse, the slip
+   * in terracotta — while the sentence stays a sentence about one thing.
+   *
+   * `metric` is always ONE of these two when it is set (it is the larger of the
+   * same two moves in absolute terms), so the bold word in the lead and the lit
+   * column can never point at different figures.
+   */
+  best: VerdictMetric | null;
+  worst: VerdictMetric | null;
   direction: VerdictDirection;
   /** Signed % change vs baseline for `metric`, rounded. 0 when flat or cold. */
   deltaPct: number;
@@ -170,7 +196,7 @@ export function activityVerdict(
   const needed = Math.max(1, Math.min(MIN_BASELINE_PERIODS, Math.ceil(priors.length / 2)));
   const cold = baselinePeriods < needed;
   const base = { range, figures, baselinePeriods, baselineOf: priors.length };
-  if (cold) return { ...base, metric: null, direction: "flat", deltaPct: 0, cold: true };
+  if (cold) return { ...base, metric: null, best: null, worst: null, direction: "flat", deltaPct: 0, cold: true };
 
   // Largest absolute move wins — among the metrics with a real baseline to move
   // FROM. Two gates decide "real": the mean has to clear the metric's floor,
@@ -191,25 +217,41 @@ export function activityVerdict(
   // (strict `>`), so the same period never yields two different sentences on
   // two clients.
   type Candidate = { metric: VerdictMetric; deltaPct: number };
-  let best: Candidate | null = null;
-  let fallback: Candidate | null = null;
+  const qualified: Candidate[] = [];
+  const fallbacks: Candidate[] = [];
   for (const f of figures) {
     if (f.baseline <= 0) continue;
     const deltaPct = Math.round(((f.value - f.baseline) / f.baseline) * 100);
     if (Math.abs(deltaPct) < VERDICT_THRESHOLD_PCT) continue;
     const cand: Candidate = { metric: f.metric, deltaPct };
     const trained = priors.filter((p) => p[f.metric] > 0).length;
-    if (f.baseline >= VERDICT_BASELINE_FLOOR[f.metric] && trained >= needed) {
-      if (!best || Math.abs(deltaPct) > Math.abs(best.deltaPct)) best = cand;
-    } else if (!fallback || Math.abs(deltaPct) > Math.abs(fallback.deltaPct)) {
-      fallback = cand;
-    }
+    if (f.baseline >= VERDICT_BASELINE_FLOOR[f.metric] && trained >= needed) qualified.push(cand);
+    else fallbacks.push(cand);
   }
 
-  const win = best ?? fallback;
-  if (!win) return { ...base, metric: null, direction: "flat", deltaPct: 0, cold: false };
+  // `figures` is in VERDICT_METRICS order and both pools preserve it, so a
+  // strict comparison keeps the EARLIER metric on a tie and the same period can
+  // never yield two different readings on two clients.
+  const top = (pool: Candidate[], better: (c: Candidate, held: Candidate) => boolean) =>
+    pool.reduce<Candidate | null>((held, c) => (held === null || better(c, held) ? c : held), null);
+  const moved = (pool: Candidate[]) => top(pool, (c, h) => Math.abs(c.deltaPct) > Math.abs(h.deltaPct));
+  const rose = (pool: Candidate[]) => top(pool.filter((c) => c.deltaPct > 0), (c, h) => c.deltaPct > h.deltaPct);
+  const fell = (pool: Candidate[]) => top(pool.filter((c) => c.deltaPct < 0), (c, h) => c.deltaPct < h.deltaPct);
+
+  // The two ends rank under the SAME gate the sentence does, each on its own
+  // side: a qualified riser beats an ungated one, and only if no qualified
+  // metric rose at all does a thin-baseline rise get the chartreuse. Toning a
+  // column the sentence deliberately refused to headline would put the card's
+  // brightest mark on the figure it least trusts.
+  const win = moved(qualified) ?? moved(fallbacks);
+  const best = rose(qualified) ?? rose(fallbacks);
+  const worst = fell(qualified) ?? fell(fallbacks);
+
+  const ends = { best: best?.metric ?? null, worst: worst?.metric ?? null };
+  if (!win) return { ...base, ...ends, metric: null, direction: "flat", deltaPct: 0, cold: false };
   return {
     ...base,
+    ...ends,
     metric: win.metric,
     direction: win.deltaPct < 0 ? "down" : "up",
     deltaPct: win.deltaPct,
@@ -232,14 +274,17 @@ export function figureDeltaPct(f: VerdictFigure): number | null {
  * `ActivityVerdict.direction`, which is what the SENTENCE says about the one
  * metric it named.
  *
- * Both clients used to tone the columns by `direction` alone, which meant the
- * card's colour marked the sentence's subject and nothing else — so it never
- * moved when a different column was opened. Pressing Hours left the chartreuse
- * sitting on Distance, and the only feedback the press produced was a fill one
- * value-step off the card behind it. SELECTION owns the colour now, and this is
- * what keeps that colour honest: an opened column is toned by its own move, so
- * a week where hours fell reads terracotta on Hours even while the card's
- * headline is a distance rise.
+ * The card tones its columns by `best` / `worst` — the period's two ENDS — and
+ * this is what keeps that tone honest wherever a single figure is restated away
+ * from the row it was ranked in. The breakdown sheet is the case: it carries the
+ * pressed column's total behind a scrim, with the row it came from no longer on
+ * screen, so it colours that total by the figure's OWN move rather than by a
+ * ranking the athlete can no longer see.
+ *
+ * It agrees with the ranking by construction — `best` is a rise and `worst` a
+ * fall, both past this same threshold — so an end's column and its sheet always
+ * read the same hue, and a middle column reads chalk in the sheet exactly as it
+ * reads unmarked in the row.
  *
  * Same threshold the sentence uses, so a move too small to be worth a claim is
  * also too small to be worth a hue, and a column can never contradict the

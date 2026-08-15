@@ -244,6 +244,10 @@ export const web_home = {
     "w.home.act.vsBase": "{d} vs {b}",
     "w.home.act.empty": "Nothing logged in this period.",
     "w.home.act.hint": "Open a figure for the sessions behind it",
+    // The two ENDS of the period, spoken. The columns mark them in colour and in
+    // a signed percentage; a screen reader gets neither, so the mark is said.
+    "w.home.act.aBest": "biggest rise this period",
+    "w.home.act.aWorst": "biggest drop this period",
     // RECORDS — the Progress cluster's own block, promoted out of the verdict
     // card's foot into a section head of its own. The head names the block and
     // the meta beside it names the window, so the old "New PRs this week"
@@ -1439,6 +1443,8 @@ export const web_home = {
     "w.home.act.vsBase": "{d} wobec {b}",
     "w.home.act.empty": "Nic nie zapisano w tym okresie.",
     "w.home.act.hint": "Otwórz liczbę, żeby zobaczyć sesje za nią",
+    "w.home.act.aBest": "największy wzrost w tym okresie",
+    "w.home.act.aWorst": "największy spadek w tym okresie",
     "w.home.act.recordsTitle": "Rekordy",
     "w.home.endw.empty": "Nic nie zapisano",
     "w.home.endw.leadOne": "Wszystko to {s}.",
@@ -2537,6 +2543,8 @@ export const web_home = {
     "w.home.act.vsBase": "{d} vs. {b}",
     "w.home.act.empty": "In diesem Zeitraum nichts geloggt.",
     "w.home.act.hint": "Öffne eine Zahl für die Sessions dahinter",
+    "w.home.act.aBest": "größter Anstieg in diesem Zeitraum",
+    "w.home.act.aWorst": "größter Rückgang in diesem Zeitraum",
     "w.home.act.recordsTitle": "Rekorde",
     "w.home.endw.empty": "Nichts erfasst",
     "w.home.endw.leadOne": "Alles davon war {s}.",

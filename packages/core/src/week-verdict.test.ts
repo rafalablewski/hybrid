@@ -281,9 +281,10 @@ describe("activityVerdict — a thin baseline can't hijack the sentence (A1)", (
 });
 
 /* ── A COLUMN'S OWN MOVE ───────────────────────────────────────────────────
-   The colour on the figure row follows SELECTION now, so an opened column has
-   to be able to say what IT did — independently of the metric the sentence
-   named, which may be a different one moving the other way. */
+   A figure restated away from the row it was ranked in — the breakdown sheet
+   carries the pressed column's total behind a scrim — has to be able to say
+   what IT did, independently of the metric the sentence named, which may be a
+   different one moving the other way. */
 describe("figureDirection / figureDeltaPct", () => {
   const f = (value: number, baseline: number) => ({ metric: "hours" as const, value, baseline });
 
@@ -329,5 +330,71 @@ describe("figureDirection / figureDeltaPct", () => {
     // The named metric's own direction agrees with the sentence's.
     const namedFig = v.figures.find((x) => x.metric === v.metric)!;
     expect(figureDirection(namedFig)).toBe(v.direction);
+  });
+});
+
+/* ── THE PERIOD'S TWO ENDS ─────────────────────────────────────────────────
+   `metric` is one slot, so it can only ever name the biggest move. `best` and
+   `worst` rank the two directions separately, which is what lets the figure row
+   light the win and the slip at once. */
+describe("activityVerdict — best / worst", () => {
+  it("marks the biggest riser and the biggest faller", () => {
+    // Tonnage climbing while the hours behind it fall.
+    const priors = [9, 16, 23, 30].map((d) => s(d, 5000, 90));
+    const v = activityVerdict([...priors, s(2, 9000, 45)], d7());
+    expect(v.best).toBe("tonnage"); // +80%
+    expect(v.worst).toBe("hours");  // −50%
+  });
+
+  it("lights the drop the sentence had no room for", () => {
+    // The week the card was built to stop hiding: training time up, distance
+    // down by three quarters. The sentence gets the bigger of the two; the row
+    // has to carry BOTH, or the 4 km → 1 km never appears in colour anywhere.
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 5000, 90), run(2, 1)], d7());
+    expect(v.best).toBe("hours");
+    expect(v.worst).toBe("distance");
+  });
+
+  it("the sentence's metric is always one of the two ends", () => {
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 5000, 90), run(2, 1)], d7());
+    expect(v.metric).not.toBeNull();
+    expect([v.best, v.worst]).toContain(v.metric);
+  });
+
+  it("leaves an end empty when nothing moved that way", () => {
+    const v = activityVerdict([...fourFlatWeeks(5000), s(2, 9000, 60)], d7());
+    expect(v.best).toBe("tonnage");
+    expect(v.worst).toBeNull();
+  });
+
+  it("marks neither end while the card is cold", () => {
+    const v = activityVerdict([s(2, 9000)], d7());
+    expect(v.cold).toBe(true);
+    expect(v.best).toBeNull();
+    expect(v.worst).toBeNull();
+  });
+
+  it("a thin-baseline rise does not take the mark off a metric with history", () => {
+    // 0.1 km of four-week distance yields a four-digit percentage. It is the
+    // same figure the SENTENCE refuses to headline, so it must not take the
+    // chartreuse either — the card's brightest mark cannot land on the figure
+    // it trusts least while a metric with four weeks behind it is up 80%.
+    const priors = [9, 16, 23].map((d) => s(d, 5000, 60));
+    const v = activityVerdict([...priors, s(30, 5000, 60), run(30, 0.4), s(2, 9000, 60), run(2, 6)], d7());
+    const distance = v.figures.find((x) => x.metric === "distance")!;
+    expect(figureDeltaPct(distance)!).toBeGreaterThan(VERDICT_PCT_CEILING);
+    expect(v.best).toBe("tonnage");
+    expect(v.metric).toBe("tonnage");
+  });
+
+  it("an end never contradicts that figure's own direction", () => {
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 5000, 90), run(2, 1)], d7());
+    for (const fig of v.figures) {
+      if (fig.metric === v.best) expect(figureDirection(fig)).toBe("up");
+      if (fig.metric === v.worst) expect(figureDirection(fig)).toBe("down");
+    }
   });
 });
