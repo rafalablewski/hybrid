@@ -2,6 +2,7 @@ import { Component, type ReactNode } from "react";
 import { View, Text, ScrollView, Share, Platform } from "react-native";
 import { router, type ErrorBoundaryProps } from "expo-router";
 import { fs, PressScale as Pressable } from "../lib/ui";
+import { RADIUS } from "./aurora/kit";
 
 // The render boundaries. In a production RN build, an uncaught render exception
 // unmounts the React tree → a blank white screen the user can only escape by
@@ -75,7 +76,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
       {/* WHAT broke, on the device, in the tester's hands. Bounded and
           scrollable so a long stack can't push the actions off the screen. */}
       <ScrollView
-        style={{ alignSelf: "stretch", maxHeight: 190, marginTop: 18, borderWidth: 1, borderColor: LINE, borderRadius: 16, backgroundColor: INK2 }}
+        style={{ alignSelf: "stretch", maxHeight: 190, marginTop: 18, borderWidth: 1, borderColor: LINE, borderRadius: RADIUS.field, backgroundColor: INK2 }}
         // Stated on both axes: this is the DETAIL CARD's own inset, not the
         // screen gutter — and a bare `padding` here would silently claim to be
         // the latter (see apps/web/__tests__/screen-gutter.test.ts).
@@ -91,7 +92,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
           onPress={onRetry}
           accessibilityRole="button"
           accessibilityLabel="Try again"
-          style={{ backgroundColor: LIME, borderRadius: 999, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
+          style={{ backgroundColor: LIME, borderRadius: RADIUS.pill, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
         >
           <Text style={{ color: INK, fontWeight: "800", fontSize: fs.note }}>Try again</Text>
         </Pressable>
@@ -100,7 +101,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
             onPress={onLeave}
             accessibilityRole="button"
             accessibilityLabel="Back to Today"
-            style={{ borderWidth: 1, borderColor: LINE, borderRadius: 999, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
+            style={{ borderWidth: 1, borderColor: LINE, borderRadius: RADIUS.pill, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
           >
             <Text style={{ color: CHALK, fontWeight: "700", fontSize: fs.note }}>Back to Today</Text>
           </Pressable>

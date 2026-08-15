@@ -10,6 +10,7 @@ import { F, fs, tracking } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { withAlpha } from "./field";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { RADIUS } from "./kit";
 
 /**
  * THE TOAST — one small glass chip for a one-line outcome ("Following",
@@ -87,7 +88,7 @@ export function ToastHost() {
       <Animated.View
         accessibilityLiveRegion={kind === "error" ? "assertive" : "polite"}
         style={{
-          borderRadius: 999,
+          borderRadius: RADIUS.pill,
           overflow: "hidden",
           paddingHorizontal: 16,
           paddingVertical: 9,

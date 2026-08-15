@@ -479,7 +479,7 @@ function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]
           style={{
             flex: 1,
             height: Math.max(3, (w.value / max) * 110),
-            borderRadius: 3,
+            borderRadius: RADIUS.mark,
             // Held, the finger's week is the lit one — the "this week" accent
             // would otherwise compete with the answer the athlete asked for.
             backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : `${C.lime}6b`,
@@ -531,7 +531,7 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
           left: `${(pr[0] / W) * 100}%`,
           top: `${(pr[1] / H) * 100}%`,
           width: 9, height: 9, marginLeft: -4.5, marginTop: -4.5,
-          borderRadius: 999, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink,
+          borderRadius: RADIUS.pill, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink,
         }}
       />
       {!!hit && (
@@ -542,7 +542,7 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
             left: `${(hit[0] / W) * 100}%`,
             top: `${(hit[1] / H) * 100}%`,
             width: 13, height: 13, marginLeft: -6.5, marginTop: -6.5,
-            borderRadius: 999, backgroundColor: C.chalk, borderWidth: 2, borderColor: C.ink,
+            borderRadius: RADIUS.pill, backgroundColor: C.chalk, borderWidth: 2, borderColor: C.ink,
           }}
         />
       )}
@@ -586,7 +586,7 @@ function EffortSplitBar({
   const shown = bands.filter((b) => b.v > 0);
   return (
     <View>
-      <View style={{ flexDirection: "row", gap: 2, height: 12, borderRadius: 999, overflow: "hidden" }}>
+      <View style={{ flexDirection: "row", gap: 2, height: 12, borderRadius: RADIUS.pill, overflow: "hidden" }}>
         {bands.map((b) => <View key={b.k} style={{ width: `${b.v}%`, backgroundColor: b.bg }} />)}
       </View>
       <View style={{ flexDirection: "row", gap: 2, marginTop: space.md }}>

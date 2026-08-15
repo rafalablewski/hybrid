@@ -66,7 +66,7 @@ export default function AuroraVolumeModel() {
     }),
   );
 
-  const field = { fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingVertical: 8, textAlign: "center" as const };
+  const field = { fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingVertical: 8, textAlign: "center" as const };
   const prose = { fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash };
 
   return (

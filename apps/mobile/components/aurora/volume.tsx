@@ -717,7 +717,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk }}>{Math.round(done.score * 100)}%</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.knownAbout")}</Text>
         </View>
-        <View style={{ height: 3, borderRadius: 999, backgroundColor: C.ink, marginTop: 10, overflow: "hidden" }}>
+        <View style={{ height: 3, borderRadius: RADIUS.pill, backgroundColor: C.ink, marginTop: 10, overflow: "hidden" }}>
           <View style={{ width: pct(done.score), height: "100%", backgroundColor: C.lime }} />
         </View>
 
@@ -1033,7 +1033,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 16 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
-          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: 3, backgroundColor: i === sets.length - 1 ? C.blue : `${C.blue}66` }} />
+          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: RADIUS.mark, backgroundColor: i === sets.length - 1 ? C.blue : `${C.blue}66` }} />
         ))}
       </View>
     </View>

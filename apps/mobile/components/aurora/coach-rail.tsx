@@ -7,7 +7,7 @@ import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../.
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 import RailTail from "./rail-tail";
-import { GUTTER } from "./kit";
+import { GUTTER , RADIUS} from "./kit";
 
 // "Follow a coach" — a horizontally swipeable rail on the mobile Today. Mirrors
 // the web rail: live marketplace (/api/coaches) with the shared placeholder
@@ -94,14 +94,14 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
             ...(c.years ? [{ value: `${c.years}y`, label: t("w.explore.coachCoaching") }] : []),
           ];
           return (
-            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${t("w.explore.coachOpen")} ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, overflow: "hidden", ...cardShadow }}>
+            <Pressable key={c.userId ?? c.handle ?? String(i)} onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${t("w.explore.coachOpen")} ${c.name}`} style={{ position: "relative", width: CARD_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, paddingTop: 16, paddingHorizontal: 16, paddingBottom: 16, overflow: "hidden", ...cardShadow }}>
               {/* accent wash — the coach's colour bleeding in from the top corner
                   (a diagonal fade stands in for the web's radial gradient). */}
               <LinearGradient colors={[`${accent}24`, `${accent}00`]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.9 }} style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none" />
               <Text style={{ position: "absolute", top: 14, right: 14, color: `${C.ash}8c`, fontFamily: F.mono, fontSize: fs.subtitle }}>›</Text>
 
               <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingRight: 16 }}>
-                <View style={{ width: 46, height: 46, borderRadius: 999, borderWidth: 1.5, borderColor: accent, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
+                <View style={{ width: 46, height: 46, borderRadius: RADIUS.pill, borderWidth: 1.5, borderColor: accent, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
                   <Text style={{ color: accentText, fontFamily: F.monoBold, fontSize: fs.body }}>{initials(c.name)}</Text>
                 </View>
                 <View style={{ flex: 1 }}>

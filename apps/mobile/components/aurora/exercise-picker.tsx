@@ -146,7 +146,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
         {/* The tile carries the lift's DRAWN demo once it exists, and until then
             its IMPLEMENT (core: exercise-marks) — a barbell, a pair of bells, a
             cable handle. Sports keep their catalog glyph. */}
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+        <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
           {e.icon
             ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
             : <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={txt(C, c)} />}
@@ -157,7 +157,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
     );
   };
   const slab = (entries: Entry[]) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 3 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 3 }}>
       {entries.map((e, i) => row(e, i === entries.length - 1))}
     </View>
   );
@@ -185,7 +185,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.builder.close")}</Text>
             </Pressable>
           </View>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 16 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 16 }}>
             <AuroraIcon name="search" size={18} color={C.ash} />
             <TextInput
               value={query}
@@ -255,13 +255,13 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                       const c = kindColor(r.entries[0]!.kind, C);
                       return (
                         <Pressable key={r.key} onPress={() => setRoom(r.key)} accessibilityRole="button" accessibilityLabel={r.label}
-                          style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, padding: 16 }}>
+                          style={{ flexBasis: "47%", flexGrow: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16 }}>
                           {/* A room is a muscle group, not a lift — its mark is
                               the BODY it trains, lit from the room's own
                               exercise list (core: roomBodyMark). Sports rooms
                               keep their catalog glyph; a room the DB can't read
                               falls back to its initials. */}
-                          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                          <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
                             {r.icon
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
                               : roomBodyMark(r.entries.map((e) => e.name))

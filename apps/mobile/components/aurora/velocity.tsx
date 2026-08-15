@@ -115,7 +115,7 @@ export default function AuroraVelocity() {
         <View style={{ marginTop: 8 }}>
           {VELOCITY_ZONES.slice().reverse().map((z) => (
             <View key={z.id} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
-              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: zoneColor(z.id, C) }} />
+              <View style={{ width: 10, height: 10, borderRadius: RADIUS.mark, backgroundColor: zoneColor(z.id, C) }} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{z.label}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{z.focus}</Text>
@@ -164,7 +164,7 @@ function Plot({ points, profile }: { points: LVPoint[]; profile: LoadVelocityPro
     for (let i = 0; i <= 28; i++) { const l = minL + ((profile.estimated1rm - minL) * i) / 28; line.push({ load: l, velocity: velocityAtLoad(profile, l) }); }
   }
   return (
-    <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: H, borderWidth: 1, borderColor: C.line, borderRadius: 12, backgroundColor: C.ink, overflow: "hidden" }}>
+    <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: H, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, backgroundColor: C.ink, overflow: "hidden" }}>
       {w > 0 && line.map((p, i) => <View key={`l${i}`} style={{ position: "absolute", left: X(p.load) - 1.5, top: Y(p.velocity) - 1.5, width: 3, height: 3, borderRadius: 2, backgroundColor: C.violet }} />)}
       {w > 0 && points.map((p, i) => <View key={`p${i}`} style={{ position: "absolute", left: X(p.load) - 4, top: Y(p.velocity) - 4, width: 8, height: 8, borderRadius: 4, backgroundColor: C.lime }} />)}
     </View>

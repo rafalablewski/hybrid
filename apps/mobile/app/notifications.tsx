@@ -171,7 +171,7 @@ export default function Notifications() {
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{relativeTime(it.at)}</Text>
             {/* Semantic, not decoration: this row is unread. It sits on
                 the TRAILING edge so it can't read as a header marker. */}
-            {isNew && <View accessibilityLabel={t("notif.new")} style={{ width: 7, height: 7, borderRadius: 999, backgroundColor: C.lime }} />}
+            {isNew && <View accessibilityLabel={t("notif.new")} style={{ width: 7, height: 7, borderRadius: RADIUS.pill, backgroundColor: C.lime }} />}
           </View>
         </Pressable>
       </SwipeRow>

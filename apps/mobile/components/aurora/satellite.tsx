@@ -6,6 +6,7 @@ import { GlassSatellite, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPO
 import { withAlpha } from "./field";
 import { useTheme } from "../../lib/theme";
 import { F, fs, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { RADIUS } from "./kit";
 
 /**
  * ASATELLITE — the ONE neutral glass button, and the TWIN of
@@ -106,7 +107,7 @@ export default function ASatellite({
         alignItems: "center",
         justifyContent: "center",
         gap: 7,
-        borderRadius: 999,
+        borderRadius: RADIUS.pill,
         overflow: "hidden",
         // Transparent under the real material, so the glass is the fill rather
         // than a wash printed on top of it.

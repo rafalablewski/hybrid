@@ -6,6 +6,7 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, tracking, PressScale as Pressable } from "../../lib/ui";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraExerciseMark from "./exercise-mark";
+import { RADIUS } from "./kit";
 
 /**
  * The exercise DEMO MEDIA surface (mobile) — one component for every place a
@@ -56,7 +57,7 @@ export default function AuroraExerciseMedia({
   const tag = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase" as const, color: C.ash };
 
   return (
-    <View style={{ borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingVertical: 10, paddingHorizontal: 16 }}>
+    <View style={{ borderRadius: RADIUS.card, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingVertical: 10, paddingHorizontal: 16 }}>
       <View style={{ alignItems: "center" }}>
         <View style={{ width: "58%", maxWidth: 220, aspectRatio: 1 }}>
           {/* A clip/link with no poster has nothing to draw here — the

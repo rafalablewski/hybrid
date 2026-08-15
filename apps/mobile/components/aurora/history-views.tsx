@@ -174,10 +174,10 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
     <View style={{ gap: 12, marginTop: 12 }}>
       <View style={{ flexDirection: "row", gap: 6 }}>
         {week.map((d, i) => (
-          <View key={d.key} style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 8, paddingBottom: 8, borderRadius: 12, backgroundColor: C.ink2, borderWidth: 1, borderColor: d.isToday ? C.lime : C.line }}>
+          <View key={d.key} style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 8, paddingBottom: 8, borderRadius: RADIUS.inner, backgroundColor: C.ink2, borderWidth: 1, borderColor: d.isToday ? C.lime : C.line }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(WEEKDAY_LABEL_KEYS[i]!).slice(0, 1)}</Text>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: d.isToday ? lime : d.future ? C.ash : C.chalk }}>{d.dayNum}</Text>
-            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: d.dot === 2 ? C.lime : d.dot === 1 ? withAlpha(C.lime, 0.45) : "transparent" }} />
+            <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: d.dot === 2 ? C.lime : d.dot === 1 ? withAlpha(C.lime, 0.45) : "transparent" }} />
           </View>
         ))}
       </View>
@@ -369,7 +369,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ flexDirection: "row", gap: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, padding: 3 }}>
+      <View style={{ flexDirection: "row", gap: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 3 }}>
         {TREND_RANGES.map((rg) => {
           const on = range === rg.id;
           return (
@@ -378,7 +378,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
               onPress={() => setRange(rg.id)}
               accessibilityRole="button"
               accessibilityState={{ selected: on }}
-              style={{ flex: 1, paddingVertical: 8, borderRadius: 999, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
+              style={{ flex: 1, paddingVertical: 8, borderRadius: RADIUS.pill, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
             >
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
                 {t(rg.key)}

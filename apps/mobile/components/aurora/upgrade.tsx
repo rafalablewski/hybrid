@@ -13,6 +13,7 @@ import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui"
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import Sheet from "./sheet";
+import { RADIUS } from "./kit";
 
 // The Full toolkit, sold as one concise sheet (matches the web upgrade sheet).
 // Benefits come from the shared @hybrid/core FULL_BENEFITS so the paywall and
@@ -116,7 +117,7 @@ export default function AuroraUpgrade() {
     // so the CTA sits at the end of the read on both clients.
     <Sheet visible={open} onClose={close} onClosed={() => router.back()}>
       {/* badge */}
-      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${pa.fill}24`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
       </View>
 
@@ -149,7 +150,7 @@ export default function AuroraUpgrade() {
       )}
 
       {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}
-      <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
+      <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: RADIUS.field, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
         {busy ? <ActivityIndicator color={pa.ink} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.account.upgrade.start-trial")}</Text>}
       </Pressable>
       {/* Restore Purchases — required by Apple for auto-renewable subscriptions */}

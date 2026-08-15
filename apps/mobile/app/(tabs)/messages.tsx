@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { fs, F, leading , tracking} from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { AuroraScreen } from "../../components/aurora/kit";
+import { AuroraScreen , RADIUS} from "../../components/aurora/kit";
 import { AuroraIcon } from "../../components/aurora/icons";
 
 /**
@@ -25,7 +25,7 @@ export default function Messages() {
   const { t } = useLang();
   return (
     <AuroraScreen hero={{ rank: "title", title: t("messages.title"), eyebrow: t("nav.group.social") }} back={false}>
-      <View style={{ marginTop: 24, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 20 }}>
+      <View style={{ marginTop: 24, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
         <AuroraIcon name="mail" size={28} color={C.ash} />
         <Text style={{ marginTop: 14, fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: C.chalk }}>{t("messages.soonTitle")}</Text>
         <Text style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("messages.soonBody")}</Text>

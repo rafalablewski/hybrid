@@ -15,7 +15,7 @@ import {
   type ProgramItem,
   type CoachGroup,
 } from "../lib/api";
-import { ACard, cardStack, APill } from "./aurora/kit";
+import { ACard, cardStack, APill , RADIUS} from "./aurora/kit";
 
 const sessionsOf = (w: ProgramWeek[]) => w.reduce((n, x) => n + x.days.length, 0);
 const today = localTodayKey;
@@ -155,7 +155,7 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
     const sel = target === key;
     return (
       <Pressable key={key} onPress={() => setTarget(sel ? "" : key)}
-        style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? `${C.lime}1c` : "transparent", borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
+        style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? `${C.lime}1c` : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: sel ? txt(C, C.lime) : C.ash }}>{label}</Text>
       </Pressable>
     );

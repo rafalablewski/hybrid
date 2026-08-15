@@ -29,6 +29,7 @@ import { track } from "../../lib/track";
 import { fs, tracking, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import { HubGlyph } from "./today-tabs";
+import { RADIUS } from "./kit";
 
 /**
  * THE SIDE MENU (mobile) — the drawer behind the Today header's avatar, the
@@ -270,7 +271,7 @@ export default function AuroraSideMenu({
               <View pointerEvents="none" style={{ position: "absolute", top: -50, right: -40, width: 150, height: 150, borderRadius: 75, backgroundColor: `${pa.fill}24` }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: pa.text }}>{t("w.home.pillnav.upgradeKicker")}</Text>
               <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 6, letterSpacing: tracking.display }}>{t("nav.upgrade")}</Text>
-              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: pa.fill, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
+              <View style={{ marginTop: 12, alignSelf: "flex-start", backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 7 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: pa.ink }}>{t("w.home.pillnav.goFull")}</Text>
               </View>
             </Pressable>

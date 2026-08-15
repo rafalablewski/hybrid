@@ -10,6 +10,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, tracking, F } from "../../lib/ui";
+import { RADIUS } from "./kit";
 
 const poly = (pts: { x: number; y: number }[]) => pts.map((q) => `${q.x},${q.y}`).join(" ");
 
@@ -44,7 +45,7 @@ export default function AuroraBodyMap({ name, t }: { name: string; t: (k: string
 function Shell({ C, map, selectedGlow, t, children }: { C: Palette; map: ExerciseBodyMap; selectedGlow: MuscleGlow | null; t: (k: string) => string; children: React.ReactNode }) {
   const shown = selectedGlow || map.glow[0];
   return (
-    <View style={{ marginTop: 12, borderRadius: 28, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
+    <View style={{ marginTop: 12, borderRadius: RADIUS.card, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 }}>
       {children}
       {/* caption — the selected muscle, or the top mover by default */}
       <View style={{ alignItems: "center", marginTop: 6, minHeight: 20 }}>
@@ -68,7 +69,7 @@ function Shell({ C, map, selectedGlow, t, children }: { C: Palette; map: Exercis
 function Swatch({ C, label, opacity }: { C: Palette; label: string; opacity: number }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-      <View style={{ width: 11, height: 11, borderRadius: 3, backgroundColor: C.lime, opacity, borderWidth: 1, borderColor: C.line }} />
+      <View style={{ width: 11, height: 11, borderRadius: RADIUS.mark, backgroundColor: C.lime, opacity, borderWidth: 1, borderColor: C.line }} />
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
     </View>
   );

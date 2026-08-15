@@ -9,6 +9,7 @@ import { getProfile, follow, unfollow, getCompare, blockUser, reportTarget } fro
 import { registerPerson, useSharedSurfaceTarget } from "../lib/shared-element";
 import { useConfirm } from "./aurora/confirm";
 import Sheet from "./aurora/sheet";
+import { RADIUS } from "./aurora/kit";
 
 /** The level chip's ink — the palette's existing ramp, no new colours. Mirrors
  *  badgeInk in aurora/profile.tsx and LevelChip on web. */
@@ -40,9 +41,9 @@ export function Avatar({ url, name, handle, size = 44, shared }: { url?: string 
   const { ref } = useSharedSurfaceTarget(shared ? SHARED_ELEMENTS.personAvatar : "");
   const srcRef = useRef<View | null>(null);
   const face = url
-    ? <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2 }} />
+    ? <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: C.ink2 }} />
     : (
-      <View style={{ width: size, height: size, borderRadius: 999, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+      <View style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
         <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
       </View>
     );
@@ -85,7 +86,7 @@ export function SButton({ label, onPress, ghost, tone, small, disabled, full, bu
   const C = useTheme().palette;
   const t = tone ?? C.lime;
   return (
-    <Pressable onPress={onPress} disabled={disabled} style={{ paddingVertical: small ? 7 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: 999, borderWidth: 1, borderColor: ghost ? C.line : t, backgroundColor: ghost ? "transparent" : t, opacity: disabled ? 0.5 : 1, alignSelf: full ? "stretch" : undefined, alignItems: full ? "center" : undefined }}>
+    <Pressable onPress={onPress} disabled={disabled} style={{ paddingVertical: small ? 7 : 10, paddingHorizontal: small ? 12 : 16, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: ghost ? C.line : t, backgroundColor: ghost ? "transparent" : t, opacity: disabled ? 0.5 : 1, alignSelf: full ? "stretch" : undefined, alignItems: full ? "center" : undefined }}>
       <View>
         <Text style={{ color: ghost ? C.chalk : C.onAccent, fontFamily: F.bold, fontSize: small ? 12 : 13, opacity: busyLabel ? 0 : 1 }}>{label}</Text>
         {busyLabel ? (

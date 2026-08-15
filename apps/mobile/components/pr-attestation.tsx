@@ -4,6 +4,7 @@ import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit } from 
 import { fetchAttestations, requestAttestation } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../lib/ui";
+import { RADIUS } from "./aurora/kit";
 
 // Verified Strength Record — the attestation panel on a session's PR list.
 // Mirrors apps/web/components/pr-attestation.tsx: tier badge per PR
@@ -49,10 +50,10 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
             {i.topLoad ? <> at <Text style={{ fontFamily: F.bold }}>{fmtWeight(i.topLoad, units)}</Text></> : null}.
           </Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-            <Pressable onPress={() => respond(i.id, "cosign")} disabled={busyId === i.id} style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 7 }}>
+            <Pressable onPress={() => respond(i.id, "cosign")} disabled={busyId === i.id} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 13, paddingVertical: 7 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: "#0c0d0c" }}>I watched it</Text>
             </Pressable>
-            <Pressable onPress={() => respond(i.id, "decline")} disabled={busyId === i.id} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 7 }}>
+            <Pressable onPress={() => respond(i.id, "decline")} disabled={busyId === i.id} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 13, paddingVertical: 7 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Decline</Text>
             </Pressable>
           </View>
@@ -120,7 +121,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
               <Text style={{ flex: 1, minWidth: 120, fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>
                 {lift} <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmtWeight(topLoad, units)}</Text>
               </Text>
-              <View style={{ borderRadius: 999, borderWidth: 1, borderColor: tier === 2 ? C.lime : C.line, paddingHorizontal: 10, paddingVertical: 2, opacity: pending ? 0.75 : 1 }}>
+              <View style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: tier === 2 ? C.lime : C.line, paddingHorizontal: 10, paddingVertical: 2, opacity: pending ? 0.75 : 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: tier === 2 ? txt(C, C.lime) : tier === 1 ? C.chalk : C.ash }}>
                   {pending ? `${badge.label} — witness asked` : badge.label}
                   {tier === 2 && signer?.witnessHandle ? ` by @${signer.witnessHandle}` : ""}
@@ -144,7 +145,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
                   accessibilityLabel="Witness handle"
                   style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 8 }}
                 />
-                <Pressable onPress={() => ask(lift)} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}>
+                <Pressable onPress={() => ask(lift)} disabled={busy} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: "#0c0d0c" }}>{busy ? "Sending" : "Send"}</Text>
                 </Pressable>
               </View>

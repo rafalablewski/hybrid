@@ -9,7 +9,7 @@ import {
   type LoggedSession,
 } from "@hybrid/core";
 import Sheet from "./sheet";
-import { ASearch } from "./kit";
+import { ASearch , RADIUS} from "./kit";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -79,7 +79,7 @@ export default function ExerciseFavouritesSheet({
         accessibilityLabel={`${on ? t("w.home.exw.unpin") : t("w.home.exw.pin")} – ${e.name}`}
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line, opacity: locked ? 0.45 : 1 }}
       >
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.body, letterSpacing: tracking.display, color: on ? txt(C, C.lime) : C.ash }}>{e.initials}</Text>
         </View>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
@@ -92,7 +92,7 @@ export default function ExerciseFavouritesSheet({
   };
 
   const slab = (list: ExerciseBrowseEntry[]) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 4 }}>
       {list.map((e, i) => row(e, i === list.length - 1))}
     </View>
   );

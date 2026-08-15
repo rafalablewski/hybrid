@@ -275,8 +275,31 @@ describe("leading and tracking", () => {
 
 describe("geometry", () => {
   it("RATCHET — raw borderRadius gives way to RADIUS.*", () => {
-    // 36 distinct radii against a 5-rung vocabulary (mark/inner/field/card/pill).
-    expectAtMost(hits(/borderRadius:\s*\d/g), 459, "raw borderRadius → RADIUS.*");
+    // 459 → 166. 293 sites were ALREADY a rung — 122 at 999, 75 at 16, 57 at 12,
+    // 28 at 3, 13 at 28 — and simply were not saying so. Verified exact against
+    // RADIUS before the rewrite ran, so nothing moved. `999` alone was a quarter
+    // of the debt: the pill idiom, spelled as a sentinel 122 times.
+    //
+    // WHAT IS LEFT IS MOSTLY NOT DRIFT, and this axis differs from the type ones
+    // in a way that matters. A radius is frequently DERIVED rather than chosen:
+    //
+    //   A CIRCLE is `borderRadius = size / 2`, and there were 41 sites where the
+    //     radius is provably half a width or height ON THE SAME LINE — r115 on
+    //     230, r75 on 150, r85 on 170, r44 on 88, r42 on 84 — with more where
+    //     the dimension sits a line away or is computed. Snapping those to
+    //     RADIUS.card would not be a restyle, it would be a BUG: the circles
+    //     stop being circles. There is no rung for "half of whatever this is",
+    //     and there should not be one.
+    //
+    //   A CONCENTRIC corner is `parent - pad`, which the kit already exposes as
+    //     concentric(). Those small values (4, 5, 6, 8, 10) are the arithmetic
+    //     of a nested surface, not a choice from a ladder.
+    //
+    // So the remainder needs reading site by site — is this a circle, a
+    // concentric inset, or a genuine off-ladder choice — and only the third kind
+    // is sweepable. That is a different job from the rename and is not attempted
+    // here.
+    expectAtMost(hits(/borderRadius:\s*\d/g), 166, "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -469,7 +492,16 @@ describe("presentation", () => {
     // A ratchet rather than a HARD rule, because a handful of these are
     // legitimately not pills (today's chartreuse day-disc). It may only ever
     // fall.
-    const found = hits(/backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*(?:999|RADIUS\.pill|1[0-9]\b|2[0-9]\b)|borderRadius:\s*(?:999|RADIUS\.pill|1[0-9]\b|2[0-9]\b)[^\n]*backgroundColor:\s*(?:C|palette)\.lime/g);
+    // THE RADIUS ALTERNATION MUST NAME THE TOKENS TOO. This pattern was written
+    // against raw integers (999, 1x, 2x), so when the borderRadius sweep renamed
+    // those to RADIUS.* the guard simply stopped seeing two of its own sites and
+    // the count fell 31 → 29 with nothing fixed. A rename must never be able to
+    // shrink another rule's coverage; `inner` (12) and `field` (16) are the two
+    // rungs inside the old 1x/2x range, so they are spelled here as well.
+    const RAD = String.raw`(?:999|RADIUS\.(?:pill|inner|field)|1[0-9]\b|2[0-9]\b)`;
+    const found = hits(new RegExp(
+      String.raw`backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*${RAD}` +
+      String.raw`|borderRadius:\s*${RAD}[^\n]*backgroundColor:\s*(?:C|palette)\.lime`, "g"));
     expectAtMost(found, 31, "hand-rolled lime pill → <APill />");
   });
 

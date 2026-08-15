@@ -5,7 +5,7 @@ import { routineSummary, type SessionBlock } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { withAlpha, ASection } from "./kit";
+import { withAlpha, ASection , RADIUS} from "./kit";
 import Sheet from "./sheet";
 import { CtaLabel } from "./cta-label";
 
@@ -107,7 +107,7 @@ export default function QuickStartSheet({
         <Pressable
           onPress={() => { onClose(); onBuildNew(); }}
           accessibilityRole="button"
-          style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: 16, paddingVertical: 12, alignItems: "center" }}
+          style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center" }}
         >
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
         </Pressable>
@@ -149,7 +149,7 @@ function Star({ C, on, label, onPress }: { C: P; on: boolean; label: string; onP
 function FavouriteCard({ C, width, r, t, onLaunch, onToggleFav }: { C: P; width: number; r: QuickRoutine; t: (k: string) => string; onLaunch: () => void; onToggleFav: () => void }) {
   const { glyph, accent } = decor(r.id, C);
   return (
-    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: 16, overflow: "hidden" }}>
+    <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, overflow: "hidden" }}>
       <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, 0.05) }]} />
       <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.18), withAlpha(accent, 0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <View style={{ position: "absolute", top: 10, right: 10 }}>
@@ -167,7 +167,7 @@ function RoutineRow({ C, first, r, t, onLaunch, onToggleFav }: { C: P; first: bo
   const { glyph, accent } = decor(r.id, C);
   return (
     <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 2, borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderTopColor: C.line }}>
-      <View style={{ width: 36, height: 36, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(accent, 0.13), borderWidth: 1, borderColor: withAlpha(accent, 0.26) }}>
+      <View style={{ width: 36, height: 36, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(accent, 0.13), borderWidth: 1, borderColor: withAlpha(accent, 0.26) }}>
         <Text style={{ fontSize: fs.note, color: txt(C, accent) }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>

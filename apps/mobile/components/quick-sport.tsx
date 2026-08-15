@@ -18,7 +18,7 @@ import { useLang } from "../lib/i18n";
 import { fs, space, tracking, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
-import { APill } from "./aurora/kit";
+import { APill , RADIUS} from "./aurora/kit";
 import { DeviceMark } from "./aurora/device-mark";
 import { DeviceImportSheet } from "./device-import";
 import { healthKitAvailability } from "../lib/healthkit";
@@ -127,7 +127,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.home.quickSport.close")}</Text>
               </Pressable>
             </View>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 16 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 16 }}>
               <AuroraIcon name="search" size={18} color={C.ash} />
               <TextInput value={query} onChangeText={setQuery} placeholder={t("w.home.quickSport.search")} placeholderTextColor={C.ash} autoFocus style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, paddingVertical: 12 }} />
             </View>

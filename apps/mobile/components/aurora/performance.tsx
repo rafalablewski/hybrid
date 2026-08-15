@@ -435,7 +435,7 @@ function Full({ top }: { top?: ReactNode }) {
                 const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
                 const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
                 return (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 12, paddingVertical: 4, paddingHorizontal: 10, borderRadius: 999, backgroundColor: withAlpha(tint, 0.12), borderWidth: 1, borderColor: withAlpha(tint, 0.34) }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 12, paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS.pill, backgroundColor: withAlpha(tint, 0.12), borderWidth: 1, borderColor: withAlpha(tint, 0.34) }}>
                     <ReadinessFace feeling={adj.feeling} scale={0.5} />
                     <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, tint) }}>{label}</Text>
                   </View>

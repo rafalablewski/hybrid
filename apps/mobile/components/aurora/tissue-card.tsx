@@ -10,7 +10,7 @@ import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { ACard, CardFoot, ActionPill } from "./kit";
+import { ACard, CardFoot, ActionPill , RADIUS} from "./kit";
 import { InjurySheet, RiskBody } from "./protocol";
 
 /** The protocol's full span, so the status line can say "day 9 of 21" without
@@ -190,7 +190,7 @@ export default function TissueCard({
           <View style={{ paddingBottom: 4 }}>
             <Rows rows={axis.rows} C={C} t={t} />
             {risk.awaitingBaseline.length > 0 && (
-              <View style={{ marginTop: 12, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: `${C.ash}14` }}>
+              <View style={{ marginTop: 12, padding: 12, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, backgroundColor: `${C.ash}14` }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
               </View>
@@ -201,7 +201,7 @@ export default function TissueCard({
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 16, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
             {load.enoughHistory ? (
               <>
-                <View style={{ flexDirection: "row", gap: 1, backgroundColor: C.line, borderWidth: 1, borderColor: C.line, borderRadius: 12, overflow: "hidden" }}>
+                <View style={{ flexDirection: "row", gap: 1, backgroundColor: C.line, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, overflow: "hidden" }}>
                   <Watch C={C} label={t("w.home.cockpit.acwr")} value={load.acwr.toFixed(2)} color={txt(C, acwrColor(load.band, C))} />
                   <Watch C={C} label={t("w.home.cockpit.srpe")} value={load.acute.toLocaleString()} />
                   <Watch C={C} label={t("w.home.cockpit.monotony")} value={load.monotony.toFixed(1)} />
@@ -310,8 +310,8 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Text numberOfLines={1} style={{ fontFamily: r.flagged ? F.black : F.reg, fontSize: fs.caption, color: C.chalk, width: 62 }}>{t(INJURY_AREA_KEY[r.tissue])}</Text>
             {/* the row's own bar, on the axis scale, carrying the same flag line */}
-            <View style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: `${C.ash}29` }}>
-              <View style={{ position: "absolute", left: 0, top: 0, height: 5, width: `${r.leftPct}%`, borderRadius: 3, backgroundColor: r.risk > 0 ? riskColor(r.band, C) : "transparent" }} />
+            <View style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: `${C.ash}29` }}>
+              <View style={{ position: "absolute", left: 0, top: 0, height: 5, width: `${r.leftPct}%`, borderRadius: RADIUS.mark, backgroundColor: r.risk > 0 ? riskColor(r.band, C) : "transparent" }} />
               <View style={{ position: "absolute", left: "50%", top: -6, height: 17, width: 1, backgroundColor: `${C.ash}80` }} />
             </View>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...num(C, r.flagged), width: 26, fontFamily: F.monoBold, color: r.flagged ? txt(C, C.red) : C.chalk }}>{r.risk}</Text>

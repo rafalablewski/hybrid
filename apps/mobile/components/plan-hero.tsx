@@ -13,7 +13,7 @@ import { useSharedSurfaceTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 import { leading, tracking, fs, F, useEntrance, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { AuroraField, withAlpha } from "./aurora/kit";
+import { AuroraField, withAlpha , RADIUS} from "./aurora/kit";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./aurora/hero";
 import { haptic } from "../lib/haptics";
 
@@ -44,7 +44,7 @@ export function PlanDockPill({ state, idleLabel, busyLabel, doneLabel, onPress }
       accessibilityRole="button"
       style={{
         height: 50,
-        borderRadius: 999,
+        borderRadius: RADIUS.pill,
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: done ? C.ink2 : C.lime,

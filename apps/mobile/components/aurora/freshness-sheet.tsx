@@ -7,7 +7,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, F } from "../../lib/ui";
-import { withAlpha } from "./kit";
+import { withAlpha , RADIUS} from "./kit";
 import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -137,7 +137,7 @@ function Row({ C, row, label }: { C: Palette; row: FreshnessRow; label: string }
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
       <Text numberOfLines={1} style={{ flex: 1, fontFamily: row.top ? F.semi : F.reg, fontSize: fs.caption, color: row.top ? C.chalk : C.ash }}>{label}</Text>
-      <View style={{ width: 84, height: 6, borderRadius: 3, backgroundColor: C.ink, overflow: "hidden" }}>
+      <View style={{ width: 84, height: 6, borderRadius: RADIUS.mark, backgroundColor: C.ink, overflow: "hidden" }}>
         <View style={{ width: `${row.sharePct}%`, height: "100%", backgroundColor: rowPaint(C, row) }} />
       </View>
       <Text style={{ width: 34, textAlign: "right", fontFamily: F.mono, fontSize: fs.caption, color: row.top ? C.chalk : C.ash }}>{row.value}</Text>

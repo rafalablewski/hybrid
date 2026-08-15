@@ -8,7 +8,7 @@ import { fs, F, leading, tracking, trackFigure, PressScale as Pressable } from "
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { AuroraIcon } from "./icons";
-import { DockRail, DockChip, CARD_PAD, GUTTER } from "./kit";
+import { DockRail, DockChip, CARD_PAD, GUTTER , RADIUS} from "./kit";
 import GroupMark from "./group-mark";
 import { FoodRow, IClose, IPlus, Glyph } from "./nutrition-kit";
 
@@ -61,7 +61,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
   const counts = useMemo(() => roleCounts(items), [items]);
   const pct = Math.round(stats.completeness * 100);
   return (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: CARD_PAD, marginTop: 16 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: fs.stat, color: C.chalk }}>{stats.count}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -77,7 +77,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
       {/* THE MIX — one bar, a segment per shelf, in the shelf's own colour. It
           is the pantry's actual shape, and it is the legend for the chips
           below: the same five colours, in the same order. */}
-      <View style={{ flexDirection: "row", gap: 2, height: 8, marginTop: 18, borderRadius: 999, overflow: "hidden" }}>
+      <View style={{ flexDirection: "row", gap: 2, height: 8, marginTop: 18, borderRadius: RADIUS.pill, overflow: "hidden" }}>
         {FOOD_ROLES.filter((r) => counts[r] > 0).map((r) => (
           <View key={r} style={{ flex: counts[r], backgroundColor: RC[r], opacity: roleOpacity(r) }} />
         ))}
@@ -110,7 +110,7 @@ export function PantrySearchToggle({ open, onToggle }: { open: boolean; onToggle
       accessibilityState={{ expanded: open }}
       accessibilityLabel={open ? t("w.recovery.nutrition.clear") : t("w.recovery.nutrition.pn.searchPh")}
       hitSlop={8}
-      style={{ width: 44, height: 44, borderRadius: 16, borderWidth: 1, borderColor: open ? C.lime : C.line, alignItems: "center", justifyContent: "center" }}
+      style={{ width: 44, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: open ? C.lime : C.line, alignItems: "center", justifyContent: "center" }}
     >
       {open ? <IClose size={18} color={C.chalk} /> : <AuroraIcon name="search" size={18} color={C.chalk} />}
     </Pressable>
@@ -165,7 +165,7 @@ export function PantryScreen<T extends PantryFood>({
           the athlete reached for is still the top-right one. */}
       {searchOpen ? (
         <View style={{ marginTop: 12 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingVertical: 12 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}>
             <AuroraIcon name="search" size={17} color={C.ash} />
             <TextInput
               ref={inputRef}
@@ -259,14 +259,14 @@ export function PantryScreen<T extends PantryFood>({
       {q.length >= 2 ? dbSlot : null}
 
       {canCreate ? (
-        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: 999, paddingVertical: 14 }}>
+        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14 }}>
           <IPlus size={15} color={txt(C, C.lime)} strokeWidth={2.2} />
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
         </Pressable>
       ) : (
         /* The cap gates the ADD, never the library: every food already saved
            stays loggable, searchable and deletable at the cap. */
-        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: `${premium?.fill ?? C.lime}1f`, borderWidth: 1, borderColor: `${premium?.fill ?? C.lime}66`, borderRadius: 999, paddingVertical: 14 }}>
+        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: `${premium?.fill ?? C.lime}1f`, borderWidth: 1, borderColor: `${premium?.fill ?? C.lime}66`, borderRadius: RADIUS.pill, paddingVertical: 14 }}>
           <Text style={{ color: premium?.text ?? txt(C, C.lime) }}>✦</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: premium?.text ?? txt(C, C.lime) }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
         </Pressable>

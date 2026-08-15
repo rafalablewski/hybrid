@@ -42,7 +42,7 @@ import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
-import { withAlpha, ASection, GUTTER, CARD_PAD } from "./aurora/kit";
+import { withAlpha, ASection, GUTTER, CARD_PAD , RADIUS} from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
 
@@ -183,7 +183,7 @@ export default function PercentProgram({
         <ProgramDays days={view.days} week={view.week} peakNote={view.peakNote} C={C} />
       </View>
 
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, padding: CARD_PAD, marginBottom: 12 }}>
+      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD, marginBottom: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{view.progression}</Text>
       </View>
@@ -223,7 +223,7 @@ function WeekRail({ C, bars, weeks, week, setWeek, wkLabel }: { C: Palette; bars
           <Pressable key={w} onPress={() => setWeek(w)} accessibilityRole="button" accessibilityState={{ selected: on }} hitSlop={4} style={{ width: 46, alignItems: "center", gap: 6, paddingVertical: 3 }}>
             {hasBars ? (
               <View style={{ width: 16, height: 34, justifyContent: "flex-end" }}>
-                <View style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: 3, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16) }} />
+                <View style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: RADIUS.mark, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16) }} />
               </View>
             ) : (
               <View style={{ width: 22, height: 2, borderRadius: 2, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16), marginTop: 16 }} />
@@ -291,7 +291,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
   const allProse = days.length > 0 && days.every((d) => d.sessions.every((s) => s.lifts.every(isProse)));
 
   if (allProse) {
-    const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, overflow: "hidden" as const, marginBottom: 12 };
+    const card = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden" as const, marginBottom: 12 };
     return (
       <View style={card}>
         <WeekHeader title={`Week ${week}`} right={peakNote ? peakNote.toLowerCase() : null} C={C} />
@@ -395,7 +395,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
   const words = dayLeadWords(day);
   const right = dayContentSummary(day);
   return (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28, overflow: "hidden", marginBottom: 12 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden", marginBottom: 12 }}>
       <Pressable
         disabled={!expandable}
         onPress={onToggle}

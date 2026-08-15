@@ -7,6 +7,7 @@ import { useLang } from "../lib/i18n";
 import { getComments, postComment } from "../lib/social-api";
 import { Avatar, SButton } from "./social-kit";
 import { useConfirm } from "./aurora/confirm";
+import { RADIUS } from "./aurora/kit";
 
 /**
  * THE THREAD under a post (mobile) — twin of apps/web/components/feed-comments.tsx.
@@ -64,7 +65,7 @@ export function Comments({
         </View>
       ))}
       <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
-        <TextInput ref={box} value={text} onChangeText={setText} placeholder={t("w.social.commentPlaceholder")} placeholderTextColor={C.ash} style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontFamily: F.reg, fontSize: fs.body }} />
+        <TextInput ref={box} value={text} onChangeText={setText} placeholder={t("w.social.commentPlaceholder")} placeholderTextColor={C.ash} style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontFamily: F.reg, fontSize: fs.body }} />
         <SButton label={t("w.social.post")} small onPress={send} />
       </View>
     </View>

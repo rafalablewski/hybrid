@@ -11,7 +11,7 @@ import {
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
-import { ADrawer, CARD_PAD as SHARED_CARD_PAD, withAlpha } from "./kit";
+import { ADrawer, CARD_PAD as SHARED_CARD_PAD, withAlpha , RADIUS} from "./kit";
 import PeriodRecords from "./period-records";
 import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import { useLang } from "../../lib/i18n";
@@ -155,7 +155,7 @@ export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title
       }}
     >
       <View style={{
-        width: 32, height: 32, borderRadius: 16,
+        width: 32, height: 32, borderRadius: RADIUS.field,
         borderWidth: 1, borderColor: premium ? pa.text : C.line, alignItems: "center", justifyContent: "center",
       }}>
         <Text style={{ fontSize: fs.body, color: glyphColor }}>{glyph}</Text>
@@ -316,7 +316,7 @@ export default function AuroraWeekVerdict({
       {/* The compartment below supplies the bottom padding while it is open, so
           the card gives its own up rather than fencing the panel in. */}
       <View style={{
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 28,
+        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card,
         paddingHorizontal: CARD_PAD, paddingTop: CARD_PAD, paddingBottom: open ? 0 : CARD_PAD, ...cardShadow(),
       }}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
@@ -383,7 +383,7 @@ export default function AuroraWeekVerdict({
                   // The first column pulls its inset back off the card's edge so
                   // the labels still line up with everything above them.
                   flex: 1, paddingHorizontal: 5, paddingTop: 4, paddingBottom: 6,
-                  marginLeft: i === 0 ? -5 : 0, marginTop: -4, borderRadius: 12,
+                  marginLeft: i === 0 ? -5 : 0, marginTop: -4, borderRadius: RADIUS.inner,
                   // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
                   // here: at 9% it reads as the column being lit rather than as
                   // a second surface laid over the card.
@@ -563,7 +563,7 @@ function MetricDetail({
           <View style={{ flexDirection: "row", gap: 2, height: 6, marginTop: 12 }}>
             {detail.groups.map((g, i) => (
               <View key={g.id} style={{
-                flexGrow: Math.max(g.share, 0.02), flexBasis: 0, borderRadius: 999,
+                flexGrow: Math.max(g.share, 0.02), flexBasis: 0, borderRadius: RADIUS.pill,
                 backgroundColor: i === 0 ? C.chalk : i === 1 ? C.ash : C.line,
                 opacity: group && group !== g.id ? 0.35 : 1,
               }} />
@@ -583,7 +583,7 @@ function MetricDetail({
                   style={{
                     flexDirection: "row", alignItems: "center", gap: 8,
                     paddingHorizontal: 8, paddingVertical: 6, marginHorizontal: -8,
-                    backgroundColor: active ? C.ink2 : "transparent", borderRadius: 12,
+                    backgroundColor: active ? C.ink2 : "transparent", borderRadius: RADIUS.inner,
                   }}
                 >
                   <Text style={{ fontSize: fs.body, width: 18, textAlign: "center" }}>{g.icon}</Text>
@@ -620,7 +620,7 @@ function MetricDetail({
                   accessibilityRole="button"
                   style={{
                     flexDirection: "row", alignItems: "center", gap: 10,
-                    paddingHorizontal: 8, paddingVertical: 8, marginHorizontal: -8, borderRadius: 12,
+                    paddingHorizontal: 8, paddingVertical: 8, marginHorizontal: -8, borderRadius: RADIUS.inner,
                   }}
                 >
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, width: 44 }}>

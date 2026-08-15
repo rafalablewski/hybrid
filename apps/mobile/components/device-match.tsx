@@ -17,6 +17,7 @@ import { leading, tracking, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } f
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
 import Sheet from "./aurora/sheet";
+import { RADIUS } from "./aurora/kit";
 
 /**
  * DEVICE MATCH — the sheet behind the summary's "Match the workout from your
@@ -179,7 +180,7 @@ export function DeviceMatchSheet({
                         </Text>
                       </View>
                       {best && (
-                        <View style={{ backgroundColor: C.lime, borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
+                        <View style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
                           <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: tracking.label, color: C.onAccent, textTransform: "uppercase" }}>
                             ✓ {t("session.device.best")}
                           </Text>
@@ -203,7 +204,7 @@ export function DeviceMatchSheet({
                       </Text>
                     )}
                     {best && busyUuid == null && (
-                      <View style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: 12, paddingVertical: 11, alignItems: "center" }}>
+                      <View style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.inner, paddingVertical: 11, alignItems: "center" }}>
                         <CtaLabel label={`${t("session.device.matchCta")} →`} color={C.onAccent} fontSize={13} font={F.black} />
                       </View>
                     )}

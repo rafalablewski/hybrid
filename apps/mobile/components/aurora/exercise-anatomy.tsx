@@ -8,6 +8,7 @@ import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } f
 import AuroraExerciseMedia from "./exercise-media";
 import AuroraBodyMap from "./body-map";
 import Sheet from "./sheet";
+import { RADIUS } from "./kit";
 
 /* ── muscle-activation bars ── */
 
@@ -30,8 +31,8 @@ function MuscleBar({ C, m, t }: { C: Palette; m: MuscleActivation; t: (k: string
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{m.pct}%</Text>
         </View>
       </View>
-      <View style={{ height: 4, borderRadius: 3, backgroundColor: C.line, overflow: "hidden", marginTop: 5 }}>
-        <View style={{ height: "100%", borderRadius: 3, width: `${m.pct}%`, backgroundColor: barColor, opacity: primary ? 1 : 0.6 }} />
+      <View style={{ height: 4, borderRadius: RADIUS.mark, backgroundColor: C.line, overflow: "hidden", marginTop: 5 }}>
+        <View style={{ height: "100%", borderRadius: RADIUS.mark, width: `${m.pct}%`, backgroundColor: barColor, opacity: primary ? 1 : 0.6 }} />
       </View>
     </View>
   );
@@ -72,7 +73,7 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.exp.anatomy.stabilizers")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
           {a.stabilizers.map((sName) => (
-            <Text key={sName} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash, paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>{sName}</Text>
+            <Text key={sName} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash, paddingVertical: 5, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2 }}>{sName}</Text>
           ))}
         </View>
       </View>
@@ -126,7 +127,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
         style={{
           marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8,
           borderWidth: 1, borderColor: `${C.lime}66`, backgroundColor: `${C.lime}14`,
-          borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16,
+          borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16,
         }}
       >
         <Svg viewBox="0 0 16 16" width={13} height={13}><Path d="M5 3.5v9l7-4.5-7-4.5Z" fill={txt(C, C.lime)} /></Svg>

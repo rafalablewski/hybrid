@@ -340,7 +340,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       {/* Roster TAGS */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs, marginBottom: 16 }}>
         {tags.map((tg) => (
-          <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${C.ash}1f`, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingLeft: 12, paddingRight: 8, paddingVertical: 5 }}>
+          <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: `${C.ash}1f`, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingLeft: 12, paddingRight: 8, paddingVertical: 5 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{tg}</Text>
             <Pressable accessibilityLabel={`${t("w.teams.coach.removeTag")} ${tg}`} onPress={() => saveTags(tags.filter((x) => x !== tg))} hitSlop={6}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.ash, lineHeight: fs.note }}>×</Text>
@@ -356,7 +356,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           placeholderTextColor={C.ash}
           accessibilityLabel={t("w.teams.coach.addTagLabel")}
           autoCapitalize="none"
-          style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, minWidth: 96 }}
+          style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6, minWidth: 96 }}
         />
       </View>
 

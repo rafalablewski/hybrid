@@ -893,7 +893,7 @@ export default function AuroraHome() {
                             <LiftRow key={i} r={r} i={i + 1} />
                           ))}
                           <LinearGradient colors={["transparent", "transparent", C.ink2]} locations={[0, 0.16, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
-                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: `${C.lime}24`, borderWidth: 1, borderColor: `${C.lime}66`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
                             <CtaLabel label={`${t("w.home.today.showAllLifts")} ${rows.length} ${t("w.home.today.liftsWord")} →`} color={txt(C, C.lime)} fontSize={12} font={F.monoBold} />
                           </Pressable>
                         </View>
@@ -1251,7 +1251,7 @@ export default function AuroraHome() {
               onPress={() => { setDoneOpen(false); router.push(`/session/${s.id}`); }}
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}
             >
-              <View style={{ width: 30, height: 30, borderRadius: 999, backgroundColor: `${C.lime}2e`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+              <View style={{ width: 30, height: 30, borderRadius: RADIUS.pill, backgroundColor: `${C.lime}2e`, borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✓</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -1261,7 +1261,7 @@ export default function AuroraHome() {
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
             </Pressable>
           ))}
-          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingVertical: 16, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" }}>
+          <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 16, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="calendar" size={15} color={C.ash} />
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.home.today.doneCalendar")}</Text>
           </Pressable>
@@ -1661,7 +1661,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           const accent = txt(C, C[READINESS_FACE[key].accent]);
           return (
             <PressScale key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
-              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: 16, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
+              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? `${accent}66` : "transparent", backgroundColor: on ? `${accent}1f` : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
               <ReadinessFace feeling={key} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
             </PressScale>
@@ -1734,7 +1734,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             onPress={() => setFollowUpOpen(true)}
             accessibilityRole="button"
             accessibilityLabel={done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 16, backgroundColor: done.complete || asking ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete || asking ? C.line : `${txt(C, C.lime)}42` }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: RADIUS.field, backgroundColor: done.complete || asking ? "transparent" : `${txt(C, C.lime)}12`, borderWidth: 1, borderColor: done.complete || asking ? C.line : `${txt(C, C.lime)}42` }}
           >
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>
@@ -1751,7 +1751,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
                 <View
                   key={i}
                   accessibilityLabel={st.kind === "metric" ? t(metricLabelKey(st.key)) : st.session.title}
-                  style={{ width: 7, height: 7, borderRadius: 999, backgroundColor: stepAnswered(st, metrics) ? txt(C, C.lime) : C.line }}
+                  style={{ width: 7, height: 7, borderRadius: RADIUS.pill, backgroundColor: stepAnswered(st, metrics) ? txt(C, C.lime) : C.line }}
                 />
               ))}
             </View>

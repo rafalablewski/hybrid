@@ -13,7 +13,7 @@ import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SC
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { withAlpha } from "./field";
-import { AMeter } from "./kit";
+import { AMeter , RADIUS} from "./kit";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { RollingNumber } from "./rolling-number";
@@ -176,7 +176,7 @@ export function MarkPlate({ C, src, height = 34, full }: {
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 16,
-        borderRadius: 16,
+        borderRadius: RADIUS.field,
         backgroundColor: withAlpha(C.chalk, 0.07),
         borderWidth: 1,
         borderColor: C.line,
@@ -202,7 +202,7 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
   const rows = nutritionPanel(scale === 1 ? facts : scaleFacts(facts, scale));
   const p100 = per100 ? nutritionPanel(per100) : null;
   return (
-    <View style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 16, paddingBottom: 8 }}>
+    <View style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingBottom: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingTop: 12, paddingBottom: 8 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.facts.title")}</Text>
         {p100 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.facts.per100")}</Text> : null}
@@ -508,7 +508,7 @@ export function PickerDoor({ C, title, icon, onPress, last }: {
           rule's size). Width only — the box takes the ring's height, so a door
           stays the lighter row it is meant to be. */}
       <View style={{ width: ROW_LEAD, alignItems: "center" }}>
-        <View style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ width: 32, height: 32, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           {icon}
         </View>
       </View>
@@ -533,7 +533,7 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
   const { t } = useLang();
   const body = (
     <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingVertical: 12, paddingHorizontal: PICKER_EDGE, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }}>
-      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: 999, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
+      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
       <Pressable onPress={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0 }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>

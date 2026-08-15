@@ -25,7 +25,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, F, PressScale , tracking} from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
 import { GlassPillRow, LIQUID_GLASS_SUPPORTED } from "./swiftui";
-import { withAlpha } from "./kit";
+import { withAlpha , RADIUS} from "./kit";
 import { HubGlyph } from "./today-tabs";
 
 // ── THE TODAY HUB DOCK (mobile) ─────────────────────────────────────────────
@@ -239,7 +239,7 @@ export function TodayHubDock({
           // instead of floating free, so the fallback is a shipped shape rather
           // than a degraded one.
           ...(reduced
-            ? { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 999, padding: 4 }
+            ? { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 4 }
             : null),
         }}
       >

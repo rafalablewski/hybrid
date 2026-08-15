@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { APill } from "./aurora/kit";
+import { APill , RADIUS} from "./aurora/kit";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import {
   DEVICE_IMPORT_DAYS,
@@ -240,7 +240,7 @@ export function DeviceImportSheet({
                       gap: 12,
                       borderWidth: 1,
                       borderColor: off ? C.line : C.lime,
-                      borderRadius: 16,
+                      borderRadius: RADIUS.field,
                       padding: 16,
                       marginBottom: 10,
                       backgroundColor: off ? C.ink2 : `${C.lime}12`,

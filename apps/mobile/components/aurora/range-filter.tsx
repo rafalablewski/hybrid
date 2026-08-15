@@ -14,6 +14,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
+import { RADIUS } from "./kit";
 
 /**
  * THE DATE FILTER — Week / 7 days / 30 days / YTD / a month, in the iOS 26
@@ -269,7 +270,7 @@ function PickerSection({ label, children }: { label: string; children: ReactNode
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginHorizontal: 4, marginBottom: 6 }}>
         {label}
       </Text>
-      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, overflow: "hidden" }}>
+      <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, overflow: "hidden" }}>
         {children}
       </View>
     </View>

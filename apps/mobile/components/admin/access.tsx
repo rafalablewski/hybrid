@@ -13,7 +13,7 @@ import { leading, fs, space, Mono, Kicker, Chip, LoadSwap, F, PressScale as Pres
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraIcon } from "../aurora/icons";
 import { Intro, Banner, ErrorNote, PillBtn, FilterGroup } from "./_kit";
-import { ACard, cardStack } from "../aurora/kit";
+import { ACard, cardStack , RADIUS} from "../aurora/kit";
 import { useConfirm } from "../aurora/confirm";
 
 // Mobile Access (Governance) — parity with the web "access" section, which
@@ -255,7 +255,7 @@ export default function AdminAccess() {
                                       borderWidth: 1,
                                       borderColor: on ? palette.lime : palette.line,
                                       backgroundColor: on ? `${palette.lime}1c` : "transparent",
-                                      borderRadius: 999,
+                                      borderRadius: RADIUS.pill,
                                       paddingVertical: 5,
                                       paddingHorizontal: 11,
                                       opacity: busy ? 0.6 : 1,

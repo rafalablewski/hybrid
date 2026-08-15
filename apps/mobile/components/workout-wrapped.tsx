@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { APill } from "./aurora/kit";
+import { APill , RADIUS} from "./aurora/kit";
 import { View, Text, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -414,7 +414,7 @@ export function WorkoutWrapped({
           <View style={{ flex: 1 }} />
           <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size }} />
           <Text style={{ fontFamily: F.bold, fontSize: 17, color: cel ? txt(C, C.lime) : C.chalk, marginTop: 10 }}>{heroSub}</Text>
-          <View style={{ flexDirection: "row", marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
+          <View style={{ flexDirection: "row", marginTop: 20, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
             {wrapped.basics.map((b, i) => (
               <View key={b.labelKey} style={{ flex: 1, paddingVertical: 16, paddingHorizontal: 4, alignItems: "center", backgroundColor: HERO_TAKEOVER_RAISED, borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
                 {/* A modelled figure wears a "~" — it is never presented as a
@@ -431,7 +431,7 @@ export function WorkoutWrapped({
                device's name. Chip and mark are both chalk: the artwork can't be
                tinted, and a white logo next to lime text would read as two
                claims at once. See core/device-marks.ts. */
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: `${C.chalk}52`, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 12 }}>
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: `${C.chalk}52`, borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
               {deviceMark ? (
                 <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
@@ -440,7 +440,7 @@ export function WorkoutWrapped({
               )}
             </Pressable>
           ) : canMatch ? (
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED }}>
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED }}>
               <DeviceMark provider="apple" form="mark" height={13} on="dark" label="" />
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("session.device.matchCta")}</Text>
             </Pressable>
@@ -500,7 +500,7 @@ export function WorkoutWrapped({
               </View>
             ))}
             {!full && (
-              <Pressable onPress={() => { onBack(); router.push("/upgrade"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: premium.fill, borderRadius: 999, paddingVertical: 12, paddingHorizontal: 20 }}>
+              <Pressable onPress={() => { onBack(); router.push("/upgrade"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: premium.fill, borderRadius: RADIUS.pill, paddingVertical: 12, paddingHorizontal: 20 }}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.note, color: premium.ink }}>✦ {t("session.wrapped.unlock")}</Text>
               </Pressable>
             )}
@@ -513,7 +513,7 @@ export function WorkoutWrapped({
             {eyebrow(t("session.device.panelTitle"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
-            <View style={{ marginTop: 20, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
+            <View style={{ marginTop: 20, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED }}>
                 <View style={{ flex: 1.1 }} />
                 {/* An imported session has no logged column — the recording IS the log. */}
@@ -559,7 +559,7 @@ export function WorkoutWrapped({
           <Panel center glows={<Glow size={panelH * 0.45} color={`${C.violet}18`} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
-            <View style={{ marginTop: 24, borderRadius: 16, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
+            <View style={{ marginTop: 24, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               {([
                 ["heart", C.red, "session.wrapped.device.hr"],
                 ["flame", C.red, "session.wrapped.device.energy"],
@@ -572,7 +572,7 @@ export function WorkoutWrapped({
                 </View>
               ))}
             </View>
-            <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: 999, paddingVertical: 12, paddingHorizontal: 24 }}>
+            <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, paddingHorizontal: 24 }}>
               <CtaLabel label={`${t("session.wrapped.device.cta")} →`} color={C.onAccent} fontSize={15} font={F.black} />
             </Pressable>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 16 }}>
@@ -589,7 +589,7 @@ export function WorkoutWrapped({
               <>
                 <View style={{ flexDirection: "row", alignItems: "flex-end", height: 72, marginTop: 34, gap: 3 }}>
                   {signature.map((v, i) => (
-                    <View key={i} style={{ width: 6, height: `${Math.round(v * 100)}%`, borderRadius: 3, backgroundColor: C.lime, opacity: 0.4 + v * 0.6 }} />
+                    <View key={i} style={{ width: 6, height: `${Math.round(v * 100)}%`, borderRadius: RADIUS.mark, backgroundColor: C.lime, opacity: 0.4 + v * 0.6 }} />
                   ))}
                 </View>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: 12 }}>{t("session.wrapped.signatureCap")}</Text>
@@ -617,7 +617,7 @@ export function WorkoutWrapped({
         <View style={{ position: "absolute", left: 24, right: 24, bottom: insets.bottom + 20 }}>
           <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 16 }}>
             {keys.map((_, i) => (
-              <View key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: 3, backgroundColor: i === Math.min(panel, keys.length - 1) ? C.lime : C.line }} />
+              <View key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: RADIUS.mark, backgroundColor: i === Math.min(panel, keys.length - 1) ? C.lime : C.line }} />
             ))}
           </View>
           <APill label={`↗ ${t("summary.share")}`} onPress={() => { setActive(0); setSheetOpen(true); }} />

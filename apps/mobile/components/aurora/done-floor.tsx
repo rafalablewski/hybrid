@@ -3,7 +3,7 @@ import { alsoTodayCopy, isRated, sessionIcon, sessionMeta, type LoggedSession, t
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { withAlpha } from "./kit";
+import { withAlpha , RADIUS} from "./kit";
 import { ArrowGlyph } from "./cta-label";
 import SwipeRow from "../swipe-row";
 import AActionPair from "./action-pair";
@@ -142,7 +142,7 @@ export default function DoneFloor({
             // Two targets, one row: the row opens the session, the word rates it.
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Pressable onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
-                <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, 0.16) }}>
+                <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, 0.16) }}>
                   <Text style={{ fontSize: fs.title }}>{sessionIcon(s)}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>

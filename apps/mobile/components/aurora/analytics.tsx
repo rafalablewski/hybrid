@@ -16,7 +16,7 @@ import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
-import { AuroraScreen, ACard, AStat, ASub, ASegment, AMeter } from "./kit";
+import { AuroraScreen, ACard, AStat, ASub, ASegment, AMeter , RADIUS} from "./kit";
 
 /**
  * AURORA Analytics — the 3-scope dashboard (Athlete / Coach / Operator), now
@@ -78,7 +78,7 @@ function PrivacyNote({ scope, accent }: { scope: AnalyticsScope; accent: string 
   const C = useTheme().palette;
   const { t } = useLang();
   return (
-    <View style={{ marginTop: 16, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
+    <View style={{ marginTop: 16, paddingVertical: 10, paddingHorizontal: 12, borderRadius: RADIUS.field, backgroundColor: `${accent}12`, borderLeftWidth: 3, borderLeftColor: accent }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t(analyticsScopePrivacyKey(scope))}</Text>
     </View>
   );
@@ -103,7 +103,7 @@ function Bars({ data, color, highlightLast }: { data: { label: string; v: number
     <>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 96, gap: 5 }}>
         {data.map((d, i) => (
-          <View key={i} style={{ flex: 1, height: 6 + (d.v / max) * 84, borderRadius: 3, backgroundColor: highlightLast && i === data.length - 1 ? color : `${color}66` }} />
+          <View key={i} style={{ flex: 1, height: 6 + (d.v / max) * 84, borderRadius: RADIUS.mark, backgroundColor: highlightLast && i === data.length - 1 ? color : `${color}66` }} />
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>

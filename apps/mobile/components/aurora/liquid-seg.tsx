@@ -4,7 +4,7 @@ import { springs, springToRN } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
-import { withAlpha } from "./kit";
+import { withAlpha , RADIUS} from "./kit";
 import { haptic } from "../../lib/haptics";
 
 /**
@@ -228,7 +228,7 @@ export function LiquidSeg({
       accessibilityRole="tablist"
       onLayout={(e) => setTrackW(e.nativeEvent.layout.width)}
       {...pan.panHandlers}
-      style={[{ flexDirection: "row", position: "relative", padding: pad, borderRadius: 999 }, trackStyle]}
+      style={[{ flexDirection: "row", position: "relative", padding: pad, borderRadius: RADIUS.pill }, trackStyle]}
     >
       {thumbW > 0 && (
         <Animated.View
@@ -239,7 +239,7 @@ export function LiquidSeg({
             top: pad,
             height: segHeight,
             width: thumbW,
-            borderRadius: 999,
+            borderRadius: RADIUS.pill,
             transform: [
               { translateX: x },
               { scaleX: lift.interpolate({ inputRange: [0, 1], outputRange: [1, inflateX] }) },
@@ -255,18 +255,18 @@ export function LiquidSeg({
           <Animated.View
             style={[
               StyleSheet.absoluteFill,
-              { borderRadius: 999, backgroundColor: restFill, opacity: lift.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) },
+              { borderRadius: RADIUS.pill, backgroundColor: restFill, opacity: lift.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) },
             ]}
           />
           {/* touched state: the clear glass lens */}
-          <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: 999, opacity: lift }]}>
+          <Animated.View style={[StyleSheet.absoluteFill, { borderRadius: RADIUS.pill, opacity: lift }]}>
             {nativeGlass ? (
               <GlassSurface radius={Math.round(segHeight / 2)} />
             ) : (
               <View
                 style={[
                   StyleSheet.absoluteFill,
-                  { borderRadius: 999, backgroundColor: simFill, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: simRim },
+                  { borderRadius: RADIUS.pill, backgroundColor: simFill, borderWidth: StyleSheet.hairlineWidth * 2, borderColor: simRim },
                 ]}
               />
             )}
@@ -288,7 +288,7 @@ export function LiquidSeg({
             accessibilityRole="tab"
             accessibilityLabel={it.label}
             accessibilityState={{ selected: i === index }}
-            style={{ flex: 1, height: segHeight, borderRadius: 999, alignItems: "center", justifyContent: "center" }}
+            style={{ flex: 1, height: segHeight, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center" }}
           >
             {it.render(on)}
           </Pressable>

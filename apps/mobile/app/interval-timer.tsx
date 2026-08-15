@@ -110,14 +110,14 @@ export default function IntervalTimer() {
           )}
         </View>
         {/* linear progress of whole session */}
-        <View style={{ width: 230, height: 6, borderRadius: 3, backgroundColor: C.line, marginTop: 18, overflow: "hidden" }}>
+        <View style={{ width: 230, height: 6, borderRadius: RADIUS.mark, backgroundColor: C.line, marginTop: 18, overflow: "hidden" }}>
           <View style={{ width: `${Math.round(progress * 100)}%`, height: "100%", backgroundColor: C.lime }} />
         </View>
       </View>
 
       {/* controls */}
       <View style={{ flexDirection: "row", gap: space.md, alignItems: "center", justifyContent: "center", marginTop: 22 }}>
-        <Pressable onPress={reset} style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Pressable onPress={reset} style={{ width: 56, height: 56, borderRadius: RADIUS.card, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>↺</Text>
         </Pressable>
         <Pressable

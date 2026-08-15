@@ -175,7 +175,7 @@ export default function AuroraSettings() {
               {acct.newPw.length > 0 && (
                 <View accessibilityLiveRegion="polite" style={{ marginBottom: 10 }}>
                   <View style={{ flexDirection: "row", gap: 4 }}>
-                    {[1, 2, 3, 4].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= pw.score ? pwColor : C.line }} />)}
+                    {[1, 2, 3, 4].map((i) => <View key={i} style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: i <= pw.score ? pwColor : C.line }} />)}
                   </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: pwColor, marginTop: 6 }}>{t("w.account.settings.pw-strength")}: {t(`w.account.settings.pw-${pw.label}`)}</Text>
                 </View>
@@ -356,7 +356,7 @@ export default function AuroraSettings() {
         accessibilityLabel={c.title}
         style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 12, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
       >
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.danger ? `${C.red}24` : tile, alignItems: "center", justifyContent: "center" }}>
+        <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: c.danger ? `${C.red}24` : tile, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name={c.icon} size={20} color={c.danger ? (txt(C, C.red) as string) : fg} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -394,7 +394,7 @@ export default function AuroraSettings() {
           and quick-action chips. Shared completeness math with web. */}
       <View style={{ padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
         <PressScale onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={t("w.account.settings.edit-profile")} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-          <View style={{ width: 56, height: 56, borderRadius: 28, borderWidth: 2.5, borderColor: txt(C, C.lime), alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          <View style={{ width: 56, height: 56, borderRadius: RADIUS.card, borderWidth: 2.5, borderColor: txt(C, C.lime), alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {profile?.avatarUrl ? (
               <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
             ) : (
@@ -414,11 +414,11 @@ export default function AuroraSettings() {
         </PressScale>
         {/* Quick actions */}
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 16, flexWrap: "wrap" }}>
-          <PressScale onPress={openEditProfile} style={{ borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, backgroundColor: `${C.lime}14`, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}>
+          <PressScale onPress={openEditProfile} style={{ borderWidth: 1, borderColor: `${txt(C, C.lime)}66`, backgroundColor: `${C.lime}14`, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.settings.edit-profile")}</Text>
           </PressScale>
           {!!profile?.handle && (
-            <PressScale onPress={shareProfile} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 8 }}>
+            <PressScale onPress={shareProfile} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>↗ {t("w.account.settings.share-profile")}</Text>
             </PressScale>
           )}

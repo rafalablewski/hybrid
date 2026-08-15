@@ -128,7 +128,7 @@ export default function MfaSettings() {
             {verified.map((f) => (
               <View key={f.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{f.friendly_name || "Authenticator"}</Text>
-                <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? 0.5 : 1 }}>
+                <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? 0.5 : 1 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>Remove</Text>
                 </Pressable>
               </View>
@@ -149,7 +149,7 @@ export default function MfaSettings() {
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginBottom: 10 }}>
                   Scan this with your authenticator, then enter the 6-digit code to confirm.
                 </Text>
-                <View style={{ alignItems: "flex-start", backgroundColor: "#fff", borderRadius: 12, padding: 6, alignSelf: "flex-start" }}>
+                <View style={{ alignItems: "flex-start", backgroundColor: "#fff", borderRadius: RADIUS.inner, padding: 6, alignSelf: "flex-start" }}>
                   <QrMatrix url={enroll.uri} size={168} />
                 </View>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8, marginBottom: 12 }}>
@@ -170,7 +170,7 @@ export default function MfaSettings() {
                     <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>Confirm</Text>
                   </Pressable>
                 </View>
-                <Pressable onPress={() => { setEnroll(null); setCode(""); }} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 6, marginTop: 10, alignSelf: "flex-start" }}>
+                <Pressable onPress={() => { setEnroll(null); setCode(""); }} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 6, marginTop: 10, alignSelf: "flex-start" }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>Cancel</Text>
                 </Pressable>
               </View>

@@ -60,7 +60,7 @@ export default function AuroraPeriodize() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.md, marginTop: 12 }}>
           {macro.blocks.map((b) => (
             <View key={b.key} style={{ flexDirection: "row", alignItems: "center", gap: space.xs }}>
-              <View style={{ width: 10, height: 10, borderRadius: 3, backgroundColor: b.color }} />
+              <View style={{ width: 10, height: 10, borderRadius: RADIUS.mark, backgroundColor: b.color }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: b.key === current.key ? C.chalk : C.ash }}>{b.label}</Text>
             </View>
           ))}

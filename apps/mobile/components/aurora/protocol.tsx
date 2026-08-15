@@ -353,7 +353,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                   <View
                     style={{
                       position: "absolute", left: now ? 4 : 6, top: now ? 5 : 7,
-                      width: now ? 14 : 10, height: now ? 14 : 10, borderRadius: 999,
+                      width: now ? 14 : 10, height: now ? 14 : 10, borderRadius: RADIUS.pill,
                       backgroundColor: passed ? accent : now ? C.ink2 : C.line,
                       borderWidth: now ? 3 : 0, borderColor: accent,
                     }}

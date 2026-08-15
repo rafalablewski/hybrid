@@ -265,7 +265,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
    *  selection drops to a neutral outline and the unpicked options fade back, so
    *  the row shows what was answered instead of inviting another answer. */
   const tile = (sel: boolean) => ({
-    flex: 1, aspectRatio: 1, borderRadius: 16, alignItems: "center" as const, justifyContent: "center" as const,
+    flex: 1, aspectRatio: 1, borderRadius: RADIUS.field, alignItems: "center" as const, justifyContent: "center" as const,
     borderWidth: 1,
     borderColor: sel ? (locked ? C.ash : C.lime) : C.line,
     backgroundColor: sel ? (locked ? `${C.ash}24` : `${C.lime}1a`) : C.ink,
@@ -292,7 +292,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           <View
             key={i}
             style={{
-              flex: 1, height: 5, borderRadius: 999,
+              flex: 1, height: 5, borderRadius: RADIUS.pill,
               backgroundColor: done || isAnswered(st) ? C.lime : i === step ? `${C.lime}59` : C.line,
             }}
           />
@@ -304,7 +304,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           the flow is live again so the muted tiles coming back to full colour is
           explained rather than merely observed. */}
       {locked || (editing && !done) ? (
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingHorizontal: 12, paddingVertical: 12, borderRadius: 16, backgroundColor: locked ? `${C.lime}14` : "transparent", borderWidth: 1, borderColor: locked ? `${C.lime}3d` : C.line }}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingHorizontal: 12, paddingVertical: 12, borderRadius: RADIUS.field, backgroundColor: locked ? `${C.lime}14` : "transparent", borderWidth: 1, borderColor: locked ? `${C.lime}3d` : C.line }}>
           <AuroraIcon name={locked ? "check-circle" : "edit"} size={20} color={locked ? txt(C, C.lime) : C.ash} />
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t(locked ? "w.recovery.checkins.savedTitle" : "w.recovery.checkins.edit")}</Text>
@@ -380,7 +380,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                   // colour and still tapping through to its question, it read as
                   // "edit any of this whenever" — which is exactly what the Edit
                   // button is for. Muted here, restored the moment Edit is pressed.
-                  style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderStyle: on ? "solid" : "dashed", borderColor: C.line, borderRadius: 16, paddingVertical: 12, opacity: locked ? 0.45 : on ? 1 : 0.6 }}
+                  style={{ flex: 1, alignItems: "center", gap: 6, backgroundColor: C.ink, borderWidth: 1, borderStyle: on ? "solid" : "dashed", borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, opacity: locked ? 0.45 : on ? 1 : 0.6 }}
                 >
                   {on ? (
                     <ReadinessFace feeling={checkinScaleFeeling(ratings[m.key])} scale={0.76} />

@@ -20,6 +20,7 @@ import { useSheetRecede } from "../../lib/sheet-recede";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { fs, F, tracking } from "../../lib/ui";
+import { RADIUS } from "./kit";
 
 /**
  * AURORA Sheet (mobile) — a slide-up bottom sheet rendered in a transparent
@@ -320,7 +321,7 @@ export default function Sheet({
 
   const header = (
     <>
-      <View style={{ width: 40, height: 4, borderRadius: 999, backgroundColor: C.line, alignSelf: "center", marginBottom: title || sub ? 16 : 8 }} />
+      <View style={{ width: 40, height: 4, borderRadius: RADIUS.pill, backgroundColor: C.line, alignSelf: "center", marginBottom: title || sub ? 16 : 8 }} />
       {title ? <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking.display, color: C.chalk }}>{title}</Text> : null}
       {sub ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>{sub}</Text> : null}
     </>

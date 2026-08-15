@@ -7,7 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
 import { useAccountSettings } from "../../lib/account";
 import { SButton } from "../social-kit";
-import { ACard, cardStack, AChip } from "./kit";
+import { ACard, cardStack, AChip , RADIUS} from "./kit";
 import { HeroNav } from "./hero";
 
 // The unified EDIT PROFILE screen (Instagram-style): a live preview + the avatar
@@ -18,7 +18,7 @@ import { HeroNav } from "./hero";
 
 type FieldKey = "name" | "handle" | "displayName" | "bio" | "email" | "visibility";
 
-const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 16, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: fs.note } as const);
+const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: fs.note } as const);
 
 export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const C = useTheme().palette;
@@ -190,7 +190,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 }}>
                 {form.avatarUrl ? <SButton label={t("w.profile.savePhoto")} small onPress={() => saveSocial()} /> : null}
-                <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 16 }}>
+                <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.profile.uploadSoon")}</Text>
                 </Pressable>
               </View>

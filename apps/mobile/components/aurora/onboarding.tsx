@@ -55,7 +55,7 @@ export default function AuroraOnboarding() {
       <View style={{ flex: 1, padding: 24 }}>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
           {Array.from({ length: total }).map((_, i) => (
-            <View key={i} style={{ flex: 1, height: 5, borderRadius: 3, backgroundColor: i <= idx ? palette.lime : palette.line }} />
+            <View key={i} style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: i <= idx ? palette.lime : palette.line }} />
           ))}
         </View>
         <Pressable onPress={() => router.replace("/(tabs)")} style={{ alignSelf: "flex-end", marginTop: 16 }}>

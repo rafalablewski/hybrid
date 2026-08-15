@@ -3,6 +3,7 @@ import { View, Text, Modal } from "react-native";
 import { leading, tracking, fs, F, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
+import { RADIUS } from "./aurora/kit";
 
 // ============================================================
 //  Guided first-run tour (mobile) — the "how to use HYBRID"
@@ -53,11 +54,11 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
             </Pressable>
             <View style={{ flexDirection: "row", gap: space.sm }}>
               {i > 0 && (
-                <Pressable onPress={() => setI((n) => n - 1)} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 11 }}>
+                <Pressable onPress={() => setI((n) => n - 1)} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 11 }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Back</Text>
                 </Pressable>
               )}
-              <Pressable onPress={() => (last ? onDone() : setI((n) => n + 1))} style={{ backgroundColor: C.lime, borderRadius: 999, paddingHorizontal: 24, paddingVertical: 11 }}>
+              <Pressable onPress={() => (last ? onDone() : setI((n) => n + 1))} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 24, paddingVertical: 11 }}>
                 <CtaLabel label={last ? "Got it" : "Next →"} color={txt(C, C.ink)} fontSize={fs.note} />
               </Pressable>
             </View>

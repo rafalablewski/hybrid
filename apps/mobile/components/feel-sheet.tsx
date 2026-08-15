@@ -9,7 +9,7 @@ import {
 } from "@hybrid/core";
 import { useTheme } from "../lib/theme";
 import { fs, F, FIXED_FONT_SCALE } from "../lib/ui";
-import { withAlpha } from "./aurora/kit";
+import { withAlpha , RADIUS} from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import { FeelPrompt } from "./feel-prompt";
 
@@ -74,7 +74,7 @@ export default function FeelSheet({
       {session ? (
         <>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18 }}>
-            <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(C.blue, 0.16) }}>
+            <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(C.blue, 0.16) }}>
               <Text style={{ fontSize: fs.title }}>{sessionIcon(session)}</Text>
             </View>
             <Text

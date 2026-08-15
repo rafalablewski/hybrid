@@ -91,7 +91,7 @@ export default function AuroraExercises() {
         >
           {/* the lift's DRAWN demo once it exists (core: exercise-media), and
               until then its IMPLEMENT mark (core: exercise-marks) */}
-          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={e.staple ? txt(C, C.lime) : C.ash} />
           </View>
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
@@ -120,7 +120,7 @@ export default function AuroraExercises() {
   };
 
   const Card = ({ list }: { list: ExerciseBrowseEntry[] }) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 4 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 4 }}>
       {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} />)}
     </View>
   );

@@ -26,7 +26,7 @@ import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, tracking, trackFigure, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub } from "./chart-scrub";
-import { AuroraScreen } from "./kit";
+import { AuroraScreen , RADIUS} from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
 
@@ -212,7 +212,7 @@ function TonnageChart({ C, weeks, units, t, held }: { C: Palette; weeks: { baseK
       <View style={{ flexDirection: "row", gap: 16, marginTop: 8 }}>
         {[{ c: DEEP_BASE, l: t("w.analyze.ex.tonnageBase") }, { c: DEEP_HARD, l: t("w.analyze.ex.tonnageHard") }].map((i) => (
           <View key={i.l} style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: i.c }} />
+            <View style={{ width: 9, height: 9, borderRadius: RADIUS.mark, backgroundColor: i.c }} />
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{i.l}</Text>
           </View>
         ))}
@@ -311,7 +311,7 @@ function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 16, paddingBottom: 6 }}>
       {slide.cells.map((cell, i) => (
-        <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: 16, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
+        <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: RADIUS.field, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{i + 1}RM</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
@@ -531,7 +531,7 @@ function ConsistencyDots({ C, weekly, foot }: { C: Palette; weekly: number[]; fo
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingTop: 24 }}>
       {weekly.map((w, i) => (
-        <View key={i} style={{ width: 9, height: 9, borderRadius: 999, backgroundColor: w > 0 ? C.lime : C.line, opacity: w > 0 ? steps[Math.min(w, 3)]! + 0.12 : 1 }} />
+        <View key={i} style={{ width: 9, height: 9, borderRadius: RADIUS.pill, backgroundColor: w > 0 ? C.lime : C.line, opacity: w > 0 ? steps[Math.min(w, 3)]! + 0.12 : 1 }} />
       ))}
       <Text style={{ width: "100%", marginTop: 12, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{foot}</Text>
     </View>

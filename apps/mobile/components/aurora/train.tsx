@@ -167,7 +167,7 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
       </Text>
       <Text style={{ fontFamily: F.black, fontSize: 25, lineHeight: 28, color: C.onAccent, marginTop: 10, letterSpacing: tracking.display }}>{title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: leading(fs.caption) }} numberOfLines={2}>{blurb}</Text>
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink, borderRadius: 16, paddingVertical: 16, marginTop: 16 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink, borderRadius: RADIUS.field, paddingVertical: 16, marginTop: 16 }}>
         <AuroraIcon name="play" size={15} color={C.lime} />
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
       </View>

@@ -9,7 +9,7 @@ import {
 import { sapi } from "../../lib/social-api";
 import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard } from "./kit";
+import { APill, ACard , RADIUS} from "./kit";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { DoorRow } from "./week-verdict";
@@ -140,7 +140,7 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
           <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: trackFigure(40), color: C.chalk }}>{wv.value}<Text style={{ fontSize: fs.note, color: C.ash }}> {wv.unit}</Text></Text>
           {dstr && dir !== "flat" && (
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.inner, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: `${dir === "down" ? C.red : C.lime}28` }}>{dirArrow(dir)} {dstr} {units}</Text>
           )}
         </View>
       )}
@@ -165,7 +165,7 @@ function MetricTile({ C, tr, units }: { C: Palette; tr: MetricTrend; units: "kg"
   const dstr = tr.delta != null ? fmtMetricDelta(tr.def, tr.delta, units) : null;
   // Two columns with a 9px gutter inside a 16px-padded card.
   return (
-    <View style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 6 }}>
+    <View style={{ width: "48%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 8, gap: 6 }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t(tr.def.labelKey)}</Text>
         <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: dirColorM(C, tr.direction) }}>{dstr != null ? `${dirArrow(tr.direction)} ${dstr}` : dirArrow(tr.direction)}</Text>
@@ -251,7 +251,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
   };
 
   return (
-    <View style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, marginBottom: 10 }}>
+    <View style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12, marginBottom: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end" }}>
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.account.profile.priv-height-t")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: heightCm != null ? lime : C.ash }}>
@@ -277,7 +277,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
             disabled={busy || parsed == null}
             accessibilityRole="button"
             accessibilityLabel={t("common.save")}
-            style={{ borderRadius: 999, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? 0.6 : 1 }}
+            style={{ borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? 0.6 : 1 }}
           >
             {busy ? <ActivityIndicator color={parsed == null ? C.ash : C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: parsed == null ? C.ash : C.onAccent }}>{t("common.save")}</Text>}
           </Pressable>
@@ -295,9 +295,9 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
 // quiet mono suffix. Empty reads as a muted "0" placeholder.
 function MetricInput({ C, label, unit, value, onChange }: { C: Palette; label: string; unit: string; value: string; onChange: (v: string) => void }) {
   return (
-    <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: 16, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12 }}>
+    <View style={{ width: "48%", backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: C.lime }} />
+        <View style={{ width: 9, height: 9, borderRadius: RADIUS.mark, backgroundColor: C.lime }} />
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, marginTop: 2 }}>
