@@ -664,56 +664,6 @@ export function loadTier(pct: number | null, dayMax: number | null): InkTier {
   return "low";
 }
 
-/** One bar of the day-header pulse. `h` is 0..1 (already normalised, floored so
- *  the lightest touch still registers); `hot` marks the day's top-% work. */
-export interface PulseBar {
-  h: number;
-  hot: boolean;
-}
-
-/**
- * The day's load shape — one bar per prescription (load × volume), the day-level
- * echo of the plan's week waveform. Strictly semantic: every bar is a real
- * step; delete a set and the pulse changes. Percent steps weigh load × NL; RPE
- * work weighs effort × volume; prose entries (runs) carry no bar. When a long
- * day would exceed `cap` bars, bars aggregate to one per lift so the pulse
- * never turns into noise. Returns [] for days with nothing to draw.
- */
-export function dayPulse(day: ProgramDayView, cap = 14): PulseBar[] {
-  const max = dayMaxPct(day);
-  type Raw = { v: number; hot: boolean; lift: number };
-  const raw: Raw[] = [];
-  let liftIx = 0;
-  for (const s of day.sessions)
-    for (const l of s.lifts) {
-      if (l.steps && l.steps.length) {
-        for (const st of l.steps)
-          raw.push({ v: ((st.pct ?? 40) / 100) * st.nl, hot: st.pct != null && st.pct === max, lift: liftIx });
-      } else if (l.rpe != null || l.setsReps != null) {
-        const nums = (l.setsReps ?? "").match(/\d+/g)?.map(Number) ?? [];
-        const vol = nums.length >= 2 ? nums[0]! * nums[1]! : (nums[0] ?? 1) * 10;
-        raw.push({ v: ((l.rpe ?? 7) / 10) * vol, hot: false, lift: liftIx });
-      }
-      liftIx += 1;
-    }
-  if (raw.length === 0) return [];
-  let bars: { v: number; hot: boolean }[] = raw;
-  if (raw.length > cap) {
-    const byLift = new Map<number, { v: number; hot: boolean }>();
-    for (const r of raw) {
-      const b = byLift.get(r.lift);
-      if (b) {
-        b.v += r.v;
-        b.hot = b.hot || r.hot;
-      } else byLift.set(r.lift, { v: r.v, hot: r.hot });
-    }
-    bars = [...byLift.values()];
-  }
-  const top = Math.max(...bars.map((b) => b.v));
-  if (top <= 0) return [];
-  return bars.map((b) => ({ h: 0.15 + 0.85 * (b.v / top), hot: b.hot }));
-}
-
 /** The accordion row's plain-words summary — what the day IS, before what it
  *  contains: the first three distinct exercise names, joined with " + "
  *  ("Press + Snatch + Front Squat"). Falls back to prose workout labels for
@@ -811,14 +761,6 @@ export function planHeroView(
 //  Cover — the full-bleed plan cover (Explore card ↔ detail hero)
 // ============================================================
 
-/** One bar of the schedule waveform — a week and its relative volume. */
-export interface PlanWeekBar {
-  week: number;
-  /** the discipline's volume count for the week (NL for strength-percent, item
-   *  count otherwise) — clients normalise against the max to draw bar heights. */
-  value: number;
-}
-
 /** The cover view model shared by the Explore PlanCover and the plan-detail
  *  hero, so both render the SAME cover at two scales and cannot drift. */
 export interface PlanCoverView extends PlanHeroView {
@@ -833,9 +775,6 @@ export interface PlanCoverView extends PlanHeroView {
   title: string;
   /** meta-line parts (clients join with their MetaLine — spaced en dashes). */
   metaParts: (string | null)[];
-  /** per-week volume for the schedule waveform; [] for single-week plans or
-   *  when the discipline has no comparable count (endurance). */
-  weekBars: PlanWeekBar[];
 }
 
 export function planCoverView(
@@ -844,17 +783,6 @@ export function planCoverView(
   program?: PlanProgram,
 ): PlanCoverView {
   const hero = planHeroView(plan, program);
-  const weekBars: PlanWeekBar[] = [];
-  if (program && program.weeks.length > 1) {
-    for (const w of program.weeks) {
-      const nl = weekNL(w);
-      const items = w.days.reduce((n, d) => n + d.sessions.reduce((m, s) => m + sessionItems(s), 0), 0);
-      weekBars.push({ week: w.index, value: nl > 0 ? nl : items });
-    }
-    // No signal at all (every week zero) → no waveform; clients fall back to
-    // plain week labels.
-    if (!weekBars.some((b) => b.value > 0)) weekBars.length = 0;
-  }
   return {
     ...hero,
     accent: goal.color,
@@ -863,7 +791,6 @@ export function planCoverView(
     duration: `${plan.weeks} ${plan.weeks === 1 ? "WEEK" : "WEEKS"}`,
     title: plan.name,
     metaParts: [`${plan.sessions}×/wk`, plan.tag, plan.hot ? "★ Popular" : null],
-    weekBars,
   };
 }
 
