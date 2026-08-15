@@ -64,15 +64,45 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE ,
  * Colour is the SEMANTIC channel here (terracotta down, chartreuse up, chalk
  * flat), not the brand accent — a bad week must not read as a highlight.
  *
- * SELECTION OWNS THAT COLOUR, and that is what pays for the rest of the card's
- * restraint. It used to mark the metric the SENTENCE named and nothing else, so
- * it never moved: pressing Hours left the chartreuse sitting on Distance, and
- * the press itself showed up only as an `ink`-on-`ink2` fill nobody sees on a
- * phone in daylight. So the open column takes the tone (core's
- * `figureDirection` — its OWN move, never the sentence's, so a fallen Hours
- * column reads terracotta inside a card headlining a distance rise). At rest —
- * nothing open — the named metric still holds the tone, so the resting card is
- * unchanged.
+ * THE PERIOD'S TWO ENDS OWN THAT COLOUR — core's `best` and `worst`. Chartreuse
+ * marks the figure that rose furthest above its baseline, terracotta the one
+ * that fell furthest below it, and the columns between them carry no tone at
+ * all. Both marks are on the resting card, before anything is pressed.
+ *
+ * The channel has belonged to two things before this and neither could say what
+ * the row is actually for. It first marked the metric the SENTENCE named, which
+ * is one slot: a week headlining "+50% training time" put chartreuse on Hours
+ * and left the distance that halved underneath it looking exactly like the two
+ * figures that did not move. Then SELECTION took it, which fixed a press nobody
+ * could see but made the card's only colour a function of what the finger was
+ * doing — at rest it fell back to the sentence's one slot, and the second half
+ * of the week stayed unsaid.
+ *
+ * Ranking the ends separately is what lets the row carry both halves at once,
+ * and it costs the sentence nothing: `metric` is the LARGER of the same two
+ * moves, so the bold word in the lead is always sitting on one of the two lit
+ * columns. Colour here is the SEMANTIC channel, so this is also the point of it
+ * — 4 km last week against 1 km this week is the thing to look at on a week
+ * whose hours went up, and now it is the thing that is lit.
+ *
+ * THE TWO MARKS ARE NOT SYMMETRIC, deliberately. The rise is a bright figure
+ * that glows off the card; the fall is a dark stain the figure sits in — the
+ * maroon wash (core `colors.maroon`), which is the palette's only wash and
+ * exists for this one column. Toned text alone gave the two ends the same
+ * visual weight, and equal weight is the one thing the pair must not have: a
+ * week's slip has to be the heavier mark even when its percentage is the
+ * smaller one, because it is the half of the week that asks for a decision.
+ *
+ * THE MARK IS NOT THE SELECTION, and the two channels are kept apart. The mark
+ * is about the PERIOD and does not move: tone on the label and the figure, the
+ * end's own signed percentage under it (a second, non-hue channel, since the
+ * pair reads as one grey to a red-green athlete), and the fall's wash.
+ * Selection is about the FINGER and travels: the 2px rail, plus a 9% wash on
+ * whichever column is open — including the untoned ones, which wash chalk so a
+ * middle column still registers the press. The fall's column has a wash
+ * already, so it LIFTS (`maroonLit`) rather than taking a tone-alpha that would
+ * have made it go paler under the finger — a press must never read as the mark
+ * being lifted off.
  *
  * THE BREAKDOWN IS A SHEET, and this is the third and last shape it has taken.
  * It began as a second bordered, rounded card drawn INSIDE this one, with a
@@ -418,24 +448,42 @@ export default function AuroraWeekVerdict({
             the hairline under a GroupMark. */}
         <View style={{ flexDirection: "row", gap: gutter, marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
           {v.figures.map((f, i) => {
-            const isNamed = f.metric === v.metric;
             const isOpen = open === f.metric;
-            // AT REST the sentence keeps the colour, so the card's first paint
-            // is exactly what it always was. The moment a column is open,
-            // SELECTION owns the channel and the open one is toned by its own
-            // move — never the sentence's, which may be a different metric
-            // going the other way.
-            const dir: VerdictDirection | null = open === null
-              ? (isNamed ? v.direction : null)
-              : (isOpen ? figureDirection(f) : null);
+            // THE TWO ENDS TAKE THE COLOUR, always — core's `best` and `worst`.
+            // Chartreuse on the figure that rose furthest above its baseline,
+            // terracotta on the one that fell furthest below it, and nothing on
+            // the columns in between.
+            const dir: VerdictDirection | null =
+              f.metric === v.best ? "up" : f.metric === v.worst ? "down" : null;
             const col = dir ? dirColor(dir) : null;
+            const delta = dir ? figureDeltaPct(f) : null;
+            // THE FALL SITS IN A WASH; THE RISE DOES NOT. The two marks are not
+            // symmetric and should not be: a rise is a bright figure that glows
+            // off the card, a fall is a dark stain the figure sits in. Toned
+            // text alone gave them the same weight, which is the one thing the
+            // pair must not have — a week's slip has to be the heavier mark
+            // even when its percentage is the smaller one.
+            //
+            // It LIFTS rather than lightens when opened. The tone-alpha wash the
+            // other columns use would have made the fall's column go PALER under
+            // a finger, so the press read as the mark being lifted off.
+            const wash = f.metric === v.worst
+              ? (isOpen ? C.maroonLit : C.maroon)
+              : isOpen ? withAlpha(col ?? C.chalk, col ? 0.09 : 0.06)
+                : "transparent";
             return (
               <Pressable
                 key={f.metric}
                 onPress={() => openColumn(f.metric)}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isOpen }}
-                accessibilityLabel={`${t(verdictLabelKey(f.metric))} – ${fmt(f.metric, f.value)}`}
+                accessibilityLabel={[
+                  t(verdictLabelKey(f.metric)),
+                  fmt(f.metric, f.value),
+                  // The mark is spelled out, because a screen reader gets none
+                  // of the hue and none of the sign printed beside the figure.
+                  dir === "up" ? t("w.home.act.aBest") : dir === "down" ? t("w.home.act.aWorst") : null,
+                ].filter(Boolean).join(" – ")}
                 accessibilityHint={t("w.home.act.hint")}
                 style={{
                   // Padding is the WASH's inset now, so it is symmetric: the lit
@@ -447,8 +495,11 @@ export default function AuroraWeekVerdict({
                   marginLeft: i === 0 ? -5 : 0, marginTop: -4, borderRadius: RADIUS.inner,
                   // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
                   // here: at 9% it reads as the column being lit rather than as
-                  // a second surface laid over the card.
-                  backgroundColor: isOpen && col ? withAlpha(col, dir === "flat" ? 0.06 : 0.09) : "transparent",
+                  // a second surface laid over the card. An untoned column still
+                  // has to register the press, so it washes chalk. The FALL is
+                  // the exception — see `wash` above, it carries its maroon at
+                  // rest.
+                  backgroundColor: wash,
                 }}
               >
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: col ?? C.ash }}>
@@ -457,9 +508,25 @@ export default function AuroraWeekVerdict({
                 <Text style={{ fontFamily: F.mono, fontSize: figSize, letterSpacing: tracking.display, marginTop: 3, color: col ?? C.chalk }}>
                   {fmt(f.metric, f.value)}
                 </Text>
-                {/* THE RAIL — selection in a second channel, so the state does
-                    not rest on hue alone (a flat column is toned chalk, and
-                    colour vision is not universal). */}
+                {/* THE END'S OWN MOVE — the working-out for the colour, beside
+                    the colour, and the SECOND CHANNEL the mark needs: a signed
+                    percentage says "furthest up" and "furthest down" to an
+                    athlete who cannot separate the two hues. It prints only on
+                    the two ends, which is what keeps it a mark rather than a
+                    fifth row of figures. */}
+                {delta !== null && (
+                  <Text
+                    numberOfLines={1}
+                    maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                    style={{ fontFamily: F.mono, fontSize: fs.nano, marginTop: 3, color: col ?? C.ash }}
+                  >
+                    {`${delta > 0 ? "+" : "−"}${Math.abs(delta)}%`}
+                  </Text>
+                )}
+                {/* THE RAIL — selection in a second channel, so which column is
+                    OPEN does not rest on the wash alone. It is deliberately not
+                    the mark's channel: the mark is about the period and stays
+                    put, the rail is about the finger and moves with it. */}
                 <View style={{
                   height: 2, borderRadius: 2, marginTop: 7,
                   backgroundColor: isOpen ? (col ?? C.ash) : "transparent",

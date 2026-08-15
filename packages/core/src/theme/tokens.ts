@@ -28,6 +28,25 @@ export const colors = {
   violet: "#8296c4", // steel/slate blue — coach & non-premium accent (was #c9a9f0 lavender)
   amber: "#d0cd94", // sand — sport / caution accent (Plan) + the premium-upgrade cue
   red: "#d56f3e", // terracotta — alert / injury / streak (Connect)
+  // MAROON — a SURFACE, never text. The only wash in the palette, and it exists
+  // because the activity card's two marks are not symmetric: the rise is a
+  // bright figure that glows, the fall is meant to read as a dark stain
+  // underneath one. Terracotta text alone gave the fall the same visual weight
+  // as the rise, and the whole point of the pair is that they do not weigh the
+  // same.
+  //
+  // These are COMPOSITED values, not alphas: the column they sit in only ever
+  // sits on `card`, so stating the result is exact where a wash-over-alpha is a
+  // guess that drifts the moment the surface under it changes. `maroonLit` is
+  // the same wash under a finger — the fall's column has to be able to register
+  // a press without going PALER, which is what a tone-alpha selection wash
+  // would have done to it.
+  //
+  // Both are guarded against `accentText.red` in palette.test.ts (5.8:1 and
+  // 4.8:1): terracotta is what is printed ON this, so a wash that darkens until
+  // it swallows its own figure is the failure mode to watch.
+  maroon: "#3a1f19", // the FALL's resting wash, on `card`
+  maroonLit: "#4e2a20", // …the same wash while its column is open
 } as const;
 
 export type ColorToken = keyof typeof colors;

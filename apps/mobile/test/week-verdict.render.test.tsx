@@ -157,3 +157,99 @@ describe("the activity card's breakdown", () => {
     expect(sheet).toContain("1.0 t");
   });
 });
+
+/**
+ * THE PERIOD'S TWO ENDS, MARKED — the row carries the win AND the slip.
+ *
+ * The colour on this row used to follow the SENTENCE, which is one slot. A week
+ * whose training time climbed while its distance collapsed put chartreuse on
+ * Hours and left Distance looking exactly like the two columns that did not move
+ * — the biggest fact about the week rendered in the styling of "nothing
+ * happened". So the fixture below is precisely that week, and the assertion is
+ * that BOTH ends are marked: core's `best` on Hours, `worst` on Distance.
+ *
+ * The a11y label is what it asserts on, because that is the one channel a test
+ * can read AND the one an athlete who cannot separate the two hues depends on.
+ */
+const longLift = (weeks: number): LoggedSession => {
+  const started = noonWeeksAgo(weeks);
+  return { ...lift(weeks), completedAt: new Date(started + 90 * 60000).toISOString() };
+};
+
+/** Time up a third, distance down three quarters, tonnage and count flat. */
+const bothEnds: LoggedSession[] = [
+  longLift(0), run(0, 1),
+  lift(1), run(1, 4),
+  lift(2), run(2, 4),
+  lift(3), run(3, 4),
+  lift(4), run(4, 4),
+];
+
+describe("the activity card's marks", () => {
+  const labelStarting = (prefix: string) =>
+    screen.getAllByRole("button")
+      .map((b) => b.getAttribute("aria-label") ?? "")
+      .find((l) => l.startsWith(prefix)) ?? "";
+
+  it("marks the riser and the faller at rest, not just the sentence's metric", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+
+    expect(labelStarting("Hours")).toContain("biggest rise this period");
+    expect(labelStarting("Distance")).toContain("biggest drop this period");
+  });
+
+  it("leaves the columns between the ends unmarked", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+
+    // A mark on every column is the same as a mark on none.
+    for (const prefix of ["Tonnage", "Sessions"]) {
+      expect(labelStarting(prefix)).not.toContain("biggest");
+    }
+  });
+
+  it("prints each end's own move beside it — the working-out for the colour", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("+33%");
+    expect(text).toContain("−75%");
+  });
+});
+
+/**
+ * THE FALL SITS IN A WASH — the two marks are deliberately unequal.
+ *
+ * Toned text alone gave the rise and the fall the same visual weight, and equal
+ * weight is the one thing the pair must not have: a week's slip is the half that
+ * asks for a decision, so it reads as a dark stain the figure sits in while the
+ * rise is a bright figure glowing off the card.
+ *
+ * The assertion is that the maroon lands on the WORST column and on nothing
+ * else — a wash that spreads is a wash that has stopped meaning anything.
+ */
+describe("the fall's maroon wash", () => {
+  const columnFor = (prefix: string) =>
+    screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith(prefix));
+
+  it("backs the worst column at rest, before anything is pressed", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(58, 31, 25)"); // colors.maroon
+  });
+
+  it("does not back the rise, nor the columns that did not move", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    // The rise glows instead of staining; the flat columns carry nothing at all.
+    for (const prefix of ["Hours", "Tonnage", "Sessions"]) {
+      const bg = columnFor(prefix)!.style.backgroundColor;
+      expect(bg === "" || bg === "rgba(0, 0, 0, 0)", `${prefix} is washed — got "${bg}"`).toBe(true);
+    }
+  });
+
+  it("LIFTS under a finger rather than going paler", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    fireEvent.click(columnFor("Distance")!);
+    // A tone-alpha selection wash would have lightened it toward the card,
+    // reading as the mark being lifted off by the press.
+    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(78, 42, 32)"); // colors.maroonLit
+  });
+});

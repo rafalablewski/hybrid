@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { contrastRatio, relativeLuminance, deltaE2000, WCAG, DISTINCT_ROLE_DE } from "../contrast";
 import { ROLE_COLOR, type SemanticRole } from "../semantic";
 import { THEMES, type ThemeName } from "./palette";
+import { colors } from "./tokens";
 
 describe("contrastRatio", () => {
   it("is 21 for black on white and 1 for identical colours", () => {
@@ -51,6 +52,25 @@ describe("theme palettes meet WCAG AA", () => {
     // stops any future accent edit from regressing the button legibility.
     it(`${name}: onAccent on accent fill ≥ AA`, () => {
       expect(contrastRatio(t.onAccent, t.accent)).toBeGreaterThanOrEqual(WCAG.AA);
+    });
+
+    // THE MAROON WASH — the activity card's fall sits in it, and terracotta is
+    // what is printed ON it. A wash that keeps darkening until it swallows its
+    // own figure is the failure mode: the mark would still be visible as a
+    // surface while the number it exists to draw attention to went unreadable.
+    // Guarded at both levels, because the lit one is what a finger produces.
+    for (const [level, wash] of [["maroon", colors.maroon], ["maroonLit", colors.maroonLit]] as const) {
+      it(`${name}: terracotta on the ${level} wash ≥ AA`, () => {
+        expect(contrastRatio(t.accentText.red, wash)).toBeGreaterThanOrEqual(WCAG.AA);
+      });
+    }
+
+    // …and it has to still read as a WASH. Too far from the card underneath and
+    // it stops being a stain on the column and becomes a second card drawn
+    // inside the first — the exact reading the breakdown drawer was un-carded
+    // to end.
+    it(`${name}: the maroon wash stays a wash, not a surface of its own`, () => {
+      expect(contrastRatio(colors.maroon, t.card)).toBeLessThan(1.6);
     });
   }
 });

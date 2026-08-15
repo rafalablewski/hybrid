@@ -13,6 +13,11 @@ export interface Palette extends ThemePalette {
   violet: string;
   amber: string;
   red: string;
+  /** The FALL's wash — a surface, never text. See colors.maroon: the activity
+   *  card's two marks are deliberately unequal, a bright figure against a dark
+   *  stain, and `maroonLit` is that stain under a finger. */
+  maroon: string;
+  maroonLit: string;
   /** fixed near-black for text/icons ON a bright accent fill */
   onAccent: string;
 }
@@ -23,6 +28,8 @@ const fillsFor = (t: ThemePalette) => ({
   violet: colors.violet,
   amber: colors.amber,
   red: colors.red,
+  maroon: colors.maroon,
+  maroonLit: colors.maroonLit,
   onAccent: t.onAccent,
 });
 
