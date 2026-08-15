@@ -729,28 +729,39 @@ export default function AuroraHome() {
         {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the
             path to one) and, below it, what was actually done. First of the
             FOUR themed clusters the whole dashboard scroll is organised into
-            (Train / Recover / Progress / Explore) — each opens with a
-            GroupMark, the quiet wayfinding tier above the blocks' own heads,
-            so the page reads as four thoughts instead of nine competing
-            cards. Mirrors web today.tsx. ═════ */}
-        {/* mt={0}: The head emits the gap to the first content row (HUB_MASTHEAD.gap.below), so this block contributes none. RN does not collapse margins and CSS does, so a block that kept its own top margin would sit 16 lower on mobile than on web. */}
-        <GroupMark label={t("w.home.group.train")} mt={0} />
+            (Train / Recover / Progress / Explore) — the quiet wayfinding tier
+            above the blocks' own heads, so the page reads as four thoughts
+            instead of nine competing cards.
+            THIS ONE CARRIES NO GroupMark, and it is the only one that doesn't.
+            A cluster marker earns its place by naming a TURN in the scroll —
+            "you have left the training and arrived at recovery". The first
+            cluster turns from nothing: it opens directly under the masthead,
+            which already names the day, on a tab the hub pills already label,
+            so "Train" was a heading that announced what the screen was
+            visibly about. The other two hubs of this hub (Performance, Feed)
+            open straight into their content under the same head, so a label
+            here also made Dashboard the odd one of the three. ═════ */}
 
         {/* PLAN TODAY — the single focused hero (your one job today). No kicker or
             eyebrow: the screen is already today's training and the plan names
             itself — the interface shouldn't narrate what the athlete can see.
             When enrolled in a dated program the count-based hero gives way to the
-            date-anchored WEEK RAIL (parity with web). */}
+            date-anchored WEEK RAIL (parity with web).
+            NO TOP MARGIN on any branch below: this is now the first row after
+            the masthead, and the head emits the gap to it
+            (HUB_MASTHEAD.gap.below). RN does not collapse margins, so a branch
+            that kept its own 16 would sit a whole gap too low — the spacing the
+            retired GroupMark used to absorb with mt={0}. */}
         {sessionsError && sessions.length === 0 ? (
           /* SESSIONS FAILED TO LOAD — with no cached data we can't tell an
              enrolled athlete from a first-run one, so the chooser here would be
              a lie ("looks like a new user" when really the network dropped).
              Show the honest retry card instead of the empty-state chooser. */
-          <View style={{ marginTop: 16 }}>
+          <View>
             <FetchError onRetry={load} />
           </View>
         ) : useRail ? (
-          <View style={{ marginTop: 16 }}>
+          <View>
             <AuroraWeekRail
               planId={planId!}
               planStartedAt={planStartedAt!}
@@ -767,7 +778,7 @@ export default function AuroraHome() {
              training, so a plan-less regular gets the calendar from their
              first session instead of the chooser forever. The chooser demotes
              to slim rows under an Explore-standard "Add structure" head. */
-          <View style={{ marginTop: 16 }}>
+          <View>
             <AuroraLogbookRail
               sessions={sessions}
               onLog={() => router.push("/workout?source=empty")}
@@ -818,16 +829,14 @@ export default function AuroraHome() {
              announcing that a choice is available). Each full-width card wears the Go-Full
              anatomy with its corner glow, the hue confined to glyph + CTA,
              and IS the start — no separate Start pill. Mirrors web today.tsx. */
-          <View style={{ marginTop: 16 }}>
-            <View style={{ gap: space.sm }}>
-              <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/plans")} />
-              <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
-              <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
-              <ChooserCard C={C} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
-            </View>
+          <View style={{ gap: space.sm }}>
+            <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/plans")} />
+            <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
+            <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
+            <ChooserCard C={C} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
           </View>
         ) : (
-        <ACard style={{ marginTop: 16 }}>
+        <ACard>
             {/* On a plan, Start is the full-width action anchored BELOW the lifts;
                 the only thing riding the top row is the readiness dial, and only
                 once there's logged history — a bare onboarding macrocycle must
