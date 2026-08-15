@@ -6,9 +6,7 @@ import { LiquidSeg } from "./liquid-seg";
 
 /** One Today-hub mark, drawn as a true vector at the same 72×72 stroke box and
  *  weight as AuroraSvgIcon, so the pills sit in the app's one monoline icon
- *  voice. Decorative — the Pressable carries the tab's real name. Shared with
- *  the floating dock (aurora/today-hub-dock.tsx) so the resting control and
- *  the detached row cannot draw the same three marks two ways. */
+ *  voice. Decorative — the Pressable carries the tab's real name. */
 export function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: HubGlyphName; color: string; size?: number; strokeWidth?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 72 72" fill="none">
@@ -49,17 +47,18 @@ export function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: 
  * three different lengths do not read as one set, so they were replaced by
  * marks of matched weight. They are NOT SF Symbols — all three were
  * purpose-built to be unlike the system's (the bento is deliberately not the
- * plain 2×2 that means "all apps", and the kit has no chart glyph at all), and
- * substituting them would draw the same three marks two ways, the exact drift
- * `HubGlyph` exists to prevent since the floating dock keeps drawing them. The
+ * plain 2×2 that means "all apps", and the kit has no chart glyph at all). The
  * words stay as each segment's accessible name.
  *
  * The selection pill is NEUTRAL, not the brand chartreuse (the user-approved
  * Liquid Glass preview): a hub tab goes nowhere the accent needs to point.
  *
- * There is no second row. The Performance tab briefly had its own chip rail
- * for Performance / Volume / Trends; those three are now ONE page, so the
- * rail had nothing left to switch between.
+ * There is no second row, and nothing of this control persists once it has
+ * scrolled off. It briefly detached into a floating row of glass pills that hung
+ * over all three views (see the retired today-hub-floating-pills capability);
+ * the top edge is now the athlete's, and the hub's other way in — the app
+ * header's side menu, which switches tab in place from any scroll depth —
+ * covers reaching Performance or Feed from deep in a page.
  */
 export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (id: TodayTabId) => void }) {
   const { palette: C } = useTheme();
