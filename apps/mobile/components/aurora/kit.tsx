@@ -958,18 +958,43 @@ export function ASearch({
  * to fit rather than clipping them, so this one does too — down to
  * `minimumFontScale`, and only where a label actually needs it. Every call site
  * gains it (three of the language switcher's own labels were on the edge).
+ *
+ * ── AND IT WORKS INSIDE A CARD ─────────────────────────────────────────────
+ * `surface="card"` recesses the track instead of raising it, so a control on a
+ * raised surface is still a container. The four hand-drawn tab rows this
+ * component replaced included one INSIDE a day card, and "a track may be
+ * heavier than the card wants" was the honest reservation about converting it.
+ * The weight is real and it is the point: a switch that changes what the card
+ * below it shows should look like a control, not like two words that happen to
+ * be underlined. What it must NOT do is disappear — see the note on the fill.
  */
 export function ASegment<T extends string>({
   options,
   value,
   onPick,
+  surface = "screen",
 }: {
   options: { id: T; label: string; meta?: string | number }[];
   value: T;
   onPick: (v: T) => void;
+  /** What the control is standing ON. See TRACK ON A CARD below. */
+  surface?: "screen" | "card";
 }) {
   const { palette } = useTheme();
   const index = Math.max(0, options.findIndex((o) => o.id === value));
+  // ── THE TRACK ON A CARD ──────────────────────────────────────────────────
+  // The default track is `ink2` — one step UP from the screen's `ink` ground,
+  // which is what makes it read as a container at all. A CARD is already
+  // `ink2`, so that same track inside one is invisible: identical fill, with
+  // nothing but a hairline to say a control is there. (The day card's session
+  // toggle is the case that found this.)
+  //
+  // The answer is not another step up — there is no token above `ink2` worth
+  // the name, and stacking surfaces to say "control" is how a screen grows
+  // six containers of the same weight. It is a step DOWN: on a raised card the
+  // track is a WELL cut into it, which is also how the system control reads on
+  // a grouped background. Same lens, same border, inverted ground.
+  const trackFill = surface === "card" ? palette.ink : palette.ink2;
   return (
     <LiquidSeg
       items={options.map((o) => ({
@@ -1004,7 +1029,7 @@ export function ASegment<T extends string>({
       // 44 so the segment clears the HIG target; the track's own padding puts
       // the control at 52, which is what a segmented control should be.
       segHeight={HIT_TARGET}
-      trackStyle={{ backgroundColor: palette.ink2, borderWidth: 1, borderColor: palette.line }}
+      trackStyle={{ backgroundColor: trackFill, borderWidth: 1, borderColor: palette.line }}
     />
   );
 }
