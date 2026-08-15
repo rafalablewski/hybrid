@@ -163,6 +163,12 @@ export const web_home = {
     "w.home.group.recover": "Recover",
     "w.home.group.progress": "Progress",
     "w.home.group.explore": "Explore",
+    // Performance's runs. There is NO `state` key and there must not be one:
+    // that run opens the screen, so it takes no marker — the same rule that
+    // leaves Today's first run unnamed, and it would additionally have echoed
+    // the card under it ("State" over "Your state").
+    "w.home.group.training": "Training",
+    "w.home.group.season": "Season",
     // A Progress rail head's ONE right-slot fact. Both are FRACTIONS, and that
     // is the whole rule: wave 3 had the exercises and endurance heads quote
     // their parent column WHOLE ("7.2 t this week" under a card already saying
@@ -1382,6 +1388,8 @@ export const web_home = {
     "w.home.group.recover": "Regeneracja",
     "w.home.group.progress": "Postępy",
     "w.home.group.explore": "Odkrywaj",
+    "w.home.group.training": "Trening",
+    "w.home.group.season": "Sezon",
     "w.home.group.metaOf": "{a} z {b} w tym tygodniu",
     "w.home.group.metaMoves": "{a} z {b} ćwiczeń",
     "w.home.week.title": "Ten tydzień",
@@ -2478,6 +2486,8 @@ export const web_home = {
     "w.home.group.recover": "Erholung",
     "w.home.group.progress": "Fortschritt",
     "w.home.group.explore": "Entdecken",
+    "w.home.group.training": "Training",
+    "w.home.group.season": "Saison",
     "w.home.group.metaOf": "{a} von {b} diese Woche",
     "w.home.group.metaMoves": "{a} von {b} Übungen",
     "w.home.week.title": "Diese Woche",

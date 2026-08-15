@@ -136,6 +136,26 @@ describe("the hub head guard — no screen may draw its own", () => {
     }
   });
 
+  it("never opens a tab on a marker — the run that opens a hub scroll is unnamed", () => {
+    // THE RULE THE TRAIN REMOVAL LEFT BEHIND, now that Performance marks its
+    // runs too: a marker names a TURN in the scroll, and the opening run turns
+    // from nothing. It sits directly under a masthead that already names the
+    // screen, on a tab the hub pills already label. Today lost "Train" to this;
+    // Performance was built without a "State" for the same reason (it would
+    // also have echoed the card below it word for word).
+    for (const file of HUB_SCREENS) {
+      const src = code(file);
+      const head = src.indexOf("<HubMasthead");
+      const mark = src.indexOf("<GroupMark", head);
+      if (head < 0 || mark < 0) continue; // the Feed marks nothing at all
+      // Something has to RENDER between the head and the first marker. The
+      // match includes `<HubMasthead` itself, so one hit means the marker is
+      // the very next thing on the screen — which is the defect.
+      const rendered = src.slice(head, mark).match(/<[A-Z][A-Za-z]*/g) ?? [];
+      expect(rendered.length, file).toBeGreaterThan(1);
+    }
+  });
+
   it("opens its first cluster with no marker at all", () => {
     // "Train", in the display face, directly under a masthead that says Today,
     // on a tab the hub pills already label Dashboard — a heading announcing
@@ -152,12 +172,13 @@ describe("the hub head guard — no screen may draw its own", () => {
   });
 
   it("keeps the group labels down to the markers that actually render", () => {
-    // The Performance clusters (State / Training / Season) were labels for
-    // GroupMarks that are not in the code — mobile's Performance is still the
-    // numbered card scroll, and the web twin died before it grew them either.
-    // Three strings in three locales for a marker set that doesn't exist, and
-    // they read as evidence Performance was clustered when it wasn't. Every
-    // surviving w.home.group.* key must be rendered by something.
+    // These three (State / Training / Season) once existed as strings for
+    // GroupMarks that were NOT in the code — Performance was still the numbered
+    // card scroll, and the web twin died before it grew them either. Training
+    // and Season are now real markers on that page and are back; `state` is
+    // not, and must never be: that run opens the screen (see the guard above).
+    // Every surviving w.home.group.* key must be rendered by something, so a
+    // label can no longer outlive — or precede — the marker it was written for.
     const i18n = read("packages/core/src/i18n-web/home.ts");
     const keys = new Set([...i18n.matchAll(/"(w\.home\.group\.[a-zA-Z]+)"/g)].map((m) => m[1]!));
     const rendered = [
