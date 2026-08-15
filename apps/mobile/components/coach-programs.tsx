@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
-import { localTodayKey } from "@hybrid/core";
+import { localTodayKey , ALPHA} from "@hybrid/core";
 import { leading, fs, space, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
@@ -156,7 +156,7 @@ function ProgramRow({ program, clients, groups, onEdit, onDelete, onAssigned }: 
     const sel = target === key;
     return (
       <Pressable key={key} onPress={() => setTarget(sel ? "" : key)}
-        style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? withAlpha(C.lime, 0.11) : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}>
+        style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? withAlpha(C.lime, ALPHA.fill) : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: sel ? txt(C, C.lime) : C.ash }}>{label}</Text>
       </Pressable>
     );

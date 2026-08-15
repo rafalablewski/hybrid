@@ -6,6 +6,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { withAlpha } from "./field";
+import { ALPHA } from "@hybrid/core";
 
 /** AURORA AI coach — same /api/ai-coach call (server-side Claude, engine
  *  fallback) and rendered note as the classic, in the rounded look.
@@ -33,7 +34,7 @@ export default function AuroraAiCoach({ embedded = false }: { embedded?: boolean
   }, [ask]);
 
   const chip = (label: string, color: string) => (
-    <View style={{ backgroundColor: withAlpha(color, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+    <View style={{ backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, color) }}>{label}</Text>
     </View>
   );

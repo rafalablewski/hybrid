@@ -11,7 +11,8 @@ import {
   type LogbookDay,
   type LoggedSession,
   type WeightUnit,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -201,7 +202,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
             <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{day.dayOfMonth}</Text>
           </View>
         ) : selected ? (
-          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: withAlpha(C.chalk, 0.302), alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), alignItems: "center", justifyContent: "center" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{day.dayOfMonth}</Text>
           </View>
         ) : (
@@ -214,7 +215,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
           untrained day fills nothing — silence, never terracotta, because a
           logbook makes no promises. */}
       <View style={{ height: 12, alignItems: "center", justifyContent: "center" }}>
-        <View style={{ width: LOAD_W, height: LOAD_H, borderRadius: LOAD_H / 2, backgroundColor: withAlpha(C.chalk, 0.12), overflow: "hidden" }}>
+        <View style={{ width: LOAD_W, height: LOAD_H, borderRadius: LOAD_H / 2, backgroundColor: withAlpha(C.chalk, ALPHA.fill), overflow: "hidden" }}>
           {day.load > 0 ? (
             <View
               style={{

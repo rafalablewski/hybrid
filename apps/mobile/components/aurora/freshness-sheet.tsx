@@ -3,7 +3,8 @@ import { View, Text } from "react-native";
 import {
   FRESHNESS_COPY, FATIGUE_NORM_FLOOR,
   type FreshnessExplain, type FreshnessRow, type FreshnessStep,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, F } from "../../lib/ui";
@@ -27,7 +28,7 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 /** A row's bar, painted from the ROW's own role — never re-derived here. */
 const rowPaint = (C: Palette, r: FreshnessRow) => {
   const paint = txt(C, roleColor(C, r.role));
-  return r.dim ? withAlpha(paint, 0.34) : paint;
+  return r.dim ? withAlpha(paint, ALPHA.line) : paint;
 };
 
 export default function FreshnessSheet({ explain, onClose }: {

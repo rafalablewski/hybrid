@@ -13,7 +13,8 @@ import {
   type ExerciseWidgetCard,
   type LoggedSession,
   type WeightUnit,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import HistoryStrip from "./history-strip";
 import { useChartScrub } from "./chart-scrub";
 import RailTail from "./rail-tail";
@@ -261,7 +262,7 @@ export default function ExerciseWidgetRail({
           onPress={() => setAdding(true)}
           accessibilityRole="button"
           accessibilityLabel={`${t("w.home.exw.addCard")} – ${t("w.home.exw.title")}`}
-          style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, 0.4), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
+          style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, ALPHA.rim), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
         >
           <Text style={{ fontSize: fs.title, color: C.ash }}>＋</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.addCard")}</Text>

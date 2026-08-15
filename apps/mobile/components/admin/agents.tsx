@@ -12,7 +12,8 @@ import {
   type AgentDefinition,
   type AgentStatus,
   type Kpi,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { leading, tracking, fs, space, Mono, Kicker, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -652,7 +653,7 @@ function ToolToggle({ label, on, onPress }: { label: string; on: boolean; onPres
       style={{
         borderWidth: 1,
         borderColor: on ? palette.lime : palette.line,
-        backgroundColor: on ? withAlpha(palette.lime, 0.12) : palette.ink2,
+        backgroundColor: on ? withAlpha(palette.lime, ALPHA.fill) : palette.ink2,
         borderRadius: RADIUS.pill,
         paddingVertical: 6,
         paddingHorizontal: 12,
@@ -677,7 +678,7 @@ function Toggle({ on, onToggle, disabled }: { on: boolean; onToggle: () => void;
         borderRadius: RADIUS.pill,
         borderWidth: 1,
         borderColor: on ? palette.lime : palette.line,
-        backgroundColor: on ? withAlpha(palette.lime, 0.2) : palette.ink2,
+        backgroundColor: on ? withAlpha(palette.lime, ALPHA.solid) : palette.ink2,
         padding: 2,
         alignItems: on ? "flex-end" : "flex-start",
         justifyContent: "center",

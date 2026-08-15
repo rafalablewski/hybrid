@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
-import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
+import { GUIDES, type Guide, type GuideBlock , ALPHA} from "@hybrid/core";
 import { leading, tracking, fs, space, Mono, Kicker, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { FilterGroup } from "./_kit";
@@ -63,7 +63,7 @@ function Block({ b }: { b: GuideBlock }) {
 
   if (b.t === "note") {
     return (
-      <View style={{ borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: withAlpha(palette.amber, 0.07), borderRadius: 8, padding: 12 }}>
+      <View style={{ borderLeftWidth: 3, borderLeftColor: palette.amber, backgroundColor: withAlpha(palette.amber, ALPHA.wash), borderRadius: 8, padding: 12 }}>
         <Kicker color={palette.amber}>Note</Kicker>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: 21, color: palette.chalk, marginTop: 4 }}>{b.text}</Text>
       </View>
@@ -117,9 +117,9 @@ function Block({ b }: { b: GuideBlock }) {
               width: 22,
               height: 22,
               borderRadius: 6,
-              backgroundColor: withAlpha(palette.lime, 0.12),
+              backgroundColor: withAlpha(palette.lime, ALPHA.fill),
               borderWidth: 1,
-              borderColor: withAlpha(palette.lime, 0.333),
+              borderColor: withAlpha(palette.lime, ALPHA.line),
               alignItems: "center",
               justifyContent: "center",
               marginTop: 1,

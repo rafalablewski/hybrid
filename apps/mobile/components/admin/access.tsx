@@ -7,7 +7,8 @@ import {
   type NavGroup,
   type Persona,
   type PersonaAccess,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, LoadSwap, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -255,7 +256,7 @@ export default function AdminAccess() {
                                     style={{
                                       borderWidth: 1,
                                       borderColor: on ? palette.lime : palette.line,
-                                      backgroundColor: on ? withAlpha(palette.lime, 0.11) : "transparent",
+                                      backgroundColor: on ? withAlpha(palette.lime, ALPHA.fill) : "transparent",
                                       borderRadius: RADIUS.pill,
                                       paddingVertical: 5,
                                       paddingHorizontal: 11,

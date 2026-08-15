@@ -8,7 +8,8 @@ import {
   type Capability,
   type CapabilityStatus,
   type BenchmarkMetric,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { adminGet } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -99,13 +100,13 @@ function CapRow({ cap, color }: { cap: Capability; color: string }) {
       </View>
       <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>
       {cap.retiredBecause ? (
-        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: withAlpha(palette.red, 0.07), borderWidth: 1, borderColor: withAlpha(palette.red, 0.25) }}>
+        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: withAlpha(palette.red, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(palette.red, ALPHA.edge) }}>
           <Kicker color={palette.red}>Why it went</Kicker>
           <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), marginTop: 3 }}>{cap.retiredBecause}</Mono>
         </View>
       ) : null}
       {cap.blockedBy ? (
-        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: withAlpha(palette.amber, 0.07), borderWidth: 1, borderColor: withAlpha(palette.amber, 0.25) }}>
+        <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: withAlpha(palette.amber, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(palette.amber, ALPHA.edge) }}>
           <Kicker color={palette.amber}>Needs</Kicker>
           <Mono color={palette.chalk} style={{ fontSize: fs.caption, lineHeight: leading(fs.caption), marginTop: 3 }}>{cap.blockedBy}</Mono>
         </View>

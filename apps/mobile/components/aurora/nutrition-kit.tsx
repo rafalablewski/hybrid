@@ -8,7 +8,8 @@ import {
   PICKER_SOURCES, pickerSourceLabelKey,
   type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET , trackFigure} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -177,7 +178,7 @@ export function MarkPlate({ C, src, height = 34, full }: {
         justifyContent: "center",
         paddingHorizontal: 16,
         borderRadius: RADIUS.field,
-        backgroundColor: withAlpha(C.chalk, 0.07),
+        backgroundColor: withAlpha(C.chalk, ALPHA.wash),
         borderWidth: 1,
         borderColor: C.line,
         overflow: "hidden",

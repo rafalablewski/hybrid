@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Animated, PanResponder, Platform, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
-import { springs, springToRN } from "@hybrid/core";
+import { springs, springToRN , ALPHA} from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -218,9 +218,9 @@ export function LiquidSeg({
 
   // The rest pill is deliberately NEUTRAL — the reference look — not the brand
   // chartreuse: a near-solid step of the text colour over the track.
-  const restFill = withAlpha(C.chalk, 0.24);
-  const simFill = withAlpha(C.chalk, 0.1);
-  const simRim = withAlpha(C.chalk, 0.4);
+  const restFill = withAlpha(C.chalk, ALPHA.edge);
+  const simFill = withAlpha(C.chalk, ALPHA.fill);
+  const simRim = withAlpha(C.chalk, ALPHA.rim);
 
   return (
     <View

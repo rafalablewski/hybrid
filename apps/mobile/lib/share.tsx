@@ -3,7 +3,7 @@ import { View, Text, Share, Animated, type TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
+import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit , ALPHA} from "@hybrid/core";
 import { C, F, fs, Kicker } from "./ui";
 import { withAlpha } from "../components/aurora/field";
 
@@ -36,7 +36,7 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
     <View
       ref={ref}
       collapsable={false}
-      style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), borderRadius: 18, padding: 20 }}
+      style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), borderRadius: 18, padding: 20 }}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, letterSpacing: -1 }}>
@@ -81,7 +81,7 @@ export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: str
       style={{ width, height: Math.round((width * 16) / 9), backgroundColor: C.ink, padding: width * 0.09, justifyContent: "space-between" }}
     >
       {/* Lime glow disc — the Aurora membrane look on the dark backdrop. */}
-      <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: withAlpha(C.lime, 0.133) }} />
+      <View pointerEvents="none" style={{ position: "absolute", top: -width * 0.2, right: -width * 0.25, width: width * 0.9, height: width * 0.9, borderRadius: width * 0.45, backgroundColor: withAlpha(C.lime, ALPHA.fill) }} />
       <View>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: width * 0.072, color: C.chalk, letterSpacing: -1 }}>
@@ -348,7 +348,7 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
       <View
         ref={ref}
         collapsable={false}
-        style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), borderRadius: 18, padding: 20 }}
+        style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), borderRadius: 18, padding: 20 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, letterSpacing: -1 }}>

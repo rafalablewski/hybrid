@@ -12,7 +12,8 @@ import {
   hoursAfterSession,
   readNoteKey,
   FEEL_READ_KEY,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
@@ -124,7 +125,7 @@ export function FeelPrompt({
               flex: 1, alignItems: "center", gap: 6, paddingVertical: 12, paddingHorizontal: 2,
               borderRadius: 14, borderWidth: 1,
               borderColor: on ? C.lime : C.line,
-              backgroundColor: on ? withAlpha(C.lime, 0.15) : compact ? C.ink2 : C.ink,
+              backgroundColor: on ? withAlpha(C.lime, ALPHA.solid) : compact ? C.ink2 : C.ink,
             }}
           >
             <Text style={{ fontSize: 21, opacity: on ? 1 : 0.55 }}>{l.emoji}</Text>

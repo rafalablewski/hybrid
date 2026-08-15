@@ -33,7 +33,8 @@ import {
   type InkTier,
   type LoadColor,
   type LiftKind,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import MeasuredOutcome from "./measured-outcome";
 import { useRevalidate } from "../lib/queries";
@@ -155,7 +156,7 @@ export default function PercentProgram({
                     accessibilityLabel={inp.label}
                     value={val}
                     onChangeText={(v) => (inp.kind === "number" ? onMaxChange(inp.key, v) : setVals((m) => ({ ...m, [inp.key]: v })))}
-                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.note, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, 0.25), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
+                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.note, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, ALPHA.edge), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
                   />
                 </View>
               );
@@ -223,10 +224,10 @@ function WeekRail({ C, bars, weeks, week, setWeek, wkLabel }: { C: Palette; bars
           <Pressable key={w} onPress={() => setWeek(w)} accessibilityRole="button" accessibilityState={{ selected: on }} hitSlop={4} style={{ width: 46, alignItems: "center", gap: 6, paddingVertical: 3 }}>
             {hasBars ? (
               <View style={{ width: 16, height: 34, justifyContent: "flex-end" }}>
-                <View style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: RADIUS.mark, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16) }} />
+                <View style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: RADIUS.mark, backgroundColor: on ? C.lime : withAlpha(C.chalk, ALPHA.solid) }} />
               </View>
             ) : (
-              <View style={{ width: 22, height: 2, borderRadius: 2, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16), marginTop: 16 }} />
+              <View style={{ width: 22, height: 2, borderRadius: 2, backgroundColor: on ? C.lime : withAlpha(C.chalk, ALPHA.solid), marginTop: 16 }} />
             )}
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
               {wkLabel} {w}
@@ -342,7 +343,7 @@ function Pulse({ day, C }: { day: ProgramDayView; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: 16 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {bars.map((b, i) => (
-        <View key={i} style={{ width: 3, borderRadius: 1.5, height: Math.max(3, Math.round(b.h * 16)), backgroundColor: b.hot ? C.lime : withAlpha(C.chalk, 0.22) }} />
+        <View key={i} style={{ width: 3, borderRadius: 1.5, height: Math.max(3, Math.round(b.h * 16)), backgroundColor: b.hot ? C.lime : withAlpha(C.chalk, ALPHA.edge) }} />
       ))}
     </View>
   );
@@ -418,7 +419,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
         <Pulse day={day} C={C} />
         {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
         {expandable && (
-          <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: open ? C.lime : withAlpha(C.chalk, 0.25), backgroundColor: open ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: open ? C.lime : withAlpha(C.chalk, ALPHA.edge), backgroundColor: open ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, lineHeight: 15, color: open ? C.ink : C.ash }}>{open ? "−" : "+"}</Text>
           </View>
         )}
@@ -729,7 +730,7 @@ function ExerciseSheet({ sel, onClose, C }: { sel: SheetSel | null; onClose: () 
           </View>
         ))}
         {!!lift.oneRm && (
-          <View style={{ ...row, borderTopColor: withAlpha(C.chalk, 0.12) }}>
+          <View style={{ ...row, borderTopColor: withAlpha(C.chalk, ALPHA.fill) }}>
             <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>1RM</Text>
             <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.oneRm}</Text>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>from your maxes</Text>

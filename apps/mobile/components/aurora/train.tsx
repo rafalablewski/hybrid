@@ -7,7 +7,8 @@ import {
   velocityProfiles,
   sessionsOnDay,
   type LoggedSession,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { FUNNEL } from "@hybrid/core";
 import { fetchSessions, fetchRoutines, type Routine } from "../../lib/api";
 import { useDraft } from "../../lib/draft";
@@ -180,7 +181,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
   const pa = usePremiumAccent();
   return (
     <PressScale onPress={onPress} style={{ marginTop: 16 }}>
-      <ACard style={{ borderColor: withAlpha(pa.fill, 0.27) }}>
+      <ACard style={{ borderColor: withAlpha(pa.fill, ALPHA.edge) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: pa.text }}>{t("train.aiCoach")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: pa.text }}>{t("w.home.today.unlockFullBtn")}</Text>
@@ -244,7 +245,7 @@ function ListRow({
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         {premium && (
-          <View style={{ borderWidth: 1, borderColor: withAlpha(pa.fill, 0.33), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
+          <View style={{ borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.line), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: pa.text }}>{t("train.premium")}</Text>
           </View>
         )}

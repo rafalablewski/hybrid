@@ -24,7 +24,8 @@ import {
   type BodyweightLookup,
   type StatRange,
   sessionTitleText,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
@@ -177,7 +178,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
           <View key={d.key} style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 8, paddingBottom: 8, borderRadius: RADIUS.inner, backgroundColor: C.ink2, borderWidth: 1, borderColor: d.isToday ? C.lime : C.line }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(WEEKDAY_LABEL_KEYS[i]!).slice(0, 1)}</Text>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: d.isToday ? lime : d.future ? C.ash : C.chalk }}>{d.dayNum}</Text>
-            <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: d.dot === 2 ? C.lime : d.dot === 1 ? withAlpha(C.lime, 0.45) : "transparent" }} />
+            <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: d.dot === 2 ? C.lime : d.dot === 1 ? withAlpha(C.lime, ALPHA.rim) : "transparent" }} />
           </View>
         ))}
       </View>
@@ -190,7 +191,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <DayLabel C={C} text={u.isToday ? `${t("w.analyze.cal.today")} – ${fmtDayLong(u.dateKey)}` : fmtDayLong(u.dateKey)} today={u.isToday} />
             <Chip color={u.isToday ? C.lime : C.ash}>{t("histview.planned")}</Chip>
           </View>
-          <View style={{ borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, 0.38) }}>
+          <View style={{ borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, ALPHA.rim) }}>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
             {u.blockNames.length > 0 && (
               <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
@@ -241,7 +242,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
   return (
     <View style={{ gap: 12, marginTop: 12 }}>
       {weeks.map((w) => (
-        <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, 0.3) : C.line }}>
+        <View key={w.startKey} style={{ backgroundColor: C.ink2, borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1, borderColor: w.isCurrent ? withAlpha(C.lime, ALPHA.line) : C.line }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
             {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: tracking.caps, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
@@ -249,7 +250,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, height: 34, marginTop: 12, marginBottom: 4 }}>
             {w.days.map((d) => {
               const h = d.load <= 0 ? 3 : Math.max(6, Math.round((d.load / maxLoad) * 34));
-              return <View key={d.dateKey} style={{ flex: 1, height: h, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: d.load <= 0 ? withAlpha(C.ash, 0.18) : d.hasCardio && !d.hasStrength ? C.blue : C.lime }} />;
+              return <View key={d.dateKey} style={{ flex: 1, height: h, borderTopLeftRadius: 3, borderTopRightRadius: 3, backgroundColor: d.load <= 0 ? withAlpha(C.ash, ALPHA.solid) : d.hasCardio && !d.hasStrength ? C.blue : C.lime }} />;
             })}
           </View>
           <View style={{ flexDirection: "row", gap: 5 }}>

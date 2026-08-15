@@ -2,7 +2,8 @@ import { View, Text, TextInput } from "react-native";
 import {
   fs, tracking, blockKindKey, resolveBlock, blockRamp,
   type AthleteVolumeProfile, type MuscleGroup, type VolumeBlock, type VolumeLandmark,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
@@ -141,7 +142,7 @@ export default function AuroraVolumeModel() {
                   accessibilityLabel={label}
                   maxFontSizeMultiplier={FIXED_FONT_SCALE}
                   onEndEditing={(e) => setProfile({ [key]: e.nativeEvent.text.trim() === "" ? undefined : Number(e.nativeEvent.text) } as Partial<AthleteVolumeProfile>)}
-                  style={{ ...field, color: isMeasured ? C.ash : C.chalk, borderColor: isMeasured ? withAlpha(C.lime, 0.35) : C.line }}
+                  style={{ ...field, color: isMeasured ? C.ash : C.chalk, borderColor: isMeasured ? withAlpha(C.lime, ALPHA.line) : C.line }}
                 />
               </View>
             );
@@ -180,7 +181,7 @@ export default function AuroraVolumeModel() {
                       accessibilityLabel={`${ml(m)} ${k}`}
                       maxFontSizeMultiplier={FIXED_FONT_SCALE}
                       onEndEditing={(e) => editField(m, k, e.nativeEvent.text)}
-                      style={{ ...field, fontSize: fs.caption, paddingHorizontal: 2, color: overridden ? C.chalk : C.ash, borderColor: overridden ? withAlpha(C.lime, 0.45) : C.line }}
+                      style={{ ...field, fontSize: fs.caption, paddingHorizontal: 2, color: overridden ? C.chalk : C.ash, borderColor: overridden ? withAlpha(C.lime, ALPHA.rim) : C.line }}
                     />
                   </View>
                 );
@@ -241,7 +242,7 @@ function Toggle({ C, on, label, onPress }: { C: Palette; on: boolean; label: str
       onPress={onPress}
       accessibilityRole="switch"
       accessibilityState={{ checked: on }}
-      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, 0.12) : "transparent" }}
+      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent" }}
     >
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{label}</Text>
     </Pressable>

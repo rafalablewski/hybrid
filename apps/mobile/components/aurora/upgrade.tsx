@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
-import { FUNNEL, FULL_BENEFITS } from "@hybrid/core";
+import { FUNNEL, FULL_BENEFITS , ALPHA} from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull, restorePurchases, fetchFullPrice } from "../../lib/iap";
@@ -118,7 +118,7 @@ export default function AuroraUpgrade() {
     // so the CTA sits at the end of the read on both clients.
     <Sheet visible={open} onClose={close} onClosed={() => router.back()}>
       {/* badge */}
-      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(pa.fill, 0.14), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+      <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(pa.fill, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
       </View>
 

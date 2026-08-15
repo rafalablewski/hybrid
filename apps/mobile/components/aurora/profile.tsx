@@ -24,7 +24,8 @@ import {
   type Achievement,
   type HeatCell,
   type AuroraIconName,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useSession } from "../../lib/session";
@@ -236,7 +237,7 @@ export default function AuroraProfile() {
       {socialP && !sComplete && (
         /* an icon-tile ROW (tile + text + chevron), not a full-width card — it
            keeps the compact inset. See CARD_PAD for the variants that stay 16. */
-        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: withAlpha(C.lime, 0.08), borderRadius: RADIUS.card, padding: 16, marginBottom: 16 }}>
+        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.card, padding: 16, marginBottom: 16 }}>
           <View style={{ width: 44, height: 44, borderRadius: RADIUS.inner, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
           </View>
@@ -493,8 +494,8 @@ export default function AuroraProfile() {
                       height: 60,
                       borderRadius: RADIUS.field,
                       borderWidth: 1,
-                      borderColor: a.earned ? withAlpha(C.lime, 0.45) : C.line,
-                      backgroundColor: a.earned ? withAlpha(C.lime, 0.12) : C.ink2,
+                      borderColor: a.earned ? withAlpha(C.lime, ALPHA.rim) : C.line,
+                      backgroundColor: a.earned ? withAlpha(C.lime, ALPHA.fill) : C.ink2,
                       alignItems: "center",
                       justifyContent: "center",
                     }}

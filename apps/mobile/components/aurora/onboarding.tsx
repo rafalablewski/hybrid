@@ -4,7 +4,8 @@ import { useRouter } from "expo-router";
 import {
   ONBOARDING_GOAL_GROUPS,
   type OnboardingQuestion,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
 import { useLang } from "../../lib/i18n";
@@ -183,7 +184,7 @@ function Choice({ active, title, sub, onPress }: { active: boolean; title: strin
   return (
     <Pressable
       onPress={onPress}
-      style={{ flexDirection: "row", alignItems: "center", gap: space.md, borderWidth: 1, borderColor: active ? palette.lime : palette.line, backgroundColor: active ? withAlpha(palette.lime, 0.08) : palette.ink2, borderRadius: RADIUS.field, padding: 16 }}
+      style={{ flexDirection: "row", alignItems: "center", gap: space.md, borderWidth: 1, borderColor: active ? palette.lime : palette.line, backgroundColor: active ? withAlpha(palette.lime, ALPHA.wash) : palette.ink2, borderRadius: RADIUS.field, padding: 16 }}
     >
       {active && <AuroraIcon name="check" size={22} color={txt(palette, palette.lime)} />}
       <View style={{ flex: 1 }}>

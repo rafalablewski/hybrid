@@ -9,7 +9,8 @@ import {
   personalTrainingLog,
   localTodayKey,
   formatStrengthPr,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
   getCoachLinks,
@@ -188,7 +189,7 @@ export default function AuroraCoach() {
             <ACard key={l.id} style={{ marginTop: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{personName(l.client)}</Text>
-                <View style={{ backgroundColor: withAlpha(C.ash, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+                <View style={{ backgroundColor: withAlpha(C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.teams.coach.pending")}</Text>
                 </View>
               </View>
@@ -341,7 +342,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       {/* Roster TAGS */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.xs, marginBottom: 16 }}>
         {tags.map((tg) => (
-          <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(C.ash, 0.12), borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingLeft: 12, paddingRight: 8, paddingVertical: 5 }}>
+          <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(C.ash, ALPHA.fill), borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingLeft: 12, paddingRight: 8, paddingVertical: 5 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{tg}</Text>
             <Pressable accessibilityLabel={`${t("w.teams.coach.removeTag")} ${tg}`} onPress={() => saveTags(tags.filter((x) => x !== tg))} hitSlop={6}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.ash, lineHeight: fs.note }}>×</Text>
@@ -448,7 +449,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                   <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{new Date(a.date).toLocaleDateString()}</Text>
                 </View>
-                <View style={{ backgroundColor: withAlpha(a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+                <View style={{ backgroundColor: withAlpha(a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash) }}>{a.status}</Text>
                 </View>
               </View>
@@ -504,7 +505,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           {notes.map((n) => (
             <ACard key={n.id} style={{ marginTop: 12 }}>
               {n.private && (
-                <View style={{ alignSelf: "flex-start", backgroundColor: withAlpha(C.ash, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
+                <View style={{ alignSelf: "flex-start", backgroundColor: withAlpha(C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.teams.coach.private")}</Text>
                 </View>
               )}

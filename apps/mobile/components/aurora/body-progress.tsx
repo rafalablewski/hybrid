@@ -5,7 +5,8 @@ import {
   fmtMetricValue, fmtMetricDelta, unitToKg, isDecimalInput,
   latestHeightCm, fmtHeight, displayHeight, storeHeightCm, heightUnitFor,
   type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { sapi } from "../../lib/social-api";
 import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
@@ -141,7 +142,7 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
         <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
           <Text style={{ fontFamily: F.monoBold, fontSize: 40, letterSpacing: trackFigure(40), color: C.chalk }}>{wv.value}<Text style={{ fontSize: fs.note, color: C.ash }}> {wv.unit}</Text></Text>
           {dstr && dir !== "flat" && (
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.inner, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: withAlpha(dir === "down" ? C.red : C.lime, 0.157) }}>{dirArrow(dir)} {dstr} {units}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.inner, marginBottom: 4, color: dirColorM(C, dir), backgroundColor: withAlpha(dir === "down" ? C.red : C.lime, ALPHA.solid) }}>{dirArrow(dir)} {dstr} {units}</Text>
           )}
         </View>
       )}
@@ -152,7 +153,7 @@ function ReportHero({ C, report, units }: { C: Palette; report: WeeklyReport; un
         </View>
         <View style={{ flexDirection: "row", gap: 5 }}>
           {Array.from({ length: report.cadenceOf }).map((_, i) => (
-            <View key={i} style={{ flex: 1, height: 7, borderRadius: 4, backgroundColor: i < report.cadence ? C.lime : withAlpha(C.ash, 0.22) }} />
+            <View key={i} style={{ flex: 1, height: 7, borderRadius: 4, backgroundColor: i < report.cadence ? C.lime : withAlpha(C.ash, ALPHA.edge) }} />
           ))}
         </View>
       </View>
@@ -185,7 +186,7 @@ function Bars({ C, heights }: { C: Palette; heights: number[] }) {
     <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: H, marginTop: 2 }}>
       {heights.map((h, i) => {
         const last = i === heights.length - 1;
-        return <View key={i} style={{ flex: 1, height: Math.max(3, h * H), borderRadius: 2, backgroundColor: last ? C.lime : withAlpha(C.lime, 0.267) }} />;
+        return <View key={i} style={{ flex: 1, height: Math.max(3, h * H), borderRadius: 2, backgroundColor: last ? C.lime : withAlpha(C.lime, ALPHA.edge) }} />;
       })}
     </View>
   );

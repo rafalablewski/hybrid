@@ -39,7 +39,8 @@ import {
   type CardioPrHit,
   type E1rmPoint,
   type PacePoint,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -355,7 +356,7 @@ function Trend({ points, series, t, units }: { points: E1rmPoint[]; series: numb
               flex: 1,
               height: 6 + ((v - min) / range) * 22,
               borderRadius: 2,
-              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.lime : withAlpha(C.lime, 0.333),
+              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.lime : withAlpha(C.lime, ALPHA.line),
             }}
           />
         ))}
@@ -398,7 +399,7 @@ function PaceTrend({ points, series, t }: { points: PacePoint[]; series: number[
               flex: 1,
               height: 6 + ((max - v) / range) * 22,
               borderRadius: 2,
-              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.blue : withAlpha(C.blue, 0.333),
+              backgroundColor: (scrub.index >= 0 ? i === scrub.index : i === series.length - 1) ? C.blue : withAlpha(C.blue, ALPHA.line),
             }}
           />
         ))}

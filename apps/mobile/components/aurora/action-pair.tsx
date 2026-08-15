@@ -3,6 +3,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { withAlpha } from "./field";
+import { ALPHA } from "@hybrid/core";
 
 // ── AURORA Action pair (mobile) ─────────────────────────────────────────────
 // A PRIMARY AND A SECONDARY ON ONE BASELINE — SwiftUI's `.borderedProminent`
@@ -75,8 +76,8 @@ export default function AActionPair({ actions, align = "center" }: {
             paddingVertical: 11,
             paddingHorizontal: a.prominent ? 20 : 17,
             borderRadius: RADIUS.pill,
-            backgroundColor: a.prominent ? C.lime : withAlpha(C.chalk, 0.09),
-            ...(a.prominent ? {} : { borderWidth: 1, borderColor: withAlpha(C.chalk, 0.15) }),
+            backgroundColor: a.prominent ? C.lime : withAlpha(C.chalk, ALPHA.wash),
+            ...(a.prominent ? {} : { borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.solid) }),
             ...(a.prominent ? startGlow(C.lime, pressed) : { opacity: pressed ? 0.7 : 1 }),
           })}
         >

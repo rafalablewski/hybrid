@@ -3,7 +3,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import {
   RECIPES, recipeCardStats, recipeCookView, recipeCoverView, recipeTileView,
   type Recipe, type RecipeCollection, type RecipeCookView,
- colors,} from "@hybrid/core";
+ colors,
+  ALPHA,} from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -162,7 +163,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t(`w.recovery.nutrition.meal.${recipe.meal}`)}</Text>
           {recipe.highProtein && (
-            <View style={{ backgroundColor: withAlpha(C.lime, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
+            <View style={{ backgroundColor: withAlpha(C.lime, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.recipeFilter.highProtein")}</Text>
             </View>
           )}
@@ -173,7 +174,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
         </View>
         <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
           {stats.map((st) => (
-            <View key={st.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.14), paddingTop: 8 }}>
+            <View key={st.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 8 }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.heading, lineHeight: leading(fs.heading, "tight"), letterSpacing: tracking.display, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                 {st.value}
                 {!!st.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{st.unit}</Text>}

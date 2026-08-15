@@ -5,7 +5,8 @@ import {
   INJURY_FIGURES, INJURY_VIEWBOX, INJURY_AREA_KEY, INJURY_AREA_HINT_KEY,
   INJURY_WHEN, INJURY_WHEN_KEY, nearestInjuryArea, injuryTouchPoint, injuryDateFor,
   rtpView, riskRole, type InjuryWhen, type InjuryFigure, type MuscleGroup, type TissueRisk,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor, type Palette } from "../../lib/theme";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -160,7 +161,7 @@ export function RiskBody({ byTissue, onPick }: { byTissue: Record<string, Tissue
   const { t } = useLang();
   const toneOf = (g: MuscleGroup): AreaTone => {
     const ti = byTissue[g];
-    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: withAlpha(C.ash, 0.45), fillOpacity: 0.2 };
+    if (!ti || ti.risk <= 0) return { fill: C.ash, stroke: withAlpha(C.ash, ALPHA.rim), fillOpacity: 0.2 };
     const hex = roleColor(C, riskRole(ti.band));
     return { fill: hex, stroke: hex, fillOpacity: 0.22 + 0.5 * Math.min(1, ti.risk / 100) };
   };
@@ -236,7 +237,7 @@ export function InjurySheet({
               style={{
                 flex: 1, alignItems: "center", borderRadius: RADIUS.pill, paddingVertical: 10,
                 borderWidth: 1, borderColor: on ? C.chalk : C.line,
-                backgroundColor: on ? withAlpha(C.chalk, 0.1) : "transparent",
+                backgroundColor: on ? withAlpha(C.chalk, ALPHA.fill) : "transparent",
               }}
             >
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: on ? C.chalk : C.ash }}>{t(INJURY_WHEN_KEY[wk])}</Text>
@@ -255,7 +256,7 @@ export function InjurySheet({
         accessibilityState={{ disabled: !area || busy }}
         style={{
           marginTop: 20, borderRadius: RADIUS.pill, paddingVertical: 15, alignItems: "center",
-          backgroundColor: area ? C.chalk : withAlpha(C.ash, 0.22),
+          backgroundColor: area ? C.chalk : withAlpha(C.ash, ALPHA.edge),
         }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: area ? C.ink : C.ash }}>{t("w.injury.openProtocol")}</Text>

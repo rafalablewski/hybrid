@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation } from "@hybrid/core";
+import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation , ALPHA} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -127,7 +127,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
         accessibilityRole="button"
         style={{
           marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8,
-          borderWidth: 1, borderColor: withAlpha(C.lime, 0.4), backgroundColor: withAlpha(C.lime, 0.08),
+          borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), backgroundColor: withAlpha(C.lime, ALPHA.wash),
           borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16,
         }}
       >

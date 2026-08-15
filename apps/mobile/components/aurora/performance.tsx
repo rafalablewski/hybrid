@@ -15,7 +15,8 @@ import {
   freshnessExplain, wearableExplain, wearableSourcePhrase,
   type CapabilityMovement, type FreshnessPillar, type ReadinessFact, type RingSegment, type SemanticRole,
   type WearableExplain,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -435,7 +436,7 @@ function Full({ top }: { top?: ReactNode }) {
                 const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
                 const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
                 return (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 12, paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS.pill, backgroundColor: withAlpha(tint, 0.12), borderWidth: 1, borderColor: withAlpha(tint, 0.34) }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 12, paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS.pill, backgroundColor: withAlpha(tint, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(tint, ALPHA.line) }}>
                     <ReadinessFace feeling={adj.feeling} scale={0.5} />
                     <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, tint) }}>{label}</Text>
                   </View>

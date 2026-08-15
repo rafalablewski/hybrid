@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
-import { plansForGoal } from "@hybrid/core";
+import { plansForGoal , ALPHA} from "@hybrid/core";
 import { leading, fs, space, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import {
@@ -103,7 +103,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
                   <Pressable
                     key={c.clientId}
                     onPress={() => toggle(g, c.clientId)}
-                    style={{ borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, 0.11) : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}
+                    style={{ borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}
                   >
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{on ? "✓ " : ""}{c.name}</Text>
                   </Pressable>
@@ -119,7 +119,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
                 <Pressable
                   key={gg}
                   onPress={() => { setGoalFor((m) => ({ ...m, [g.id]: gg })); setPlanFor((m) => ({ ...m, [g.id]: "" })); }}
-                  style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? withAlpha(C.lime, 0.11) : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}
+                  style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? withAlpha(C.lime, ALPHA.fill) : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}
                 >
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: sel ? txt(C, C.lime) : C.ash }}>{gg}</Text>
                 </Pressable>
@@ -138,7 +138,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
                     <Pressable
                       key={p.id || "_goal"}
                       onPress={() => setPlanFor((m) => ({ ...m, [g.id]: p.id }))}
-                      style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? withAlpha(C.lime, 0.11) : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}
+                      style={{ borderWidth: 1, borderColor: sel ? C.lime : C.line, backgroundColor: sel ? withAlpha(C.lime, ALPHA.fill) : "transparent", borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 6 }}
                     >
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: sel ? txt(C, C.lime) : C.ash }}>{p.name}</Text>
                     </Pressable>

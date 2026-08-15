@@ -5,7 +5,8 @@ import {
   fitLoadVelocityProfile, lvPointsFromSessions, liftsWithVelocity, bestPointPerLoad, velocityAtLoad,
   velocityZone, suggestLoad, mvtFor, VELOCITY_ZONES,
   type LoggedSession, type LoadVelocityProfile, type LVPoint,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
@@ -46,7 +47,7 @@ export default function AuroraVelocity() {
     .filter((r) => Number.isFinite(r.load) && Number.isFinite(r.vel)).slice(-6).reverse(), [sessions, active]);
 
   const chip = (color: string, label: string) => (
-    <View style={{ backgroundColor: withAlpha(color, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
+    <View style={{ backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text>
     </View>
   );

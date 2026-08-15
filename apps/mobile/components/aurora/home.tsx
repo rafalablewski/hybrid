@@ -58,7 +58,8 @@ import {
   type Equipment,
   type ScheduledDay,
   type LogbookDay,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -894,7 +895,7 @@ export default function AuroraHome() {
                             <LiftRow key={i} r={r} i={i + 1} />
                           ))}
                           <LinearGradient colors={["transparent", "transparent", C.ink2]} locations={[0, 0.16, 1]} style={StyleSheet.absoluteFill} pointerEvents="none" />
-                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: withAlpha(C.lime, 0.14), borderWidth: 1, borderColor: withAlpha(C.lime, 0.4), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+                          <Pressable onPress={() => setLiftsOpen(true)} hitSlop={6} style={{ position: "absolute", bottom: 0, alignSelf: "center", backgroundColor: withAlpha(C.lime, ALPHA.solid), borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
                             <CtaLabel label={`${t("w.home.today.showAllLifts")} ${rows.length} ${t("w.home.today.liftsWord")} →`} color={txt(C, C.lime)} fontSize={12} font={F.monoBold} />
                           </Pressable>
                         </View>
@@ -911,7 +912,7 @@ export default function AuroraHome() {
                 {!isAthlete && (
                   <Pressable
                     onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "today-plan" }); router.push("/upgrade"); }}
-                    style={{ marginTop: 12, padding: 12, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(pa.fill, 0.4) }}
+                    style={{ marginTop: 12, padding: 12, borderRadius: 0, borderWidth: 1, borderStyle: "dashed", borderColor: withAlpha(pa.fill, ALPHA.rim) }}
                   >
                     <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: 16, color: C.ash }}><Text style={{ color: pa.text }}>[note]</Text> {t("w.home.today.followingAsWritten1")}{t("w.home.today.unlockFull")}{t("w.home.today.followingAsWritten2")}</Text>
                   </Pressable>
@@ -1252,7 +1253,7 @@ export default function AuroraHome() {
               onPress={() => { setDoneOpen(false); router.push(`/session/${s.id}`); }}
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}
             >
-              <View style={{ width: 30, height: 30, borderRadius: RADIUS.pill, backgroundColor: withAlpha(C.lime, 0.18), borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+              <View style={{ width: 30, height: 30, borderRadius: RADIUS.pill, backgroundColor: withAlpha(C.lime, ALPHA.solid), borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✓</Text>
               </View>
               <View style={{ flex: 1 }}>
@@ -1288,7 +1289,7 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
   return (
     <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20, overflow: "hidden" }}>
       {/* path-accent glow blooming from the top-right corner (Go-Full anatomy) */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, 0.05) }]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, ALPHA.wash) }]} />
       <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.17), withAlpha(accent, 0.0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <Text style={{ fontSize: fs.title, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
@@ -1308,7 +1309,7 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
   return (
     <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, overflow: "hidden" }}>
       {/* path-accent glow blooming from the top-right corner (ChooserCard anatomy) */}
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, 0.05) }]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, ALPHA.wash) }]} />
       <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.17), withAlpha(accent, 0.0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <Text style={{ fontSize: fs.note, lineHeight: 17, color: txt(C, accent) }}>{glyph}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
@@ -1662,7 +1663,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           const accent = txt(C, C[READINESS_FACE[key].accent]);
           return (
             <PressScale key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
-              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? withAlpha(accent, 0.4) : "transparent", backgroundColor: on ? withAlpha(accent, 0.12) : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
+              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? withAlpha(accent, ALPHA.rim) : "transparent", backgroundColor: on ? withAlpha(accent, ALPHA.fill) : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
               <ReadinessFace feeling={key} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
             </PressScale>
@@ -1735,7 +1736,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             onPress={() => setFollowUpOpen(true)}
             accessibilityRole="button"
             accessibilityLabel={done.complete ? t("w.recovery.readiness.logMoreDone") : t("w.recovery.readiness.logMore")}
-            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: RADIUS.field, backgroundColor: done.complete || asking ? "transparent" : withAlpha(txt(C, C.lime), 0.07), borderWidth: 1, borderColor: done.complete || asking ? C.line : withAlpha(txt(C, C.lime), 0.26) }}
+            style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, paddingVertical: 12, paddingHorizontal: 16, borderRadius: RADIUS.field, backgroundColor: done.complete || asking ? "transparent" : withAlpha(txt(C, C.lime), ALPHA.wash), borderWidth: 1, borderColor: done.complete || asking ? C.line : withAlpha(txt(C, C.lime), ALPHA.edge) }}
           >
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>

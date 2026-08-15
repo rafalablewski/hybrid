@@ -8,7 +8,8 @@ import {
   type DeviceWorkout,
   type LoggedSession,
   type RankedDeviceWorkout,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
@@ -169,7 +170,7 @@ export function DeviceMatchSheet({
                       borderRadius: best ? 20 : 16,
                       padding: best ? 18 : 13,
                       marginBottom: best ? 14 : 10,
-                      backgroundColor: best ? withAlpha(C.lime, 0.08) : C.ink2,
+                      backgroundColor: best ? withAlpha(C.lime, ALPHA.wash) : C.ink2,
                       opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1,
                     }}
                   >

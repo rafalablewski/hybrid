@@ -3,7 +3,8 @@ import { View, Text, TextInput } from "react-native";
 import {
   FOOD_ROLES, pantryShelves, pantryStats, roleCounts,
   type FoodRole, type PantryFood,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { fs, F, leading, tracking, trackFigure, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -267,7 +268,7 @@ export function PantryScreen<T extends PantryFood>({
       ) : (
         /* The cap gates the ADD, never the library: every food already saved
            stays loggable, searchable and deletable at the cap. */
-        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: withAlpha(premium?.fill ?? C.lime, 0.12), borderWidth: 1, borderColor: withAlpha(premium?.fill ?? C.lime, 0.4), borderRadius: RADIUS.pill, paddingVertical: 14 }}>
+        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: withAlpha(premium?.fill ?? C.lime, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(premium?.fill ?? C.lime, ALPHA.rim), borderRadius: RADIUS.pill, paddingVertical: 14 }}>
           <Text style={{ color: premium?.text ?? txt(C, C.lime) }}>✦</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: premium?.text ?? txt(C, C.lime) }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
         </Pressable>

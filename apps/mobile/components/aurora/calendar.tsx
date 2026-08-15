@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, SHARED_ELEMENTS } from "@hybrid/core";
+import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, SHARED_ELEMENTS , ALPHA} from "@hybrid/core";
 import { useSharedSurfaceSource, useSharedSurfaceTarget } from "../../lib/shared-element";
 import { useSessionsQuery } from "../../lib/queries";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -62,7 +62,7 @@ export default function AuroraCalendar() {
   const navBtn = { minWidth: 40, height: 40, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center" as const, justifyContent: "center" as const };
 
   const chip = (color: string, labelText: string) => (
-    <View style={{ backgroundColor: withAlpha(color, 0.14), borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3, alignSelf: "flex-start" }}>
+    <View style={{ backgroundColor: withAlpha(color, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3, alignSelf: "flex-start" }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, color) }}>{labelText}</Text>
     </View>
   );
@@ -105,7 +105,7 @@ export default function AuroraCalendar() {
                     ));
                   }
                   setSelected(cell.date);
-                }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? withAlpha(C.lime, 0.4) : C.line, backgroundColor: cellBg }}>
+                }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? withAlpha(C.lime, ALPHA.rim) : C.line, backgroundColor: cellBg }}>
                   {asg ? (
                     <View style={{ position: "absolute", top: 3, right: 3, flexDirection: "row", gap: 2 }}>
                       <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: C.violet }} />
@@ -136,7 +136,7 @@ export default function AuroraCalendar() {
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 6 }}>
             <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
             {a.status === "completed" ? chip(C.lime, t("w.analyze.cal.done")) : (
-              <Pressable accessibilityRole="button" accessibilityLabel={t("w.analyze.cal.markDone")} onPress={() => markDone(a.id)} style={{ backgroundColor: withAlpha(C.lime, 0.14), borderWidth: 1, borderColor: withAlpha(C.lime, 0.4), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Pressable accessibilityRole="button" accessibilityLabel={t("w.analyze.cal.markDone")} onPress={() => markDone(a.id)} style={{ backgroundColor: withAlpha(C.lime, ALPHA.solid), borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.analyze.cal.markDone")}</Text>
               </Pressable>
             )}

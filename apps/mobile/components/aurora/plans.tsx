@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Animated, View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors} from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors, ALPHA} from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
@@ -200,13 +200,13 @@ function ShelfTrack({ x, view, content }: { x: Animated.Value; view: number; con
   const thumb = Math.max(24, Math.min(1, view / content) * track);
   const maxScroll = Math.max(1, content - view);
   return (
-    <View onLayout={(e) => setTrack(e.nativeEvent.layout.width)} style={{ height: 2, borderRadius: 2, marginTop: 8, backgroundColor: withAlpha(C.chalk, 0.1), overflow: "hidden" }}>
+    <View onLayout={(e) => setTrack(e.nativeEvent.layout.width)} style={{ height: 2, borderRadius: 2, marginTop: 8, backgroundColor: withAlpha(C.chalk, ALPHA.fill), overflow: "hidden" }}>
       <Animated.View
         style={{
           height: 2,
           width: thumb,
           borderRadius: 2,
-          backgroundColor: withAlpha(C.chalk, 0.34),
+          backgroundColor: withAlpha(C.chalk, ALPHA.line),
           transform: [{ translateX: x.interpolate({ inputRange: [0, maxScroll], outputRange: [0, Math.max(0, track - thumb)], extrapolate: "clamp" }) }],
         }}
       />
@@ -323,12 +323,12 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
               <ACard style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{p.tag}</Text>
-                  {p.hot && <View style={{ backgroundColor: withAlpha(C.lime, 0.12), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
+                  {p.hot && <View style={{ backgroundColor: withAlpha(C.lime, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
                 </View>
                 <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
                 <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
                   {hero.stats.map((s) => (
-                    <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, 0.14), paddingTop: 8 }}>
+                    <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 8 }}>
                       <Text style={{ fontFamily: F.black, fontSize: fs.heading, lineHeight: 21, letterSpacing: tracking.display, color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{s.unit}</Text>}

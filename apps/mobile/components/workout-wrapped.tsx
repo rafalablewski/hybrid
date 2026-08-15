@@ -54,7 +54,8 @@ import {
   type WeightUnit,
   type BodyweightLookup,
   THEMES,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { fetchConnections, patchSessionDevice } from "../lib/api";
 import { healthKitAvailability } from "../lib/healthkit";
 import { useRevalidate } from "../lib/queries";
@@ -405,7 +406,7 @@ export function WorkoutWrapped({
         )}
 
         {/* ── HERO ── */}
-        <Panel glows={<><Glow size={panelH * 0.5} color={withAlpha(C.violet, 0.133)} top={-40} right={-80} /><Glow size={panelH * 0.5} color={withAlpha(C.lime, 0.08)} bottom={panelH * 0.2} left={-90} /></>}>
+        <Panel glows={<><Glow size={panelH * 0.5} color={withAlpha(C.violet, ALPHA.fill)} top={-40} right={-80} /><Glow size={panelH * 0.5} color={withAlpha(C.lime, ALPHA.wash)} bottom={panelH * 0.2} left={-90} /></>}>
           {eyebrow(t("session.wrapped.title"))}
           {/* SHARED ELEMENT (destination). The title the tapped row was showing
               flies here and scales up instead of the page re-rendering it.
@@ -436,7 +437,7 @@ export function WorkoutWrapped({
                device's name. Chip and mark are both chalk: the artwork can't be
                tinted, and a white logo next to lime text would read as two
                claims at once. See core/device-marks.ts. */
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.chalk, 0.32), borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
               {deviceMark ? (
                 <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
@@ -457,7 +458,7 @@ export function WorkoutWrapped({
         {/* The immediate read, for a session opened later that was never rated.
             The card says what a late answer is worth rather than pretending it
             is the in-the-gym reading. See core/feel-schedule.ts. */}
-        <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, 0.07)} top={panelH * 0.05} left={-90} />}>
+        <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.05} left={-90} />}>
           <FeelPrompt
             sessionId={session.id}
             minutes={receipt.durationMin}
@@ -481,7 +482,7 @@ export function WorkoutWrapped({
             style={{
               marginTop: 22, alignSelf: "stretch", flexDirection: "row", alignItems: "center",
               justifyContent: "space-between", gap: 12,
-              borderWidth: 1, borderColor: withAlpha(C.amber, 0.333), backgroundColor: withAlpha(C.amber, 0.05),
+              borderWidth: 1, borderColor: withAlpha(C.amber, ALPHA.line), backgroundColor: withAlpha(C.amber, ALPHA.wash),
               borderRadius: 20, paddingVertical: 13, paddingHorizontal: 16,
             }}
           >
@@ -495,7 +496,7 @@ export function WorkoutWrapped({
 
         {/* ── PREMIUM ── */}
         {wrapped.facts.length > 0 && (
-          <Panel center glows={<Glow size={panelH * 0.5} color={withAlpha(C.violet, 0.08)} top={0} left={-100} />}>
+          <Panel center glows={<Glow size={panelH * 0.5} color={withAlpha(C.violet, ALPHA.wash)} top={0} left={-100} />}>
             {eyebrow(t("session.wrapped.premium"))}
             <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, marginTop: 8, marginBottom: 20 }}>{t("session.wrapped.premiumLead")}</Text>
             {wrapped.facts.map((f) => (
@@ -514,7 +515,7 @@ export function WorkoutWrapped({
 
         {/* ── THE DEVICE'S READ (matched) ── */}
         {device && (
-          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, 0.08)} top={panelH * 0.06} right={-90} />}>
+          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.device.panelTitle"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: 32, marginTop: 12 }}>{device.activityLabel}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
@@ -561,7 +562,7 @@ export function WorkoutWrapped({
 
         {/* ── CONNECT A DEVICE ── */}
         {showDeviceAd && (
-          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.violet, 0.094)} top={panelH * 0.06} right={-90} />}>
+          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.violet, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: 32, marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
             <View style={{ marginTop: 24, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
@@ -587,7 +588,7 @@ export function WorkoutWrapped({
         )}
 
         {/* ── SIGNATURE ── */}
-        <Panel center glows={<Glow size={panelH * 0.55} color={withAlpha(GOLD, 0.08)} top={-panelH * 0.1} left={win.width / 2 - panelH * 0.275} />}>
+        <Panel center glows={<Glow size={panelH * 0.55} color={withAlpha(GOLD, ALPHA.wash)} top={-panelH * 0.1} left={win.width / 2 - panelH * 0.275} />}>
           <View style={{ alignItems: "center" }}>
             {eyebrow(t("session.wrapped.title"))}
             {signature.length >= SIGNATURE_MIN_BARS && (

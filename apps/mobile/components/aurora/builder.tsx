@@ -26,7 +26,8 @@ import {
   type BlockKind,
   type StrengthSet,
   type WeightUnit,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useRoutineBuilder, type EditableBlock } from "../../lib/use-routine-builder";
 import { useBodyweight } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -180,7 +181,7 @@ export default function AuroraBuilder() {
       ) : (
         // Free user at the template limit — more saved routines is Full.
         // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
-        <View style={{ marginTop: 16, borderWidth: 1, borderColor: withAlpha(pa.fill, 0.333), backgroundColor: withAlpha(pa.fill, 0.08), borderRadius: RADIUS.card, padding: 16 }}>
+        <View style={{ marginTop: 16, borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.line), backgroundColor: withAlpha(pa.fill, ALPHA.wash), borderRadius: RADIUS.card, padding: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
           <Pressable
@@ -460,7 +461,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 onPress={() => builder.cycleType(b.uid, i)}
                 accessibilityRole="button"
                 accessibilityLabel={`${setTypeBadge(s, i)} ${t("w.train.blocks.setTypeTitle")}`}
-                style={{ width: 34, height: 38, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? withAlpha(accent, 0.12) : "transparent", alignItems: "center", justifyContent: "center" }}
+                style={{ width: 34, height: 38, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: accent ?? C.line, backgroundColor: accent ? withAlpha(accent, ALPHA.fill) : "transparent", alignItems: "center", justifyContent: "center" }}
               >
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
               </Pressable>
@@ -510,7 +511,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
               onPress={() => { it.run(b.uid); setSpecial(false); }}
               style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 16, borderTopWidth: ii === 0 ? 0 : 1, borderTopColor: C.line }}
             >
-              <View style={{ width: 30, height: 30, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(it.c, 0.16) }}>
+              <View style={{ width: 30, height: 30, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(it.c, ALPHA.solid) }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, it.c) }}>{it.badge}</Text>
               </View>
               <View style={{ flex: 1 }}>

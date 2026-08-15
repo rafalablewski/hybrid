@@ -13,7 +13,8 @@ import {
   type MuscleVolumeStatus, type VolumeZone, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
   type LandmarkFactor, type LandmarkSource, type WeightUnit,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { setLoggerPref } from "../../lib/logger-prefs";
@@ -495,9 +496,9 @@ function ShapeColumn({ s, color, dim }: { s: MuscleVolumeStatus; color: string; 
   return (
     <View style={{ width: "100%", height: H, borderRadius: 7, backgroundColor: C.ink, overflow: "hidden", opacity: dim ? 0.35 : 1 }}>
       {/* the productive band, lit through the whole column width */}
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.bandStart), height: pct(g.bandEnd - g.bandStart), backgroundColor: withAlpha(C.lime, 0.13) }} />
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.bandStart), height: pct(g.bandEnd - g.bandStart), backgroundColor: withAlpha(C.lime, ALPHA.fill) }} />
       {/* the territory past the ceiling */}
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), top: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.mrv), top: 0, backgroundColor: withAlpha(C.red, ALPHA.solid) }} />
       {/* this week */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: pct(g.x), backgroundColor: color, opacity: 0.9, borderTopLeftRadius: 7, borderTopRightRadius: 7 }} />
       {/* the ceiling reads as a NOTCH in the column, so it survives the fill */}
@@ -521,7 +522,7 @@ function Prescription({ flat, title, why, items, color, ml, unit }: {
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
         {items.map((s) => (
-          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 8, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, 0.35), backgroundColor: withAlpha(color, 0.1) }}>
+          <View key={s.muscle} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 8, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(color, ALPHA.line), backgroundColor: withAlpha(color, ALPHA.fill) }}>
             <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{ml(s.muscle)}</Text>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: txt(C, color) }}>{deltaLabel(s)}</Text>
           </View>
@@ -540,7 +541,7 @@ function Toggle({ on, label, onPress }: { on: boolean; label: string; onPress: (
       onPress={() => { haptic.light(); onPress(); }}
       accessibilityRole="switch"
       accessibilityState={{ checked: on }}
-      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, 0.12) : "transparent" }}
+      style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent" }}
     >
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{label}</Text>
     </Pressable>
@@ -689,7 +690,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
               accessibilityRole="radio"
               accessibilityState={{ selected: on }}
               accessibilityLabel={`${t(r.labelKey)}${meta ? `, ${meta}` : ""}`}
-              style={{ flexDirection: "row", alignItems: "center", gap: space.ms, height: RUNG_H, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: 10, backgroundColor: on ? withAlpha(C.chalk, 0.05) : "transparent" }}
+              style={{ flexDirection: "row", alignItems: "center", gap: space.ms, height: RUNG_H, paddingHorizontal: 8, marginHorizontal: -8, borderRadius: 10, backgroundColor: on ? withAlpha(C.chalk, ALPHA.wash) : "transparent" }}
             >
               {/* One segment of the spine. Lit means the layer contributed; full
                   strength means it is the layer that named the numbers. */}
@@ -938,8 +939,8 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
         <View style={{ height: 11, borderRadius: 6, backgroundColor: C.ink, overflow: "hidden" }}>
           {/* The track is itself the key: the productive band lit, the territory
               past the ceiling tinted, so the zones read even on an empty rail. */}
-          <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, 0.13) }} />
-          <View style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, 0.16) }} />
+          <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, ALPHA.fill) }} />
+          <View style={{ position: "absolute", left: pct(g.mrv), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.red, ALPHA.solid) }} />
           <View style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: pct(g.x), backgroundColor: color, opacity: 0.9, borderRadius: 6 }} />
           {/* MEV + MRV as notches cut out of the rail — always legible, filled or not */}
           <View style={{ position: "absolute", left: pct(g.mev), top: 0, bottom: 0, width: 2, backgroundColor: C.ink2 }} />
@@ -957,7 +958,7 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
               <View style={{ position: "absolute", left: 0, width: pct(region.from), top: 0, bottom: 0, backgroundColor: withAlpha(C.ink, 0.76) }} />
               <View style={{ position: "absolute", left: pct(region.to), right: 0, top: 0, bottom: 0, backgroundColor: withAlpha(C.ink, 0.76) }} />
               {/* Caliper edges, so the lit slice reads even when it is empty. */}
-              <View pointerEvents="none" style={{ position: "absolute", left: pct(region.from), width: pct(region.to - region.from), top: 0, bottom: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: withAlpha(C.chalk, 0.45) }} />
+              <View pointerEvents="none" style={{ position: "absolute", left: pct(region.from), width: pct(region.to - region.from), top: 0, bottom: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.rim) }} />
             </>
           )}
         </View>
@@ -1033,7 +1034,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 16 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
-          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: RADIUS.mark, backgroundColor: i === sets.length - 1 ? C.blue : withAlpha(C.blue, 0.4) }} />
+          <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: RADIUS.mark, backgroundColor: i === sets.length - 1 ? C.blue : withAlpha(C.blue, ALPHA.rim) }} />
         ))}
       </View>
     </View>

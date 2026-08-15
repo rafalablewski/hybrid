@@ -1,5 +1,6 @@
 import { View } from "react-native";
 import { withAlpha } from "./kit";
+import { ALPHA } from "@hybrid/core";
 
 /**
  * HISTORY STRIP (mobile) — the Progress cluster's ONE chart of the recent
@@ -31,7 +32,7 @@ export default function HistoryStrip({ bars, color, height = 24, held = -1 }: {
           style={{
             flex: 1, borderRadius: 2,
             height: Math.max(3, Math.round(h * height)),
-            backgroundColor: (held >= 0 ? i === held : i === bars.length - 1) ? color : withAlpha(color, 0.34),
+            backgroundColor: (held >= 0 ? i === held : i === bars.length - 1) ? color : withAlpha(color, ALPHA.line),
           }}
         />
       ))}

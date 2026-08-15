@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, trackFigure, springs, springDurationMs, springToRN, durations, skeleton } from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, trackFigure, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -624,10 +624,10 @@ export function Chip({
   return (
     <View
       style={{
-        backgroundColor: withAlpha(fill, 0.12),
+        backgroundColor: withAlpha(fill, ALPHA.fill),
         borderRadius: RADIUS.pill,
         borderWidth: tone === "outline" ? 1 : 0,
-        borderColor: withAlpha(fill, 0.4),
+        borderColor: withAlpha(fill, ALPHA.rim),
         paddingHorizontal: 11,
         paddingVertical: 3,
         alignSelf: "flex-start",

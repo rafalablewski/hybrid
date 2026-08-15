@@ -12,7 +12,8 @@ import {
   planDeviceImport,
   type DeviceImportItem,
   type LoggedSession,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { healthKitAvailability, queryRecentDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
 import { importDeviceWorkouts, type DeviceImportLanded } from "../lib/api";
 import { FeelPrompt } from "./feel-prompt";
@@ -244,7 +245,7 @@ export function DeviceImportSheet({
                       borderRadius: RADIUS.field,
                       padding: 16,
                       marginBottom: 10,
-                      backgroundColor: off ? C.ink2 : withAlpha(C.lime, 0.07),
+                      backgroundColor: off ? C.ink2 : withAlpha(C.lime, ALPHA.wash),
                       opacity: done ? 0.55 : 1,
                     }}
                   >

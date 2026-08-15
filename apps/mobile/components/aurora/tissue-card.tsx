@@ -5,7 +5,8 @@ import {
   computeInjuryRisk, computeLoad, riskRole, RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   type AcwrBand, type RiskBand, type RiskDriverKind, type TissueRow,
   type MuscleGroup, type TissueRisk,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
@@ -97,7 +98,7 @@ export default function TissueCard({
   })();
 
   return (
-    <ACard solid style={{ marginTop: 16, borderColor: alert ? withAlpha(C.red, 0.45) : C.line, backgroundColor: alert ? withAlpha(C.red, 0.07) : undefined }}>
+    <ACard solid style={{ marginTop: 16, borderColor: alert ? withAlpha(C.red, ALPHA.rim) : C.line, backgroundColor: alert ? withAlpha(C.red, ALPHA.wash) : undefined }}>
       {/* HEAD — the subject, and how many tissues are on the worklist. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: alert ? txt(C, C.red) : C.chalk }}>{t("w.injury.tissue")}</Text>
@@ -191,7 +192,7 @@ export default function TissueCard({
           <View style={{ paddingBottom: 4 }}>
             <Rows rows={axis.rows} C={C} t={t} />
             {risk.awaitingBaseline.length > 0 && (
-              <View style={{ marginTop: 12, padding: 12, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.ash, 0.08) }}>
+              <View style={{ marginTop: 12, padding: 12, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.ash, ALPHA.wash) }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
               </View>
@@ -311,7 +312,7 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Text numberOfLines={1} style={{ fontFamily: r.flagged ? F.black : F.reg, fontSize: fs.caption, color: C.chalk, width: 62 }}>{t(INJURY_AREA_KEY[r.tissue])}</Text>
             {/* the row's own bar, on the axis scale, carrying the same flag line */}
-            <View style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: withAlpha(C.ash, 0.16) }}>
+            <View style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: withAlpha(C.ash, ALPHA.solid) }}>
               <View style={{ position: "absolute", left: 0, top: 0, height: 5, width: `${r.leftPct}%`, borderRadius: RADIUS.mark, backgroundColor: r.risk > 0 ? riskColor(r.band, C) : "transparent" }} />
               <View style={{ position: "absolute", left: "50%", top: -6, height: 17, width: 1, backgroundColor: withAlpha(C.ash, 0.5) }} />
             </View>

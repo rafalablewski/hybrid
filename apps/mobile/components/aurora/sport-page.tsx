@@ -26,7 +26,8 @@ import {
   type SportPageModel,
   type SportStore,
   type SportWeek,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
@@ -401,7 +402,7 @@ export default function AuroraSportPage() {
                   <Text style={{ ...mono(fs.micro), marginTop: 4 }}>{b.demand}</Text>
                 </View>
                 <View style={{ alignItems: "flex-end", maxWidth: 170 }}>
-                  <View style={{ backgroundColor: withAlpha(C.lime, 0.16), borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
+                  <View style={{ backgroundColor: withAlpha(C.lime, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
                     <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime) }}>{b.scheme}</Text>
                   </View>
                   <Text style={{ ...mono(fs.nano), marginTop: 6, textAlign: "right", lineHeight: leading(fs.nano) }}>
@@ -483,7 +484,7 @@ function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]
             borderRadius: RADIUS.mark,
             // Held, the finger's week is the lit one — the "this week" accent
             // would otherwise compete with the answer the athlete asked for.
-            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : withAlpha(C.lime, 0.42),
+            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : withAlpha(C.lime, ALPHA.rim),
           }}
         />
       ))}
@@ -578,7 +579,7 @@ function EffortSplitBar({
   // One hue at three densities — three HUES would imply three meanings; this is
   // one meaning (intensity) at three levels.
   const bands = [
-    { v: pct(split.easy), k: labels[0]!, bg: withAlpha(C.lime, 0.38) },
+    { v: pct(split.easy), k: labels[0]!, bg: withAlpha(C.lime, ALPHA.rim) },
     { v: pct(split.moderate), k: labels[1]!, bg: withAlpha(C.lime, 0.68) },
     { v: pct(split.hard), k: labels[2]!, bg: C.lime },
   ];

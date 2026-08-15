@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { currentPhase, type Macrocycle } from "@hybrid/core";
+import { currentPhase, type Macrocycle , ALPHA} from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, space, F } from "../../lib/ui";
@@ -55,7 +55,7 @@ export default function AuroraPeriodize() {
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", gap: 3, height: 12, borderRadius: 6, overflow: "hidden" }}>
           {macro.blocks.map((b) => (
-            <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === current.key ? b.color : withAlpha(b.color, 0.25) }} />
+            <View key={b.key} style={{ flex: b.weeks, backgroundColor: b.key === current.key ? b.color : withAlpha(b.color, ALPHA.edge) }} />
           ))}
         </View>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.md, marginTop: 12 }}>
@@ -79,7 +79,7 @@ export default function AuroraPeriodize() {
             {b.micros.map((m) => (
               <View
                 key={m.week}
-                style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: RADIUS.field, backgroundColor: m.week === week ? withAlpha(C.lime, 0.1) : C.ink, borderWidth: 1, borderColor: m.week === week ? C.lime : C.line }}
+                style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: RADIUS.field, backgroundColor: m.week === week ? withAlpha(C.lime, ALPHA.fill) : C.ink, borderWidth: 1, borderColor: m.week === week ? C.lime : C.line }}
               >
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: m.kind === "recovery" ? C.ash : C.chalk }}>W{m.week}</Text>
                 <View style={{ height: 4, borderRadius: 2, marginTop: 4, width: "70%", backgroundColor: m.kind === "recovery" ? C.ash : b.color, opacity: 0.4 + (m.intensity / 100) * 0.6 }} />

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { durations } from "@hybrid/core";
+import { durations , ALPHA} from "@hybrid/core";
 import { haptic } from "../../lib/haptics";
 import { AURORA_NAV_BAR_HEIGHT } from "../../lib/layout";
 import { useTheme } from "../../lib/theme";
@@ -94,7 +94,7 @@ export function ToastHost() {
           paddingVertical: 9,
           backgroundColor: LIQUID_GLASS_SUPPORTED ? "transparent" : withAlpha(C.ink2, 0.92),
           borderWidth: StyleSheet.hairlineWidth,
-          borderColor: withAlpha("#ffffff", 0.16),
+          borderColor: withAlpha("#ffffff", ALPHA.solid),
           opacity: shown,
           transform: reduced ? [] : [{ translateY: shown.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
         }}

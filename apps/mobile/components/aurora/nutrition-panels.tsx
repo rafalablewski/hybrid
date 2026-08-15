@@ -4,7 +4,8 @@ import Svg, { Path, Circle, Polyline } from "react-native-svg";
 import {
   type NutritionGoal, type NutritionNudge as NutritionNudgeShape, type NutritionSummary,
   type WeightPoint,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
@@ -29,7 +30,7 @@ export function CDivider({ label, tier, premium }: { label: string; tier?: strin
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{label}</Text>
-        {tier ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: premium ? withAlpha(pa.fill, 0.45) : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
+        {tier ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: premium ? withAlpha(pa.fill, ALPHA.rim) : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
       </View>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
     </View>
@@ -54,7 +55,7 @@ export function WeightTrend({ points, color }: { points: WeightPoint[]; color: s
       </View>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 64, gap: series.length > 40 ? 1 : 2 }}>
         {series.map((v, i) => (
-          <View key={i} style={{ flex: 1, height: 6 + ((v - min) / range) * 58, borderRadius: 2, backgroundColor: i === series.length - 1 ? color : withAlpha(color, 0.333) }} />
+          <View key={i} style={{ flex: 1, height: 6 + ((v - min) / range) * 58, borderRadius: 2, backgroundColor: i === series.length - 1 ? color : withAlpha(color, ALPHA.line) }} />
         ))}
       </View>
       {points.length > 1 && (
@@ -146,7 +147,7 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
             </View>
           ) : null}
           {!full ? (
-            <Pressable onPress={onUpgrade} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: withAlpha(pa.fill, 0.09), borderWidth: 1, borderColor: withAlpha(pa.fill, 0.302), borderRadius: RADIUS.field, padding: 16 }}>
+            <Pressable onPress={onUpgrade} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: withAlpha(pa.fill, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.line), borderRadius: RADIUS.field, padding: 16 }}>
               <Glyph name="spark" size={19} color={pa.text} strokeWidth={5} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.deepInsights")}</Text>
@@ -189,7 +190,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
      ring, on a row it had built at the CARD radius. One control, two shapes and
      two techniques. Now both read the standard. */
   const choice = (on: boolean, label: string, sub: string, onPress: () => void) => (
-    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: on ? withAlpha(C.lime, 0.08) : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16, marginBottom: 10 }}>
+    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: on ? withAlpha(C.lime, ALPHA.wash) : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16, marginBottom: 10 }}>
       <View style={{ flex: 1 }}><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{sub}</Text></View>
       <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={C.onAccent} /> : null}</View>
     </Pressable>
@@ -244,8 +245,8 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
 
       {step === 2 ? (
         <View style={{ marginTop: 24 }}>
-          <ACard solid style={{ alignItems: "center", paddingVertical: 20, backgroundColor: withAlpha(pa.fill, 0.08), borderColor: withAlpha(pa.fill, 0.302) }}>
-            <View style={{ backgroundColor: withAlpha(pa.fill, 0.157), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
+          <ACard solid style={{ alignItems: "center", paddingVertical: 20, backgroundColor: withAlpha(pa.fill, ALPHA.wash), borderColor: withAlpha(pa.fill, ALPHA.line) }}>
+            <View style={{ backgroundColor: withAlpha(pa.fill, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ {t("w.account.settings.full")}</Text></View>
             <AHeading style={{ fontSize: fs.headline, marginTop: 16, textAlign: "center" }}>{t("w.recovery.nutrition.trialTitle")}</AHeading>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.trialSub")}</Text>
             <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, marginTop: 16 }}>$9.99<Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text></Text>

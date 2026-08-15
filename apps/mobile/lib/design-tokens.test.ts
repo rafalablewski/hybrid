@@ -491,6 +491,31 @@ describe("colour", () => {
 });
 
 describe("colour arithmetic", () => {
+  it("RATCHET — a tint names its rung; a ramp keeps its own stops", () => {
+    // Converting the hex suffixes made the alphas readable, and reading them
+    // showed 58 distinct values doing two jobs. ALPHA (packages/core/src/theme/
+    // tokens.ts) names the six rungs those two jobs actually need — wash / fill
+    // / solid for tinted SURFACES, edge / line / rim for tinted BORDERS — and
+    // 230 sites now say which one they mean.
+    //
+    // The scale was derived from the histogram, not chosen: 82 of the 230 did
+    // not move at all, 112 moved by 2% or less, and exactly ONE moved by more
+    // than 4% (the worst shift in the whole migration is 0.040). Two families
+    // rather than one because they tolerate different precision — a surface is
+    // a large area where 4% is visible, a hairline is one pixel where it is not.
+    //
+    // WHAT KEEPS A RAW NUMBER, and this is why the rule is a ratchet and not
+    // HARD: the histogram is CONTINUOUS from 0 to 1, not clustered. Above ~0.45
+    // it is scrims tuned against specific content, and inside a LinearGradient
+    // every stop is a position on a ramp that has to read as smooth. Neither is
+    // a palette choice, and snapping them to rungs would be inventing a scale
+    // where none exists. The remaining count is those two things, and it should
+    // fall only if one of them turns out to be a tint in disguise — NOT by
+    // adding rungs until the number reaches zero.
+    expectAtMost(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 120,
+      "a tint → ALPHA.*; a ramp stop or scrim may keep its number");
+  });
+
   it("HARD — alpha is withAlpha(), never a hex suffix", () => {
     // THE RULE ABOVE COULD NOT SEE THIS, which is the point of adding it. The
     // hex-literal ratchet matches QUOTED hex, and 235 of the 247 hand-rolled

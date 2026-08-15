@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, ScrollView, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { routineSummary, type SessionBlock } from "@hybrid/core";
+import { routineSummary, type SessionBlock , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -150,7 +150,7 @@ function FavouriteCard({ C, width, r, t, onLaunch, onToggleFav }: { C: P; width:
   const { glyph, accent } = decor(r.id, C);
   return (
     <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ width, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16, overflow: "hidden" }}>
-      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, 0.05) }]} />
+      <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: withAlpha(accent, ALPHA.wash) }]} />
       <LinearGradient pointerEvents="none" colors={[withAlpha(accent, 0.18), withAlpha(accent, 0)]} start={{ x: 1, y: 0 }} end={{ x: 0.25, y: 0.8 }} style={StyleSheet.absoluteFill} />
       <View style={{ position: "absolute", top: 10, right: 10 }}>
         <Star C={C} on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onPress={onToggleFav} />
@@ -167,7 +167,7 @@ function RoutineRow({ C, first, r, t, onLaunch, onToggleFav }: { C: P; first: bo
   const { glyph, accent } = decor(r.id, C);
   return (
     <Pressable onPress={onLaunch} accessibilityRole="button" accessibilityLabel={r.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, paddingHorizontal: 2, borderTopWidth: first ? 0 : StyleSheet.hairlineWidth, borderTopColor: C.line }}>
-      <View style={{ width: 36, height: 36, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(accent, 0.13), borderWidth: 1, borderColor: withAlpha(accent, 0.26) }}>
+      <View style={{ width: 36, height: 36, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(accent, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(accent, ALPHA.edge) }}>
         <Text style={{ fontSize: fs.note, color: txt(C, accent) }}>{glyph}</Text>
       </View>
       <View style={{ flex: 1, minWidth: 0 }}>

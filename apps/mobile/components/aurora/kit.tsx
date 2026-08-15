@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, useEntrance, HubDissolve, cardShadow, 
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName , ALPHA} from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -390,7 +390,7 @@ export function Spark({
             flex: 1,
             height: 4 + ((v - min) / range) * (height - 4),
             borderRadius: 2,
-            backgroundColor: i === series.length - 1 ? color : withAlpha(color, 0.333),
+            backgroundColor: i === series.length - 1 ? color : withAlpha(color, ALPHA.line),
           }}
         />
       ))}
@@ -611,7 +611,7 @@ export function APill({
           minHeight: HIT_TARGET,
           opacity: disabled ? 0.5 : 1,
           borderWidth: variant === "soft" || outline ? 1 : 0,
-          borderColor: outline && color ? withAlpha(color, 0.45) : palette.line,
+          borderColor: outline && color ? withAlpha(color, ALPHA.rim) : palette.line,
           overflow: "hidden",
           // Fill the wrapper, whatever the wrapper turned out to be. A no-op
           // when it is content-sized, which is the common case.
@@ -703,7 +703,7 @@ export function AChip({
         borderRadius: RADIUS.pill,
         borderWidth: 1,
         borderColor: selected ? tint : palette.line,
-        backgroundColor: selected ? withAlpha(tint, 0.16) : "transparent",
+        backgroundColor: selected ? withAlpha(tint, ALPHA.solid) : "transparent",
       }}
     >
       <Text

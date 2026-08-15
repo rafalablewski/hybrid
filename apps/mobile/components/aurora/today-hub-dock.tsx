@@ -13,7 +13,8 @@ import {
   type HubDockState,
   type HubMotion,
   type TodayTabId,
-} from "@hybrid/core";
+
+  ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useNavScroll } from "../../lib/nav-scroll";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
@@ -254,7 +255,7 @@ export function TodayHubDock({
             gap={gap}
             open={shown}
             height={HUB_PILL.height}
-            tintColor={withAlpha(C.lime, 0.34)}
+            tintColor={withAlpha(C.lime, ALPHA.line)}
             // Straight from the shared tokens rather than off the resolved
             // transitions above: the native layer only ever runs when motion is
             // NOT reduced, and these are the two springs `hubMotion` hands the
