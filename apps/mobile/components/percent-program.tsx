@@ -3,7 +3,6 @@ import { View, Text, TextInput, ScrollView, Animated, Easing } from "react-nativ
 import { LinearGradient } from "expo-linear-gradient";
 import {
   planProgramView,
-  planCoverView,
   splitInputsTitle,
   inputEcho,
   rpeColor,
@@ -16,7 +15,6 @@ import {
   outlierPrescription,
   dayMaxPct,
   loadTier,
-  dayPulse,
   dayLeadWords,
   stepWords,
   rpeMeaning,
@@ -26,7 +24,6 @@ import {
   type GoalNode,
   type GoalPlan,
   type PlanProgram,
-  type PlanWeekBar,
   type ProgramDayView,
   type ProgramLiftView,
   type ProgramSessionView,
@@ -42,9 +39,9 @@ import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
-import { ACard, cardStack, withAlpha, ASection, GUTTER } from "./aurora/kit";
+import { ACard, cardStack, withAlpha, ASection, DockRail, DockChip } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
-import PlanCoverScreen, { PlanDockPill } from "./plan-hero";
+import PlanCoverScreen, { PlanDockPill, COVER_GUTTER } from "./plan-hero";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
@@ -73,8 +70,8 @@ function groupByKind(lifts: ProgramLiftView[]): Group[] {
  * blocks, endurance pace plans, …) through the shared planProgramView, in the
  * full-bleed cover redesign: PlanCoverScreen provides the collapsing cover, the
  * stats hem and the docked enroll pill; this component supplies the body — the
- * maxes LEDGER, the volume-WAVEFORM week rail (sticky under the collapsed bar),
- * and the programme day cards. Renders the SAME content as the web.
+ * maxes LEDGER, the week rail (sticky under the collapsed bar) and the
+ * programme day cards.
  */
 export default function PercentProgram({
   goal,
@@ -114,7 +111,6 @@ export default function PercentProgram({
     if (Number.isFinite(n) && n > 0) maxes[i.key] = n;
   }
   const view = planProgramView(program, { week, maxes });
-  const cover = planCoverView(goal, plan, program);
 
   const revalidate = useRevalidate();
   const enroll = async () => {
@@ -168,7 +164,7 @@ export default function PercentProgram({
           )}
         </>
       }
-      rail={multiWeek ? <WeekRail C={C} bars={cover.weekBars} weeks={view.weeks} week={view.week} setWeek={setWeek} wkLabel={t("w.train.plans.wkShort")} /> : undefined}
+      rail={multiWeek ? <WeekRail weeks={view.weeks} week={view.week} setWeek={setWeek} wkLabel={t("w.train.plans.wkShort")} railLabel={t("w.train.plans.chooseWeek")} /> : undefined}
       dock={
         <PlanDockPill
           state={state}
@@ -204,41 +200,29 @@ export default function PercentProgram({
   );
 }
 
-/** The Explore SectionHead vocabulary — display-face title left, mono meta
- *  right. Shared by the ledger and schedule heads on this screen. */
 /**
- * The WAVEFORM week rail — one slim column per week whose bar height is that
- * week's real volume, so the plan's wave and taper read as shape before they're
- * read as numbers. Selection is the only accent. Full-bleed (the caller's rail
- * slot runs edge-to-edge); docks under the collapsed cover.
+ * The week rail — one chip per week, sticky under the collapsed cover.
+ *
+ * It used to be a WAVEFORM: each chip carried a bar whose height was that
+ * week's volume. The bars are gone. They were decoration dressed as data — the
+ * week's real volume is already stated in words beside the Schedule head, the
+ * heights were normalised against the plan's own peak (so the same wave read
+ * differently for every plan and compared to nothing), and being the one
+ * hand-rolled rail on a surface that has a shared primitive is exactly how the
+ * four dock rails drifted apart the first time. With the bars gone this is
+ * plainly what it always was — a MODE rail, one week selected, the panel below
+ * changing — so it rides the kit's DockRail/DockChip and cannot drift again.
+ * The gutter is COVER_GUTTER, not GUTTER: the rail slot is full-bleed and
+ * unpadded, and a resting chip lines up with the cover scaffold's column (16),
+ * not with the app's (12).
  */
-function WeekRail({ C, bars, weeks, week, setWeek, wkLabel }: { C: Palette; bars: PlanWeekBar[]; weeks: number[]; week: number; setWeek: (w: number) => void; wkLabel: string }) {
-  const byWeek = new Map(bars.map((b) => [b.week, b.value]));
-  const max = Math.max(1, ...bars.map((b) => b.value));
-  const hasBars = bars.length > 0;
-  // CoverScreen's rail slot is full-width and unpadded, so this padding IS the
-  // screen gutter — the token, not the number.
+function WeekRail({ weeks, week, setWeek, wkLabel, railLabel }: { weeks: number[]; week: number; setWeek: (w: number) => void; wkLabel: string; railLabel: string }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: GUTTER, paddingTop: 8, paddingBottom: 8, gap: 2 }}>
-      {weeks.map((w) => {
-        const on = w === week;
-        const v = byWeek.get(w) ?? 0;
-        return (
-          <Pressable key={w} onPress={() => setWeek(w)} accessibilityRole="button" accessibilityState={{ selected: on }} hitSlop={4} style={{ width: 46, alignItems: "center", gap: 6, paddingVertical: 3 }}>
-            {hasBars ? (
-              <View style={{ width: 16, height: 34, justifyContent: "flex-end" }}>
-                <View style={{ width: 16, height: Math.max(5, Math.round((v / max) * 34)), borderRadius: 3, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16) }} />
-              </View>
-            ) : (
-              <View style={{ width: 22, height: 2, borderRadius: 2, backgroundColor: on ? C.lime : withAlpha(C.chalk, 0.16), marginTop: 16 }} />
-            )}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 0.9, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>
-              {wkLabel} {w}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </ScrollView>
+    <DockRail label={railLabel} gutter={COVER_GUTTER}>
+      {weeks.map((w) => (
+        <DockChip key={w} role="mode" label={`${wkLabel} ${w}`} selected={w === week} onPress={() => setWeek(w)} />
+      ))}
+    </DockRail>
   );
 }
 
@@ -332,20 +316,6 @@ function WeekHeader({ title, right, C }: { title: string; right: string | null; 
   );
 }
 
-// The day's load shape — one hairline bar per prescription, the day-level echo
-// of the week waveform. Semantic: every bar is a real step (dayPulse, core).
-function Pulse({ day, C }: { day: ProgramDayView; C: Palette }) {
-  const bars = dayPulse(day);
-  if (!bars.length) return null;
-  return (
-    <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 2, height: 16 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-      {bars.map((b, i) => (
-        <View key={i} style={{ width: 3, borderRadius: 1.5, height: Math.max(3, Math.round(b.h * 16)), backgroundColor: b.hot ? C.lime : withAlpha(C.chalk, 0.22) }} />
-      ))}
-    </View>
-  );
-}
-
 /**
  * The accordion's expand/collapse — house motion: the body ARRIVES on the sheet
  * spring (springs.sheet via springToRN, the same physics the web rides through
@@ -387,7 +357,11 @@ function Collapse({ open, children }: { open: boolean; children: ReactNode }) {
 }
 
 // One accordion day: a pressable summary row (title + plain-words summary,
-// pulse + volume + chevron) that opens into the day's full tables.
+// volume + chevron) that opens into the day's full tables. The row used to
+// carry a PULSE too — a strip of hairline bars, the day-level echo of the week
+// waveform. It went with the waveform: the summary row already says what the
+// day is in words and how much of it there is as a figure, and a sparkline
+// nobody can read a number off is the third thing competing for the same row.
 function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open: boolean; onToggle: () => void; onLift: (l: ProgramLiftView, marker: string | null) => void; C: Palette }) {
   const expandable = day.sessions.some((s) => s.lifts.length > 0);
   const words = dayLeadWords(day);
@@ -418,7 +392,6 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
             </Text>
           )}
         </View>
-        <Pulse day={day} C={C} />
         {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
         {expandable && (
           <View style={{ width: 26, height: 26, borderRadius: 13, borderWidth: 1, borderColor: open ? C.lime : withAlpha(C.chalk, 0.25), backgroundColor: open ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>
