@@ -53,6 +53,10 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
   // open a slot for the card in the hand. Zero for every row at rest.
   const shifts = useRef<Record<string, Animated.Value>>({});
   const [dragKey, setDragKey] = useState<string | null>(null);
+  // The pending move, as STATE rather than the ref `move` keeps — a list that
+  // prints positions has to renumber with the gap (see `slotOf`), and that is a
+  // render. It changes once per slot crossed, not once per frame.
+  const [pending, setPending] = useState<{ group: string; from: number; to: number } | null>(null);
   // Bumped on every pickup, so a put-down still settling when the next card is
   // grabbed cannot clear the new card's key out from under it.
   const seq = useRef(0);
@@ -106,6 +110,18 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
     for (let k = 0; k < count; k++) shiftOf(group, k).setValue(0);
   };
 
+  /**
+   * The index a row would have if the finger let go NOW.
+   *
+   * For a list that PRINTS its positions — the logger's Order block numbers
+   * every lift — the gap alone is half a preview: opening a slot at 3 while the
+   * card in it still says 2 is the list contradicting itself under the finger.
+   * Callers render `slotOf(group, i) + 1` instead of `i + 1`. A list that shows
+   * no positions never has to call this.
+   */
+  const slotOf = (group: string, index: number) =>
+    pending && pending.group === group ? displacedIndex(index, pending.from, pending.to) : index;
+
   const springLift = (to: number, then?: (finished: boolean) => void) => {
     // JS-driven, like `dragY` beside it: `move` writes dragY every frame with
     // setValue, and a native-driven node in the same transform array as a
@@ -156,6 +172,7 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
     seq.current++;
     drag.current = { group, from: index, to: index, dy: 0, count };
     closeGaps(group, count); // a previous drag's gaps must not still be open
+    setPending(null);
     // Stop, don't just overwrite: a put-down still springing back would keep
     // running against the new drag's setValue writes.
     dragY.stopAnimation();
@@ -191,8 +208,12 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
     }
     drag.current.to = to;
     // Only when the ANSWER changes, not every frame: the gap springs once per
-    // slot crossed, so the rows travel instead of chasing the finger.
-    if (to !== was) part(to);
+    // slot crossed, so the rows travel instead of chasing the finger — and the
+    // one render this costs happens then too, not sixty times a second.
+    if (to !== was) {
+      part(to);
+      setPending(to === from ? null : { group, from, to });
+    }
   };
 
   /**
@@ -235,6 +256,7 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
       // Put back where it came from: nothing reindexed, and no gap was left
       // open (`to` came home to `from`), so the card just travels back.
       drag.current = { group: "", from: -1, to: -1, dy: 0, count: 0 };
+      setPending(null);
       settle(null);
       return;
     }
@@ -247,10 +269,11 @@ export function useDragReorder(onMove: (group: string, from: number, to: number)
     onMove(group, from, to);
     haptic.selection();
     closeGaps(group, count);
+    setPending(null); // the real indices are the preview's now
     dragY.setValue(residual);
     drag.current = { group: "", from: -1, to: -1, dy: 0, count: 0 };
     settle(key(group, to));
   };
 
-  return { dragY, dragKey, key, rowStyle, begin, move, end, onRowLayout };
+  return { dragY, dragKey, key, rowStyle, slotOf, begin, move, end, onRowLayout };
 }

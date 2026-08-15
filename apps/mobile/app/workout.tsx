@@ -2206,7 +2206,7 @@ function ExerciseSheet({
               index={i}
               count={all.length}
               accessible
-              accessibilityLabel={`${i + 1}. ${e.name}`}
+              accessibilityLabel={`${exDrag.slotOf("", i) + 1}. ${e.name}`}
               accessibilityActions={[
                 { name: "moveUp", label: t("workout.moveUp") },
                 { name: "moveDown", label: t("workout.moveDown") },
@@ -2216,7 +2216,11 @@ function ExerciseSheet({
               // sheet's own panel colour, so at rest it is invisible.
               style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 10, paddingHorizontal: 2, backgroundColor: C.ink2 }}
             >
-              <Text style={{ width: 16, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{i + 1}</Text>
+              {/* The PREVIEWED position, not the current one: while a card is
+                  held the list has already parted around it, and a row sitting
+                  in the slot the gap opened while still printing its old number
+                  contradicts the gap beside it. */}
+              <Text style={{ width: 16, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{exDrag.slotOf("", i) + 1}</Text>
               <AuroraExerciseAvatar name={e.name} size={28} />
               <Text numberOfLines={1} style={{ flex: 1, fontFamily: here ? F.bold : F.reg, fontSize: fs.bodyLg, color: here ? C.chalk : C.ash }}>{e.name}</Text>
               {e.kind === "strength" && (
