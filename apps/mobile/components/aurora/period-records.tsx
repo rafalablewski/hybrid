@@ -26,7 +26,7 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
  * now reads as three named things — This week, Records, Exercises — so the
  * block takes the same Explore-standard head its neighbours wear: display-face
  * title left, the window as mono meta right (a "Records" with no window would
- * read as all-time), with the count joining it once the cells become a rail.
+ * read as all-time) and nothing else — no count.
  * Silent when the period holds none: an empty celebration is not a celebration.
  */
 
@@ -177,22 +177,18 @@ export default function PeriodRecords({
 
   return (
     <View style={{ marginTop: 24 }}>
-      {/* Explore-standard head. The right slot carries the WINDOW — a block
-          headed "Records" with no period would read as all-time — and, from
-          three up, the count. A6: the count is a fact only when the reader
-          cannot do the counting; with one or two records both cells sit side by
-          side on one row, so a "2" beside them restates what is already in
-          view. From three up they are a RAIL — you cannot count what you have
-          to scroll — so the total earns its place, and past PRS_RAIL_CAP the
-          trailing "Show all {n}" cell carries it too. */}
+      {/* Explore-standard head. The right slot carries the WINDOW and NOTHING
+          ELSE — a block headed "Records" with no period would read as all-time,
+          so the window is the one thing that has to be there. The count used to
+          sit beside it from three records up, and it never earned the space:
+          the cells ARE the count, the rail's own dissolve says there is more
+          past the edge, and past PRS_RAIL_CAP the trailing "Show all {n}" cell
+          states the total at the point the reader can act on it. A bare
+          chartreuse numeral floating at the end of a heading read as a badge on
+          a block that is a celebration, not an inbox. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.act.recordsTitle")}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: C.ash }}>{windowName}</Text>
-          {prs.length > 2 && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{prs.length}</Text>
-          )}
-        </View>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: 0.9, color: C.ash }}>{windowName}</Text>
       </View>
 
       {prs.length < 3 ? (
