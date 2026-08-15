@@ -13,7 +13,7 @@ import { useExercises } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { RADIUS } from "./kit";
+import { RADIUS, AMarkTile } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import { AuroraExerciseAvatar } from "./exercise-media";
@@ -257,14 +257,20 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
                               the BODY it trains, lit from the room's own
                               exercise list (core: roomBodyMark). Sports rooms
                               keep their catalog glyph; a room the DB can't read
-                              falls back to its initials. */}
-                          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                              falls back to its initials.
+
+                              It takes the kit's square tile even so. A room is
+                              still a THING, and this grid scrolls directly under
+                              the result rows above it — a sheet that draws two
+                              radii at once is worse than one committing to
+                              either. Only a PERSON is round. */}
+                          <AMarkTile>
                             {r.icon
                               ? <Text style={{ fontSize: 17 }}>{r.icon}</Text>
                               : roomBodyMark(r.entries.map((e) => e.name))
                                 ? <AuroraBodyMark names={r.entries.map((e) => e.name)} size={32} color={txt(C, c)} silhouette={C.line} />
                                 : <Text style={{ fontFamily: F.black, fontSize: 13, letterSpacing: -0.3, color: txt(C, c) }}>{initials(r.label)}</Text>}
-                          </View>
+                          </AMarkTile>
                           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 10 }}>{r.label}</Text>
                           <Text style={{ fontFamily: F.mono, fontSize: 10, letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>{r.entries.length}</Text>
                         </Pressable>

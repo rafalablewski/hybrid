@@ -453,6 +453,59 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
 }
 
 /**
+ * THE MARK TILE — the box a THING's mark sits in: a lift's implement, a room's
+ * body map, a sport's glyph.
+ *
+ * It is SQUARE (`RADIUS.mark`), and that is the entire job. A PERSON's avatar is
+ * a circle (components/social-kit `Avatar`, radius 999), so the shape carries the
+ * noun and nothing has to be read to tell a barbell from a face.
+ *
+ * The box lives here because it kept being redrawn: the logger's card header, the
+ * picker's rows, the picker's own Rooms grid one scroll below them, the Exercises
+ * browser and the pin sheet each owned a copy — four at 40/12, one with no box at
+ * all — and squaring them one at a time is how a sheet ends up showing two radii.
+ * `AuroraExerciseAvatar` (aurora/exercise-media) wraps this with the lift's mark
+ * already inside; reach for the tile directly only when the CONTENT is something
+ * else (a body map, a catalogue emoji).
+ */
+export function AMarkTile({ size = 40, label, children, style }: {
+  size?: number;
+  /**
+   * a11y label. Give one only where the tile SAYS something its row does not —
+   * the logger's cards label it with the block's kind. In a picker or browser row
+   * the pressable already announces the name, so the tile stays silent rather
+   * than making VoiceOver read it twice.
+   */
+  label?: string;
+  children: ReactNode;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette } = useTheme();
+  return (
+    <View
+      accessibilityRole={label ? "image" : undefined}
+      accessibilityLabel={label}
+      style={[
+        {
+          width: size,
+          height: size,
+          borderRadius: RADIUS.mark,
+          backgroundColor: palette.ink,
+          borderWidth: 1,
+          borderColor: palette.line,
+          alignItems: "center",
+          justifyContent: "center",
+          overflow: "hidden",
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
+}
+
+/**
  * THE BUTTON'S VARIANTS.
  *
  * `outline` came across from lib/ui's retired `Button`, which was the other half

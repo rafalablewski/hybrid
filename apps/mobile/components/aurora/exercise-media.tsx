@@ -4,7 +4,7 @@ import { exerciseMedia, exerciseThumb, inferBlockKind, type ExerciseMediaAsset }
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, tracking, PressScale as Pressable } from "../../lib/ui";
-import { RADIUS } from "./kit";
+import { AMarkTile } from "./kit";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraExerciseMark from "./exercise-mark";
 
@@ -149,17 +149,15 @@ function Loop({ frames, cycleMs, poster, alt, active }: { frames: string[]; cycl
 
 /**
  * THE EXERCISE AVATAR — what a lift wears in a row, a card header or a picker
- * result. It is SQUARE (`RADIUS.mark`), and that is the whole point of it: a
- * PERSON's avatar is a circle (components/social-kit `Avatar`, radius 999), so
- * the two never have to be read to be told apart. A lift is a THING — an
- * implement, a drawing, a piece of the catalogue — not a face, and a rounded
- * lift tile beside a rounded face says they are the same kind of noun.
+ * result: the kit's square `AMarkTile` with the lift's own mark already inside.
+ * A lift is a THING — an implement, a drawing, a piece of the catalogue — not a
+ * face, so it takes the square and a PERSON keeps the circle.
  *
- * The box lives HERE, not at the call site. Three surfaces (the logger's card
- * header, the picker's results, the Exercises browser) each drew their own
- * before this existed — two at 40/12 and one with no box at all — which is
- * exactly how the shape drifted. `AuroraExerciseMedia variant="thumb"` still
- * renders the glyph alone for anything that genuinely owns its own frame.
+ * The box is the kit's, not this file's and certainly not the call site's: five
+ * surfaces drew their own before the tile existed. This is now the ONLY way a
+ * lift is pictured in a row or a header — `variant="thumb"` is still offered for
+ * a surface that genuinely owns its own frame, but nothing takes it today, so
+ * treat a new caller of it as a question rather than a pattern.
  */
 export function AuroraExerciseAvatar({
   name,
@@ -178,35 +176,16 @@ export function AuroraExerciseAvatar({
   tint?: string;
   /** A catalogue emoji, drawn in place of the implement mark when present. */
   icon?: string | null;
-  /**
-   * a11y label. Give one only where the tile SAYS something the surrounding row
-   * does not — the logger's cards label it with the block's KIND. In a picker or
-   * a browser row the pressable already announces the lift's name, so the tile
-   * stays silent rather than making VoiceOver read it twice.
-   */
+  /** a11y label — see `AMarkTile`; give one only where the row doesn't already say it. */
   label?: string;
 }) {
   const { palette: C } = useTheme();
   return (
-    <View
-      accessibilityRole={label ? "image" : undefined}
-      accessibilityLabel={label}
-      style={{
-        width: size,
-        height: size,
-        borderRadius: RADIUS.mark,
-        backgroundColor: C.ink,
-        borderWidth: 1,
-        borderColor: C.line,
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
-      }}
-    >
+    <AMarkTile size={size} label={label}>
       {icon
         ? <Text style={{ fontSize: Math.round(size * 0.42) }}>{icon}</Text>
         : <Thumb name={name} size={glyph ?? Math.round(size * 0.6)} tint={tint ?? modalityTint(name, C)} />}
-    </View>
+    </AMarkTile>
   );
 }
 
