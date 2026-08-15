@@ -16,7 +16,7 @@ import { fs, space, F, tracking, PressScale as Pressable, FIXED_FONT_SCALE } fro
 import { RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
-import AuroraExerciseMedia from "./exercise-media";
+import { AuroraExerciseAvatar } from "./exercise-media";
 import AuroraBodyMark from "./body-mark";
 import { useListMotion } from "../../lib/list-motion";
 
@@ -143,14 +143,11 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, title, r
     const hint = shapeHint(e);
     return (
       <Pressable key={e.name} onPress={() => pick(e)} accessibilityRole="button" accessibilityLabel={e.name} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
-        {/* The tile carries the lift's DRAWN demo once it exists, and until then
-            its IMPLEMENT (core: exercise-marks) — a barbell, a pair of bells, a
-            cable handle. Sports keep their catalog glyph. */}
-        <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-          {e.icon
-            ? <Text style={{ fontSize: 17 }}>{e.icon}</Text>
-            : <AuroraExerciseMedia name={e.name} variant="thumb" size={24} tint={txt(C, c)} />}
-        </View>
+        {/* The SQUARE exercise avatar (shared — exercise-media): it carries the
+            lift's DRAWN demo once it exists, and until then its IMPLEMENT
+            (core: exercise-marks) — a barbell, a pair of bells, a cable handle.
+            Sports keep their catalog glyph. */}
+        <AuroraExerciseAvatar name={e.name} icon={e.icon} tint={txt(C, c)} glyph={24} />
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         {!!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{hint}</Text>}
       </Pressable>

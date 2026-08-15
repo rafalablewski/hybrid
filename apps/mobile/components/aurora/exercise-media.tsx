@@ -4,6 +4,7 @@ import { exerciseMedia, exerciseThumb, inferBlockKind, type ExerciseMediaAsset }
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, tracking, PressScale as Pressable } from "../../lib/ui";
+import { RADIUS } from "./kit";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraExerciseMark from "./exercise-mark";
 
@@ -140,6 +141,71 @@ function Loop({ frames, cycleMs, poster, alt, active }: { frames: string[]; cycl
           style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0, width: "100%", height: "100%", opacity: n === i ? 1 : 0 }}
         />
       ))}
+    </View>
+  );
+}
+
+/* ── the exercise AVATAR: the tile that carries the thumb ── */
+
+/**
+ * THE EXERCISE AVATAR — what a lift wears in a row, a card header or a picker
+ * result. It is SQUARE (`RADIUS.mark`), and that is the whole point of it: a
+ * PERSON's avatar is a circle (components/social-kit `Avatar`, radius 999), so
+ * the two never have to be read to be told apart. A lift is a THING — an
+ * implement, a drawing, a piece of the catalogue — not a face, and a rounded
+ * lift tile beside a rounded face says they are the same kind of noun.
+ *
+ * The box lives HERE, not at the call site. Three surfaces (the logger's card
+ * header, the picker's results, the Exercises browser) each drew their own
+ * before this existed — two at 40/12 and one with no box at all — which is
+ * exactly how the shape drifted. `AuroraExerciseMedia variant="thumb"` still
+ * renders the glyph alone for anything that genuinely owns its own frame.
+ */
+export function AuroraExerciseAvatar({
+  name,
+  size = 40,
+  glyph,
+  tint,
+  icon,
+  label,
+}: {
+  name: string;
+  /** The tile's box. */
+  size?: number;
+  /** Mark size inside the box; defaults to 60% of it. */
+  glyph?: number;
+  /** Mark colour; defaults to the lift's modality accent. */
+  tint?: string;
+  /** A catalogue emoji, drawn in place of the implement mark when present. */
+  icon?: string | null;
+  /**
+   * a11y label. Give one only where the tile SAYS something the surrounding row
+   * does not — the logger's cards label it with the block's KIND. In a picker or
+   * a browser row the pressable already announces the lift's name, so the tile
+   * stays silent rather than making VoiceOver read it twice.
+   */
+  label?: string;
+}) {
+  const { palette: C } = useTheme();
+  return (
+    <View
+      accessibilityRole={label ? "image" : undefined}
+      accessibilityLabel={label}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: RADIUS.mark,
+        backgroundColor: C.ink,
+        borderWidth: 1,
+        borderColor: C.line,
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      {icon
+        ? <Text style={{ fontSize: Math.round(size * 0.42) }}>{icon}</Text>
+        : <Thumb name={name} size={glyph ?? Math.round(size * 0.6)} tint={tint ?? modalityTint(name, C)} />}
     </View>
   );
 }
