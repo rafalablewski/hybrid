@@ -6,6 +6,7 @@ import {
   migrateBlocks,
   planDeviceImport,
   sanitizeDeviceWorkout,
+  sanitizeSessionBlocks,
   type DeviceWorkout,
   type LoggedSession,
 } from "@hybrid/core";
@@ -13,6 +14,7 @@ import { Prisma } from "@prisma/client";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { getCachedPublishedExercises } from "@/lib/cache";
+import { athleteBodyweight, projectSessionSafely } from "@/lib/session-projection";
 import { prisma } from "@/lib/db";
 
 /**
@@ -108,7 +110,19 @@ export async function POST(request: Request) {
      *  the right ones rather than re-asking a question already answered on an
      *  attach. */
     rated: boolean;
+    /** The store's own id for the recording behind this row. Named so the
+     *  client can go back and read what the SUMMARY threw away — the
+     *  heart-rate trace, the route, the laps — and upload it against this
+     *  session. Only the phone can read a health store, and only while the
+     *  recording is still in it, so an import that returns no uuid is an
+     *  import whose streams are lost. */
+    uuid: string;
   }[] = [];
+  /** Sessions this call created or attached a recording to — every one of them
+   *  needs its fact rows rebuilt, because attaching a recording CHANGES THE
+   *  FIGURES: the measurement outranks what was typed, and a projection made
+   *  before the attach would record the typed duration and distance forever. */
+  const touched: string[] = [];
 
   for (const item of plan) {
     const device = { ...item.workout, matchedAt: stamp() } as unknown as Prisma.InputJsonValue;
@@ -128,6 +142,7 @@ export async function POST(request: Request) {
         continue;
       }
       attached += 1;
+      if (item.sessionId) touched.push(item.sessionId);
       // `sessionId` is optional on the plan item — an attach always carries one,
       // and the row it names came out of the query the plan was built against,
       // so this find is what proves it rather than a non-null assertion.
@@ -140,6 +155,7 @@ export async function POST(request: Request) {
           completedAt: new Date(item.workout.end).toISOString(),
           minutes: item.workout.durationMin,
           rated: typeof joined.feel === "number",
+          uuid: item.workout.uuid,
         });
       continue;
     }
@@ -150,11 +166,18 @@ export async function POST(request: Request) {
         // The session lands where the TRAINING happened, not when the sync ran.
         startedAt: new Date(item.workout.start),
         completedAt: new Date(item.workout.end),
-        blocks: deviceWorkoutBlocks(item.workout) as unknown as object,
+        // Through the same sanitiser as every other write. A recording is
+        // already bounded on its way in (sanitizeDeviceWorkout), but its caps
+        // are single-field and sport-blind — a 300 km "swim" clears them — and
+        // "one definition of a storable workout" has to mean every path, or it
+        // means the paths somebody remembered.
+        blocks: (sanitizeSessionBlocks(deviceWorkoutBlocks(item.workout)) ??
+          []) as unknown as object,
         device,
       },
     });
     created += 1;
+    touched.push(row.id);
     landed.push({
       id: row.id,
       title: row.title,
@@ -163,7 +186,20 @@ export async function POST(request: Request) {
       minutes: item.workout.durationMin,
       // A row this call created cannot carry an answer — nobody has been asked.
       rated: false,
+      uuid: item.workout.uuid,
     });
+  }
+
+  // Rebuild the fact rows for everything this import touched — re-read first,
+  // so each projection runs against the row as it now stands (with its
+  // recording attached) rather than the shape it had when the plan was built.
+  // ONE bodyweight lookup for the whole batch: a fortnight of recordings is one
+  // athlete, and resolving their weight history 40 times would be 40 queries
+  // for one answer.
+  if (touched.length) {
+    const bw = await athleteBodyweight(user.id);
+    const fresh = await prisma.session.findMany({ where: { id: { in: touched }, userId: user.id } });
+    for (const s of fresh) await projectSessionSafely(s, bw);
   }
 
   return NextResponse.json({ created, attached, linked, skipped, landed });

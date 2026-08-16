@@ -10,7 +10,13 @@ import {
   type RankedDeviceWorkout,
 
   ALPHA,} from "@hybrid/core";
-import { healthKitAvailability, queryDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
+import {
+  healthKitAvailability,
+  queryDeviceWorkouts,
+  requestStreamReadAuth,
+  requestWorkoutReadAuth,
+  uploadWorkoutStreams,
+} from "../lib/healthkit";
 import { patchSessionDevice } from "../lib/api";
 import { useLang } from "../lib/i18n";
 import { DeviceMark } from "./aurora/device-mark";
@@ -62,7 +68,13 @@ export function DeviceMatchSheet({
     // types it hasn't asked about, so a returning athlete goes straight to the
     // query. A denial is invisible by design (Apple) — it surfaces as an empty
     // list, same as a watch that recorded nothing.
+    // Both asks together, at the ONE moment an athlete expects a permission
+    // sheet: opening the match sheet. The stream read (the trace under the
+    // summary) needs the route and the cycling series, and prompting for those
+    // later — as the sheet closes on a picked match — would put a system dialog
+    // on screen at the moment the athlete thinks they are done.
     await requestWorkoutReadAuth();
+    await requestStreamReadAuth();
     const workouts = await queryDeviceWorkouts(session.startedAt);
     if (workouts == null) {
       setPhase("error");
@@ -85,6 +97,13 @@ export function DeviceMatchSheet({
       setPhase("error");
       return;
     }
+    // THE RECORDING ITSELF, behind the match. The DeviceWorkout just attached is
+    // the summary — the heart-rate trace, the route and the laps under it are
+    // what a summary throws away, and only this device can read them. Fired
+    // AFTER the match is saved and never awaited: the athlete is done here, the
+    // upload takes as long as a GPS track takes, and a failed upload must not
+    // look like a failed match.
+    void uploadWorkoutStreams(session.id, w.uuid).catch(() => undefined);
     onMatched({ ...w, matchedAt: new Date().toISOString() });
     onClose();
   };

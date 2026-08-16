@@ -2,14 +2,31 @@ import { useEffect, useState } from "react";
 import { APill } from "./aurora/kit";
 import { ActivityIndicator, ScrollView, Text, TextInput, View } from "react-native";
 import {
+  cardioDiscipline,
+  distanceBounds,
   editableBlockFields,
+  inspectEffort,
+  inspectSet,
+  kgToUnit,
+  loadBounds,
+  repsBounds,
   sessionEditDirty,
   sessionEditDraft,
   sessionEditPatch,
+  parseSportDistance,
+  sportDistanceUnit,
+  unitToKg,
+  ELEVATION_BOUNDS,
+  MINUTES_BOUNDS,
+  ROUNDS_BOUNDS,
+  RPE_BOUNDS,
+  type Bounds,
   type LoggedSession,
   type SessionEditDraft,
 } from "@hybrid/core";
 import { patchSessionEdit } from "../lib/api";
+import { allowFieldValue } from "../lib/field-guard";
+import { ConcernLine } from "./aurora/concern-line";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { leading, tracking, F, fs, space, PressScale as Pressable } from "../lib/ui";
@@ -56,7 +73,14 @@ function Num({ C, cap, value, onChange }: { C: Palette; cap?: string; value: str
  * The model is shared — core/session-edit.ts builds the draft and folds it back
  * onto the ORIGINAL blocks, so nothing this sheet doesn't show (stroke, incline,
  * zone, superset group, a set's role or measured rest) can be lost by an edit.
- * Web parity: apps/web/components/session-edit.tsx.
+ * (The web twin this once had parity with went with the user-facing web client.)
+ *
+ * BOTH PLAUSIBILITY TIERS RUN HERE, and this was the last logging surface
+ * without them: an impossible figure cannot be typed at all, and an improbable
+ * one gets the quiet amber line rather than an argument. A correction is where a
+ * slipped finger is MOST likely — the athlete is retyping a number they already
+ * got wrong once — and it lands on a session that already carries PRs, a feel
+ * report and possibly a device match.
  */
 export function SessionEditSheet({
   session,
@@ -88,13 +112,66 @@ export function SessionEditSheet({
 
   const dirty = sessionEditDirty(session, draft, { units });
 
+  /**
+   * THE SAME TWO TIERS AS THE LOGGERS, on the one screen that was still without
+   * them. A correction is where a slipped finger is MOST likely — the athlete is
+   * retyping a figure they already got wrong once — and it lands on a session
+   * that already has PRs, a feel report and possibly a device match hanging off
+   * it. The server refuses the impossible either way; being told after the save
+   * is just later and worse.
+   *
+   * THE DRAFT IS IN DISPLAY UNITS, unlike the logger's state: `sessionEditDraft`
+   * builds it with the athlete's own weight unit and the sport's own distance
+   * unit, so a bound written in kg or km has to be converted before it is either
+   * compared or announced. A lb user told "max 1500 kg" about a field showing
+   * pounds has been given a true and useless sentence.
+   */
+  const fieldBounds = (name: string, key: string): { bounds: Bounds; max?: number; unit?: string } | null => {
+    if (key === "load") {
+      const b = loadBounds(name);
+      return units === "lb" ? { bounds: b, max: Math.floor(kgToUnit(b.max, "lb")), unit: "lb" } : { bounds: b };
+    }
+    if (key === "reps") return { bounds: repsBounds(name) };
+    if (key === "rpe") return { bounds: RPE_BOUNDS };
+    if (key === "minutes") return { bounds: MINUTES_BOUNDS };
+    if (key === "rounds") return { bounds: ROUNDS_BOUNDS };
+    if (key === "elevation") return { bounds: ELEVATION_BOUNDS };
+    if (key === "distance") {
+      const b = distanceBounds(cardioDiscipline(name));
+      return sportDistanceUnit(name) === "m"
+        ? { bounds: b, max: Math.round(b.max * 1000), unit: "m" }
+        : { bounds: b };
+    }
+    return null;
+  };
+
+  /** True when every field this patch sets may hold what it is being given;
+   *  shows the bound for the first one that may not. */
+  const patchAllowed = (name: string, patch: Record<string, unknown>): boolean =>
+    Object.entries(patch).every(([key, value]) => {
+      if (typeof value !== "string") return true;
+      const f = fieldBounds(name, key);
+      return !f || allowFieldValue(t, value, f.bounds, { max: f.max, unit: f.unit });
+    });
+
   const setBlock = (i: number, patch: Partial<SessionEditDraft["blocks"][number]>) =>
-    setDraft((d) => ({ ...d, blocks: d.blocks.map((b, j) => (j === i ? { ...b, ...patch } : b)) }));
+    setDraft((d) => {
+      const b = d.blocks[i];
+      // EVERY string entry, not just the first: today each call site sets one
+      // field, and a guard that silently only checked one of two would be an
+      // invisible hole the moment that stopped being true.
+      if (b && !patchAllowed(b.name, patch)) return d;
+      return { ...d, blocks: d.blocks.map((x, j) => (j === i ? { ...x, ...patch } : x)) };
+    });
   const setSet = (i: number, j: number, patch: Partial<SessionEditDraft["blocks"][number]["sets"][number]>) =>
-    setDraft((d) => ({
-      ...d,
-      blocks: d.blocks.map((b, bi) => (bi === i ? { ...b, sets: b.sets.map((s, si) => (si === j ? { ...s, ...patch } : s)) } : b)),
-    }));
+    setDraft((d) => {
+      const b = d.blocks[i];
+      if (b && !patchAllowed(b.name, patch)) return d;
+      return {
+        ...d,
+        blocks: d.blocks.map((x, bi) => (bi === i ? { ...x, sets: x.sets.map((s, si) => (si === j ? { ...s, ...patch } : s)) } : x)),
+      };
+    });
   const addSet = (i: number) =>
     setDraft((d) => ({
       ...d,
@@ -159,14 +236,24 @@ export function SessionEditSheet({
                           <Text style={[label, { flex: 1 }]}>{t("session.edit.reps")}</Text>
                           <Text style={[label, { flex: 1 }]}>{t("session.edit.rpe")}</Text>
                         </View>
-                        {b.sets.map((s, j) => (
-                          <View key={j} style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: j ? 8 : 0 }}>
-                            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, width: 20 }}>{j + 1}</Text>
-                            <Num C={C} value={s.load} onChange={(v) => setSet(i, j, { load: v })} />
-                            <Num C={C} value={s.reps} onChange={(v) => setSet(i, j, { reps: v })} />
-                            <Num C={C} value={s.rpe} onChange={(v) => setSet(i, j, { rpe: v })} />
-                          </View>
-                        ))}
+                        {b.sets.map((s, j) => {
+                          // Judged in KILOGRAMS, whatever the field shows: the
+                          // bounds and the implied-max rule are written in the
+                          // stored unit, and a pounds figure compared against
+                          // them would call every heavy set unusual.
+                          const c = inspectSet(b.name, units === "lb" ? String(unitToKg(parseFloat(s.load) || 0, "lb")) : s.load, s.reps);
+                          return (
+                            <View key={j} style={{ marginTop: j ? 8 : 0 }}>
+                              <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
+                                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, width: 20 }}>{j + 1}</Text>
+                                <Num C={C} value={s.load} onChange={(v) => setSet(i, j, { load: v })} />
+                                <Num C={C} value={s.reps} onChange={(v) => setSet(i, j, { reps: v })} />
+                                <Num C={C} value={s.rpe} onChange={(v) => setSet(i, j, { rpe: v })} />
+                              </View>
+                              <ConcernLine concern={c} />
+                            </View>
+                          );
+                        })}
                         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
                           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, flex: 1, paddingRight: 10 }}>{t("session.edit.emptySet")}</Text>
                           <Pressable onPress={() => addSet(i)} hitSlop={8}>
@@ -190,6 +277,19 @@ export function SessionEditSheet({
                         {fields.rpe && <Num C={C} cap={t("session.edit.rpe")} value={b.rpe} onChange={(v) => setBlock(i, { rpe: v })} />}
                       </View>
                     )}
+                    {/* The distance and the time are judged TOGETHER: each can
+                        be ordinary while the pace they imply is not, and a
+                        correction is exactly where that pair gets broken. The
+                        draft holds the sport's own unit, so the distance is
+                        converted back to stored kilometres first. */}
+                    {!fields.sets && (() => {
+                      const c = inspectEffort({
+                        discipline: cardioDiscipline(b.name),
+                        distanceKm: parseSportDistance(b.distance, b.name),
+                        minutes: parseFloat(b.minutes) || null,
+                      });
+                      return <ConcernLine concern={c} />;
+                    })()}
                   </View>
                 );
               })}

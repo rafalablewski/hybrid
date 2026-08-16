@@ -732,6 +732,134 @@ describe("the typed rung is a RECORD, not the latest typing", () => {
   });
 });
 
+describe("the ladder reads the STORED bests — a 5 km from inside an 8 km run", () => {
+  it("fills a rung nothing was logged at", () => {
+    // An 8 km run: no logged effort is within 5% of 5 km, so before the
+    // recording's distance series landed this rung simply stayed empty.
+    const runs = [effort("a", "Long run", "running", 4, 8, 40, { durationSec: 2400 })];
+    const bare = sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.km === 5)!;
+    expect(bare.time).toBeNull();
+
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      segmentBests: [{ sessionId: "a", distanceKm: 5, seconds: 1380 }],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("23:00");
+    expect(rung.sessionId).toBe("a");
+    expect(rung.segment).toBe(true);
+    // Dated and attributed from the SESSION — a stored best carries neither.
+    expect(rung.at).toBe(runs[0]!.startedAt);
+    expect(rung.provider).toBe("apple");
+    // Pace derives from the exact rung, not from the 8 km around it.
+    expect(rung.pace).toBe("4:36");
+  });
+
+  it("matches a rung EXACTLY — the 5% band is for ragged logged efforts", () => {
+    const runs = [effort("a", "Long run", "running", 4, 8, 40)];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      // 5.2 km would fill the 5 km rung as a logged effort. As a segment it must
+      // not: a window is derived AT the rung, so 5.2 is a different rung's row
+      // (or junk), and banding an exact figure would understate the athlete.
+      segmentBests: [{ sessionId: "a", distanceKm: 5.2, seconds: 1380 }],
+    });
+    expect(m.records.find((r) => r.km === 5)!.time).toBeNull();
+  });
+
+  it("takes the half marathon's awkward figure without a rounding fudge", () => {
+    const runs = [effort("a", "Long run", "running", 4, 30, 150)];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      segmentBests: [{ sessionId: "a", distanceKm: 21.0975, seconds: 6730 }],
+    });
+    expect(m.records.find((r) => r.name === "half")!.time).toBe("1:52:10");
+  });
+
+  it("prefers the SEGMENT over the logged effort of the SAME run", () => {
+    // A 5.02 km parkrun with a route: the effort says 23:00 over 5.02 km, the
+    // segment says 22:52 over exactly 5 km. Same run, measured twice — the
+    // ladder must show one row and must not claim an 8-second improvement.
+    const runs = [effort("a", "Parkrun", "running", 4, 5.02, 23, { durationSec: 1380 })];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      segmentBests: [{ sessionId: "a", distanceKm: 5, seconds: 1372 }],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("22:52");
+    expect(rung.segment).toBe(true);
+    expect(rung.delta).toBeNull();
+  });
+
+  it("lets a logged effort still beat a segment, and marks the winner honestly", () => {
+    const runs = [
+      effort("a", "Long run", "running", 40, 8, 40, { durationSec: 2400 }),
+      effort("b", "Parkrun", "running", 5, 5, 22, { durationSec: 1320 }),
+    ];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      segmentBests: [{ sessionId: "a", distanceKm: 5, seconds: 1380 }],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("22:00");
+    expect(rung.sessionId).toBe("b");
+    expect(rung.segment).toBe(false);
+    // The segment is what STOOD before the race beat it, so it is what the
+    // delta measures against — the chronological walk sees both.
+    expect(rung.delta).toBe("−1:00");
+  });
+
+  it("ignores a best belonging to another sport's session", () => {
+    const runs = [effort("a", "Long run", "running", 4, 8, 40)];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      // A swim session's 400 m best, handed over with everything else. It names
+      // no session on the running page, so the running page cannot use it.
+      segmentBests: [
+        { sessionId: "swim-1", distanceKm: 5, seconds: 900 },
+        { sessionId: "a", distanceKm: 5, seconds: 1380 },
+      ],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("23:00");
+    expect(rung.sessionId).toBe("a");
+  });
+
+  it("promotes a segment-filled rung like any other", () => {
+    const runs = [effort("a", "Long run", "running", 4, 8, 40)];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      segmentBests: [{ sessionId: "a", distanceKm: 5, seconds: 1380 }],
+    });
+    // 5 km is Running's marker rung — the page's big figure.
+    expect(m.records.find((r) => r.promoted)!.km).toBe(5);
+  });
+
+  it("still loses to a faster TYPED marker, and says so", () => {
+    const runs = [effort("a", "Long run", "running", 4, 8, 40)];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      markers: [{ value: "21:00", at: new Date(NOW - 2 * DAY).toISOString() }],
+      segmentBests: [{ sessionId: "a", distanceKm: 5, seconds: 1380 }],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("21:00");
+    expect(rung.typed).toBe(true);
+    expect(rung.segment).toBe(false);
+  });
+
+  it("reads the pool's own rungs in the pool's own unit", () => {
+    const swims = [effort("s", "Squad", "swimming", 3, 1.5, 30, { durationSec: 1800 })];
+    const m = sportPageModel("Swimming", swims, {
+      now: NOW,
+      segmentBests: [{ sessionId: "s", distanceKm: 0.1, seconds: 82 }],
+    });
+    const rung = m.records.find((r) => r.km === 0.1)!;
+    expect(rung.time).toBe("1:22");
+    expect(rung.segment).toBe(true);
+  });
+});
+
 describe("the counts a door can promise", () => {
   it("separates cardio BLOCKS from SESSIONS — a brick holds two of one", () => {
     const brick: LoggedSession = {

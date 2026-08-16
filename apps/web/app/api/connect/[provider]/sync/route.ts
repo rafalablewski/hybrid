@@ -3,6 +3,8 @@ import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import {
   connectorSpec,
+  judge,
+  signalBounds,
   parseWhoop,
   parseOura,
   parseHealthKit,
@@ -10,6 +12,7 @@ import {
   type Signal,
 } from "@hybrid/core";
 import { PROVIDER_ENDPOINTS, refreshAccessToken, tokenExpired } from "@/lib/connectors";
+import { readJsonLimited } from "@/lib/guard";
 import { revealToken } from "@/lib/crypto";
 
 // Pull (or receive) provider data and write it into the Signal ontology.
@@ -27,9 +30,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
   let signals: Signal[] = [];
 
   if (provider === "apple") {
-    // native push: { samples: [...] }
-    const raw = (await request.json().catch(() => ({}))) as Parameters<typeof parseHealthKit>[1];
-    signals = parseHealthKit(user.id, raw);
+    // Native push: { samples: [...] }. BOUNDED, because the phone now relays the
+    // athlete's whole Health history a chunk at a time rather than a single
+    // 30-day window of three metrics — a chunk is tens of kilobytes, and 4 MB is
+    // far above any honest one while still refusing a body that could exhaust
+    // the lambda before a single row is written.
+    const parsed = await readJsonLimited<Parameters<typeof parseHealthKit>[1]>(request, 4 * 1024 * 1024);
+    if (parsed.error) return parsed.error;
+    signals = parseHealthKit(user.id, parsed.data ?? {});
   } else {
     const conn = await prisma.connection.findUnique({
       where: { userId_provider: { userId: user.id, provider } },
@@ -65,9 +73,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     signals = provider === "whoop" ? parseWhoop(user.id, raw) : parseOura(user.id, raw);
   }
 
-  if (signals.length) {
+  // A CONNECTOR IS NOT A TRUSTED SOURCE, it is an unattended one. Nobody reads
+  // these rows on the way in, and each joins a rolling baseline — so a provider
+  // that reports a sentinel (-1, 9999) on a failed read, or a unit we guessed
+  // wrong, would silently redefine what "normal" is for this athlete. Same
+  // bounds as the hand-typed path; a bad reading is DROPPED, and the rest of the
+  // sync lands, because one odd sample must not cost a fortnight of good ones.
+  const clean = signals.filter((s) => judge(s.value, signalBounds(s.kind)) !== "refuse");
+  if (clean.length < signals.length)
+    console.warn(`[connect/${provider}] dropped ${signals.length - clean.length} implausible reading(s)`);
+  if (clean.length) {
     await prisma.signal.createMany({
-      data: signals.map((s) => ({
+      data: clean.map((s) => ({
         userId: user.id,
         kind: s.kind,
         value: s.value,

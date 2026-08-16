@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
-import { signalUnit, SIGNAL_KINDS, HEAT_TEMP_BOUNDS, HEAT_MINUTES_BOUNDS, type SignalKind } from "@hybrid/core";
+import { signalUnit, signalBounds, judge, SIGNAL_KINDS, HEAT_TEMP_BOUNDS, HEAT_MINUTES_BOUNDS, type SignalKind } from "@hybrid/core";
 
 // The Performance State's universal time-series. Any source (manual, HealthKit,
 // WHOOP, Garmin, Catapult, nutrition…) writes one Signal shape here; the engines
@@ -71,6 +71,22 @@ export async function POST(request: Request) {
   if (bounds && (b.value < bounds[0] || b.value > bounds[1]))
     return NextResponse.json(
       { error: `${kind} must be between ${bounds[0]} and ${bounds[1]}` },
+      { status: 400 },
+    );
+
+  // EVERY OTHER KIND IS BOUNDED TOO NOW. Heat was singled out as "the one kind
+  // that can carry a fat-finger" because it was the only one typed by hand at
+  // the time — but a Signal is the ontology's atom, written by this route, the
+  // HealthKit relay and every connector to come, and each reading joins a
+  // ROLLING BASELINE. An unbounded column means one bad read does not produce
+  // one bad day: it moves the athlete's own normal, and every z-score after it
+  // is measured against a number that never happened. plausibility.ts declares
+  // a range per kind and a wide fallback for the rest, so nothing lands in a
+  // baseline that no instrument could have produced.
+  const kindBounds = signalBounds(kind);
+  if (judge(b.value, kindBounds) === "refuse")
+    return NextResponse.json(
+      { error: `${kind} must be between ${kindBounds.min} and ${kindBounds.max} ${kindBounds.unit}`.trim() },
       { status: 400 },
     );
   const ts = typeof b.ts === "string" && !Number.isNaN(Date.parse(b.ts)) ? new Date(b.ts) : new Date();

@@ -18,6 +18,9 @@ import {
   loadUnitCount,
   setType,
   setTypeBadge,
+  cardioDiscipline,
+  inspectEffort,
+  inspectSet,
   rpeRirSwap,
   displayLoad,
   storeLoad,
@@ -36,6 +39,7 @@ import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { ConcernLine } from "./concern-line";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -488,6 +492,13 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 />
               </View>
             </View>
+            {/* Improbable but storable — asked, never blocked. A routine is
+                re-logged every time it is started, so an odd figure prescribed
+                here becomes an odd figure in every session that follows it. */}
+            {(() => {
+              const c = inspectSet(b.name, s.load, s.reps);
+              return <ConcernLine concern={c} />;
+            })()}
           </SwipeRow>
           </Animated.View>
         );
@@ -591,6 +602,16 @@ function CardioEditor({ b, C, builder, field, label }: {
           />
         </View>
       </View>
+      {/* Judged as a PAIR: each figure can be ordinary while the pace they imply
+          is not, and that is where a unit slip actually shows up. */}
+      {(() => {
+        const c = inspectEffort({
+          discipline: cardioDiscipline(b.name),
+          distanceKm: b.distance ?? null,
+          minutes: b.minutes ?? null,
+        });
+        return <ConcernLine concern={c} />;
+      })()}
       {/* Modality extras — a swim never sees incline; a treadmill never sees stroke. */}
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10 }}>
         {has("incline") && (

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sanitizeNote, sanitizeMood, sanitizeTags, sanitizeFeelLevel, sanitizeDeviceWorkout, sanitizeSessionBlocks } from "@hybrid/core";
 import { Prisma } from "@prisma/client";
 import { getOrCreateDbUser } from "@/lib/server-auth";
+import { projectSessionSafely, setProjectionArchived } from "@/lib/session-projection";
 import { prisma } from "@/lib/db";
 
 // Manage one of the athlete's own logged workouts. Both clients call this.
@@ -99,6 +100,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         : {}),
     },
   });
+
+  // Keep the queryable projections in step with the document. Two DIFFERENT
+  // jobs, and conflating them would be wrong: correcting the blocks or the
+  // device match changes what the facts SAY (reproject them), while archiving
+  // only changes whether they COUNT (flip the mirrored flag on the rows that
+  // are already there). A full rewrite on every archive would churn thousands
+  // of rows to change one boolean; a flag flip after a block edit would leave
+  // the deleted sets behind, still counting.
+  if (blocksValue !== undefined || deviceValue !== undefined) await projectSessionSafely(session);
+  else if (hasArchived) await setProjectionArchived(session.id, session.archivedAt != null);
+
   return NextResponse.json({ session });
 }
 
@@ -112,6 +124,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (!existing) return NextResponse.json({ error: "not found" }, { status: 404 });
   if (existing.userId !== me.id) return NextResponse.json({ error: "forbidden" }, { status: 403 });
 
+  // The projections (sets, streams, laps) are FK-cascaded off this row, so a
+  // deleted workout takes its derived rows with it — nothing to clean up here.
   await prisma.session.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

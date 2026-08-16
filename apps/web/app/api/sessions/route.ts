@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { migrateBlocks, exerciseNameAliasMap, sanitizeNote, sanitizeMood, sanitizeTags, sanitizeFeelLevel } from "@hybrid/core";
+import { migrateBlocks, exerciseNameAliasMap, sanitizeNote, sanitizeMood, sanitizeTags, sanitizeFeelLevel, sanitizeSessionBlocks } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { getCachedPublishedExercises } from "@/lib/cache";
+import { projectSessionSafely } from "@/lib/session-projection";
 import { prisma } from "@/lib/db";
 
 // The logger's backend. Both clients (web + mobile) call this.
@@ -61,14 +62,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "title is required" }, { status: 400 });
   }
 
+  // THE CREATE PATH IS CHECKED TOO, and it was not.
+  //
+  // The old comment here said this route "stores what our own logger built", so
+  // the blocks went into the column verbatim. That was never a guarantee — it is
+  // an HTTP endpoint, and even the real logger passes on whatever the athlete
+  // typed. A 70 000 kg bench press or a 5 200 km swim landed in the document and
+  // from there into tonnage, e1RM, mileage, training load, ACWR, readiness and
+  // the cohort norms, where one typo moves a whole history and nothing
+  // downstream can tell it apart from a fact.
+  //
+  // Same sanitiser as the edit route, so there is ONE definition of a storable
+  // workout: an impossible FIGURE is dropped and the session is kept (losing a
+  // finished workout over a slipped finger punishes the athlete far harder than
+  // losing the one number), while a malformed SHAPE is a 400.
+  const blocks = sanitizeSessionBlocks(b.blocks ?? []);
+  if (!blocks) return NextResponse.json({ error: "invalid blocks" }, { status: 400 });
+
   const session = await prisma.session.create({
     data: {
       userId: user.id,
       title: b.title.trim(),
       startedAt: b.startedAt ? new Date(b.startedAt as string) : new Date(),
       completedAt: b.completedAt ? new Date(b.completedAt as string) : null,
-      // blocks holds the prototype block shape (exercises/sets/reps/load/rpe)
-      blocks: (b.blocks ?? []) as object,
+      // The sanitised block shape (exercises/sets/reps/load/rpe) — see above.
+      blocks: blocks as unknown as object,
       readiness: typeof b.readiness === "number" ? b.readiness : null,
       // Private post-workout reflection (owner-only).
       note: sanitizeNote(b.note),
@@ -85,6 +103,13 @@ export async function POST(request: Request) {
         sanitizeFeelLevel(b.feel) != null || sanitizeFeelLevel(b.fatigue) != null ? new Date() : null,
     },
   });
+
+  // Project the document into the per-set fact table — one row per set, one per
+  // timed effort, so the workout is queryable and not just storable. AFTER the
+  // create and never inside it: the athlete's session is already safe, and a
+  // derived table must not be able to fail the logging path (see
+  // lib/session-projection.ts).
+  await projectSessionSafely(session);
 
   return NextResponse.json({ session }, { status: 201 });
 }

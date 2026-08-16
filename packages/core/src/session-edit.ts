@@ -28,7 +28,27 @@
  * elsewhere) because that is what the athlete typed and what they will read
  * back; storage stays kilometres, converted at the edges by olympic-sports.ts.
  */
-import type { LoggedSession, SessionBlock, StrengthSet } from "./engines/session";
+import { cardioDiscipline, type LoggedSession, type SessionBlock, type StrengthSet } from "./engines/session";
+import {
+  checkEffort,
+  distanceBounds,
+  ELEVATION_BOUNDS,
+  INCLINE_BOUNDS,
+  INTERVAL_BOUNDS,
+  keep,
+  loadBounds,
+  MINUTES_BOUNDS,
+  repsBounds,
+  REST_BOUNDS,
+  ROM_BOUNDS,
+  ROUNDS_BOUNDS,
+  RPE_BOUNDS,
+  toNum,
+  VELOCITY_BOUNDS,
+  WATTS_BOUNDS,
+  ZONE_BOUNDS,
+  type Bounds,
+} from "./plausibility";
 import { displaySportDistance, parseSportDistance, sportDistanceUnit, timedSportOnly } from "./olympic-sports";
 import { displayLoad, storeLoad, type WeightUnit } from "./units";
 
@@ -204,9 +224,6 @@ export function sessionEditDirty(session: LoggedSession, draft: SessionEditDraft
 
 // ---- API-side validation ----------------------------------------------------
 
-const bounded = (v: unknown, min: number, max: number): number | undefined =>
-  typeof v === "number" && Number.isFinite(v) && v >= min && v <= max ? v : undefined;
-
 const str = (v: unknown, max: number): string | undefined => {
   if (typeof v !== "string") return undefined;
   const t = v.trim().slice(0, max);
@@ -216,17 +233,65 @@ const str = (v: unknown, max: number): string | undefined => {
 const SET_ROLES = new Set(["warmup", "working", "cooldown"]);
 
 /**
- * Coerce arbitrary input into clean `Session.blocks`, or null when it isn't a
- * block list at all. The write path for an EDIT, which is the first time a
- * client hands the server blocks for a session that already exists — so unlike
- * the create route (which stores what the logger built) this one is checked:
- * a malformed edit must never overwrite a good workout with junk.
+ * A numeric field that is STORED AS TEXT (a set's load, reps, RPE, velocity),
+ * kept only when the number inside it is storable — else "".
  *
- * Bounds are sanity caps, not physiology: a 24 h effort, 1 000 km, 10 000 m of
- * climb, RPE 1–10, 200 sets. Unknown keys are dropped rather than passed
- * through — the stored shape is the one this file documents.
+ * The text is preserved verbatim rather than re-rendered from the parsed
+ * number, so "2.50" does not silently become "2.5" and a locale comma survives
+ * a round trip. A blank stays blank: an empty field is not a wrong one.
  */
-export function sanitizeSessionBlocks(input: unknown): SessionBlock[] | null {
+const numText = (v: unknown, b: Bounds): string => {
+  if (typeof v !== "string") return "";
+  const t = v.trim().slice(0, 24);
+  if (!t) return "";
+  const n = toNum(t);
+  return n != null && keep(n, b) != null ? t : "";
+};
+
+/**
+ * Coerce arbitrary input into clean `Session.blocks`, or null when it isn't a
+ * block list at all. THE write path for a workout — both the create route and
+ * the edit route go through here, so there is exactly one description of what a
+ * storable session is and no way to reach the column around it.
+ *
+ * NULL means the SHAPE is wrong (not an array, a block with no name, a set list
+ * that isn't one) and the caller should refuse the request. An out-of-range
+ * FIGURE is different: the field is DROPPED and the workout is kept. That
+ * asymmetry is deliberate — a 70 000 kg bench press is a keystroke, and losing
+ * the whole session over it would punish the athlete for the typo far harder
+ * than losing the one number does. What is never done is clamping: 1 500 kg is
+ * no more true than 70 000, and a made-up figure is worse than an absent one
+ * because nothing downstream can tell it was invented.
+ *
+ * WHAT COUNTS AS OUT OF RANGE lives in plausibility.ts, per field AND per
+ * context: a load is judged against the implement (120 kg is ordinary on a
+ * barbell and impossible on a kettlebell), a rep count against what the field
+ * actually holds (reps, or the seconds of a hold, or the metres of a carry), a
+ * distance against the discipline (5 200 km is a unit slip in a swim and merely
+ * absurd in a ride). Pairs are judged too: an effort whose distance and time
+ * imply a speed no human reaches loses its distance, because one of the two is
+ * wrong and the pair is what proves it.
+ *
+ * Unknown keys are dropped rather than passed through — the stored shape is the
+ * one this file documents.
+ */
+export function sanitizeSessionBlocks(
+  input: unknown,
+  opts: {
+    /**
+     * Keep a set with neither a load nor a rep count.
+     *
+     * In a SESSION such a row is noise — nothing happened — and dropping it is
+     * right. In a ROUTINE it is the prescription's own shape: the builder's
+     * "add a warm-up / cool-down / drop set" controls create exactly
+     * `{ load: "", reps: "", role }`, a deliberate empty slot the athlete fills
+     * when they run it. Sharing one sanitiser without this flag silently ate
+     * those rows on save, and the refetch that followed made them look like
+     * they had never been added.
+     */
+    keepEmptySets?: boolean;
+  } = {},
+): SessionBlock[] | null {
   if (!Array.isArray(input)) return null;
   if (input.length > 100) return null;
   const out: SessionBlock[] = [];
@@ -239,22 +304,28 @@ export function sanitizeSessionBlocks(input: unknown): SessionBlock[] | null {
     if (b.kind === "strength") {
       if (!Array.isArray(b.sets) || b.sets.length > 200) return null;
       const sets: StrengthSet[] = [];
+      // The load and rep fields are STRINGS on the stored shape, and until now
+      // nothing looked inside them — a length cap is not a bound, so "70000"
+      // was a legal bench press and it moved every tonnage, e1RM and PR the
+      // athlete has. They are judged against the exercise itself now.
+      const lb = loadBounds(name);
+      const rb = repsBounds(name);
       for (const rs of b.sets) {
         if (typeof rs !== "object" || rs === null) return null;
         const s = rs as Record<string, unknown>;
-        const load = typeof s.load === "string" ? s.load.trim().slice(0, 24) : "";
-        const reps = typeof s.reps === "string" ? s.reps.trim().slice(0, 24) : "";
-        if (!load && !reps) continue;
+        const load = numText(s.load, lb);
+        const reps = numText(s.reps, rb);
+        if (!load && !reps && !opts.keepEmptySets) continue;
         const role = typeof s.role === "string" && SET_ROLES.has(s.role) ? (s.role as StrengthSet["role"]) : undefined;
         sets.push({
           load,
           reps,
-          ...(str(s.rpe, 8) ? { rpe: str(s.rpe, 8)! } : {}),
-          ...(str(s.vel, 8) ? { vel: str(s.vel, 8)! } : {}),
-          ...(str(s.peakVel, 8) ? { peakVel: str(s.peakVel, 8)! } : {}),
-          ...(str(s.rom, 8) ? { rom: str(s.rom, 8)! } : {}),
+          ...(numText(s.rpe, RPE_BOUNDS) ? { rpe: numText(s.rpe, RPE_BOUNDS) } : {}),
+          ...(numText(s.vel, VELOCITY_BOUNDS) ? { vel: numText(s.vel, VELOCITY_BOUNDS) } : {}),
+          ...(numText(s.peakVel, VELOCITY_BOUNDS) ? { peakVel: numText(s.peakVel, VELOCITY_BOUNDS) } : {}),
+          ...(numText(s.rom, ROM_BOUNDS) ? { rom: numText(s.rom, ROM_BOUNDS) } : {}),
           ...(s.drop === true ? { drop: true } : {}),
-          ...(bounded(s.rest, 0, 3600) != null ? { rest: bounded(s.rest, 0, 3600)! } : {}),
+          ...(keep(s.rest, REST_BOUNDS) != null ? { rest: keep(s.rest, REST_BOUNDS)! } : {}),
           ...(role ? { role } : {}),
         });
       }
@@ -263,24 +334,41 @@ export function sanitizeSessionBlocks(input: unknown): SessionBlock[] | null {
         name,
         sets,
         ...(str(b.note, 500) ? { note: str(b.note, 500)! } : {}),
-        ...(bounded(b.restSec, 0, 3600) != null ? { restSec: bounded(b.restSec, 0, 3600)! } : {}),
+        ...(keep(b.restSec, REST_BOUNDS) != null ? { restSec: keep(b.restSec, REST_BOUNDS)! } : {}),
         ...(str(b.group, 24) ? { group: str(b.group, 24)! } : {}),
       });
       continue;
     }
 
     if (b.kind === "cardio") {
+      // The discipline decides what "far" means: 5 200 km is a unit slip in a
+      // swim (5 200 metres) and merely absurd in a ride, and one shared bound
+      // could only ever be right for one of them.
+      const discipline =
+        typeof b.discipline === "string" && b.discipline
+          ? (b.discipline as never)
+          : (cardioDiscipline(name) as never);
+      const minutes = keep(b.minutes, MINUTES_BOUNDS);
+      let distance = keep(b.distance, distanceBounds(discipline));
+      // THE PAIR, not just the parts. Each of "10 km" and "5 min" is ordinary;
+      // together they are 33 m/s, which no runner has ever done — so one of the
+      // two is wrong. The distance is the one dropped, because it is the field
+      // unit slips land in and because a duration with no distance is still a
+      // usable effort while a distance with an impossible pace is not.
+      if (distance != null && checkEffort({ discipline, distanceKm: distance, minutes }) === "refuse")
+        distance = null;
       out.push({
         kind: "cardio",
         name,
         ...(str(b.discipline, 24) ? { discipline: b.discipline as never } : {}),
-        ...(bounded(b.distance, 0.001, 1000) != null ? { distance: bounded(b.distance, 0.001, 1000)! } : {}),
-        ...(bounded(b.minutes, 0.1, 1440) != null ? { minutes: bounded(b.minutes, 0.1, 1440)! } : {}),
-        ...(bounded(b.rpe, 1, 10) != null ? { rpe: bounded(b.rpe, 1, 10)! } : {}),
-        ...(bounded(b.incline, 0, 45) != null ? { incline: bounded(b.incline, 0, 45)! } : {}),
+        ...(distance != null ? { distance } : {}),
+        ...(minutes != null ? { minutes } : {}),
+        ...(keep(b.rpe, RPE_BOUNDS) != null ? { rpe: keep(b.rpe, RPE_BOUNDS)! } : {}),
+        ...(keep(b.incline, INCLINE_BOUNDS) != null ? { incline: keep(b.incline, INCLINE_BOUNDS)! } : {}),
         ...(str(b.stroke, 24) ? { stroke: str(b.stroke, 24)! } : {}),
-        ...(bounded(b.zone, 1, 5) != null ? { zone: bounded(b.zone, 1, 5)! } : {}),
-        ...(bounded(b.elevation, 1, 10000) != null ? { elevation: bounded(b.elevation, 1, 10000)! } : {}),
+        ...(keep(b.watts, WATTS_BOUNDS) != null ? { watts: keep(b.watts, WATTS_BOUNDS)! } : {}),
+        ...(keep(b.zone, ZONE_BOUNDS) != null ? { zone: keep(b.zone, ZONE_BOUNDS)! } : {}),
+        ...(keep(b.elevation, ELEVATION_BOUNDS) != null ? { elevation: keep(b.elevation, ELEVATION_BOUNDS)! } : {}),
       });
       continue;
     }
@@ -290,11 +378,11 @@ export function sanitizeSessionBlocks(input: unknown): SessionBlock[] | null {
         kind: "conditioning",
         name,
         ...(str(b.format, 60) ? { format: str(b.format, 60)! } : {}),
-        ...(bounded(b.work, 1, 7200) != null ? { work: bounded(b.work, 1, 7200)! } : {}),
-        ...(bounded(b.rest, 0, 7200) != null ? { rest: bounded(b.rest, 0, 7200)! } : {}),
-        ...(bounded(b.rounds, 1, 500) != null ? { rounds: bounded(b.rounds, 1, 500)! } : {}),
-        ...(bounded(b.minutes, 0.1, 1440) != null ? { minutes: bounded(b.minutes, 0.1, 1440)! } : {}),
-        ...(bounded(b.rpe, 1, 10) != null ? { rpe: bounded(b.rpe, 1, 10)! } : {}),
+        ...(keep(b.work, INTERVAL_BOUNDS) != null ? { work: keep(b.work, INTERVAL_BOUNDS)! } : {}),
+        ...(keep(b.rest, INTERVAL_BOUNDS) != null ? { rest: keep(b.rest, INTERVAL_BOUNDS)! } : {}),
+        ...(keep(b.rounds, ROUNDS_BOUNDS) != null ? { rounds: keep(b.rounds, ROUNDS_BOUNDS)! } : {}),
+        ...(keep(b.minutes, MINUTES_BOUNDS) != null ? { minutes: keep(b.minutes, MINUTES_BOUNDS)! } : {}),
+        ...(keep(b.rpe, RPE_BOUNDS) != null ? { rpe: keep(b.rpe, RPE_BOUNDS)! } : {}),
       });
       continue;
     }

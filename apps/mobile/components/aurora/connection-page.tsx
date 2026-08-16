@@ -7,6 +7,7 @@ import {
   healthKitAvailability,
   healthKitConnected,
   healthKitLastSync,
+  healthKitHistoryPending,
   syncHealthKit,
 } from "../../lib/healthkit";
 import { useLang } from "../../lib/i18n";
@@ -145,6 +146,11 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
   // Sessions already matched to a watch workout whose stored read the sync
   // re-took — only worth a line when it actually mended something.
   const [repaired, setRepaired] = useState(0);
+  /** Sessions whose full recording this sync fetched, and whether the walk back
+   *  through the athlete's older history is still going. Both are one-time
+   *  catch-up work, and saying so is what stops "why is it still syncing?". */
+  const [streamed, setStreamed] = useState(0);
+  const [historyPending, setHistoryPending] = useState(false);
 
   useEffect(() => {
     healthKitConnected().then(setConnected);
@@ -178,6 +184,8 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
     }
     setWritten(r.written);
     setRepaired(r.repaired);
+    setStreamed(r.streamed);
+    setHistoryPending(await healthKitHistoryPending());
     setNote("synced");
     setLastSync(new Date().toISOString());
     onChanged();
@@ -244,6 +252,16 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
           {repaired > 0 ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
               {repaired} {t("w.account.connections.hk-repaired")}
+            </Text>
+          ) : null}
+          {streamed > 0 ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
+              {streamed} {t("w.account.connections.hk-streamed")}
+            </Text>
+          ) : null}
+          {historyPending ? (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4, lineHeight: leading(fs.micro) }}>
+              {t("w.account.connections.hk-history")}
             </Text>
           ) : null}
         </>

@@ -69,6 +69,11 @@ model User {
   planMaxes Json @default("{}")
 
   sessions          Session[]
+  // The queryable projections of those sessions (see SessionSet). Denormalised
+  // with a userId of their own so a cross-athlete aggregate never joins Session.
+  sessionSets       SessionSet[]
+  sessionStreams    SessionStream[]
+  sessionLaps       SessionLap[]
   macrocycles       Macrocycle[]
   biometrics        Biometric[]
   signals           Signal[]
@@ -938,12 +943,223 @@ model Session {
   // the default History list + all engines, but kept for the audit trail.
   archivedAt   DateTime?
 
+  // The QUERYABLE projections of this row. `blocks` above stays the source of
+  // truth — the document the athlete edits — and these are derived, disposable
+  // and rebuildable from it (core/session-facts.ts, core/session-streams.ts).
+  // Cascade-deleted with the session, so a deleted workout leaves nothing behind.
+  sets    SessionSet[]
+  streams SessionStream[]
+  laps    SessionLap[]
+
   // History/engine reads are "where userId (+ archivedAt is null) order by
   // startedAt desc". A bare userId index made Postgres sort in memory and
   // couldn't serve the global `order by startedAt` admin paths.
   @@index([userId, startedAt])
   @@index([userId, archivedAt, startedAt])
   @@index([startedAt])
+}
+
+// ONE PERFORMED EFFORT — a strength SET, or a whole timed effort — as a row.
+//
+// `Session.blocks` is a Json document: the right shape for the thing the athlete
+// edits, and the wrong one for every question asked across sessions or across
+// athletes. A set inside a JSON column is not a value Postgres can see, so it
+// cannot be indexed, grouped, or joined; "how many working sets of Back Squat
+// above RPE 9 last month" had to load whole sessions into the lambda and walk
+// them in TypeScript under a `take:` cap that silently truncates the answer.
+// Every cross-athlete analytic in the app was that shape.
+//
+// This is the fact table that fixes it. It is a PROJECTION, written on every
+// session write from core's `sessionSetFacts` — never edited directly, never
+// read to render a workout, and safe to drop and rebuild. The engines' own
+// helpers compute the derived columns (effective load, tonnage, e1RM, pace), so
+// an aggregate here and a figure on a screen cannot drift.
+//
+// FULLY DENORMALISED ON PURPOSE. userId, performedAt and archived are copied
+// onto every row so the questions this table exists for never join back to
+// Session — a warehouse table that needs a join for its most common filter is
+// not a warehouse table. The write path keeps them in step (an archive flips
+// `archived` on the session's rows in the same call).
+model SessionSet {
+  id        String  @id @default(cuid())
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  // Copied from the session so a date-ranged aggregate never joins.
+  performedAt DateTime
+  // Mirrors Session.archivedAt != null. Archived workouts stay out of every
+  // analytic exactly as they stay out of History.
+  archived    Boolean  @default(false)
+
+  // Position within the document this row came from. (blockIndex, setIndex) is
+  // unique per session and stable, so a reprojection can upsert rather than
+  // churn ids. Timed efforts have no sets — theirs is always setIndex 0.
+  blockIndex Int
+  setIndex   Int
+
+  kind       String // strength | cardio | conditioning
+  exercise   String // the name as stored (already canonicalised on read)
+  movement   String? // engine movement pattern — "hinge", "push-v", …
+  muscles    String[] @default([]) // engine muscle groups (0–3)
+  discipline String? // coarse cardio modality — "running", "swimming", …
+
+  // ---- strength ----------------------------------------------------------
+  role            String  @default("working") // working | warmup | cooldown
+  drop            Boolean @default(false)
+  reps            Int?
+  loadKg          Float? // as entered, before the bodyweight modes
+  // The bodyweight this row was resolved AGAINST (kg), when the lift's load
+  // mode needed one. Kept because a later weigh-in makes old rows stale rather
+  // than wrong — without the column nobody could tell which rows to reproject.
+  bodyweightKg    Float?
+  effectiveLoadKg Float? // what was actually moved per rep
+  volumeKg        Float? // effectiveLoad × reps × implements
+  e1rmKg          Float? // Epley, from this set alone
+  rpe             Float?
+  velocityMs      Float? // VBT mean concentric velocity
+  peakVelocityMs  Float?
+  romCm           Float?
+  restSec         Int? // MEASURED rest before this set (never the prescription)
+
+  // ---- timed efforts -----------------------------------------------------
+  distanceKm   Float?
+  durationSec  Int? // second-accurate where a recording supplied it
+  paceSecPerKm Float?
+  elevationM   Float?
+  watts        Float?
+  zone         Int?
+  rounds       Int?
+
+  // True when this row's figures came from a matched device recording rather
+  // than from what the athlete typed — the provenance every analytic should be
+  // able to weight or filter on.
+  measured Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  // One row per (session, block, set) — the natural key of the projection, and
+  // what makes a rewrite idempotent.
+  @@unique([sessionId, blockIndex, setIndex])
+  // An athlete's own history, by date — the per-user analytics path.
+  @@index([userId, performedAt])
+  // One athlete's history of ONE lift: the progression/e1RM chart's query.
+  @@index([userId, exercise, performedAt])
+  // CROSS-ATHLETE, the ones that were impossible before: everybody's sets of a
+  // lift, of a movement pattern, of a discipline, over a window.
+  @@index([exercise, performedAt])
+  @@index([movement, performedAt])
+  @@index([discipline, performedAt])
+  @@index([performedAt])
+}
+
+// A RECORDED SERIES — the second-by-second data underneath a workout summary.
+//
+// Session.device holds a DeviceWorkout: duration, distance, kcal, average and
+// peak heart rate. That is a summary, and summary-level Apple Health data is a
+// commodity every app can read. The shape underneath — where the heart rate
+// went and when, the route, the power — is what a wearable company actually
+// owns, and none of it was landing here. It also cannot be recovered later: a
+// recording not read at match time is one the athlete must re-import by hand.
+//
+// ONE ROW PER (session, kind), holding parallel offsets/values arrays rather
+// than a row per sample: an hour of 1 Hz heart rate is 3 600 samples, so a
+// per-sample table is millions of rows per athlete-year and unaffordable to
+// index at a million athletes. Postgres arrays keep it queryable (`unnest`)
+// without that, and the aggregate columns below answer the common questions
+// without touching the arrays at all. Shape, bounds and the 3 000-sample cap
+// live in core/session-streams.ts.
+model SessionStream {
+  id        String  @id @default(cuid())
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  performedAt DateTime
+  archived    Boolean  @default(false)
+
+  // hr | power | cadence | speed | altitude | distance | route
+  kind String
+  // The unit is fixed by the kind (core STREAM_UNIT), stored so a reader never
+  // has to know the table's conventions to plot it.
+  unit String
+
+  // Which connector produced it, and that provider's id for the recording — so
+  // a re-import recognises what it already stored rather than duplicating it.
+  provider String @default("apple")
+  uuid     String
+
+  // The instant `offsets` are measured from — the recording's start.
+  startedAt DateTime
+  // Seconds from startedAt, strictly increasing; values[i] belongs to
+  // offsets[i]. Whole seconds, not timestamps: 3 000 ISO strings are 72 KB of
+  // mostly-identical prefix, and the anchor only needs storing once.
+  offsets   Int[]
+  values    Float[]
+  // Longitude, for `route` only — values holds the latitude of the same fix.
+  valuesB   Float[]  @default([])
+
+  // Lifted out of the arrays so "average power", "peak heart rate" and "how
+  // long was it" are column reads. Null for `route`, where the mean of a set of
+  // latitudes is a point in a field, not a fact about a run.
+  sampleCount Int
+  durationSec Int
+  min         Float?
+  max         Float?
+  avg         Float?
+
+  createdAt DateTime @default(now())
+
+  // One series per kind per session — a re-import replaces rather than stacks.
+  @@unique([sessionId, kind])
+  @@index([userId, performedAt])
+  @@index([kind, performedAt])
+}
+
+// A LAP — one delimited piece of a recording, and the row a personal record is
+// actually looked up from.
+//
+// Four kinds (core LapKind): `lap` (the athlete pressed the button), `split` (a
+// machine split at a round distance), `segment` (a leg of a multi-sport
+// recording), and `best` — a DERIVED best effort, the fastest window inside the
+// recording covering a catalog distance. Bests are stored rather than computed
+// on read for one reason: "my fastest 5 km" must be an indexed lookup, not a
+// scan over every stream the athlete has ever recorded.
+//
+// Laps get a row each where samples do not, because laps are tens per workout
+// rather than thousands — the grain is affordable and the queries need it.
+model SessionLap {
+  id        String  @id @default(cuid())
+  session   Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+
+  performedAt DateTime
+  archived    Boolean  @default(false)
+
+  kind  String // lap | split | segment | best
+  index Int // position within its kind, 0-based
+
+  startOffsetSec Int // seconds from the recording's start
+  durationSec    Float
+  distanceKm     Float?
+  avgHr          Int?
+  maxHr          Int?
+  avgWatts       Float?
+  elevationM     Float?
+  paceSecPerKm   Float?
+
+  createdAt DateTime @default(now())
+
+  @@unique([sessionId, kind, index])
+  @@index([userId, performedAt])
+  // "The athlete's fastest 5 km ever" and "everybody's fastest 5 km" — the two
+  // questions the record ladder could not ask before the streams landed.
+  @@index([userId, kind, distanceKm, durationSec])
+  @@index([kind, distanceKm, durationSec])
 }
 
 // A workout logged BEFORE the athlete has an account (guest mode). The mobile

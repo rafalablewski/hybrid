@@ -124,16 +124,57 @@ export function parseOura(athleteId: string, raw: {
 }
 
 /** Apple HealthKit samples relayed from the native client. */
+/**
+ * EVERY HEALTHKIT TYPE THE RELAY UNDERSTANDS → the Signal kind it becomes.
+ *
+ * Exported because the PHONE has to read exactly what the server can store: the
+ * native side asks HealthKit for these identifiers and the relay maps them
+ * back, so one table keeps the two ends from drifting. Adding a metric is a
+ * line here plus a `SignalKind` — nothing else.
+ *
+ * It started as three entries (HRV, resting HR, sleep) and everything else the
+ * watch knew stayed on the watch: VO2 max, the body-composition readings a
+ * smart scale writes, respiratory rate, blood oxygen, sleeping wrist
+ * temperature, heart-rate recovery, and the daily activity totals. All of it
+ * was already on the phone of anyone who had connected Apple Health.
+ */
+export const MAX_HEALTHKIT_SAMPLES = 20_000;
+
+export const HEALTHKIT_SIGNAL_TYPES: Record<string, SignalKind> = {
+  // ---- recovery ----------------------------------------------------------
+  HKQuantityTypeIdentifierHeartRateVariabilitySDNN: "hrv",
+  HKQuantityTypeIdentifierRestingHeartRate: "restingHr",
+  HKCategoryTypeIdentifierSleepAnalysis: "sleep",
+  HKQuantityTypeIdentifierRespiratoryRate: "respiratoryRate",
+  HKQuantityTypeIdentifierOxygenSaturation: "spo2",
+  HKQuantityTypeIdentifierAppleSleepingWristTemperature: "wristTemp",
+  HKQuantityTypeIdentifierWalkingHeartRateAverage: "walkingHr",
+  HKQuantityTypeIdentifierHeartRateRecoveryOneMinute: "heartRateRecovery",
+  // ---- fitness -----------------------------------------------------------
+  HKQuantityTypeIdentifierVO2Max: "vo2Max",
+  // ---- daily activity ----------------------------------------------------
+  HKQuantityTypeIdentifierStepCount: "steps",
+  HKQuantityTypeIdentifierActiveEnergyBurned: "activeEnergy",
+  HKQuantityTypeIdentifierBasalEnergyBurned: "restingEnergy",
+  HKQuantityTypeIdentifierAppleExerciseTime: "exerciseMinutes",
+  HKQuantityTypeIdentifierAppleStandTime: "standHours",
+  // ---- composition (a smart scale writes these into Health) --------------
+  HKQuantityTypeIdentifierBodyMass: "bodyMass",
+  HKQuantityTypeIdentifierBodyFatPercentage: "bodyFat",
+  HKQuantityTypeIdentifierLeanBodyMass: "leanMass",
+};
+
 export function parseHealthKit(athleteId: string, raw: {
   samples?: { type?: string; value?: number; end?: string }[];
 }): Signal[] {
   const out: Signal[] = [];
-  const map: Record<string, SignalKind> = {
-    HKQuantityTypeIdentifierHeartRateVariabilitySDNN: "hrv",
-    HKQuantityTypeIdentifierRestingHeartRate: "restingHr",
-    HKCategoryTypeIdentifierSleepAnalysis: "sleep",
-  };
-  for (const s of raw.samples ?? []) {
+  const map: Record<string, SignalKind> = HEALTHKIT_SIGNAL_TYPES;
+  // Capped. The phone now relays the athlete's whole history in chunks rather
+  // than one 30-day window, so this list is genuinely large — and a cap here is
+  // what keeps a malformed or hostile body from becoming an unbounded write.
+  // 20 000 daily samples is ~3 years of every metric in the table at once, far
+  // above any chunk the client sends.
+  for (const s of (raw.samples ?? []).slice(0, MAX_HEALTHKIT_SAMPLES)) {
     const kind = s.type ? map[s.type] : undefined;
     if (!kind || typeof s.value !== "number") continue;
     push(out, athleteId, "apple", s.end ?? new Date().toISOString(), kind, s.value);

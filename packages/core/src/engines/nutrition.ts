@@ -12,6 +12,7 @@
 import type { Signal } from "./signals";
 import { localDayKey, localTodayKey, dayKeyDiff } from "../day-key";
 import { type NutritionFacts, scaleFacts, unknown } from "../food-facts";
+import { judge, signalBounds } from "../plausibility";
 
 const DAY = 86_400_000;
 const KCAL_PER_KG = 7700; // ~energy in 1 kg of body mass
@@ -545,7 +546,14 @@ export function foodLogSignals(
     if (unknown(v)) continue;
     out.push({ kind, value: Math.round((v as number) * 10) / 10, unit: "g" });
   }
-  return out.filter((r) => r.value > 0);
+  // AND NOTHING IMPOSSIBLE. A mistyped serving count or a food whose per-100 g
+  // panel was filed as per-serving turns one entry into a 400 000 kcal day, and
+  // these rows are Signals — they join the athlete's rolling baselines, so a
+  // single bad log does not produce one bad day, it moves what "normal" means
+  // for every day after it. Dropped here rather than at each write site,
+  // because this builder is deliberately the ONE place that decides what a
+  // logged food means and a filter anywhere else would be a second opinion.
+  return out.filter((r) => r.value > 0 && judge(r.value, signalBounds(r.kind)) !== "refuse");
 }
 
 /**

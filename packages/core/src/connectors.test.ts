@@ -6,6 +6,7 @@ import {
   parseWhoop,
   parseOura,
   parseHealthKit,
+  MAX_HEALTHKIT_SAMPLES,
 } from "./connectors";
 
 describe("connector registry", () => {
@@ -52,15 +53,55 @@ describe("provider parsers", () => {
     expect(sleep.ts).toBe("2026-06-01T00:00:00.000Z");
   });
 
-  it("maps HealthKit sample types to signal kinds", () => {
+  it("maps HealthKit sample types to signal kinds, and drops the ones it has no home for", () => {
     const sigs = parseHealthKit("a1", {
       samples: [
         { type: "HKQuantityTypeIdentifierRestingHeartRate", value: 52, end: "2026-06-01T07:00:00.000Z" },
-        { type: "HKQuantityTypeIdentifierStepCount", value: 9000, end: "2026-06-01T07:00:00.000Z" },
+        // A real HealthKit type this app has no use for — an unmapped sample is
+        // dropped rather than guessed at.
+        { type: "HKQuantityTypeIdentifierDietaryCaffeine", value: 95, end: "2026-06-01T07:00:00.000Z" },
       ],
     });
     expect(sigs).toHaveLength(1);
     expect(sigs[0]!.kind).toBe("restingHr");
     expect(sigs[0]!.source).toBe("apple");
+  });
+
+  it("reads everything the watch knows, not just the original three", () => {
+    // The relay used to map HRV, resting HR and sleep, and leave the rest of
+    // Apple Health on the phone. Each of these was already sitting there.
+    const at = "2026-06-01T07:00:00.000Z";
+    const sigs = parseHealthKit("a1", {
+      samples: [
+        { type: "HKQuantityTypeIdentifierVO2Max", value: 54.2, end: at },
+        { type: "HKQuantityTypeIdentifierStepCount", value: 9000, end: at },
+        { type: "HKQuantityTypeIdentifierActiveEnergyBurned", value: 720, end: at },
+        { type: "HKQuantityTypeIdentifierAppleExerciseTime", value: 64, end: at },
+        { type: "HKQuantityTypeIdentifierBodyMass", value: 78.4, end: at },
+        { type: "HKQuantityTypeIdentifierBodyFatPercentage", value: 14.5, end: at },
+        { type: "HKQuantityTypeIdentifierRespiratoryRate", value: 13.5, end: at },
+        { type: "HKQuantityTypeIdentifierOxygenSaturation", value: 97, end: at },
+        { type: "HKQuantityTypeIdentifierAppleSleepingWristTemperature", value: 36.2, end: at },
+        { type: "HKQuantityTypeIdentifierHeartRateRecoveryOneMinute", value: 34, end: at },
+      ],
+    });
+    expect(sigs.map((s) => s.kind)).toEqual([
+      "vo2Max", "steps", "activeEnergy", "exerciseMinutes", "bodyMass",
+      "bodyFat", "respiratoryRate", "spo2", "wristTemp", "heartRateRecovery",
+    ]);
+    // Each carries the ontology's own unit, not whatever the phone sent.
+    expect(sigs.find((s) => s.kind === "vo2Max")!.unit).toBe("ml/kg/min");
+    expect(sigs.find((s) => s.kind === "steps")!.value).toBe(9000);
+  });
+
+  it("caps a relayed batch rather than writing whatever arrives", () => {
+    // The phone now sends the athlete's whole history in chunks, so this list is
+    // genuinely large — and unbounded input is unbounded writes.
+    const samples = Array.from({ length: MAX_HEALTHKIT_SAMPLES + 50 }, (_, i) => ({
+      type: "HKQuantityTypeIdentifierStepCount",
+      value: 1000 + i,
+      end: new Date(Date.parse("2026-06-01T07:00:00.000Z") + i * 1000).toISOString(),
+    }));
+    expect(parseHealthKit("a1", { samples })).toHaveLength(MAX_HEALTHKIT_SAMPLES);
   });
 });

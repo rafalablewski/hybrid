@@ -101,6 +101,9 @@ export default function AuroraSportStrength() {
 
   const markers = useMemo(() => markerHistory(store, name), [store, name]);
   const m: SportPageModel = useMemo(
+    // No `segmentBests` here on purpose: this screen renders the TRANSFER
+    // prescription and never draws the record ladder, so fetching the stored
+    // bests would be a request whose result nothing reads.
     () => sportPageModel(name, sessions, { levelIdx, markers }),
     [name, sessions, levelIdx, markers],
   );

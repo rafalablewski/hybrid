@@ -33,7 +33,27 @@ export type SignalKind =
   | "barVelocity"
   // composition / physiology
   | "bodyMass"
+  | "bodyFat"
+  | "leanMass"
   | "bloodMarker"
+  // WHAT THE WRIST ALREADY KNOWS. Every one of these is sitting in Apple Health
+  // (and in WHOOP's and Oura's APIs) on a phone that syncs daily, and none of it
+  // was landing here — the relay read three metrics and left the rest on the
+  // device. They are kinds rather than columns for the same reason hrv is: a
+  // reading joins a rolling baseline and is scored against the athlete's own
+  // normal, which is the only way a number like a resting respiratory rate says
+  // anything at all.
+  | "vo2Max"
+  | "steps"
+  | "activeEnergy"
+  | "restingEnergy"
+  | "exerciseMinutes"
+  | "standHours"
+  | "walkingHr"
+  | "respiratoryRate"
+  | "spo2"
+  | "wristTemp"
+  | "heartRateRecovery"
   // heat exposure — the ONE input no device will ever report, so both halves
   // are typed: how long, and how hot. Two rows at an identical ts are one
   // sitting (engines/heat.ts, heatSittings).
@@ -88,7 +108,31 @@ const META: Record<SignalKind, { unit: string; better: SignalDirection }> = {
   asymmetry: { unit: "%", better: "low" },
   barVelocity: { unit: "m/s", better: "high" },
   bodyMass: { unit: "kg", better: "high" },
+  bodyFat: { unit: "%", better: "low" },
+  leanMass: { unit: "kg", better: "high" },
   bloodMarker: { unit: "", better: "high" },
+  // Cardio fitness. The single best-evidenced predictor of all-cause mortality
+  // a watch can estimate, and the one number an endurance athlete would ask for
+  // first.
+  vo2Max: { unit: "ml/kg/min", better: "high" },
+  steps: { unit: "count", better: "high" },
+  activeEnergy: { unit: "kcal", better: "high" },
+  // Resting metabolic rate. NOT "better high" as a goal — it is read as a
+  // baseline the nutrition model can lean on — but it tracks lean mass, so up
+  // is the direction that means what it says.
+  restingEnergy: { unit: "kcal", better: "high" },
+  exerciseMinutes: { unit: "min", better: "high" },
+  standHours: { unit: "h", better: "high" },
+  walkingHr: { unit: "bpm", better: "low" },
+  respiratoryRate: { unit: "br/min", better: "low" },
+  spo2: { unit: "%", better: "high" },
+  // Sleeping wrist temperature. A RISE is the signal — illness, alcohol, a hard
+  // day — so lower is the better direction even though the number itself is
+  // only meaningful against this athlete's own baseline.
+  wristTemp: { unit: "C", better: "low" },
+  // How far the heart rate falls in the minute after stopping. A fitness and
+  // autonomic-recovery read, and a big drop is the good one.
+  heartRateRecovery: { unit: "bpm", better: "high" },
   sauna: { unit: "min", better: "high" },
   saunaTemp: { unit: "C", better: "high" },
   energyIntake: { unit: "kcal", better: "high" },

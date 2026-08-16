@@ -1,4 +1,4 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, SportSegmentBest } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, type HeatProtocol } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -134,6 +134,66 @@ export async function fetchSessions(opts?: { archived?: boolean }): Promise<Logg
     if (!res.ok) return [];
     const data = (await res.json()) as { sessions?: LoggedSession[] };
     return data.sessions ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** One session that carries a device recording: what to look the recording up
+ *  by, and whether its full trace has already been fetched. */
+export type SessionRecording = {
+  id: string;
+  uuid: string;
+  provider: string;
+  /** True when the full trace is already stored — the backfill's skip flag. */
+  streamed: boolean;
+  /** What the STORED recording says (core `deviceFingerprint`), so the repair
+   *  pass can spot an unchanged read without the blob crossing the wire. */
+  fingerprint: string;
+};
+
+/**
+ * EVERY session of the athlete's that carries a device recording — the work-list
+ * for both device passes (summary repair, stream backfill).
+ *
+ * DELIBERATELY NOT `fetchSessions`, and that is the whole point of it existing:
+ * the History list returns the FIFTY most recent sessions, so a work-list built
+ * from it silently stops at fifty. An athlete with more than that had older
+ * recordings that would never be repaired and older traces that were never
+ * going to be fetched, however many times they synced. This list is uncapped
+ * because it carries three fields per row instead of a whole workout.
+ */
+export async function fetchSessionRecordings(): Promise<SessionRecording[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/recordings`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { recordings?: SessionRecording[] };
+    return Array.isArray(data.recordings) ? data.recordings : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The athlete's stored BEST EFFORTS — the fastest window covering each catalog
+ * distance, found inside their recordings (see core sportRecords /
+ * `segmentBests`).
+ *
+ * Fetched WHOLE, for every sport, because a lap row does not know what sport it
+ * belongs to — a session does. The sport page attributes each row by session id
+ * against the slice it has already narrowed, so the sport-narrowing rule stays
+ * in core rather than being reimplemented behind a query string.
+ *
+ * Empty on any failure: a record ladder that has never seen a segment is the
+ * ladder as it shipped, so this degrades to "no extra rungs" rather than to an
+ * error the page has to render.
+ */
+export async function fetchSessionBests(): Promise<SportSegmentBest[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/bests`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { bests?: SportSegmentBest[] };
+    return data.bests ?? [];
   } catch {
     return [];
   }
@@ -532,6 +592,37 @@ export async function patchSessionDevice(id: string, device: DeviceWorkout | nul
 }
 
 /**
+ * Upload a recording's STREAMS — the second-by-second data under the summary.
+ *
+ * A DeviceWorkout is duration, distance, kcal, average and peak heart rate;
+ * every app with a HealthKit entitlement reads those. The heart-rate trace, the
+ * route and the laps are the part that is actually worth owning, and only the
+ * phone can read them — so they go up with the match, not later.
+ *
+ * Best-effort and deliberately separate from the match PATCH: the match is
+ * already saved by the time this runs, and a failed upload must never look like
+ * a failed match. The server sanitises, downsamples and derives the splits and
+ * best efforts from what lands (see core/session-streams.ts).
+ */
+export async function postSessionStreams(
+  id: string,
+  payload: { streams: SessionStream[]; laps: SessionLap[]; activityLabel?: string },
+): Promise<{ streams: number; laps: number }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}/streams`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return { streams: 0, laps: 0 };
+    const d = (await res.json().catch(() => ({}))) as { streams?: number; laps?: number };
+    return { streams: d.streams ?? 0, laps: d.laps ?? 0 };
+  } catch {
+    return { streams: 0, laps: 0 };
+  }
+}
+
+/**
  * A row an import put into the log (or joined), named — so the client can ask
  * about it while the athlete is still standing in front of the import. A watch
  * measures everything about a session except how hard it felt, and that is the
@@ -547,6 +638,9 @@ export type DeviceImportLanded = {
   minutes: number;
   /** True for an attach onto a session the athlete had already rated. */
   rated: boolean;
+  /** The health store's id for the recording behind this row — what the client
+   *  needs to go back and upload the streams under the summary. */
+  uuid?: string;
 };
 
 /** What an import changed, as the server counted it. */

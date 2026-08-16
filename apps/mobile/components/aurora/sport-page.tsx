@@ -24,11 +24,12 @@ import {
   type SportChartReading,
   type SportPageModel,
   type SportRecord,
+  type SportSegmentBest,
   type SportStore,
   type SportWeek,
 
   ALPHA,} from "@hybrid/core";
-import { fetchSessions } from "../../lib/api";
+import { fetchSessionBests, fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
@@ -75,6 +76,11 @@ export default function AuroraSportPage() {
   const name = sportFromSlug(param) ?? param;
 
   const [sessions, setSessions] = useState<LoggedSession[]>([]);
+  // The stored BEST EFFORTS — the fastest window covering each catalog distance,
+  // found inside a recording. Fetched whole (every sport) and attributed by
+  // session id inside the model, which is the only place that knows which
+  // sessions are this sport's.
+  const [bests, setBests] = useState<SportSegmentBest[]>([]);
   const [store, setStore] = useState<SportStore | null>(null);
   const [levelIdx, setLevelIdx] = useState(0);
   const [draft, setDraft] = useState<string | null>(null);
@@ -85,6 +91,10 @@ export default function AuroraSportPage() {
     useCallback(() => {
       let active = true;
       fetchSessions().then((d) => { if (active) setSessions(d); }).catch(() => {});
+      // Its own fetch, not part of the session payload: the ladder is the only
+      // reader, and a page that never draws a rung should not pay for it in the
+      // request every screen makes.
+      fetchSessionBests().then((d) => { if (active) setBests(d); }).catch(() => {});
       return () => { active = false; };
     }, []),
   );
@@ -117,8 +127,8 @@ export default function AuroraSportPage() {
 
   const markers = useMemo(() => markerHistory(store, name), [store, name]);
   const m: SportPageModel = useMemo(
-    () => sportPageModel(name, sessions, { levelIdx, markers }),
-    [name, sessions, levelIdx, markers],
+    () => sportPageModel(name, sessions, { levelIdx, markers, segmentBests: bests }),
+    [name, sessions, levelIdx, markers, bests],
   );
 
   // The two held charts. Both hooks run every render — a sport with no pace
@@ -229,10 +239,11 @@ export default function AuroraSportPage() {
       {headline ? (
         <View style={{ paddingTop: space.xxl, paddingBottom: space.lg }}>
           {/* THE LADDER'S ⓘ. A record has rules an athlete would otherwise
-              discover by surprise (5.2 km counts as a 5 km; a 5 km inside a
-              long run does not), so the label row is a door to them. The whole
-              row is the target — a nano label beside a 13pt glyph is not one —
-              and the glyph IS a ring, so nothing is drawn around it. */}
+              discover by surprise (5.2 km counts as a 5 km; a 5 km taken from
+              inside a long run counts too, and is marked), so the label row is
+              a door to them. The whole row is the target — a nano label beside
+              a 13pt glyph is not one — and the glyph IS a ring, so nothing is
+              drawn around it. */}
           <Pressable
             onPress={() => setRules(true)}
             accessibilityRole="button"
@@ -251,6 +262,7 @@ export default function AuroraSportPage() {
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: space.md }}>
             {!!headline.pace && <Text style={mono(fs.micro)}>{headline.pace} {m.paceUnit}</Text>}
             {!!headline.at && <Text style={mono(fs.micro)}>{fmtDate(headline.at)}</Text>}
+            {headline.segment && <Text style={label()}>{t("w.train.sportPage.recordSegment")}</Text>}
             <Provenance provider={headline.provider} />
           </View>
         </View>
@@ -307,11 +319,21 @@ export default function AuroraSportPage() {
           <Text numberOfLines={1} style={{ ...label(), width: 78 }}>{rungLabel(r)}</Text>
           {r.time ? (
             <>
-              <View style={{ flex: 1, flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
+              {/* The time leads and the pace gives way: on a narrow phone a
+                  segment-marked rung asks for one more item on the row, and the
+                  pace is the one figure here that is derivable from the two
+                  beside it. */}
+              <View style={{ flex: 1, flexShrink: 1, flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.subtitle, color: C.chalk }}>{r.time}</Text>
-                {!!r.pace && <Text style={mono(fs.nano)}>{r.pace} {m.paceUnit}</Text>}
+                {!!r.pace && <Text numberOfLines={1} style={{ ...mono(fs.nano), flexShrink: 1 }}>{r.pace} {m.paceUnit}</Text>}
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                {/* WHERE THE TIME CAME FROM. A segment rung was measured over
+                    exactly this distance inside a recording rather than being a
+                    whole logged effort's clock — the more precise of the two,
+                    and a distinction an athlete draws themselves between a race
+                    and a fast stretch of a long run. */}
+                {r.segment && <Text numberOfLines={1} style={label()}>{t("w.train.sportPage.recordSegment")}</Text>}
                 {!!r.at && <Text style={mono(fs.nano)}>{fmtDate(r.at)}</Text>}
                 <Provenance provider={r.provider} />
               </View>

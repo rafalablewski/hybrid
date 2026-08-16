@@ -6,6 +6,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import { haptic } from "../lib/haptics";
+import { ConcernLine } from "../components/aurora/concern-line";
+import { allowFieldValue } from "../lib/field-guard";
 import { animateListChange } from "../lib/list-motion";
 import { useSharedSurfaceSource, useSharedSurfaceTarget } from "../lib/shared-element";
 import {
@@ -32,6 +34,20 @@ import {
   loadUnitCount,
   timedSportOnly,
   sportDistanceUnit,
+  allowsTyping,
+  cardioDiscipline,
+  inspectEffort,
+  inspectSet,
+  distanceBounds,
+  loadBounds,
+  repsBounds,
+  ELEVATION_BOUNDS,
+  INCLINE_BOUNDS,
+  MINUTES_BOUNDS,
+  RPE_BOUNDS,
+  VELOCITY_BOUNDS,
+  ZONE_BOUNDS,
+  type Bounds,
   displaySportDistance,
   parseSportDistance,
   formatCardioPr,
@@ -750,12 +766,75 @@ export default function Workout() {
         return { ...x, name };
       }),
     );
+  /** Which bounds a SET field is judged against — the load and rep ceilings read
+   *  the exercise itself, since 120 is ordinary on a barbell and impossible on a
+   *  kettlebell, and the rep field holds seconds for a hold and metres for a
+   *  carry. A field with no numeric meaning gets none. */
+  const setFieldBounds = (name: string, k: keyof WSet): Bounds | null => {
+    if (k === "load") return loadBounds(name);
+    if (k === "reps") return repsBounds(name);
+    if (k === "rpe") return RPE_BOUNDS;
+    // The live logger captures mean velocity only; the stored shape carries a
+    // peak too (VBT sensors report both) and the editor may yet write it.
+    if (k === "vel") return VELOCITY_BOUNDS;
+    return null;
+  };
+
   const setSetField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
     setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) } : x)),
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        // The load field is entered in the athlete's unit and stored in kg by
+        // the caller, so what arrives here is already the stored figure and is
+        // judged against the stored bound. The MESSAGE still has to speak the
+        // athlete's unit, or a lb user is told "max 1500 kg" about a field
+        // showing pounds.
+        if (typeof v === "string") {
+          const bounds = setFieldBounds(x.name, k);
+          // The load arrives already converted to kg by the caller, so it is
+          // judged against the stored bound — but the MESSAGE has to speak the
+          // athlete's own unit, or a lb user is told "max 1500 kg" about a
+          // field showing pounds.
+          const lb = k === "load" && prefs.units === "lb";
+          const shown = lb ? displayLoad(v, "lb") : v;
+          const opts = lb && bounds ? { max: Math.floor(kgToUnit(bounds.max, "lb")), unit: "lb" } : undefined;
+          if (!allowFieldValue(t, shown, bounds, opts)) return x;
+        }
+        return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) };
+      }),
     );
+
   const condField = (u: string, k: "minutes" | "rpe" | "distance" | "incline" | "stroke" | "elevation" | "zone", v: string) =>
-    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, [k]: v } : x)));
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        // DISTANCE IS ENTERED IN THE SPORT'S OWN UNIT — metres for a pool swim,
+        // kilometres on the road — so "5200" in a swim field is 5.2 km and is
+        // perfectly legal, while the same digits in a run field are a unit slip.
+        // Judging the raw string against a km bound would refuse the pool and
+        // wave through the road, which is exactly backwards.
+        if (k === "distance") {
+          const km = parseSportDistance(v, x.name);
+          const b = distanceBounds(cardioDiscipline(x.name));
+          const unit = sportDistanceUnit(x.name);
+          const inUnit = unit === "m" ? { max: Math.round(b.max * 1000), unit } : undefined;
+          // Judged in the field's OWN unit: the value shown is metres for a pool
+          // swim and kilometres on the road, and comparing the raw string to a
+          // km bound would refuse the pool and wave through the road.
+          if (km != null && !allowFieldValue(t, unit === "m" ? String(km * 1000) : String(km), b, inUnit)) return x;
+          return { ...x, [k]: v };
+        }
+        const bounds =
+          k === "minutes" ? MINUTES_BOUNDS
+          : k === "rpe" ? RPE_BOUNDS
+          : k === "incline" ? INCLINE_BOUNDS
+          : k === "elevation" ? ELEVATION_BOUNDS
+          : k === "zone" ? ZONE_BOUNDS
+          : null;
+        if (!allowFieldValue(t, v, bounds)) return x;
+        return { ...x, [k]: v };
+      }),
+    );
   // Quick +/- the last set's load by the chosen increment (in display units).
   const bumpLastLoad = (u: string, deltaDisplay: number) =>
     setExercises((xs) =>
@@ -1447,6 +1526,9 @@ export default function Workout() {
                   return x.sets.map((s, i) => {
                     const focus = setFocus(x.sets, i);
                     const st = setType(s);
+                    // Improbable but storable — the athlete is asked, never stopped.
+                    const concern = inspectSet(x.name, s.load, s.reps);
+                    const odd = concern.verdict !== "ok";
                     const typeAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
                     return (
                       <View key={s.uid ?? i}>
@@ -1560,6 +1642,7 @@ export default function Workout() {
                                 </>
                               )}
                             </View>
+                            <ConcernLine concern={concern} align="center" />
                             {/* RPE — ONE TAP, not another input row: tapping the
                                 chip reveals a single row of value pills (the core
                                 RPE scale, RIR-labelled when swapped); tapping a
@@ -1599,8 +1682,14 @@ export default function Workout() {
                             // not a boxed mini-card (no card-in-card).
                             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6), opacity: focus === "done" ? 0.62 : 0.72 }}>
                               <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+                              {/* A collapsed row SIGNALS; the expanded one
+                                  explains. Its own figures turn amber rather
+                                  than gaining a badge — the row is already
+                                  three columns wide on a small phone, and
+                                  tapping it re-opens the set where the full
+                                  sentence is waiting. */}
                               <Pressable style={{ flex: 1 }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
-                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{summary}</Text>
+                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash }}>{summary}</Text>
                               </Pressable>
                               <Text style={{ fontFamily: F.black, fontSize: fs.body, color: s.done ? txt(C, C.lime) : C.ash }}>{s.done ? "✓" : "○"}</Text>
                             </View>
@@ -1737,6 +1826,17 @@ export default function Workout() {
                     <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
                   </View>
                 </View>
+                {/* The two fields are judged TOGETHER: each can be ordinary
+                    while the pace they imply is not, and that pair is where a
+                    unit slip or a mistyped clock actually shows up. */}
+                {(() => {
+                  const c = inspectEffort({
+                    discipline: cardioDiscipline(x.name),
+                    distanceKm: parseSportDistance(x.distance ?? "", x.name),
+                    minutes: parseFloat(x.minutes) || null,
+                  });
+                  return <ConcernLine concern={c} />;
+                })()}
                 {/* Modality extras — the exercise-profile model decides the
                     fields (incline / stroke / elevation / HR zone), matching
                     the Builder and the web logger. */}

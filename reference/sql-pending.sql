@@ -1,11 +1,13 @@
 -- ===========================================================================
 -- HYBRID — every outstanding migration, in one script, in dependency order.
 --
--- STATUS: FULLY APPLIED. The whole file was run in the Supabase SQL Editor
--- (Aug 2026), which cleared the three appendices that were still outstanding at
--- the time — the nutrition LABEL PANEL at the end of section 1, SECTION 4b
--- (RecordAttestation) and SECTION 4c (SavedPost). Re-running it now is a no-op
--- from top to bottom.
+-- STATUS: ONE SECTION OUTSTANDING — SECTION 4d (SessionSet / SessionStream /
+-- SessionLap). Everything before it was run in the Supabase SQL Editor
+-- (Aug 2026), which cleared the three appendices outstanding at the time — the
+-- nutrition LABEL PANEL at the end of section 1, SECTION 4b (RecordAttestation)
+-- and SECTION 4c (SavedPost). Paste the WHOLE file again to apply 4d: every
+-- statement above it is idempotent, so the bundle is still the safe thing to
+-- run and there is never a question of which pieces you already have.
 --
 -- NOTE (2026-08 strategy cuts): twelve of the tables this bundle sets up were
 -- later DROPPED — Organization, Team, Membership, OrgInvite, TalentProfile,
@@ -981,6 +983,198 @@ drop policy if exists savedpost_owner on "SavedPost";
 create policy savedpost_owner on "SavedPost" for all
   using ("userId" = public.app_user_id())
   with check ("userId" = public.app_user_id());
+
+
+-- ===========================================================================
+-- SECTION 4d — SessionSet / SessionStream / SessionLap  ** NOT YET APPLIED **
+-- Source: sql-session-sets-streams.sql (verbatim). Run the whole bundle again
+-- to apply it; everything above is idempotent.
+--
+-- Two data-layer gaps, closed while the tables are empty — which is the only
+-- cheap time to do it, since at scale this is a re-architecture under load.
+--
+--   SessionSet     A logged set lived only inside "Session"."blocks", a jsonb
+--                  document Postgres cannot index into, so there was no per-set
+--                  grain at all: every cross-athlete analytic loaded whole
+--                  sessions into the API and walked them in TypeScript, under a
+--                  row cap that does not fail but TRUNCATES. This is the fact
+--                  table — one row per strength SET, one per timed effort —
+--                  denormalised with the athlete, the date and the archive flag
+--                  so an aggregate never joins back. It is a PROJECTION of the
+--                  document (@hybrid/core sessionSetFacts), rewritten on every
+--                  session write and rebuildable at any time from
+--                  POST /api/admin/backfill/session-sets.
+--
+--   SessionStream  "Session"."device" carried a workout SUMMARY only. The
+--   SessionLap     heart-rate series, the GPS route, the laps and the splits
+--                  never landed anywhere — and cannot be recovered afterwards,
+--                  since only the phone can read a health store and only while
+--                  the recording is still in it. A stream is ONE row per
+--                  (session, kind) with parallel offsets/values arrays (a row
+--                  per sample would be millions per athlete-year); a LAP gets a
+--                  row each, including the derived `best` efforts, so "my
+--                  fastest 5 km" is an indexed lookup rather than a scan.
+--
+-- Depends on public.app_user_id() from section 2. All three cascade with their
+-- "Session" and their "User". Until this runs, the projection writes fail
+-- harmlessly (the API logs and swallows them — a derived table is never worth
+-- losing an athlete's workout over) and the analytics routes return empty.
+-- ===========================================================================
+
+create table if not exists "SessionSet" (
+  "id"              text primary key default gen_random_uuid()::text,
+  "sessionId"       text not null references "Session"("id") on delete cascade,
+  "userId"          text not null references "User"("id") on delete cascade,
+  "performedAt"     timestamp(3) not null,
+  "archived"        boolean not null default false,
+  "blockIndex"      integer not null,
+  "setIndex"        integer not null,
+  "kind"            text not null,
+  "exercise"        text not null,
+  "movement"        text,
+  "muscles"         text[] not null default array[]::text[],
+  "discipline"      text,
+  "role"            text not null default 'working',
+  "drop"            boolean not null default false,
+  "reps"            integer,
+  "loadKg"          double precision,
+  "bodyweightKg"    double precision,
+  "effectiveLoadKg" double precision,
+  "volumeKg"        double precision,
+  "e1rmKg"          double precision,
+  "rpe"             double precision,
+  "velocityMs"      double precision,
+  "peakVelocityMs"  double precision,
+  "romCm"           double precision,
+  "restSec"         integer,
+  "distanceKm"      double precision,
+  "durationSec"     integer,
+  "paceSecPerKm"    double precision,
+  "elevationM"      double precision,
+  "watts"           double precision,
+  "zone"            integer,
+  "rounds"          integer,
+  "measured"        boolean not null default false,
+  "createdAt"       timestamp(3) not null default now()
+);
+
+-- The natural key of the projection — what makes a rewrite idempotent.
+create unique index if not exists "SessionSet_sessionId_blockIndex_setIndex_key"
+  on "SessionSet" ("sessionId", "blockIndex", "setIndex");
+-- An athlete's own history, by date.
+create index if not exists "SessionSet_userId_performedAt_idx"
+  on "SessionSet" ("userId", "performedAt");
+-- One athlete's history of ONE lift (the progression / e1RM chart).
+create index if not exists "SessionSet_userId_exercise_performedAt_idx"
+  on "SessionSet" ("userId", "exercise", "performedAt");
+-- CROSS-ATHLETE — the queries that were impossible before this table existed.
+create index if not exists "SessionSet_exercise_performedAt_idx"
+  on "SessionSet" ("exercise", "performedAt");
+create index if not exists "SessionSet_movement_performedAt_idx"
+  on "SessionSet" ("movement", "performedAt");
+create index if not exists "SessionSet_discipline_performedAt_idx"
+  on "SessionSet" ("discipline", "performedAt");
+create index if not exists "SessionSet_performedAt_idx"
+  on "SessionSet" ("performedAt");
+
+-- ---------------------------------------------------------------------------
+-- SessionStream — one recorded series per (session, kind)
+-- ---------------------------------------------------------------------------
+create table if not exists "SessionStream" (
+  "id"          text primary key default gen_random_uuid()::text,
+  "sessionId"   text not null references "Session"("id") on delete cascade,
+  "userId"      text not null references "User"("id") on delete cascade,
+  "performedAt" timestamp(3) not null,
+  "archived"    boolean not null default false,
+  "kind"        text not null, -- hr | power | cadence | speed | altitude | distance | route
+  "unit"        text not null,
+  "provider"    text not null default 'apple',
+  "uuid"        text not null,
+  "startedAt"   timestamp(3) not null,
+  -- Seconds from "startedAt", strictly increasing; "values"[i] belongs to
+  -- "offsets"[i]. "valuesB" is longitude, for the `route` kind only.
+  "offsets"     integer[] not null,
+  "values"      double precision[] not null,
+  "valuesB"     double precision[] not null default array[]::double precision[],
+  -- Lifted out of the arrays so the common questions are column reads.
+  "sampleCount" integer not null,
+  "durationSec" integer not null,
+  "min"         double precision,
+  "max"         double precision,
+  "avg"         double precision,
+  "createdAt"   timestamp(3) not null default now()
+);
+
+-- One series per kind per session — a re-import replaces rather than stacks.
+create unique index if not exists "SessionStream_sessionId_kind_key"
+  on "SessionStream" ("sessionId", "kind");
+create index if not exists "SessionStream_userId_performedAt_idx"
+  on "SessionStream" ("userId", "performedAt");
+create index if not exists "SessionStream_kind_performedAt_idx"
+  on "SessionStream" ("kind", "performedAt");
+
+-- ---------------------------------------------------------------------------
+-- SessionLap — laps, splits, multi-sport segments, and derived best efforts
+-- ---------------------------------------------------------------------------
+create table if not exists "SessionLap" (
+  "id"             text primary key default gen_random_uuid()::text,
+  "sessionId"      text not null references "Session"("id") on delete cascade,
+  "userId"         text not null references "User"("id") on delete cascade,
+  "performedAt"    timestamp(3) not null,
+  "archived"       boolean not null default false,
+  "kind"           text not null, -- lap | split | segment | best
+  "index"          integer not null,
+  "startOffsetSec" integer not null,
+  "durationSec"    double precision not null,
+  "distanceKm"     double precision,
+  "avgHr"          integer,
+  "maxHr"          integer,
+  "avgWatts"       double precision,
+  "elevationM"     double precision,
+  "paceSecPerKm"   double precision,
+  "createdAt"      timestamp(3) not null default now()
+);
+
+create unique index if not exists "SessionLap_sessionId_kind_index_key"
+  on "SessionLap" ("sessionId", "kind", "index");
+create index if not exists "SessionLap_userId_performedAt_idx"
+  on "SessionLap" ("userId", "performedAt");
+-- "The athlete's fastest 5 km ever", and "everybody's fastest 5 km" — the two
+-- questions the record ladder could not ask while only summaries were stored.
+create index if not exists "SessionLap_userId_kind_distanceKm_durationSec_idx"
+  on "SessionLap" ("userId", "kind", "distanceKm", "durationSec");
+create index if not exists "SessionLap_kind_distanceKm_durationSec_idx"
+  on "SessionLap" ("kind", "distanceKm", "durationSec");
+
+-- ---------------------------------------------------------------------------
+-- RLS — owner-only, exactly like "Session" itself.
+--
+-- These rows are the athlete's training, re-shaped. They are strictly MORE
+-- sensitive than the session document in one respect: a route stream is the
+-- athlete's home address written down 3 000 times. No coach read, no public
+-- read, no anon grant. Every legitimate reader (the API, the k-anonymous
+-- efficacy index, the admin aggregates) goes through Prisma's privileged role,
+-- which bypasses RLS — the policies below are the belt for PostgREST.
+-- ---------------------------------------------------------------------------
+alter table "SessionSet" enable row level security;
+drop policy if exists sessionset_own on "SessionSet";
+create policy sessionset_own on "SessionSet" for all
+  using ("userId" = public.app_user_id())
+  with check ("userId" = public.app_user_id());
+
+alter table "SessionStream" enable row level security;
+drop policy if exists sessionstream_own on "SessionStream";
+create policy sessionstream_own on "SessionStream" for all
+  using ("userId" = public.app_user_id())
+  with check ("userId" = public.app_user_id());
+
+alter table "SessionLap" enable row level security;
+drop policy if exists sessionlap_own on "SessionLap";
+create policy sessionlap_own on "SessionLap" for all
+  using ("userId" = public.app_user_id())
+  with check ("userId" = public.app_user_id());
+
+revoke all on "SessionSet", "SessionStream", "SessionLap" from anon;
 
 
 -- ===========================================================================

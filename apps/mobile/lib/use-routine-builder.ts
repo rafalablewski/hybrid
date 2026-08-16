@@ -1,15 +1,32 @@
 import { useEffect, useState } from "react";
 import {
+  allowsTyping,
+  cardioDiscipline,
+  distanceBounds,
   inferBlockKind,
   cycleSetType,
+  judge,
+  loadBounds,
   moveItemTo,
+  repsBounds,
   warmupRamp,
   DEFAULT_REST_SEC,
+  ELEVATION_BOUNDS,
+  INCLINE_BOUNDS,
+  INTERVAL_BOUNDS,
+  MINUTES_BOUNDS,
+  ROM_BOUNDS,
+  ROUNDS_BOUNDS,
+  RPE_BOUNDS,
+  VELOCITY_BOUNDS,
+  ZONE_BOUNDS,
+  type Bounds,
   type SessionBlock,
   type StrengthSet,
   type BlockKind,
 } from "@hybrid/core";
 import { fetchRoutines, createRoutine, deleteRoutine, type Routine } from "./api";
+import { allowFieldValue, refuseFieldValue } from "./field-guard";
 import { useLang } from "./i18n";
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -36,6 +53,9 @@ const cloneBlock = (b: SessionBlock): EditableBlock => ({ ...(JSON.parse(JSON.st
  *  per-set editing over the same /api/templates persistence as the web twin. */
 export function useRoutineBuilder() {
   const { t } = useLang();
+  /** Say why the keystroke did not land — shared with both loggers, so a bound
+   *  tightened in core cannot keep announcing the old number from here. */
+  const refuse = (b: Bounds) => refuseFieldValue(t, b);
   const [name, setName] = useState("New routine");
   const [items, setItems] = useState<EditableBlock[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -58,12 +78,28 @@ export function useRoutineBuilder() {
   const moveBlockTo = (from: number, to: number) => setItems((xs) => moveItemTo(xs, from, to));
 
   // ----- strength: per-set control -----
+  /**
+   * A ROUTINE'S FIGURES ARE WORSE TO GET WRONG THAN A SESSION'S, because a
+   * routine is re-logged: an impossible load typed once here is loaded into
+   * every workout started from it, and nobody re-reads a template they trust.
+   * Same refusal the live logger applies, from the same bounds — the keystroke
+   * does not land, and the toast names the ceiling in the field's own unit.
+   */
+  const setFieldBounds = (name: string, key: keyof StrengthSet): Bounds | null => {
+    if (key === "load") return loadBounds(name);
+    if (key === "reps") return repsBounds(name);
+    if (key === "rpe") return RPE_BOUNDS;
+    if (key === "vel" || key === "peakVel") return VELOCITY_BOUNDS;
+    if (key === "rom") return ROM_BOUNDS;
+    return null;
+  };
+
   const updateSet = (u: string, i: number, key: keyof StrengthSet, val: string) =>
-    patch(u, (b) =>
-      b.kind === "strength"
-        ? { ...b, sets: b.sets.map((s, j) => (j === i ? ({ ...s, [key]: val } as StrengthSet) : s)) }
-        : b,
-    );
+    patch(u, (b) => {
+      if (b.kind !== "strength") return b;
+      if (!allowFieldValue(t, val, setFieldBounds(b.name, key))) return b;
+      return { ...b, sets: b.sets.map((s, j) => (j === i ? ({ ...s, [key]: val } as StrengthSet) : s)) };
+    });
   // New set carries the previous set's load/reps forward (same behaviour as the
   // live logger's carry-over) so a straight-sets scheme is one tap per set.
   const addSet = (u: string) =>
@@ -114,8 +150,30 @@ export function useRoutineBuilder() {
     );
 
   // ----- cardio / conditioning fields -----
+  /** The cardio/conditioning fields, which arrive already PARSED (the callers
+   *  convert the sport's own unit to stored km before handing it over), so they
+   *  are judged as numbers against the same bounds the API enforces. */
+  const blockFieldBounds = (name: string, key: string): Bounds | null => {
+    if (key === "distance") return distanceBounds(cardioDiscipline(name));
+    if (key === "minutes") return MINUTES_BOUNDS;
+    if (key === "rpe") return RPE_BOUNDS;
+    if (key === "incline") return INCLINE_BOUNDS;
+    if (key === "elevation") return ELEVATION_BOUNDS;
+    if (key === "zone") return ZONE_BOUNDS;
+    if (key === "rounds") return ROUNDS_BOUNDS;
+    if (key === "work" || key === "rest") return INTERVAL_BOUNDS;
+    return null;
+  };
+
   const setField = (u: string, key: string, val: string | number | undefined) =>
-    patch(u, (b) => ({ ...b, [key]: val }) as EditableBlock);
+    patch(u, (b) => {
+      const bounds = typeof val === "number" ? blockFieldBounds(b.name, key) : null;
+      if (bounds && judge(val, bounds) === "refuse") {
+        refuse(bounds);
+        return b;
+      }
+      return { ...b, [key]: val } as EditableBlock;
+    });
 
   const loadRoutine = (r: Routine) => {
     setName(r.name);

@@ -14,7 +14,13 @@ import {
   type LoggedSession,
 
   ALPHA,} from "@hybrid/core";
-import { healthKitAvailability, queryRecentDeviceWorkouts, requestWorkoutReadAuth } from "../lib/healthkit";
+import {
+  healthKitAvailability,
+  queryRecentDeviceWorkouts,
+  requestStreamReadAuth,
+  requestWorkoutReadAuth,
+  uploadLandedStreams,
+} from "../lib/healthkit";
 import { importDeviceWorkouts, type DeviceImportLanded } from "../lib/api";
 import { FeelPrompt } from "./feel-prompt";
 import { setLoggerPref, useLoggerPrefs } from "../lib/logger-prefs";
@@ -108,6 +114,10 @@ export function DeviceImportSheet({
     // The permission ask doubles as "connect" — iOS only sheets types it hasn't
     // asked about, so a returning athlete goes straight to the read.
     await requestWorkoutReadAuth();
+    // Asked here, while the athlete is already looking at a permission sheet —
+    // the import uploads each landed recording's trace afterwards, and a system
+    // dialog appearing then would land mid-import with nothing to explain it.
+    await requestStreamReadAuth();
     const workouts = await queryRecentDeviceWorkouts();
     if (workouts == null) {
       setPhase("error");
@@ -163,6 +173,12 @@ export function DeviceImportSheet({
       return;
     }
     wrote.current = true;
+    // The import wrote SUMMARIES. Everything under them — the heart-rate trace,
+    // the route, the laps — is still only on this device, and only while the
+    // store still holds the recording. Fired here and never awaited: the rows
+    // exist, the athlete is being asked how it felt, and the upload rides
+    // alongside that rather than in front of it.
+    if (res.landed.length) void uploadLandedStreams(res.landed).catch(() => 0);
     // A row that came back already rated (an attach onto a session the athlete
     // finished in the app) has nothing to ask. Nothing to ask about at all → the
     // import is simply done, exactly as before.
