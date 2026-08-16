@@ -134,6 +134,7 @@ export * from "./session-wrapped";
 export * from "./session-edit";
 export * from "./session-feel";
 export * from "./session-device";
+export * from "./plausibility";
 export * from "./session-facts";
 export * from "./session-streams";
 export * from "./device-activity";

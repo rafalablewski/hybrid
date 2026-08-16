@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import { haptic } from "../lib/haptics";
+import { toast } from "../components/aurora/toast";
 import { animateListChange } from "../lib/list-motion";
 import { useSharedSurfaceSource, useSharedSurfaceTarget } from "../lib/shared-element";
 import {
@@ -32,6 +33,18 @@ import {
   loadUnitCount,
   timedSportOnly,
   sportDistanceUnit,
+  allowsTyping,
+  cardioDiscipline,
+  distanceBounds,
+  loadBounds,
+  repsBounds,
+  ELEVATION_BOUNDS,
+  INCLINE_BOUNDS,
+  MINUTES_BOUNDS,
+  RPE_BOUNDS,
+  VELOCITY_BOUNDS,
+  ZONE_BOUNDS,
+  type Bounds,
   displaySportDistance,
   parseSportDistance,
   formatCardioPr,
@@ -750,12 +763,106 @@ export default function Workout() {
         return { ...x, name };
       }),
     );
+  /**
+   * THE FIELD CANNOT HOLD AN IMPOSSIBLE NUMBER.
+   *
+   * A slipped finger is the most common thing that happens in a logger, and its
+   * cost is nothing like proportionate: one 70 000 kg bench press or 5 200 km
+   * swim moves tonnage, e1RM, mileage, training load, ACWR, readiness and the
+   * cohort norms, and nothing downstream can tell it from a fact. The server
+   * refuses these too (that is the guard that counts — a client is advice), but
+   * being told after the workout is saved is far too late to fix a set you can
+   * no longer remember.
+   *
+   * So the keystroke is REFUSED, the way a maxLength refuses one: the digit
+   * simply does not appear. And it says why, because a field that silently stops
+   * accepting input reads as broken — the toast names the bound, in the field's
+   * OWN unit, so the answer is in the message rather than in a support thread.
+   *
+   * Only the impossible is refused. The "improbable but real" band (a 300 kg
+   * squat, a 100 km ride) is deliberately left alone: an app that cannot record
+   * an outlier is an app the best athletes cannot use.
+   */
+  const guardedFieldValue = (bounds: Bounds | null, next: string, unitLabel?: string): boolean => {
+    if (!bounds || allowsTyping(next, bounds)) return true;
+    toast(
+      t("w.train.blocks.maxValue")
+        .replace("{n}", String(bounds.max))
+        .replace("{unit}", unitLabel ?? bounds.unit),
+      "error",
+    );
+    return false;
+  };
+
+  /** Which bounds a SET field is judged against — the load and rep ceilings read
+   *  the exercise itself, since 120 is ordinary on a barbell and impossible on a
+   *  kettlebell, and the rep field holds seconds for a hold and metres for a
+   *  carry. A field with no numeric meaning gets none. */
+  const setFieldBounds = (name: string, k: keyof WSet): Bounds | null => {
+    if (k === "load") return loadBounds(name);
+    if (k === "reps") return repsBounds(name);
+    if (k === "rpe") return RPE_BOUNDS;
+    // The live logger captures mean velocity only; the stored shape carries a
+    // peak too (VBT sensors report both) and the editor may yet write it.
+    if (k === "vel") return VELOCITY_BOUNDS;
+    return null;
+  };
+
   const setSetField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
     setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) } : x)),
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        // The load field is entered in the athlete's unit and stored in kg by
+        // the caller, so what arrives here is already the stored figure and is
+        // judged against the stored bound. The MESSAGE still has to speak the
+        // athlete's unit, or a lb user is told "max 1500 kg" about a field
+        // showing pounds.
+        if (typeof v === "string") {
+          const bounds = setFieldBounds(x.name, k);
+          if (bounds && k === "load" && prefs.units === "lb") {
+            const shown: Bounds = { ...bounds, max: Math.floor(kgToUnit(bounds.max, "lb")) };
+            if (!guardedFieldValue(shown, displayLoad(v, "lb"), "lb")) return x;
+          } else if (!guardedFieldValue(bounds, v)) return x;
+        }
+        return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) };
+      }),
     );
+
   const condField = (u: string, k: "minutes" | "rpe" | "distance" | "incline" | "stroke" | "elevation" | "zone", v: string) =>
-    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, [k]: v } : x)));
+    setExercises((xs) =>
+      xs.map((x) => {
+        if (x.uid !== u) return x;
+        // DISTANCE IS ENTERED IN THE SPORT'S OWN UNIT — metres for a pool swim,
+        // kilometres on the road — so "5200" in a swim field is 5.2 km and is
+        // perfectly legal, while the same digits in a run field are a unit slip.
+        // Judging the raw string against a km bound would refuse the pool and
+        // wave through the road, which is exactly backwards.
+        if (k === "distance") {
+          const km = parseSportDistance(v, x.name);
+          const b = distanceBounds(cardioDiscipline(x.name));
+          if (km != null && km > b.max) {
+            const unit = sportDistanceUnit(x.name);
+            toast(
+              t("w.train.blocks.maxValue")
+                .replace("{n}", unit === "m" ? String(Math.round(b.max * 1000)) : String(b.max))
+                .replace("{unit}", unit),
+              "error",
+            );
+            return x;
+          }
+          return { ...x, [k]: v };
+        }
+        const bounds =
+          k === "minutes" ? MINUTES_BOUNDS
+          : k === "rpe" ? RPE_BOUNDS
+          : k === "incline" ? INCLINE_BOUNDS
+          : k === "elevation" ? ELEVATION_BOUNDS
+          : k === "zone" ? ZONE_BOUNDS
+          : null;
+        if (!guardedFieldValue(bounds, v)) return x;
+        return { ...x, [k]: v };
+      }),
+    );
   // Quick +/- the last set's load by the chosen increment (in display units).
   const bumpLastLoad = (u: string, deltaDisplay: number) =>
     setExercises((xs) =>

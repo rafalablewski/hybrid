@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { FREE_TEMPLATE_LIMIT, type SessionBlock } from "@hybrid/core";
+import { FREE_TEMPLATE_LIMIT, sanitizeSessionBlocks } from "@hybrid/core";
 import { getOrCreateDbUser, entitlementOf } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -62,15 +62,19 @@ export async function POST(request: Request) {
   const b = (await request.json().catch(() => ({}))) as { name?: unknown; description?: unknown; blocks?: unknown };
   if (typeof b.name !== "string" || !b.name.trim())
     return NextResponse.json({ error: "name is required" }, { status: 400 });
-  if (!Array.isArray(b.blocks))
-    return NextResponse.json({ error: "blocks must be an array" }, { status: 400 });
+  // A routine is a workout the athlete will log again and again, so an
+  // impossible figure in one is worse than in a single session: it is re-logged
+  // every time the routine is started, and nobody re-reads a template they
+  // trust. Same sanitiser, same one definition of a storable block.
+  const blocks = sanitizeSessionBlocks(b.blocks);
+  if (!blocks) return NextResponse.json({ error: "blocks must be an array" }, { status: 400 });
 
   const template = await prisma.workoutTemplate.create({
     data: {
       ownerId: me.id,
       name: b.name.trim().slice(0, 120),
       description: typeof b.description === "string" ? b.description.trim().slice(0, 500) : null,
-      blocks: b.blocks as unknown as SessionBlock[] as object,
+      blocks: blocks as unknown as object,
     },
     // Don't RETURN `favourite` — the column may not be migrated yet (see GET).
     select: { id: true, name: true, description: true, blocks: true, createdAt: true },

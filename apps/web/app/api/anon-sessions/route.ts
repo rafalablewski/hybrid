@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { sanitizeSessionBlocks } from "@hybrid/core";
 import { rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 
@@ -32,6 +33,8 @@ export async function POST(request: Request) {
   }
   const platform =
     b.platform === "ios" || b.platform === "android" || b.platform === "web" ? b.platform : null;
+  const blocks = sanitizeSessionBlocks(b.blocks ?? []);
+  if (!blocks) return NextResponse.json({ error: "invalid blocks" }, { status: 400 });
 
   try {
     await prisma.anonSession.create({
@@ -40,7 +43,11 @@ export async function POST(request: Request) {
         platform,
         title: b.title.trim().slice(0, 200),
         startedAt: b.startedAt ? new Date(b.startedAt as string) : new Date(),
-        blocks: (b.blocks ?? []) as object,
+        // Same guard as a signed-in session: a guest's blocks reach the admin's
+        // usage view and the anon corpus, and an unbounded figure there is the
+        // same lie it would be in a real athlete's history — with nobody who can
+        // spot it, since there is no account to come back and correct it.
+        blocks: blocks as unknown as object,
       },
     });
     return NextResponse.json({ ok: true }, { status: 201 });

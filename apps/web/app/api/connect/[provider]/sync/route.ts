@@ -3,6 +3,8 @@ import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 import {
   connectorSpec,
+  judge,
+  signalBounds,
   parseWhoop,
   parseOura,
   parseHealthKit,
@@ -65,9 +67,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ pro
     signals = provider === "whoop" ? parseWhoop(user.id, raw) : parseOura(user.id, raw);
   }
 
-  if (signals.length) {
+  // A CONNECTOR IS NOT A TRUSTED SOURCE, it is an unattended one. Nobody reads
+  // these rows on the way in, and each joins a rolling baseline — so a provider
+  // that reports a sentinel (-1, 9999) on a failed read, or a unit we guessed
+  // wrong, would silently redefine what "normal" is for this athlete. Same
+  // bounds as the hand-typed path; a bad reading is DROPPED, and the rest of the
+  // sync lands, because one odd sample must not cost a fortnight of good ones.
+  const clean = signals.filter((s) => judge(s.value, signalBounds(s.kind)) !== "refuse");
+  if (clean.length < signals.length)
+    console.warn(`[connect/${provider}] dropped ${signals.length - clean.length} implausible reading(s)`);
+  if (clean.length) {
     await prisma.signal.createMany({
-      data: signals.map((s) => ({
+      data: clean.map((s) => ({
         userId: user.id,
         kind: s.kind,
         value: s.value,

@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import { HEIGHT_MIN_CM, HEIGHT_MAX_CM } from "@hybrid/core";
+import {
+  BODY_FAT_BOUNDS,
+  BODY_MASS_BOUNDS,
+  HEIGHT_MAX_CM,
+  HEIGHT_MIN_CM,
+  TAPE_BOUNDS,
+  keep,
+  type Bounds,
+} from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
 
@@ -7,10 +15,15 @@ import { prisma } from "@/lib/db";
 // progress). Owner-only (RLS in reference/sql-private-tab.sql). GET lists
 // newest-first; POST logs one measurement; DELETE removes one.
 
-// A finite positive number in a sane human range, else null. Keeps a fat-finger
-// (negative / absurd) value out of the trend without rejecting the whole log.
-const num = (v: unknown, max: number): number | null =>
-  typeof v === "number" && Number.isFinite(v) && v > 0 && v <= max ? v : null;
+// A measurement inside the bounds core declares for it, else null — a
+// fat-fingered value stays out of the trend without rejecting the whole log.
+//
+// THE FLOOR IS THE HALF THAT WAS MISSING. This bounded the top and let anything
+// above zero through, so a bodyweight of 0.5 (a scale in the wrong unit, a
+// slipped decimal) was storable — and a near-zero bodyweight does not merely
+// look odd, it silently zeroes the effective load of every pull-up, dip and
+// assisted rep the athlete has ever logged and rewrites their whole tonnage.
+const num = (v: unknown, b: Bounds): number | null => keep(v, b);
 
 // Height has a FLOOR as well as a ceiling: unlike a tape measurement, a value
 // below ~120 cm is a unit mix-up (inches typed into a cm field) rather than a
@@ -38,16 +51,16 @@ export async function POST(request: Request) {
   const data = {
     userId: me.id,
     measuredAt,
-    weightKg: num(b.weightKg, 500),
+    weightKg: num(b.weightKg, BODY_MASS_BOUNDS),
     heightCm: heightCm(b.heightCm),
-    bodyFatPct: num(b.bodyFatPct, 75),
-    neckCm: num(b.neckCm, 100),
-    chestCm: num(b.chestCm, 250),
-    waistCm: num(b.waistCm, 250),
-    hipsCm: num(b.hipsCm, 250),
-    thighCm: num(b.thighCm, 150),
-    armCm: num(b.armCm, 100),
-    calfCm: num(b.calfCm, 100),
+    bodyFatPct: num(b.bodyFatPct, BODY_FAT_BOUNDS),
+    neckCm: num(b.neckCm, TAPE_BOUNDS),
+    chestCm: num(b.chestCm, TAPE_BOUNDS),
+    waistCm: num(b.waistCm, TAPE_BOUNDS),
+    hipsCm: num(b.hipsCm, TAPE_BOUNDS),
+    thighCm: num(b.thighCm, TAPE_BOUNDS),
+    armCm: num(b.armCm, TAPE_BOUNDS),
+    calfCm: num(b.calfCm, TAPE_BOUNDS),
     note: typeof b.note === "string" && b.note.trim() ? b.note.trim().slice(0, 500) : null,
   };
   // Require at least one real value so an all-empty submit doesn't create noise.
