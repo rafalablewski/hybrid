@@ -507,7 +507,7 @@ describe("activityComparison", () => {
 
   it("maps a move onto the half-track, signed", () => {
     const at = (pct: number) => comparisonBar({
-      metric: "hours", value: 0, baseline: 0, deltaPct: pct, diff: 0, end: null,
+      metric: "hours", value: 0, previous: 0, baseline: 0, deltaPct: pct, diff: 0, end: null,
     });
     expect(at(0)).toBe(0);
     expect(at(COMPARE_SCALE_PCT)).toBe(1);
