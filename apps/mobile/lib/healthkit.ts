@@ -35,6 +35,7 @@ import {
 } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
+import { nativeSpan, readHealthFaults } from "./healthkit-watchdog";
 import {
   API_BASE,
   fetchSessions,
@@ -53,6 +54,25 @@ import { metaCelsius, metaMetres, metaQty, qtyCount, qtyKcal, qtyKm, qtyMinutes 
 // server's Connection.lastSyncAt for instant display.
 const CONNECTED_KEY = "hybrid.healthkit.connected";
 const LAST_SYNC_KEY = "hybrid.healthkit.lastSync";
+/**
+ * HOW FAR a permission sheet has actually got — which is not the same question
+ * as "is this athlete connected".
+ *
+ * The library states it plainly: querying a type the app has never requested
+ * authorization for crashes the app. Connection predates both of the type sets
+ * below, so an athlete who connected when the relay read three biometrics has a
+ * `connected` flag and no workout permission — and the two UNATTENDED paths
+ * (auto-import on foreground, the sync's stream backfill) never open a
+ * permission sheet by design, so they would otherwise read types nobody ever
+ * asked about, on app open, with no way to see what happened.
+ *
+ * TWO LEVELS, because the second one is the one that can be given up:
+ *  `workouts` — the workout list and its statistics. The import IS this.
+ *  `all`      — plus the series under a recording (route, cycling power and
+ *               cadence). The trace, which is worth a chart and not the app.
+ */
+const ASKED_KEY = "hybrid.healthkit.askedTypes";
+type AskLevel = "workouts" | "all";
 
 type HK = typeof import("@kingstinct/react-native-healthkit");
 
@@ -126,25 +146,44 @@ async function registerAppleConnection(action: "connect" | "disconnect"): Promis
 export async function connectHealthKit(): Promise<{ ok: boolean; error?: string }> {
   const hk = loadHealthKit();
   if (!hk) return { ok: false, error: "unavailable" };
-  try {
-    const ok = await hk.requestAuthorization({
-      toRead: [
-        // EVERYTHING the relay can store, asked for once. The list was three
-        // types; the rest of Apple Health sat on the phone unread.
-        ...DAILY_READ_TYPES,
-        // The summary's workout match reads the workout list + its HR/energy,
-        // and the stream read that follows a match wants the route and the
-        // cycling series. Asked here too so a fresh connect sheets everything
-        // ONCE rather than prompting again the first time a workout matches.
-        ...WORKOUT_READ_TYPES,
-        ...STREAM_READ_TYPES,
-      ],
-    });
-    if (!ok) return { ok: false, error: "authorization did not complete" };
-  } catch (e) {
-    return { ok: false, error: String(e) };
-  }
+  // Under the watchdog like every other native span. This is the ONE ask that
+  // still puts the whole list to the store in a single sheet, which is right
+  // here — connecting is a deliberate tap on a button that says so — but it
+  // makes this the one remaining place a permission request could take the
+  // process, and a span that names itself is the difference between a report
+  // and a shrug.
+  const res = await nativeSpan(
+    "auth",
+    async () => {
+      try {
+        const ok = await hk.requestAuthorization({
+          toRead: [
+            // EVERYTHING the relay can store, asked for once. The list was three
+            // types; the rest of Apple Health sat on the phone unread.
+            ...DAILY_READ_TYPES,
+            // The summary's workout match reads the workout list + its HR/energy,
+            // and the stream read that follows a match wants the route and the
+            // cycling series. Asked here too so a fresh connect sheets everything
+            // ONCE rather than prompting again the first time a workout matches.
+            ...WORKOUT_READ_TYPES,
+            ...STREAM_READ_TYPES,
+          ],
+        });
+        return ok ? null : "authorization did not complete";
+      } catch (e) {
+        return String(e);
+      }
+    },
+    "authorization did not run",
+  );
+  if (res) return { ok: false, error: res };
   await AsyncStorage.setItem(CONNECTED_KEY, "1").catch(() => {});
+  // This sheet covered the workout + stream types too, so the unattended reads
+  // are cleared to run without ever opening a dialog of their own. It is also
+  // the way BACK to the full level for an athlete whose import ask had to
+  // shorten itself (see requestDeviceReadAuth): connecting is a deliberate tap,
+  // and this is the one place the whole list is asked for on purpose.
+  await AsyncStorage.setItem(ASKED_KEY, "all" satisfies AskLevel).catch(() => {});
   await registerAppleConnection("connect");
   return { ok: true };
 }
@@ -304,16 +343,86 @@ const WORKOUT_READ_TYPES = [
   ...DISTANCE_TYPES,
 ] as const;
 
-/** Sheet the workout read permissions (idempotent — iOS only shows the sheet
- *  for types it hasn't asked about yet, so an athlete who connected before this
- *  feature existed gets exactly one extra prompt). */
-export async function requestWorkoutReadAuth(): Promise<boolean> {
+/**
+ * Sheet the permissions every device READ needs — the workout list and its
+ * statistics, plus the series under a recording — in ONE ask.
+/**
+ * THIS LIST IS EXACTLY THE ONE THAT SHIPPED BEFORE STREAMS EXISTED, and that is
+ * the whole point of it.
+ *
+ * The import worked, and then it exited the app on the next build. The read
+ * behind the sheet did not change between those two builds — `readWorkout`,
+ * `workoutDistanceKm` and `queryRecentDeviceWorkouts` are byte-identical — so
+ * the only new thing between tapping the bar and the workouts appearing was a
+ * SECOND `requestAuthorization`, fired straight after this one for the stream
+ * types. Whatever the abort's mechanism (two system sheets overlapping, or the
+ * route type in the list itself), it is in that call, because there is nothing
+ * else there.
+ *
+ * So this asks for the workout types and nothing else, and the tap path returns
+ * to the shape that was working. The stream types are asked for where they are
+ * actually used — inside `readWorkoutStreams`, after the sessions have already
+ * landed, in the ONE span the watchdog is allowed to switch off for good
+ * (lib/healthkit-watchdog.ts). Guessing which half is fatal is not required:
+ * the half that is not needed cannot be reached from the tap, and the half that
+ * is optional cannot cost more than a chart.
+ *
+ * The ask is RECORDED (see ASKED_KEY) because the unattended paths cannot ask,
+ * and must not read a type nobody ever requested.
+ */
+export async function requestDeviceReadAuth(): Promise<boolean> {
   const hk = loadHealthKit();
   if (!hk) return false;
+  const asked = await nativeSpan(
+    "auth",
+    async () => {
+      try {
+        return { reached: true, ok: await hk.requestAuthorization({ toRead: [...WORKOUT_READ_TYPES] }) };
+      } catch {
+        return { reached: false, ok: false };
+      }
+    },
+    { reached: false, ok: false },
+  );
+  // Recorded on REACHING the store, not on the answer: what the gate downstream
+  // needs to know is that these types have been PUT to HealthKit, not what the
+  // athlete said (Apple hides a read denial by design — it reads as no data).
+  // A request that THREW never registered anything, so it records nothing. And
+  // it never DOWNGRADES a device already cleared for the full list.
+  if (asked.reached && (await askedLevel()) !== "all")
+    await AsyncStorage.setItem(ASKED_KEY, "workouts" satisfies AskLevel).catch(() => {});
+  return asked.ok;
+}
+
+/**
+ * The stream types, asked for at the point of use.
+ *
+ * Called from inside the `streams` span and nowhere else, so the sheet it may
+ * raise cannot land on the tap path — and if the ask is what aborts, it aborts
+ * inside the one span that is switched off afterwards rather than inside the
+ * one the import cannot do without. Returns false when the types are still not
+ * cleared, and the caller reads nothing rather than querying a type nobody
+ * requested.
+ */
+async function ensureStreamAuth(hk: HK): Promise<boolean> {
+  if ((await askedLevel()) === "all") return true;
   try {
-    return await hk.requestAuthorization({ toRead: [...WORKOUT_READ_TYPES] });
+    await hk.requestAuthorization({ toRead: [...STREAM_READ_TYPES] });
   } catch {
     return false;
+  }
+  await AsyncStorage.setItem(ASKED_KEY, "all" satisfies AskLevel).catch(() => {});
+  return true;
+}
+
+/** How far the permission sheet has got on this device, or null if it never
+ *  ran. The gate on every read — and, at the `all` level, on the stream read. */
+async function askedLevel(): Promise<AskLevel | null> {
+  try {
+    const v = await AsyncStorage.getItem(ASKED_KEY);
+    return v === "all" || v === "workouts" ? v : null;
+  } catch {
+    return null;
   }
 }
 
@@ -507,6 +616,19 @@ export async function queryRecentDeviceWorkouts(days = DEVICE_IMPORT_DAYS): Prom
 async function readWorkouts(startDate: Date, endDate: Date): Promise<DeviceWorkout[] | null> {
   const hk = loadHealthKit();
   if (!hk) return null;
+  // Never before a permission sheet has put these types to the store — reading
+  // a type the app has never requested is the library's own documented crash.
+  // The two surfaces that read workouts both ask first; this covers the
+  // unattended callers (auto-import, the sync's repair pass), which cannot.
+  if ((await askedLevel()) == null) return null;
+  return nativeSpan("workouts", () => readWorkoutsUnguarded(hk, startDate, endDate), null);
+}
+
+async function readWorkoutsUnguarded(
+  hk: HK,
+  startDate: Date,
+  endDate: Date,
+): Promise<DeviceWorkout[] | null> {
   const filter = { date: { startDate, endDate } };
   let proxies: readonly WorkoutProxyLike[];
   try {
@@ -556,6 +678,9 @@ async function readWorkouts(startDate: Date, endDate: Date): Promise<DeviceWorko
 export async function refreshMatchedWorkouts(): Promise<{ checked: number; repaired: number }> {
   const hk = loadHealthKit();
   if (!hk) return { checked: 0, repaired: 0 };
+  // Same gate as every other workout read: this one runs on a sync, with no
+  // athlete in front of it and no sheet it could raise (see ASKED_KEY).
+  if ((await askedLevel()) == null) return { checked: 0, repaired: 0 };
   let matched: { id: string; uuid: string; fingerprint: string }[];
   try {
     // THE WHOLE matched history, which this pass always claimed to cover and
@@ -570,25 +695,33 @@ export async function refreshMatchedWorkouts(): Promise<{ checked: number; repai
   }
   if (matched.length === 0) return { checked: 0, repaired: 0 };
 
-  const fresh = new Map<string, DeviceWorkout>();
-  let proxies: readonly WorkoutProxyLike[];
-  try {
-    const uuids = [...new Set(matched.map((m) => m.uuid))];
-    proxies = await hk.queryWorkoutSamples({ limit: 0, filter: { uuids } });
-  } catch {
-    return { checked: matched.length, repaired: 0 };
-  }
-  // Per-recording, for the same reason the import read is (see `readWorkouts`):
-  // this pass covers the athlete's WHOLE matched history, so one unreadable
-  // proxy in it would otherwise mean not a single session gets repaired.
-  for (const w of proxies) {
-    try {
-      const read = await readWorkout(hk, w);
-      if (read) fresh.set(read.uuid, read);
-    } catch {
-      /* this recording can't be re-read — leave the stored one alone */
-    }
-  }
+  const fresh = await nativeSpan(
+    "workouts",
+    async () => {
+      const out = new Map<string, DeviceWorkout>();
+      let proxies: readonly WorkoutProxyLike[];
+      try {
+        const uuids = [...new Set(matched.map((m) => m.uuid))];
+        proxies = await hk.queryWorkoutSamples({ limit: 0, filter: { uuids } });
+      } catch {
+        return out;
+      }
+      // Per-recording, for the same reason the import read is (see
+      // `readWorkouts`): this pass covers the athlete's WHOLE matched history,
+      // so one unreadable proxy in it would otherwise mean not a single session
+      // gets repaired.
+      for (const w of proxies) {
+        try {
+          const read = await readWorkout(hk, w);
+          if (read) out.set(read.uuid, read);
+        } catch {
+          /* this recording can't be re-read — leave the stored one alone */
+        }
+      }
+      return out;
+    },
+    new Map<string, DeviceWorkout>(),
+  );
 
   let repaired = 0;
   for (const m of matched) {
@@ -720,13 +853,19 @@ async function readDaily(
 
 /** Everything readable in one window, as relay samples. */
 async function readWindow(hk: HK, startDate: Date, endDate: Date): Promise<RelaySample[]> {
-  const filter = { date: { startDate, endDate } };
-  const quantities = await Promise.all(DAILY_READS.map((r) => readDaily(hk, r, filter)));
-  const sleep = await hk
-    .queryCategorySamples("HKCategoryTypeIdentifierSleepAnalysis", { limit: 0, filter })
-    .then((xs) => xs.map((s) => ({ value: s.value as number, start: iso(s.startDate), end: iso(s.endDate) })))
-    .catch(() => [] as Reading[]);
-  return [...quantities.flat(), ...nightlySleep(sleep)];
+  return nativeSpan(
+    "signals",
+    async () => {
+      const filter = { date: { startDate, endDate } };
+      const quantities = await Promise.all(DAILY_READS.map((r) => readDaily(hk, r, filter)));
+      const sleep = await hk
+        .queryCategorySamples("HKCategoryTypeIdentifierSleepAnalysis", { limit: 0, filter })
+        .then((xs) => xs.map((s) => ({ value: s.value as number, start: iso(s.startDate), end: iso(s.endDate) })))
+        .catch(() => [] as Reading[]);
+      return [...quantities.flat(), ...nightlySleep(sleep)];
+    },
+    [] as RelaySample[],
+  );
 }
 
 /** POST one batch to the relay. Returns the rows the server wrote, or null when
@@ -884,19 +1023,6 @@ const STREAM_READ_TYPES = [
   "HKQuantityTypeIdentifierCyclingPower",
   "HKQuantityTypeIdentifierCyclingCadence",
 ] as const;
-
-/** Sheet the stream permissions. Idempotent — iOS only prompts for types it
- *  hasn't asked about, so an athlete who connected before this existed gets
- *  exactly one extra sheet, and only when they first match a workout. */
-export async function requestStreamReadAuth(): Promise<boolean> {
-  const hk = loadHealthKit();
-  if (!hk) return false;
-  try {
-    return await hk.requestAuthorization({ toRead: [...STREAM_READ_TYPES] });
-  } catch {
-    return false;
-  }
-}
 
 /** Seconds from `t0`, floored — the offset the stored streams are keyed on. */
 const offsetSec = (d: Date | string, t0: number): number | null => {
@@ -1100,12 +1226,36 @@ function readDeviceLaps(w: WorkoutProxyLike, t0: number, endSec: number): Sessio
  * Null when HealthKit is unreachable or the store no longer holds the workout
  * (deleted on the watch); `{ streams: [] }` when it holds it and there was
  * nothing underneath (a gym session with no strap and no GPS).
+ *
+ * THE ONE READ THE APP IS WILLING TO GIVE UP, and everything the stream feature
+ * newly touches is inside it — the permission ask for the route and cycling
+ * types AS WELL AS the reads themselves. It runs AFTER the sessions have landed
+ * (the summaries are already saved; this is the trace under them), so the whole
+ * span can be switched off for good the first time it is implicated in a
+ * vanished process (lib/healthkit-watchdog.ts). A missing heart-rate trace
+ * costs a chart; being thrown out of the app costs the import.
+ *
+ * The outer gate is only "a sheet has run at all". Without that, the workout
+ * query one line down would itself be a read of a type nobody requested.
  */
 export async function readWorkoutStreams(
   uuid: string,
 ): Promise<{ streams: SessionStream[]; laps: SessionLap[]; activityLabel: string } | null> {
   const hk = loadHealthKit();
   if (!hk || !uuid) return null;
+  if ((await askedLevel()) == null) return null;
+  return nativeSpan(
+    "streams",
+    async () => ((await ensureStreamAuth(hk)) ? readWorkoutStreamsUnguarded(hk, uuid) : null),
+    null,
+    { optional: true },
+  );
+}
+
+async function readWorkoutStreamsUnguarded(
+  hk: HK,
+  uuid: string,
+): Promise<{ streams: SessionStream[]; laps: SessionLap[]; activityLabel: string } | null> {
   let proxies: readonly WorkoutProxyLike[];
   try {
     proxies = await hk.queryWorkoutSamples({ limit: 1, filter: { uuid } });

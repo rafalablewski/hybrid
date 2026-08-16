@@ -13,8 +13,7 @@ import {
 import {
   healthKitAvailability,
   queryDeviceWorkouts,
-  requestStreamReadAuth,
-  requestWorkoutReadAuth,
+  requestDeviceReadAuth,
   uploadWorkoutStreams,
 } from "../lib/healthkit";
 import { patchSessionDevice } from "../lib/api";
@@ -68,13 +67,12 @@ export function DeviceMatchSheet({
     // types it hasn't asked about, so a returning athlete goes straight to the
     // query. A denial is invisible by design (Apple) — it surfaces as an empty
     // list, same as a watch that recorded nothing.
-    // Both asks together, at the ONE moment an athlete expects a permission
-    // sheet: opening the match sheet. The stream read (the trace under the
-    // summary) needs the route and the cycling series, and prompting for those
-    // later — as the sheet closes on a picked match — would put a system dialog
-    // on screen at the moment the athlete thinks they are done.
-    await requestWorkoutReadAuth();
-    await requestStreamReadAuth();
+    // ONE ask, at the ONE moment an athlete expects a permission sheet: opening
+    // the match sheet. It covers the workout types only — the trace read that
+    // follows a picked match asks for the route and cycling types itself, at the
+    // point of use, because that read is the half the app is willing to lose and
+    // this one is not (see requestDeviceReadAuth).
+    await requestDeviceReadAuth();
     const workouts = await queryDeviceWorkouts(session.startedAt);
     if (workouts == null) {
       setPhase("error");

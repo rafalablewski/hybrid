@@ -1,0 +1,83 @@
+diff --git a/ios/WorkoutProxy.swift b/ios/WorkoutProxy.swift
+index 83e11e8d142404ea4107d02c1b711fe895e6afe4..51871a3fc9a163657bac513d0992c06c478d73e8 100644
+--- a/ios/WorkoutProxy.swift
++++ b/ios/WorkoutProxy.swift
+@@ -47,31 +47,59 @@ func getWorkoutRoutesInternal(
+   return routes
+ }
+ 
++// PATCHED (HYBRID) — see patches/@kingstinct__react-native-healthkit@14.0.2.patch
++//
++// This function held TWO fatalError()s wearing other clothes, and either one
++// takes the whole process with it — no Swift error, no JS rejection, nothing a
++// `.catch()` upstream can survive. The app simply exits, which is what an
++// athlete reports as "I tapped import and it closed".
++//
++//   1. `try! await withCheckedThrowingContinuation { … }`. HKWorkoutRouteQuery
++//      hands its handler an error for perfectly ordinary reasons — route data
++//      iCloud has not finished downloading, a store locked behind the device
++//      passcode, an authorization the athlete has since revoked in Settings →
++//      Health. Every one of those became `try!` on a thrown continuation, which
++//      is an unconditional crash.
++//
++//   2. The CHECKED continuation itself. That handler is called MANY times (one
++//      call per batch of fixes, the last with `done == true`), and a checked
++//      continuation traps if it is resumed twice — so a late error, or a second
++//      `done` from a route the watch is still writing, crashes as well.
++//
++// A route the store will not hand over is worth exactly nothing, and certainly
++// not the app: this returns the fixes it did get (or none at all), the caller
++// drops the stream, and the import lands its sessions exactly as it does for a
++// workout that never had a route. The query is stopped the moment it settles so
++// a still-recording route cannot go on calling back into a dead continuation.
+ func getRouteLocations(
+   route: HKWorkoutRoute
+ ) async -> [CLLocation] {
+-  let locations = try! await withCheckedThrowingContinuation {
+-    (continuation: CheckedContinuation<[CLLocation], Error>) in
++  return await withCheckedContinuation {
++    (continuation: CheckedContinuation<[CLLocation], Never>) in
+     var allLocations: [CLLocation] = []
++    var settled = false
+ 
+     let query = HKWorkoutRouteQuery(route: route) {
+-      (_, locationsOrNil, done, errorOrNil) in
++      (routeQuery, locationsOrNil, done, errorOrNil) in
+ 
+       DispatchQueue.main.async {
+-        if let error = errorOrNil {
+-          continuation.resume(throwing: error)
++        if settled {
+           return
+         }
+ 
+-        guard let currentLocationBatch = locationsOrNil else {
+-          return continuation.resume(
+-            throwing: runtimeErrorWithPrefix("Unexpected empty response")
+-          )
++        if errorOrNil != nil {
++          settled = true
++          store.stop(routeQuery)
++          return continuation.resume(returning: [])
+         }
+ 
+-        allLocations.append(contentsOf: currentLocationBatch)
++        if let currentLocationBatch = locationsOrNil {
++          allLocations.append(contentsOf: currentLocationBatch)
++        }
+ 
+         if done {
++          settled = true
++          store.stop(routeQuery)
+           continuation.resume(returning: allLocations)
+         }
+       }
+@@ -79,8 +107,6 @@ func getRouteLocations(
+ 
+     store.execute(query)
+   }
+-
+-  return locations
+ }
+ 
+ func serializeLocation(location: CLLocation, previousLocation: CLLocation?)

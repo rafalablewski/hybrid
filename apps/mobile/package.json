@@ -23,7 +23,7 @@
     "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo/ui": "~56.0.25",
     "@hybrid/core": "workspace:*",
-    "@kingstinct/react-native-healthkit": "^14.0.2",
+    "@kingstinct/react-native-healthkit": "14.0.2",
     "@react-native-async-storage/async-storage": "3.1.1",
     "@supabase/supabase-js": "2.107.0",
     "@tanstack/react-query": "^5.101.0",
