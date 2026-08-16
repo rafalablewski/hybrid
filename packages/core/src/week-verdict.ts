@@ -363,6 +363,32 @@ export function figureDeltaPct(f: VerdictFigure): number | null {
 }
 
 /**
+ * PAST THE CEILING — the one predicate every surface that draws a percentage
+ * asks, and the reason it is a primitive on the NUMBER rather than a method on
+ * one shape.
+ *
+ * The ceiling used to be a fact about the HEADLINE alone (`verdictShowsStep`),
+ * because the headline was the only place a percentage was drawn large. It was
+ * never true that it was the only place one was drawn. Three surfaces print a
+ * signed percentage off this same arithmetic — the card's lead, the receipt
+ * cell's mark (the end's second, non-hue channel) and the comparison page's row
+ * — and two of them were printing it RAW. On the very week the ceiling exists
+ * for, one card carried an honest "0.1 km → 6.8 km" in the lead, a "+6700%" in
+ * the cell three lines under it, and the same "+6700%" again one drag away.
+ *
+ * So the rule belongs to a MOVE, not to a slot: `verdictShowsStep` and
+ * `figureShowsStep` are both this asked of a particular figure, and the
+ * comparison row asks it of its own `deltaPct` directly. One threshold, one
+ * comparison, no surface inventing its own.
+ */
+export const pctPastCeiling = (deltaPct: number | null): boolean =>
+  deltaPct !== null && Math.abs(deltaPct) > VERDICT_PCT_CEILING;
+
+/** `pctPastCeiling` asked of ONE figure's own move — what a receipt cell asks
+ *  before it prints its mark. */
+export const figureShowsStep = (f: VerdictFigure): boolean => pctPastCeiling(figureDeltaPct(f));
+
+/**
  * A FIGURE'S OWN DIRECTION — what the COLUMN says about itself, as against
  * `ActivityVerdict.direction`, which is what the SENTENCE says about the one
  * metric it named.
@@ -486,14 +512,22 @@ const clampTrack = (pct: number): number =>
   Math.max(-1, Math.min(1, pct / COMPARE_SCALE_PCT));
 
 /**
- * Whether the card should print the STEP ("0.1 → 6.8 km") instead of the
- * percentage. True past VERDICT_PCT_CEILING, where a ratio against a thin
- * baseline stops being a measurement and starts reading as a bug — a four-digit
- * percentage beside a 6.8 km week costs every figure around it its credibility.
- * Both clients ask this, so neither can invent its own ceiling.
+ * Whether the SENTENCE's metric should print the STEP ("0.1 → 6.8 km") instead
+ * of the percentage. True past VERDICT_PCT_CEILING, where a ratio against a
+ * thin baseline stops being a measurement and starts reading as a bug — a
+ * four-digit percentage beside a 6.8 km week costs every figure around it its
+ * credibility. Both clients ask this, so neither can invent its own ceiling.
+ *
+ * It is `figureShowsStep` asked of the figure the sentence named — the ceiling
+ * belongs to a MOVE, and the headline is one move among four. Delegating rather
+ * than restating it is what stops the lead and the cell under it printing the
+ * same fact two ways.
  */
-export const verdictShowsStep = (v: ActivityVerdict): boolean =>
-  v.metric !== null && !v.cold && Math.abs(v.deltaPct) > VERDICT_PCT_CEILING;
+export const verdictShowsStep = (v: ActivityVerdict): boolean => {
+  if (v.metric === null || v.cold) return false;
+  const named = v.figures.find((f) => f.metric === v.metric);
+  return !!named && figureShowsStep(named);
+};
 
 /** The rolling seven-day verdict — the card's original window, kept as the
  *  shorthand for callers that just want "the last week" without a range. */

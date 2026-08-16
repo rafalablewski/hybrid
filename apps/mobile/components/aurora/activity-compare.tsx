@@ -1,6 +1,6 @@
 import { View, Text, type DimensionValue } from "react-native";
 import {
-  comparisonBar, comparisonAverageMark, verdictLabelKey, ALPHA,
+  comparisonBar, comparisonAverageMark, pctPastCeiling, verdictLabelKey, ALPHA,
   type VerdictComparison, type ActivityMetric,
 } from "@hybrid/core";
 import { ASection, RADIUS, withAlpha } from "./kit";
@@ -69,6 +69,17 @@ import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, tracking } fro
  * sessions inside. Two ways in, one destination, or the second page is a dead
  * end wearing a chart.
  *
+ * THE CEILING APPLIES HERE TOO (Aug 2026). Core's VERDICT_PCT_CEILING was
+ * treated as a rule about the CARD'S LEAD, because that was the only place a
+ * percentage was drawn large — so this page happily rendered "+6700%" against a
+ * 0.1 km previous week while the lead one drag away printed the honest step.
+ * Past the ceiling a row PROMOTES its difference into the figure slot ("+6.7
+ * km") and drops the context slot that was carrying it. It does not fall back
+ * to the step the lead prints: PREV and NOW two lines below already ARE that
+ * step, stated as landmarks, so printing it again in the head would be the row
+ * repeating itself. Core's `pctPastCeiling` is the predicate, shared with the
+ * receipt cell, so no surface can drift to its own ceiling again.
+ *
  * IT IS A PAGE, NOT A SHEET. A sheet is for a DETOUR — narrow to a sport, open a
  * session, come back — which is why the breakdown is one. The comparison is not
  * a detour; it is the same four figures said the other way, so it belongs beside
@@ -127,6 +138,15 @@ export default function ActivityCompare({
           const bar = comparisonBar(r);
           const avg = comparisonAverageMark(r);
           const move = r.deltaPct;
+          // PAST THE CEILING THE PERCENTAGE IS NOT A MEASUREMENT — core's rule,
+          // and this page was the last surface still ignoring it: a 0.1 km
+          // previous week rendered "+6700%" here while the card one drag away
+          // printed the honest step. The row does NOT fall back to that step,
+          // because PREV and NOW two lines below already ARE the step, stated
+          // as landmarks. It PROMOTES the difference instead — the same real
+          // figure the context slot was carrying, moved into the slot the
+          // percentage vacated, so the row loses nothing and repeats nothing.
+          const absurd = pctPastCeiling(move);
           return (
             <Pressable
               key={r.metric}
@@ -150,9 +170,11 @@ export default function ActivityCompare({
             >
               <MeasureLine
                 name={t(verdictLabelKey(r.metric))}
-                figure={move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move)}%`}
+                figure={move === null ? "—"
+                  : absurd ? signed(r.metric, r.diff)
+                    : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move)}%`}
                 tone={col}
-                context={move === null ? null : signed(r.metric, r.diff)}
+                context={move === null || absurd ? null : signed(r.metric, r.diff)}
               />
 
               {/* The marks are this page's own — one bar off a centre axis. The

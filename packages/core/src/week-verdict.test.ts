@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, VERDICT_END_THRESHOLD_PCT, figureDeltaPct, figureDirection, activityComparison, comparisonBar, comparisonAverageMark, comparisonHeadKey, COMPARE_SCALE_PCT, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
+import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, VERDICT_END_THRESHOLD_PCT, figureDeltaPct, figureDirection, figureShowsStep, activityComparison, comparisonBar, comparisonAverageMark, comparisonHeadKey, COMPARE_SCALE_PCT, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
 import { resolveActivityRange } from "./activity-window";
 import { addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
@@ -322,6 +322,35 @@ describe("figureDirection / figureDeltaPct", () => {
     expect(VERDICT_END_THRESHOLD_PCT).toBeLessThan(VERDICT_THRESHOLD_PCT);
     expect(figureDirection(f(91, 100))).toBe("down");
     expect(figureDirection(f(109, 100))).toBe("up");
+  });
+
+  it("carries the ceiling too, so a cell can't print what the lead refuses to", () => {
+    // The card's lead prints "0.1 → 6.8 km" past VERDICT_PCT_CEILING because a
+    // four-digit percentage reads as a bug. The receipt cell prints that same
+    // metric's own signed percentage, and it was printing it RAW — so the one
+    // card carried an honest step and a "+7849%" three lines apart.
+    expect(figureShowsStep(f(680, 10))).toBe(true);
+    expect(figureShowsStep(f(120, 100))).toBe(false);
+    // Exactly ON the ceiling is still a percentage — the step is for what is
+    // PAST it, the same strict comparison the sentence's version always used.
+    expect(figureShowsStep(f(100 * (1 + VERDICT_PCT_CEILING / 100), 100))).toBe(false);
+    // No axis is not an enormous move; it is no move to render either way.
+    expect(figureShowsStep(f(680, 0))).toBe(false);
+  });
+
+  it("the sentence's ceiling IS the named figure's — one rule, asked twice", () => {
+    // The A1 fixture: four prior weeks of real lifting beside a token 0.1 km
+    // jog, then a week that holds the tonnage and runs 6.8 km — nothing else
+    // moved, so the thin-baselined distance takes the sentence as the FALLBACK
+    // and lands past the ceiling.
+    const priors = [
+      ...[9, 16, 23, 30].map((d) => s(d, 5200)),
+      ...[9, 16, 23, 30].map((d) => run(d, 0.1)),
+    ];
+    const v = activityVerdict([...priors, s(2, 5200), run(2, 6.8)], d7());
+    expect(v.metric).toBe("distance");
+    expect(verdictShowsStep(v)).toBe(figureShowsStep(v.figures.find((x) => x.metric === "distance")!));
+    expect(verdictShowsStep(v)).toBe(true);
   });
 
   it("a column may move opposite to the metric the sentence named", () => {

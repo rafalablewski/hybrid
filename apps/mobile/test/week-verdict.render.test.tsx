@@ -217,6 +217,88 @@ describe("the activity card's marks", () => {
 });
 
 /**
+ * THE CARD STATES ITS HEADLINE NUMBER ONCE.
+ *
+ * The lead used to carry the named metric's percentage at 23dp in its corner,
+ * and the cell for that same metric carried the identical percentage again
+ * below it. Not sometimes: `metric` is by construction one of the two ends, so
+ * every marked week printed one number twice, in two sizes, in one hue, on a
+ * diagonal — which is what the card looked like when it was reported as
+ * unreadable. The cell's copy is the one with more in it (it says WHICH measure
+ * moved by sitting on it), so the corner went and the header keeps what the
+ * grid cannot say: the sentence, and the axis it was measured from.
+ *
+ * PAGE ONE ONLY. Page two states every metric's move by design — that is the
+ * whole page — so the count is taken on the card's first page, which is what
+ * `bothEnds` renders before any swipe.
+ */
+describe("the card's headline number", () => {
+  /** How many times `needle` occurs in `hay`. */
+  const times = (hay: string, needle: string) => hay.split(needle).length - 1;
+
+  it("prints the sentence's percentage in ONE place, not in two", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const page = container.textContent ?? "";
+
+    // "−75%" is distance: the period's worst end AND the metric the sentence
+    // names, which is exactly the case the corner figure duplicated. Page two
+    // states every move by design and accounts for one of the two occurrences
+    // here; a THIRD is the corner growing back.
+    expect(times(page, "−75%")).toBe(2);
+    // The other end, which the corner never carried, is unchanged: its cell and
+    // its comparison row.
+    expect(times(page, "+33%")).toBe(2);
+  });
+
+  it("keeps the sentence and its axis, which is what the corner never carried", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const page = (container.textContent ?? "").toLowerCase();
+
+    expect(page).toContain("is down on the week before");
+    expect(page).toContain("previous 7 days");
+  });
+});
+
+/**
+ * PAST THE CEILING, A CELL PRINTS THE STEP — never a four-digit percentage.
+ *
+ * The ceiling used to guard the headline corner alone, so on the very week it
+ * exists for the card read "0.1 km → 6.8 km" in the lead and "+6700%" in the
+ * cell three lines under it — one card, one fact, and the absurd rendering was
+ * the one sitting next to the figure. With the corner gone the cell is the only
+ * place a percentage is drawn, so the cell is where core's rule is asked.
+ */
+const thinBaseline: LoggedSession[] = [
+  lift(0), run(0, 6.8),
+  lift(1), run(1, 0.1),
+  lift(2), run(2, 0.1),
+  lift(3), run(3, 0.1),
+  lift(4), run(4, 0.1),
+];
+
+describe("a move past the ceiling", () => {
+  it("renders as the step it is, in the cell that made it", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={thinBaseline} units="kg" />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("0.1 km → 6.8 km");
+    // Whatever else the card says, on EITHER page, it does not say this.
+    expect(text).not.toMatch(/[+−]\d{4,}%/);
+  });
+
+  it("promotes the difference on the comparison page, where PREV/NOW are the step", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={thinBaseline} units="kg" />);
+    const text = container.textContent ?? "";
+
+    // Page two's row cannot fall back to the step — its own landmark cells
+    // already print it — so the real difference takes the percentage's slot.
+    expect(text).toContain("+6.7 km");
+    expect(text).toContain("PREV 0.1 km");
+    expect(text).toContain("NOW 6.8 km");
+  });
+});
+
+/**
  * A SLIP TOO SMALL FOR THE SENTENCE IS STILL THE ROW'S WORST END.
  *
  * The reported week: time up a third, tonnage up, and distance down NINE per
