@@ -1,3 +1,22 @@
+/**
+ * THE PERFORMANCE TAB — the Today hub's second pill.
+ *
+ * THE PAGE IS ORGANISED INTO FOUR RUNS, AND ONLY THREE OF THEM ARE NAMED.
+ * State (this card + tissue) → TRAINING (level + volume) → SEASON → EXPLORE.
+ * The numbered comments below have always described that order; from Aug 2026
+ * the last three also carry a GroupMark, the same headline tier Today marks its
+ * runs with, off the same w.home.group.* keys. Before that the order existed
+ * only in this file, which is why the registry spent months claiming a
+ * structure the screen never showed.
+ *
+ * THE FIRST RUN TAKES NO MARKER, and that is the rule, not an omission. It
+ * opens directly under the masthead, so a name there announces what the screen
+ * is visibly about — the defect that got "Train" deleted off Today in the same
+ * week. It would also have been the one label that echoed the card beneath it
+ * word for word: "State" over a card headed "Your state". Today's first run is
+ * unmarked for the identical reason. One rule, both tabs: a marker names a TURN
+ * in the scroll, and the opening run turns from nothing.
+ */
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, ScrollView } from "react-native";
 import Svg, { Path, Line, Circle, Rect } from "react-native-svg";
@@ -28,6 +47,7 @@ import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
 import { HubMasthead } from "./hub-masthead";
+import GroupMark from "./group-mark";
 import AuroraVolume from "./volume";
 import { AuroraIcon } from "./icons";
 import TissueCard from "./tissue-card";
@@ -532,6 +552,14 @@ function Full({ top }: { top?: ReactNode }) {
           have to do it; this card keeps the status line and the door. */}
       <TissueCard risk={risk} load={loadState} hasData={hasData} onOpenToday={() => router.push("/")} />
 
+      {/* ═════ GROUP: TRAINING — the work itself: who the athlete is, then how
+          much they did against what they should. Second of the page's runs and
+          the FIRST to be marked — the run above it opens the screen and takes
+          no name (see the head of this file). Shares Today's marker component
+          and its vocabulary, so the hub's two long scrolls are organised by one
+          grammar rather than two. ═════ */}
+      <GroupMark label={t("w.home.group.training")} />
+
       {/* 4 · YOUR LEVEL — who the athlete is, before what they should train.
           That is also the causal order: training age is the strongest single
           input to the volume bands rendered directly below it. It sat four
@@ -549,6 +577,9 @@ function Full({ top }: { top?: ReactNode }) {
             destination that row renders its arrow and does nothing. */}
         <AuroraVolume compact onOpenModel={() => router.push("/volume-model")} />
       </View>
+
+      {/* ═════ GROUP: SEASON — the long arc. ═════ */}
+      <GroupMark label={t("w.home.group.season")} />
 
       {/* 6 · SEASON — one card. The bar draws the fraction, so the line names
           the week once instead of restating it as a percentage. */}
@@ -578,6 +609,11 @@ function Full({ top }: { top?: ReactNode }) {
           </Pressable>
         </View>
       </ACard>
+
+      {/* ═════ GROUP: EXPLORE — beyond this page. The SHARED key, not a second
+          word for the same idea: Today closes on Explore too, and one label
+          rendered by both tabs is what makes this one vocabulary. ═════ */}
+      <GroupMark label={t("w.home.group.explore")} />
 
       {/* 7 · GO DEEPER — the exits. Every row carries a live value, because a
           door that tells you what is behind it is the only kind worth a row. */}

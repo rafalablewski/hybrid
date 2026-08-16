@@ -162,6 +162,7 @@ export * from "./social-dto";
 export * from "./nav-bar";
 export * from "./side-menu";
 export * from "./help";
+export * from "./hook-order";
 
 /** Sprint marker so both clients can show what's wired up. */
 export const CORE_VERSION = "0.1.0-sprint2";

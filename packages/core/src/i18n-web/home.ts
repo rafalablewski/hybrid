@@ -150,14 +150,25 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deloaded to {pct}%, −1 set — you're wrecked today",
     "w.home.today.rxWreckedBw": "Dropped a set — you're wrecked today",
     "w.home.today.goFull": "Go Full",
-    // ── Today's group markers — the four themed clusters the dashboard scroll
-    // is organised into (Train / Recover / Progress / Explore). Rendered as a
-    // quiet mono-uppercase wayfinding tier ABOVE the blocks' own heads; shared
-    // by web today.tsx and mobile home.tsx so the taxonomy can't drift.
-    "w.home.group.train": "Train",
+    // ── Today's group markers — the themed clusters the dashboard scroll is
+    // organised into. A wayfinding tier ABOVE the blocks' own heads, naming
+    // the TURN from one cluster to the next.
+    // THERE IS NO `train` KEY, and that is deliberate — do not re-add one. The
+    // first cluster opens directly under the masthead, which already names the
+    // day, on a tab the hub pills already label, so a "Train" heading there
+    // announced what the screen was visibly about (and made Dashboard the only
+    // one of the three hub views that didn't open straight into its content).
+    // A marker earns its place by naming a turn; the first cluster turns from
+    // nothing.
     "w.home.group.recover": "Recover",
     "w.home.group.progress": "Progress",
     "w.home.group.explore": "Explore",
+    // Performance's runs. There is NO `state` key and there must not be one:
+    // that run opens the screen, so it takes no marker — the same rule that
+    // leaves Today's first run unnamed, and it would additionally have echoed
+    // the card under it ("State" over "Your state").
+    "w.home.group.training": "Training",
+    "w.home.group.season": "Season",
     // A Progress rail head's ONE right-slot fact. Both are FRACTIONS, and that
     // is the whole rule: wave 3 had the exercises and endurance heads quote
     // their parent column WHOLE ("7.2 t this week" under a card already saying
@@ -168,11 +179,6 @@ export const web_home = {
     // trained in its own 8-week window. The retired key was `metaWeek`.
     "w.home.group.metaOf": "{a} of {b} this week",
     "w.home.group.metaMoves": "{a} of {b} movements",
-    // The Performance page's clusters (State / Training / Season, plus the
-    // shared Explore label above) — same headline-tier GroupMark, same grammar.
-    "w.home.group.state": "State",
-    "w.home.group.training": "Training",
-    "w.home.group.season": "Season",
     // ── This week — the verdict card (Statistics + Analytics, merged onto Today).
     // The lead sentences take {m} = the metric name below; the vs* lines take
     // {b} = the BASELINE alone, unit-formatted. They used to open with {v} = the
@@ -1379,15 +1385,13 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deload do {pct}%, −1 seria — dziś jesteś wykończony",
     "w.home.today.rxWreckedBw": "Odjęto serię — dziś jesteś wykończony",
     "w.home.today.goFull": "Przejdź na Full",
-    "w.home.group.train": "Trening",
     "w.home.group.recover": "Regeneracja",
     "w.home.group.progress": "Postępy",
     "w.home.group.explore": "Odkrywaj",
-    "w.home.group.metaOf": "{a} z {b} w tym tygodniu",
-    "w.home.group.metaMoves": "{a} z {b} ćwiczeń",
-    "w.home.group.state": "Stan",
     "w.home.group.training": "Trening",
     "w.home.group.season": "Sezon",
+    "w.home.group.metaOf": "{a} z {b} w tym tygodniu",
+    "w.home.group.metaMoves": "{a} z {b} ćwiczeń",
     "w.home.week.title": "Ten tydzień",
     "w.home.other.title": "Inne sporty",
     "w.home.other.efforts": "Wyjścia",
@@ -2479,15 +2483,13 @@ export const web_home = {
     "w.home.today.rxWrecked": "Deload auf {pct}%, −1 Satz — du bist heute erschöpft",
     "w.home.today.rxWreckedBw": "Ein Satz weniger — du bist heute erschöpft",
     "w.home.today.goFull": "Auf Full",
-    "w.home.group.train": "Training",
     "w.home.group.recover": "Erholung",
     "w.home.group.progress": "Fortschritt",
     "w.home.group.explore": "Entdecken",
-    "w.home.group.metaOf": "{a} von {b} diese Woche",
-    "w.home.group.metaMoves": "{a} von {b} Übungen",
-    "w.home.group.state": "Zustand",
     "w.home.group.training": "Training",
     "w.home.group.season": "Saison",
+    "w.home.group.metaOf": "{a} von {b} diese Woche",
+    "w.home.group.metaMoves": "{a} von {b} Übungen",
     "w.home.week.title": "Diese Woche",
     "w.home.other.title": "Andere Sportarten",
     "w.home.other.efforts": "Einheiten",
