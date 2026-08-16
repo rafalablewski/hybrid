@@ -175,21 +175,66 @@ export const REST_BOUNDS: Bounds = { min: 0, max: 7200, softMax: 900, unit: "s" 
  * check is on the implied one-rep max: if a set claims an e1RM past what the
  * implement can hold, the PAIR is wrong even though neither number is.
  */
-export function checkSet(
+/**
+ * WHY a value is worth a question, not just that it is. The client needs this to
+ * say something useful — "unusually heavy" and "faster than a world record" are
+ * different problems with different fixes, and "check this" alone is a shrug.
+ */
+export type ConcernReason =
+  | "load"
+  | "reps"
+  | "impliedMax"
+  | "distance"
+  | "duration"
+  | "speed";
+
+/** A verdict with its reason. `reason` is null only when the verdict is `ok`. */
+export interface Concern {
+  verdict: Plausibility;
+  reason: ConcernReason | null;
+}
+
+const OK: Concern = { verdict: "ok", reason: null };
+
+/**
+ * The i18n key that EXPLAINS each reason, so both clients say the same sentence
+ * and neither invents its own. The copy is deliberately specific — "check this"
+ * alone is a shrug, and the athlete cannot act on a shrug; "that pace beats the
+ * world record" tells them exactly which two fields to look at.
+ */
+export const CONCERN_KEY: Record<ConcernReason, string> = {
+  load: "w.train.blocks.checkLoad",
+  reps: "w.train.blocks.checkReps",
+  impliedMax: "w.train.blocks.checkImpliedMax",
+  distance: "w.train.blocks.checkDistance",
+  duration: "w.train.blocks.checkDuration",
+  speed: "w.train.blocks.checkSpeed",
+};
+
+/**
+ * One set, judged, WITH the reason — see `checkSet` for the rules. Split out so
+ * a UI can name what is odd about the set rather than flagging it blankly.
+ */
+export function inspectSet(
   exerciseName: string,
   load: string | number | undefined,
   reps: string | number | undefined,
-): Plausibility {
+): Concern {
   const l = toNum(load);
   const r = toNum(reps);
-  const lv = judge(l ?? 0, loadBounds(exerciseName));
-  const rv = judge(r ?? 0, repsBounds(exerciseName));
-  const worst = worstOf(lv, rv);
-  if (worst === "refuse") return "refuse";
-  // Only rep-counted lifts have an e1RM. A 60-second hold at 40 kg is fine.
-  if ((gymExercise(exerciseName)?.measure ?? "reps") !== "reps") return worst;
-  if (l == null || r == null || l <= 0 || r <= 0) return worst;
   const bounds = loadBounds(exerciseName);
+  const lv = judge(l ?? 0, bounds);
+  const rv = judge(r ?? 0, repsBounds(exerciseName));
+  // The LOAD is reported first when both are odd: it is the field a mistyped
+  // set is most often wrong in, and the one the athlete will look at.
+  const worst = worstOf(lv, rv);
+  const reason: ConcernReason = lv === worst && lv !== "ok" ? "load" : "reps";
+  if (worst === "refuse") return { verdict: "refuse", reason };
+  // Only rep-counted lifts have an e1RM. A 60-second hold at 40 kg is fine.
+  if ((gymExercise(exerciseName)?.measure ?? "reps") !== "reps")
+    return worst === "ok" ? OK : { verdict: worst, reason };
+  if (l == null || r == null || l <= 0 || r <= 0)
+    return worst === "ok" ? OK : { verdict: worst, reason };
   // Epley, the same estimate the engines use — one implementation of what a set
   // implies, so this can never disagree with the number the app then shows.
   const implied = l * (1 + r / 30) * loadUnitCount(exerciseName);
@@ -199,9 +244,22 @@ export function checkSet(
   // 200 kg × 60 implies 600 kg, which is absurd for a squat and not something
   // this file can call impossible without asserting physiology it has no
   // business asserting.
-  if (implied > bounds.max) return "refuse";
-  if (bounds.softMax != null && implied > bounds.softMax) return worstOf(worst, "check");
-  return worst;
+  if (implied > bounds.max) return { verdict: "refuse", reason: "impliedMax" };
+  // The pair is what is odd here, so the reason is the pair — unless a single
+  // field was ALREADY worth a question on its own, in which case naming that
+  // field is the more actionable answer.
+  if (bounds.softMax != null && implied > bounds.softMax)
+    return { verdict: "check", reason: worst === "check" ? reason : "impliedMax" };
+  return worst === "ok" ? OK : { verdict: worst, reason };
+}
+
+/** The verdict alone — the shape a write path wants. */
+export function checkSet(
+  exerciseName: string,
+  load: string | number | undefined,
+  reps: string | number | undefined,
+): Plausibility {
+  return inspectSet(exerciseName, load, reps).verdict;
 }
 
 /* ── ENDURANCE ───────────────────────────────────────────────────────────── */
@@ -302,25 +360,40 @@ const SPEED_BY_DISCIPLINE: Record<CardioDiscipline, { max: number; soft: number 
   other: { max: 35, soft: 14 },
 };
 
-export function checkEffort(input: {
+export function inspectEffort(input: {
   discipline?: CardioDiscipline | null;
   distanceKm?: number | null;
   /** Either seconds or minutes — whichever the caller holds. */
   seconds?: number | null;
   minutes?: number | null;
-}): Plausibility {
+}): Concern {
   const d = input.distanceKm;
   const sec = input.seconds ?? (input.minutes != null ? input.minutes * 60 : null);
   const dv = d != null ? judge(d, distanceBounds(input.discipline)) : "ok";
   const tv = input.minutes != null ? judge(input.minutes, MINUTES_BOUNDS) : "ok";
   const worst = worstOf(dv, tv);
-  if (worst === "refuse") return "refuse";
-  if (d == null || sec == null || !(d > 0) || !(sec > 0)) return worst;
+  const reason: ConcernReason = dv === worst && dv !== "ok" ? "distance" : "duration";
+  if (worst === "refuse") return { verdict: "refuse", reason };
+  if (d == null || sec == null || !(d > 0) || !(sec > 0))
+    return worst === "ok" ? OK : { verdict: worst, reason };
   const speed = (d * 1000) / sec;
   const limits = SPEED_BY_DISCIPLINE[input.discipline ?? "other"] ?? SPEED_BY_DISCIPLINE.other;
-  if (speed > limits.max) return "refuse";
-  if (speed > limits.soft) return worstOf(worst, "check");
-  return worst;
+  if (speed > limits.max) return { verdict: "refuse", reason: "speed" };
+  // The PAIR is what is impossible, so the pair is the reason — unless one of
+  // the two figures was already odd by itself, which is the better thing to say.
+  if (speed > limits.soft)
+    return { verdict: "check", reason: worst === "check" ? reason : "speed" };
+  return worst === "ok" ? OK : { verdict: worst, reason };
+}
+
+/** The verdict alone — the shape a write path wants. */
+export function checkEffort(input: {
+  discipline?: CardioDiscipline | null;
+  distanceKm?: number | null;
+  seconds?: number | null;
+  minutes?: number | null;
+}): Plausibility {
+  return inspectEffort(input).verdict;
 }
 
 /* ── CONDITIONING ────────────────────────────────────────────────────────── */

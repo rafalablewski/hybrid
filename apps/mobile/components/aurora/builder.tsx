@@ -18,6 +18,11 @@ import {
   loadUnitCount,
   setType,
   setTypeBadge,
+  cardioDiscipline,
+  inspectEffort,
+  inspectSet,
+  CONCERN_KEY,
+  type ConcernReason,
   rpeRirSwap,
   displayLoad,
   storeLoad,
@@ -52,6 +57,34 @@ import { setLoggerPref } from "../../lib/logger-prefs";
 import { withAlpha } from "./field";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
+
+/**
+ * THE "ARE YOU SURE?" LINE — the softer half of the plausibility model, and a
+ * routine is where it matters most: a prescription is re-logged every time the
+ * routine is started, so an odd figure here is an odd figure forever, and
+ * nobody re-reads a template they trust.
+ *
+ * Never blocks. The hard half already refused the impossible; this is for the
+ * improbable-but-real, where an app that argues with a strong athlete is worse
+ * than one that stays quiet. Sentence from core, so both clients say the same
+ * thing.
+ */
+function ConcernLine({ reason, C, t }: { reason: ConcernReason | null; C: Palette; t: (k: string) => string }) {
+  if (!reason) return null;
+  return (
+    <Text
+      style={{
+        fontFamily: F.mono,
+        fontSize: fs.nano,
+        color: txt(C, C.amber),
+        marginTop: 6,
+        lineHeight: leading(fs.nano),
+      }}
+    >
+      {t(CONCERN_KEY[reason])}
+    </Text>
+  );
+}
 
 const kindColor = (k: BlockKind, C: Palette) =>
   k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet;
@@ -488,6 +521,13 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 />
               </View>
             </View>
+            {/* Improbable but storable — asked, never blocked. A routine is
+                re-logged every time it is started, so an odd figure prescribed
+                here becomes an odd figure in every session that follows it. */}
+            {(() => {
+              const c = inspectSet(b.name, s.load, s.reps);
+              return <ConcernLine reason={c.verdict === "check" ? c.reason : null} C={C} t={t} />;
+            })()}
           </SwipeRow>
           </Animated.View>
         );
@@ -591,6 +631,16 @@ function CardioEditor({ b, C, builder, field, label }: {
           />
         </View>
       </View>
+      {/* Judged as a PAIR: each figure can be ordinary while the pace they imply
+          is not, and that is where a unit slip actually shows up. */}
+      {(() => {
+        const c = inspectEffort({
+          discipline: cardioDiscipline(b.name),
+          distanceKm: b.distance ?? null,
+          minutes: b.minutes ?? null,
+        });
+        return <ConcernLine reason={c.verdict === "check" ? c.reason : null} C={C} t={t} />;
+      })()}
       {/* Modality extras — a swim never sees incline; a treadmill never sees stroke. */}
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10 }}>
         {has("incline") && (

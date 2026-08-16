@@ -4,8 +4,12 @@ import {
   checkEffort,
   checkSet,
   distanceBounds,
+  inspectEffort,
+  inspectSet,
   judge,
   judgeText,
+  CONCERN_KEY,
+  type ConcernReason,
   keep,
   loadBounds,
   repsBounds,
@@ -15,6 +19,7 @@ import {
   RPE_BOUNDS,
   SIGNAL_FALLBACK,
 } from "./plausibility";
+import { baselineString } from "./i18n";
 import { foodLogSignals } from "./engines/nutrition";
 import { sanitizeSessionBlocks } from "./session-edit";
 import type { SessionBlock } from "./engines/session";
@@ -175,6 +180,45 @@ describe("checkEffort — the speed sanity check", () => {
 
   it("prefers the device's exact seconds when it has them", () => {
     expect(checkEffort({ discipline: "running", distanceKm: 10, seconds: 300 })).toBe("refuse");
+  });
+});
+
+describe("inspectSet / inspectEffort — the reason, not just the verdict", () => {
+  it("names the FIELD when a single figure is what is odd", () => {
+    expect(inspectSet("Back Squat", "450", "3")).toEqual({ verdict: "check", reason: "load" });
+    expect(inspectSet("Back Squat", "60", "300")).toEqual({ verdict: "check", reason: "reps" });
+    expect(inspectEffort({ discipline: "running", distanceKm: 160, minutes: 900 }))
+      .toEqual({ verdict: "check", reason: "distance" });
+  });
+
+  it("names the PAIR when neither figure is odd on its own", () => {
+    // 200 × 60 is an ordinary load and an ordinary rep count; together they
+    // imply a 600 kg squat.
+    expect(inspectSet("Back Squat", "200", "60")).toEqual({ verdict: "check", reason: "impliedMax" });
+    // 10 km and 25 min are each unremarkable; the pace beats the world record.
+    expect(inspectEffort({ discipline: "running", distanceKm: 10, minutes: 25 }))
+      .toEqual({ verdict: "check", reason: "speed" });
+  });
+
+  it("says nothing at all about an ordinary set or effort", () => {
+    expect(inspectSet("Back Squat", "100", "5")).toEqual({ verdict: "ok", reason: null });
+    expect(inspectEffort({ discipline: "running", distanceKm: 10, minutes: 50 }))
+      .toEqual({ verdict: "ok", reason: null });
+  });
+
+  it("carries a reason on a refusal too, so a client can explain it", () => {
+    expect(inspectSet("Bench Press", "70000", "5").reason).toBe("load");
+    expect(inspectEffort({ discipline: "running", distanceKm: 10, minutes: 5 }).reason).toBe("speed");
+  });
+
+  it("has copy for every reason it can produce", () => {
+    // A reason with no sentence behind it renders as a blank amber line, which
+    // is worse than no line at all.
+    const reasons: ConcernReason[] = ["load", "reps", "impliedMax", "distance", "duration", "speed"];
+    for (const r of reasons) {
+      expect(CONCERN_KEY[r]).toBeTruthy();
+      expect(baselineString("en", CONCERN_KEY[r])).toBeTruthy();
+    }
   });
 });
 

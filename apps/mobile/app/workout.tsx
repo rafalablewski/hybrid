@@ -35,6 +35,10 @@ import {
   sportDistanceUnit,
   allowsTyping,
   cardioDiscipline,
+  inspectEffort,
+  inspectSet,
+  CONCERN_KEY,
+  type ConcernReason,
   distanceBounds,
   loadBounds,
   repsBounds,
@@ -808,6 +812,40 @@ export default function Workout() {
     return null;
   };
 
+  /**
+   * THE "ARE YOU SURE?" LINE — the softer half of the plausibility model.
+   *
+   * The hard half refuses a keystroke outright. This half is for the figures
+   * that are IMPROBABLE BUT REAL: a 300 kg squat, a 24-hour ride, a 160 km
+   * week. Refusing those would be worse than the typos it catches, because an
+   * app that cannot record an outlier is one the best athletes cannot use — so
+   * it never blocks anything. It says what is odd, once, next to the number,
+   * and gets out of the way.
+   *
+   * AMBER AND QUIET, not a dialog. A strong lifter would meet a modal every
+   * session, and a warning that interrupts is a warning people learn to dismiss
+   * without reading. A line under the figure they are looking at is seen at the
+   * moment it is cheap to fix and ignored at no cost when it is right.
+   *
+   * The sentence comes from core (`CONCERN_KEY`), so both clients say the same
+   * thing and neither invents its own wording.
+   */
+  const ConcernLine = ({ reason, align = "center" }: { reason: ConcernReason | null; align?: "center" | "left" }) =>
+    reason ? (
+      <Text
+        style={{
+          fontFamily: F.mono,
+          fontSize: fs.nano,
+          color: txt(C, C.amber),
+          marginTop: 8,
+          textAlign: align === "center" ? "center" : "left",
+          lineHeight: leading(fs.nano),
+        }}
+      >
+        {t(CONCERN_KEY[reason])}
+      </Text>
+    ) : null;
+
   const setSetField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
     setExercises((xs) =>
       xs.map((x) => {
@@ -1554,6 +1592,9 @@ export default function Workout() {
                   return x.sets.map((s, i) => {
                     const focus = setFocus(x.sets, i);
                     const st = setType(s);
+                    // Improbable but storable — the athlete is asked, never stopped.
+                    const concern = inspectSet(x.name, s.load, s.reps);
+                    const odd = concern.verdict === "check" ? concern.reason : null;
                     const typeAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
                     return (
                       <View key={s.uid ?? i}>
@@ -1667,6 +1708,7 @@ export default function Workout() {
                                 </>
                               )}
                             </View>
+                            <ConcernLine reason={odd} />
                             {/* RPE — ONE TAP, not another input row: tapping the
                                 chip reveals a single row of value pills (the core
                                 RPE scale, RIR-labelled when swapped); tapping a
@@ -1706,8 +1748,14 @@ export default function Workout() {
                             // not a boxed mini-card (no card-in-card).
                             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6), opacity: focus === "done" ? 0.62 : 0.72 }}>
                               <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{setTypeBadge(s, i)}</Text>
+                              {/* A collapsed row SIGNALS; the expanded one
+                                  explains. Its own figures turn amber rather
+                                  than gaining a badge — the row is already
+                                  three columns wide on a small phone, and
+                                  tapping it re-opens the set where the full
+                                  sentence is waiting. */}
                               <Pressable style={{ flex: 1 }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
-                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{summary}</Text>
+                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, C.amber) : C.ash }}>{summary}</Text>
                               </Pressable>
                               <Text style={{ fontFamily: F.black, fontSize: fs.body, color: s.done ? txt(C, C.lime) : C.ash }}>{s.done ? "✓" : "○"}</Text>
                             </View>
@@ -1844,6 +1892,17 @@ export default function Workout() {
                     <Cell value={x.minutes} onChange={(v) => condField(x.uid, "minutes", v)} />
                   </View>
                 </View>
+                {/* The two fields are judged TOGETHER: each can be ordinary
+                    while the pace they imply is not, and that pair is where a
+                    unit slip or a mistyped clock actually shows up. */}
+                {(() => {
+                  const c = inspectEffort({
+                    discipline: cardioDiscipline(x.name),
+                    distanceKm: parseSportDistance(x.distance ?? "", x.name),
+                    minutes: parseFloat(x.minutes) || null,
+                  });
+                  return <ConcernLine reason={c.verdict === "check" ? c.reason : null} align="left" />;
+                })()}
                 {/* Modality extras — the exercise-profile model decides the
                     fields (incline / stroke / elevation / HR zone), matching
                     the Builder and the web logger. */}
