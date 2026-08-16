@@ -120,7 +120,9 @@ describe("type scale", () => {
   });
 
   it("RATCHET — raw fontSize integers give way to fs.* rungs", () => {
-    // 427 → 89, and the split is the whole point of stopping there.
+    // 427 → 89 → 48, in two passes with different jobs.
+    //
+    // THE FIRST PASS WAS A RENAME and stopped where a rename stops:
     //
     // 339 of them — 79% — were ALREADY a rung and simply were not saying so:
     // 77 at 10, 39 at 11, 38 at 18, 32 at 12, 32 at 13 … Renaming those is a
@@ -131,24 +133,48 @@ describe("type scale", () => {
     // was 20%. Corrected rather than left — a guard that misstates its own
     // subject is how a ceiling drifts out of touch with its count.)
     //
+    // 87 → 48, and the second pass is the RESTYLE the note below deferred.
+    //
+    // THE TWO CLUSTERS WENT FIRST, because the note was right that they were one
+    // copied decision each, and right that only a person could pick the rung:
+    //
+    //   17 → fs.subtitle (16), 17 sites. 17 is not a near-miss of anything in
+    //     this system, it is SF PRO'S BODY SIZE — iOS's default — leaking into
+    //     an Archivo one, which is how the same "card title" ended up 17 here
+    //     and 16 (already a rung) three files over. Every one of them is a card,
+    //     sheet or section title, which is what `subtitle` is for. 1dp.
+    //
+    //   24 → fs.display (26), 14 sites. UP, not down, and the direction is the
+    //     argument: the cluster is figures and glyphs — the amount you type into
+    //     a nutrition row, the weight on the body-progress form, a stat value, a
+    //     stepper's −, the invite screen's title. A figure that is the subject
+    //     of its row belongs at the rung above its neighbours, not below.
+    //     `headline` (22) is documented as a screen head with no hero, which is
+    //     not what any of these are.
+    //
+    //   ABOVE 46 → fs.stat, 8 sites (48 ×2, 52, 56 ×2, 60 ×2, 68). The old note
+    //     said snapping these "would be absurd" — it was reading the whole set
+    //     as story/cover figures. Measured, only three are: the watermark emoji
+    //     bled off a recipe tile and a plan cover (78, 96, 118), which carry no
+    //     font face and are artwork, not type. The other eight were each "the
+    //     one hero figure on a screen" — the definition of `stat` — typed a rung
+    //     and a half higher by six different people. A 42% spread is not a
+    //     missing rung. scale.ts now names the two real exceptions (hero.ts's
+    //     takeover figure, and glyph artwork) instead of claiming there are none.
+    //
     // WHAT IS LEFT IS NOT THE SAME KIND OF WORK, which is why it is left:
     //
-    //   58 sit BETWEEN rungs, all within 2dp of one — 16 at 17, 16 at 24, 7 at
-    //     28, 6 at 19, 5 at 21. These are real drift and the two clusters of 16
-    //     are almost certainly one decision each, copied. But fontSize is the
-    //     most visible property there is: moving a 17dp label to 16 is 6%
-    //     smaller, and 24 → 22 is 9% off a heading. That is a RESTYLE of
-    //     specific screens, not a rename, and it wants eyes on a device.
+    //   THE LONG TAIL, 19 through 44 — 6 at 19, 6 at 28, 6 at 30, 5 at 21, 4 at
+    //     23, 4 at 44, 3 at 27, 3 at 40, and singletons at 25, 32, 38, 42. Same
+    //     shape as the two clusters, without the thing that made them
+    //     sweepable: no value here is the fingerprint of one copied decision,
+    //     so each is sized against something specific beside it and needs its
+    //     own look rather than a sweep's verdict.
     //
-    //   17 sit between 30 and 46, in the gap above `display` and below `stat`.
-    //     Same argument, larger steps.
+    //   Two FRACTIONAL sizes (11.5, 12.5) — a half-dp is a deliberate nudge, not
+    //     a rung missed by half.
     //
-    //   11 sit ABOVE `stat`, up to 118dp. The scale's own header calls this out:
-    //     "The ladder ends at `stat` on purpose: there is no rung above it, so a
-    //     figure larger than 46 is a design smell, not a missing token." These
-    //     are the story/cover figures. Snapping them to 46 would be absurd and
-    //     adding rungs would bless them; either way it is a design conversation,
-    //     not a sweep.
+    //   The three glyph watermarks, deliberately, per the paragraph above.
     //
     //   1 was RENAMED AND PUT BACK. home.tsx's plan-card title took fs.headline
     //     cleanly, and that tripped hub-masthead.test.ts, which bans the rung
@@ -157,7 +183,7 @@ describe("type scale", () => {
     //     but the guard is load-bearing and a rename is not worth weakening it
     //     for. It sits as a raw 22 and is counted here, which is the honest
     //     place for a site that has no rung it is allowed to name.
-    expectAtMost(hits(/fontSize:\s*\d+/g), 87, "raw fontSize → use an fs.* rung");
+    expectAtMost(hits(/fontSize:\s*\d+/g), 48, "raw fontSize → use an fs.* rung");
   });
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
@@ -199,6 +225,31 @@ describe("type scale", () => {
     const sites = codeHits(/fontWeight:/g).filter((h) => !h.startsWith("components/error-boundary.tsx"));
     expect(sites, "fontWeight → pick the FACE (F.mono/F.monoBold, F.reg/F.semi/F.bold/F.black)").toEqual([]);
   });
+
+  it("HARD — no TYPE above fs.stat; art and the takeover figure are not type", () => {
+    // The ceiling scale.ts declares, finally holding something. It was prose for
+    // as long as it existed and the app answered with eight figures at 48–68,
+    // each one "the hero figure on THIS screen" typed a rung higher than the
+    // last person's. They are all fs.stat now.
+    //
+    // WHAT THIS DELIBERATELY DOES NOT CATCH, because neither is type on the
+    // reading ladder:
+    //
+    //   GLYPH ART — the watermark emoji bled off a recipe tile or a plan cover
+    //     (78, 96, 118). No font face on the line, because there is no face: it
+    //     is a picture sized to a card. The rule keys on `fontFamily` being
+    //     present for exactly this reason, rather than exempting three paths by
+    //     name — a fourth watermark should not have to edit this test.
+    //
+    //   THE TAKEOVER FIGURE — hero.ts's `HERO_FIGURE` (76), spelled as a token
+    //     rather than a literal, so it is not a number in a style at all.
+    //
+    // A real violation therefore has to be a literal size above 46 with a face
+    // beside it, which is precisely the shape of "somebody wanted this number to
+    // feel important".
+    const oversize = hits(/fontSize:\s*(?:4[7-9]|[5-9]\d|\d{3,})\b/g).filter((h) => /fontFamily:/.test(lineAt(h)));
+    expect(oversize, "a figure above fs.stat → fs.stat (or hero.ts's HERO_FIGURE, on a takeover)").toEqual([]);
+  });
 });
 
 describe("leading and tracking", () => {
@@ -238,7 +289,16 @@ describe("leading and tracking", () => {
     // The rest are 14 sites with no size on the line at all (each needs reading,
     // not a regex) and the deliberate outliers the original note called out — a
     // 2.71 spacer, a 1.04 display.
-    expectAtMost(hits(/lineHeight:\s*\d/g), 48, "absolute lineHeight → leading(size, role)");
+    // 48 → 43: the fontSize restyle took five more with it. The figures that
+    // came down to fs.stat were each carrying a hand-tuned absolute box (52 on
+    // 48, 56 on 52, 58 on 56, 74 on 68) — at one shared size those stop being
+    // per-figure tunings and become one leading, so they read leading(fs.stat,
+    // "tight") now. That is the pattern the note above describes in reverse: an
+    // absolute is only untokenizable while the sizes under it disagree. (The
+    // fifth is the portion stepper's −, whose box was 26 on a size of 24: once
+    // the size took a rung the pair read as a 1.0 ratio, which is nobody's
+    // choice, it is two numbers that used to be different.)
+    expectAtMost(hits(/lineHeight:\s*\d/g), 43, "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking names its token; a big figure derives it", () => {
@@ -320,7 +380,10 @@ describe("geometry", () => {
     // concentric inset, or a genuine off-ladder choice — and only the third kind
     // is sweepable. That is a different job from the rename and is not attempted
     // here.
-    expectAtMost(hits(/borderRadius:\s*\d/g), 162, "raw borderRadius → RADIUS.*");
+    // 162 → 160, re-measured rather than moved: two sites went with other work
+    // and nobody re-pinned. Which is the discipline in this file's header — a
+    // ceiling above its count is a budget for more of the thing.
+    expectAtMost(hits(/borderRadius:\s*\d/g), 160, "raw borderRadius → RADIUS.*");
   });
 });
 

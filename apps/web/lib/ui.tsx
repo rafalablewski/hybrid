@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
-import { colors, ROLE_COLOR, statSubTone, type AccentKey, type SemanticRole, fs, space } from "@hybrid/core";
+import { colors, ROLE_COLOR, statSubTone, type AccentKey, type SemanticRole, fs, space, TABULAR_NUMS } from "@hybrid/core";
 import RollingNumber from "@/components/aurora/rolling-number";
 
 // Re-export the shared scale so screens import sizing from one place:
@@ -137,9 +137,20 @@ export function GlassField() {
 }
 
 export const disp: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
-export const cond: CSSProperties = { fontFamily: "'Archivo Narrow', sans-serif" };
 export const mono: CSSProperties = { fontFamily: "'JetBrains Mono', monospace" };
 export const body: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
+
+/**
+ * A FIGURE'S NUMERALS — spread into any style that draws a number sitting in a
+ * column, updating, or animating. Argument in core `scale.ts` beside
+ * `TABULAR_NUMS`; short version: a proportional `1` is narrower than an `8`, so
+ * a column stops aligning and a rolling digit resizes its own slot mid-turn.
+ *
+ * Web had this at ZERO sites — not "mostly applied", never applied — which is
+ * why every `Stat` tile and every rolling figure in the admin panel has been
+ * drawing proportional figures beside a mobile twin that mostly wasn't.
+ */
+export const tabular: CSSProperties = { fontVariantNumeric: TABULAR_NUMS };
 
 export const tip = {
   background: INK,
@@ -248,7 +259,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
   return (
     <span
       style={{
-        ...cond,
+        ...disp,
         display: "inline-block",
         fontSize: fs.caption,
         fontWeight: 600,
@@ -471,8 +482,9 @@ export function Stat({
       <div
         style={{
           ...disp,
+          ...tabular,
           fontWeight: 800,
-          fontSize: 34,
+          fontSize: fs.hero,
           color: txt(c),
           lineHeight: 1.1,
           margin: "6px 0 2px",

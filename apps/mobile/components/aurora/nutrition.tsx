@@ -2033,7 +2033,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             ) : null}
 
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, paddingHorizontal: 16, marginTop: 16 }}>
-              <Pressable onPress={() => stepPortion(-1)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.monoBold, fontSize: 24, lineHeight: 26, color: txt(C, C.lime) }}>–</Text></Pressable>
+              <Pressable onPress={() => stepPortion(-1)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), color: txt(C, C.lime) }}>–</Text></Pressable>
               <View style={{ alignItems: "center" }}>
                 <TextInput value={portionText} onChangeText={setPortionText} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.pt.amount")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.black, fontSize: 30, letterSpacing: trackFigure(30), color: C.chalk, padding: 0 }} />
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{portionUnitLabel(portionUnitActive)}</Text>
@@ -2097,7 +2097,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               <RollingNumber
                 value={String(sc(portion.kcal))}
                 align="center"
-                style={{ fontFamily: F.black, fontSize: 48, lineHeight: leading(48, "tight"), letterSpacing: trackFigure(48), color: C.chalk }}
+                style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}
               />
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>kcal</Text>
             </View>
@@ -2586,8 +2586,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color }}>{label}</Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 8 }}>
           {fixed != null
-            ? <Text style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: tracking.display, color: C.chalk }}>{fixed}</Text>
-            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.black, fontSize: 24, letterSpacing: tracking.display, color: C.chalk, padding: 0 }} />}
+            ? <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{fixed}</Text>
+            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, padding: 0 }} />}
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>g</Text>
         </View>
       </View>
@@ -2628,8 +2628,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             the meal is built from products these show the summed total. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 24 }}>
           {fromComps
-            ? <Text style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: 60, letterSpacing: trackFigure(60), color: C.chalk }}>{compTotals.kcal}</Text>
-            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: 60, letterSpacing: trackFigure(60), color: C.chalk, padding: 0 }} />}
+            ? <Text style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{compTotals.kcal}</Text>
+            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0 }} />}
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>kcal</Text>
         </View>
         <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.calorie")}</Text>
@@ -2915,7 +2915,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
 
         {/* Energy hero — both units, because a label states both and we finally can. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 20 }}>
-          <Text style={{ fontFamily: F.black, fontSize: 56, letterSpacing: trackFigure(56), lineHeight: 58, color: C.chalk }}>{f.facts.kcal}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "tight"), color: C.chalk }}>{f.facts.kcal}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>kcal</Text>
           <View style={{ flex: 1 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{kj(f.facts.kcal)} kJ</Text>

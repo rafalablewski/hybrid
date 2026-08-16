@@ -120,7 +120,7 @@ export function DeviceMatchSheet({
                 here today, so the sheet is titled with Apple's own artwork. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, flex: 1, paddingRight: 10 }}>
               <DeviceMark provider="apple" form="mark" height={14} on="dark" label="" />
-              <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{t("session.device.pickTitle")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("session.device.pickTitle")}</Text>
             </View>
             {phase === "list" && (
               <Pressable onPress={() => void load()}>

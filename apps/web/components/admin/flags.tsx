@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { PREMIUM_ACCENT_FLAG, PREMIUM_ACCENT_PRESETS, PREMIUM_ACCENT_DEFAULT, normalizePremiumAccent, resolvePremiumAccent, wcagRating, isHexColor, type WcagGrade } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Flag = {
   key: string;
@@ -174,7 +174,7 @@ function knob(on: boolean): React.CSSProperties {
   return { width: 20, height: 20, borderRadius: 999, background: on ? LIME : ASH, display: "block" };
 }
 const resetBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.caption,
   fontWeight: 700,
   textTransform: "uppercase",

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { OnboardingQuestion, OnboardingChoice } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, RED, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Draft = {
   key: string;
@@ -271,7 +271,7 @@ const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-"
 
 const inp: React.CSSProperties = { ...mono, fontSize: fs.body, width: "100%", padding: "9px 11px", borderRadius: 9, background: INK2, color: CHALK, border: `1px solid ${LINE}`, marginBottom: 4, outline: "none" };
 const primaryBtn: React.CSSProperties = { ...disp, fontWeight: 800, fontSize: fs.caption, background: LIME, color: INK, border: "none", borderRadius: 9, padding: "9px 16px", cursor: "pointer" };
-const smallBtn: React.CSSProperties = { ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", padding: "8px 10px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: INK, color: txt(ASH) };
+const smallBtn: React.CSSProperties = { ...disp, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", padding: "8px 10px", borderRadius: 9, cursor: "pointer", border: `1px solid ${LINE}`, background: INK, color: txt(ASH) };
 const iconBtn: React.CSSProperties = { ...disp, fontSize: fs.body, width: 28, height: 22, borderRadius: 7, border: `1px solid ${LINE}`, background: INK2, color: txt(ASH), cursor: "pointer", lineHeight: 1, padding: 0 };
 
 function toggle(on: boolean): React.CSSProperties {

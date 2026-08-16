@@ -72,7 +72,7 @@ import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
 import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../lib/ui";
+import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
@@ -113,7 +113,10 @@ function CountUp({ value, style }: { value: string; style: TextStyle }) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [value]);
-  return <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={style} numberOfLines={1} adjustsFontSizeToFit>{disp}</Text>;
+  // TABULAR, and this is the case that proves the rule: the value is re-rendered
+  // every frame for 900ms, so a proportional numeral resizes the figure under
+  // itself all the way up and the count reads as a wobble rather than a climb.
+  return <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={[TABULAR, style]} numberOfLines={1} adjustsFontSizeToFit>{disp}</Text>;
 }
 
 /**
@@ -445,7 +448,7 @@ export function WorkoutWrapped({
           </Text>
           <View style={{ flex: 1 }} />
           <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size }} />
-          <Text style={{ fontFamily: F.bold, fontSize: 17, color: cel ? txt(C, C.lime) : C.chalk, marginTop: 10 }}>{heroSub}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: cel ? txt(C, C.lime) : C.chalk, marginTop: 10 }}>{heroSub}</Text>
           <View style={{ flexDirection: "row", marginTop: 20, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
             {wrapped.basics.map((b, i) => (
               <View key={b.labelKey} style={{ flex: 1, paddingVertical: 16, paddingHorizontal: 4, alignItems: "center", backgroundColor: HERO_TAKEOVER_RAISED, borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>

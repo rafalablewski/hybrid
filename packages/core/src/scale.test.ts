@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, type TypeRole, type SpaceToken } from "./scale";
-import { ALPHA } from "./theme/tokens";
+import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
 
 /**
  * THE SCALE'S OWN GUARD.
@@ -164,5 +164,34 @@ describe("ALPHA — the tint scale", () => {
       expect(v).toBeGreaterThan(0);
       expect(v).toBeLessThanOrEqual(0.45);
     }
+  });
+});
+
+/**
+ * THE FACES — two, and the guard is here because the third one died quietly.
+ *
+ * `fonts.condensed` (Archivo Narrow) was declared in the brand tokens and
+ * specified in the build brief for two years, and the mobile app — the product —
+ * never loaded it: four Archivo weights and two JetBrains Mono weights in
+ * `useFonts`, no `@expo-google-fonts/archivo-narrow` anywhere. Nothing failed,
+ * because a declared-but-unloaded family is not an error on either platform: RN
+ * falls back to the system face and CSS falls through to the next name in the
+ * stack. So the identity read as three faces in the tokens and shipped as two,
+ * and the web admin's chips drew in a face the phone's admin console could not.
+ *
+ * These assertions exist so re-declaring the face is a deliberate act with a
+ * loading step attached, rather than a line in a token file that looks true.
+ */
+describe("the type faces", () => {
+  it("declares exactly the faces the app loads", () => {
+    expect(Object.keys(fonts).sort()).toEqual(["display", "mono"]);
+  });
+
+  it("asks the font service for nothing it does not declare", () => {
+    // A webfont in the @import that no token names is a download for nothing,
+    // and it is how Archivo Narrow stayed alive on web after the mobile app had
+    // already decided against it.
+    const families = [...fontImportUrl.matchAll(/family=([^&:]+)/g)].map((m) => m[1]!.replace(/\+/g, " "));
+    expect(families.sort()).toEqual(Object.values(fonts).slice().sort());
   });
 });

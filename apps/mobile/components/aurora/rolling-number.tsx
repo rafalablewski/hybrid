@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, StyleSheet, Text, View, type StyleProp, type TextStyle } from "react-native";
 import { durations, numericDiff, numericRolls } from "@hybrid/core";
+import { TABULAR } from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 
 /**
@@ -23,6 +24,15 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
  *
  * Reduce Motion SUBSTITUTES: the digit still changes, it simply changes without
  * travelling. Never an instant cut of the update itself.
+ *
+ * THE FIGURES ARE TABULAR, AND THIS COMPONENT DECLARES IT rather than trusting
+ * its callers to. Every cell is its own column, so with proportional numerals a
+ * units digit going 1 → 8 makes its column WIDER mid-turn and shoves the digits
+ * beside it sideways — the roll exists to make one change read as one event and
+ * a jittering figure is the opposite of that. It was on ~25 call sites by hand
+ * and absent from this one, which meant whether a figure held still depended on
+ * whoever wrote the style. `TABULAR` is spread first, so a caller can still
+ * override it deliberately.
  */
 export function RollingNumber({
   value,
@@ -57,6 +67,7 @@ export function RollingNumber({
   const from = prev.current;
   const roll = numericRolls(from, value) && !reduced;
   const { cells, dir } = numericDiff(from ?? value, value);
+  const cell = [TABULAR, style];
 
   return (
     // The whole figure is ONE accessible string. Without this it reads out
@@ -70,9 +81,9 @@ export function RollingNumber({
     >
       {cells.map((c, i) =>
         roll && c.rolls && c.changed ? (
-          <RollCell key={`${c.key}:${c.char}:${i}`} from={c.prev ?? ""} to={c.char} dir={dir} style={style} max={maxFontSizeMultiplier} />
+          <RollCell key={`${c.key}:${c.char}:${i}`} from={c.prev ?? ""} to={c.char} dir={dir} style={cell} max={maxFontSizeMultiplier} />
         ) : (
-          <Text key={`${c.key}:${i}`} maxFontSizeMultiplier={maxFontSizeMultiplier} style={style}>{c.char}</Text>
+          <Text key={`${c.key}:${i}`} maxFontSizeMultiplier={maxFontSizeMultiplier} style={cell}>{c.char}</Text>
         ),
       )}
     </View>

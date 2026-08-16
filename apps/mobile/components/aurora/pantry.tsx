@@ -210,7 +210,7 @@ export function PantryScreen<T extends PantryFood>({
               style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: C.chalk, padding: 0 }}
             />
             {query ? (
-              <Pressable onPress={() => onQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: 17, color: C.ash }}>×</Text></Pressable>
+              <Pressable onPress={() => onQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>×</Text></Pressable>
             ) : <Glyph name="scan" size={17} color={C.ash} strokeWidth={4} />}
           </View>
           {searchHint}

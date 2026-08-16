@@ -141,7 +141,7 @@ export default function AuroraLogin() {
             placeholder="000000"
             placeholderTextColor={palette.ash}
             accessibilityLabel={t("w.account.login.verify-title")}
-            style={{ fontFamily: F.mono, fontSize: 24, letterSpacing: 8, textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.field, paddingVertical: 16, backgroundColor: palette.ink2 }}
+            style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: 8, textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.field, paddingVertical: 16, backgroundColor: palette.ink2 }}
           />
           {!!error && (
             <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.red), marginTop: 10 }}>{error}</Text>

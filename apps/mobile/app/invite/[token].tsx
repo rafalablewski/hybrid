@@ -55,7 +55,7 @@ export default function InviteClaim() {
   return (
     <AuroraScreen scroll={false} center>
       <View style={{ alignItems: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, textAlign: "center" }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, textAlign: "center" }}>
           {state === "done" ? "You're connected ✓" : "Your coach invited you"}
         </Text>
 

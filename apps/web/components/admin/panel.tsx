@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
-import { fs, space, INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, cond, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { fs, space, INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useIsMobile } from "@/lib/use-media-query";
 import { useTemplate } from "@/lib/use-template";
@@ -336,7 +336,7 @@ export default function AdminPanel() {
     return {
       width: "100%",
       marginTop: 6,
-      ...cond,
+      ...disp,
       fontSize: fs.caption,
       fontWeight: 700,
       textTransform: "uppercase" as const,

@@ -14,7 +14,7 @@ import {
   type AgentStatus,
   type Kpi,
 } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
@@ -883,7 +883,7 @@ const input: React.CSSProperties = {
   outline: "none",
 };
 const presetBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.bodyLg,
   fontWeight: 700,
   padding: "10px 14px",
@@ -894,7 +894,7 @@ const presetBtn: React.CSSProperties = {
   color: CHALK,
 };
 const primaryBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",
@@ -907,7 +907,7 @@ const primaryBtn: React.CSSProperties = {
   color: txt(LIME),
 };
 const dangerBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",
@@ -920,7 +920,7 @@ const dangerBtn: React.CSSProperties = {
   color: txt(ASH),
 };
 const addBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.body,
   fontWeight: 600,
   textAlign: "left",
@@ -944,7 +944,7 @@ const removeBtn: React.CSSProperties = {
   color: txt(ASH),
 };
 const chipBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.body,
   fontWeight: 600,
   padding: "8px 11px",

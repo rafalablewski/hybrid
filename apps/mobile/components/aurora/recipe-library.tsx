@@ -169,8 +169,8 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
           )}
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 }}>
-          <Text style={{ fontSize: 24 }}>{recipe.emoji}</Text>
-          <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, flexShrink: 1 }}>{recipe.name}</Text>
+          <Text style={{ fontSize: fs.display }}>{recipe.emoji}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{recipe.name}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
           {stats.map((st) => (

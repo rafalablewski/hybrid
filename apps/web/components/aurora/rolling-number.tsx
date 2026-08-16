@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { numericDiff, numericRolls } from "@hybrid/core";
+import { numericDiff, numericRolls, TABULAR_NUMS } from "@hybrid/core";
 
 /**
  * A FIGURE THAT ROLLS to its new value instead of being swapped for it — the
@@ -25,6 +25,15 @@ import { numericDiff, numericRolls } from "@hybrid/core";
  *
  * Reduce Motion is handled by the global backstop in globals.css, which collapses
  * these animations; the number still updates, which is the part that matters.
+ *
+ * THE FIGURES ARE TABULAR, declared here rather than left to callers — and on
+ * this client that is not a tidy-up, it is the fix for a visible defect: web
+ * had `font-variant-numeric` at ZERO call sites, and every column below is its
+ * own inline-grid box sized by the glyph inside it. With proportional numerals
+ * a units digit rolling 1 → 8 makes its own column WIDER halfway through the
+ * turn and shoves every digit beside it sideways, so a figure built to make one
+ * change read as one event twitches instead. `...style` comes after, so a
+ * caller can still override it deliberately.
  */
 export default function RollingNumber({
   value,
@@ -55,7 +64,7 @@ export default function RollingNumber({
     // reads out character by character ("eight", "two", "point", "five"), which
     // is worse than the swap this replaces — so the columns are hidden from
     // assistive tech and the value is announced once, off-screen.
-    <span className={className} style={{ display: "inline-flex", position: "relative", ...style }}>
+    <span className={className} style={{ display: "inline-flex", position: "relative", fontVariantNumeric: TABULAR_NUMS, ...style }}>
       <span style={{ position: "absolute", width: 1, height: 1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap" }}>
         {ariaLabel ?? value}
       </span>

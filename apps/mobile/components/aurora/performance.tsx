@@ -767,7 +767,7 @@ function Comp({ C, label, value, onExplain, explainLabel }: {
       accessibilityLabel={`${label} ${value} – ${explainLabel}`}
       style={{ flex: 1, alignItems: "center" }}
     >
-      <Text style={{ fontFamily: F.black, fontSize: 24, color: C.chalk, letterSpacing: tracking.display }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking.display }}>{value}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
         {/* The glyph IS a ring — wrapping it in a second bordered circle, as the

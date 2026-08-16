@@ -84,7 +84,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
 
       <ACard style={{ marginTop: 16 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{t("w.account.connections.title")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.connections.title")}</Text>
           <View style={{ backgroundColor: withAlpha(statusColor(status, C), ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, statusColor(status, C)), textTransform: "lowercase" }}>{statusLabel}</Text>
           </View>
@@ -112,7 +112,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{t("w.account.connections.recent")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("w.account.connections.recent")}</Text>
         {signals.length === 0 ? (
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 10 }}>{t("w.account.connections.recent-empty")}</Text>
         ) : (

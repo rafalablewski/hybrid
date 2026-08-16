@@ -4,7 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
-import { C, F, fs, Kicker } from "./ui";
+import { C, F, fs, Kicker, TABULAR } from "./ui";
 import { withAlpha } from "../components/aurora/field";
 
 const MUSCLE_LABEL: Record<string, string> = {
@@ -246,7 +246,9 @@ function CountUpText({ value, run, style }: { value: string; run: boolean; style
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [run, value]);
-  return <Text style={style}>{disp}</Text>;
+  // TABULAR — see the twin in workout-wrapped.tsx: the figure is re-rendered
+  // every frame while it counts, so proportional numerals resize it as it goes.
+  return <Text style={[TABULAR, style]}>{disp}</Text>;
 }
 
 export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string) => string; units?: WeightUnit; width: number; styleId?: StoryStyleId; animate?: boolean }>(

@@ -336,7 +336,7 @@ export default function AuroraVolume({ top, unified = false, compact = false, on
         ) : (
           <>
             <View style={{ flexDirection: "row", alignItems: "baseline", marginTop: 10 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 68, lineHeight: 74, letterSpacing: trackFigure(68), color: C.chalk }}>{summary.inRange}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{summary.inRange}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, marginLeft: 4 }}>/{summary.total}</Text>
             </View>
             <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: 21, color: C.ash, marginTop: -2, maxWidth: 240 }}>{t("w.analyze.vol.heroCaption")}</Text>
