@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { healthKitAvailability, healthKitConnected, queryRecentDeviceWorkouts } from "./healthkit";
+import {
+  healthKitAvailability,
+  healthKitConnected,
+  queryRecentDeviceWorkouts,
+  uploadLandedStreams,
+} from "./healthkit";
 import { importDeviceWorkouts, type DeviceImportResult } from "./api";
 import { useLoggerPrefs } from "./logger-prefs";
 
@@ -35,6 +40,10 @@ export async function runDeviceImport(): Promise<DeviceImportResult | null> {
   if (workouts == null) return null;
   const res = await importDeviceWorkouts(workouts);
   if (res) await AsyncStorage.setItem(LAST_RUN_KEY, String(Date.now())).catch(() => {});
+  // The import wrote SUMMARIES; the traces under them are still only on this
+  // device. Sent after the rows exist and never awaited by the caller's UI —
+  // the sessions have already landed, and this is the half nothing else can do.
+  if (res?.landed.length) void uploadLandedStreams(res.landed).catch(() => 0);
   return res;
 }
 

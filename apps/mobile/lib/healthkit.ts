@@ -26,11 +26,15 @@ import {
   DEVICE_MATCH_WINDOW_H,
   isDeviceName,
   sanitizeDeviceWorkout,
+  sanitizeSessionStream,
   type DeviceWorkout,
+  type SessionLap,
+  type SessionStream,
+  type StreamKind,
 } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
-import { API_BASE, fetchSessions, patchSessionDevice } from "./api";
+import { API_BASE, fetchSessions, patchSessionDevice, postSessionStreams } from "./api";
 // The bridge's units → ours. Pure + unit-tested (health-quantities.test.ts)
 // because an unrecognised unit here does not throw, it makes a whole metric
 // disappear — see that file's comment for the distance this cost.
@@ -121,9 +125,12 @@ export async function connectHealthKit(): Promise<{ ok: boolean; error?: string 
         "HKQuantityTypeIdentifierHeartRateVariabilitySDNN",
         "HKQuantityTypeIdentifierRestingHeartRate",
         "HKCategoryTypeIdentifierSleepAnalysis",
-        // The summary's workout match reads the workout list + its HR/energy.
-        // Asked here too so a fresh connect sheets everything ONCE.
+        // The summary's workout match reads the workout list + its HR/energy,
+        // and the stream read that follows a match wants the route and the
+        // cycling series. Asked here too so a fresh connect sheets everything
+        // ONCE rather than prompting again the first time a workout matches.
         ...WORKOUT_READ_TYPES,
+        ...STREAM_READ_TYPES,
       ],
     });
     if (!ok) return { ok: false, error: "authorization did not complete" };
@@ -291,6 +298,18 @@ const activityLabel = (hk: HK, type: number): string => {
 
 /** One workout proxy as the library hands it back. */
 type WorkoutProxyLike = Awaited<ReturnType<HK["queryWorkoutSamples"]>>[number];
+
+/** A quantity type identifier, as the library's query signature wants it. */
+type QuantityTypeIdentifier = Parameters<HK["queryQuantitySamples"]>[0];
+
+/** One GPS fix off a workout route (the library's WorkoutRouteLocation). */
+type RouteLocationLike = {
+  latitude: number;
+  longitude: number;
+  altitude: number;
+  horizontalAccuracy: number;
+  date: Date | string;
+};
 
 /**
  * HOW FAR the recording says it went, km.
@@ -613,4 +632,332 @@ export async function syncHealthKit(): Promise<{
   } catch {
     return { ok: false, written: 0, repaired, error: "network" };
   }
+}
+
+// ---- the recording itself: streams, route, laps ---------------------------
+
+/**
+ * THE PART OF A RECORDING A SUMMARY THROWS AWAY.
+ *
+ * `readWorkout` above produces a DeviceWorkout — duration, distance, kcal,
+ * average and peak heart rate. Every app with a HealthKit entitlement reads
+ * those same eleven numbers; they are a commodity. What is not is the shape
+ * underneath: where the heart rate went and when, the GPS track, the laps the
+ * athlete pressed, and the cumulative distance series every split and best
+ * effort falls out of.
+ *
+ * ONLY THE PHONE CAN READ IT, and only while the recording is still in the
+ * store. So the read happens at match time and is uploaded with the match; a
+ * recording that was never read is one the athlete would have to re-import by
+ * hand. Everything below degrades per series — a workout with a good heart-rate
+ * trace and a broken GPS track must still land the heart rate.
+ *
+ * The shapes are @hybrid/core's (session-streams.ts): nothing HealthKit-specific
+ * crosses this file's boundary, so a Garmin or WHOOP connector later fills the
+ * same shape and the server, the database and both clients are unchanged.
+ */
+
+/** The per-workout series worth reading, and the unit each is stored in. Kept
+ *  small on purpose: these are the ones the app derives something from. */
+const STREAM_READS: { kind: StreamKind; type: QuantityTypeIdentifier; unit: string }[] = [
+  { kind: "hr", type: "HKQuantityTypeIdentifierHeartRate", unit: "count/min" },
+  { kind: "power", type: "HKQuantityTypeIdentifierCyclingPower", unit: "W" },
+  { kind: "cadence", type: "HKQuantityTypeIdentifierCyclingCadence", unit: "count/min" },
+];
+
+/** The read permissions the stream read needs, on top of WORKOUT_READ_TYPES.
+ *  A route lives behind its own type; power and cadence behind theirs. */
+const STREAM_READ_TYPES = [
+  "HKWorkoutRouteTypeIdentifier",
+  "HKQuantityTypeIdentifierCyclingPower",
+  "HKQuantityTypeIdentifierCyclingCadence",
+] as const;
+
+/** Sheet the stream permissions. Idempotent — iOS only prompts for types it
+ *  hasn't asked about, so an athlete who connected before this existed gets
+ *  exactly one extra sheet, and only when they first match a workout. */
+export async function requestStreamReadAuth(): Promise<boolean> {
+  const hk = loadHealthKit();
+  if (!hk) return false;
+  try {
+    return await hk.requestAuthorization({ toRead: [...STREAM_READ_TYPES] });
+  } catch {
+    return false;
+  }
+}
+
+/** Seconds from `t0`, floored — the offset the stored streams are keyed on. */
+const offsetSec = (d: Date | string, t0: number): number | null => {
+  const t = new Date(d).getTime();
+  return Number.isFinite(t) ? Math.floor((t - t0) / 1000) : null;
+};
+
+/** One quantity type over one workout → a stream, or null when the store has
+ *  nothing (a ride with no power meter, a lift with no strap). */
+async function readQuantityStream(
+  hk: HK,
+  w: WorkoutProxyLike,
+  read: (typeof STREAM_READS)[number],
+  t0: number,
+  uuid: string,
+): Promise<SessionStream | null> {
+  let samples: readonly { quantity: number; startDate: Date; endDate: Date }[];
+  try {
+    samples = await hk.queryQuantitySamples(read.type, {
+      // The workout filter is what makes this the workout's OWN heart rate
+      // rather than every beat in the day around it.
+      //
+      // The two casts are the library's generics, not looseness on our side:
+      // the filter is typed for the untyped `WorkoutProxy` while a query hands
+      // back the `WorkoutProxyTyped` flavour (they differ only in how metadata
+      // is typed), and `unit` is narrowed per-identifier — which a table of
+      // three identifiers can't satisfy at the call site. The unit strings are
+      // pinned beside their identifiers in STREAM_READS above.
+      filter: { workout: w as never },
+      limit: 0,
+      ascending: true,
+      unit: read.unit as never,
+    });
+  } catch {
+    return null;
+  }
+  const offsets: number[] = [];
+  const values: number[] = [];
+  for (const s of samples) {
+    // A quantity sample spans an interval; the value belongs at its END, which
+    // is when the reading was complete. Beat-to-beat samples make this a
+    // distinction without a difference; a 10-second averaged power sample makes
+    // it the difference between a lap boundary landing right and landing early.
+    const at = offsetSec(s.endDate, t0);
+    if (at == null || !Number.isFinite(s.quantity)) continue;
+    offsets.push(at);
+    values.push(s.quantity);
+  }
+  if (offsets.length < 2) return null;
+  return sanitizeSessionStream({
+    kind: read.kind,
+    startedAt: new Date(t0).toISOString(),
+    offsets,
+    values,
+    provider: "apple",
+    uuid,
+  });
+}
+
+/**
+ * THE ROUTE, and the two streams that fall out of it.
+ *
+ * HealthKit stores a workout route as CLLocations — latitude, longitude,
+ * altitude, speed — and nothing else. The cumulative distance series (which
+ * every split and best effort is computed from) is not stored anywhere: it is
+ * integrated here, from the great-circle distance between consecutive fixes.
+ *
+ * INACCURATE FIXES ARE SKIPPED, not smoothed. A GPS fix with a 65-metre
+ * horizontal accuracy in a city street is a jump sideways into the next block,
+ * and integrating it adds distance the athlete never ran — which would make
+ * every split and every "best 5 km" derived from it flatteringly fast. Dropping
+ * the fix loses a moment of the track; keeping it loses the truth of the figure.
+ */
+const MAX_FIX_ACCURACY_M = 50;
+
+/** Great-circle distance between two fixes, km (haversine). */
+function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number): number {
+  const R = 6371.0088;
+  const rad = Math.PI / 180;
+  const dLat = (bLat - aLat) * rad;
+  const dLng = (bLng - aLng) * rad;
+  const h =
+    Math.sin(dLat / 2) ** 2 + Math.cos(aLat * rad) * Math.cos(bLat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+async function readRouteStreams(
+  w: WorkoutProxyLike,
+  t0: number,
+  uuid: string,
+): Promise<SessionStream[]> {
+  let routes: readonly { locations: readonly RouteLocationLike[] }[];
+  try {
+    routes = await w.getWorkoutRoutes();
+  } catch {
+    return [];
+  }
+  const fixes = routes
+    .flatMap((r) => [...r.locations])
+    .map((l) => ({ ...l, at: offsetSec(l.date, t0) }))
+    .filter((l) => l.at != null && Number.isFinite(l.latitude) && Number.isFinite(l.longitude))
+    .sort((a, b) => a.at! - b.at!);
+  if (fixes.length < 2) return [];
+
+  const routeOffsets: number[] = [];
+  const lat: number[] = [];
+  const lng: number[] = [];
+  const distOffsets: number[] = [];
+  const dist: number[] = [];
+  const altOffsets: number[] = [];
+  const alt: number[] = [];
+  let km = 0;
+  let prev: (typeof fixes)[number] | null = null;
+  for (const f of fixes) {
+    const usable =
+      !Number.isFinite(f.horizontalAccuracy) || f.horizontalAccuracy <= MAX_FIX_ACCURACY_M;
+    if (!usable) continue;
+    if (prev) km += haversineKm(prev.latitude, prev.longitude, f.latitude, f.longitude);
+    routeOffsets.push(f.at!);
+    lat.push(f.latitude);
+    lng.push(f.longitude);
+    distOffsets.push(f.at!);
+    dist.push(km);
+    if (Number.isFinite(f.altitude)) {
+      altOffsets.push(f.at!);
+      alt.push(f.altitude);
+    }
+    prev = f;
+  }
+
+  const startedAt = new Date(t0).toISOString();
+  const base = { startedAt, provider: "apple", uuid };
+  return [
+    sanitizeSessionStream({ ...base, kind: "route", offsets: routeOffsets, values: lat, valuesB: lng }),
+    sanitizeSessionStream({ ...base, kind: "distance", offsets: distOffsets, values: dist }),
+    sanitizeSessionStream({ ...base, kind: "altitude", offsets: altOffsets, values: alt }),
+  ].filter((s): s is SessionStream => s != null);
+}
+
+/**
+ * The laps the DEVICE recorded — the button presses, and the legs of a
+ * multi-sport recording.
+ *
+ * HealthKit gives lap MARKERS (instants), not lap objects, so a lap's duration
+ * is the gap to the next marker and the last lap runs to the end of the
+ * workout. Segments arrive as `activities` and already carry their own
+ * interval. The splits and best efforts are NOT computed here — the server
+ * derives those from the distance series when the upload lands, so the rule
+ * lives in one place rather than in every client that can read a watch.
+ */
+function readDeviceLaps(w: WorkoutProxyLike, t0: number, endSec: number): SessionLap[] {
+  const out: SessionLap[] = [];
+  const lap = (kind: "lap" | "segment", index: number, from: number, to: number): SessionLap => ({
+    kind,
+    index,
+    startOffsetSec: from,
+    durationSec: Math.max(0, to - from),
+    distanceKm: null,
+    avgHr: null,
+    maxHr: null,
+    avgWatts: null,
+    elevationM: null,
+    paceSecPerKm: null,
+  });
+
+  try {
+    // WorkoutEventType.lap === 3, marker === 4 — a watch writes one or the
+    // other depending on how the lap was taken.
+    const marks = (w.events ?? [])
+      .filter((e) => (e.type as unknown as number) === 3 || (e.type as unknown as number) === 4)
+      .map((e) => offsetSec(e.startDate, t0))
+      .filter((s): s is number => s != null && s >= 0)
+      .sort((a, b) => a - b);
+    marks.forEach((from, i) => {
+      const to = i + 1 < marks.length ? marks[i + 1]! : endSec;
+      if (to > from) out.push(lap("lap", i, from, to));
+    });
+  } catch {
+    // A proxy that won't hand over its events costs the laps, not the upload.
+  }
+
+  try {
+    const acts = [...(w.activities ?? [])];
+    if (acts.length > 1)
+      acts.forEach((a, i) => {
+        const from = offsetSec(a.startDate, t0);
+        const to = offsetSec(a.endDate, t0);
+        if (from != null && to != null && to > from) out.push(lap("segment", i, from, to));
+      });
+  } catch {
+    // Same.
+  }
+  return out;
+}
+
+/**
+ * Read everything one recording holds beyond its summary, by the store's own
+ * uuid — the id already carried on `Session.device`, so a match, an import and
+ * a repair pass all address the same recording the same way.
+ *
+ * Null when HealthKit is unreachable or the store no longer holds the workout
+ * (deleted on the watch); `{ streams: [] }` when it holds it and there was
+ * nothing underneath (a gym session with no strap and no GPS).
+ */
+export async function readWorkoutStreams(
+  uuid: string,
+): Promise<{ streams: SessionStream[]; laps: SessionLap[]; activityLabel: string } | null> {
+  const hk = loadHealthKit();
+  if (!hk || !uuid) return null;
+  let proxies: readonly WorkoutProxyLike[];
+  try {
+    proxies = await hk.queryWorkoutSamples({ limit: 1, filter: { uuid } });
+  } catch {
+    return null;
+  }
+  const w = proxies[0];
+  if (!w) return null;
+
+  const start = isoOrNull(w.startDate);
+  const end = isoOrNull(w.endDate);
+  if (!start || !end) return null;
+  const t0 = Date.parse(start);
+  const endSec = Math.max(0, Math.round((Date.parse(end) - t0) / 1000));
+
+  const [quantities, route] = await Promise.all([
+    Promise.all(STREAM_READS.map((r) => readQuantityStream(hk, w, r, t0, uuid).catch(() => null))),
+    readRouteStreams(w, t0, uuid).catch(() => [] as SessionStream[]),
+  ]);
+
+  return {
+    streams: [...quantities.filter((s): s is SessionStream => s != null), ...route],
+    laps: readDeviceLaps(w, t0, endSec),
+    activityLabel: activityLabel(hk, w.workoutActivityType as unknown as number),
+  };
+}
+
+/**
+ * Read a recording's streams and upload them against a session. Best-effort and
+ * fire-and-forget by design: the match itself is already saved, and a failed
+ * stream upload must never look like a failed match. Returns what landed.
+ */
+export async function uploadWorkoutStreams(
+  sessionId: string,
+  uuid: string,
+): Promise<{ streams: number; laps: number }> {
+  const read = await readWorkoutStreams(uuid).catch(() => null);
+  if (!read || read.streams.length === 0) return { streams: 0, laps: 0 };
+  return postSessionStreams(sessionId, read);
+}
+
+/**
+ * Upload the streams for a batch of rows an import just landed.
+ *
+ * The import writes SUMMARIES — that is all the server was handed. The trace
+ * under each one is still on this device and nowhere else, so the import is only
+ * half done until this runs. Sequential rather than parallel: a fortnight of
+ * runs is a fortnight of GPS tracks, and firing twenty uploads at once off a
+ * phone on a train is how a sync ends up worse than no sync.
+ *
+ * Best-effort throughout — the sessions are already saved, and a row whose
+ * recording the store no longer holds is simply skipped. Returns how many rows
+ * actually landed streams.
+ */
+export async function uploadLandedStreams(
+  landed: { id: string; uuid?: string | null }[],
+  max = 20,
+): Promise<number> {
+  if (healthKitAvailability() !== "ready") return 0;
+  let done = 0;
+  for (const row of landed.slice(0, max)) {
+    if (!row.uuid) continue;
+    const res = await uploadWorkoutStreams(row.id, row.uuid).catch(() => ({ streams: 0, laps: 0 }));
+    if (res.streams > 0) done += 1;
+  }
+  return done;
 }

@@ -3,6 +3,7 @@ import { migrateBlocks, exerciseNameAliasMap, sanitizeNote, sanitizeMood, saniti
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { getCachedPublishedExercises } from "@/lib/cache";
+import { projectSessionSafely } from "@/lib/session-projection";
 import { prisma } from "@/lib/db";
 
 // The logger's backend. Both clients (web + mobile) call this.
@@ -85,6 +86,13 @@ export async function POST(request: Request) {
         sanitizeFeelLevel(b.feel) != null || sanitizeFeelLevel(b.fatigue) != null ? new Date() : null,
     },
   });
+
+  // Project the document into the per-set fact table — one row per set, one per
+  // timed effort, so the workout is queryable and not just storable. AFTER the
+  // create and never inside it: the athlete's session is already safe, and a
+  // derived table must not be able to fail the logging path (see
+  // lib/session-projection.ts).
+  await projectSessionSafely(session);
 
   return NextResponse.json({ session }, { status: 201 });
 }

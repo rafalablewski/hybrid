@@ -310,6 +310,29 @@ begin
     execute 'create policy checkin_coach_read on "Checkin" for select using (public.is_active_coach("userId") and "sharedWithCoach")';
   end if;
 
+  -- SessionSet / SessionStream / SessionLap — the queryable projections of a
+  -- session (see reference/sql-session-sets-streams.sql). OWNER ONLY, with no
+  -- coach read even though "Session" itself has one: these rows are strictly
+  -- more sensitive than the document they came from — a route stream is the
+  -- athlete's home address written down three thousand times, and a coach who
+  -- should see a workout has not thereby been shown where it started. Every
+  -- legitimate reader goes through Prisma's privileged role, which bypasses RLS.
+  if to_regclass('public."SessionSet"') is not null then
+    execute 'alter table "SessionSet" enable row level security';
+    execute 'drop policy if exists sessionset_own on "SessionSet"';
+    execute 'create policy sessionset_own on "SessionSet" for all using ("userId" = public.app_user_id()) with check ("userId" = public.app_user_id())';
+  end if;
+  if to_regclass('public."SessionStream"') is not null then
+    execute 'alter table "SessionStream" enable row level security';
+    execute 'drop policy if exists sessionstream_own on "SessionStream"';
+    execute 'create policy sessionstream_own on "SessionStream" for all using ("userId" = public.app_user_id()) with check ("userId" = public.app_user_id())';
+  end if;
+  if to_regclass('public."SessionLap"') is not null then
+    execute 'alter table "SessionLap" enable row level security';
+    execute 'drop policy if exists sessionlap_own on "SessionLap"';
+    execute 'create policy sessionlap_own on "SessionLap" for all using ("userId" = public.app_user_id()) with check ("userId" = public.app_user_id())';
+  end if;
+
   -- WorkoutTemplate — owner only.
   if to_regclass('public."WorkoutTemplate"') is not null then
     execute 'alter table "WorkoutTemplate" enable row level security';

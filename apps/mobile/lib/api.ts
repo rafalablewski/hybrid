@@ -1,4 +1,4 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, type HeatProtocol } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -532,6 +532,37 @@ export async function patchSessionDevice(id: string, device: DeviceWorkout | nul
 }
 
 /**
+ * Upload a recording's STREAMS — the second-by-second data under the summary.
+ *
+ * A DeviceWorkout is duration, distance, kcal, average and peak heart rate;
+ * every app with a HealthKit entitlement reads those. The heart-rate trace, the
+ * route and the laps are the part that is actually worth owning, and only the
+ * phone can read them — so they go up with the match, not later.
+ *
+ * Best-effort and deliberately separate from the match PATCH: the match is
+ * already saved by the time this runs, and a failed upload must never look like
+ * a failed match. The server sanitises, downsamples and derives the splits and
+ * best efforts from what lands (see core/session-streams.ts).
+ */
+export async function postSessionStreams(
+  id: string,
+  payload: { streams: SessionStream[]; laps: SessionLap[]; activityLabel?: string },
+): Promise<{ streams: number; laps: number }> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}/streams`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) return { streams: 0, laps: 0 };
+    const d = (await res.json().catch(() => ({}))) as { streams?: number; laps?: number };
+    return { streams: d.streams ?? 0, laps: d.laps ?? 0 };
+  } catch {
+    return { streams: 0, laps: 0 };
+  }
+}
+
+/**
  * A row an import put into the log (or joined), named — so the client can ask
  * about it while the athlete is still standing in front of the import. A watch
  * measures everything about a session except how hard it felt, and that is the
@@ -547,6 +578,9 @@ export type DeviceImportLanded = {
   minutes: number;
   /** True for an attach onto a session the athlete had already rated. */
   rated: boolean;
+  /** The health store's id for the recording behind this row — what the client
+   *  needs to go back and upload the streams under the summary. */
+  uuid?: string;
 };
 
 /** What an import changed, as the server counted it. */
