@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, ScrollView, LayoutAnimation, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
   durationUnits, formatDuration,
   groupDistanceDisplay, fmtKm,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
-  figureDeltaPct, figureDirection,
+  figureDeltaPct, figureDirection, activityComparison, comparisonHeadKey,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import { ACard, withAlpha , RADIUS} from "./kit";
+import ActivityCompare from "./activity-compare";
 import PeriodRecords from "./period-records";
 import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import Sheet from "./sheet";
@@ -78,6 +79,15 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE ,
  * doing — at rest it fell back to the sentence's one slot, and the second half
  * of the week stayed unsaid.
  *
+ * THE MARKS RANK ON A LOWER BAR THAN THE SENTENCE (core's
+ * VERDICT_END_THRESHOLD_PCT against VERDICT_THRESHOLD_PCT), and that is the
+ * third thing the row needed. Ranking the ends separately is useless if both
+ * ends have to clear the bar for making a CLAIM: a week of +31% hours, +18%
+ * tonnage, −7% sessions and −9% distance produced a `worst` of null, so the one
+ * measure that actually went backwards rendered in the same ash as the two that
+ * held. A sentence needs a move worth stating; a mark only says which end of
+ * this row the figure is, and the far end is the far end at 9%.
+ *
  * Ranking the ends separately is what lets the row carry both halves at once,
  * and it costs the sentence nothing: `metric` is the LARGER of the same two
  * moves, so the bold word in the lead is always sitting on one of the two lit
@@ -85,24 +95,22 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE ,
  * — 4 km last week against 1 km this week is the thing to look at on a week
  * whose hours went up, and now it is the thing that is lit.
  *
- * THE TWO MARKS ARE NOT SYMMETRIC, deliberately. The rise is a bright figure
- * that glows off the card; the fall is a dark stain the figure sits in — the
- * maroon wash (core `colors.maroon`), which is the palette's only wash and
- * exists for this one column. Toned text alone gave the two ends the same
- * visual weight, and equal weight is the one thing the pair must not have: a
- * week's slip has to be the heavier mark even when its percentage is the
- * smaller one, because it is the half of the week that asks for a decision.
+ * BOTH MARKS ARE FOREGROUND, and the mark owns no background at all. The fall
+ * spent a while sitting in a maroon WASH — a dark stain under the column, on
+ * the argument that a slip must be the heavier of the two marks. It made one
+ * column a SURFACE while the other three were type on the card, so the row read
+ * as three figures and one filled box, and the box was what the eye found first
+ * whether or not the slip was the week's story. Hue and sign already separate
+ * the two ends; weight was never the axis the pair should have argued on.
  *
- * THE MARK IS NOT THE SELECTION, and the two channels are kept apart. The mark
- * is about the PERIOD and does not move: tone on the label and the figure, the
- * end's own signed percentage under it (a second, non-hue channel, since the
- * pair reads as one grey to a red-green athlete), and the fall's wash.
- * Selection is about the FINGER and travels: the 2px rail, plus a 9% wash on
+ * THE MARK IS NOT THE SELECTION, and the two channels are kept apart — which is
+ * now a clean split, since they no longer share the background. The mark is
+ * about the PERIOD and does not move: tone on the label and the figure, plus
+ * that end's own signed percentage under it (a second, non-hue channel, since
+ * the pair reads as one grey to a red-green athlete). Selection is about the
+ * FINGER and travels: the 2px rail, plus a 9% wash of the column's own tone on
  * whichever column is open — including the untoned ones, which wash chalk so a
- * middle column still registers the press. The fall's column has a wash
- * already, so it LIFTS (`maroonLit`) rather than taking a tone-alpha that would
- * have made it go paler under the finger — a press must never read as the mark
- * being lifted off.
+ * middle column still registers the press.
  *
  * THE BREAKDOWN IS A SHEET, and this is the third and last shape it has taken.
  * It began as a second bordered, rounded card drawn INSIDE this one, with a
@@ -279,8 +287,46 @@ export default function AuroraWeekVerdict({
     setAll(false);
   };
 
+  // THE PAGER. The card is two pages wide: the verdict, and the comparison.
+  // `page` is the settled index (momentum end), `pageW` the content width the
+  // ScrollView measures for itself — the card's own inner width, not the
+  // screen's, since the pager lives INSIDE the card and its pages respect the
+  // card's padding (the full-bleed rule is for rails sitting on a screen).
+  const [page, setPage] = useState(0);
+  const [pageW, setPageW] = useState(0);
+  // Each page's own height, so the card can be the height of the page it is on.
+  // Page one is ~157dp of content and page two ~390dp; a pager fixed to the
+  // taller one leaves two hundred points of dead card under the figure row, on
+  // the page an athlete sees first, every time.
+  const [heights, setHeights] = useState<[number, number]>([0, 0]);
+  const pager = useRef<ScrollView | null>(null);
+
+  const measure = (i: 0 | 1) => (e: LayoutChangeEvent) => {
+    const h = Math.round(e.nativeEvent.layout.height);
+    setHeights((prev) => (Math.abs(prev[i] - h) < 1 ? prev : (i === 0 ? [h, prev[1]] : [prev[0], h])));
+  };
+
+  const settle = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const w = e.nativeEvent.layoutMeasurement.width || pageW || 1;
+    const i = Math.max(0, Math.min(1, Math.round(e.nativeEvent.contentOffset.x / w)));
+    if (i === page) return;
+    // The height change is the card growing under the athlete's own drag, so it
+    // eases rather than jumping. Reduce Motion is honoured by the platform:
+    // LayoutAnimation is a no-op when the setting is on.
+    LayoutAnimation.configureNext(LayoutAnimation.create(220, "easeInEaseOut", "scaleY"));
+    setPage(i);
+    if (!hinted) {
+      setHinted(true);
+      AsyncStorage.setItem(HINT_KEY, "1").catch(() => {});
+    }
+  };
+
   const v: ActivityVerdict = useMemo(() => activityVerdict(sessions, range, bw), [sessions, range, bw]);
   const summary = useMemo(() => activitySummary(sessions, range, bw), [sessions, range, bw]);
+  // The second page's model — the same figures, the same baselines and the same
+  // two ends the row above already carries, so the chart and the row can never
+  // disagree about one week.
+  const compare = useMemo(() => activityComparison(v), [v]);
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
   // distance keeps the shared km precision, and minutes go through the shared
@@ -328,7 +374,7 @@ export default function AuroraWeekVerdict({
   // the direction, the figure on the right carries the magnitude, this line
   // carries what it was measured against.
   const why = v.metric && named
-    ? t(verdictWhyKey(v)).replace("{b}", fmt(named.metric, named.baseline))
+    ? t(verdictWhyKey(v)).replace("{b}", fmt(named.metric, named.previous))
     : t(verdictWhyKey(v));
 
   // Four columns only ever appear for a hybrid athlete (tonnage + distance);
@@ -385,7 +431,7 @@ export default function AuroraWeekVerdict({
   const openWhy = openFig && openDelta !== null
     ? t("w.home.act.vsBase")
       .replace("{d}", `${openDelta > 0 ? "+" : openDelta < 0 ? "−" : ""}${Math.abs(openDelta)}%`)
-      .replace("{b}", fmt(openFig.metric, openFig.baseline))
+      .replace("{b}", fmt(openFig.metric, openFig.previous))
     : null;
 
   return (
@@ -409,6 +455,39 @@ export default function AuroraWeekVerdict({
           the lower compartment could supply its own, and the compartment left
           with the drawer. */}
       <ACard>
+        {/* ── THE PAGER. The card is two pages wide now: the VERDICT, and the
+            COMPARISON. The figure row can mark only two of its four metrics
+            (`best` and `worst` are the period's two ENDS), so the other two
+            comparisons were computed on every render and thrown away; page two
+            keeps them. See aurora/activity-compare.tsx for why it is a page and
+            not a sheet.
+
+            It is the app's existing pager idiom — the same `pagingEnabled` +
+            `snapToInterval` + `decelerationRate="fast"` ScrollView that carries
+            workout-wrapped's slides, with that screen's dot indicator under it.
+
+            THE FULL-BLEED RULE DOES NOT APPLY. Screen-level rails must let their
+            cards slide under the physical screen edge; this pager sits INSIDE a
+            card, which is the rule's stated exception, so its pages respect the
+            card's padding and the card keeps its own gutter.
+
+            THE FILTER STAYS OUTSIDE IT, above the card. Both pages describe the
+            same window, so a control that changed on page two would be a second
+            period hiding behind a swipe. ─────────────────────────────────── */}
+        <ScrollView
+          ref={pager}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={pageW || undefined}
+          onLayout={(e) => setPageW(Math.round(e.nativeEvent.layout.width))}
+          onMomentumScrollEnd={settle}
+          // The card is the height of the page it is ON — see `heights` above.
+          style={{ height: heights[page] || undefined }}
+          contentContainerStyle={{ alignItems: "flex-start" }}
+        >
+          <View style={{ width: pageW || undefined }} onLayout={measure(0)}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
           <View style={{ flex: 1 }}>
@@ -457,20 +536,20 @@ export default function AuroraWeekVerdict({
               f.metric === v.best ? "up" : f.metric === v.worst ? "down" : null;
             const col = dir ? dirColor(dir) : null;
             const delta = dir ? figureDeltaPct(f) : null;
-            // THE FALL SITS IN A WASH; THE RISE DOES NOT. The two marks are not
-            // symmetric and should not be: a rise is a bright figure that glows
-            // off the card, a fall is a dark stain the figure sits in. Toned
-            // text alone gave them the same weight, which is the one thing the
-            // pair must not have — a week's slip has to be the heavier mark
-            // even when its percentage is the smaller one.
+            // BOTH MARKS ARE FOREGROUND. The fall used to sit in a maroon wash
+            // — a dark stain under the column, on the argument that a slip must
+            // be the heavier mark. It made the fall a SURFACE while every other
+            // column was type on the card, so the row read as three figures and
+            // one filled box, and the box was the thing the eye found first
+            // whether or not the slip was the week's story. The pair is
+            // separated by hue and by sign, which is the separation it needed;
+            // weight was never the axis it should have argued on.
             //
-            // It LIFTS rather than lightens when opened. The tone-alpha wash the
-            // other columns use would have made the fall's column go PALER under
-            // a finger, so the press read as the mark being lifted off.
-            const wash = f.metric === v.worst
-              ? (isOpen ? C.maroonLit : C.maroon)
-              : isOpen ? withAlpha(col ?? C.chalk, col ? 0.09 : 0.06)
-                : "transparent";
+            // So the background is the SELECTION channel alone, on every column
+            // alike: transparent at rest, a 9% wash of the column's own tone
+            // under a finger, and chalk at 6% for an untoned column so a middle
+            // one still registers the press.
+            const wash = isOpen ? withAlpha(col ?? C.chalk, col ? 0.09 : 0.06) : "transparent";
             return (
               <Pressable
                 key={f.metric}
@@ -496,9 +575,9 @@ export default function AuroraWeekVerdict({
                   // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
                   // here: at 9% it reads as the column being lit rather than as
                   // a second surface laid over the card. An untoned column still
-                  // has to register the press, so it washes chalk. The FALL is
-                  // the exception — see `wash` above, it carries its maroon at
-                  // rest.
+                  // has to register the press, so it washes chalk. NOTHING sits
+                  // here at rest, on any column — the background is selection's
+                  // channel and the marks are foreground (see `wash` above).
                   backgroundColor: wash,
                 }}
               >
@@ -540,9 +619,46 @@ export default function AuroraWeekVerdict({
             at the column that opened the panel, and a sheet needs no pointing —
             see the file header. */}
 
+          </View>
+
+          {/* PAGE TWO — every metric against its own average, on one axis. */}
+          <View style={{ width: pageW || undefined }} onLayout={measure(1)}>
+            <ActivityCompare
+              rows={compare}
+              headline={t(comparisonHeadKey(v))}
+              fmt={fmt}
+              onOpen={openColumn}
+              t={t}
+            />
+          </View>
+        </ScrollView>
+
+        {/* THE PAGE INDICATOR — workout-wrapped's, verbatim: 7dp dots, the
+            active one a 20dp chartreuse pill. Reused rather than re-drawn,
+            because five rails once drew five different tails. */}
+        <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginTop: 14 }}>
+          {[0, 1].map((i) => (
+            <View
+              key={i}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={{
+                width: i === page ? 20 : 7, height: 7, borderRadius: RADIUS.pill,
+                backgroundColor: i === page ? C.lime : C.line,
+              }}
+            />
+          ))}
+        </View>
+
+        {/* THE HINT, ONCE, and it now teaches the SWIPE. The dots say there is
+            more, but they do not say what, and the second page is the only
+            thing on this card an athlete cannot find by looking at it — a
+            column is a large figure that obviously presses. It retires on the
+            first swipe OR the first column opened, whichever comes first, under
+            the key it always used. */}
         {!hinted && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
-            {t("w.home.act.hint")}
+            {t("w.home.cmp.hint")}
           </Text>
         )}
       </ACard>

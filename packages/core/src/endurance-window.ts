@@ -100,9 +100,18 @@ export type EnduranceMetric = (typeof ENDURANCE_METRICS)[number];
 export interface EnduranceWindow {
   range: ActivityRange;
   totals: EnduranceTotals;
-  /** Mean of the preceding windows of the same length — the same comparison
-   *  the verdict card makes, so "up on your average" means one thing on this
-   *  screen. Zeroes when there is no history to compare against. */
+  /**
+   * THE AXIS — the period immediately before this one, and what this section's
+   * percentage is measured from. It is the SAME comparison the verdict card
+   * above it makes, which is the whole reason it has to move when that one
+   * does: both cards read one range filter, so a screen where the totals card
+   * says "up on last week" and the endurance card says "up on your average"
+   * is one screen giving two answers about one window.
+   */
+  previous: EnduranceTotals;
+  /** THE LANDMARK — the mean of the preceding windows. Kept for the same
+   *  reason the verdict card keeps it: "up on last week" and "still under your
+   *  normal" are different facts. Zeroes when there is no history. */
   baseline: EnduranceTotals;
   /** Biggest first, by minutes. */
   slices: EnduranceSlice[];
@@ -170,7 +179,8 @@ function windowSlice(
 /**
  * The endurance read for a period, with the baseline it is measured against.
  *
- * The baseline is the mean of the preceding windows of the same length —
+ * The axis is the window immediately before; the mean of the preceding windows
+ * of the same length is kept beside it as a landmark —
  * INCLUDING any that were empty, because a fortnight off genuinely is part of
  * your average and dropping it would make every return look like a personal
  * best. Same rule, same windows, as the verdict card.
@@ -190,10 +200,14 @@ export function enduranceWindow(
   );
   const mean = (pick: (t: EnduranceTotals) => number) =>
     priors.length ? priors.reduce((n, p) => n + pick(p), 0) / priors.length : 0;
+  // Nearest first, so priors[0] is the window the athlete is asking about.
+  const prior = priors[0] ?? null;
+  const zero: EnduranceTotals = { efforts: 0, minutes: 0, distanceKm: 0 };
 
   return {
     range,
     totals,
+    previous: prior ? { efforts: prior.efforts, minutes: prior.minutes, distanceKm: prior.distanceKm } : zero,
     baseline: {
       efforts: mean((t) => t.efforts),
       minutes: mean((t) => t.minutes),
@@ -212,23 +226,29 @@ export const enduranceValue = (t: EnduranceTotals, m: EnduranceMetric): number =
   m === "efforts" ? t.efforts : m === "distance" ? t.distanceKm : t.minutes;
 
 /**
- * A METRIC'S OWN MOVE — the signed % it sits above or below its own baseline,
- * rounded. Null when there is no baseline to move from, which is a different
- * fact from "it did not move" and must never render as 0%. Same contract as
- * the verdict card's `figureDeltaPct`, so the two cards' deltas mean the same
- * thing.
+ * A METRIC'S OWN MOVE — the signed % it sits above or below the PERIOD BEFORE
+ * IT, rounded. Null when there is no previous period to move from, which is a
+ * different fact from "it did not move" and must never render as 0%. Same
+ * contract AND the same axis as the verdict card's `figureDeltaPct`, so the two
+ * cards on one screen cannot answer one range filter two ways.
  */
 export function enduranceDeltaPct(w: EnduranceWindow, m: EnduranceMetric): number | null {
-  const base = enduranceValue(w.baseline, m);
+  const base = enduranceValue(w.previous, m);
   if (base <= 0) return null;
   return Math.round(((enduranceValue(w.totals, m) - base) / base) * 100);
 }
 
 /**
- * A METRIC'S OWN DIRECTION, on the SAME threshold the verdict card uses — so a
- * move too small to be worth a claim up there is also too small to be worth a
- * hue down here, and the two cards can never contradict each other about
- * whether a week was flat.
+ * A METRIC'S OWN DIRECTION, on the verdict card's SENTENCE threshold
+ * (VERDICT_THRESHOLD_PCT) — because what this tones is a sentence too: the
+ * signed delta inside this section's lead. A move too small to be worth a claim
+ * up there is too small to be worth one down here, and the two cards can never
+ * contradict each other about whether a period was flat.
+ *
+ * It is deliberately NOT the verdict card's lower mark threshold
+ * (VERDICT_END_THRESHOLD_PCT). That one ranks the two ENDS of a row of figures
+ * — which end of four this is — and this section's lead is one figure with no
+ * row to be an end of, so there is nothing here for the lower bar to rank.
  */
 export function enduranceDirection(w: EnduranceWindow, m: EnduranceMetric): VerdictDirection {
   const d = enduranceDeltaPct(w, m);

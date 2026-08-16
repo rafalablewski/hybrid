@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { addLocalDays, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { renderScreen } from "./render";
 
@@ -217,39 +217,162 @@ describe("the activity card's marks", () => {
 });
 
 /**
- * THE FALL SITS IN A WASH — the two marks are deliberately unequal.
+ * A SLIP TOO SMALL FOR THE SENTENCE IS STILL THE ROW'S WORST END.
  *
- * Toned text alone gave the rise and the fall the same visual weight, and equal
- * weight is the one thing the pair must not have: a week's slip is the half that
- * asks for a decision, so it reads as a dark stain the figure sits in while the
- * rise is a bright figure glowing off the card.
- *
- * The assertion is that the maroon lands on the WORST column and on nothing
- * else — a wash that spreads is a wash that has stopped meaning anything.
+ * The reported week: time up a third, tonnage up, and distance down NINE per
+ * cent — the only measure that went backwards, and the only one the row said
+ * nothing about, because the ends were once ranked on the SENTENCE's 15%
+ * threshold. The marks rank on core's lower VERDICT_END_THRESHOLD_PCT now: a
+ * claim in words needs a move worth stating, a mark only says which end of this
+ * row a figure is.
  */
-describe("the fall's maroon wash", () => {
+const shallowFall: LoggedSession[] = [
+  longLift(0), run(0, 3.6),
+  lift(1), run(1, 4),
+  lift(2), run(2, 4),
+  lift(3), run(3, 4),
+  lift(4), run(4, 4),
+];
+
+describe("a faller under the sentence's threshold", () => {
   const columnFor = (prefix: string) =>
     screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith(prefix));
 
-  it("backs the worst column at rest, before anything is pressed", () => {
-    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
-    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(58, 31, 25)"); // colors.maroon
+  it("still takes the drop mark", () => {
+    renderScreen(<AuroraWeekVerdict sessions={shallowFall} units="kg" />);
+
+    expect(columnFor("Distance")!.getAttribute("aria-label")).toContain("biggest drop this period");
   });
 
-  it("does not back the rise, nor the columns that did not move", () => {
+  it("prints its own single-digit move, and leaves the sentence alone", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={shallowFall} units="kg" />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("−10%");
+    // The lead is still the rise — a 10% slip is not worth a claim in words.
+    expect(text).toContain("+33%");
+  });
+});
+
+/**
+ * BOTH MARKS ARE FOREGROUND — the row carries no fill at rest.
+ *
+ * The fall used to sit in a maroon WASH, on the argument that a slip should be
+ * the heavier of the two marks. It made one column a surface while the other
+ * three were type on the card, so the row read as three figures and one filled
+ * box — and the box was what the eye found first whether or not the slip was
+ * the week's story. Hue and sign already separate the ends.
+ *
+ * So the background belongs to SELECTION alone, and these are the assertions
+ * that keep the two channels from merging again: nothing is filled until a
+ * finger lands, and what a finger produces is a tint of that column's own tone.
+ */
+describe("the row's backgrounds", () => {
+  const columnFor = (prefix: string) =>
+    screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith(prefix));
+  const bare = (bg: string) => bg === "" || bg === "rgba(0, 0, 0, 0)" || bg === "transparent";
+
+  it("leaves EVERY column unfilled at rest, the fall included", () => {
     renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
-    // The rise glows instead of staining; the flat columns carry nothing at all.
-    for (const prefix of ["Hours", "Tonnage", "Sessions"]) {
+    for (const prefix of ["Tonnage", "Sessions", "Hours", "Distance"]) {
       const bg = columnFor(prefix)!.style.backgroundColor;
-      expect(bg === "" || bg === "rgba(0, 0, 0, 0)", `${prefix} is washed — got "${bg}"`).toBe(true);
+      expect(bare(bg), `${prefix} is filled at rest — got "${bg}"`).toBe(true);
     }
   });
 
-  it("LIFTS under a finger rather than going paler", () => {
+  it("still marks the fall — in the foreground, where both marks now live", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    expect(columnFor("Distance")!.getAttribute("aria-label")).toContain("biggest drop this period");
+    expect(container.textContent ?? "").toContain("−75%");
+  });
+
+  it("fills only under a finger, in that column's own tone", () => {
     renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
     fireEvent.click(columnFor("Distance")!);
-    // A tone-alpha selection wash would have lightened it toward the card,
-    // reading as the mark being lifted off by the press.
-    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(78, 42, 32)"); // colors.maroonLit
+    // 9% of terracotta (#e58a5c) — selection's channel, not the mark's.
+    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgba(229, 138, 92, 0.09)");
+    // …and it is the ONLY column filled: selection travels, the marks do not.
+    for (const prefix of ["Tonnage", "Sessions", "Hours"]) {
+      expect(bare(columnFor(prefix)!.style.backgroundColor)).toBe(true);
+    }
+  });
+});
+
+/**
+ * THE SECOND PAGE — every metric against its own average.
+ *
+ * The figure row marks TWO of four metrics, because `best` and `worst` are the
+ * period's two ends and a row of totals has no room to argue about the middle.
+ * The other two comparisons were computed on every render and thrown away. The
+ * assertions here are that page two keeps them, that it says the same thing
+ * about the same week as the row one drag away, and that colour still marks
+ * only the two ends — a chart that lit every rise would put chartreuse on a
+ * column the row leaves in ash.
+ */
+describe("the comparison page", () => {
+  const textOf = () => (screen.getByText(/four-week average/i).closest("div")?.textContent ?? "");
+
+  it("carries a row for every figure, not just the two the row marks", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const text = container.textContent ?? "";
+
+    // All four metrics named, and all four moves stated — the two the sentence
+    // and the row can never get to are +0% and -0% nowhere: they are printed.
+    for (const label of ["Tonnage", "Sessions", "Hours", "Distance"]) {
+      expect(text).toContain(label);
+    }
+    expect(text).toContain("+33%");  // hours, the rise
+    expect(text).toContain("−75%");  // distance, the fall
+  });
+
+  it("wears the by-muscle head — a title, and a meta that names the axis", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const text = (container.textContent ?? "").toLowerCase();
+    // Display-face title left, mono meta right, exactly as Volume's "By muscle"
+    // sets it. The meta names the AXIS and nothing else — the WINDOW is
+    // deliberately absent, since the section head above the card already names
+    // it and printing it twice is the redundancy the Progress sweep catches.
+    expect(text).toContain("by metric");
+    expect(text).toContain("vs previous 7 days");
+  });
+
+  it("puts three landmarks in the scale's grammar, as MEV / MAV / MRV are three", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const text = container.textContent ?? "";
+    // Where you were, where you are, what your normal is — a quiet label and a
+    // loud figure each, pinned left so the values align down the whole list.
+    expect(text).toContain("PREV");
+    expect(text).toContain("NOW");
+    expect(text).toContain("AVG");
+  });
+
+  it("spells a row out for a screen reader, difference included", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const labels = screen.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? "");
+    const row = labels.find((l) => l.includes("difference of"));
+    expect(row).toBeTruthy();
+    // A screen reader gets neither the bar's direction nor its length, so the
+    // sentence has to carry the percentage, both figures and the difference.
+    expect(row).toMatch(/%/);
+    expect(row).toMatch(/from .+ to /);
+  });
+
+  it("puts the page indicator under the card, as a pair", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    // Two dots, and the active one is the chartreuse pill (20dp wide).
+    const dots = [...container.querySelectorAll("div")].filter((d) => {
+      const s = (d as HTMLElement).style;
+      return s.height === "7px" && (s.width === "7px" || s.width === "20px");
+    });
+    expect(dots).toHaveLength(2);
+    expect(dots.filter((d) => (d as HTMLElement).style.width === "20px")).toHaveLength(1);
+  });
+
+  it("teaches the swipe once — the only thing on the card you cannot see", async () => {
+    // The hint starts hidden and can only ever appear (never flash in), so it
+    // arrives with the stored flag rather than on the first frame.
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    await waitFor(() =>
+      expect((container.textContent ?? "").toLowerCase()).toContain("swipe for every metric"));
   });
 });

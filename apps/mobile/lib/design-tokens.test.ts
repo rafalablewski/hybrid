@@ -997,4 +997,27 @@ describe("screens", () => {
     const bad = owns.filter((f) => !/useEntrance\b/.test(f.text)).map((f) => f.path);
     expect(bad, `\nowns its scaffold but not its entrance:\n  ${bad.join("\n  ")}\n`).toEqual([]);
   });
+
+  it("HARD — the measure row is a component, not a shape two screens both know", () => {
+    // Volume's "By muscle" list and the Progress card's comparison page ask the
+    // identical question — a measure, where it sits, and the landmarks that
+    // give the mark meaning — and the second was built as a hand-rolled copy of
+    // the first. aurora/measure-row.tsx is now the one definition of that row's
+    // head line, its rail and its landmark scale, so a change to any of the
+    // three lands on both screens or on neither.
+    //
+    // The rail's own geometry is what this pins, because it is the piece most
+    // easily re-typed: an 11dp track is the field a measure is marked in, and a
+    // second file stating it is a second rail that will drift.
+    const rail = FILES.filter((f) => /height:\s*11\b[\s\S]{0,80}?backgroundColor:\s*C\.ink\b/.test(f.text))
+      .map((f) => f.path)
+      .filter((p) => p !== "components/aurora/measure-row.tsx");
+    expect(rail, `\nthe measure rail is re-typed outside measure-row.tsx:\n  ${rail.join("\n  ")}\n`).toEqual([]);
+
+    // …and both screens really do read it, so this rule is guarding something
+    // that exists rather than a file nobody imports.
+    const readers = FILES.filter((f) => /from "\.\/measure-row"/.test(f.text)).map((f) => f.path);
+    expect(readers).toContain("components/aurora/volume.tsx");
+    expect(readers).toContain("components/aurora/activity-compare.tsx");
+  });
 });

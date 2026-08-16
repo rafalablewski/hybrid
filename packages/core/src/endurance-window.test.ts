@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
-  enduranceWindow, enduranceDeltaPct, enduranceLead, enduranceValue, hasEnduranceHistory,
+  enduranceWindow, enduranceDeltaPct, enduranceDirection, enduranceLead, enduranceValue, hasEnduranceHistory,
 } from "./endurance-window";
+import { activityVerdict, figureDeltaPct } from "./week-verdict";
 import { activitySummary, resolveActivityRange } from "./activity-window";
 import type { LoggedSession, SessionBlock } from "./engines/session";
 
@@ -210,5 +211,46 @@ describe("hasEnduranceHistory", () => {
 
   it("is true for other sports too, not just lane disciplines", () => {
     expect(hasEnduranceHistory([sess("squash", 3, [cardio("Squash", 45, "sport")], 45)])).toBe(true);
+  });
+});
+
+/* ── ONE SCREEN, ONE AXIS ──────────────────────────────────────────────────
+   The Endurance section and the verdict card sit on the same screen, read the
+   same range filter, and this section's minutes are a strict SLICE of that
+   card's hours. So they cannot measure from different windows: a screen where
+   the totals card says "up on last week" and the endurance card says "up on
+   your average" is one screen giving two answers about one window. The card's
+   axis moved to the previous period, and this is the assertion that dragged
+   this file with it. */
+describe("the endurance window shares the card's axis", () => {
+  /** Last week 30 min of running; the three before it 90. A mean would call
+   *  this week's 45 min a FALL; against last week it is a rise. */
+  const jog: LoggedSession[] = [
+    sess("now", 2, [cardio("Run", 45, "running")], 45),
+    sess("w1", 9, [cardio("Run", 30, "running")], 30),
+    sess("w2", 16, [cardio("Run", 90, "running")], 90),
+    sess("w3", 23, [cardio("Run", 90, "running")], 90),
+    sess("w4", 30, [cardio("Run", 90, "running")], 90),
+  ];
+
+  it("measures from the period before, not the mean of several", () => {
+    const w = enduranceWindow(jog, resolveActivityRange("d7", NOW));
+    expect(w.previous.minutes).toBe(30);
+    expect(w.baseline.minutes).toBe(75);
+    expect(enduranceDeltaPct(w, "minutes")).toBe(50);
+    expect(enduranceDirection(w, "minutes")).toBe("up");
+  });
+
+  it("says the same thing about the same window as the card above it", () => {
+    const range = resolveActivityRange("d7", NOW);
+    const w = enduranceWindow(jog, range);
+    const v = activityVerdict(jog, range);
+    const hours = v.figures.find((f) => f.metric === "hours")!;
+
+    // These sessions are endurance only, so the section's minutes ARE the
+    // card's hours column — and both now divide by the same denominator.
+    expect(w.totals.minutes).toBe(hours.value);
+    expect(w.previous.minutes).toBe(hours.previous);
+    expect(enduranceDeltaPct(w, "minutes")).toBe(figureDeltaPct(hours));
   });
 });

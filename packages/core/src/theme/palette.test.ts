@@ -54,23 +54,14 @@ describe("theme palettes meet WCAG AA", () => {
       expect(contrastRatio(t.onAccent, t.accent)).toBeGreaterThanOrEqual(WCAG.AA);
     });
 
-    // THE MAROON WASH — the activity card's fall sits in it, and terracotta is
-    // what is printed ON it. A wash that keeps darkening until it swallows its
-    // own figure is the failure mode: the mark would still be visible as a
-    // surface while the number it exists to draw attention to went unreadable.
-    // Guarded at both levels, because the lit one is what a finger produces.
-    for (const [level, wash] of [["maroon", colors.maroon], ["maroonLit", colors.maroonLit]] as const) {
-      it(`${name}: terracotta on the ${level} wash ≥ AA`, () => {
-        expect(contrastRatio(t.accentText.red, wash)).toBeGreaterThanOrEqual(WCAG.AA);
-      });
-    }
-
-    // …and it has to still read as a WASH. Too far from the card underneath and
-    // it stops being a stain on the column and becomes a second card drawn
-    // inside the first — the exact reading the breakdown drawer was un-carded
-    // to end.
-    it(`${name}: the maroon wash stays a wash, not a surface of its own`, () => {
-      expect(contrastRatio(colors.maroon, t.card)).toBeLessThan(1.6);
+    // THE PALETTE CARRIES NO COMPOSITED WASHES. `maroon` / `maroonLit` were
+    // here for the activity card's fallen column and left with it — three
+    // guards went with them. A background is a named SURFACE or a withAlpha()
+    // tint of a foreground colour; a hand-composited third kind has to be
+    // re-derived the moment the surface under it changes, which is the drift
+    // this asserts against.
+    it(`${name}: no composited wash tokens creep back into the palette`, () => {
+      expect(Object.keys(colors).filter((k) => /wash|maroon/i.test(k))).toEqual([]);
     });
   }
 });

@@ -28,25 +28,19 @@ export const colors = {
   violet: "#8296c4", // steel/slate blue — coach & non-premium accent (was #c9a9f0 lavender)
   amber: "#d0cd94", // sand — sport / caution accent (Plan) + the premium-upgrade cue
   red: "#d56f3e", // terracotta — alert / injury / streak (Connect)
-  // MAROON — a SURFACE, never text. The only wash in the palette, and it exists
-  // because the activity card's two marks are not symmetric: the rise is a
-  // bright figure that glows, the fall is meant to read as a dark stain
-  // underneath one. Terracotta text alone gave the fall the same visual weight
-  // as the rise, and the whole point of the pair is that they do not weigh the
-  // same.
+  // NO WASH TOKENS. `maroon` / `maroonLit` lived here for one consumer — the
+  // activity card's fallen column, which sat in a dark stain so the fall would
+  // outweigh the rise. It is gone (Aug 2026): a stain made that one column a
+  // SURFACE while the other three were type on the card, so the row read as
+  // three figures and one filled box, and the box was what the eye found first
+  // whether or not the slip was the week's story. Both ends are foreground now,
+  // separated by hue and by sign.
   //
-  // These are COMPOSITED values, not alphas: the column they sit in only ever
-  // sits on `card`, so stating the result is exact where a wash-over-alpha is a
-  // guess that drifts the moment the surface under it changes. `maroonLit` is
-  // the same wash under a finger — the fall's column has to be able to register
-  // a press without going PALER, which is what a tone-alpha selection wash
-  // would have done to it.
-  //
-  // Both are guarded against `accentText.red` in palette.test.ts (5.8:1 and
-  // 4.8:1): terracotta is what is printed ON this, so a wash that darkens until
-  // it swallows its own figure is the failure mode to watch.
-  maroon: "#3a1f19", // the FALL's resting wash, on `card`
-  maroonLit: "#4e2a20", // …the same wash while its column is open
+  // The palette therefore has no composited surface colours at all, and that is
+  // the state to keep it in: a background here is either a named SURFACE (ink /
+  // ink2 / card) or a tint of a foreground colour through withAlpha(), never a
+  // third kind of thing that has to be re-derived by hand whenever the surface
+  // under it changes.
 } as const;
 
 export type ColorToken = keyof typeof colors;
