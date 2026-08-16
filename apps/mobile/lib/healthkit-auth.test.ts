@@ -37,6 +37,10 @@ import { describe, expect, it } from "vitest";
  */
 
 const SRC = readFileSync(join(__dirname, "healthkit.ts"), "utf8");
+/** Everything in the bridge that opens a permission sheet. */
+const STREAM_ASKERS = ["connectHealthKit", "requestDeviceReadAuth", "requestStreamReadAuth"];
+/** The screens that can reach the trace path at all. */
+const SCREEN = (f: string) => readFileSync(join(__dirname, "..", "components", f), "utf8");
 
 /** A function body, from its signature to the closing brace at column 0. */
 function body(name: string): string {
@@ -53,13 +57,19 @@ describe("HealthKit authorization is split where the crash was", () => {
     expect(ask).not.toContain("STREAM_READ_TYPES");
   });
 
-  it("the stream types are asked for in one deliberate place", () => {
+  it("the stream types are asked for in exactly one place", () => {
     expect(body("requestStreamReadAuth")).toContain("STREAM_READ_TYPES");
-    // Exactly two `requestAuthorization` call sites in the whole bridge: the
-    // connect sheet (one deliberate tap that asks for everything at once) and
-    // the two functions above. A third is a sheet somebody didn't ask for.
+    // Three `requestAuthorization` call sites in the whole bridge: connect, the
+    // device sheets' workout ask, and the stream ask. A fourth is a sheet
+    // somebody didn't ask for.
     const asks = SRC.match(/requestAuthorization\(/g) ?? [];
     expect(asks.length).toBe(3);
+    // And ONE of those three may name the series types. The connect sheet used
+    // to include them so a later match wouldn't prompt — which put one of the
+    // three calls the app may still be dying inside behind "Connect Apple
+    // Health", a button pressed long before anybody wants a GPS track.
+    const streamAsks = STREAM_ASKERS.filter((fn) => body(fn).includes("STREAM_READ_TYPES"));
+    expect(streamAsks).toEqual(["requestStreamReadAuth"]);
   });
 
   it("no read path asks for a permission", () => {
@@ -83,6 +93,29 @@ describe("HealthKit authorization is split where the crash was", () => {
     // The unattended pass may not be the first thing on a phone to meet that
     // native call — see `streamsProven`.
     expect(body("backfillWorkoutStreams")).toContain("streamsProven");
+  });
+
+  it("only the control that says what it does can take the first trace read", () => {
+    // THE INVARIANT THIS WHOLE FIX RESTS ON, and it spans files, so it is
+    // checked across them: every caller of the trace path other than the import
+    // sheet's own trace row must be behind `streamsProven` — the flag set by a
+    // read that has already come back on this phone. Otherwise the first
+    // encounter with the call the app may still be dying inside happens on a
+    // tap that never mentioned recordings (matching a workout), or on no tap at
+    // all (a foreground sync).
+    const match = SCREEN("device-match.tsx");
+    expect(match).toContain("uploadWorkoutStreams");
+    expect(match, "device-match must gate its upload on streamsProven").toContain("streamsProven");
+
+    const sheet = SCREEN("device-import.tsx");
+    // The sheet uploads in two places: automatically once proven, and from the
+    // trace row. The automatic one is the guarded one.
+    expect(sheet).toMatch(/trace\.granted && trace\.proven/);
+    // The stream ask is reached from the trace row and nowhere else in the app.
+    const askers = ["device-import.tsx", "device-match.tsx"].filter((f) =>
+      SCREEN(f).includes("requestStreamReadAuth"),
+    );
+    expect(askers).toEqual(["device-import.tsx"]);
   });
 
   it("the stream spans are named one native call at a time", () => {

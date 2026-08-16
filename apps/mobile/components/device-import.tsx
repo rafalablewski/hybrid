@@ -23,7 +23,12 @@ import {
   streamsProven,
   uploadLandedStreams,
 } from "../lib/healthkit";
-import { readHealthFaults, type HealthStep } from "../lib/healthkit-watchdog";
+import {
+  forgetHealthFaults,
+  readHealthFaults,
+  STREAM_HEALTH_STEPS,
+  type HealthStep,
+} from "../lib/healthkit-watchdog";
 import { importDeviceWorkouts, type DeviceImportLanded } from "../lib/api";
 import { FeelPrompt } from "./feel-prompt";
 import { setLoggerPref, useLoggerPrefs } from "../lib/logger-prefs";
@@ -122,6 +127,11 @@ export function DeviceImportSheet({
   // the app close. This line is the only thing that can turn that into a report
   // anybody can act on, so it names the span rather than apologising vaguely.
   const [faults, setFaults] = useState<HealthStep[]>([]);
+  /** Has one of the trace spans been implicated in a process that vanished?
+   *  Then the row is a "try anyway" — the read is skipped until asked for by
+   *  name, and a control that silently does nothing is worse than the crash it
+   *  is avoiding. Covers the previous build's single "streams" name too. */
+  const streamFaulted = faults.some((f) => (f as string).startsWith("stream"));
   // "vs your usual" is the athlete against THEMSELVES over the last month.
   // Bodyweight is not passed because it cannot move this number: a felt load is
   // effort × minutes, and neither term is bodyweight-dependent.
@@ -242,10 +252,20 @@ export function DeviceImportSheet({
     if (tracing) return;
     haptic.selection();
     setTracing(true);
+    // AN IMPLICATED SPAN IS SKIPPED UNTIL SOMEBODY ASKS FOR IT BY NAME, and this
+    // tap is that ask. A phone that met the crash under an earlier build is
+    // carrying a marker for it right now, so without this the row would sit
+    // there doing nothing at all — quarantine turning into a dead control, with
+    // no way back and nothing said. The fault line above the row is what makes
+    // it an informed tap rather than a mystery.
+    if (streamFaulted) await forgetHealthFaults(STREAM_HEALTH_STEPS).catch(() => {});
     const granted = trace.granted || (await requestStreamReadAuth());
     const done = granted && allLanded.length ? await uploadLandedStreams(allLanded).catch(() => 0) : 0;
     setTrace({ granted: await streamReadGranted(), proven: await streamsProven() });
     setTraced(granted && allLanded.length ? done : null);
+    // Whatever the read did, the record is what it is now — including a marker
+    // this very tap may have just left behind and come back from.
+    setFaults(Object.keys(await readHealthFaults()) as HealthStep[]);
     setTracing(false);
   };
 
@@ -257,7 +277,10 @@ export function DeviceImportSheet({
     trace.granted && trace.proven ? null : (
       <Pressable
         onPress={() => void fetchTraces()}
-        disabled={tracing || (trace.granted && allLanded.length === 0)}
+        // A faulted span makes this row an offer again even with nothing landed:
+        // the tap is what lifts the quarantine, and refusing it would leave the
+        // athlete looking at a control that cannot be operated.
+        disabled={tracing || (trace.granted && allLanded.length === 0 && !streamFaulted)}
         accessibilityRole="button"
         accessibilityLabel={t("device.import.traceTitle")}
         accessibilityHint={t("device.import.traceDesc")}
@@ -281,11 +304,15 @@ export function DeviceImportSheet({
           >
             {traced != null
               ? t("device.import.traceDone").replace("{n}", String(traced))
-              : !trace.granted
-                ? t("device.import.traceCta")
-                : // Granted, with nothing landed to fetch for: the row is a
-                  // state rather than an action, and says so in ash.
-                  t(allLanded.length ? "device.import.traceFetch" : "device.import.traceOn")}
+              : streamFaulted
+                ? // The span this row runs has been implicated in a vanished
+                  // process. The word has to carry that, or the tap is a trap.
+                  t("device.import.traceRetry")
+                : !trace.granted
+                  ? t("device.import.traceCta")
+                  : // Granted, with nothing landed to fetch for: the row is a
+                    // state rather than an action, and says so in ash.
+                    t(allLanded.length ? "device.import.traceFetch" : "device.import.traceOn")}
           </Text>
         )}
       </Pressable>

@@ -168,9 +168,34 @@ export async function readHealthFaults(): Promise<Faults> {
   return faults;
 }
 
-/** Forget the record — for a "try it anyway" the athlete asked for. */
-export async function forgetHealthFaults(): Promise<void> {
-  faults = {};
-  await AsyncStorage.removeItem(FAULTS_KEY).catch(() => {});
+/**
+ * Forget the record — for a "try it anyway" the athlete asked for.
+ *
+ * WITHOUT THIS THE QUARANTINE IS A LIFE SENTENCE, which is not what it is for.
+ * A marker is evidence that a span did not return, not proof it can never
+ * return: iOS terminating a suspended app mid-read leaves exactly the same
+ * trace, and so does a force-quit. So a span that has been implicated is one an
+ * athlete may still ask for by name — and the only sane place to decide that is
+ * in front of the control that runs it, which is why the import sheet's trace
+ * row turns into "Try anyway" rather than going quietly dead.
+ *
+ * Scoped, because "try the recording again" must not also clear the record of a
+ * different span dying somewhere else.
+ */
+export async function forgetHealthFaults(steps?: HealthStep[]): Promise<void> {
+  if (!steps) faults = {};
+  else {
+    const next = { ...faults };
+    // The previous build's flat name covered all three stream calls, so a retry
+    // of any of them has to clear it too or the record outlives its meaning.
+    for (const s of steps) delete next[s];
+    if (steps.some((s) => STREAM_STEPS.includes(s))) delete (next as Faults & Record<string, number>)[LEGACY_STREAM_STEP];
+    faults = next;
+  }
+  await AsyncStorage.setItem(FAULTS_KEY, JSON.stringify(faults)).catch(() => {});
   await AsyncStorage.removeItem(INFLIGHT_KEY).catch(() => {});
 }
+
+/** The spans behind a recording's trace — what a "try anyway" on the trace row
+ *  clears, and what the sheet checks before offering one. */
+export const STREAM_HEALTH_STEPS: HealthStep[] = STREAM_STEPS;

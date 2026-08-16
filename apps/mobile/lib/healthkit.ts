@@ -138,12 +138,18 @@ async function registerAppleConnection(action: "connect" | "disconnect"): Promis
 export async function connectHealthKit(): Promise<{ ok: boolean; error?: string }> {
   const hk = loadHealthKit();
   if (!hk) return { ok: false, error: "unavailable" };
-  // Under the watchdog like every other native span. This is the ONE ask that
-  // still puts the whole list to the store in a single sheet, which is right
-  // here — connecting is a deliberate tap on a button that says so — but it
-  // makes this the one remaining place a permission request could take the
-  // process, and a span that names itself is the difference between a report
-  // and a shrug.
+  // Under the watchdog like every other native span. Connecting is a deliberate
+  // tap on a button that says so, so this is where the whole DAILY + WORKOUT
+  // list goes to the store in one sheet rather than prompting again later.
+  //
+  // THE SERIES TYPES ARE NOT IN IT, and that is not a tidy-up. They used to be:
+  // a fresh connect sheeted everything at once so a later match wouldn't prompt.
+  // But the ask for those three types is one of exactly three native calls the
+  // app can still be dying inside, and leaving it here would mean "Connect Apple
+  // Health" — a button an athlete presses long before they care about a GPS
+  // track — could take the process for a feature they haven't asked for yet.
+  // One place asks for them now (`requestStreamReadAuth`), reached from one
+  // control that says what it is for. Pinned by healthkit-auth.test.ts.
   const res = await nativeSpan(
     "auth",
     async () => {
@@ -153,12 +159,8 @@ export async function connectHealthKit(): Promise<{ ok: boolean; error?: string 
             // EVERYTHING the relay can store, asked for once. The list was three
             // types; the rest of Apple Health sat on the phone unread.
             ...DAILY_READ_TYPES,
-            // The summary's workout match reads the workout list + its HR/energy,
-            // and the stream read that follows a match wants the route and the
-            // cycling series. Asked here too so a fresh connect sheets everything
-            // ONCE rather than prompting again the first time a workout matches.
+            // The summary's workout match reads the workout list + its HR/energy.
             ...WORKOUT_READ_TYPES,
-            ...STREAM_READ_TYPES,
           ],
         });
         return ok ? null : "authorization did not complete";
@@ -170,10 +172,9 @@ export async function connectHealthKit(): Promise<{ ok: boolean; error?: string 
   );
   if (res) return { ok: false, error: res };
   await AsyncStorage.setItem(CONNECTED_KEY, "1").catch(() => {});
-  // This sheet covered the workout + stream types too, so the reads behind them
-  // are cleared without a dialog of their own — but that is the STORE's answer
-  // to give, not ours to record (see `storeHasAsked`). All this does is forget
-  // the cached answer, so the next read asks again and gets the new one.
+  // What this sheet cleared is the STORE's answer to give, not ours to record
+  // (see `storeHasAsked`). All this does is forget the cached answer, so the
+  // next read asks again and gets the new one.
   forgetAskedCache();
   await registerAppleConnection("connect");
   return { ok: true };
