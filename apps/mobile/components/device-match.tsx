@@ -101,6 +101,11 @@ export function DeviceMatchSheet({
     // AFTER the match is saved and never awaited: the athlete is done here, the
     // upload takes as long as a GPS track takes, and a failed upload must not
     // look like a failed match.
+    //
+    // It reads NOTHING unless the athlete has granted the series types on the
+    // import sheet's trace row — no permission sheet is raised from here, and no
+    // series type is queried that the store was never asked about. Before that
+    // it is a no-op, and the match is unaffected either way.
     void uploadWorkoutStreams(session.id, w.uuid).catch(() => undefined);
     onMatched({ ...w, matchedAt: new Date().toISOString() });
     onClose();

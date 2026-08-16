@@ -5,6 +5,8 @@ import {
   healthKitAvailability,
   healthKitConnected,
   queryRecentDeviceWorkouts,
+  streamReadGranted,
+  streamsProven,
   uploadLandedStreams,
 } from "./healthkit";
 import { importDeviceWorkouts, type DeviceImportResult } from "./api";
@@ -41,9 +43,15 @@ export async function runDeviceImport(): Promise<DeviceImportResult | null> {
   const res = await importDeviceWorkouts(workouts);
   if (res) await AsyncStorage.setItem(LAST_RUN_KEY, String(Date.now())).catch(() => {});
   // The import wrote SUMMARIES; the traces under them are still only on this
-  // device. Sent after the rows exist and never awaited by the caller's UI —
-  // the sessions have already landed, and this is the half nothing else can do.
-  if (res?.landed.length) void uploadLandedStreams(res.landed).catch(() => 0);
+  // device — but this is an UNATTENDED run, on a foreground, with nobody having
+  // asked for anything. The trace read is the span the app has twice vanished
+  // inside, so it only rides along here once it has been seen to return on this
+  // phone and the athlete has granted the series types (lib/healthkit.ts —
+  // `streamsProven`, `streamReadGranted`). Until then the summaries land and
+  // the traces wait, which is the right way round: a session in the log is the
+  // product, the trace under it is a chart.
+  if (res?.landed.length && (await streamsProven()) && (await streamReadGranted()))
+    void uploadLandedStreams(res.landed).catch(() => 0);
   return res;
 }
 

@@ -18,6 +18,9 @@ import {
   healthKitAvailability,
   queryRecentDeviceWorkouts,
   requestDeviceReadAuth,
+  requestStreamReadAuth,
+  streamReadGranted,
+  streamsProven,
   uploadLandedStreams,
 } from "../lib/healthkit";
 import { readHealthFaults, type HealthStep } from "../lib/healthkit-watchdog";
@@ -92,6 +95,27 @@ export function DeviceImportSheet({
   // What the import just put in the log, waiting on its effort rating.
   const [landed, setLanded] = useState<DeviceImportLanded[]>([]);
   const [answered, setAnswered] = useState(false);
+  /**
+   * THE TRACE UNDER THE SUMMARY — and why it is a row rather than a side effect.
+   *
+   * The import used to fire the recording read on its own tail, unawaited: the
+   * sessions landed, this sheet moved to the rating question, and the read
+   * started behind it. That read is native, and on a real phone the process went
+   * with it — twice. An athlete tapped import, the app closed, and the only way
+   * to find out that the sessions HAD landed was to open the app again.
+   *
+   * So the summaries are the import, full stop, and the trace is a second thing
+   * with its own row: it says what it fetches, it asks for the series types when
+   * tapped, and if reading them is what takes the app then it takes it under a
+   * control the athlete chose, with a name on it. Once one read has come back on
+   * this phone (`streamsProven`) the row stops being a gate and the traces ride
+   * along with every import from then on.
+   */
+  const [trace, setTrace] = useState<{ granted: boolean; proven: boolean }>({ granted: false, proven: false });
+  const [tracing, setTracing] = useState(false);
+  const [traced, setTraced] = useState<number | null>(null);
+  // Everything the import wrote, rated or not — the rows a trace fetch covers.
+  const [allLanded, setAllLanded] = useState<DeviceImportLanded[]>([]);
   // A native read that never came back (lib/healthkit-watchdog.ts). Said out
   // loud HERE because a native abort leaves nothing else behind: no exception,
   // no error screen, no log the phone still has — just an athlete who watched
@@ -117,6 +141,7 @@ export function DeviceImportSheet({
       setPhase("unavailable");
       return;
     }
+    setTrace({ granted: await streamReadGranted(), proven: await streamsProven() });
     setPhase("loading");
     // The permission ask doubles as "connect" — iOS only sheets types it hasn't
     // asked about, so a returning athlete goes straight to the read. It asks for
@@ -138,6 +163,8 @@ export function DeviceImportSheet({
       new Set(planned.filter((i) => i.action !== "linked" && brief(i)).map((i) => i.workout.uuid)),
     );
     setLanded([]);
+    setAllLanded([]);
+    setTraced(null);
     setAnswered(false);
     setPhase("list");
   }, []);
@@ -180,12 +207,14 @@ export function DeviceImportSheet({
       return;
     }
     wrote.current = true;
-    // The import wrote SUMMARIES. Everything under them — the heart-rate trace,
-    // the route, the laps — is still only on this device, and only while the
-    // store still holds the recording. Fired here and never awaited: the rows
-    // exist, the athlete is being asked how it felt, and the upload rides
-    // alongside that rather than in front of it.
-    if (res.landed.length) void uploadLandedStreams(res.landed).catch(() => 0);
+    setAllLanded(res.landed);
+    // The import wrote SUMMARIES, and that is the import finished. The trace
+    // under each row is still only on this device — but reading it is the span
+    // that has twice taken the process, so it rides along ONLY where that read
+    // has already been seen to return on this phone. Everywhere else it waits
+    // for the row below, which says what it does before it does it.
+    if (res.landed.length && trace.granted && trace.proven)
+      void uploadLandedStreams(res.landed).catch(() => 0);
     // A row that came back already rated (an attach onto a session the athlete
     // finished in the app) has nothing to ask. Nothing to ask about at all → the
     // import is simply done, exactly as before.
@@ -197,6 +226,70 @@ export function DeviceImportSheet({
     setLanded(ask);
     setPhase("rate");
   };
+
+  /**
+   * THE ONE PLACE THE SERIES TYPES ARE ASKED FOR, and the one place a trace is
+   * fetched before the read has proved itself on this phone.
+   *
+   * Both halves are deliberate taps because both halves are what the app has
+   * been closed inside: the permission sheet for the route and cycling types,
+   * and the route query behind it. Neither now happens to an athlete who did not
+   * ask; if one of them still takes the process, the watchdog's marker names
+   * which (lib/healthkit-watchdog.ts), the sessions are already in the log, and
+   * the span never runs unattended again.
+   */
+  const fetchTraces = async () => {
+    if (tracing) return;
+    haptic.selection();
+    setTracing(true);
+    const granted = trace.granted || (await requestStreamReadAuth());
+    const done = granted && allLanded.length ? await uploadLandedStreams(allLanded).catch(() => 0) : 0;
+    setTrace({ granted: await streamReadGranted(), proven: await streamsProven() });
+    setTraced(granted && allLanded.length ? done : null);
+    setTracing(false);
+  };
+
+  /** Present in both the list and the rating step: before an import it is the
+   *  grant, after one it is the fetch for what just landed. Hidden once the
+   *  read has proved itself — from then on the traces simply come with the
+   *  import and a row saying so would be a switch for something already on. */
+  const traceRow =
+    trace.granted && trace.proven ? null : (
+      <Pressable
+        onPress={() => void fetchTraces()}
+        disabled={tracing || (trace.granted && allLanded.length === 0)}
+        accessibilityRole="button"
+        accessibilityLabel={t("device.import.traceTitle")}
+        accessibilityHint={t("device.import.traceDesc")}
+        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderTopWidth: 1, borderTopColor: C.line }}
+      >
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("device.import.traceTitle")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2, lineHeight: leading(fs.micro, "snug") }}>
+            {t("device.import.traceDesc")}
+          </Text>
+        </View>
+        {tracing ? (
+          <ActivityIndicator color={C.lime} />
+        ) : (
+          <Text
+            style={{
+              fontFamily: F.mono,
+              fontSize: fs.caption,
+              color: traced != null || (trace.granted && allLanded.length === 0) ? C.ash : txt(C, C.lime),
+            }}
+          >
+            {traced != null
+              ? t("device.import.traceDone").replace("{n}", String(traced))
+              : !trace.granted
+                ? t("device.import.traceCta")
+                : // Granted, with nothing landed to fetch for: the row is a
+                  // state rather than an action, and says so in ash.
+                  t(allLanded.length ? "device.import.traceFetch" : "device.import.traceOn")}
+          </Text>
+        )}
+      </Pressable>
+    );
 
   const when = (isoTs: string) =>
     new Date(isoTs).toLocaleString(undefined, { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
@@ -382,6 +475,10 @@ export function DeviceImportSheet({
                   {t(answered ? "common.done" : "device.import.rateSkip")}
                 </Text>
               </Pressable>
+              {/* The sessions are in the log by now, which is exactly why the
+                  trace offer belongs here: whatever this read does, it can no
+                  longer cost the import. */}
+              {traceRow}
             </>
           )}
 
@@ -416,6 +513,7 @@ export function DeviceImportSheet({
                 onToggle={() => setLoggerPref("deviceAutoImport", !prefs.deviceAutoImport)}
                 noBorder
               />
+              {phase === "list" && traceRow}
             </View>
           )}
     </Sheet>

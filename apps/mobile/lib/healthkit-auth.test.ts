@@ -3,26 +3,37 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 /**
- * THE TAP PATH ASKS FOR THE WORKOUT TYPES AND NOTHING ELSE.
+ * NO READ PATH ASKS FOR ANYTHING, AND NO READ RUNS ON OUR OWN SAY-SO.
  *
- * The watch import worked, and the next build exited the app when an athlete
- * tapped it. The read behind that tap did not change between the two builds —
- * `readWorkout`, `workoutDistanceKm` and `queryRecentDeviceWorkouts` are
- * byte-identical across the commit — so the only new thing standing between the
- * tap and the list of workouts was a SECOND `requestAuthorization`, for the
- * stream types (route, cycling power, cycling cadence), fired immediately after
- * the first. There was nothing else there to be the cause.
+ * Two builds' worth of evidence, and it points one way. The watch import worked;
+ * the next build added the stream half (a second `requestAuthorization` for the
+ * route + cycling types, and the reads behind it) and the app started closing
+ * when an athlete tapped import. The build after that moved the second ask off
+ * the tap and down to its point of use — and the crash moved with it exactly:
+ * the sheet opened, the list appeared, the sessions landed, and the process went
+ * as the trace read started. Nothing in JS can catch that; a Swift abort takes
+ * the process, so there is no exception, no rejected promise and no error
+ * boundary between it and the athlete.
  *
- * So the rule is: `requestDeviceReadAuth` — the one both device sheets call on
- * open — asks for WORKOUT_READ_TYPES only. STREAM_READ_TYPES is asked for at
- * the point of use, inside `readWorkoutStreams`, which runs after the sessions
- * have already landed and is the one span the watchdog can switch off for good.
- * The half that is not needed to import cannot be reached from the tap.
+ * So the rules this file pins are the ones that survive not knowing which native
+ * call it is:
+ *
+ *  1. `requestDeviceReadAuth` — what both device sheets call on open — asks for
+ *     WORKOUT_READ_TYPES and nothing else. That is the shape that has always
+ *     worked.
+ *  2. The stream types are asked for in `requestStreamReadAuth` and NOWHERE
+ *     else, and no read path calls it. A permission sheet is raised by a tap on
+ *     a control that says what it is for, never behind an import.
+ *  3. Every read is gated on the STORE's answer (`storeHasAsked` →
+ *     getRequestStatusForAuthorization), not on a flag this file wrote after
+ *     calling requestAuthorization. The bridge silently drops identifiers it
+ *     can't build, so those two claims come apart — and querying a type the
+ *     store was never asked about is the library's own documented crash.
  *
  * This reads the source as TEXT, like design-tokens.test.ts and
  * commit-state.test.ts, because the thing worth pinning is the SHAPE of the
- * call rather than a value any unit test could observe: nothing in JS can catch
- * the failure this prevents, and nothing in this repo can run HealthKit.
+ * calls rather than a value any unit test could observe: nothing in this repo
+ * can run HealthKit, and nothing in JS can observe the failure it prevents.
  */
 
 const SRC = readFileSync(join(__dirname, "healthkit.ts"), "utf8");
@@ -42,25 +53,49 @@ describe("HealthKit authorization is split where the crash was", () => {
     expect(ask).not.toContain("STREAM_READ_TYPES");
   });
 
-  it("the stream types are asked for at the point of use", () => {
-    const lazy = body("ensureStreamAuth");
-    expect(lazy).toContain("STREAM_READ_TYPES");
+  it("the stream types are asked for in one deliberate place", () => {
+    expect(body("requestStreamReadAuth")).toContain("STREAM_READ_TYPES");
+    // Exactly two `requestAuthorization` call sites in the whole bridge: the
+    // connect sheet (one deliberate tap that asks for everything at once) and
+    // the two functions above. A third is a sheet somebody didn't ask for.
+    const asks = SRC.match(/requestAuthorization\(/g) ?? [];
+    expect(asks.length).toBe(3);
   });
 
-  it("only the skippable span reaches the stream ask", () => {
-    // `ensureStreamAuth` must be called from inside readWorkoutStreams' span and
-    // nowhere else — a caller outside it would put a permission sheet back on a
-    // path that cannot afford one.
-    const calls = SRC.match(/ensureStreamAuth\(/g) ?? [];
-    // One declaration, one call site.
-    expect(calls.length).toBe(2);
-    expect(body("readWorkoutStreams")).toContain("ensureStreamAuth(hk)");
+  it("no read path asks for a permission", () => {
+    // The regression this replaces was named `ensureStreamAuth`: an ask called
+    // from inside the stream read, which is what put a permission sheet on the
+    // tail of every import.
+    expect(SRC).not.toMatch(/ensureStreamAuth/);
+    for (const fn of ["readWorkoutStreams", "readWorkouts", "refreshMatchedWorkouts", "readWindow"])
+      expect(body(fn), `${fn} must not request authorization`).not.toContain("requestAuthorization");
+  });
+
+  it("the reads are gated on the store's own answer, not a flag of ours", () => {
+    expect(body("storeHasAsked")).toContain("getRequestStatusForAuthorization");
+    for (const fn of ["readWorkouts", "refreshMatchedWorkouts", "readWorkoutStreams"])
+      expect(body(fn), `${fn} must gate on storeHasAsked`).toContain("storeHasAsked");
+    // The flag that used to answer this question, gone rather than left to rot.
+    expect(SRC).not.toMatch(/askedLevel|ASKED_KEY/);
+  });
+
+  it("the trace read is quarantined until it has returned once", () => {
+    // The unattended pass may not be the first thing on a phone to meet that
+    // native call — see `streamsProven`.
+    expect(body("backfillWorkoutStreams")).toContain("streamsProven");
+  });
+
+  it("the stream spans are named one native call at a time", () => {
+    // "streams" named three different calls, so a marker left on disk could not
+    // say which of them the process died inside. Each has its own name now.
+    for (const step of ["stream-auth", "stream-read", "stream-route"])
+      expect(SRC, `${step} span missing`).toContain(`"${step}"`);
+    expect(SRC).not.toMatch(/nativeSpan\(\s*"streams"/);
   });
 
   it("the two old split entry points are gone", () => {
     // Their names are the regression: two requestAuthorization calls in a row,
     // at both call sites.
     expect(SRC).not.toMatch(/export async function requestWorkoutReadAuth/);
-    expect(SRC).not.toMatch(/export async function requestStreamReadAuth/);
   });
 });
