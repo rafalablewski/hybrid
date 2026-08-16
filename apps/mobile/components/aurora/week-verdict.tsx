@@ -374,7 +374,7 @@ export default function AuroraWeekVerdict({
   // the direction, the figure on the right carries the magnitude, this line
   // carries what it was measured against.
   const why = v.metric && named
-    ? t(verdictWhyKey(v)).replace("{b}", fmt(named.metric, named.baseline))
+    ? t(verdictWhyKey(v)).replace("{b}", fmt(named.metric, named.previous))
     : t(verdictWhyKey(v));
 
   // Four columns only ever appear for a hybrid athlete (tonnage + distance);
@@ -431,7 +431,7 @@ export default function AuroraWeekVerdict({
   const openWhy = openFig && openDelta !== null
     ? t("w.home.act.vsBase")
       .replace("{d}", `${openDelta > 0 ? "+" : openDelta < 0 ? "−" : ""}${Math.abs(openDelta)}%`)
-      .replace("{b}", fmt(openFig.metric, openFig.baseline))
+      .replace("{b}", fmt(openFig.metric, openFig.previous))
     : null;
 
   return (

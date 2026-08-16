@@ -150,7 +150,25 @@ export interface VerdictFigure {
   /** Canonical unit: tonnage = kg, sessions = count, hours = MINUTES,
    *  distance = KM. */
   value: number;
-  /** Mean of the preceding periods, same unit (0 when there is no history). */
+  /**
+   * THE AXIS — the immediately PRECEDING window of the same length, and what
+   * every percentage on this card is measured from.
+   *
+   * It used to be `baseline` below, the mean of four windows, and that was
+   * wrong in the plainest possible way: an athlete who picks "last 7 days"
+   * (the 10th to the 16th) is asking about the 7 days before it (the 3rd to
+   * the 9th), and the card answered with a four-week average. A label can say
+   * "four-week average" honestly and still be answering a question nobody
+   * asked.
+   */
+  previous: number;
+  /**
+   * THE LANDMARK — the mean of the preceding periods, same unit (0 when there
+   * is no history). It is no longer what anything is measured FROM; it is
+   * drawn beside the mark as a second reference, the way MEV and MRV sit on a
+   * muscle's rail. "Up on last week" and "still under your normal" are two
+   * different facts and the card can now carry both.
+   */
   baseline: number;
 }
 
@@ -184,11 +202,14 @@ export interface ActivityVerdict {
   best: VerdictMetric | null;
   worst: VerdictMetric | null;
   direction: VerdictDirection;
-  /** Signed % change vs baseline for `metric`, rounded. 0 when flat or cold. */
+  /** Signed % change vs the PREVIOUS period for `metric`, rounded. 0 when flat
+   *  or cold. */
   deltaPct: number;
-  /** Too little history to compare — show the figures, make no claim. */
+  /** No previous period carrying training — no axis, so no claim. The figures
+   *  still render; the card never goes blank. */
   cold: boolean;
-  /** Preceding periods (of those compared) that carried any training. */
+  /** Preceding periods (of those compared) that carried any training. Reported
+   *  for the landmark, which is still a mean of all of them. */
   baselinePeriods: number;
   /** How many preceding periods were available to compare against. */
   baselineOf: number;
@@ -197,10 +218,21 @@ export interface ActivityVerdict {
 /**
  * The period's verdict. Totals come from activity-window.ts — the same
  * arithmetic the breakdown behind each figure is built from, so a column and
- * the list it opens can never disagree — and the baseline is the mean of the
- * preceding windows of the same length, INCLUDING any that were empty, because
- * a fortnight off genuinely is part of your average and dropping it would make
- * every return look like a personal best.
+ * the list it opens can never disagree.
+ *
+ * EVERY PERCENTAGE IS MEASURED FROM THE PREVIOUS PERIOD — the immediately
+ * preceding window of the same length. Pick "last 7 days" and the card answers
+ * about the 7 days before it; pick June and it answers about May. It used to
+ * measure from the MEAN of four such windows, and the label said so honestly,
+ * but honest labelling does not rescue an answer to a question nobody asked.
+ *
+ * THE MEAN SURVIVES AS A LANDMARK. It is still computed, still carried on every
+ * figure, and the comparison page draws it as a second notch on the rail — the
+ * way a muscle's rail carries MEV and MRV either side of where you are. "Up on
+ * last week" and "still under your normal" are two different facts, and the
+ * card can now show both without either one pretending to be the other. Empty
+ * windows still count INTO that mean: a fortnight off genuinely is part of your
+ * average, and dropping it would make every return look like a personal best.
  */
 export function activityVerdict(
   sessions: LoggedSession[],
@@ -210,33 +242,43 @@ export function activityVerdict(
   const measured = deviceTrueSessions(sessions);
   const current = activityTotalsIn(measured, range.from, range.through, bw);
 
+  // `activityBaselineWindows` hands the preceding windows back NEAREST FIRST,
+  // so priors[0] is the period the athlete is actually asking about — the 7
+  // days before the 7 they picked.
   const windows = activityBaselineWindows(range);
   const priors: ActivityTotals[] = windows.map((w) => activityTotalsIn(measured, w.from, w.to, bw));
   const baselinePeriods = priors.filter((p) => p.sessions > 0).length;
+  const prior = priors[0] ?? null;
 
   const mean = (pick: (t: ActivityTotals) => number) =>
     priors.length ? priors.reduce((n, p) => n + pick(p), 0) / priors.length : 0;
 
   const figures: VerdictFigure[] = VERDICT_METRICS
-    .map((metric) => ({ metric, value: current[metric], baseline: mean((t) => t[metric]) }))
+    .map((metric) => ({
+      metric,
+      value: current[metric],
+      previous: prior ? prior[metric] : 0,
+      baseline: mean((t) => t[metric]),
+    }))
     // A pure lifter shouldn't carry an empty distance column; a runner who took
-    // this week off should still see theirs, which is why the baseline counts.
-    .filter((f) => f.metric !== "distance" || f.value > 0 || f.baseline > 0);
+    // this week off should still see theirs, which is why the history counts.
+    .filter((f) => f.metric !== "distance" || f.value > 0 || f.previous > 0 || f.baseline > 0);
 
-  // Two of four for a week; HALF the windows when a range offers fewer, so a
-  // year-to-date read — which only has two past years to look at — isn't cold
-  // forever, while the bar stays proportionally the same.
-  const needed = Math.max(1, Math.min(MIN_BASELINE_PERIODS, Math.ceil(priors.length / 2)));
-  const cold = baselinePeriods < needed;
+  // NO PREVIOUS PERIOD, NO VERDICT. The axis is one window now, so the gate is
+  // the plainest form of the old one: did the period we are measuring FROM
+  // carry any training at all. A percentage against a week nobody trained is
+  // not a small number, it is not a number — and the card shows the figures
+  // with no claim over them, exactly as it always did when it had none.
+  const cold = !prior || prior.sessions === 0;
   const base = { range, figures, baselinePeriods, baselineOf: priors.length };
   if (cold) return { ...base, metric: null, best: null, worst: null, direction: "flat", deltaPct: 0, cold: true };
 
-  // Largest absolute move wins — among the metrics with a real baseline to move
-  // FROM. Two gates decide "real": the mean has to clear the metric's floor,
-  // and the metric has to have actually appeared in as many prior windows as
-  // the card itself needs. `cold` asks that second question of the whole card
-  // and never of the metric that ends up winning, which is how a measure
-  // trained once in four weeks could claim the sentence.
+  // Largest absolute move wins — among the metrics with a real figure to move
+  // FROM. One gate decides "real" now: the PREVIOUS period's figure has to
+  // clear the metric's floor. The old pair (a floor on the mean, plus a
+  // coverage count across four windows) existed because the denominator was a
+  // mean and could be thin without being zero; against a single window the
+  // floor says the whole thing.
   //
   // A metric that fails either gate is not discarded: it becomes the FALLBACK,
   // used only when nothing qualified. A 0.1 → 6.8 km week in an otherwise flat
@@ -259,12 +301,11 @@ export function activityVerdict(
   const qualified: Candidate[] = [];
   const fallbacks: Candidate[] = [];
   for (const f of figures) {
-    if (f.baseline <= 0) continue;
-    const deltaPct = Math.round(((f.value - f.baseline) / f.baseline) * 100);
+    if (f.previous <= 0) continue;
+    const deltaPct = Math.round(((f.value - f.previous) / f.previous) * 100);
     if (Math.abs(deltaPct) < VERDICT_END_THRESHOLD_PCT) continue;
     const cand: Candidate = { metric: f.metric, deltaPct };
-    const trained = priors.filter((p) => p[f.metric] > 0).length;
-    if (f.baseline >= VERDICT_BASELINE_FLOOR[f.metric] && trained >= needed) qualified.push(cand);
+    if (f.previous >= VERDICT_BASELINE_FLOOR[f.metric]) qualified.push(cand);
     else fallbacks.push(cand);
   }
 
@@ -315,8 +356,8 @@ export function activityVerdict(
  * fact from "it did not move" and must never render as 0%.
  */
 export function figureDeltaPct(f: VerdictFigure): number | null {
-  if (f.baseline <= 0) return null;
-  return Math.round(((f.value - f.baseline) / f.baseline) * 100);
+  if (f.previous <= 0) return null;
+  return Math.round(((f.value - f.previous) / f.previous) * 100);
 }
 
 /**
@@ -368,6 +409,10 @@ export interface VerdictComparison {
   metric: VerdictMetric;
   /** Canonical unit, same as VerdictFigure. */
   value: number;
+  /** The AXIS — the immediately preceding window, what the bar measures from. */
+  previous: number;
+  /** The LANDMARK — the mean of the preceding windows, drawn as a second notch
+   *  on the same rail. Not what anything is measured from. */
   baseline: number;
   /** Signed % vs baseline, rounded. Null when there is no baseline to move
    *  from — a different fact from "it did not move", and never rendered as 0. */
@@ -396,9 +441,10 @@ export const activityComparison = (v: ActivityVerdict): VerdictComparison[] =>
   v.figures.map((f) => ({
     metric: f.metric,
     value: f.value,
+    previous: f.previous,
     baseline: f.baseline,
     deltaPct: figureDeltaPct(f),
-    diff: f.value - f.baseline,
+    diff: f.value - f.previous,
     end: f.metric === v.best ? "best" : f.metric === v.worst ? "worst" : null,
   }));
 
@@ -411,9 +457,31 @@ export const activityComparison = (v: ActivityVerdict): VerdictComparison[] =>
  */
 export function comparisonBar(c: VerdictComparison): number | null {
   if (c.deltaPct === null) return null;
-  const f = c.deltaPct / COMPARE_SCALE_PCT;
-  return Math.max(-1, Math.min(1, f));
+  return clampTrack(c.deltaPct);
 }
+
+/**
+ * WHERE THE AVERAGE SITS on that same signed half-track — the second landmark,
+ * drawn as a notch the way MEV and MRV sit on a muscle's rail. Null when there
+ * is no axis to place it against, or when the mean IS the previous period and a
+ * notch would land exactly under the axis it duplicates.
+ *
+ * This is the whole point of keeping the mean after the axis moved: "up 31% on
+ * last week" and "still under your normal" are two different facts about one
+ * week, and a row that can draw both is a row that can be read either way round
+ * without swiping anywhere.
+ */
+export function comparisonAverageMark(c: VerdictComparison): number | null {
+  if (c.previous <= 0 || c.baseline <= 0) return null;
+  const pct = Math.round(((c.baseline - c.previous) / c.previous) * 100);
+  if (Math.abs(pct) < VERDICT_END_THRESHOLD_PCT) return null;
+  return clampTrack(pct);
+}
+
+/** A percentage onto the signed half-track: pinned at ±1 past the scale, so the
+ *  bar stops growing and the figure keeps counting. */
+const clampTrack = (pct: number): number =>
+  Math.max(-1, Math.min(1, pct / COMPARE_SCALE_PCT));
 
 /**
  * Whether the card should print the STEP ("0.1 → 6.8 km") instead of the
@@ -473,9 +541,10 @@ export function verdictLeadKey(v: ActivityVerdict): string {
   return weekly ? "w.home.week.upLead" : "w.home.act.upLeadP";
 }
 
-/** i18n key for the mono line under the sentence (the working-out). The
- *  comparison names the period it was made against, so a month's verdict can't
- *  read as if it were quoting a four-week average. */
+/** i18n key for the mono line under the sentence (the working-out). It names
+ *  the window the percentage was measured FROM — the period immediately before
+ *  this one — so a month's verdict reads "May" and a seven-day read says the
+ *  seven days before it, rather than either quoting a mean nobody asked for. */
 export function verdictWhyKey(v: ActivityVerdict): string {
   if (v.cold) return "w.home.week.coldWhy";
   if (!v.metric) return "w.home.week.flatWhy";

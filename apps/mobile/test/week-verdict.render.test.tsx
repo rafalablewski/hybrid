@@ -333,16 +333,17 @@ describe("the comparison page", () => {
     // deliberately absent, since the section head above the card already names
     // it and printing it twice is the redundancy the Progress sweep catches.
     expect(text).toContain("by metric");
-    expect(text).toContain("vs four-week avg");
+    expect(text).toContain("vs previous 7 days");
   });
 
-  it("puts both figures in the landmark scale's grammar", () => {
+  it("puts three landmarks in the scale's grammar, as MEV / MAV / MRV are three", () => {
     const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
     const text = container.textContent ?? "";
-    // AVG / NOW are MEV / MAV / MRV's columns: a quiet label, a loud figure,
-    // pinned left so the values align down the whole list.
-    expect(text).toContain("AVG");
+    // Where you were, where you are, what your normal is — a quiet label and a
+    // loud figure each, pinned left so the values align down the whole list.
+    expect(text).toContain("PREV");
     expect(text).toContain("NOW");
+    expect(text).toContain("AVG");
   });
 
   it("spells a row out for a screen reader, difference included", () => {

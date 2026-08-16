@@ -1,6 +1,6 @@
 import { View, Text, type DimensionValue } from "react-native";
 import {
-  comparisonBar, verdictLabelKey, ALPHA,
+  comparisonBar, comparisonAverageMark, verdictLabelKey, ALPHA,
   type VerdictComparison, type ActivityMetric,
 } from "@hybrid/core";
 import { ASection, RADIUS, withAlpha } from "./kit";
@@ -125,6 +125,7 @@ export default function ActivityCompare({
         {rows.map((r) => {
           const col = tone(r.end);
           const bar = comparisonBar(r);
+          const avg = comparisonAverageMark(r);
           const move = r.deltaPct;
           return (
             <Pressable
@@ -172,24 +173,38 @@ export default function ActivityCompare({
                       backgroundColor: col ?? C.ash, opacity: 0.9,
                     }} />
                   )}
-                  {/* The axis, notched in LAST so it survives the fill — the
-                      same device MEV and MRV use over there. */}
+                  {/* THE AVERAGE, as a second landmark — MEV and MRV sit either
+                      side of where you are on a muscle's rail, and this is the
+                      same move: the bar says what you did against LAST period,
+                      the notch says where your normal is. Absent when the mean
+                      is the previous period, where it would land under the axis
+                      it duplicates. */}
+                  {avg !== null && (
+                    <View style={{
+                      position: "absolute", left: pct(0.5 + avg / 2), top: 0, bottom: 0,
+                      width: 2, marginLeft: -1, backgroundColor: withAlpha(C.chalk, ALPHA.line),
+                    }} />
+                  )}
+                  {/* The axis, notched in LAST so it survives both — the same
+                      device MEV and MRV use over there. */}
                   <View style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 2, backgroundColor: withAlpha(C.chalk, ALPHA.rim) }} />
                 </MeasureTrack>
               )}
 
               {/* AVG / NOW where MEV / MAV / MRV sit. Not pressable here: the
                   whole row already presses through to the breakdown. */}
-              {/* The AVG cell KEEPS ITS SLOT when there is no average to show —
-                  a metric with no baseline (a lifter's first logged run) would
-                  otherwise pull NOW into the left column while every row beside
-                  it kept NOW on the right, and the list stops lining up. An em
-                  dash says "there is no average", which is the true fact and
-                  the same one the figure above it is printing. */}
+              {/* THREE LANDMARKS, exactly as MEV / MAV / MRV are three: where
+                  you were, where you are, and what your normal is. Every cell
+                  KEEPS ITS SLOT when it has nothing to say — a metric with no
+                  previous period would otherwise pull the others left while
+                  every row beside it kept them in place, and the list stops
+                  lining up. An em dash says "there is none", which is the true
+                  fact and the same one the figure above is printing. */}
               <MeasureScale
                 cells={[
-                  { key: "avg", label: t("w.home.cmp.avg"), value: move === null ? "—" : fmt(r.metric, r.baseline) },
+                  { key: "prev", label: t("w.home.cmp.prev"), value: move === null ? "—" : fmt(r.metric, r.previous) },
                   { key: "now", label: t("w.home.cmp.now"), value: fmt(r.metric, r.value) },
+                  { key: "avg", label: t("w.home.cmp.avg"), value: r.baseline > 0 ? fmt(r.metric, r.baseline) : "—" },
                 ]}
               />
             </Pressable>

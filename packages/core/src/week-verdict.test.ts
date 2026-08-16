@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, VERDICT_END_THRESHOLD_PCT, figureDeltaPct, figureDirection, activityComparison, comparisonBar, comparisonHeadKey, COMPARE_SCALE_PCT, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
+import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, VERDICT_END_THRESHOLD_PCT, figureDeltaPct, figureDirection, activityComparison, comparisonBar, comparisonAverageMark, comparisonHeadKey, COMPARE_SCALE_PCT, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
 import { resolveActivityRange } from "./activity-window";
 import { addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
@@ -46,15 +46,17 @@ describe("activityVerdict — the rolling seven days", () => {
     expect(v.figures.every((f) => f.value === 0 && f.baseline === 0)).toBe(true);
   });
 
-  it("stays cold until two of the four prior weeks carry training", () => {
-    // One prior week only — a percentage off that is a coin flip.
-    const one = activityVerdict([s(2, 1000), s(9, 100)], d7());
-    expect(one.cold).toBe(true);
-    expect(one.baselinePeriods).toBe(1);
+  it("is cold exactly when the PREVIOUS period carried no training", () => {
+    // The axis is one window now, so the gate is the plainest form of the old
+    // one: a percentage against a week nobody trained is not a number.
+    const gap = activityVerdict([s(2, 1000), s(16, 100), s(23, 100)], d7());
+    expect(gap.cold).toBe(true);
+    expect(gap.baselinePeriods).toBe(2);
 
-    const two = activityVerdict([s(2, 1000), s(9, 100), s(16, 100)], d7());
-    expect(two.cold).toBe(false);
-    expect(two.baselinePeriods).toBe(2);
+    // …and one trained week immediately before is all it takes.
+    const near = activityVerdict([s(2, 1000), s(9, 100)], d7());
+    expect(near.cold).toBe(false);
+    expect(near.baselinePeriods).toBe(1);
   });
 
   it("names the metric and the direction when tonnage falls past the threshold", () => {
@@ -97,14 +99,16 @@ describe("activityVerdict — the rolling seven days", () => {
     expect(v.deltaPct).toBe(-50);
   });
 
-  it("counts an empty prior week into the baseline rather than dropping it", () => {
-    // Trained weeks 2, 3, 4 at 10 000; week 1 off. Baseline = 30 000 / 4 = 7 500,
-    // so this week's 10 000 reads as +33% — a real return, not a flat week.
+  it("counts an empty prior week into the LANDMARK, which is still a mean", () => {
+    // Trained weeks 2, 3, 4 at 10 000; the week immediately before is off. The
+    // mean is 30 000 / 4 = 7 500 and still carries the empty week — a fortnight
+    // off is part of your average. But the AXIS is that empty week, so the card
+    // is cold: there is nothing to measure from, whatever the mean says.
     const v = activityVerdict([s(2, 10_000), s(16, 10_000), s(23, 10_000), s(30, 10_000)], d7());
     expect(v.baselinePeriods).toBe(3);
     expect(v.figures[0]!.baseline).toBe(7500);
-    expect(v.direction).toBe("up");
-    expect(v.deltaPct).toBe(33);
+    expect(v.figures[0]!.previous).toBe(0);
+    expect(v.cold).toBe(true);
   });
 
   it("ignores a metric with no baseline instead of dividing by zero", () => {
@@ -286,9 +290,11 @@ describe("activityVerdict — a thin baseline can't hijack the sentence (A1)", (
    what IT did, independently of the metric the sentence named, which may be a
    different one moving the other way. */
 describe("figureDirection / figureDeltaPct", () => {
-  const f = (value: number, baseline: number) => ({ metric: "hours" as const, value, baseline });
+  // The AXIS is `previous`; `baseline` is the mean, which is now a landmark and
+  // measures nothing. The helper names the axis to keep that straight.
+  const f = (value: number, previous: number) => ({ metric: "hours" as const, value, previous, baseline: previous });
 
-  it("no baseline is not a flat move", () => {
+  it("no previous period is not a flat move", () => {
     expect(figureDeltaPct(f(120, 0))).toBeNull();
     expect(figureDirection(f(120, 0))).toBe("flat");
     // …and the distinction survives: a figure that appeared from nothing must
@@ -296,7 +302,7 @@ describe("figureDirection / figureDeltaPct", () => {
     expect(figureDeltaPct(f(0, 0))).toBeNull();
   });
 
-  it("reads the signed move against its own baseline", () => {
+  it("reads the signed move against the period before it", () => {
     expect(figureDeltaPct(f(120, 100))).toBe(20);
     expect(figureDeltaPct(f(80, 100))).toBe(-20);
     expect(figureDirection(f(120, 100))).toBe("up");
@@ -408,13 +414,13 @@ describe("activityVerdict — best / worst", () => {
     expect(v.worst).toBeNull();
   });
 
-  it("a thin-baseline rise does not take the mark off a metric with history", () => {
-    // 0.1 km of four-week distance yields a four-digit percentage. It is the
+  it("a thin-axis rise does not take the mark off a metric with a real one", () => {
+    // 0.4 km in the week before against 6 km this week is +1400%. It is the
     // same figure the SENTENCE refuses to headline, so it must not take the
     // chartreuse either — the card's brightest mark cannot land on the figure
-    // it trusts least while a metric with four weeks behind it is up 80%.
-    const priors = [9, 16, 23].map((d) => s(d, 5000, 60));
-    const v = activityVerdict([...priors, s(30, 5000, 60), run(30, 0.4), s(2, 9000, 60), run(2, 6)], d7());
+    // it trusts least while a metric with a real previous week is up 80%.
+    const priors = [16, 23, 30].map((d) => s(d, 5000, 60));
+    const v = activityVerdict([...priors, s(9, 5000, 60), run(9, 0.4), s(2, 9000, 60), run(2, 6)], d7());
     const distance = v.figures.find((x) => x.metric === "distance")!;
     expect(figureDeltaPct(distance)!).toBeGreaterThan(VERDICT_PCT_CEILING);
     expect(v.best).toBe("tonnage");
@@ -491,8 +497,8 @@ describe("activityComparison", () => {
   });
 
   it("pins the bar past the scale and lets the figure keep counting", () => {
-    const priors = [9, 16, 23].map((d) => s(d, 5000, 60));
-    const v = activityVerdict([...priors, s(30, 5000, 60), run(30, 0.4), s(2, 9000, 60), run(2, 6)], d7());
+    const priors = [16, 23, 30].map((d) => s(d, 5000, 60));
+    const v = activityVerdict([...priors, s(9, 5000, 60), run(9, 0.4), s(2, 9000, 60), run(2, 6)], d7());
     const distance = activityComparison(v).find((r) => r.metric === "distance")!;
 
     expect(distance.deltaPct!).toBeGreaterThan(COMPARE_SCALE_PCT);
@@ -525,5 +531,70 @@ describe("comparisonHeadKey", () => {
     // A month is addressed by its own id ("m:YYYY-MM"), not the word.
     expect(forRange("m:2026-06")).toBe("w.home.cmp.vsMonths");
     expect(forRange("ytd")).toBe("w.home.cmp.vsYears");
+  });
+});
+
+/* ── THE AXIS IS THE PERIOD BEFORE ─────────────────────────────────────────
+   Pick "last 7 days" and the question is about the 7 days before it. The card
+   used to answer with a four-week mean, which is a true sentence about the
+   wrong window. The mean survives as a LANDMARK the comparison page draws
+   beside the mark, so "up on last week" and "still under your normal" can both
+   be read off one row. */
+describe("the previous period as the axis", () => {
+  it("measures from the window immediately before, not the mean of four", () => {
+    // Last week 5 000 kg; the three before it 10 000. A mean would read this
+    // week's 6 000 as DOWN (-29% against 8 750); against last week it is UP.
+    const v = activityVerdict([s(2, 6000), s(9, 5000), s(16, 10_000), s(23, 10_000), s(30, 10_000)], d7());
+    const tonnage = v.figures.find((f) => f.metric === "tonnage")!;
+
+    expect(tonnage.previous).toBe(5000);
+    expect(tonnage.baseline).toBe(8750);
+    expect(figureDeltaPct(tonnage)).toBe(20);
+    expect(v.direction).toBe("up");
+  });
+
+  it("keeps the mean as a landmark, and puts it on the same track", () => {
+    const v = activityVerdict([s(2, 6000), s(9, 5000), s(16, 10_000), s(23, 10_000), s(30, 10_000)], d7());
+    const tonnage = activityComparison(v).find((r) => r.metric === "tonnage")!;
+
+    expect(tonnage.previous).toBe(5000);
+    expect(tonnage.baseline).toBe(8750);
+    // The mean sits +75% above the axis — past the scale, so its notch pins
+    // exactly as a bar would.
+    expect(comparisonAverageMark(tonnage)).toBe(1);
+  });
+
+  it("places the landmark on the side it actually falls", () => {
+    // This time the mean is BELOW last week: three quiet weeks, one big one.
+    const v = activityVerdict([s(2, 12_000), s(9, 10_000), s(16, 5000), s(23, 5000), s(30, 5000)], d7());
+    const tonnage = activityComparison(v).find((r) => r.metric === "tonnage")!;
+
+    expect(tonnage.baseline).toBeLessThan(tonnage.previous);
+    expect(comparisonAverageMark(tonnage)!).toBeLessThan(0);
+  });
+
+  it("draws no landmark when the mean IS the previous period", () => {
+    // Four identical weeks: a notch would land under the axis it duplicates.
+    const v = activityVerdict([s(2, 12_000), ...fourFlatWeeks(10_000)], d7());
+    const tonnage = activityComparison(v).find((r) => r.metric === "tonnage")!;
+
+    expect(tonnage.baseline).toBe(tonnage.previous);
+    expect(comparisonAverageMark(tonnage)).toBeNull();
+  });
+
+  it("draws no landmark, and no bar, without an axis to place them against", () => {
+    const v = activityVerdict([s(2, 9000, 60)], d7());
+    expect(v.cold).toBe(true);
+    for (const r of activityComparison(v)) {
+      expect(comparisonBar(r)).toBeNull();
+      expect(comparisonAverageMark(r)).toBeNull();
+    }
+  });
+
+  it("states the difference against the axis, not the mean", () => {
+    const v = activityVerdict([s(2, 6000), s(9, 5000), s(16, 10_000), s(23, 10_000), s(30, 10_000)], d7());
+    const tonnage = activityComparison(v).find((r) => r.metric === "tonnage")!;
+    // 6 000 against last week's 5 000 — the figure an athlete acts on.
+    expect(tonnage.diff).toBe(1000);
   });
 });
