@@ -282,7 +282,7 @@ export const web_home = {
     // {h} arrives ALREADY FORMATTED, through core's formatDuration — the unit
     // is the formatter's ("1h 30min"), never a literal in the string, so this
     // line and the verdict card's hours column can't print a span two ways.
-    "w.home.endw.why": "{h}, {d} on your average",
+    "w.home.endw.why": "{h}, {d} on the period before",
     "w.home.endw.whyCold": "{h} in total",
     "w.home.act.close": "Close",
     "w.home.act.allGroups": "All",
@@ -1474,7 +1474,7 @@ export const web_home = {
     "w.home.endw.leadOne": "Wszystko to {s}.",
     "w.home.endw.leadMost": "{n} sportów, głównie {s}.",
     "w.home.endw.leadLed": "{n} sportów, na czele {s}.",
-    "w.home.endw.why": "{h}, {d} wobec Twojej średniej",
+    "w.home.endw.why": "{h}, {d} wobec poprzedniego okresu",
     "w.home.endw.whyCold": "{h} łącznie",
     "w.home.act.close": "Zamknij",
     "w.home.act.allGroups": "Wszystko",
@@ -2583,7 +2583,7 @@ export const web_home = {
     "w.home.endw.leadOne": "Alles davon war {s}.",
     "w.home.endw.leadMost": "{n} Sportarten, überwiegend {s}.",
     "w.home.endw.leadLed": "{n} Sportarten, angeführt von {s}.",
-    "w.home.endw.why": "{h}, {d} gegenüber deinem Schnitt",
+    "w.home.endw.why": "{h}, {d} gegenüber dem Zeitraum davor",
     "w.home.endw.whyCold": "{h} insgesamt",
     "w.home.act.close": "Schließen",
     "w.home.act.allGroups": "Alle",

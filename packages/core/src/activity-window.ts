@@ -153,7 +153,9 @@ export function resolveActivityRange(id: string | null | undefined, now = Date.n
 
 /**
  * The periods the comparison is made against: the windows immediately before
- * this one, of the SAME elapsed length. Four for a week (the four-week average
+ * this one, of the SAME elapsed length, NEAREST FIRST — [0] is the axis every
+ * percentage is measured from, and the rest feed the mean the comparison page
+ * draws as a landmark. Four for a week (the average
  * the card has always quoted), three for a month or a 30-day window, two years
  * for a YTD.
  *

@@ -23,24 +23,25 @@
  *
  * THE WINDOW IS NO LONGER FIXED. The card carries a date filter — the calendar
  * week (Mon–Sun), the last 7 or 30 days, the year to date, or any single month
- * — so this takes an `ActivityRange` and compares it against the equivalent
- * periods before it (see activity-window.ts, which also owns the totals and the
- * per-metric breakdown the figures open into). "Four-week average" is therefore
- * the WEEK's phrasing of a general rule: the mean of the preceding windows of
- * the same length.
+ * — so this takes an `ActivityRange` and compares it against THE EQUIVALENT
+ * PERIOD BEFORE IT (see activity-window.ts, which also owns the totals and the
+ * per-metric breakdown the figures open into): last 7 days against the 7 before
+ * them, June against May, this week against last week. The mean of several such
+ * windows is still computed and still carried, but as a LANDMARK the comparison
+ * page draws beside the mark — never as the thing anything is measured from.
  *
  * Pure, so web and mobile say the SAME sentence about the same period. Nothing
  * here formats: the caller renders `value` / `baseline` through its own unit
  * preference (kg vs lb tonnage), which is why the metric values stay canonical.
  *
  * TWO HONESTY RULES, in the done-receipt tradition:
- *   • NO BASELINE, NO VERDICT. Fewer than MIN_BASELINE_PERIODS of the preceding
- *     windows carrying any training → `cold`, and the card shows the figures
- *     with no claim over them. A verdict computed against one week of history
- *     is a coin flip wearing a percentage.
+ *   • NO PREVIOUS PERIOD, NO VERDICT. The window before this one carried no
+ *     training → `cold`, and the card shows the figures with no claim over
+ *     them. A percentage against a week nobody trained is not a small number,
+ *     it is not a number.
  *   • QUIET IS A REAL ANSWER. Nothing past the threshold → `flat` and no metric
  *     is named. A card that finds something wrong every week is a card people
- *     stop reading, so "tracking with your average" has to be a state it can
+ *     stop reading, so "tracking with the week before" has to be a state it can
  *     actually reach.
  *
  * THE SENTENCE IS ONE SLOT; THE PERIOD HAS TWO ENDS. `metric` can only name the
@@ -86,9 +87,9 @@ export const VERDICT_THRESHOLD_PCT = 15;
  * ranked over, and it is deliberately lower than the sentence's.
  *
  * The two ask different questions. The sentence makes a CLAIM about the period
- * ("your training time is the highest it's been in four weeks"), and a claim
- * needs a move big enough to be worth stating — that is the 15 above, and the
- * reason "tracking with your average" has to be a state the card can reach.
+ * ("your training time is up on the week before"), and a claim needs a move big
+ * enough to be worth stating — that is the 15 above, and the reason "tracking
+ * with the week before" has to be a state the card can reach.
  * The marks make no claim: they say WHICH END of your own row this figure is,
  * and the far end of a row is the far end whether it fell 40% or 9%.
  *
@@ -107,18 +108,20 @@ export const VERDICT_THRESHOLD_PCT = 15;
  */
 export const VERDICT_END_THRESHOLD_PCT = 5;
 
-/** How many of the preceding periods must carry training before we'll compare.
- *  Capped at however many the range actually offers, so a year-to-date read —
- *  which only has last year to look at — isn't permanently cold. */
-export const MIN_BASELINE_PERIODS = 2;
+// MIN_BASELINE_PERIODS lived here and is gone. It answered "how many of the
+// preceding windows must carry training before we'll compare" — a real question
+// when the denominator was a mean of four. Against a single previous window the
+// question collapses to "did that window carry training", which `cold` asks
+// directly, and a constant nobody reads is a constant that will be re-derived
+// wrong. The reasoning lives in capabilities.ts; the code is in git.
 
 /**
- * The baseline a metric must reach before it may claim the SENTENCE, in that
- * metric's canonical unit (tonnage kg, sessions count, hours MINUTES,
+ * What the PREVIOUS period must reach before a metric may claim the SENTENCE,
+ * in that metric's canonical unit (tonnage kg, sessions count, hours MINUTES,
  * distance km).
  *
- * Without this the only guard was `baseline <= 0`, and a four-week distance
- * mean of 0.087 km survived it: dividing by it produced "+7849%". The absurd
+ * Without this the only guard was `previous <= 0`, and 0.087 km of distance in
+ * the week before survived it: dividing by it produced "+7849%". The absurd
  * figure was the visible half of the problem. The other half was worse —
  * ranking by raw ratio hands the headline to whichever metric has the SMALLEST
  * denominator, so a lifter who jogs once a month had their sentence taken by
@@ -130,11 +133,10 @@ export const VERDICT_BASELINE_FLOOR: Record<VerdictMetric, number> = {
   tonnage: 250,   // kg — roughly one working set
   hours: 30,      // minutes
   distance: 1,    // km
-  // No floor on the session COUNT: it has no negligible quantity to express,
-  // and the coverage gate below already says everything a floor would. A count
-  // is present in a window exactly when the window carried training, which is
-  // the same question `cold` asks of the card — so sessions rank exactly as
-  // they always did.
+  // No floor on the session COUNT: it has no negligible quantity to express. A
+  // count is present in a window exactly when the window carried training,
+  // which is the same question `cold` already asks of the whole card — so a
+  // floor here would say nothing the gate above it has not said.
   sessions: 0,
 };
 
@@ -280,11 +282,11 @@ export function activityVerdict(
   // mean and could be thin without being zero; against a single window the
   // floor says the whole thing.
   //
-  // A metric that fails either gate is not discarded: it becomes the FALLBACK,
-  // used only when nothing qualified. A 0.1 → 6.8 km week in an otherwise flat
+  // A metric that fails the gate is not discarded: it becomes the FALLBACK,
+  // used only when nothing qualified. A 0.4 → 6 km week in an otherwise flat
   // period genuinely is the week's story — it just has no business outranking a
-  // measure with four weeks of history behind it, and past the ceiling it
-  // prints as the step rather than as a four-digit percentage.
+  // measure with a real previous week behind it, and past the ceiling it prints
+  // as the step rather than as a four-digit percentage.
   //
   // Ranking stays on the raw percentage so a period that was already decided
   // one way keeps its sentence: the gates change WHICH metrics compete, never
