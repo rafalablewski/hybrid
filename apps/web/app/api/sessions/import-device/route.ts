@@ -6,6 +6,7 @@ import {
   migrateBlocks,
   planDeviceImport,
   sanitizeDeviceWorkout,
+  sanitizeSessionBlocks,
   type DeviceWorkout,
   type LoggedSession,
 } from "@hybrid/core";
@@ -165,7 +166,13 @@ export async function POST(request: Request) {
         // The session lands where the TRAINING happened, not when the sync ran.
         startedAt: new Date(item.workout.start),
         completedAt: new Date(item.workout.end),
-        blocks: deviceWorkoutBlocks(item.workout) as unknown as object,
+        // Through the same sanitiser as every other write. A recording is
+        // already bounded on its way in (sanitizeDeviceWorkout), but its caps
+        // are single-field and sport-blind — a 300 km "swim" clears them — and
+        // "one definition of a storable workout" has to mean every path, or it
+        // means the paths somebody remembered.
+        blocks: (sanitizeSessionBlocks(deviceWorkoutBlocks(item.workout)) ??
+          []) as unknown as object,
         device,
       },
     });

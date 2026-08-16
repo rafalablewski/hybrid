@@ -139,18 +139,36 @@ export async function fetchSessions(opts?: { archived?: boolean }): Promise<Logg
   }
 }
 
+/** One session that carries a device recording: what to look the recording up
+ *  by, and whether its full trace has already been fetched. */
+export type SessionRecording = {
+  id: string;
+  uuid: string;
+  provider: string;
+  /** True when the full trace is already stored — the backfill's skip flag. */
+  streamed: boolean;
+  /** What the STORED recording says (core `deviceFingerprint`), so the repair
+   *  pass can spot an unchanged read without the blob crossing the wire. */
+  fingerprint: string;
+};
+
 /**
- * Which of the athlete's sessions ALREADY have their recording stored — the
- * backfill's skip list, so a GPS track is never re-read and re-uploaded for
- * nothing. Empty on any failure, which makes the backfill try rather than skip;
- * trying costs a wasted upload, skipping costs the trace forever.
+ * EVERY session of the athlete's that carries a device recording — the work-list
+ * for both device passes (summary repair, stream backfill).
+ *
+ * DELIBERATELY NOT `fetchSessions`, and that is the whole point of it existing:
+ * the History list returns the FIFTY most recent sessions, so a work-list built
+ * from it silently stops at fifty. An athlete with more than that had older
+ * recordings that would never be repaired and older traces that were never
+ * going to be fetched, however many times they synced. This list is uncapped
+ * because it carries three fields per row instead of a whole workout.
  */
-export async function fetchStreamedSessionIds(): Promise<string[]> {
+export async function fetchSessionRecordings(): Promise<SessionRecording[]> {
   try {
-    const res = await fetchWithTimeout(`${API_URL}/api/sessions/streamed`, { headers: await authHeaders() });
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/recordings`, { headers: await authHeaders() });
     if (!res.ok) return [];
-    const data = (await res.json()) as { sessionIds?: string[] };
-    return Array.isArray(data.sessionIds) ? data.sessionIds : [];
+    const data = (await res.json()) as { recordings?: SessionRecording[] };
+    return Array.isArray(data.recordings) ? data.recordings : [];
   } catch {
     return [];
   }

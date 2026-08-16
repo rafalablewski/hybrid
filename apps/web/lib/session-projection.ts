@@ -4,6 +4,7 @@ import {
   exerciseNameAliasMap,
   lapDerivationFor,
   migrateBlocks,
+  sanitizeSessionBlocks,
   sessionSetFacts,
   streamSummary,
   STREAM_UNIT,
@@ -58,18 +59,31 @@ export type ProjectableSession = Pick<
   "id" | "userId" | "startedAt" | "completedAt" | "archivedAt" | "title"
 > & { blocks: unknown; device?: unknown };
 
-const toLogged = (s: ProjectableSession, aliasMap: Record<string, string>): LoggedSession => ({
-  id: s.id,
-  title: s.title,
-  startedAt: s.startedAt.toISOString(),
-  completedAt: s.completedAt?.toISOString() ?? null,
+const toLogged = (s: ProjectableSession, aliasMap: Record<string, string>): LoggedSession => {
   // Canonicalised on the way in, exactly as the read path does it: `exercise` is
   // the column every cross-athlete aggregate GROUPs BY, so a lift stored under a
   // superseded name has to project under its CURRENT one. Without this a rename
   // would split one lift's history into two exercises that never add up again.
-  blocks: migrateBlocks(s.blocks, aliasMap),
-  device: (s.device ?? null) as LoggedSession["device"],
-});
+  const migrated = migrateBlocks(s.blocks, aliasMap);
+  return {
+    id: s.id,
+    title: s.title,
+    startedAt: s.startedAt.toISOString(),
+    completedAt: s.completedAt?.toISOString() ?? null,
+    // AND SANITISED, which matters most for the sessions written BEFORE the
+    // plausibility guards existed. Those documents can hold a 70 000 kg bench
+    // press, and the whole reason this table exists is cross-athlete aggregates
+    // — one legacy typo would sit in the platform's tonnage and its exercise
+    // rankings forever, indistinguishable from a fact.
+    //
+    // The DOCUMENT is left exactly as it is: this is a read-time filter on the
+    // projection, so nothing the athlete logged is rewritten or lost, and the
+    // figure comes back the moment they correct it. The warehouse holds what
+    // the app calls storable; the document holds what happened.
+    blocks: sanitizeSessionBlocks(migrated) ?? migrated,
+    device: (s.device ?? null) as LoggedSession["device"],
+  };
+};
 
 /**
  * The admin exercise library, published to the engines and folded into a rename

@@ -27,6 +27,7 @@ import {
   isDeviceName,
   sanitizeDeviceWorkout,
   sanitizeSessionStream,
+  deviceFingerprint,
   type DeviceWorkout,
   type SessionLap,
   type SessionStream,
@@ -37,7 +38,7 @@ import { fetchWithTimeout } from "./fetch";
 import {
   API_BASE,
   fetchSessions,
-  fetchStreamedSessionIds,
+  fetchSessionRecordings,
   patchSessionDevice,
   postSessionStreams,
 } from "./api";
@@ -537,16 +538,6 @@ async function readWorkouts(startDate: Date, endDate: Date): Promise<DeviceWorko
   return out;
 }
 
-/** The stored fields a refresh may legitimately change. `matchedAt` is excluded
- *  — the server re-stamps it on every write, so comparing it would make every
- *  session look stale forever. */
-const deviceFingerprint = (d: DeviceWorkout): string =>
-  JSON.stringify(
-    Object.entries(d)
-      .filter(([k]) => k !== "matchedAt")
-      .sort(([a], [b]) => a.localeCompare(b)),
-  );
-
 /**
  * REPAIR THE SESSIONS ALREADY MATCHED.
  *
@@ -565,11 +556,15 @@ const deviceFingerprint = (d: DeviceWorkout): string =>
 export async function refreshMatchedWorkouts(): Promise<{ checked: number; repaired: number }> {
   const hk = loadHealthKit();
   if (!hk) return { checked: 0, repaired: 0 };
-  let matched: { id: string; device: DeviceWorkout }[];
+  let matched: { id: string; uuid: string; fingerprint: string }[];
   try {
-    matched = (await fetchSessions())
-      .filter((s) => s.device?.provider === "apple" && typeof s.device.uuid === "string" && s.device.uuid)
-      .map((s) => ({ id: s.id, device: s.device as DeviceWorkout }));
+    // THE WHOLE matched history, which this pass always claimed to cover and
+    // did not: it read the History list, which stops at the fifty most recent
+    // sessions, so an athlete's older recordings kept their damaged read
+    // forever. The recordings index carries every one of them.
+    matched = (await fetchSessionRecordings())
+      .filter((r) => r.provider === "apple")
+      .map((r) => ({ id: r.id, uuid: r.uuid, fingerprint: r.fingerprint }));
   } catch {
     return { checked: 0, repaired: 0 };
   }
@@ -578,7 +573,7 @@ export async function refreshMatchedWorkouts(): Promise<{ checked: number; repai
   const fresh = new Map<string, DeviceWorkout>();
   let proxies: readonly WorkoutProxyLike[];
   try {
-    const uuids = [...new Set(matched.map((m) => m.device.uuid))];
+    const uuids = [...new Set(matched.map((m) => m.uuid))];
     proxies = await hk.queryWorkoutSamples({ limit: 0, filter: { uuids } });
   } catch {
     return { checked: matched.length, repaired: 0 };
@@ -597,8 +592,11 @@ export async function refreshMatchedWorkouts(): Promise<{ checked: number; repai
 
   let repaired = 0;
   for (const m of matched) {
-    const read = fresh.get(m.device.uuid);
-    if (!read || deviceFingerprint(read) === deviceFingerprint(m.device)) continue;
+    const read = fresh.get(m.uuid);
+    // The stored blob never crosses the wire — the index carries its fingerprint
+    // (core `deviceFingerprint`) and the fresh read is fingerprinted the same
+    // way, so an unchanged recording costs one string compare instead of a PATCH.
+    if (!read || deviceFingerprint(read) === m.fingerprint) continue;
     if (await patchSessionDevice(m.id, read)) repaired += 1;
   }
   return { checked: matched.length, repaired };
@@ -1205,12 +1203,12 @@ export async function backfillWorkoutStreams(max = MAX_BACKFILL_PER_SYNC): Promi
   if (healthKitAvailability() !== "ready") return 0;
   let pending: { id: string; uuid: string }[];
   try {
-    const [sessions, already] = await Promise.all([fetchSessions(), fetchStreamedSessionIds()]);
-    const have = new Set(already);
-    pending = sessions
-      .filter((s) => !have.has(s.id))
-      .filter((s) => s.device?.provider === "apple" && typeof s.device.uuid === "string" && s.device.uuid)
-      .map((s) => ({ id: s.id, uuid: (s.device as DeviceWorkout).uuid }));
+    // The RECORDINGS index, not the History list: History returns the fifty most
+    // recent sessions, so a work-list built from it would stop at fifty and an
+    // athlete's older traces would never be fetched however often they synced.
+    pending = (await fetchSessionRecordings())
+      .filter((r) => !r.streamed && r.provider === "apple")
+      .map((r) => ({ id: r.id, uuid: r.uuid }));
   } catch {
     return 0;
   }

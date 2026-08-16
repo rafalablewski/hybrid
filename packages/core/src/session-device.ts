@@ -257,6 +257,29 @@ export function deviceDistanceLabel(km: number, activityLabel: string): string {
   return kmOrMeters(km);
 }
 
+/**
+ * A short, stable summary of what a stored recording SAYS — every field that a
+ * re-read could legitimately change, and nothing else.
+ *
+ * It exists so the repair pass can answer "has this recording's read actually
+ * changed?" without shipping the whole stored blob to the phone to compare. The
+ * server computes it over the stored row and the client computes it over the
+ * fresh read; equal means there is nothing to write, and a PATCH per matched
+ * session per sync is exactly what an athlete with a thousand workouts cannot
+ * afford.
+ *
+ * `matchedAt` is EXCLUDED: the server re-stamps it on every write, so including
+ * it would make every session look stale forever and the pass would never
+ * settle.
+ */
+export function deviceFingerprint(d: Record<string, unknown> | DeviceWorkout): string {
+  return JSON.stringify(
+    Object.entries(d)
+      .filter(([k, v]) => k !== "matchedAt" && v !== undefined && v !== null)
+      .sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
+
 /** How far around the session's start the device store is searched for
  *  candidates, hours. Wide on purpose: a quick-logged sport session is stamped
  *  when it was LOGGED (often hours after it was played), so a tight window
