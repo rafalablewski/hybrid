@@ -94,24 +94,22 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE ,
  * — 4 km last week against 1 km this week is the thing to look at on a week
  * whose hours went up, and now it is the thing that is lit.
  *
- * THE TWO MARKS ARE NOT SYMMETRIC, deliberately. The rise is a bright figure
- * that glows off the card; the fall is a dark stain the figure sits in — the
- * maroon wash (core `colors.maroon`), which is the palette's only wash and
- * exists for this one column. Toned text alone gave the two ends the same
- * visual weight, and equal weight is the one thing the pair must not have: a
- * week's slip has to be the heavier mark even when its percentage is the
- * smaller one, because it is the half of the week that asks for a decision.
+ * BOTH MARKS ARE FOREGROUND, and the mark owns no background at all. The fall
+ * spent a while sitting in a maroon WASH — a dark stain under the column, on
+ * the argument that a slip must be the heavier of the two marks. It made one
+ * column a SURFACE while the other three were type on the card, so the row read
+ * as three figures and one filled box, and the box was what the eye found first
+ * whether or not the slip was the week's story. Hue and sign already separate
+ * the two ends; weight was never the axis the pair should have argued on.
  *
- * THE MARK IS NOT THE SELECTION, and the two channels are kept apart. The mark
- * is about the PERIOD and does not move: tone on the label and the figure, the
- * end's own signed percentage under it (a second, non-hue channel, since the
- * pair reads as one grey to a red-green athlete), and the fall's wash.
- * Selection is about the FINGER and travels: the 2px rail, plus a 9% wash on
+ * THE MARK IS NOT THE SELECTION, and the two channels are kept apart — which is
+ * now a clean split, since they no longer share the background. The mark is
+ * about the PERIOD and does not move: tone on the label and the figure, plus
+ * that end's own signed percentage under it (a second, non-hue channel, since
+ * the pair reads as one grey to a red-green athlete). Selection is about the
+ * FINGER and travels: the 2px rail, plus a 9% wash of the column's own tone on
  * whichever column is open — including the untoned ones, which wash chalk so a
- * middle column still registers the press. The fall's column has a wash
- * already, so it LIFTS (`maroonLit`) rather than taking a tone-alpha that would
- * have made it go paler under the finger — a press must never read as the mark
- * being lifted off.
+ * middle column still registers the press.
  *
  * THE BREAKDOWN IS A SHEET, and this is the third and last shape it has taken.
  * It began as a second bordered, rounded card drawn INSIDE this one, with a
@@ -466,20 +464,20 @@ export default function AuroraWeekVerdict({
               f.metric === v.best ? "up" : f.metric === v.worst ? "down" : null;
             const col = dir ? dirColor(dir) : null;
             const delta = dir ? figureDeltaPct(f) : null;
-            // THE FALL SITS IN A WASH; THE RISE DOES NOT. The two marks are not
-            // symmetric and should not be: a rise is a bright figure that glows
-            // off the card, a fall is a dark stain the figure sits in. Toned
-            // text alone gave them the same weight, which is the one thing the
-            // pair must not have — a week's slip has to be the heavier mark
-            // even when its percentage is the smaller one.
+            // BOTH MARKS ARE FOREGROUND. The fall used to sit in a maroon wash
+            // — a dark stain under the column, on the argument that a slip must
+            // be the heavier mark. It made the fall a SURFACE while every other
+            // column was type on the card, so the row read as three figures and
+            // one filled box, and the box was the thing the eye found first
+            // whether or not the slip was the week's story. The pair is
+            // separated by hue and by sign, which is the separation it needed;
+            // weight was never the axis it should have argued on.
             //
-            // It LIFTS rather than lightens when opened. The tone-alpha wash the
-            // other columns use would have made the fall's column go PALER under
-            // a finger, so the press read as the mark being lifted off.
-            const wash = f.metric === v.worst
-              ? (isOpen ? C.maroonLit : C.maroon)
-              : isOpen ? withAlpha(col ?? C.chalk, col ? 0.09 : 0.06)
-                : "transparent";
+            // So the background is the SELECTION channel alone, on every column
+            // alike: transparent at rest, a 9% wash of the column's own tone
+            // under a finger, and chalk at 6% for an untoned column so a middle
+            // one still registers the press.
+            const wash = isOpen ? withAlpha(col ?? C.chalk, col ? 0.09 : 0.06) : "transparent";
             return (
               <Pressable
                 key={f.metric}
@@ -505,9 +503,9 @@ export default function AuroraWeekVerdict({
                   // A WASH OF ITS OWN TONE, not the `ink` fill that used to sit
                   // here: at 9% it reads as the column being lit rather than as
                   // a second surface laid over the card. An untoned column still
-                  // has to register the press, so it washes chalk. The FALL is
-                  // the exception — see `wash` above, it carries its maroon at
-                  // rest.
+                  // has to register the press, so it washes chalk. NOTHING sits
+                  // here at rest, on any column — the background is selection's
+                  // channel and the marks are foreground (see `wash` above).
                   backgroundColor: wash,
                 }}
               >

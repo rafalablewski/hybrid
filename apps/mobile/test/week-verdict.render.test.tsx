@@ -238,11 +238,10 @@ describe("a faller under the sentence's threshold", () => {
   const columnFor = (prefix: string) =>
     screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith(prefix));
 
-  it("still takes the drop mark and the maroon", () => {
+  it("still takes the drop mark", () => {
     renderScreen(<AuroraWeekVerdict sessions={shallowFall} units="kg" />);
 
     expect(columnFor("Distance")!.getAttribute("aria-label")).toContain("biggest drop this period");
-    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(58, 31, 25)"); // colors.maroon
   });
 
   it("prints its own single-digit move, and leaves the sentence alone", () => {
@@ -256,39 +255,45 @@ describe("a faller under the sentence's threshold", () => {
 });
 
 /**
- * THE FALL SITS IN A WASH — the two marks are deliberately unequal.
+ * BOTH MARKS ARE FOREGROUND — the row carries no fill at rest.
  *
- * Toned text alone gave the rise and the fall the same visual weight, and equal
- * weight is the one thing the pair must not have: a week's slip is the half that
- * asks for a decision, so it reads as a dark stain the figure sits in while the
- * rise is a bright figure glowing off the card.
+ * The fall used to sit in a maroon WASH, on the argument that a slip should be
+ * the heavier of the two marks. It made one column a surface while the other
+ * three were type on the card, so the row read as three figures and one filled
+ * box — and the box was what the eye found first whether or not the slip was
+ * the week's story. Hue and sign already separate the ends.
  *
- * The assertion is that the maroon lands on the WORST column and on nothing
- * else — a wash that spreads is a wash that has stopped meaning anything.
+ * So the background belongs to SELECTION alone, and these are the assertions
+ * that keep the two channels from merging again: nothing is filled until a
+ * finger lands, and what a finger produces is a tint of that column's own tone.
  */
-describe("the fall's maroon wash", () => {
+describe("the row's backgrounds", () => {
   const columnFor = (prefix: string) =>
     screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith(prefix));
+  const bare = (bg: string) => bg === "" || bg === "rgba(0, 0, 0, 0)" || bg === "transparent";
 
-  it("backs the worst column at rest, before anything is pressed", () => {
+  it("leaves EVERY column unfilled at rest, the fall included", () => {
     renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
-    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(58, 31, 25)"); // colors.maroon
-  });
-
-  it("does not back the rise, nor the columns that did not move", () => {
-    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
-    // The rise glows instead of staining; the flat columns carry nothing at all.
-    for (const prefix of ["Hours", "Tonnage", "Sessions"]) {
+    for (const prefix of ["Tonnage", "Sessions", "Hours", "Distance"]) {
       const bg = columnFor(prefix)!.style.backgroundColor;
-      expect(bg === "" || bg === "rgba(0, 0, 0, 0)", `${prefix} is washed — got "${bg}"`).toBe(true);
+      expect(bare(bg), `${prefix} is filled at rest — got "${bg}"`).toBe(true);
     }
   });
 
-  it("LIFTS under a finger rather than going paler", () => {
+  it("still marks the fall — in the foreground, where both marks now live", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    expect(columnFor("Distance")!.getAttribute("aria-label")).toContain("biggest drop this period");
+    expect(container.textContent ?? "").toContain("−75%");
+  });
+
+  it("fills only under a finger, in that column's own tone", () => {
     renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
     fireEvent.click(columnFor("Distance")!);
-    // A tone-alpha selection wash would have lightened it toward the card,
-    // reading as the mark being lifted off by the press.
-    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(78, 42, 32)"); // colors.maroonLit
+    // 9% of terracotta (#e58a5c) — selection's channel, not the mark's.
+    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgba(229, 138, 92, 0.09)");
+    // …and it is the ONLY column filled: selection travels, the marks do not.
+    for (const prefix of ["Tonnage", "Sessions", "Hours"]) {
+      expect(bare(columnFor(prefix)!.style.backgroundColor)).toBe(true);
+    }
   });
 });
