@@ -657,3 +657,54 @@ describe("a rung that IS the pace split", () => {
     expect(rung.pace).toBeNull();
   });
 });
+
+describe("the typed rung is a RECORD, not the latest typing", () => {
+  const at = (d: number) => new Date(NOW - d * DAY).toISOString();
+
+  it("keeps the FASTEST typing when a slower one is entered afterwards", () => {
+    // A rung labelled "Best 5 km" that reads the last entry would show 25:00
+    // the day after a 22:41 was typed. That is the athlete's current form, not
+    // their record, and the marker history exists so it need not be confused.
+    const m = sportPageModel("Running", [], {
+      now: NOW,
+      markers: [{ value: "22:41", at: at(30) }, { value: "25:00", at: at(2) }],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("22:41");
+    expect(rung.at).toBe(at(30));
+    expect(rung.typed).toBe(true);
+  });
+
+  it("deltas against the typing that STOOD, like a measured rung does", () => {
+    // 30:00 → 25:00 → 24:30 is a −0:30 improvement, not −5:30 against the
+    // first-ever entry — the same rule the measured rungs follow.
+    const m = sportPageModel("Running", [], {
+      now: NOW,
+      markers: [{ value: "30:00", at: at(90) }, { value: "25:00", at: at(40) }, { value: "24:30", at: at(3) }],
+    });
+    expect(m.records.find((r) => r.km === 5)!.delta).toBe("−0:30");
+  });
+
+  it("has no delta on the first typing", () => {
+    const m = sportPageModel("Running", [], { now: NOW, markers: [{ value: "24:30", at: at(3) }] });
+    expect(m.records.find((r) => r.km === 5)!.delta).toBeNull();
+  });
+});
+
+describe("the counts a door can promise", () => {
+  it("separates cardio BLOCKS from SESSIONS — a brick holds two of one", () => {
+    const brick: LoggedSession = {
+      id: "b1",
+      title: "Brick",
+      startedAt: new Date(NOW - DAY).toISOString(),
+      blocks: [
+        { kind: "cardio", name: "Easy run", discipline: "running", distance: 5, minutes: 26 },
+        { kind: "cardio", name: "Run off the bike", discipline: "running", distance: 3, minutes: 15 },
+      ],
+    } as LoggedSession;
+    const m = sportPageModel("Running", [brick], { now: NOW });
+    // Two efforts, ONE row in History — the door opens History, so it counts rows.
+    expect(m.meta.efforts).toBe(2);
+    expect(m.meta.sessions).toBe(1);
+  });
+});

@@ -260,7 +260,7 @@ export interface SportPageModel {
   empty: boolean;
   /** The FACTS the hero's meta line states. Clients localize each one and join
    *  them with heroMetaLine() — the model never bakes English into a hero. */
-  meta: { efforts: number; distance: string | null; distanceUnit: "km" | "m"; firstAt: string | null };
+  meta: { efforts: number; sessions: number; distance: string | null; distanceUnit: "km" | "m"; firstAt: string | null };
   primary: SportPrimary;
   /** The catalog's marker prompt, when the sport has one and it is unfilled. */
   markerPrompt: { label: string; ph: string } | null;
@@ -442,11 +442,31 @@ export function sportRecords(
   // Oldest → newest, so a running best can name what it displaced.
   const chron = [...all].reverse();
   const markerRung = ladder.find((r) => r.marker) ?? null;
-  const lastMarker = [...markers].reverse().find((m) => m.value.trim().length > 0) ?? null;
+  // THE TYPED RUNG TAKES THE BEST TYPING, NOT THE LAST ONE. A rung is labelled
+  // "Best 5 km"; reading the most recent entry would put 25:00 there the day
+  // after a 22:41 was typed, which is the athlete's CURRENT figure and not
+  // their record. The marker history exists precisely so this can be a record.
+  //
   // A typed rung has to be a CLOCK. "Blue belt, 2 yrs" is a marker too, and it
   // is not a time at a distance — markerNumber would happily turn "240" into a
   // 4-minute 5 km.
-  const typedSec = lastMarker && lastMarker.value.includes(":") ? markerNumber(lastMarker.value) : null;
+  const typedClocks = markers
+    .filter((m) => m.value.trim().length > 0 && m.value.includes(":"))
+    .map((m) => ({ sec: markerNumber(m.value), at: m.at }))
+    .filter((m): m is { sec: number; at: string } => m.sec != null);
+  // Walked in the order they were typed, so "the previous best" means the one
+  // that stood before this beat it — the same rule the measured rungs follow,
+  // rather than a baseline on the first-ever typing.
+  let typedSec: number | null = null;
+  let typedAt: string | null = null;
+  let typedPrev: number | null = null;
+  for (const t of typedClocks) {
+    if (typedSec == null || t.sec < typedSec) {
+      if (typedSec != null) typedPrev = typedSec;
+      typedSec = t.sec;
+      typedAt = t.at;
+    }
+  }
 
   const rows: SportRecord[] = ladder.map((rung) => {
     let best: SportEffort | null = null;
@@ -470,17 +490,16 @@ export function sportRecords(
     };
 
     if (typedWins) {
-      const d = markerDelta(markers[0]!.value, lastMarker!.value);
       return {
         ...base,
         time: clock(typedSec!),
         // No measured distance behind a typed time, so no pace derived from it.
         pace: null,
-        at: lastMarker!.at,
+        at: typedAt,
         sessionId: null,
         provider: null,
         typed: true,
-        delta: d?.improving ? d.delta : null,
+        delta: typedPrev != null && typedPrev > typedSec! ? `−${clock(typedPrev - typedSec!)}` : null,
       };
     }
     if (best == null) {
@@ -684,6 +703,11 @@ export function sportPageModel(
   /* ── the hero's meta line — facts about THIS instance ── */
   const meta = {
     efforts: totalsRaw.efforts,
+    // `efforts` counts cardio BLOCKS (a brick session holds two), which is the
+    // right figure for "how many times have I run". `sessions` is the row count
+    // in History, so a door that opens History has to promise this one — the
+    // two differ exactly when a session holds more than one block of a sport.
+    sessions: slice.length,
     distance: hasDistance && totalsRaw.distanceKm > 0 ? sportDistance(totalsRaw.distanceKm, distanceUnit) : null,
     distanceUnit,
     // The oldest effort in the slice — `all` is newest-first.

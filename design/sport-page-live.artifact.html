@@ -555,14 +555,17 @@ function records(sport, all, markers){
   var chron=all.slice().reverse();                       // oldest → newest
   var markerRung=null,i;
   for(i=0;i<ladder.length;i++) if(ladder[i].marker) markerRung=ladder[i];
-  var last=null;
-  for(i=markers.length-1;i>=0;i--) if(markers[i].value.trim()){last=markers[i];break;}
-  var typedSec=null;
-  if(last && last.value.indexOf(":")>-1){
-    var parts=last.value.split(":").map(Number);
-    if(parts.every(function(n){return isFinite(n);}))
-      typedSec=parts.reduce(function(a,n){return a*60+n;},0);
-  }
+  // The BEST typing, not the latest — a rung labelled "Best 5 km" that read the
+  // last entry would show 25:00 the day after a 22:41 was typed. Delta walks
+  // the typings the way the measured delta walks the efforts.
+  var typedSec=null, typedAt=null, typedPrev=null;
+  markers.forEach(function(mk){
+    if(!mk.value.trim()||mk.value.indexOf(":")<0) return;
+    var parts=mk.value.split(":").map(Number);
+    if(!parts.every(function(n){return isFinite(n);})) return;
+    var sec=parts.reduce(function(a,n){return a*60+n;},0);
+    if(typedSec==null||sec<typedSec){ if(typedSec!=null) typedPrev=typedSec; typedSec=sec; typedAt=mk.at; }
+  });
   var rows=ladder.map(function(rung){
     var best=null,prev=null;
     chron.forEach(function(e){
@@ -576,13 +579,8 @@ function records(sport, all, markers){
       value:rung.name?null:sportDistance(rung.km,c.unit),
       unit:rung.name?null:c.unit, name:rung.name||null, promoted:false};
     if(typedWins){
-      var d=null, first=markers.length?markers[0].value:null;
-      if(first&&first!==last.value&&first.indexOf(":")>-1){
-        var fp=first.split(":").map(Number).reduce(function(a,n){return a*60+n;},0);
-        if(fp>typedSec) d="−"+clock(fp-typedSec);
-      }
-      return Object.assign(base,{time:clock(typedSec),pace:null,at:last.at,
-        provider:null,typed:true,delta:d});
+      return Object.assign(base,{time:clock(typedSec),pace:null,at:typedAt,provider:null,typed:true,
+        delta:typedPrev!=null&&typedPrev>typedSec?"−"+clock(typedPrev-typedSec):null});
     }
     if(!best) return Object.assign(base,{time:null,pace:null,at:null,provider:null,typed:false,delta:null});
     // A rung AT the pace split IS its own pace — printing both puts the same

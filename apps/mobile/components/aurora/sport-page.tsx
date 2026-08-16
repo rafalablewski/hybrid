@@ -19,7 +19,6 @@ import {
   sportPageModel,
   sportPaceReading,
   sportVolumeReading,
-  transferSessionBlocks,
   type LoggedSession,
   type SportBest,
   type SportChartReading,
@@ -43,8 +42,6 @@ import { DoorRow } from "./week-verdict";
 import { withAlpha } from "./field";
 
 const STORE_KEY = "hybrid.sport";
-/** The handoff the live logger reads when the transfer session is started. */
-const PENDING_KEY = "hybrid.pendingSportSession";
 
 /**
  * THE SPORT PAGE (mobile). There is no web twin any more — the user-facing web
@@ -97,18 +94,26 @@ export default function AuroraSportPage() {
     if (!name) router.replace("/sport");
   }, [name, router]);
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORE_KEY)
-      .then((rawStore) => {
-        if (!rawStore) return;
-        const s = JSON.parse(rawStore) as SportStore | null;
-        if (s && typeof s === "object") {
-          setStore(s);
-          if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  // ON FOCUS, not on mount. The strength screen writes the SAME store, so a
+  // level picked there must be read back when the athlete returns — otherwise
+  // this screen holds a stale copy and the next `recordMarker` write persists
+  // the old level over the new one, silently reverting it.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      AsyncStorage.getItem(STORE_KEY)
+        .then((rawStore) => {
+          if (!active || !rawStore) return;
+          const s = JSON.parse(rawStore) as SportStore | null;
+          if (s && typeof s === "object") {
+            setStore(s);
+            if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+          }
+        })
+        .catch(() => {});
+      return () => { active = false; };
+    }, []),
+  );
 
   const markers = useMemo(() => markerHistory(store, name), [store, name]);
   const m: SportPageModel = useMemo(
@@ -127,18 +132,9 @@ export default function AuroraSportPage() {
     setStore(next);
     AsyncStorage.setItem(STORE_KEY, JSON.stringify(next)).catch(() => {});
   };
-  const pickLevel = (i: number) => {
-    setLevelIdx(i);
-    persist({ ...(store ?? {}), sport: name, levelIdx: i });
-  };
   const saveMarker = (value: string) => {
     persist(recordMarker(store, name, value, new Date().toISOString()));
     setDraft(null);
-  };
-  const startTransfer = async () => {
-    if (!m.transfer) return;
-    await AsyncStorage.setItem(PENDING_KEY, JSON.stringify({ title: `${name} – ${LEVELS[levelIdx]}`, blocks: transferSessionBlocks(m.transfer) }));
-    router.push("/workout?source=sport-transfer");
   };
 
   const mono = (size: number, color = C.ash) => ({ fontFamily: F.mono, fontSize: size, color });
@@ -295,7 +291,7 @@ export default function AuroraSportPage() {
       {/* An FTP is watts, not a time at a distance, so it fills no rung and
           keeps its own line beside the ladder. Where the marker IS a rung, the
           rung above has already stated it. */}
-      {m.markerAside && m.primary.kind === "marker" && !!headline && (
+      {m.markerAside && m.primary.kind === "marker" && (!!headline || m.empty) && (
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, paddingVertical: space.md, ...dividerTop }}>
           <Text style={label()}>{m.primary.label}</Text>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
@@ -476,7 +472,10 @@ export default function AuroraSportPage() {
           {/* A vertical list ends in a DOOR ROW of that list. This one stopped
               at three efforts and offered no way to the rest of them. */}
           <DoorRow
-            title={t("w.train.sportPage.allEfforts").replace("{n}", String(m.meta.efforts))}
+            // `meta.sessions`, not `meta.efforts`: efforts counts cardio BLOCKS,
+            // and a brick session holds two of them, so the door would promise
+            // a number one larger than the list behind it can show.
+            title={t("w.train.sportPage.allEfforts").replace("{n}", String(m.meta.sessions))}
             sub={t("w.train.sportPage.inHistory")}
             glyph="→"
             onPress={() => router.push(`/history?sport=${encodeURIComponent(name)}`)}

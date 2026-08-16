@@ -139,18 +139,32 @@ export default function AuroraHistory() {
 
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
-  // Only archived sessions still render as the classic swipe list (restore /
-  // delete live behind the swipe); live history renders the merged layouts.
-  // Archived cards don't open the breakdown — the detail route only serves
-  // live sessions (fetchable by owner), so tapping would dead-end on notFound.
+  // TWO LISTS SHARE THIS ROW, and they are not the same list.
+  //
+  // ARCHIVED: restore / delete behind the swipe, and no tap — the detail route
+  // only serves live sessions (fetchable by owner), so tapping would dead-end
+  // on notFound.
+  //
+  // SPORT-FILTERED: live sessions, reached from that sport's page. They must
+  // OPEN, and they must not carry the archive actions — "Restore" is
+  // meaningless on a session that was never archived and "Delete" behind a
+  // swipe is a destructive action nobody came here for. Handing this row live
+  // data with the archived actions attached was how the filter first shipped.
   const renderItem = ({ item: s }: { item: LoggedSession }) => {
     const prCount = prCounts.get(s.id) ?? 0;
-    const actions: SwipeAction[] = [
-      { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => void manage.archive(s.id, false) },
-      { key: "delete", label: t("common.delete"), color: C.red, onPress: () => manage.confirmDelete(s) },
-    ];
+    const actions: SwipeAction[] = showArchived
+      ? [
+          { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => void manage.archive(s.id, false) },
+          { key: "delete", label: t("common.delete"), color: C.red, onPress: () => manage.confirmDelete(s) },
+        ]
+      : [];
     return (
-      <SwipeCard C={C} busy={manage.busyId === s.id} actions={actions}>
+      <SwipeCard
+        C={C}
+        busy={manage.busyId === s.id}
+        actions={actions}
+        onPress={showArchived ? undefined : () => router.push(`/session/${s.id}`)}
+      >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
@@ -294,10 +308,14 @@ export default function AuroraHistory() {
  *  surface deciding by displacement on a spring nothing guarded. The geometry
  *  (88pt tiles, several of them) stays this card's own: unlike SwipeRow it can
  *  reveal more than one action, so its open position is not `swipe.action`. */
-function SwipeCard({ C, busy, actions, children }: {
+function SwipeCard({ C, busy, actions, onPress, children }: {
   C: Palette;
   busy: boolean;
+  /** Empty = no swipe at all (reveal is 0, so the gesture has nowhere to go). */
   actions: SwipeAction[];
+  /** Opens the row. A press while the actions are revealed closes them first —
+   *  the swipe is a mode, and the first tap out of a mode exits it. */
+  onPress?: () => void;
   children: ReactNode;
 }) {
   const TILE = 88;
@@ -352,7 +370,12 @@ function SwipeCard({ C, busy, actions, children }: {
         <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
           {/* CARD_PAD, not 16: the web twin of this very component has always
               been inset 20, so one swipe card read two ways by client. */}
-          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: CARD_PAD }}>
+          <Pressable
+            onPress={() => { if (openRef.current) { animate(false); return; } onPress?.(); }}
+            disabled={!onPress && actions.length === 0}
+            accessibilityRole={onPress ? "button" : undefined}
+            style={{ padding: CARD_PAD }}
+          >
             {children}
           </Pressable>
         </Animated.View>

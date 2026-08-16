@@ -222,7 +222,10 @@ const CATALOG: OlympicSport[] = [
       ],
     },
   },
-  { name: "Track Cycling", icon: "🚲", category: "Cycling", metrics: PACED, records: [{ km: 0.2 }, { km: 1 }, { km: 4 }] },
+  // The kilo and the pursuit, in km like the rest of this sport. The flying 200 m
+  // is a real track benchmark and is deliberately NOT here: this catalog entry
+  // reads in km, so it would render as "0.2 km" — a benchmark nobody calls that.
+  { name: "Track Cycling", icon: "🚲", category: "Cycling", metrics: PACED, records: [{ km: 1 }, { km: 4 }] },
   { name: "Mountain Biking", icon: "🚵", category: "Cycling", metrics: PACED },
   { name: "BMX", icon: "🚲", category: "Cycling", metrics: TIME },
 
