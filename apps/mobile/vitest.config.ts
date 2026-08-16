@@ -61,6 +61,9 @@ export default defineConfig({
             // Reads package.json + the SDK's own version table as DATA, so it
             // stays inside the boundary while covering every native module.
             "lib/expo-alignment.test.ts",
+            // Reads the INSTALLED HealthKit pod's Swift as text, to prove the
+            // patch that removed its two fatalError()s is still applied.
+            "lib/healthkit-patch.test.ts",
             // Reads the Create Food form's default serving out of the source as
             // TEXT and then runs it through the real core readers, so it proves
             // a screen invariant without importing the screen.

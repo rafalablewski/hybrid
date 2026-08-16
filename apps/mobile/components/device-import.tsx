@@ -17,10 +17,10 @@ import {
 import {
   healthKitAvailability,
   queryRecentDeviceWorkouts,
-  requestStreamReadAuth,
-  requestWorkoutReadAuth,
+  requestDeviceReadAuth,
   uploadLandedStreams,
 } from "../lib/healthkit";
+import { readHealthFaults, type HealthStep } from "../lib/healthkit-watchdog";
 import { importDeviceWorkouts, type DeviceImportLanded } from "../lib/api";
 import { FeelPrompt } from "./feel-prompt";
 import { setLoggerPref, useLoggerPrefs } from "../lib/logger-prefs";
@@ -92,6 +92,12 @@ export function DeviceImportSheet({
   // What the import just put in the log, waiting on its effort rating.
   const [landed, setLanded] = useState<DeviceImportLanded[]>([]);
   const [answered, setAnswered] = useState(false);
+  // A native read that never came back (lib/healthkit-watchdog.ts). Said out
+  // loud HERE because a native abort leaves nothing else behind: no exception,
+  // no error screen, no log the phone still has — just an athlete who watched
+  // the app close. This line is the only thing that can turn that into a report
+  // anybody can act on, so it names the span rather than apologising vaguely.
+  const [faults, setFaults] = useState<HealthStep[]>([]);
   // "vs your usual" is the athlete against THEMSELVES over the last month.
   // Bodyweight is not passed because it cannot move this number: a felt load is
   // effort × minutes, and neither term is bodyweight-dependent.
@@ -106,18 +112,18 @@ export function DeviceImportSheet({
   const sessionsRef = useRef(sessions);
   sessionsRef.current = sessions;
   const load = useCallback(async () => {
+    setFaults(Object.keys(await readHealthFaults()) as HealthStep[]);
     if (healthKitAvailability() !== "ready") {
       setPhase("unavailable");
       return;
     }
     setPhase("loading");
     // The permission ask doubles as "connect" — iOS only sheets types it hasn't
-    // asked about, so a returning athlete goes straight to the read.
-    await requestWorkoutReadAuth();
-    // Asked here, while the athlete is already looking at a permission sheet —
-    // the import uploads each landed recording's trace afterwards, and a system
-    // dialog appearing then would land mid-import with nothing to explain it.
-    await requestStreamReadAuth();
+    // asked about, so a returning athlete goes straight to the read. ONE ask
+    // covering the workout list AND the series under a recording: the import
+    // uploads each landed recording's trace afterwards, and a second system
+    // dialog for that would land mid-import with nothing to explain it.
+    await requestDeviceReadAuth();
     const workouts = await queryRecentDeviceWorkouts();
     if (workouts == null) {
       setPhase("error");
@@ -213,6 +219,11 @@ export function DeviceImportSheet({
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 8 }}>
             {t(phase === "rate" ? "device.import.rateLead" : "device.import.lead")}
           </Text>
+          {phase !== "rate" && faults.length > 0 && (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: txt(C, C.amber), marginTop: 8 }}>
+              {t("device.import.fault").replace("{step}", faults.join(", "))}
+            </Text>
+          )}
 
           {phase === "unavailable" && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginVertical: 24 }}>{t("session.device.unavailable")}</Text>
