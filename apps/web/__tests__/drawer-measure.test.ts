@@ -55,6 +55,8 @@ const MEASURED: Record<string, string> = {
   // registry-may-not-rot assertion below is what caught the stale entry.
   "components/plan-hero.tsx":
     "Same as hero.tsx — the plan screen's rail height for the collapse offset, measured in an auto-height parent.",
+  "components/aurora/week-verdict.tsx":
+    "The activity card's PAGER measures each page and interpolates the card's height off the scroll offset, so the card grows with the drag instead of jumping after it. It takes the second escape, and takes it by construction: the height is `undefined` (auto) until BOTH pages have reported a positive height, so the box is never pinned while a measurement is still 0. After that it is pinned to a real page height — which is safe for the reason stated at the top of this file: only 0 clamps a child, any height above it overflows normally, and the content container's `alignItems: \"flex-start\"` keeps the taller page from being stretched to the shorter one's box. So page two reports its own 390dp while the card is still sitting at page one's 200dp, which is exactly what the interpolation needs.",
   "components/aurora/rolling-number.tsx":
     "RollingNumber's digit column measures its own height to slide a face by exactly one glyph. It pins NO height at all: the incoming face is in flow and defines the box (the outgoing one is absolutely positioned over it), so the measured box is the glyph's real height and never a clipped 0. An unmeasured first frame translates by 0 — the digit simply appears — rather than collapsing.",
 };
