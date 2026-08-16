@@ -10,6 +10,7 @@ import {
   sanitizeSessionStream,
   splitsFromDistance,
   streamSummary,
+  MAX_LAPS,
   STREAM_MAX_SAMPLES,
   type SessionStream,
 } from "./session-streams";
@@ -266,6 +267,16 @@ describe("sanitizeSessionLaps", () => {
     expect(laps[1]!.avgHr).toBeNull(); // 900 bpm is not a heart rate
   });
 
+  it("ROUNDS the heart rates, which are integer columns", () => {
+    // A fractional bpm does not degrade in an Int column, it throws — and the
+    // write is one transaction, so the whole recording loses its streams too.
+    const [lap] = sanitizeSessionLaps([
+      { kind: "lap", index: 0, startOffsetSec: 0, durationSec: 300, avgHr: 152.7, maxHr: 170.2 },
+    ]);
+    expect(lap!.avgHr).toBe(153);
+    expect(lap!.maxHr).toBe(170);
+  });
+
   it("de-duplicates on (kind, index)", () => {
     const laps = sanitizeSessionLaps([
       { kind: "lap", index: 0, startOffsetSec: 0, durationSec: 300 },
@@ -343,6 +354,21 @@ describe("deriveSessionLaps", () => {
     expect(laps.filter((l) => l.kind === "split")).toHaveLength(2);
     expect(laps.filter((l) => l.kind === "split").every((l) => l.durationSec !== 111)).toBe(true);
     expect(laps.filter((l) => l.kind === "lap")).toHaveLength(1);
+  });
+
+  it("keeps the BESTS when the splits overflow the cap", () => {
+    // A 600 km ride splits into 600 laps and MAX_LAPS is 500. Appended last,
+    // the bests — the only rows the record ladder reads — were the ones
+    // truncated away, so the longest rides produced no records at all.
+    const sec = 600 * 60;
+    const long = stream({
+      kind: "distance",
+      offsets: Array.from({ length: 3000 }, (_, i) => Math.round((i * sec) / 2999)),
+      values: Array.from({ length: 3000 }, (_, i) => (i * 600) / 2999),
+    });
+    const laps = deriveSessionLaps([long], [], { splitKm: 1, rungsKm: [1, 5, 10, 21.0975, 42.195] });
+    expect(laps.length).toBeLessThanOrEqual(MAX_LAPS);
+    expect(laps.filter((l) => l.kind === "best")).toHaveLength(5);
   });
 
   it("derives nothing without a distance series", () => {

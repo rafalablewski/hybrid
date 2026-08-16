@@ -250,7 +250,7 @@ export function SessionEditSheet({
                                 <Num C={C} value={s.reps} onChange={(v) => setSet(i, j, { reps: v })} />
                                 <Num C={C} value={s.rpe} onChange={(v) => setSet(i, j, { rpe: v })} />
                               </View>
-                              <ConcernLine reason={c.verdict === "check" ? c.reason : null} />
+                              <ConcernLine concern={c} />
                             </View>
                           );
                         })}
@@ -288,7 +288,7 @@ export function SessionEditSheet({
                         distanceKm: parseSportDistance(b.distance, b.name),
                         minutes: parseFloat(b.minutes) || null,
                       });
-                      return <ConcernLine reason={c.verdict === "check" ? c.reason : null} />;
+                      return <ConcernLine concern={c} />;
                     })()}
                   </View>
                 );

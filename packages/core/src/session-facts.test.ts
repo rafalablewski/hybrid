@@ -229,6 +229,30 @@ describe("sessionSetFacts — the device wins", () => {
   });
 });
 
+describe("the columns are INTEGERS, and a fractional value throws in Postgres", () => {
+  it("rounds reps and measured rest", () => {
+    // Nothing stops "8.5" reaching a rep field, and a decimal in an Int column
+    // does not degrade — it throws, the projection swallows it, and the session
+    // is silently absent from every aggregate with nothing to say why.
+    const [set] = sessionSetFacts(
+      session({ blocks: [{ kind: "strength", name: "Back Squat", sets: [{ load: "100", reps: "8.5", rest: 90.4 }] }] }),
+    );
+    expect(Number.isInteger(set!.reps)).toBe(true);
+    expect(Number.isInteger(set!.restSec)).toBe(true);
+  });
+
+  it("rounds a zone and a round count", () => {
+    const [cardio] = sessionSetFacts(
+      session({ blocks: [{ kind: "cardio", name: "Running", distance: 5, minutes: 25, zone: 3.4 }] }),
+    );
+    expect(Number.isInteger(cardio!.zone)).toBe(true);
+    const [cond] = sessionSetFacts(
+      session({ blocks: [{ kind: "conditioning", name: "AMRAP", minutes: 12, rounds: 9.6 }] }),
+    );
+    expect(Number.isInteger(cond!.rounds)).toBe(true);
+  });
+});
+
 describe("sessionFactCount", () => {
   it("predicts exactly what the projection emits", () => {
     const s = session({

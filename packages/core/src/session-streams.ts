@@ -186,6 +186,9 @@ const fin = (v: unknown): number | null => {
 
 const inRange = (n: number, lo: number, hi: number) => n >= lo && n <= hi;
 
+/** Round for a column that is an integer. Null passes through. */
+const intOrNull = (n: number | null): number | null => (n == null ? null : Math.round(n));
+
 const round = (n: number, dp: number): number => {
   const f = 10 ** dp;
   return Math.round(n * f) / f;
@@ -590,8 +593,11 @@ export function sanitizeSessionLaps(input: unknown): SessionLap[] {
       startOffsetSec: Math.round(start),
       durationSec: round(duration, 1),
       distanceKm: dist,
-      avgHr: bounded(o.avgHr, 20, 260),
-      maxHr: bounded(o.maxHr, 20, 260),
+      // ROUNDED: both are `Int` columns, and a fractional value does not
+      // degrade there, it throws — taking the whole transaction with it, so a
+      // recording would lose its streams over a decimal in one lap's heart rate.
+      avgHr: intOrNull(bounded(o.avgHr, 20, 260)),
+      maxHr: intOrNull(bounded(o.maxHr, 20, 260)),
       avgWatts: bounded(o.avgWatts, 0, 3000),
       elevationM: bounded(o.elevationM, 0, 10000),
       paceSecPerKm: dist != null ? round(duration / dist, 1) : null,
@@ -648,11 +654,10 @@ export function deriveSessionLaps(
   opts: { splitKm?: number; rungsKm?: number[] } = {},
 ): SessionLap[] {
   const distance = streams.find((s) => s.kind === "distance");
-  const derived: SessionLap[] = [];
-  if (distance) {
-    if (opts.splitKm && opts.splitKm > 0) derived.push(...splitsFromDistance(distance, opts.splitKm));
-    if (opts.rungsKm?.length) derived.push(...bestEffortsFromDistance(distance, opts.rungsKm));
-  }
+  const splits =
+    distance && opts.splitKm && opts.splitKm > 0 ? splitsFromDistance(distance, opts.splitKm) : [];
+  const bests =
+    distance && opts.rungsKm?.length ? bestEffortsFromDistance(distance, opts.rungsKm) : [];
   // A DEVICE reports laps and segments; splits and bests are OURS to compute.
   // A caller that hands over rows of a derived kind is either confused or
   // hostile, and either way the two sets would collide on (kind, index) — which
@@ -660,5 +665,11 @@ export function deriveSessionLaps(
   // recording rather than one odd lap. Dropped here, at the one place that
   // knows which kinds are derived.
   const own = deviceLaps.filter((l) => l.kind === "lap" || l.kind === "segment");
-  return enrichLaps([...own, ...derived], streams).slice(0, MAX_LAPS);
+  // ORDERED BY WHAT SURVIVES THE CAP, because the cap is not hypothetical: a
+  // 600 km ride splits into 600 laps, and MAX_LAPS is 500. Appended last, the
+  // BESTS were the rows truncated away — the only ones the record ladder reads,
+  // and a handful per recording where splits are hundreds. So bests go first
+  // (they can never fill the cap alone — there are at most as many as the sport
+  // has rungs), the device's own laps next, and the splits take what is left.
+  return enrichLaps([...bests, ...own, ...splits], streams).slice(0, MAX_LAPS);
 }

@@ -101,11 +101,21 @@ describe("reps — the field does not always hold reps", () => {
 
 describe("checkSet — the PAIR, not the parts", () => {
   it("refuses a load × reps implying a max past what the implement holds", () => {
-    // 60 kg and 40 reps each pass their own DUMBBELL bound. Together they imply
-    // a 233 kg per-bell max — a reps field with a load typed into it.
-    expect(judge(60, loadBounds("Dumbbell Bench Press"))).toBe("ok");
-    expect(judge(40, repsBounds("Dumbbell Bench Press"))).toBe("ok");
-    expect(checkSet("Dumbbell Bench Press", "60", "40")).toBe("refuse");
+    // 120 kg and 20 reps both clear their own DUMBBELL bounds. Together they
+    // imply a 200 kg per-bell max, past the 160 kg no dumbbell has ever been.
+    expect(judge(120, loadBounds("Dumbbell Bench Press"))).not.toBe("refuse");
+    expect(judge(20, repsBounds("Dumbbell Bench Press"))).toBe("ok");
+    expect(checkSet("Dumbbell Bench Press", "120", "20")).toBe("refuse");
+  });
+
+  it("judges the implied max PER IMPLEMENT, like the bound it is compared to", () => {
+    // The regression: folding the bell count into the implied max compared a
+    // two-bell total against a one-bell ceiling, so an ordinary 30 kg × 8
+    // dumbbell press drew a permanent "big one-rep max" line and a real
+    // 70 kg × 5 was refused outright. Tonnage doubles the bells; a 1RM does not.
+    expect(checkSet("Dumbbell Bench Press", "30", "8")).toBe("ok");
+    expect(checkSet("Dumbbell Bench Press", "40", "10")).toBe("ok");
+    expect(checkSet("Dumbbell Bench Press", "70", "5")).not.toBe("refuse");
   });
 
   it("questions — not refuses — a pair that is merely absurd", () => {
@@ -211,7 +221,7 @@ describe("inspectSet / inspectEffort — the reason, not just the verdict", () =
     expect(inspectEffort({ discipline: "running", distanceKm: 10, minutes: 5 }).reason).toBe("speed");
   });
 
-  it("has copy for every reason it can produce", () => {
+  it("has copy for every reason it can produce, and for a refusal's tail", () => {
     // A reason with no sentence behind it renders as a blank amber line, which
     // is worse than no line at all.
     const reasons: ConcernReason[] = ["load", "reps", "impliedMax", "distance", "duration", "speed"];
@@ -219,6 +229,26 @@ describe("inspectSet / inspectEffort — the reason, not just the verdict", () =
       expect(CONCERN_KEY[r]).toBeTruthy();
       expect(baselineString("en", CONCERN_KEY[r])).toBeTruthy();
     }
+    // A refusal appends this, so a missing key would print "— undefined".
+    expect(baselineString("en", "w.train.blocks.notSaved")).toBeTruthy();
+  });
+});
+
+describe("the write path keeps a ROUTINE's empty slots", () => {
+  it("drops a blank set from a session and keeps it in a routine", () => {
+    const input = [
+      { kind: "strength", name: "Back Squat", sets: [{ load: "", reps: "", role: "warmup" }, { load: "100", reps: "5" }] },
+    ];
+    // A session: nothing happened in that row, so it is noise.
+    expect((sanitizeSessionBlocks(input) as unknown as { sets: unknown[] }[])[0]!.sets).toHaveLength(1);
+    // A routine: the builder's warm-up / cool-down / drop controls create
+    // exactly this shape as a deliberate empty slot, and eating it deletes the
+    // prescription rather than tidying it.
+    const kept = sanitizeSessionBlocks(input, { keepEmptySets: true }) as unknown as {
+      sets: { role?: string }[];
+    }[];
+    expect(kept[0]!.sets).toHaveLength(2);
+    expect(kept[0]!.sets[0]!.role).toBe("warmup");
   });
 });
 

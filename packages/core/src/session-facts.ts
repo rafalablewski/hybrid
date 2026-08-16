@@ -159,6 +159,20 @@ const pos = (v: unknown): number | null => {
   return n != null && n > 0 ? n : null;
 };
 
+/**
+ * `pos`, ROUNDED — for the fields whose column is an integer.
+ *
+ * Nothing stops an athlete typing "8.5" into a rep field or a hold's seconds,
+ * and a fractional value reaching an `Int` column does not degrade, it THROWS.
+ * The projection is deliberately never fatal to the write it follows, so that
+ * throw would be swallowed and the session would simply have no fact rows —
+ * silently absent from every aggregate, with nothing anywhere to say why.
+ */
+const posInt = (v: unknown): number | null => {
+  const n = pos(v);
+  return n == null ? null : Math.round(n);
+};
+
 const round = (n: number, dp = 2): number => {
   const f = 10 ** dp;
   return Math.round(n * f) / f;
@@ -189,7 +203,7 @@ function strengthFacts(
   const bw = bwLift ? bodyweightKg : null;
 
   return b.sets.map((s, setIndex) => {
-    const reps = pos(s.reps);
+    const reps = posInt(s.reps);
     const entered = fin(s.load);
     // effectiveSetLoadKg reads the exercise's load MODE, so it is the only
     // correct way to turn "+10" on a weighted pull-up into 80 kg. With no
@@ -224,7 +238,7 @@ function strengthFacts(
       // The PLANNED rest is the block's; the MEASURED one is the set's. Only
       // the measured figure belongs on a fact row — a prescription is not an
       // observation, and averaging the two would report a rest nobody took.
-      restSec: pos(s.rest),
+      restSec: posInt(s.rest),
       distanceKm: null,
       durationSec: null,
       paceSecPerKm: null,
@@ -275,8 +289,8 @@ function timedFact(
       distanceKm != null && durationSec != null ? round(durationSec / distanceKm, 1) : null,
     elevationM: pos(cardio?.elevation),
     watts: pos(cardio?.watts),
-    zone: pos(cardio?.zone),
-    rounds: b.kind === "conditioning" ? pos(b.rounds) : null,
+    zone: posInt(cardio?.zone),
+    rounds: b.kind === "conditioning" ? posInt(b.rounds) : null,
     measured,
   };
 }

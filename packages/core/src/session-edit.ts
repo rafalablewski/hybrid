@@ -275,7 +275,23 @@ const numText = (v: unknown, b: Bounds): string => {
  * Unknown keys are dropped rather than passed through — the stored shape is the
  * one this file documents.
  */
-export function sanitizeSessionBlocks(input: unknown): SessionBlock[] | null {
+export function sanitizeSessionBlocks(
+  input: unknown,
+  opts: {
+    /**
+     * Keep a set with neither a load nor a rep count.
+     *
+     * In a SESSION such a row is noise — nothing happened — and dropping it is
+     * right. In a ROUTINE it is the prescription's own shape: the builder's
+     * "add a warm-up / cool-down / drop set" controls create exactly
+     * `{ load: "", reps: "", role }`, a deliberate empty slot the athlete fills
+     * when they run it. Sharing one sanitiser without this flag silently ate
+     * those rows on save, and the refetch that followed made them look like
+     * they had never been added.
+     */
+    keepEmptySets?: boolean;
+  } = {},
+): SessionBlock[] | null {
   if (!Array.isArray(input)) return null;
   if (input.length > 100) return null;
   const out: SessionBlock[] = [];
@@ -299,7 +315,7 @@ export function sanitizeSessionBlocks(input: unknown): SessionBlock[] | null {
         const s = rs as Record<string, unknown>;
         const load = numText(s.load, lb);
         const reps = numText(s.reps, rb);
-        if (!load && !reps) continue;
+        if (!load && !reps && !opts.keepEmptySets) continue;
         const role = typeof s.role === "string" && SET_ROLES.has(s.role) ? (s.role as StrengthSet["role"]) : undefined;
         sets.push({
           load,

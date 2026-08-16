@@ -1528,7 +1528,7 @@ export default function Workout() {
                     const st = setType(s);
                     // Improbable but storable — the athlete is asked, never stopped.
                     const concern = inspectSet(x.name, s.load, s.reps);
-                    const odd = concern.verdict === "check" ? concern.reason : null;
+                    const odd = concern.verdict !== "ok";
                     const typeAccent = st === "warmup" ? C.amber : st === "cooldown" ? C.blue : st === "drop" ? C.lime : null;
                     return (
                       <View key={s.uid ?? i}>
@@ -1642,7 +1642,7 @@ export default function Workout() {
                                 </>
                               )}
                             </View>
-                            <ConcernLine reason={odd} />
+                            <ConcernLine concern={concern} align="center" />
                             {/* RPE — ONE TAP, not another input row: tapping the
                                 chip reveals a single row of value pills (the core
                                 RPE scale, RIR-labelled when swapped); tapping a
@@ -1689,7 +1689,7 @@ export default function Workout() {
                                   tapping it re-opens the set where the full
                                   sentence is waiting. */}
                               <Pressable style={{ flex: 1 }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
-                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, C.amber) : C.ash }}>{summary}</Text>
+                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash }}>{summary}</Text>
                               </Pressable>
                               <Text style={{ fontFamily: F.black, fontSize: fs.body, color: s.done ? txt(C, C.lime) : C.ash }}>{s.done ? "✓" : "○"}</Text>
                             </View>
@@ -1835,7 +1835,7 @@ export default function Workout() {
                     distanceKm: parseSportDistance(x.distance ?? "", x.name),
                     minutes: parseFloat(x.minutes) || null,
                   });
-                  return <ConcernLine reason={c.verdict === "check" ? c.reason : null} align="left" />;
+                  return <ConcernLine concern={c} />;
                 })()}
                 {/* Modality extras — the exercise-profile model decides the
                     fields (incline / stroke / elevation / HR zone), matching

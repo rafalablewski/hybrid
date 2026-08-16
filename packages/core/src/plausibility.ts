@@ -37,7 +37,7 @@
  * and the loggers on the way in, so the athlete is stopped at the keystroke
  * rather than after the save. Pure, no IO, fully unit-tested.
  */
-import { gymExercise, loadUnitCount } from "./exercise-db";
+import { gymExercise } from "./exercise-db";
 import type { CardioDiscipline } from "./engines/session";
 
 /** What a value is: fine, worth a question, or not storable. */
@@ -237,7 +237,13 @@ export function inspectSet(
     return worst === "ok" ? OK : { verdict: worst, reason };
   // Epley, the same estimate the engines use — one implementation of what a set
   // implies, so this can never disagree with the number the app then shows.
-  const implied = l * (1 + r / 30) * loadUnitCount(exerciseName);
+  //
+  // PER IMPLEMENT, and NOT multiplied by the bell count. `loadBounds` is written
+  // per implement (160 kg is one dumbbell, not the pair), so folding the ×2 in
+  // here compared a two-bell total against a one-bell ceiling and called a
+  // 30 kg × 8 dumbbell press — an ordinary set — a suspiciously big one-rep max.
+  // Tonnage doubles the bells; a one-rep max does not.
+  const implied = l * (1 + r / 30);
   // The implement's OWN ceiling, with no fudge factor: an implied max past what
   // that equipment can hold means the pair is wrong however innocent each half
   // looks. Past the soft ceiling it is a question rather than a refusal —

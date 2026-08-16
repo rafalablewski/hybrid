@@ -66,7 +66,11 @@ export async function POST(request: Request) {
   // impossible figure in one is worse than in a single session: it is re-logged
   // every time the routine is started, and nobody re-reads a template they
   // trust. Same sanitiser, same one definition of a storable block.
-  const blocks = sanitizeSessionBlocks(b.blocks);
+  // `keepEmptySets`, because a routine is a PLAN: the builder's warm-up,
+  // cool-down and drop-set controls add a deliberately empty slot the athlete
+  // fills when they run it, and a session's "nothing happened, drop it" rule
+  // would delete the prescription instead.
+  const blocks = sanitizeSessionBlocks(b.blocks, { keepEmptySets: true });
   if (!blocks) return NextResponse.json({ error: "blocks must be an array" }, { status: 400 });
 
   const template = await prisma.workoutTemplate.create({

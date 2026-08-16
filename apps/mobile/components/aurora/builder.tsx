@@ -497,7 +497,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 here becomes an odd figure in every session that follows it. */}
             {(() => {
               const c = inspectSet(b.name, s.load, s.reps);
-              return <ConcernLine reason={c.verdict === "check" ? c.reason : null} />;
+              return <ConcernLine concern={c} />;
             })()}
           </SwipeRow>
           </Animated.View>
@@ -610,7 +610,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           distanceKm: b.distance ?? null,
           minutes: b.minutes ?? null,
         });
-        return <ConcernLine reason={c.verdict === "check" ? c.reason : null} />;
+        return <ConcernLine concern={c} />;
       })()}
       {/* Modality extras — a swim never sees incline; a treadmill never sees stroke. */}
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10 }}>

@@ -1,5 +1,5 @@
 import { Text } from "react-native";
-import { CONCERN_KEY, type ConcernReason } from "@hybrid/core";
+import { CONCERN_KEY, type Concern } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, F, fs } from "../../lib/ui";
@@ -19,34 +19,46 @@ import { leading, F, fs } from "../../lib/ui";
  * reading. A line under the figure they are already looking at is seen at the
  * moment it is cheap to fix and ignored at no cost when it is right.
  *
+ * IT ALSO CARRIES THE REFUSALS THE KEYSTROKE GUARD CANNOT SEE, and that is the
+ * hole it was built with. `allowFieldValue` judges ONE field, so a pair that is
+ * impossible only together — 10 km against 5 minutes, each an ordinary figure —
+ * sails past it, and the athlete saw nothing at all before the server quietly
+ * dropped the distance on save. A refusal reads in the FAILURE voice (red) and
+ * says the value will not be kept, because "we silently deleted your distance"
+ * is the one outcome an athlete must never discover afterwards.
+ *
  * The sentence comes from core (`CONCERN_KEY`), so every surface says the same
- * thing and none of them invents its own wording — and a reason renders nothing
- * at all rather than a blank amber line if its copy is ever missing.
+ * thing and none of them invents its own wording — and a verdict of `ok`
+ * renders nothing rather than an empty line.
  */
 export function ConcernLine({
-  reason,
+  concern,
   align = "left",
 }: {
-  /** Null when there is nothing to say — the ordinary case, and the reason this
-   *  takes a nullable rather than making every call site write a conditional. */
-  reason: ConcernReason | null;
+  /** The verdict AND its reason, straight from `inspectSet` / `inspectEffort` —
+   *  passed whole so no call site has to decide which verdicts are worth
+   *  showing. That decision was the bug: every one of them showed `check` and
+   *  silently swallowed `refuse`. */
+  concern: Concern;
   align?: "left" | "center";
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  if (!reason) return null;
+  if (concern.verdict === "ok" || !concern.reason) return null;
+  const bad = concern.verdict === "refuse";
   return (
     <Text
       style={{
         fontFamily: F.mono,
         fontSize: fs.nano,
-        color: txt(C, C.amber),
+        color: txt(C, bad ? C.red : C.amber),
         marginTop: 8,
         textAlign: align,
         lineHeight: leading(fs.nano),
       }}
     >
-      {t(CONCERN_KEY[reason])}
+      {t(CONCERN_KEY[concern.reason])}
+      {bad ? ` — ${t("w.train.blocks.notSaved")}` : ""}
     </Text>
   );
 }
