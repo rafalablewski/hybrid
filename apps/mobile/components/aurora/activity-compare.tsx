@@ -46,6 +46,20 @@ import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE, tracking } f
  * carried by which side of the axis the bar sits on, which is a channel this
  * page has and the figure row does not.
  *
+ * THE FIGURES ARE NOT META. Every line but the percentage once sat at nano or
+ * micro in ash — the label, both values, the difference — which is the styling
+ * of a meta row under a session, and made the one line carrying what an athlete
+ * actually did the least legible thing in the row. The STEP reads in chalk at
+ * body size now: it is the training, not a footnote to it. The percentage keeps
+ * the big slot because it is the row's subject, and everything else is a rung
+ * below it rather than three rungs below it.
+ *
+ * A ROW IS ONE OBJECT, and the spacing is what says so: the gap BETWEEN rows is
+ * more than twice the gaps inside one. At 16 against 10 the separation barely
+ * exceeded the joins, and four rows read as twelve loose lines — the grouping
+ * has to come from whitespace here, because this card does not draw rules
+ * between things.
+ *
  * NO TRACK BEHIND THE BAR. Only the axis is drawn, because only the axis is
  * information. A rail behind every bar is four bars of chrome on a card whose
  * columns already separate by whitespace — the same reasoning that retired the
@@ -97,7 +111,7 @@ export default function ActivityCompare({
       <View style={{ paddingBottom: 11, borderBottomWidth: 1, borderBottomColor: C.line }}>
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
+          style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
         >
           {headline}
         </Text>
@@ -126,7 +140,7 @@ export default function ActivityCompare({
                   .replace("{d}", signed(r.metric, r.diff))
             }
             accessibilityHint={onOpen ? t("w.home.act.hint") : undefined}
-            style={{ paddingTop: 13, paddingHorizontal: 5, marginHorizontal: -5, borderRadius: RADIUS.inner }}
+            style={{ paddingTop: 24, paddingHorizontal: 5, marginHorizontal: -5, borderRadius: RADIUS.inner }}
           >
             {/* THE MOVE TAKES THE BIG SLOT. Page one already carries the totals;
                 this page exists to say which way they went, so the signed per
@@ -135,14 +149,14 @@ export default function ActivityCompare({
               <Text
                 maxFontSizeMultiplier={FIXED_FONT_SCALE}
                 numberOfLines={1}
-                style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: col ?? C.ash }}
+                style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: col ?? C.ash }}
               >
                 {t(verdictLabelKey(r.metric))}
               </Text>
               <Text
                 maxFontSizeMultiplier={FIXED_FONT_SCALE}
                 numberOfLines={1}
-                style={{ fontFamily: F.mono, fontSize: fs.title, letterSpacing: tracking.display, color: col ?? C.chalk }}
+                style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: tracking.display, color: col ?? C.chalk }}
               >
                 {pct === null ? "—" : `${pct > 0 ? "+" : pct < 0 ? "−" : ""}${Math.abs(pct)}%`}
               </Text>
@@ -153,11 +167,11 @@ export default function ActivityCompare({
                 their figures and draw nothing, rather than measure against a
                 baseline the card has already said it does not trust. */}
             {bar !== null && (
-              <View style={{ height: 8, marginTop: 8, flexDirection: "row", alignItems: "stretch" }}>
+              <View style={{ height: 10, marginTop: 10, flexDirection: "row", alignItems: "stretch" }}>
                 <View style={{ flex: 1, alignItems: "flex-end" }}>
                   {bar < 0 && (
                     <View style={{
-                      width: `${Math.abs(bar) * 100}%`, height: 8,
+                      width: `${Math.abs(bar) * 100}%`, height: 10,
                       borderTopLeftRadius: RADIUS.mark, borderBottomLeftRadius: RADIUS.mark,
                       backgroundColor: col ?? C.ash,
                     }} />
@@ -165,11 +179,11 @@ export default function ActivityCompare({
                 </View>
                 {/* The axis itself — the only furniture on this chart, and the
                     one piece of it that is information. */}
-                <View style={{ width: 1, marginVertical: -4, backgroundColor: C.line }} />
+                <View style={{ width: 1, marginVertical: -5, backgroundColor: C.ash, opacity: 0.5 }} />
                 <View style={{ flex: 1 }}>
                   {bar > 0 && (
                     <View style={{
-                      width: `${bar * 100}%`, height: 8,
+                      width: `${bar * 100}%`, height: 10,
                       borderTopRightRadius: RADIUS.mark, borderBottomRightRadius: RADIUS.mark,
                       backgroundColor: col ?? C.ash,
                     }} />
@@ -185,11 +199,11 @@ export default function ActivityCompare({
                 explain it. The difference in real units sits right: a per cent
                 alone never says whether 31% is an hour or a minute, and the
                 real figure is the one an athlete acts on. */}
-            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 8 }}>
+            <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginTop: 10 }}>
               <Text
                 maxFontSizeMultiplier={FIXED_FONT_SCALE}
                 numberOfLines={1}
-                style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro, "snug"), color: C.ash }}
+                style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.body, lineHeight: leading(fs.body, "snug"), color: C.chalk }}
               >
                 {pct === null ? fmt(r.metric, r.value) : `${fmt(r.metric, r.baseline)} → ${fmt(r.metric, r.value)}`}
               </Text>
@@ -197,7 +211,7 @@ export default function ActivityCompare({
                 <Text
                   maxFontSizeMultiplier={FIXED_FONT_SCALE}
                   numberOfLines={1}
-                  style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro, "snug"), color: C.ash }}
+                  style={{ fontFamily: F.mono, fontSize: fs.body, lineHeight: leading(fs.body, "snug"), color: C.ash }}
                 >
                   {signed(r.metric, r.diff)}
                 </Text>
