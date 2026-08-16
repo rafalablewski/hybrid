@@ -1279,14 +1279,28 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // unit switch, Log — four of which exist to answer a question the food already
   // answered when the pack was recorded. The row states them and logs them.
 
-  /** The food's packs, localized for a row: "Whole bottle", "400 g". */
+  /**
+   * The food's packs, localized for a row: the container and how big it is —
+   * "bottle", "400 g".
+   *
+   * NOT "Whole bottle", which is the SHEET's wording and belongs there. On the
+   * unit switch that word is load-bearing: it tells a chip apart from the two
+   * beside it that count servings and grams. On a row there is nothing to tell
+   * it apart FROM, so the word is decoration — and decoration with a width.
+   * Measured in the shipping face at 393dp, two packs with it come to 317 of the
+   * 321dp the strip has, which is not a layout, it is luck: German is longer and
+   * one notch of Dynamic Type ends it. Without it the same two come to 237 and
+   * the row breathes. The verb the word was carrying moves to the a11y label,
+   * where it is read rather than measured.
+   */
   const rowPortions = useCallback((food: PackedFood): RowPortion[] => {
     const measure = portionMeasure(food);
     if (!measure) return [];
     return namedPortionUnits(food).map((u) => ({
       id: u.id,
-      label: t("w.recovery.nutrition.pt.wholePack").replace("{v}", u.portionLabel?.trim() || t("w.recovery.nutrition.pt.pack")),
+      label: u.portionLabel?.trim() || t("w.recovery.nutrition.pt.pack"),
       size: `${formatAmount(u.servingsPer * measure.perServing)} ${measure.unit}`,
+      a11y: t("w.recovery.nutrition.pt.wholePack").replace("{v}", u.portionLabel?.trim() || t("w.recovery.nutrition.pt.pack")),
     }));
   }, [t]);
 
@@ -2662,9 +2676,16 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                     to say so — otherwise a 400 the food database published is
                     indistinguishable from one they set, and there is no way to
                     know whether it is worth correcting. */}
+                {/* WHERE THIS SIZE CAME FROM, as one word. The `pt.src*` strings
+                    are SENTENCES ("pack size from the food database"), which is
+                    right where they were written — centred on their own line
+                    under the portion editor's stepper — and impossible in a row
+                    that already holds two fields and a delete: measured, that
+                    one runs 221dp of a 369dp row, and the German 304. The row
+                    carries the flag; the sheet keeps the sentence. */}
                 {pk.source !== "typed" ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, opacity: 0.85 }}>
-                    {t(`w.recovery.nutrition.pt.src${pk.source === "catalog" ? "Catalog" : "Scanned"}`)}
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+                    {t(`w.recovery.nutrition.pt.srcTag${pk.source === "catalog" ? "Catalog" : "Scanned"}`)}
                   </Text>
                 ) : null}
                 <Pressable onPress={() => removePack(pk.key)} accessibilityLabel={t("w.recovery.nutrition.hold.removePack")} hitSlop={8} style={{ padding: 2 }}>

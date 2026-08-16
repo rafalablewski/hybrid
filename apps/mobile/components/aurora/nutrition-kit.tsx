@@ -596,10 +596,14 @@ export const packMenu = (t: (k: string) => string): HoldMenuItem[] => [
 export interface RowPortion {
   /** the portion unit's id (core `portionUnitId`) — stable across a re-sort */
   id: string;
-  /** the localized name — "Whole bottle" */
+  /** the container, in the athlete's own word — "bottle" */
   label: string;
   /** how big it is, in the food's own measure — "400 g" */
   size: string;
+  /** what the chip MEANS, said in full for the screen reader — "Whole bottle".
+   *  The chip's own label is the short form because a row has nothing to tell it
+   *  apart from; a reader hearing it in a list does. */
+  a11y: string;
 }
 
 function WholePack({ portion, onLog, menu, onMenu }: {
@@ -610,6 +614,7 @@ function WholePack({ portion, onLog, menu, onMenu }: {
   // saved food. On a recent, which is a per-device copy, "Remove pack" would
   // change nothing that survives the next log, so no hold is armed there and the
   // chip is a plain AChip.
+  const { t } = useLang();
   const hold = useHoldMenu({ items: menu ?? [], onSelect: (k) => onMenu?.(k), disabled: !onMenu });
   return (
     <>
@@ -620,6 +625,10 @@ function WholePack({ portion, onLog, menu, onMenu }: {
           tone="action"
           label={portion.label}
           meta={portion.size}
+          // The chip PRINTS the container and its size; it is READ as the whole
+          // sentence, because a screen reader moving down a list has no adjacent
+          // chips to read the short form against.
+          a11yLabel={`${t("w.recovery.nutrition.addToMeal")}: ${portion.a11y}, ${portion.size}`}
           onPress={onLog}
           onLongPress={hold.holdProps.onLongPress}
           delayLongPress={hold.holdProps.delayLongPress}

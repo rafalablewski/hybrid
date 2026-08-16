@@ -858,6 +858,7 @@ export function AChip({
   count,
   meta,
   tone = "filter",
+  a11yLabel,
 }: {
   label: string;
   selected?: boolean;
@@ -869,10 +870,14 @@ export function AChip({
   accent?: string;
   /** A trailing tally, rendered inside the same pill ("Following 12"). */
   count?: number;
-  /** A trailing FIGURE in the meta voice — "400 g" beside "Whole bottle".
+  /** A trailing FIGURE in the meta voice — "400 g" beside the container's name.
    *  Unlike `count` it is not part of the label's own claim, so it stays ash. */
   meta?: string;
   tone?: "filter" | "action";
+  /** Overrides what is READ, for a chip whose printed label is deliberately
+   *  shorter than its meaning — a pack on a row prints "bottle" and means "the
+   *  whole bottle", which a reader in a list has no neighbours to infer from. */
+  a11yLabel?: string;
 }) {
   const { palette } = useTheme();
   const tint = txt(palette, accent ?? palette.lime) ?? palette.lime;
@@ -883,7 +888,7 @@ export function AChip({
       onLongPress={onLongPress}
       delayLongPress={delayLongPress}
       accessibilityRole="button"
-      accessibilityLabel={[label, count != null ? String(count) : null, meta].filter(Boolean).join(" ")}
+      accessibilityLabel={a11yLabel ?? [label, count != null ? String(count) : null, meta].filter(Boolean).join(" ")}
       accessibilityState={acts ? undefined : { selected: !!selected }}
       style={{
         minHeight: HIT_TARGET,

@@ -24,7 +24,7 @@ import { GUTTER, RADIUS } from "./aurora/kit";
  * and pick Delete from the little card that comes up. It is DISCOVERABLE in the
  * way a swipe is not (holding something to see what it can do is the reflex the
  * platform trained), it costs two taps rather than one plus a hidden gesture,
- * and it reads the same on a full-width row and on an 84dp chip — which a
+ * and it reads the same on a full-width row and on a 44dp chip — which a
  * revealed swipe action never could.
  *
  * ── IT IS A MENU, NOT A DELETE BUTTON ──────────────────────────────────────
