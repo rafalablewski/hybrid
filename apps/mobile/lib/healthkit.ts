@@ -35,7 +35,7 @@ import {
 } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
-import { nativeSpan } from "./healthkit-watchdog";
+import { nativeSpan, readHealthFaults } from "./healthkit-watchdog";
 import {
   API_BASE,
   fetchSessions,
@@ -55,18 +55,24 @@ import { metaCelsius, metaMetres, metaQty, qtyCount, qtyKcal, qtyKm, qtyMinutes 
 const CONNECTED_KEY = "hybrid.healthkit.connected";
 const LAST_SYNC_KEY = "hybrid.healthkit.lastSync";
 /**
- * Set once a permission sheet has actually ASKED for the workout + stream
- * types, which is not the same question as "is this athlete connected".
+ * HOW FAR a permission sheet has actually got — which is not the same question
+ * as "is this athlete connected".
  *
  * The library states it plainly: querying a type the app has never requested
- * authorization for crashes the app. Connection predates both of those type
- * sets, so an athlete who connected when the relay read three biometrics has a
+ * authorization for crashes the app. Connection predates both of the type sets
+ * below, so an athlete who connected when the relay read three biometrics has a
  * `connected` flag and no workout permission — and the two UNATTENDED paths
  * (auto-import on foreground, the sync's stream backfill) never open a
  * permission sheet by design, so they would otherwise read types nobody ever
  * asked about, on app open, with no way to see what happened.
+ *
+ * TWO LEVELS, because the second one is the one that can be given up:
+ *  `workouts` — the workout list and its statistics. The import IS this.
+ *  `all`      — plus the series under a recording (route, cycling power and
+ *               cadence). The trace, which is worth a chart and not the app.
  */
-const ASKED_KEY = "hybrid.healthkit.askedWorkoutTypes";
+const ASKED_KEY = "hybrid.healthkit.askedTypes";
+type AskLevel = "workouts" | "all";
 
 type HK = typeof import("@kingstinct/react-native-healthkit");
 
@@ -160,8 +166,11 @@ export async function connectHealthKit(): Promise<{ ok: boolean; error?: string 
   }
   await AsyncStorage.setItem(CONNECTED_KEY, "1").catch(() => {});
   // This sheet covered the workout + stream types too, so the unattended reads
-  // are cleared to run without ever opening a dialog of their own.
-  await AsyncStorage.setItem(ASKED_KEY, "1").catch(() => {});
+  // are cleared to run without ever opening a dialog of their own. It is also
+  // the way BACK to the full level for an athlete whose import ask had to
+  // shorten itself (see requestDeviceReadAuth): connecting is a deliberate tap,
+  // and this is the one place the whole list is asked for on purpose.
+  await AsyncStorage.setItem(ASKED_KEY, "all" satisfies AskLevel).catch(() => {});
   await registerAppleConnection("connect");
   return { ok: true };
 }
@@ -335,16 +344,26 @@ const WORKOUT_READ_TYPES = [
  *
  * The ask is RECORDED (see ASKED_KEY) because the unattended paths cannot ask,
  * and must not read a type nobody ever requested.
+ *
+ * AND IT CAN GIVE UP ITS SECOND HALF. `auth` is the one span the watchdog
+ * cannot skip — a read that never asks is a read that crashes — so if the ask
+ * itself is ever implicated in a vanished process, retrying it unchanged is a
+ * loop with no way out but deleting the app. It retries SHORTER instead: the
+ * workout types alone, which is exactly the list that shipped before the stream
+ * read existed and the one an athlete's import actually needs. The traces stay
+ * unread (readWorkoutStreams gates on the `all` level) until the athlete
+ * reconnects from the Connections hub.
  */
 export async function requestDeviceReadAuth(): Promise<boolean> {
   const hk = loadHealthKit();
   if (!hk) return false;
+  const level: AskLevel = (await readHealthFaults()).auth ? "workouts" : "all";
+  const toRead = level === "all" ? [...WORKOUT_READ_TYPES, ...STREAM_READ_TYPES] : [...WORKOUT_READ_TYPES];
   const asked = await nativeSpan(
     "auth",
     async () => {
       try {
-        const ok = await hk.requestAuthorization({ toRead: [...WORKOUT_READ_TYPES, ...STREAM_READ_TYPES] });
-        return { reached: true, ok };
+        return { reached: true, ok: await hk.requestAuthorization({ toRead }) };
       } catch {
         return { reached: false, ok: false };
       }
@@ -355,17 +374,18 @@ export async function requestDeviceReadAuth(): Promise<boolean> {
   // needs to know is that these types have been PUT to HealthKit, not what the
   // athlete said (Apple hides a read denial by design — it reads as no data).
   // A request that THREW never registered anything, so it records nothing.
-  if (asked.reached) await AsyncStorage.setItem(ASKED_KEY, "1").catch(() => {});
+  if (asked.reached) await AsyncStorage.setItem(ASKED_KEY, level).catch(() => {});
   return asked.ok;
 }
 
-/** Whether a permission sheet has ever put the workout + stream types to the
- *  store on this device. The gate on every unattended read. */
-async function deviceTypesAsked(): Promise<boolean> {
+/** How far the permission sheet has got on this device, or null if it never
+ *  ran. The gate on every read — and, at the `all` level, on the stream read. */
+async function askedLevel(): Promise<AskLevel | null> {
   try {
-    return (await AsyncStorage.getItem(ASKED_KEY)) === "1";
+    const v = await AsyncStorage.getItem(ASKED_KEY);
+    return v === "all" || v === "workouts" ? v : null;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -563,7 +583,7 @@ async function readWorkouts(startDate: Date, endDate: Date): Promise<DeviceWorko
   // a type the app has never requested is the library's own documented crash.
   // The two surfaces that read workouts both ask first; this covers the
   // unattended callers (auto-import, the sync's repair pass), which cannot.
-  if (!(await deviceTypesAsked())) return null;
+  if ((await askedLevel()) == null) return null;
   return nativeSpan("workouts", () => readWorkoutsUnguarded(hk, startDate, endDate), null);
 }
 
@@ -623,7 +643,7 @@ export async function refreshMatchedWorkouts(): Promise<{ checked: number; repai
   if (!hk) return { checked: 0, repaired: 0 };
   // Same gate as every other workout read: this one runs on a sync, with no
   // athlete in front of it and no sheet it could raise (see ASKED_KEY).
-  if (!(await deviceTypesAsked())) return { checked: 0, repaired: 0 };
+  if ((await askedLevel()) == null) return { checked: 0, repaired: 0 };
   let matched: { id: string; uuid: string; fingerprint: string }[];
   try {
     // THE WHOLE matched history, which this pass always claimed to cover and
@@ -1181,7 +1201,10 @@ export async function readWorkoutStreams(
 ): Promise<{ streams: SessionStream[]; laps: SessionLap[]; activityLabel: string } | null> {
   const hk = loadHealthKit();
   if (!hk || !uuid) return null;
-  if (!(await deviceTypesAsked())) return null;
+  // The `all` level, not merely "asked": the route and the cycling series are
+  // the half a shortened ask drops, and reading a type that ask never sent is
+  // the crash this gate exists for.
+  if ((await askedLevel()) !== "all") return null;
   return nativeSpan("streams", () => readWorkoutStreamsUnguarded(hk, uuid), null, { optional: true });
 }
 
