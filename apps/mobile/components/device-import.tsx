@@ -119,10 +119,11 @@ export function DeviceImportSheet({
     }
     setPhase("loading");
     // The permission ask doubles as "connect" — iOS only sheets types it hasn't
-    // asked about, so a returning athlete goes straight to the read. ONE ask
-    // covering the workout list AND the series under a recording: the import
-    // uploads each landed recording's trace afterwards, and a second system
-    // dialog for that would land mid-import with nothing to explain it.
+    // asked about, so a returning athlete goes straight to the read. It asks for
+    // the WORKOUT types and nothing else: the trace read that follows an import
+    // carries its own ask, at the point of use, where it is skippable (see
+    // requestDeviceReadAuth — the second ask on this line is what the build that
+    // started closing the app had added).
     await requestDeviceReadAuth();
     const workouts = await queryRecentDeviceWorkouts();
     if (workouts == null) {

@@ -25,6 +25,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  *    terminate an app mid-read, and force-quitting looks identical. So a fault
  *    is never called a crash in front of anybody, and it never disables
  *    anything the feature needs to work at all.
+ *  • One marker, not a stack. Two spans running at once (a sync in one screen
+ *    while an import runs in another) would have the first to finish clear the
+ *    other's marker, so a crash can go unnamed. Every span in lib/healthkit.ts
+ *    is awaited in sequence, so this costs a breadcrumb in a race nobody has
+ *    hit — worth saying out loud rather than pretending the record is complete.
  *  • Which is why only the OPTIONAL span acts on it. `streams` — the heart-rate
  *    trace and the GPS track read after the sessions have already landed — is
  *    skipped once it has been implicated, because the athlete's sessions are
