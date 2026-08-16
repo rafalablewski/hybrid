@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, type TypeRole, type SpaceToken } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken } from "./scale";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
 
 /**
@@ -193,5 +193,75 @@ describe("the type faces", () => {
     // already decided against it.
     const families = [...fontImportUrl.matchAll(/family=([^&:]+)/g)].map((m) => m[1]!.replace(/\+/g, " "));
     expect(families.sort()).toEqual(Object.values(fonts).slice().sort());
+  });
+});
+
+/**
+ * FITTING A FIGURE, RATHER THAN GUESSING AT ONE.
+ *
+ * The activity card shipped four figures in four quarter-width columns and two
+ * of them broke mid-word on a phone. Nothing was wrong with the code that a
+ * reviewer could see; what was missing was the multiplication that says whether
+ * a mono figure fits before a size is committed to. These pin that arithmetic,
+ * including the two answers that are easy to get backwards: an UNMEASURED
+ * container gets the caller's first choice (not the floor, which would render
+ * every figure small for a frame and then jump), and a figure past the floor
+ * gets the floor (the caller owns what happens past it).
+ */
+describe("fitMonoFigure", () => {
+  const ladder = [26, 22, 20] as const;
+  /** What a string of `n` glyphs costs at `size`, by the same arithmetic. */
+  const cost = (n: number, size: number) => n * size * MONO_ADVANCE_EM;
+
+  /** A receipt cell's type width on a 390dp screen: the card's 326dp inner
+   *  width, halved, less the cell's own 8dp inset. */
+  const CELL = 155;
+
+  it("takes the largest rung that fits", () => {
+    expect(fitMonoFigure("15.3 t", CELL, ladder)).toBe(26);
+    expect(cost(6, 26)).toBeLessThanOrEqual(CELL);
+    // A nine-glyph span still clears the top rung, which is the point of asking
+    // rather than assuming: the pessimistic guess would have shrunk it.
+    expect(fitMonoFigure("10h 15min", CELL, ladder)).toBe(26);
+  });
+
+  it("steps down exactly when the next rung stops fitting", () => {
+    // Eleven glyphs — a year-to-date span — is where 26 goes over and 22 does not.
+    expect(cost(11, 26)).toBeGreaterThan(CELL);
+    expect(cost(11, 22)).toBeLessThanOrEqual(CELL);
+    expect(fitMonoFigure("1240h 55min", CELL, ladder)).toBe(22);
+  });
+
+  it("lands on the floor rather than off the ladder", () => {
+    expect(fitMonoFigure("10240h 55min", CELL, ladder)).toBe(20);
+  });
+
+  it("answers the caller's first choice while the container is unmeasured", () => {
+    for (const w of [0, -1, Number.NaN]) expect(fitMonoFigure("15.3 t", w, ladder)).toBe(26);
+  });
+
+  it("asks the question at the athlete's own text size", () => {
+    // The same figure that fits at 1x need not fit at 1.4x, and a layout that
+    // asks only about 1x is a layout that breaks for the people who most need
+    // it not to.
+    expect(fitMonoFigure("6h 52min", CELL, ladder)).toBe(26);
+    expect(fitMonoFigure("6h 52min", CELL, ladder, 1.4)).toBe(22);
+  });
+
+  it("keeps the PLAIN figure inside the cell at the largest scale it allows", () => {
+    // The other three cells do not step — they are fixed at fs.heading — so the
+    // grid only holds if that rung clears the cell at the multiplier the text
+    // is capped to. This is the assertion the four-column row never had.
+    expect(cost("6h 52min".length, 20) * 1.4).toBeLessThanOrEqual(CELL);
+    expect(cost("1240h 55min".length, 20) * 1.15).toBeLessThanOrEqual(CELL);
+  });
+
+  it("is monotonic in width — more room never yields a smaller figure", () => {
+    let last = 0;
+    for (let w = 40; w <= 400; w += 4) {
+      const got = fitMonoFigure("6h 52min", w, ladder);
+      expect(got).toBeGreaterThanOrEqual(last);
+      last = got;
+    }
   });
 });
