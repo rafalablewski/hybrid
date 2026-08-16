@@ -47,9 +47,16 @@
  * biggest move, so the week that headlines "+50% training time" is silent about
  * the distance that halved underneath it — and the row of figures below, which
  * holds both facts, had no way to say so. `best` and `worst` rank the ends
- * separately (biggest riser, biggest faller, same threshold and same baseline
- * gates), so the columns can carry the win and the slip at once while the
- * sentence stays a sentence about one thing.
+ * separately (biggest riser, biggest faller, same baseline gates), so the
+ * columns can carry the win and the slip at once while the sentence stays a
+ * sentence about one thing.
+ *
+ * THE ENDS RANK ON A LOWER BAR THAN THE SENTENCE — VERDICT_END_THRESHOLD_PCT
+ * against VERDICT_THRESHOLD_PCT. A claim in words needs a move worth stating; a
+ * mark only says which end of your own row a figure is, and the far end is the
+ * far end at 9% as much as at 40%. Sharing one bar is what let a week of +31%
+ * hours and −9% distance light the rise and leave the only measure that went
+ * backwards looking exactly like the two that held.
  */
 import type { LoggedSession } from "./engines/session";
 import type { BodyweightInput } from "./bodyweight";
@@ -71,8 +78,34 @@ export type VerdictMetric = ActivityMetric;
 
 export type VerdictDirection = "up" | "down" | "flat";
 
-/** How far from the baseline counts as worth a sentence. */
+/** How far from the baseline counts as worth a SENTENCE. */
 export const VERDICT_THRESHOLD_PCT = 15;
+
+/**
+ * How far from the baseline counts as worth a MARK — the bar the two ends are
+ * ranked over, and it is deliberately lower than the sentence's.
+ *
+ * The two ask different questions. The sentence makes a CLAIM about the period
+ * ("your training time is the highest it's been in four weeks"), and a claim
+ * needs a move big enough to be worth stating — that is the 15 above, and the
+ * reason "tracking with your average" has to be a state the card can reach.
+ * The marks make no claim: they say WHICH END of your own row this figure is,
+ * and the far end of a row is the far end whether it fell 40% or 9%.
+ *
+ * On one 15% bar the two questions were answered by the same number, and the
+ * row went silent about halves of the week it was built to stop hiding: a week
+ * of +31% hours, +18% tonnage, −7% sessions and −9% distance lit the hours and
+ * left the ONLY measure that actually went backwards looking exactly like the
+ * two that held. The sentence was right to stay off it; the row was not.
+ *
+ * It is not zero, because a row where something is always the worst is a row
+ * that has stopped meaning anything — 0.4% below your average is noise, not a
+ * slip. Five points is where a figure stops being round-off and starts being a
+ * direction. MUST stay ≤ VERDICT_THRESHOLD_PCT: the ends are ranked over a
+ * SUPERSET of the metrics that may claim the sentence, which is what keeps the
+ * bold word in the lead sitting on a lit column.
+ */
+export const VERDICT_END_THRESHOLD_PCT = 5;
 
 /** How many of the preceding periods must carry training before we'll compare.
  *  Capped at however many the range actually offers, so a year-to-date read —
@@ -216,13 +249,19 @@ export function activityVerdict(
   // how the ones that do are ordered. VERDICT_METRICS order still breaks ties
   // (strict `>`), so the same period never yields two different sentences on
   // two clients.
+  //
+  // The pools are built at the MARK's threshold, the lower of the two, and the
+  // sentence filters them again at its own — so the ends are ranked over a
+  // superset of the metrics allowed to claim the lead. The gates are the same
+  // for both: which bar a metric has to clear is a question about the size of
+  // the move, and the floor is a question about whether the baseline was real.
   type Candidate = { metric: VerdictMetric; deltaPct: number };
   const qualified: Candidate[] = [];
   const fallbacks: Candidate[] = [];
   for (const f of figures) {
     if (f.baseline <= 0) continue;
     const deltaPct = Math.round(((f.value - f.baseline) / f.baseline) * 100);
-    if (Math.abs(deltaPct) < VERDICT_THRESHOLD_PCT) continue;
+    if (Math.abs(deltaPct) < VERDICT_END_THRESHOLD_PCT) continue;
     const cand: Candidate = { metric: f.metric, deltaPct };
     const trained = priors.filter((p) => p[f.metric] > 0).length;
     if (f.baseline >= VERDICT_BASELINE_FLOOR[f.metric] && trained >= needed) qualified.push(cand);
@@ -237,15 +276,26 @@ export function activityVerdict(
   const moved = (pool: Candidate[]) => top(pool, (c, h) => Math.abs(c.deltaPct) > Math.abs(h.deltaPct));
   const rose = (pool: Candidate[]) => top(pool.filter((c) => c.deltaPct > 0), (c, h) => c.deltaPct > h.deltaPct);
   const fell = (pool: Candidate[]) => top(pool.filter((c) => c.deltaPct < 0), (c, h) => c.deltaPct < h.deltaPct);
+  /** Only a move past the SENTENCE's threshold may be claimed in words. */
+  const claimants = (pool: Candidate[]) => pool.filter((c) => Math.abs(c.deltaPct) >= VERDICT_THRESHOLD_PCT);
 
-  // The two ends rank under the SAME gate the sentence does, each on its own
-  // side: a qualified riser beats an ungated one, and only if no qualified
-  // metric rose at all does a thin-baseline rise get the chartreuse. Toning a
-  // column the sentence deliberately refused to headline would put the card's
-  // brightest mark on the figure it least trusts.
-  const win = moved(qualified) ?? moved(fallbacks);
-  const best = rose(qualified) ?? rose(fallbacks);
-  const worst = fell(qualified) ?? fell(fallbacks);
+  const win = moved(claimants(qualified)) ?? moved(claimants(fallbacks));
+
+  // The two ends rank under the SAME baseline gate the sentence does, each on
+  // its own side: a qualified riser beats an ungated one, and only if no
+  // qualified metric rose at all does a thin-baseline rise get the chartreuse.
+  // Toning a column the sentence deliberately refused to headline would put the
+  // card's brightest mark on the figure it least trusts.
+  //
+  // THE WINNER TAKES ITS OWN END, whatever pool it came from. Within a pool it
+  // already does — the biggest absolute mover is the biggest mover on its side
+  // — but a sentence can be won out of the FALLBACKS while a small qualified
+  // move sits in the same direction, and then the bold word in the lead would
+  // point at one column while the tone sat on another. The override can only
+  // ever hand a mark to an ungated figure that the sentence has already named,
+  // so the "brightest mark on the least-trusted figure" case stays shut.
+  const best = win && win.deltaPct > 0 ? win : rose(qualified) ?? rose(fallbacks);
+  const worst = win && win.deltaPct < 0 ? win : fell(qualified) ?? fell(fallbacks);
 
   const ends = { best: best?.metric ?? null, worst: worst?.metric ?? null };
   if (!win) return { ...base, ...ends, metric: null, direction: "flat", deltaPct: 0, cold: false };
@@ -286,13 +336,15 @@ export function figureDeltaPct(f: VerdictFigure): number | null {
  * read the same hue, and a middle column reads chalk in the sheet exactly as it
  * reads unmarked in the row.
  *
- * Same threshold the sentence uses, so a move too small to be worth a claim is
- * also too small to be worth a hue, and a column can never contradict the
- * sentence above it.
+ * Same threshold the MARKS use (VERDICT_END_THRESHOLD_PCT), not the sentence's
+ * — this is the column's question, and it has to answer it the way the row
+ * does, or a figure lit terracotta in the row would open into a sheet printing
+ * it in chalk. The sentence's higher bar governs only what may be claimed in
+ * words, which is not what a hue on a single figure is doing.
  */
 export function figureDirection(f: VerdictFigure): VerdictDirection {
   const d = figureDeltaPct(f);
-  if (d === null || Math.abs(d) < VERDICT_THRESHOLD_PCT) return "flat";
+  if (d === null || Math.abs(d) < VERDICT_END_THRESHOLD_PCT) return "flat";
   return d < 0 ? "down" : "up";
 }
 

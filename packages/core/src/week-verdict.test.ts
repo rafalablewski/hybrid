@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, figureDeltaPct, figureDirection, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
+import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, VERDICT_END_THRESHOLD_PCT, figureDeltaPct, figureDirection, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
 import { resolveActivityRange } from "./activity-window";
 import { addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
@@ -303,11 +303,19 @@ describe("figureDirection / figureDeltaPct", () => {
     expect(figureDirection(f(80, 100))).toBe("down");
   });
 
-  it("takes the SENTENCE's threshold, so a hue can't claim what a claim can't", () => {
-    const under = 100 + VERDICT_THRESHOLD_PCT - 1;
+  it("takes the MARK's threshold, so a lit column opens into a sheet of the same hue", () => {
+    const under = 100 + VERDICT_END_THRESHOLD_PCT - 1;
     expect(figureDirection(f(under, 100))).toBe("flat");
-    expect(figureDirection(f(100 + VERDICT_THRESHOLD_PCT, 100))).toBe("up");
-    expect(figureDirection(f(100 - VERDICT_THRESHOLD_PCT, 100))).toBe("down");
+    expect(figureDirection(f(100 + VERDICT_END_THRESHOLD_PCT, 100))).toBe("up");
+    expect(figureDirection(f(100 - VERDICT_END_THRESHOLD_PCT, 100))).toBe("down");
+  });
+
+  it("a move under the sentence's bar still has a direction", () => {
+    // The whole point of the two bars: −9% is not worth a claim in words, and
+    // it is absolutely worth a hue on the column it belongs to.
+    expect(VERDICT_END_THRESHOLD_PCT).toBeLessThan(VERDICT_THRESHOLD_PCT);
+    expect(figureDirection(f(91, 100))).toBe("down");
+    expect(figureDirection(f(109, 100))).toBe("up");
   });
 
   it("a column may move opposite to the metric the sentence named", () => {
@@ -361,6 +369,30 @@ describe("activityVerdict — best / worst", () => {
     const v = activityVerdict([...priors, s(2, 5000, 90), run(2, 1)], d7());
     expect(v.metric).not.toBeNull();
     expect([v.best, v.worst]).toContain(v.metric);
+  });
+
+  it("marks the faller the SENTENCE has no room for, even under the sentence's bar", () => {
+    // The reported week, in miniature: training time and tonnage up, and the
+    // only measure that went BACKWARDS down a single digit. A claim needs 15%;
+    // being the worst end of your own row does not, and on one shared bar this
+    // week lit the rise and left the slip looking like the figures that held.
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 9000, 60), run(2, 3.6)], d7());
+    const distance = v.figures.find((x) => x.metric === "distance")!;
+    expect(figureDeltaPct(distance)).toBe(-10);
+    expect(Math.abs(figureDeltaPct(distance)!)).toBeLessThan(VERDICT_THRESHOLD_PCT);
+    expect(v.worst).toBe("distance");
+    expect(v.best).toBe("tonnage");
+    // …and the sentence stays off it: a 10% slip is still not worth a claim.
+    expect(v.metric).toBe("tonnage");
+    expect(v.direction).toBe("up");
+  });
+
+  it("still leaves the ends to noise — round-off is not a slip", () => {
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 9000, 60), run(2, 3.92)], d7());
+    expect(figureDeltaPct(v.figures.find((x) => x.metric === "distance")!)).toBe(-2);
+    expect(v.worst).toBeNull();
   });
 
   it("leaves an end empty when nothing moved that way", () => {

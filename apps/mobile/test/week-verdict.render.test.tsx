@@ -217,6 +217,45 @@ describe("the activity card's marks", () => {
 });
 
 /**
+ * A SLIP TOO SMALL FOR THE SENTENCE IS STILL THE ROW'S WORST END.
+ *
+ * The reported week: time up a third, tonnage up, and distance down NINE per
+ * cent — the only measure that went backwards, and the only one the row said
+ * nothing about, because the ends were once ranked on the SENTENCE's 15%
+ * threshold. The marks rank on core's lower VERDICT_END_THRESHOLD_PCT now: a
+ * claim in words needs a move worth stating, a mark only says which end of this
+ * row a figure is.
+ */
+const shallowFall: LoggedSession[] = [
+  longLift(0), run(0, 3.6),
+  lift(1), run(1, 4),
+  lift(2), run(2, 4),
+  lift(3), run(3, 4),
+  lift(4), run(4, 4),
+];
+
+describe("a faller under the sentence's threshold", () => {
+  const columnFor = (prefix: string) =>
+    screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith(prefix));
+
+  it("still takes the drop mark and the maroon", () => {
+    renderScreen(<AuroraWeekVerdict sessions={shallowFall} units="kg" />);
+
+    expect(columnFor("Distance")!.getAttribute("aria-label")).toContain("biggest drop this period");
+    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgb(58, 31, 25)"); // colors.maroon
+  });
+
+  it("prints its own single-digit move, and leaves the sentence alone", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={shallowFall} units="kg" />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("−10%");
+    // The lead is still the rise — a 10% slip is not worth a claim in words.
+    expect(text).toContain("+33%");
+  });
+});
+
+/**
  * THE FALL SITS IN A WASH — the two marks are deliberately unequal.
  *
  * Toned text alone gave the rise and the fall the same visual weight, and equal

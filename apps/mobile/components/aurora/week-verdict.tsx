@@ -78,6 +78,15 @@ import { leading, fs, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE ,
  * doing — at rest it fell back to the sentence's one slot, and the second half
  * of the week stayed unsaid.
  *
+ * THE MARKS RANK ON A LOWER BAR THAN THE SENTENCE (core's
+ * VERDICT_END_THRESHOLD_PCT against VERDICT_THRESHOLD_PCT), and that is the
+ * third thing the row needed. Ranking the ends separately is useless if both
+ * ends have to clear the bar for making a CLAIM: a week of +31% hours, +18%
+ * tonnage, −7% sessions and −9% distance produced a `worst` of null, so the one
+ * measure that actually went backwards rendered in the same ash as the two that
+ * held. A sentence needs a move worth stating; a mark only says which end of
+ * this row the figure is, and the far end is the far end at 9%.
+ *
  * Ranking the ends separately is what lets the row carry both halves at once,
  * and it costs the sentence nothing: `metric` is the LARGER of the same two
  * moves, so the bold word in the lead is always sitting on one of the two lit

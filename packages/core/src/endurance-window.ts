@@ -225,10 +225,16 @@ export function enduranceDeltaPct(w: EnduranceWindow, m: EnduranceMetric): numbe
 }
 
 /**
- * A METRIC'S OWN DIRECTION, on the SAME threshold the verdict card uses — so a
- * move too small to be worth a claim up there is also too small to be worth a
- * hue down here, and the two cards can never contradict each other about
- * whether a week was flat.
+ * A METRIC'S OWN DIRECTION, on the verdict card's SENTENCE threshold
+ * (VERDICT_THRESHOLD_PCT) — because what this tones is a sentence too: the
+ * signed delta inside this section's lead. A move too small to be worth a claim
+ * up there is too small to be worth one down here, and the two cards can never
+ * contradict each other about whether a period was flat.
+ *
+ * It is deliberately NOT the verdict card's lower mark threshold
+ * (VERDICT_END_THRESHOLD_PCT). That one ranks the two ENDS of a row of figures
+ * — which end of four this is — and this section's lead is one figure with no
+ * row to be an end of, so there is nothing here for the lower bar to rank.
  */
 export function enduranceDirection(w: EnduranceWindow, m: EnduranceMetric): VerdictDirection {
   const d = enduranceDeltaPct(w, m);
