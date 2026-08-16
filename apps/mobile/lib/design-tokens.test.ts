@@ -575,7 +575,12 @@ describe("loading", () => {
     // floor is legitimate usage, not debt. Do not force it down; check that a
     // new one sits inside a control, and raise it if that buys a layout fix
     // (see the four that did).
-    expectAtMost(hits(/<ActivityIndicator/g), 17, "content ActivityIndicator → <Loading />");
+    // 17 → 18: the import sheet's trace row. It is a control — tapping it asks
+    // for the series types and fetches the recordings behind what just landed —
+    // and its right-hand slot otherwise holds a word that changes ("Allow" →
+    // "3 fetched"), so the spinner sits exactly where the permitted four do:
+    // in-flight state inside a control, in a slot that holds its own size.
+    expectAtMost(hits(/<ActivityIndicator/g), 18, "content ActivityIndicator → <Loading />");
   });
 });
 

@@ -14,6 +14,7 @@ import {
   healthKitAvailability,
   queryDeviceWorkouts,
   requestDeviceReadAuth,
+  streamsProven,
   uploadWorkoutStreams,
 } from "../lib/healthkit";
 import { patchSessionDevice } from "../lib/api";
@@ -101,7 +102,17 @@ export function DeviceMatchSheet({
     // AFTER the match is saved and never awaited: the athlete is done here, the
     // upload takes as long as a GPS track takes, and a failed upload must not
     // look like a failed match.
-    void uploadWorkoutStreams(session.id, w.uuid).catch(() => undefined);
+    //
+    // AND IT IS NOT THE FIRST READ ON THIS PHONE. Picking a match is a tap that
+    // says "this recording is that session" — it is not a request for the GPS
+    // track, so it must not be the tap that finds out whether reading the track
+    // takes the app. It runs only once such a read has already come back here
+    // (`streamsProven`, set by the import sheet's trace row, the one control
+    // that says what it does). Before that the match still saves and the sync's
+    // backfill collects the trace later; nothing is lost but the order.
+    void streamsProven()
+      .then((proven) => (proven ? uploadWorkoutStreams(session.id, w.uuid) : undefined))
+      .catch(() => undefined);
     onMatched({ ...w, matchedAt: new Date().toISOString() });
     onClose();
   };

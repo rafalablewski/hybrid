@@ -25,29 +25,51 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  *    terminate an app mid-read, and force-quitting looks identical. So a fault
  *    is never called a crash in front of anybody, and it never disables
  *    anything the feature needs to work at all.
- *  • One marker, not a stack. Two spans running at once (a sync in one screen
- *    while an import runs in another) would have the first to finish clear the
- *    other's marker, so a crash can go unnamed. Every span in lib/healthkit.ts
- *    is awaited in sequence, so this costs a breadcrumb in a race nobody has
- *    hit — worth saying out loud rather than pretending the record is complete.
- *  • Which is why only the OPTIONAL span acts on it. `streams` — the heart-rate
- *    trace and the GPS track read after the sessions have already landed — is
- *    skipped once it has been implicated, because the athlete's sessions are
- *    the point and the trace under them is not worth a second ejection from the
- *    app. `auth` and `workouts` are the feature; they are recorded and retried.
+ *  • Only the OPTIONAL spans act on it. The trace under a session — the
+ *    heart-rate series and the GPS track, read after the sessions have already
+ *    landed — is skipped once it has been implicated, because the athlete's
+ *    sessions are the point and the trace under them is not worth a second
+ *    ejection from the app. `auth` and `workouts` are the feature; they are
+ *    recorded and retried.
+ *
+ * THE MARKER IS A PATH, NOT A WORD, and that is what the first version got
+ * wrong. One flat key meant two spans in flight at once (a sync in one screen
+ * while an import runs in another) had the first to finish clear the other's
+ * marker — a crash could go unnamed. The spans are a STACK now: entering pushes,
+ * leaving pops, and what is written is the whole path ("streams>stream-route").
+ * A crash is attributed to the DEEPEST segment, which is the call that was
+ * actually running, and the path is kept so the report says how it got there.
  */
 
-/** The native spans worth naming. Coarse on purpose: one AsyncStorage write per
- *  span, so the granularity has to be worth its own IO. */
+/** The native spans worth naming. One AsyncStorage write per span, so the
+ *  granularity has to be worth its own IO — but coarser than this is what cost
+ *  the last build its diagnosis: "streams" named three different native calls
+ *  (a permission sheet, a sample query, a route query), and knowing the process
+ *  died in one of three places is not knowing where it died. */
 export type HealthStep =
-  /** requestAuthorization — the permission sheet. */
+  /** requestAuthorization for the workout/daily types — the permission sheet. */
   | "auth"
   /** queryWorkoutSamples + the per-recording read behind it. */
   | "workouts"
-  /** The per-workout series: heart rate, power, cadence, and the route. */
-  | "streams"
   /** The daily biometrics relay (quantity + category samples). */
-  | "signals";
+  | "signals"
+  /** requestAuthorization for the route + cycling series types, on its own. */
+  | "stream-auth"
+  /** The per-workout sample series: heart rate, power, cadence. */
+  | "stream-read"
+  /** HKWorkoutRouteQuery — the GPS track. */
+  | "stream-route";
+
+/**
+ * The span the build before this one wrote for ALL THREE of the stream steps.
+ *
+ * A phone that met the crash under that build is carrying this fault right now,
+ * and the whole point of the record is that it survives the build that wrote
+ * it: without this the new sub-spans would each look untried, and the first
+ * thing the new build would do is run the call that already took the process.
+ */
+const LEGACY_STREAM_STEP = "streams";
+const STREAM_STEPS: HealthStep[] = ["stream-auth", "stream-read", "stream-route"];
 
 /** What is in flight right now — survives the process, which is the point. */
 const INFLIGHT_KEY = "hybrid.healthkit.inflight";
@@ -58,6 +80,8 @@ type Faults = Partial<Record<HealthStep, number>>;
 
 let faults: Faults = {};
 let settling: Promise<void> | null = null;
+/** The spans in flight, outermost first. Written to disk as one path. */
+const stack: HealthStep[] = [];
 
 /**
  * Promote a marker left over from a previous process into a fault, ONCE per
@@ -81,12 +105,17 @@ function settleOnce(): Promise<void> {
     }
     if (!stale) return;
     await AsyncStorage.removeItem(INFLIGHT_KEY).catch(() => {});
-    const step = stale as HealthStep;
-    faults = { ...faults, [step]: (faults[step] ?? 0) + 1 };
+    // The DEEPEST segment is the call that was running; the path is what it was
+    // running under. A marker written by the previous build is one flat word,
+    // which this reads unchanged.
+    const path = stale.split(">").filter(Boolean);
+    const step = path[path.length - 1] ?? stale;
+    const implicated = step === LEGACY_STREAM_STEP ? STREAM_STEPS : [step as HealthStep];
+    for (const s of implicated) faults = { ...faults, [s]: (faults[s] ?? 0) + 1 };
     await AsyncStorage.setItem(FAULTS_KEY, JSON.stringify(faults)).catch(() => {});
     // The one place this is ever said out loud. A native abort leaves nothing
     // else behind, so a tester on a debug build gets the answer here.
-    console.warn(`[healthkit] the previous run did not return from "${step}"`);
+    console.warn(`[healthkit] the previous run did not return from "${stale}"`);
   })();
   return settling;
 }
@@ -106,14 +135,25 @@ export async function nativeSpan<T>(
 ): Promise<T> {
   await settleOnce();
   if (opts.optional && (faults[step] ?? 0) > 0) return fallback;
+  stack.push(step);
   // Awaited, not fired: a marker that lands after the crash it was meant to
   // describe is no marker at all.
-  await AsyncStorage.setItem(INFLIGHT_KEY, step).catch(() => {});
+  await AsyncStorage.setItem(INFLIGHT_KEY, stack.join(">")).catch(() => {});
   try {
     return await run();
   } finally {
-    await AsyncStorage.removeItem(INFLIGHT_KEY).catch(() => {});
+    stack.pop();
+    await (stack.length
+      ? AsyncStorage.setItem(INFLIGHT_KEY, stack.join(">"))
+      : AsyncStorage.removeItem(INFLIGHT_KEY)
+    ).catch(() => {});
   }
+}
+
+/** Has this span already been implicated in a vanished process? For a caller
+ *  that wants to say so, or skip the work before setting anything up. */
+export function healthStepFaulted(step: HealthStep): boolean {
+  return (faults[step] ?? 0) > 0;
 }
 
 /** Which spans have been implicated, for a surface that wants to say so. Empty
@@ -128,9 +168,34 @@ export async function readHealthFaults(): Promise<Faults> {
   return faults;
 }
 
-/** Forget the record — for a "try it anyway" the athlete asked for. */
-export async function forgetHealthFaults(): Promise<void> {
-  faults = {};
-  await AsyncStorage.removeItem(FAULTS_KEY).catch(() => {});
+/**
+ * Forget the record — for a "try it anyway" the athlete asked for.
+ *
+ * WITHOUT THIS THE QUARANTINE IS A LIFE SENTENCE, which is not what it is for.
+ * A marker is evidence that a span did not return, not proof it can never
+ * return: iOS terminating a suspended app mid-read leaves exactly the same
+ * trace, and so does a force-quit. So a span that has been implicated is one an
+ * athlete may still ask for by name — and the only sane place to decide that is
+ * in front of the control that runs it, which is why the import sheet's trace
+ * row turns into "Try anyway" rather than going quietly dead.
+ *
+ * Scoped, because "try the recording again" must not also clear the record of a
+ * different span dying somewhere else.
+ */
+export async function forgetHealthFaults(steps?: HealthStep[]): Promise<void> {
+  if (!steps) faults = {};
+  else {
+    const next = { ...faults };
+    // The previous build's flat name covered all three stream calls, so a retry
+    // of any of them has to clear it too or the record outlives its meaning.
+    for (const s of steps) delete next[s];
+    if (steps.some((s) => STREAM_STEPS.includes(s))) delete (next as Faults & Record<string, number>)[LEGACY_STREAM_STEP];
+    faults = next;
+  }
+  await AsyncStorage.setItem(FAULTS_KEY, JSON.stringify(faults)).catch(() => {});
   await AsyncStorage.removeItem(INFLIGHT_KEY).catch(() => {});
 }
+
+/** The spans behind a recording's trace — what a "try anyway" on the trace row
+ *  clears, and what the sheet checks before offering one. */
+export const STREAM_HEALTH_STEPS: HealthStep[] = STREAM_STEPS;
