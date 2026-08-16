@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Animated, View, Text, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
@@ -7,11 +7,12 @@ import {
   PICKER_SOURCES, pickerSourceLabelKey, figureText,
   type GapFigure, type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
-  ALPHA,
+  ALPHA, durations,
 } from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { withAlpha } from "./field";
 import { AMeter, ASegment, AChip , RADIUS} from "./kit";
 import { RollingNumber } from "./rolling-number";
@@ -559,6 +560,32 @@ export function PickerDoor({ C, title, icon, onPress, last }: {
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
       <IChevRight size={18} color={C.ash} />
     </Pressable>
+  );
+}
+
+/**
+ * A FOLD'S CHEVRON, which turns.
+ *
+ * Two blocks in Nutrition fold behind the words "More detail" — the Create
+ * form's label fields and the portion sheet's label panel — and both drew a
+ * static ⌄ that pointed down whether the block was open or shut. A state
+ * indicator that does not indicate the state is decoration, and one that snaps
+ * between two angles is a different thing appearing rather than the same thing
+ * turning. It rotates on `durations.fast`, the token for a press state and a
+ * dismissal, and it holds still under Reduce Motion — where the ARROW STILL
+ * POINTS THE RIGHT WAY, because the direction is meaning, not motion.
+ */
+export function FoldChevron({ open, color }: { open: boolean; color: string }) {
+  const reduced = useReducedMotion();
+  const turn = useRef(new Animated.Value(open ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduced) { turn.setValue(open ? 1 : 0); return; }
+    Animated.timing(turn, { toValue: open ? 1 : 0, duration: durations.fast, useNativeDriver: true }).start();
+  }, [open, turn, reduced]);
+  return (
+    <Animated.View style={{ transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "180deg"] }) }] }}>
+      <IChevDown size={13} color={color} />
+    </Animated.View>
   );
 }
 

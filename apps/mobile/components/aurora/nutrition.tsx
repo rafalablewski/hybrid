@@ -112,7 +112,7 @@ import BarcodeScanSheet from "./barcode-scan";
 import {
   Glyph, VerifiedMark, MarkPlate, FactsPanel, FoodRow, SourceSwitch, PickerDoor, DayGap, MacroLedger, MACRO_FILL, PICKER_EDGE, BLOCK,
   IChevDown, IChevRight, IPlus, ITrash, IBolt, IClock, IBarcode,
-  presetGlyph, macroKcal, savedFoodMenu, packMenu, type RowPortion,
+  presetGlyph, macroKcal, savedFoodMenu, packMenu, FoldChevron, type RowPortion,
 } from "./nutrition-kit";
 import { HoldMenu, type HoldMenuItem } from "../hold-menu";
 import {
@@ -775,6 +775,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // keystroke it takes to become "0.35", which a numeric state would round away.
   const [portionText, setPortionText] = useState("1");
   const [packMsg, setPackMsg] = useState("");
+  /** The label panel's fold. Closed on every open: the sheet's job is to log a
+   *  food you already trust, and a panel that remembered being open would make
+   *  the next food's sheet a different height for no reason the athlete gave. */
+  const [portionFacts, setPortionFacts] = useState(false);
   const openPortion = (base: NonNullable<typeof portion>) => {
     // OPENS ON THE FOOD'S OWN MEASURE when it has one, and on servings when it
     // does not.
@@ -794,6 +798,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     setPortionUnitId(measure ? "measure" : "servings");
     setPortionText(formatAmount(measure ? measure.initial : 1));
     setPackMsg("");
+    setPortionFacts(false);
     setPortion(base);
   };
   const portionUnitList = useMemo(
@@ -2104,15 +2109,42 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 </View>
               ))}
             </View>
-            {/* The label panel — saturates, sugars, fibre, salt and the kJ figure
-                the three macro tiles above can't carry. Same core function as
-                the web screen, scaled by the same quantity. */}
-            <FactsPanel
-              C={C}
-              scale={q}
-              facts={{ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }}
-              per100={per100g({ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }, portion.servingGrams)}
-            />
+            {/* THE LABEL PANEL FOLDS, and this sheet is the reason.
+                It was always open, directly under three tiles reading protein,
+                carbs and fat — and its own first four rows are energy, fat,
+                carbs and protein. The same three figures twice, two hundred
+                pixels apart, which is the one arrangement that makes a reader
+                stop and check whether they agree.
+
+                Which one gives way is not a toss-up, because this screen has
+                already written down what it is for: "a sheet is for adding a
+                food you already trust, a page is for deciding whether to trust
+                it" (see the product-page note above). A full label panel open by
+                default is the PAGE's job arriving on the sheet. The tiles are
+                the summary and stay; the panel is the detail and is one tap
+                away — behind the same control, in the same words, as the Create
+                form's own "More detail" thirty pixels into its sibling screen.
+
+                It still carries what the tiles cannot: saturates, sugars, fibre,
+                salt, the kJ figure, the per-100 g column and the em dashes that
+                say NOT STATED rather than zero. */}
+            <Pressable
+              onPress={() => listMotion(() => setPortionFacts((x) => !x))}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: portionFacts }}
+              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: space.lg, paddingVertical: space.xs, paddingHorizontal: space.xxs }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.recovery.nutrition.facts.moreDetail")}</Text>
+              <FoldChevron open={portionFacts} color={C.ash} />
+            </Pressable>
+            {portionFacts ? (
+              <FactsPanel
+                C={C}
+                scale={q}
+                facts={{ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }}
+                per100={per100g({ kcal: portion.kcal, protein: portion.protein, carbs: portion.carbs, fat: portion.fat, satFat: portion.satFat, sugar: portion.sugar, fiber: portion.fiber, salt: portion.salt }, portion.servingGrams)}
+              />
+            ) : null}
             {/* EDITING THE FOOD ITSELF, from the sheet that just showed you it
                 was wrong. A door, not a card: it leaves for the form. */}
             {portion.productId ? (
@@ -2612,18 +2644,23 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         {/* The label panel — optional, folded away. Anything left blank stays
             NOT STATED rather than becoming a zero the diary would believe. */}
         <Pressable
-          onPress={() => setShowPanelFields((x) => !x)}
+          onPress={() => listMotion(() => setShowPanelFields((x) => !x))}
           accessibilityRole="button"
           accessibilityState={{ expanded: showPanelFields }}
           style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 16, paddingVertical: 6, paddingHorizontal: 2 }}
         >
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.recovery.nutrition.facts.moreDetail")}</Text>
-          <IChevDown size={13} color={C.ash} />
+          <FoldChevron open={showPanelFields} color={C.ash} />
         </Pressable>
         {showPanelFields ? (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 6 }}>
             {([["satFat", "w.recovery.nutrition.facts.satFat"], ["sugar", "w.recovery.nutrition.facts.sugar"], ["fiber", "w.recovery.nutrition.facts.fiber"], ["salt", "w.recovery.nutrition.facts.salt"]] as const).map(([key, lab]) => (
-              <View key={key} style={{ width: "47.5%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 10, paddingHorizontal: 12 }}>
+              // The MACRO TILE's own box, because this is the macro tile's own
+              // object: a labelled numeric field. It was drawn on `ink` with a
+              // border while the three tiles thirty pixels above sat on `ink2`
+              // with none — same thing, two spellings, and the bordered one
+              // read as a different KIND of field rather than as more of them.
+              <View key={key} style={{ width: "47.5%", flexGrow: 1, backgroundColor: C.ink2, borderRadius: RADIUS.field, paddingVertical: space.md, paddingHorizontal: space.md }}>
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t(lab)}</Text>
                 <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
                   <TextInput
@@ -2646,10 +2683,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             component carries a serving count; the macros above are their sum. */}
         {isMeal ? (
           <View style={{ marginTop: 24 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.recovery.nutrition.mealProducts")}</Text>
-              {mealComps.length > 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{mealComps.length}</Text> : null}
-            </View>
+            {/* THE SHARED HEAD, not a hand-rolled copy of it. This block drew
+                the standard by hand (F.black/fs.title + a mono count) while the
+                Packs block below drew a GroupMark — two spellings of one object,
+                forty pixels apart in one form. */}
+            <ASection
+              title={t("w.recovery.nutrition.mealProducts")}
+              meta={mealComps.length > 0 ? String(mealComps.length) : undefined}
+              style={{ marginTop: 0 }}
+            />
             {mealComps.map((c) => (
               <View key={c.productId} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <View style={{ flex: 1, minWidth: 0 }}>
@@ -2693,7 +2735,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             here would promise a screen that does not exist. */}
         {!isMeal && createMeasure ? (
           <View style={{ marginTop: 24 }}>
-            <GroupMark label={t("w.recovery.nutrition.pt.packs")} mt={0} />
+            {/* The same head as Products above it, and the count is the one the
+                athlete needs: a food carries at most MAX_FOOD_PORTIONS, and the
+                ＋ disappears at the cap without saying why. */}
+            <ASection
+              title={t("w.recovery.nutrition.pt.packs")}
+              meta={createForm.packs.length > 0 ? `${createForm.packs.length} / ${MAX_FOOD_PORTIONS}` : undefined}
+              style={{ marginTop: 0 }}
+            />
             {createForm.packs.map((pk) => (
               <View key={pk.key} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <TextInput
@@ -2737,8 +2786,19 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               </View>
             ))}
             {createForm.packs.length < MAX_FOOD_PORTIONS ? (
-              <Pressable onPress={addPack} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 14 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>＋</Text>
+              /* The expander grammar, on this list's own left edge. The house
+                 standard (endurance-lanes' All-sports control) sets the bare ＋
+                 at fs.title in ash — taken — but boxes it 32dp and follows with
+                 a chalk label, because ITS rows lead with a 32dp mark and the
+                 control has to align with them. These rows lead with a FIELD at
+                 x=0, so the same box would put this label 44dp inside every row
+                 above it and draw a step down the block's left edge. Same
+                 glyph, same rung, same ash; the lead is the list's, not the
+                 other list's. The label stays in the quiet meta voice: this
+                 block already carries a bold head, and a second chalk-bold line
+                 four rows under it would be the title twice. */
+              <Pressable onPress={addPack} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 14 }}>
+                <Text style={{ fontSize: fs.title, color: C.ash }}>＋</Text>
                 <CtaLabel label={t("w.recovery.nutrition.pt.addPack")} color={C.ash} fontSize={fs.nano} font={F.mono} style={{ textTransform: "uppercase", letterSpacing: tracking.label }} />
               </Pressable>
             ) : null}

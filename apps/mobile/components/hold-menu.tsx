@@ -6,7 +6,7 @@ import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { haptic } from "../lib/haptics";
-import { GUTTER, RADIUS } from "./aurora/kit";
+import { concentricRadius, GUTTER, RADIUS } from "./aurora/kit";
 
 /**
  * HOLD THE THING — the app's one long-press menu, and the card it opens in.
@@ -77,6 +77,15 @@ export interface HoldMenuAnchor { x: number; y: number; w: number; h: number }
 const ROW_H = 40;
 const CARD_PAD = 5;
 const GAP = 6;
+/** The card's own corner, and its rows'. The row radius is DERIVED rather than
+ *  guessed: a child inset by `CARD_PAD` on all sides is only truly concentric at
+ *  `parent − pad`, and two arcs on different centres are why a highlighted row
+ *  reads as pasted into the card instead of set in it. It was a hand-tuned
+ *  `RADIUS.inner + 2` over `RADIUS.inner − 2`, which is 14 over 10 where
+ *  concentric is 14 over 9 — one pixel, on the one corner a finger is resting
+ *  next to while it reads the menu. */
+const CARD_RADIUS = RADIUS.inner + 2;
+const ROW_RADIUS = concentricRadius(CARD_RADIUS, CARD_PAD);
 
 /** How long the finger sits on the thing before the card comes up. The logger
  *  card's own long-press number, so every hold in the app arms at one speed. */
@@ -155,7 +164,7 @@ export function AnchoredMenu({
           backgroundColor: C.ink2,
           borderWidth: 1,
           borderColor: C.line,
-          borderRadius: RADIUS.inner + 2,
+          borderRadius: CARD_RADIUS,
           padding: CARD_PAD,
           opacity: enter,
           transformOrigin: `${side} ${fitsBelow ? "top" : "bottom"}`,
@@ -167,7 +176,7 @@ export function AnchoredMenu({
       >
         {items.map((a) => (
           <PressScale key={a.key} onPress={() => onSelect(a.key)} accessibilityRole="menuitem">
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 9, borderRadius: RADIUS.inner - 2 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 10, paddingVertical: 9, borderRadius: ROW_RADIUS }}>
               {/* Destructive rows draw in the AA-guarded red text channel — the
                   same channel every other glyph in the row is held to. */}
               <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.body, color: a.destructive ? txt(C, colors.red) : C.chalk }}>
