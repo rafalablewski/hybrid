@@ -127,7 +127,7 @@ function Stat({ label, value, color, C }: { label: string; value: string; color:
   return (
     <View style={{ flex: 1 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 24, color, marginTop: 4 }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, color, marginTop: 4 }}>{value}</Text>
     </View>
   );
 }

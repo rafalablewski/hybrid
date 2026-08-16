@@ -27,9 +27,35 @@ export type TypeRole =
   | "hero" //   34 — mastheads / cover titles
   | "stat"; //  46 — the one hero figure on a screen (ring kcal, exercise 1RM)
 
-/** Font-size scale (fs.body = the default reading size). px on web, dp on RN.
- *  The ladder ends at `stat` on purpose: there is no rung above it, so a figure
- *  larger than 46 is a design smell, not a missing token. */
+/**
+ * Font-size scale (fs.body = the default reading size). px on web, dp on RN.
+ *
+ * THE LADDER ENDS AT `stat` ON PURPOSE: there is no rung above it, so a figure
+ * larger than 46 is a design smell, not a missing token.
+ *
+ * That was written as a rule and enforced by nothing, and the app answered with
+ * nine figures above it: 48, 48, 52, 56, 60 and 68 (the portion sheet's kcal,
+ * the exercise page's hero, the routine builder's minutes, the food page's
+ * energy, the create-food kcal, the volume screen's in-range count) plus the
+ * interval clock at 56. Every one of them was "the ONE hero figure on a screen"
+ * — which is the definition of `stat`, written a rung and a half higher each
+ * time somebody wanted it to feel important. A 42% spread over six sites is not
+ * a missing rung, it is six unrelated guesses, exactly like the twelve figure
+ * trackings `trackFigure` replaced. They are all `fs.stat` now.
+ *
+ * TWO THINGS ABOVE 46 ARE NOT VIOLATIONS OF THIS, and naming them is what keeps
+ * the rule honest instead of merely loud:
+ *
+ *   THE TAKEOVER FIGURE — `HERO_FIGURE` in hero.ts (76). `fs.stat` is the
+ *     ceiling for a figure INSIDE A PAGE; the Wrapped's count-up is not inside
+ *     a page, it IS the panel. It is one exported constant with the argument
+ *     written next to it, which is the opposite of a hand-typed 68.
+ *
+ *   GLYPH ARTWORK — the watermark emoji bled off the corner of a recipe tile or
+ *     a plan cover (78, 96, 118). Those carry no font face and no reading role;
+ *     they are art sized to a card, and snapping them to a type rung would be
+ *     applying a reading ladder to a picture.
+ */
 export const fs: Record<TypeRole, number> = {
   nano: 10,
   micro: 11,
@@ -193,3 +219,35 @@ export const tracking: Record<TrackingRole, number> = {
  */
 export const TRACK_FIGURE_EM = -0.035;
 export const trackFigure = (size: number): number => Math.round(size * TRACK_FIGURE_EM * 10) / 10;
+
+/**
+ * A FIGURE'S NUMERALS ARE TABULAR — the third figure axis, and the one that had
+ * a rule and no owner.
+ *
+ * Archivo and JetBrains Mono both ship proportional and tabular numeral sets,
+ * and by default text gets the PROPORTIONAL one: a `1` is drawn narrower than an
+ * `8`. That is correct for a number sitting in a sentence and wrong for every
+ * other place this app puts one, because the app's numbers are not prose — they
+ * are a column of weights, a clock, a stat tile that updates, a figure mid-roll.
+ *
+ * Two failures, and the second is not cosmetic:
+ *
+ *   A COLUMN stops being a column. Four stat tiles in a row, or a table of
+ *     loads, align on their glyphs rather than their digit slots, so 111 and 888
+ *     are visibly different widths and nothing lines up under anything.
+ *
+ *   A ROLLING FIGURE JITTERS. `RollingNumber` gives each digit its own column
+ *     and animates only the ones that changed — so a units digit going 1 → 8
+ *     RESIZES its column mid-animation and shoves every digit beside it
+ *     sideways. The roll was built to make one change read as one event; a
+ *     proportional numeral makes the whole figure twitch instead.
+ *
+ * It was applied at ~25 call sites on mobile and NOWHERE on web — and, the part
+ * that matters, at no call site that all the others pass through: neither
+ * `RollingNumber` nor the stat tiles declared it, so the system's own figure
+ * primitives did not guarantee the system's own rule, and every new figure was
+ * a fresh chance to forget. The primitives declare it now; the constant is here
+ * so the two clients spell the same value (mobile `fontVariant: [TABULAR_NUMS]`,
+ * web `fontVariantNumeric: TABULAR_NUMS` — one CSS value, two property names).
+ */
+export const TABULAR_NUMS = "tabular-nums" as const;

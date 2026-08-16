@@ -174,7 +174,7 @@ export default function AuroraHistory() {
         onPress={showArchived ? undefined : () => router.push(`/session/${s.id}`)}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{s.title}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 12, flexWrap: "wrap" }}>

@@ -347,7 +347,7 @@ export default function AuroraProfile() {
       <View style={{ flexDirection: "row", gap: 24, marginTop: 16, paddingHorizontal: 0 }}>
         {socialCounts.map((c) => (
           <View key={c.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{c.n}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{c.n}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{c.k}</Text>
           </View>
         ))}
@@ -512,7 +512,7 @@ export default function AuroraProfile() {
                       justifyContent: "center",
                     }}
                   >
-                    <Text style={{ fontSize: 24, opacity: a.earned ? 1 : 0.38 }}>{a.icon}</Text>
+                    <Text style={{ fontSize: fs.display, opacity: a.earned ? 1 : 0.38 }}>{a.icon}</Text>
                   </View>
                   <View style={{ width: 48, height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 8, overflow: "hidden" }}>
                     <View style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, backgroundColor: a.earned ? C.lime : withAlpha(C.lime, 0.6) }} />

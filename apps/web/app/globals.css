@@ -1,4 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+/* Two faces, and that is the identity — Archivo and JetBrains Mono. Archivo
+   Narrow was dropped in Aug 2026 (core theme/tokens.ts `fonts` writes down why:
+   the mobile app, which is the product, never loaded it). Keep this in step
+   with core `fontImportUrl`. */
+@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* HYBRID design tokens — mirror packages/core/src/brand.ts.

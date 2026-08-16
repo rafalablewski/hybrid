@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, space, LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, cond, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, Mono, Card, Chip, txt } from "@/lib/ui";
 
 // The moderation queue: user-flagged content reports (social profiles, comments
 // and posts). The talent-profile approval queue that used to sit beside it went
@@ -113,7 +113,7 @@ function Empty({ children }: { children: React.ReactNode }) {
 }
 
 const primaryBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",
@@ -126,7 +126,7 @@ const primaryBtn: React.CSSProperties = {
   border: `1px solid ${LIME}`,
 };
 const ghostBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",

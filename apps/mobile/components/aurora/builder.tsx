@@ -247,7 +247,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
       <View style={{ flexDirection: "row", alignItems: "baseline" }}>
         <RollingNumber
           value={String(sig.minutes)}
-          style={{ fontFamily: F.monoBold, fontSize: 52, letterSpacing: trackFigure(52), lineHeight: 56, color: C.chalk, fontVariant: ["tabular-nums"] }}
+          style={{ fontFamily: F.monoBold, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "tight"), color: C.chalk }}
         />
         <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, letterSpacing: tracking.normal }}> min</Text>
       </View>

@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, leading, tracking, F, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable, MAX_FONT_SCALE, FIXED_FONT_SCALE, HIT_TARGET, HIT_SLOP } from "../../lib/ui";
+import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable, MAX_FONT_SCALE, FIXED_FONT_SCALE, HIT_TARGET, HIT_SLOP } from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
@@ -1514,6 +1514,12 @@ export function AHeading({
  * rolling an arbitrary tree would be nonsense — the same rule web's takes, so
  * the two clients agree about which figures move.
  *
+ * ITS NUMERALS ARE TABULAR, declared here rather than left to the caller. A
+ * column of stat tiles is the exact case proportional figures break: 111 and
+ * 888 draw at different widths, so four tiles in a row stop agreeing about
+ * where a digit starts. (A composed `value` node is the caller's own text and
+ * carries its own style — spread `TABULAR` into it if it holds digits.)
+ *
  * `solid` passes through to ACard: a column of stats is a data-dense read
  * surface, and ACard's own note says translucency costs contrast there.
  */
@@ -1552,7 +1558,7 @@ export function AStat({
         {typeof value === "string" || typeof value === "number" ? (
           <RollingNumber
             value={String(value)}
-            style={{ fontFamily: F.black, fontSize: fs.hero, color: txt(palette, c ?? palette.chalk), lineHeight: leading(fs.hero, "tight") }}
+            style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.hero, color: txt(palette, c ?? palette.chalk), lineHeight: leading(fs.hero, "tight") }}
           />
         ) : (
           value

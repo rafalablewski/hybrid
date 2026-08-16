@@ -1544,7 +1544,7 @@ export default function Workout() {
                               </Pressable>
                               {!bw && (
                                 <>
-                                  <Text style={{ fontFamily: F.reg, fontSize: 24, color: C.ash, marginHorizontal: 3 }}>×</Text>
+                                  <Text style={{ fontFamily: F.reg, fontSize: fs.display, color: C.ash, marginHorizontal: 3 }}>×</Text>
                                   <Pressable style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 4 }} onPress={() => inputRefs.current[`${x.uid}:reps`]?.focus()}>
                                     <TextInput
                                       ref={(r) => { inputRefs.current[`${x.uid}:reps`] = r; }}

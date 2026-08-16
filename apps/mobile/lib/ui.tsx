@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, trackFigure, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, trackFigure, TABULAR_NUMS, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -213,6 +213,18 @@ export const F = {
   mono: "JetBrainsMono_400Regular",
   monoBold: "JetBrainsMono_700Bold",
 } as const;
+
+/**
+ * A FIGURE'S NUMERALS — spread this into any text style that draws a number
+ * that sits in a column, updates, or animates. The argument is in core
+ * `scale.ts` beside `TABULAR_NUMS`; the short version is that a proportional
+ * `1` is narrower than an `8`, so a column does not line up and a rolling digit
+ * resizes its own slot mid-turn.
+ *
+ * Spread it FIRST, so the rare caller that genuinely wants proportional figures
+ * (a number inside a sentence) can still say so after it.
+ */
+export const TABULAR: TextStyle = { fontVariant: [TABULAR_NUMS] };
 
 /**
  * THE SAME SIX FACES, UNDER THE NAMES CORE TEXT KNOWS THEM BY.
