@@ -260,6 +260,72 @@ describe("the card's headline number", () => {
 });
 
 /**
+ * THE NAMED METRIC'S CELL IS THE ONE DRAWN LARGE.
+ *
+ * Deleting the corner percentage removed a duplicate and, with it, the only
+ * thing on the card readable at arm's length. The size goes where the number
+ * already is rather than back into a second copy of it: the cell for the metric
+ * the sentence names, drawn a ladder rung up, IN ITS OWN POSITION — so the card
+ * keeps one hero figure and the grid keeps its constant order.
+ *
+ * Both assertions matter. Exactly one cell may be promoted (two heroes is no
+ * hero), and it has to be the one the sentence is about (a hero figure on a
+ * metric the lead never mentions is the card pointing two ways again).
+ */
+describe("the promoted cell", () => {
+  /** Every figure's font size, keyed by the cell's metric. Scoped to the four
+   *  metric names, since the period filter above the card is a row of buttons
+   *  too and its segments would otherwise land in the same map. */
+  const METRICS = ["Tonnage", "Sessions", "Hours", "Distance"];
+  const figureSizes = (container: Element) => {
+    const out: Record<string, number> = {};
+    for (const cell of container.querySelectorAll('[role="button"]')) {
+      const label = (cell.getAttribute("aria-label") ?? "").split(" ")[0] ?? "";
+      if (!METRICS.includes(label) || label in out) continue;
+      // label / figure / mark — the figure is the second text node down, and
+      // the largest, which is what this reads.
+      const sizes = [...cell.querySelectorAll("div,span")]
+        .map((n) => parseFloat((n as HTMLElement).style.fontSize || "0"))
+        .filter((n) => n > 0);
+      if (sizes.length) out[label] = Math.max(...sizes);
+    }
+    return out;
+  };
+
+  it("draws the sentence's metric larger, and only that one", () => {
+    // `bothEnds` headlines DISTANCE (down 75%, the larger of the two moves).
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const sizes = figureSizes(container);
+
+    expect(sizes.Distance).toBeGreaterThan(sizes.Tonnage);
+    // The other three hold one size between them — no second hero.
+    expect(new Set([sizes.Tonnage, sizes.Sessions, sizes.Hours]).size).toBe(1);
+  });
+
+  it("promotes nothing when the card names nothing", () => {
+    // A period whose previous window carried no training is COLD: the figures
+    // render and the card makes no claim over them, so there is no subject to
+    // draw large. Every cell holds the plain rung.
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={[lift(0), run(0, 5)]} units="kg" />);
+    const sizes = Object.values(figureSizes(container));
+
+    expect(sizes.length).toBeGreaterThan(1);
+    expect(new Set(sizes).size).toBe(1);
+  });
+
+  it("leaves the order alone — the hero does not move to the front", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const text = container.textContent ?? "";
+    const at = (label: string) => text.indexOf(label);
+
+    // Distance is the week's story and is still read fourth.
+    expect(at("Tonnage")).toBeLessThan(at("Sessions"));
+    expect(at("Sessions")).toBeLessThan(at("Hours"));
+    expect(at("Hours")).toBeLessThan(at("Distance"));
+  });
+});
+
+/**
  * PAST THE CEILING, A CELL PRINTS THE STEP — never a four-digit percentage.
  *
  * The ceiling used to guard the headline corner alone, so on the very week it

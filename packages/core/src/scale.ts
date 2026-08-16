@@ -251,3 +251,52 @@ export const trackFigure = (size: number): number => Math.round(size * TRACK_FIG
  * web `fontVariantNumeric: TABULAR_NUMS` — one CSS value, two property names).
  */
 export const TABULAR_NUMS = "tabular-nums" as const;
+
+/**
+ * A MONOSPACED GLYPH'S ADVANCE, in em — JetBrains Mono's, which is the app's
+ * only mono face and the face every FIGURE is set in.
+ *
+ * Every glyph in a monospaced face is exactly this wide. That is the whole
+ * reason this constant can exist: a proportional face's width is unknowable
+ * without measuring the actual string, but a figure set in mono is
+ * `characters × size × advance` before it is drawn, so a layout can ask whether
+ * a figure fits BEFORE committing to a size — instead of shipping a guess and
+ * discovering the answer on somebody's phone.
+ *
+ * The activity card discovered exactly that: four figures in four columns, each
+ * needing more width than a quarter of the card, so two of them broke mid-word
+ * in production. The arithmetic that would have caught it is one multiplication.
+ */
+export const MONO_ADVANCE_EM = 0.6;
+
+/**
+ * THE LARGEST RUNG A MONO FIGURE FITS AT — the derived alternative to picking a
+ * font size and hoping.
+ *
+ * `sizes` is a DESCENDING ladder of candidate rungs; the first that fits `width`
+ * wins, and the last is the floor when none does (a floor is not a failure — it
+ * is the smallest setting the caller is willing to draw, and the caller decides
+ * what happens past it: ellipsis, a second line, or nothing at all because the
+ * floor was chosen to be unreachable).
+ *
+ * `scale` is the OS text scale (Dynamic Type), so the question asked is the one
+ * that matters: does this figure fit on THIS athlete's phone at THEIR text size.
+ * Pass the value the caller's own `maxFontSizeMultiplier` will actually allow —
+ * asking about a scale the text is capped below would shrink a figure to make
+ * room for growth that cannot happen.
+ *
+ * Pure and unit-scaled: `width` and the sizes are in the same unit (dp on
+ * mobile, px on web), so the same call answers on both clients.
+ */
+export function fitMonoFigure(text: string, width: number, sizes: readonly number[], scale = 1): number {
+  const last = sizes[sizes.length - 1];
+  if (last === undefined) return 0;
+  // An unmeasured container answers nothing useful, and answering "the floor"
+  // would render every figure small for one frame and then jump. The caller's
+  // first choice is the honest default until a real width arrives.
+  if (!(width > 0)) return sizes[0]!;
+  for (const size of sizes) {
+    if (text.length * size * scale * MONO_ADVANCE_EM <= width) return size;
+  }
+  return last;
+}

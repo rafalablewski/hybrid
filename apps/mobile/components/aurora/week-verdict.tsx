@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, ScrollView, LayoutAnimation, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { View, Text, Animated, useWindowDimensions, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
@@ -7,6 +7,7 @@ import {
   groupDistanceDisplay, fmtKm,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, fmtTonnage,
   figureDeltaPct, figureDirection, figureShowsStep, activityComparison, comparisonHeadKey,
+  fitMonoFigure,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
@@ -171,10 +172,10 @@ import { leading, fs, space, F, PressScale, PressScale as Pressable, FIXED_FONT_
  * written out at CELL_WIDTH, and it says a quarter-width column would need the
  * app's BODY size to hold "6h 52min". `figSize = wide ? 17 : fs.heading` was a
  * layout apologising for itself: it spent a rung of legibility and wrapped
- * anyway. Two up, at the full 20dp, every figure has 40% of headroom — enough
- * for Dynamic Type at 1.4×, for German, and for any formatter that ever grows a
- * character. Nothing shrinks, nothing abbreviates, nothing wraps. The grid is
- * also square, which the row never was.
+ * anyway. Two up, at the full 20dp, a figure needs 96dp of the cell's 155 —
+ * enough spare for Dynamic Type at 1.4×, for German, and for any formatter that
+ * ever grows a character. Nothing shrinks, nothing abbreviates, nothing wraps.
+ * The grid is also square, which the row never was.
  *
  * THE HEADLINE FIGURE IS GONE, and this is the deletion the card most needed.
  * The lead's corner carried the named metric's percentage at 23dp; the cell for
@@ -198,6 +199,27 @@ import { leading, fs, space, F, PressScale, PressScale as Pressable, FIXED_FONT_
  * them. Labels are ash now, always, on every cell. What is left lit is the
  * figure and its signed move — the value and the working-out for its colour —
  * which is what makes the two ends findable instead of merely loud.
+ *
+ * THE HERO CAME BACK, AS TYPE RATHER THAN AS A SECOND COPY. Deleting the corner
+ * removed a duplicate and, with it, the only thing on the card readable at arm's
+ * length — a fair objection, and restoring the corner would restore the
+ * duplication with it. So the size goes where the number already is: the cell
+ * for the metric the sentence names is drawn a ladder rung up, IN ITS OWN
+ * POSITION, so the card has one hero figure and the grid keeps its constant
+ * order. The rung is DERIVED — `fitMonoFigure` against the cell's measured type
+ * width and the athlete's own text scale (see PROMOTED_LADDER) — because
+ * picking a size and hoping is the exact habit that produced "DISTA / NCE".
+ * A cold or flat card promotes nothing: no metric was named, so there is no
+ * subject to draw large.
+ *
+ * THE PAGER TRAVELS WITH THE FINGER. The card is the height of the page it is
+ * on, and that height used to change on `onMomentumScrollEnd` — so the whole
+ * drag ran at page one's height with page two arriving CLIPPED, and then, once
+ * the finger was long gone, the card played a 220ms LayoutAnimation and grew.
+ * Height and the page dots are now interpolated off the scroll offset itself
+ * (see `progress`), so the card grows as the page arrives, an abandoned swipe
+ * travels back instead of snapping, and the indicator says where the swipe HAS
+ * got to rather than where it ended up.
  *
  * And the LABEL is a name, not a kicker: the display face, sentence case,
  * untracked. Mono uppercase at `tracking.label` is the widest way this app can
@@ -235,11 +257,12 @@ const ROWS_SHOWN = 5;
  * The 17dp the row shrank to (from 20, whenever a fourth metric appeared) was
  * a compromise between two impossibilities, and it wrapped anyway.
  *
- * Two up, a cell is 155dp — 139dp of type — and the same eight glyphs at the
- * full 20dp need 96dp. That is 40% of headroom, which is what carries Dynamic
- * Type (1.4× → 134dp, still inside), the German "Trainingszeit", and any
- * formatter that ever grows a character. The figure stops shrinking, the label
- * stops abbreviating, and the grid is square.
+ * Two up, a cell is 171dp — 155dp of type, the grid bleeding one inset either
+ * side — and the same eight glyphs at the full 20dp need 96dp. The 59dp spare
+ * is what carries Dynamic Type (1.4× → 134dp, still inside), the German
+ * "Trainingszeit", a year-to-date span, and any formatter that ever grows a
+ * character. The figure stops shrinking, the label stops abbreviating, and the
+ * grid is square.
  *
  * READING ORDER IS UNCHANGED — row-major is VERDICT_METRICS order (tonnage,
  * sessions / hours, distance), so the constancy the row was built for survives
@@ -252,8 +275,39 @@ const CELL_WIDTH = "50%";
 /** The cell's padding — the wash's inset, and the bleed the grid takes so a
  *  cell's type still lands on the card's own content column. */
 const CELL_INSET = space.sm;
-/** ONE figure size, every cell, every period. See CELL_WIDTH. */
+/** The figure size for a cell the sentence is NOT about. See CELL_WIDTH. */
 const FIGURE_SIZE = fs.heading;
+
+/**
+ * THE NAMED METRIC'S CELL IS DRAWN LARGER — the card's one hero figure, and the
+ * answer to what the deleted corner percentage was actually for.
+ *
+ * Deleting the corner removed a duplicate, and it also removed the only thing on
+ * the card readable at arm's length. Restoring the corner would restore the
+ * duplication with it, so the size goes where the number already is: the cell
+ * for the metric the sentence names. One number, one place, and now the biggest
+ * thing on the card is the thing the card is about.
+ *
+ * IT MOVES NOTHING. The promoted cell keeps its position in VERDICT_METRICS
+ * order — tonnage stays first whether or not it is the week's story — so the
+ * position constancy the grid is built on is untouched. Only the type changes.
+ *
+ * THE SIZE IS DERIVED, NOT PICKED, which is the lesson of the row this grid
+ * replaced. `fitMonoFigure` (core scale.ts) asks the one multiplication a
+ * monospaced figure makes possible — characters × size × 0.6em — against the
+ * cell's MEASURED type width and the athlete's OWN text scale, and hands back
+ * the largest rung that fits. So "15.3 t" gets the full 26, a nine-glyph
+ * "10h 15min" steps to 22 rather than clipping, a year-to-date "1240h 55min"
+ * sits at 20 with its neighbours, and the same figure at 1.4× Dynamic Type
+ * steps down instead of running off the card. A hero figure that has to be
+ * ellipsised was never a hero figure.
+ */
+const PROMOTED_LADDER = [fs.display, fs.headline, fs.heading] as const;
+
+/** ONE LINE BOX for every figure, sized to the tallest rung a cell can draw, so
+ *  a promoted figure and a plain one share a baseline instead of sitting a few
+ *  points apart. */
+const FIGURE_BOX = leading(PROMOTED_LADDER[0], "tight");
 
 /**
  * Render a "{m}"-templated sentence with the metric name in bold.
@@ -344,6 +398,10 @@ export default function AuroraWeekVerdict({
 }) {
   const { palette: C } = useTheme();
   const { t, lang } = useLang();
+  // The OS text scale, LIVE — `useWindowDimensions` re-renders when the athlete
+  // changes it, where `PixelRatio.getFontScale()` would answer with whatever it
+  // was at mount. It decides how large the promoted figure may be drawn.
+  const { fontScale } = useWindowDimensions();
 
   // The chosen period, persisted per device under the PROGRESS key — the
   // shared filter owns the reading, the storage and the midnight re-derive.
@@ -394,21 +452,70 @@ export default function AuroraWeekVerdict({
   // taller one leaves two hundred points of dead card under the figure row, on
   // the page an athlete sees first, every time.
   const [heights, setHeights] = useState<[number, number]>([0, 0]);
-  const pager = useRef<ScrollView | null>(null);
 
   const measure = (i: 0 | 1) => (e: LayoutChangeEvent) => {
     const h = Math.round(e.nativeEvent.layout.height);
     setHeights((prev) => (Math.abs(prev[i] - h) < 1 ? prev : (i === 0 ? [h, prev[1]] : [prev[0], h])));
   };
 
+  /**
+   * THE SWIPE'S OWN PROGRESS, 0 → 1, and the card is a function of it.
+   *
+   * The card is the height of the page it is on, and page one is ~200dp against
+   * page two's ~390. That height used to change on `onMomentumScrollEnd`: the
+   * whole drag ran with the card still at page one's height — so page two came
+   * in CLIPPED, its rows cut off at a border that had not moved yet — and then,
+   * once the finger was long gone and the deceleration had finished, the card
+   * played a 220ms LayoutAnimation and grew. Two motions, in sequence, neither
+   * of them the one the finger was making.
+   *
+   * Driving it off the scroll offset makes the card grow WITH the drag: at 40%
+   * across, the card is 40% of the way between the two heights and page two is
+   * arriving at exactly the height it will rest at. It also means an abandoned
+   * swipe — dragged 30% and released — travels back rather than snapping, since
+   * the offset it is interpolated from is doing the same thing.
+   *
+   * It cannot use the native driver: `height` is a layout property, and layout
+   * is not native-drivable in RN. That is fine here — one interpolation per
+   * frame on a view that is already re-laying out is not what drops frames, and
+   * the alternative (a fixed height at the taller page) is two hundred points
+   * of dead card under the figures on the page an athlete opens on.
+   */
+  const progress = useRef(new Animated.Value(0)).current;
+  const onScroll = useMemo(
+    () => Animated.event([{ nativeEvent: { contentOffset: { x: progress } } }], { useNativeDriver: false }),
+    [progress],
+  );
+  // Both pages have to have reported before the card can be a function of the
+  // offset; until then it sizes to its content, exactly as it always did.
+  const measured = pageW > 0 && heights[0] > 0 && heights[1] > 0;
+  // MEMOISED, and it is not a micro-optimisation: `interpolate()` registers a
+  // new node on its parent Animated.Value every call, so building these inline
+  // would hang one per render off a value that lives as long as the card. Same
+  // trap `useEntrance` documents in lib/ui.
+  const swipe = useMemo(() => {
+    if (!measured) return null;
+    const track = (outputRange: readonly (number | string)[]) =>
+      progress.interpolate({ inputRange: [0, pageW], outputRange: outputRange as number[], extrapolate: "clamp" });
+    return {
+      height: track([heights[0], heights[1]]),
+      // The dots travel with the card: the leaving pill contracts as the
+      // arriving one stretches, and the chartreuse crosses between them.
+      dots: [
+        { width: track([20, 7]), backgroundColor: track([C.lime, C.line]) },
+        { width: track([7, 20]), backgroundColor: track([C.line, C.lime]) },
+      ],
+    };
+  }, [measured, progress, pageW, heights, C.lime, C.line]);
+
   const settle = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const w = e.nativeEvent.layoutMeasurement.width || pageW || 1;
     const i = Math.max(0, Math.min(1, Math.round(e.nativeEvent.contentOffset.x / w)));
     if (i === page) return;
-    // The height change is the card growing under the athlete's own drag, so it
-    // eases rather than jumping. Reduce Motion is honoured by the platform:
-    // LayoutAnimation is a no-op when the setting is on.
-    LayoutAnimation.configureNext(LayoutAnimation.create(220, "easeInEaseOut", "scaleY"));
+    // No LayoutAnimation here any more: the height has been travelling with the
+    // finger for the whole drag and is already where it needs to be. `page` is
+    // now only what the card reports about ITSELF — which page an assistive
+    // technology is on, and which way the hint retires.
     setPage(i);
     if (!hinted) {
       setHinted(true);
@@ -457,6 +564,25 @@ export default function AuroraWeekVerdict({
   const dateFmt = (ms: number, opts: Intl.DateTimeFormatOptions) => new Date(ms).toLocaleDateString(lang, opts);
 
   const named = v.figures.find((f) => f.metric === v.metric) ?? null;
+
+  // THE PROMOTED CELL'S SIZE — derived against the cell's own measured type
+  // width and the athlete's own text scale.
+  //
+  // `pageW` is the card's INNER width (the pager measures it for its pages).
+  // The grid bleeds by one inset either side, so it is `pageW + 2·INSET` wide,
+  // a cell is half of that, and a cell's TYPE is that less its own padding:
+  //   (pageW + 2·INSET) / 2 − 2·INSET  =  pageW / 2 − INSET
+  // 155dp on a 390dp screen. Confirmed against the rendered cell rather than
+  // derived and trusted — the first spelling of this line dropped an inset and
+  // would have under-sized every promoted figure by 8dp of budget.
+  //
+  // Until the measurement lands `fitMonoFigure` answers the top of the ladder,
+  // so a typical figure never renders small for a frame and then jumps up.
+  const cellType = pageW > 0 ? pageW / 2 - CELL_INSET : 0;
+  const figureSize = (f: { metric: ActivityMetric; value: number }) =>
+    f.metric !== v.metric || v.cold
+      ? FIGURE_SIZE
+      : fitMonoFigure(fmt(f.metric, f.value), cellType, PROMOTED_LADDER, Math.min(fontScale, MAX_FONT_SCALE));
 
   // The working-out carries the BASELINE alone. It used to open with the
   // period's own value as well ("6.8 against a 0.1 four-week average"), which
@@ -559,17 +685,23 @@ export default function AuroraWeekVerdict({
             THE FILTER STAYS OUTSIDE IT, above the card. Both pages describe the
             same window, so a control that changed on page two would be a second
             period hiding behind a swipe. ─────────────────────────────────── */}
-        <ScrollView
-          ref={pager}
+        <Animated.ScrollView
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
           decelerationRate="fast"
           snapToInterval={pageW || undefined}
           onLayout={(e) => setPageW(Math.round(e.nativeEvent.layout.width))}
+          onScroll={onScroll}
+          // 16ms — the card's height is a function of this offset now, so the
+          // events ARE the animation. At the RN default (0, i.e. one event per
+          // gesture) the card would arrive in a single step, which is the jump
+          // this replaced.
+          scrollEventThrottle={16}
           onMomentumScrollEnd={settle}
-          // The card is the height of the page it is ON — see `heights` above.
-          style={{ height: heights[page] || undefined }}
+          // The card is the height of the page it is on — travelling with the
+          // drag rather than jumping after it. See `progress` above.
+          style={{ height: swipe?.height }}
           contentContainerStyle={{ alignItems: "flex-start" }}
         >
           <View style={{ width: pageW || undefined }} onLayout={measure(0)}>
@@ -626,6 +758,8 @@ export default function AuroraWeekVerdict({
             const mark = delta === null ? null
               : figureShowsStep(f) ? `${fmt(f.metric, f.previous)} → ${fmt(f.metric, f.value)}`
                 : `${delta > 0 ? "+" : "−"}${Math.abs(delta)}%`;
+            // THE SENTENCE'S METRIC IS DRAWN LARGER — see PROMOTED_LADDER.
+            const size = figureSize(f);
             // BOTH MARKS ARE FOREGROUND. The fall used to sit in a maroon wash
             // — a dark stain under the column, on the argument that a slip must
             // be the heavier mark. It made the fall a SURFACE while every other
@@ -701,8 +835,14 @@ export default function AuroraWeekVerdict({
                   numberOfLines={1}
                   maxFontSizeMultiplier={MAX_FONT_SCALE}
                   style={{
-                    ...TABULAR, fontFamily: F.mono, fontSize: FIGURE_SIZE,
-                    lineHeight: leading(FIGURE_SIZE, "tight"), letterSpacing: trackFigure(FIGURE_SIZE),
+                    ...TABULAR, fontFamily: F.mono, fontSize: size,
+                    // EVERY FIGURE SITS IN THE SAME LINE BOX, whatever size it
+                    // is drawn at — the promoted one's. Sizing the box to the
+                    // glyphs would drop a 20dp figure's baseline a few points
+                    // above its 26dp neighbour's, and two figures side by side
+                    // on two baselines is the raggedness this grid replaced,
+                    // reintroduced by the fix for it.
+                    lineHeight: FIGURE_BOX, letterSpacing: trackFigure(size),
                     marginTop: space.xxs, color: col ?? C.chalk,
                   }}
                 >
@@ -759,21 +899,29 @@ export default function AuroraWeekVerdict({
               t={t}
             />
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
 
-        {/* THE PAGE INDICATOR — workout-wrapped's, verbatim: 7dp dots, the
-            active one a 20dp chartreuse pill. Reused rather than re-drawn,
-            because five rails once drew five different tails. */}
+        {/* THE PAGE INDICATOR — workout-wrapped's geometry, verbatim: 7dp dots,
+            the active one a 20dp chartreuse pill. Reused rather than re-drawn,
+            because five rails once drew five different tails.
+            IT TRAVELS, because the card behind it does. The pill used to swap
+            at `onMomentumScrollEnd` — so a drag held halfway showed the card
+            two-thirds grown under an indicator still insisting it was on page
+            one, and the pill then popped from 7dp to 20dp with nothing under
+            the finger to explain it. Interpolated off the same offset, the pill
+            stretches and the hue crosses over as the page arrives, which is the
+            one thing an indicator is for: saying where the swipe HAS got to,
+            not where it ended up. */}
         <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginTop: 14 }}>
           {[0, 1].map((i) => (
-            <View
+            <Animated.View
               key={i}
               accessibilityElementsHidden
               importantForAccessibility="no-hide-descendants"
-              style={{
-                width: i === page ? 20 : 7, height: 7, borderRadius: RADIUS.pill,
-                backgroundColor: i === page ? C.lime : C.line,
-              }}
+              style={[
+                { height: 7, borderRadius: RADIUS.pill },
+                swipe ? swipe.dots[i] : { width: i === page ? 20 : 7, backgroundColor: i === page ? C.lime : C.line },
+              ]}
             />
           ))}
         </View>
