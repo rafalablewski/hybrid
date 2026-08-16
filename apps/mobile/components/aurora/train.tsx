@@ -9,7 +9,7 @@ import {
   type LoggedSession,
 
   ALPHA,} from "@hybrid/core";
-import { FUNNEL } from "@hybrid/core";
+import { FUNNEL, pluralForm } from "@hybrid/core";
 import { fetchSessions, fetchRoutines, type Routine } from "../../lib/api";
 import { useDraft } from "../../lib/draft";
 import { useLang } from "../../lib/i18n";
@@ -32,7 +32,7 @@ import type { AuroraIconName } from "@hybrid/core";
 export default function AuroraTrain() {
   const { palette: C } = useTheme();
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { draft, discard } = useDraft();
   const { session } = useSession();
   // AI-prescribed sessions are premium (paid) only — casual/guest are funnelled.
@@ -105,7 +105,7 @@ export default function AuroraTrain() {
             </PressScale>
           </View>
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{draft.title || "Session"}</Text>
-          <View style={{ marginTop: 2 }}><MetaLine parts={[`${draft.exercises.length} ${t("workout.exercises")}`, t("train.inProgress")]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
+          <View style={{ marginTop: 2 }}><MetaLine parts={[`${draft.exercises.length} ${t(`workout.exercises.${pluralForm(draft.exercises.length, lang)}`)}`, t("train.inProgress")]} textStyle={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }} /></View>
           <APill label={`▶  ${t("train.resume")}`} onPress={() => start("empty")} style={{ marginTop: 12 }} />
         </ACard>
       )}

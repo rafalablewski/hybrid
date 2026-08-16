@@ -330,7 +330,15 @@ export default function AuroraSportPage() {
       {!!m.markerPrompt && (
         <View style={dividerTop}>
           <DoorRow
-            title={t("w.train.sportPage.addRecord")}
+            // "Add a time we haven't measured" is right for a 5 km and wrong
+            // for four of the seven markers — a belt, a playing level and a
+            // redpoint grade are not times. A rung-bearing marker gets the
+            // record invitation; everything else is asked for by its own name.
+            title={
+              m.records.some((r) => r.promoted || r.time != null) || !m.markerAside
+                ? t("w.train.sportPage.addRecord")
+                : t("w.train.sportPage.setMarker").replace("{label}", m.markerPrompt.label)
+            }
             sub={m.markerPrompt.label}
             glyph="→"
             onPress={() => setDraft(m.primary.kind === "marker" ? m.primary.value : "")}

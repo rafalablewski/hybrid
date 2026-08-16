@@ -78,18 +78,26 @@ export default function AuroraSportStrength() {
     if (!name) router.replace("/sport");
   }, [name, router]);
 
-  useEffect(() => {
-    AsyncStorage.getItem(STORE_KEY)
-      .then((rawStore) => {
-        if (!rawStore) return;
-        const s = JSON.parse(rawStore) as SportStore | null;
-        if (s && typeof s === "object") {
-          setStore(s);
-          if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-        }
-      })
-      .catch(() => {});
-  }, []);
+  // ON FOCUS, for the same reason the sport page reads it on focus: both
+  // screens write the WHOLE `hybrid.sport` object, so a marker recorded on the
+  // page while this screen held a stale copy would be dropped the next time a
+  // level is picked here. One store, read by whichever screen is in front.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      AsyncStorage.getItem(STORE_KEY)
+        .then((rawStore) => {
+          if (!active || !rawStore) return;
+          const s = JSON.parse(rawStore) as SportStore | null;
+          if (s && typeof s === "object") {
+            setStore(s);
+            if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+          }
+        })
+        .catch(() => {});
+      return () => { active = false; };
+    }, []),
+  );
 
   const markers = useMemo(() => markerHistory(store, name), [store, name]);
   const m: SportPageModel = useMemo(

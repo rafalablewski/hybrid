@@ -285,8 +285,9 @@ export interface SportPageModel {
    * ladder, or have one with nothing on it yet.
    */
   records: SportRecord[];
-  /** True when the sport's typed marker is NOT one of the ladder's rungs (an
-   *  FTP in watts), so it needs its own line rather than filling a rung. */
+  /** True when the athlete HAS typed a marker and no rung is carrying it — an
+   *  FTP in watts, or a figure the ladder could not read as a time. The client
+   *  gives it its own line; false means a rung already states it. */
   markerAside: boolean;
   bests: SportBest[];
   /** Null for the 58 sports with no `sc` block — there is no strength to prescribe. */
@@ -441,7 +442,11 @@ export function sportRecords(
 
   // Oldest → newest, so a running best can name what it displaced.
   const chron = [...all].reverse();
-  const markerRung = ladder.find((r) => r.marker) ?? null;
+  // The ROAD ladder is SHARED, and its `marker: true` flag means "the rung this
+  // sport's sc.marker states". Marathon and Race Walking have no `sc` and no
+  // marker, so the flag is not about them — honouring it there would let a
+  // catalog fact from another sport decide this page's headline.
+  const markerRung = sport?.sc ? (ladder.find((r) => r.marker) ?? null) : null;
   // THE TYPED RUNG TAKES THE BEST TYPING, NOT THE LAST ONE. A rung is labelled
   // "Best 5 km"; reading the most recent entry would put 25:00 there the day
   // after a 22:41 was typed, which is the athlete's CURRENT figure and not
@@ -657,17 +662,23 @@ export function sportPageModel(
 
   /* ── the record ladder ── */
   const records = sportRecords(sport, all, opts.markers ?? [], distanceUnit, pacePer);
-  // The FTP case: a sport whose typed marker is not one of its rungs (watts is
-  // not a time at a distance) keeps the marker as its own line beside the
-  // ladder. Where the marker IS a rung — a 5 km, a 100 m — the rung states it,
-  // and printing the marker again above it would be the repetition this whole
-  // change removes.
-  const markerAside = sc != null && !(sport?.records ?? []).some((r) => r.marker);
 
   /* ── the one figure ── */
   const history = (opts.markers ?? []).filter((m) => m.value.trim().length > 0);
   const latest = history[history.length - 1] ?? null;
   const oldest = history[0] ?? null;
+
+  // A TYPED MARKER NO RUNG IS CARRYING needs a line of its own, and this has to
+  // be the RUNTIME fact rather than a catalog one. Two ways it happens:
+  //   • the marker is not a distance at all (Cycling's FTP, in watts), so the
+  //     catalog gives it no rung to fill;
+  //   • the marker IS a rung, but what was typed is not a clock ("sub 25") or a
+  //     logged effort beat it — either way `sportRecords` left the rung
+  //     measured, and the typed figure has nowhere else to go.
+  // Gating this on the catalog alone hid the athlete's own figure in the second
+  // case. Where a rung IS carrying it, printing it again above would be the
+  // repetition this whole change removes.
+  const markerAside = latest != null && !records.some((r) => r.typed);
   let primary: SportPrimary;
   if (sc && latest) {
     const d = oldest && oldest !== latest ? markerDelta(oldest.value, latest.value) : null;

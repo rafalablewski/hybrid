@@ -109,10 +109,18 @@ export default function AuroraHistory() {
   // `sportSessions` is the sport page's own narrowing (discipline tag for an
   // endurance sport, block name for a timed one), so the count on the door and
   // the list behind it are the same slice by construction, not by coincidence.
-  const sessions = useMemo(
-    () => (sportFilter ? sportSessions(q.data ?? [], sportFilter) : (q.data ?? [])),
-    [q.data, sportFilter],
-  );
+  //
+  // It SELECTS the rows and does not become them: that function also strips the
+  // non-matching blocks out of each session, which is right for an aggregate
+  // and wrong for a list — a brick session would summarise as the run alone and
+  // then open a detail with the ride in it too. So the ids come from the slice
+  // and the rows are the untouched sessions.
+  const sessions = useMemo(() => {
+    const all = q.data ?? [];
+    if (!sportFilter) return all;
+    const keep = new Set(sportSessions(all, sportFilter).map((s) => s.id));
+    return all.filter((s) => keep.has(s.id));
+  }, [q.data, sportFilter]);
   const loading = q.isPending;
   const refreshing = q.isFetching;
   useRefreshOnFocus(q.refetch);
@@ -336,7 +344,8 @@ function SwipeCard({ C, busy, actions, onPress, children }: {
   animateRef.current = animate;
   const pan = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
+      onMoveShouldSetPanResponder: (_, g) =>
+        revealRef.current > 0 && Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
       onPanResponderMove: (_, g) => {
         const base = openRef.current ? -revealRef.current : 0;
         tx.setValue(Math.min(0, rubberBand(base + g.dx, revealRef.current)));
@@ -345,7 +354,11 @@ function SwipeCard({ C, busy, actions, onPress, children }: {
         const base = openRef.current ? -revealRef.current : 0;
         // g.vx is px/ms; the shared rule is in px/s.
         const p = projectSwipe(base + g.dx, g.vx * 1000);
-        animateRef.current(p < -revealRef.current * swipe.openAt);
+        // With NO actions the reveal is 0, and `p < -0` is true for any
+        // leftward drag — the row would latch "open" with nothing behind it,
+        // fire a haptic, and swallow the next tap. A row with nothing to reveal
+        // cannot be open.
+        animateRef.current(revealRef.current > 0 && p < -revealRef.current * swipe.openAt);
       },
       onPanResponderTerminate: () => animateRef.current(openRef.current),
     }),

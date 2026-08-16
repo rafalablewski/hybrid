@@ -611,9 +611,50 @@ describe("the record ladder — a time at a distance", () => {
   });
 
   it("keeps a marker that is NOT a distance on its own line — FTP is watts", () => {
-    const m = sportPageModel("Cycling", [], { now: NOW });
+    const at = new Date(NOW - DAY).toISOString();
+    const m = sportPageModel("Cycling", [], { now: NOW, markers: [{ value: "240", at }] });
     expect(m.records).toHaveLength(3);
+    // Watts fill no rung, so the figure needs a line of its own.
     expect(m.markerAside).toBe(true);
+    // …and with nothing typed there is nothing to set aside.
+    expect(sportPageModel("Cycling", [], { now: NOW }).markerAside).toBe(false);
+  });
+
+  it("sets a typed figure aside when the ladder could not read it as a time", () => {
+    // "sub 25" is a marker on a rung-bearing sport that parses as no clock, so
+    // no rung carries it — without the aside the athlete's own figure would be
+    // rendered nowhere once a measured rung takes the headline.
+    const runs = [effort("a", "Parkrun", "running", 5, 5, 24)];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      markers: [{ value: "sub 25", at: new Date(NOW - DAY).toISOString() }],
+    });
+    expect(m.records.some((r) => r.typed)).toBe(false);
+    expect(m.markerAside).toBe(true);
+  });
+
+  it("does NOT set it aside when a rung is already carrying it", () => {
+    const m = sportPageModel("Running", [], {
+      now: NOW,
+      markers: [{ value: "22:41", at: new Date(NOW - DAY).toISOString() }],
+    });
+    expect(m.records.find((r) => r.km === 5)!.typed).toBe(true);
+    expect(m.markerAside).toBe(false);
+  });
+
+  it("does not let another sport's marker flag pick this page's headline", () => {
+    // Marathon shares the ROAD ladder, whose 5 km rung is flagged for RUNNING's
+    // marker. Marathon has no `sc` and no marker, so the flag is not about it.
+    // A 1 km AND a 5 km, so the two rules disagree: the marker rung is 5 km,
+    // the shortest SET rung is 1 km. Without that the test proves nothing.
+    const runs = [
+      effort("a", "Track 1 k", "running", 6, 1, 4),
+      effort("b", "Parkrun", "running", 12, 5, 24),
+    ];
+    // Running owns the 5 km marker, so it headlines the 5 km.
+    expect(sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.promoted)!.km).toBe(5);
+    // Marathon has no marker at all, so it falls to the shortest rung it has set.
+    expect(sportPageModel("Marathon", runs, { now: NOW }).records.find((r) => r.promoted)!.km).toBe(1);
   });
 
   it("promotes the shortest SET rung when the marker's own is still empty", () => {

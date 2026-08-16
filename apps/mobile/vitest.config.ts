@@ -47,6 +47,10 @@ export default defineConfig({
             "lib/native-face.test.ts",
             "lib/error-boundary-palette.test.ts",
             "lib/search-surfaces.test.ts",
+            // Scans every .tsx for t("literal") keys and checks the dictionary
+            // holds them — `t()` returns the key it cannot resolve, so a missing
+            // string is invisible to every other gate here.
+            "lib/i18n-keys.test.ts",
             "lib/event-pooling.test.ts",
             // Reads every .tsx on the phone as TEXT to count brace depth, so
             // it covers the whole app from inside the pure boundary.
