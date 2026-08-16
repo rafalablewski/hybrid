@@ -36,7 +36,9 @@ import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable }
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { APill, AuroraScreen, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
+import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
+import SportRecordsSheet from "./sport-records-sheet";
 import { DoorRow } from "./week-verdict";
 import { withAlpha } from "./field";
 
@@ -45,13 +47,23 @@ const STORE_KEY = "hybrid.sport";
 const PENDING_KEY = "hybrid.pendingSportSession";
 
 /**
- * THE SPORT PAGE (mobile) — the exact twin of
- * apps/web/components/aurora/sport-page.tsx.
+ * THE SPORT PAGE (mobile). There is no web twin any more — the user-facing web
+ * client was retired in Aug 2026 and apps/web keeps only the admin panel, so
+ * this file is the sport page, singular.
  *
- * Both clients render `sportPageModel()` from @hybrid/core and nothing else, so
- * neither can decide on its own that a sport has a pace, a distance or a
- * strength block: the catalog record decides, once, for both. The charts are
- * drawn by hand at the SAME geometry the web twin uses.
+ * It renders `sportPageModel()` from @hybrid/core and nothing else, which is
+ * still the load-bearing rule even with one client: the page cannot decide on
+ * its own that a sport has a pace, a distance, a record ladder or a strength
+ * pool. The catalog record decides, once, in core — which is what keeps 65
+ * sports from becoming 65 layouts, or one layout padded with metrics most of
+ * them do not have.
+ *
+ * THE SHAPE, top to bottom: the hero (the system’s, untouched), the record
+ * ladder’s promoted rung as the one figure, the rest of the ladder, the two
+ * charts — volume as bars and pace as a line, on the same eight buckets — the
+ * bests, the recent efforts and their door into History, and a door to the
+ * strength prescription. See design/sport-page-redesign.artifact.html for the
+ * teardown this came out of, and the capabilities entries it names.
  */
 export default function AuroraSportPage() {
   const { palette: C } = useTheme();
@@ -69,6 +81,8 @@ export default function AuroraSportPage() {
   const [store, setStore] = useState<SportStore | null>(null);
   const [levelIdx, setLevelIdx] = useState(0);
   const [draft, setDraft] = useState<string | null>(null);
+  /** The explainer behind the ladder's ⓘ — what counts as a record. */
+  const [rules, setRules] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -215,7 +229,20 @@ export default function AuroraSportPage() {
           The hero counts; the page states a performance. */}
       {headline ? (
         <View style={{ paddingTop: space.xxl, paddingBottom: space.lg }}>
-          <Text style={label()}>{t("w.train.sportPage.bestAt").replace("{d}", rungLabel(headline))}</Text>
+          {/* THE LADDER'S ⓘ. A record has rules an athlete would otherwise
+              discover by surprise (5.2 km counts as a 5 km; a 5 km inside a
+              long run does not), so the label row is a door to them. The whole
+              row is the target — a nano label beside a 13pt glyph is not one —
+              and the glyph IS a ring, so nothing is drawn around it. */}
+          <Pressable
+            onPress={() => setRules(true)}
+            accessibilityRole="button"
+            accessibilityLabel={t("w.train.sportPage.rulesTitle")}
+            style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+          >
+            <Text style={label()}>{t("w.train.sportPage.bestAt").replace("{d}", rungLabel(headline))}</Text>
+            <AuroraIcon name="info" size={12} color={C.ash} />
+          </Pressable>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: space.ms, marginTop: space.ms }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{headline.time}</Text>
             {!!headline.delta && (
@@ -453,6 +480,8 @@ export default function AuroraSportPage() {
           />
         </View>
       )}
+
+      <SportRecordsSheet visible={rules} onClose={() => setRules(false)} />
 
       {/* THE RECORD SHEET — the page's one writable thing, off the page. */}
       <Sheet

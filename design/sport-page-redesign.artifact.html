@@ -363,7 +363,7 @@ tr:last-child td{border-bottom:0}
 <div class="wrap">
 
 <header class="masthead">
-  <div class="kick"><b>HYBRID</b><span>Design draft — rev 2</span><span>Mobile</span><span>16 Aug 2026</span></div>
+  <div class="kick"><b>HYBRID</b><span>Rev 3 — built</span><span>Mobile</span><span>16 Aug 2026</span></div>
   <h1>The sport page,<br><em>reduced.</em></h1>
   <p class="stand">Every sport in the catalogue has a page, and the page has grown to eleven stacked
   sections of equal weight. This is a teardown and five first drafts, worked the way Jony Ive works a
@@ -371,14 +371,19 @@ tr:last-child td{border-bottom:0}
   Then one thing gets added — because it was the thing missing.</p>
 
   <div class="brief">
-    <div class="t">Rev 2 — what changed after review</div>
+    <div class="t">Rev 3 — what shipped</div>
     <ul>
-      <li><b>The hero stays exactly as it ships.</b> Every draft that moved the figure into the cover has
-      been withdrawn. The cover is the hero system's and it is not up for negotiation here.</li>
-      <li><b>Records are the new headline:</b> your best 5 km, 10 km and half — 100 m, 400 m and 1 500 m
-      in the pool — instead of the figure the page already printed twice.</li>
-      <li><b>Two charts, kept apart.</b> Volume stays bars, pace stays a line. They are not merged into
-      one frame; they are put on the same eight weeks so their captions stop disagreeing.</li>
+      <li><b>All of it is built and pushed</b> except one deliberate hold. 3 416 core tests pass, the
+      mobile suite and typecheck pass, and the iOS bundle exports clean. Nothing here has been on a
+      device yet — the charts and the new screen want a TestFlight round.</li>
+      <li><b>The hero ships exactly as it was.</b> Every draft that moved the figure into the cover was
+      withdrawn before any code was written.</li>
+      <li><b>Records are in</b> — best 5 km, 10 km and half; 100 m, 400 m and 1 500 m in the pool; 2 k on
+      the erg. Section 04 is the rule the code actually implements, not a proposal.</li>
+      <li><b>The two charts stayed two.</b> Volume is bars, pace is a line. The one piece held back is
+      folding the intensity mix into the bars' fill — three densities of chartreuse in a 104dp bar is a
+      daylight question, not a simulator one, so it waits for a device (capability
+      <code class="f">sport-volume-intensity-fill</code>).</li>
     </ul>
   </div>
 
@@ -388,7 +393,7 @@ tr:last-child td{border-bottom:0}
     <div><dt>Sections today</dt><dd>11</dd></div>
     <div><dt>Sections proposed</dt><dd>6 + 1 pushed screen</dd></div>
     <div><dt>Hero</dt><dd>Untouched</dd></div>
-    <div><dt>Status</dt><dd>Drafts — nothing shipped</dd></div>
+    <div><dt>Status</dt><dd>Built, not device-tested</dd></div>
   </dl>
 </header>
 
@@ -1477,10 +1482,722 @@ tr:last-child td{border-bottom:0}
 
 <!-- ══ 8. COST ════════════════════════════════════════════════════════ -->
 <section id="cost">
-  <div class="sechead"><h2>What it costs to build</h2><span class="n">08 — Engineering</span></div>
-  <p class="lede">Honest accounting. Everything except the record ladder is deletion and re-arrangement of
-  figures the model already computes; the ladder is the one genuinely new piece of product. Nothing here
-  needs a migration or a new endpoint.</p>
+  <div class="sechead"><h2>What it cost to build</h2><span class="n">08 — Shipped</span></div>
+  <p class="lede">Honest accounting, after the fact. Everything except the record ladder was deletion and
+  re-arrangement of figures the model already computed; the ladder was the one genuinely new piece of
+  product. No migration, no new endpoint, no schema change — as predicted, and worth saying because that
+  prediction is the kind that is usually wrong.</p>
+  <p class="lede"><b>Mobile only.</b> The web twin this page was once built against no longer exists —
+  <code class="f">apps/web/components/aurora/</code> is down to three files and none of them is a sport
+  page. Every row below is one client plus core. (The mobile file's own header still describes itself as
+  "the exact twin of apps/web/components/aurora/sport-page.tsx"; that comment goes with the first commit
+  that touches it.)</p>
+
+  <div class="tbl">
+    <table>
+      <thead><tr><th>Change</th><th>Where</th><th>What it turned out to be</th><th>State</th></tr></thead>
+      <tbody>
+        <tr><td class="no">Not done</td><td><code>hero.ts</code>, <code>aurora/hero.tsx</code></td>
+          <td><b>The hero is untouched.</b> No new rank, no cover variant, no change to the meta line. Not a single line of the hero system is in the diff.</td>
+          <td class="no">held</td></tr>
+        <tr><td><b>Benchmark distances</b></td><td><code>olympic-sports.ts</code></td>
+          <td>One optional field, <code>SportBenchmark[]</code> in km, plus the rung the marker states. Eight sports carry one: the road ladder shared by Running and Marathon, the pool, the erg, and four singles. <b>Mountain Biking deliberately has none</b> — no conventional distance exists, and a ladder of invented rungs is the fabricated metric the catalogue exists to prevent.</td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b><code>sportRecords()</code></b></td><td><code>sport-page.ts</code></td>
+          <td>One pass over the efforts already in the model. The band, the chronological walk for the delta, the typed-marker fallback. Needed one new formatter — <code>clock()</code> in format.ts — because <code>mmss</code> renders a 1 h 52 half marathon as "112:10". <b>14 tests.</b></td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b>The ladder, on the page</b></td><td><code>aurora/sport-page.tsx</code></td>
+          <td>Promoted rung large, the rest on hairlines, unset rungs as invitations, the typing door. The headline block and the totals row deleted with it.</td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b><code>SportTotal</code> retired</b></td><td><code>sport-page.ts</code></td>
+          <td>Went further than planned. The row's model type had no consumer left, and a model whose discipline is "no figure without a consumer" cannot keep a dead one. The duration-formatting regressions it pinned were repointed onto the figures that still render.</td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b>Explainer sheet</b></td><td><code>aurora/sport-records-sheet.tsx</code></td>
+          <td>The band rule, the no-splits limit and the typed-vs-measured rule, in the athlete's words. It reads <code>RECORD_BAND</code> itself, so the sentence cannot drift from the rule it describes. EN, PL, DE.</td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b>B1 — the pace axis date</b></td><td><code>sport-page.tsx</code></td>
+          <td>Reads <code>m.pace.weekStarts[0]</code>. Two lines, exactly as scoped.</td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b>Bests on hairlines</b></td><td><code>aurora/sport-page.tsx</code></td>
+          <td>Rail and card chrome deleted; three rows on the page's own divider. <code>fastest</code> retired from <code>SportBest</code> — the ladder states pace per rung, so every sport now states best pace exactly once.</td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b>Door to History</b></td><td><code>sport-page.tsx</code> + <code>history.tsx</code></td>
+          <td><b>Grew beyond the plan, correctly.</b> History ignored a sport param, so the door would have promised "all 34 efforts" and shown everything. It filters now, through the <em>same</em> <code>sportSessions()</code> slice the page uses, so the count and the list cannot disagree. A filtered History renders as the plain list — the merged layouts would draw plan ghosts for the days the filter just removed.</td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b>Strength that carries</b></td><td><code>app/sport-strength.tsx</code> + component</td>
+          <td>Transfer, pool and level moved wholesale; rationale merged into its block; the demands' width and opacity ramps deleted; locked lifts behind one bare ＋. Its dock takes <code>startTransfer()</code> unchanged, and it shares the sport page's <code>hybrid.sport</code> store, so the level is one setting rather than two.</td>
+          <td class="yes">shipped</td></tr>
+        <tr><td><b>Intensity in the volume fill</b></td><td>—</td>
+          <td>The one hold. <code>paceEffortSplit</code> per bucket is easy; three densities of chartreuse stacked in a 104dp bar is a daylight question a simulator cannot answer. Plain bars and the split strip stay until a device says otherwise.</td>
+          <td>deferred</td></tr>
+        <tr><td><b>Records from inside a longer effort</b></td><td>—</td>
+          <td>Blocked on data, not effort: import HealthKit lap events or routes and the same rungs get segment accuracy with no change to the block's shape. Recorded as <code>sport-records-segments</code>.</td>
+          <td>planned</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══ 5. THE DRAFTS ══════════════════════════════════════════════════ -->
+<section id="drafts">
+  <div class="sechead"><h2>Five first drafts</h2><span class="n">05 — Directions</span></div>
+  <p class="lede">Each one is a different amount of nerve, from a safe re-material to a page that is almost
+  entirely doors. Every one of them leaves the hero alone. They are not mutually exclusive — the
+  recommendation that follows is a specific combination, and it says which parts it took.</p>
+
+  <div class="gal">
+
+    <!-- 01 THE LEDGER -->
+    <div class="spec">
+      <div class="cap">
+        <div class="n"><i>01</i>The Ledger</div>
+        <h3>One material, all the way down</h3>
+        <p>The smallest possible change: keep every section, delete every card. Bests become hairline rows
+        like the totals already are, and the spark goes. <b>Nothing moves; the page just stops having two
+        opinions about what a figure looks like.</b></p>
+        <div class="tr">
+          <span class="g">Gains — consistency, ~180pt shorter, one-file diff</span>
+          <span class="c">Costs — still eleven sections, still two CTAs, still no 5 km</span>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="scroll" style="max-height:540px">
+          <div class="cover short">
+            <div class="heroguard"><span>hero as shipped</span></div>
+            <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+            <div class="cvbody"><div class="eyebrow">Athletics – Endurance</div>
+              <div class="ctitle sm">Running</div>
+              <div class="cmeta">34 efforts – 284.6 km – since Mar 2025</div></div>
+          </div>
+          <div class="pad">
+            <div class="figrow" style="padding-top:20px">
+              <div><div class="figlbl">Best pace</div>
+                <div class="figval"><span class="v">4:32</span><span class="u">/km</span></div></div>
+            </div>
+            <div class="totals">
+              <div><div class="v">34</div><div class="k">Efforts</div></div>
+              <div><div class="v">284.6</div><div class="k">Kilometres</div></div>
+              <div><div class="v">18.4</div><div class="k">This week</div></div>
+            </div>
+            <div class="sec">
+              <div class="shead"><h4>Bests</h4><span class="meta">All time</span></div>
+              <div class="brow"><span class="k">Fastest</span>
+                <span class="r"><span class="v">4:32</span><span class="u">/km</span></span><span class="d">28 Jul</span></div>
+              <div class="brow"><span class="k">Longest</span>
+                <span class="r"><span class="v">21.1</span><span class="u">km</span></span><span class="d">6 Jul</span></div>
+              <div class="brow"><span class="k">Longest session</span>
+                <span class="r"><span class="v">1h 52m</span></span><span class="d">6 Jul</span></div>
+              <div class="brow"><span class="k">Biggest week</span>
+                <span class="r"><span class="v">31.2</span><span class="u">km</span></span><span class="d">28 Jul</span></div>
+            </div>
+            <div class="sec" style="padding-bottom:10px">
+              <div class="shead"><h4>Recent efforts</h4><span class="meta">Last 3</span></div>
+              <div class="erow"><div><div class="n">Long run</div><div class="sub"><span>3d ago</span><span class="watch">Apple Watch</span></div></div>
+                <div><div class="fig">18.4 km</div><div class="p">5:12 /km</div></div></div>
+              <div class="erow"><div><div class="n">Threshold</div><div class="sub"><span>6d ago</span><span class="watch">Apple Watch</span></div></div>
+                <div><div class="fig">8.0 km</div><div class="p">4:41 /km</div></div></div>
+            </div>
+          </div>
+        </div>
+        <div class="dock"><div class="pill">Log Running session</div></div>
+      </div>
+    </div>
+
+    <!-- 02 TWO CHARTS, ONE AXIS -->
+    <div class="spec">
+      <div class="cap">
+        <div class="n"><i>02</i>Two Charts, One Axis</div>
+        <h3>Kept apart, put in register</h3>
+        <p>Volume is bars. Pace is a line. They stay two sections with two grammars — but on the
+        <b>same eight buckets</b>, so a week with nothing paced draws a gap rather than being deleted from
+        the series. The effort split stops being a third section and becomes the bars' own fill.</p>
+        <div class="tr">
+          <span class="g">Gains — captions agree, defect fixed, one section deleted</span>
+          <span class="c">Costs — the split has to be computed per week, not per slice</span>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="scroll" style="max-height:540px">
+          <div class="cover short">
+            <div class="heroguard"><span>hero as shipped</span></div>
+            <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+            <div class="cvbody"><div class="eyebrow">Athletics – Endurance</div>
+              <div class="ctitle sm">Running</div>
+              <div class="cmeta">34 efforts – 284.6 km – since Mar 2025</div></div>
+          </div>
+          <div class="pad">
+            <div class="sec">
+              <div class="shead"><h4>Volume</h4><span class="meta">8 weeks – avg 20.6 km</span></div>
+              <div class="sbars">
+                <div class="avg" style="bottom:66px"></div>
+                <div class="sb"><i class="hard" style="height:6px"></i><i class="steady" style="height:11px"></i><i class="easy" style="height:30px"></i></div>
+                <div class="sb"><i class="hard" style="height:9px"></i><i class="steady" style="height:18px"></i><i class="easy" style="height:48px"></i></div>
+                <div class="sb"><i class="steady" style="height:14px"></i><i class="easy" style="height:46px"></i></div>
+                <div class="sb"><i class="hard" style="height:13px"></i><i class="steady" style="height:22px"></i><i class="easy" style="height:53px"></i></div>
+                <div class="sb void"><i style="height:3px"></i></div>
+                <div class="sb"><i class="hard" style="height:10px"></i><i class="steady" style="height:20px"></i><i class="easy" style="height:50px"></i></div>
+                <div class="sb"><i class="hard" style="height:16px"></i><i class="steady" style="height:28px"></i><i class="easy" style="height:60px"></i></div>
+                <div class="sb"><i class="hard" style="height:8px"></i><i class="steady" style="height:15px"></i><i class="easy" style="height:38px"></i></div>
+              </div>
+              <div class="axis"><span>22 Jun</span><span>This week</span></div>
+              <div class="legend">
+                <div><i style="background:#c6f84f42"></i>Easy <span class="pv">58%</span></div>
+                <div><i style="background:#c6f84fad"></i>Steady <span class="pv">27%</span></div>
+                <div><i style="background:#c6f84f"></i>Hard <span class="pv">15%</span></div>
+              </div>
+            </div>
+            <div class="sec" style="padding-bottom:12px">
+              <div class="shead"><h4>Pace</h4><span class="meta">Same 8 weeks – /km</span></div>
+              <div class="duo">
+                <div><div class="v">4:51</div><div class="k">Average</div></div>
+                <div><div class="v">4:32</div><div class="k">Best</div></div>
+              </div>
+              <div class="lane" style="height:88px">
+                <svg viewBox="0 0 326 88" preserveAspectRatio="none" aria-hidden="true">
+                  <defs><linearGradient id="pf2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#c6f84f" stop-opacity=".2"/>
+                    <stop offset="1" stop-color="#c6f84f" stop-opacity="0"/>
+                  </linearGradient></defs>
+                  <path d="M20 62 L61 48 L102 53 L143 34 L143 88 L20 88 Z" fill="url(#pf2)"/>
+                  <path d="M184 40 L225 45 L266 14 L306 26 L306 88 L184 88 Z" fill="url(#pf2)"/>
+                  <path d="M20 62 L61 48 L102 53 L143 34" fill="none" stroke="#c6f84f" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                  <path d="M184 40 L225 45 L266 14 L306 26" fill="none" stroke="#c6f84f" stroke-width="2.2"
+                        stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                  <circle cx="266" cy="14" r="4" fill="#c6f84f" stroke="#0c0d0c" stroke-width="2"/>
+                </svg>
+              </div>
+              <div class="axis"><span>22 Jun</span><span>Faster is higher</span></div>
+              <div class="gapnote"><i></i>Week of 20 Jul — nothing paced logged</div>
+            </div>
+          </div>
+        </div>
+        <div class="dock"><div class="pill">Log Running session</div></div>
+      </div>
+    </div>
+
+    <!-- 03 THE RECORD LADDER -->
+    <div class="spec">
+      <div class="cap">
+        <div class="n rec"><i>03</i>The Record Ladder</div>
+        <h3>What you run five kilometres in</h3>
+        <p>The headline slot stops repeating the hero and becomes the ladder: the big rung in full, the
+        rest on hairlines, an empty rung shown as an <b>invitation rather than a blank</b>. Provenance on
+        every row — a watch measured it, or you typed it, and it never looks the same.</p>
+        <div class="tr">
+          <span class="g">Gains — the number athletes actually quote, at last</span>
+          <span class="c">Costs — a catalogue field, a model addition, an explainer sheet</span>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="scroll" style="max-height:540px">
+          <div class="cover short">
+            <div class="heroguard"><span>hero as shipped</span></div>
+            <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+            <div class="cvbody"><div class="eyebrow">Athletics – Endurance</div>
+              <div class="ctitle sm">Running</div>
+              <div class="cmeta">34 efforts – 284.6 km – since Mar 2025</div></div>
+          </div>
+          <div class="pad">
+            <div class="recmain">
+              <div class="lbl">Best 5 km</div>
+              <div class="val"><span class="v">22:41</span><span class="d">−1:12</span></div>
+              <div class="sub"><span>4:32 /km</span><span>28 Jul</span><span class="watch">Apple Watch</span></div>
+            </div>
+            <div class="rrow"><span class="k">1 km</span><span class="t">4:02</span>
+              <span class="r"><span>12 Jul</span><span class="watch">⌚</span></span></div>
+            <div class="rrow"><span class="k">10 km</span><span class="t">48:20<small>4:50 /km</small></span>
+              <span class="r"><span>6 Jul</span><span class="watch">⌚</span></span></div>
+            <div class="rrow"><span class="k">Half</span><span class="t">1:52:10<small>5:19 /km</small></span>
+              <span class="r"><span>6 Jul</span><span class="watch">⌚</span></span></div>
+            <div class="rrow none"><span class="k">Marathon</span><span class="t">Run one and it lands here</span>
+              <span class="r"></span></div>
+            <div class="door"><span class="g">→</span>
+              <span class="t"><b>Add a time we haven't measured</b><span>a race, a track session, a pool time</span></span>
+              <span class="c">›</span></div>
+            <div style="height:14px"></div>
+          </div>
+        </div>
+        <div class="dock"><div class="pill">Log Running session</div></div>
+      </div>
+    </div>
+
+    <!-- 04 TWO TENSES -->
+    <div class="spec">
+      <div class="cap">
+        <div class="n"><i>04</i>Two Tenses</div>
+        <h3>Record and Work, on one switch</h3>
+        <p>Keeps everything, but stops interleaving it. A segmented control under the hero splits the past
+        from the future, and <b>the dock pill's label follows the segment</b> — so there is never more than
+        one chartreuse action on screen, and the strength work keeps its depth without leaving the page.</p>
+        <div class="tr">
+          <span class="g">Gains — no content lost, single action, halves the scroll</span>
+          <span class="c">Costs — a tab inside a pushed screen; state to remember</span>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="scroll" style="max-height:540px">
+          <div class="cover short">
+            <div class="heroguard"><span>hero as shipped</span></div>
+            <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+            <div class="cvbody"><div class="eyebrow">Athletics – Endurance</div>
+              <div class="ctitle sm">Running</div>
+              <div class="cmeta">34 efforts – 284.6 km – since Mar 2025</div></div>
+          </div>
+          <div class="pad">
+            <div style="display:flex;gap:6px;margin-top:16px">
+              <div style="flex:1;text-align:center;padding:11px 0;border-radius:999px;background:var(--acc);color:var(--onAcc);font:700 10.5px/1 var(--mono);letter-spacing:.16em">RECORD</div>
+              <div style="flex:1;text-align:center;padding:11px 0;border-radius:999px;border:1px solid var(--line);color:var(--ash);font:700 10.5px/1 var(--mono);letter-spacing:.16em">WORK</div>
+            </div>
+            <div class="recmain" style="padding-top:20px">
+              <div class="lbl">Best 5 km</div>
+              <div class="val"><span class="v" style="font-size:40px">22:41</span><span class="d">−1:12</span></div>
+              <div class="sub"><span>4:32 /km</span><span>28 Jul</span><span class="watch">Apple Watch</span></div>
+            </div>
+            <div class="sec" style="padding-top:8px">
+              <div class="shead"><h4>Volume</h4><span class="meta">8 weeks</span></div>
+              <div class="bars" style="height:80px">
+                <div class="avg" style="bottom:50px"></div>
+                <div class="b" style="height:36px"></div><div class="b" style="height:58px"></div>
+                <div class="b" style="height:46px"></div><div class="b" style="height:67px"></div>
+                <div class="b" style="height:25px"></div><div class="b" style="height:61px"></div>
+                <div class="b" style="height:80px"></div><div class="b now" style="height:47px"></div>
+              </div>
+              <div class="axis"><span>22 Jun</span><span>This week</span></div>
+            </div>
+            <div style="height:16px"></div>
+          </div>
+        </div>
+        <div class="dock"><div class="pill">Log Running session</div></div>
+      </div>
+    </div>
+
+    <!-- 05 DOORS -->
+    <div class="spec">
+      <div class="cap">
+        <div class="n"><i>05</i>Doors</div>
+        <h3>The page is an index</h3>
+        <p>The most severe cut. The big record, one chart, then four doors. Every subject that used to be a
+        section becomes a destination with room to be good. <b>The whole page fits on one screen</b> — but
+        it also puts a tap between the athlete and numbers they used to see at a glance.</p>
+        <div class="tr">
+          <span class="g">Gains — no scroll, every subject gets a real screen</span>
+          <span class="c">Costs — four new screens; a glance becomes a navigation</span>
+        </div>
+      </div>
+      <div class="phone">
+        <div class="scroll" style="max-height:540px">
+          <div class="cover short">
+            <div class="heroguard"><span>hero as shipped</span></div>
+            <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+            <div class="cvbody"><div class="eyebrow">Athletics – Endurance</div>
+              <div class="ctitle sm">Running</div>
+              <div class="cmeta">34 efforts – 284.6 km – since Mar 2025</div></div>
+          </div>
+          <div class="pad">
+            <div class="recmain" style="padding:20px 0 16px">
+              <div class="lbl">Best 5 km</div>
+              <div class="val"><span class="v" style="font-size:40px">22:41</span><span class="d">−1:12</span></div>
+              <div class="sub"><span>4:32 /km</span><span>28 Jul</span><span class="watch">Apple Watch</span></div>
+            </div>
+            <div class="bars" style="height:64px">
+              <div class="b" style="height:29px"></div><div class="b" style="height:46px"></div>
+              <div class="b" style="height:37px"></div><div class="b" style="height:54px"></div>
+              <div class="b" style="height:20px"></div><div class="b" style="height:49px"></div>
+              <div class="b" style="height:64px"></div><div class="b now" style="height:37px"></div>
+            </div>
+            <div class="axis"><span>8 weeks – avg 20.6 km</span><span>18.4 this week</span></div>
+            <div style="margin-top:16px">
+              <div class="door"><span class="g">→</span><span class="t"><b>All records</b><span>1 km, 10 km, half – 4 of 5 set</span></span><span class="c">›</span></div>
+              <div class="door"><span class="g">→</span><span class="t"><b>Pace and effort</b><span>4:51 average – 58% easy</span></span><span class="c">›</span></div>
+              <div class="door"><span class="g">→</span><span class="t"><b>All 34 efforts</b><span>284.6 km since Mar 2025</span></span><span class="c">›</span></div>
+              <div class="door"><span class="g">→</span><span class="t"><b>Strength that carries</b><span>3 lifts at Beginner</span></span><span class="c">›</span></div>
+            </div>
+            <div style="height:12px"></div>
+          </div>
+        </div>
+        <div class="dock"><div class="pill">Log Running session</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ 6. RECOMMENDATION ══════════════════════════════════════════════ -->
+<section id="rec">
+  <div class="sechead"><h2>What I would build</h2><span class="n">06 — Recommended</span></div>
+  <p class="lede">Draft 03's record ladder, draft 02's two registered charts, draft 01's one material, and
+  one of draft 05's doors — the one that carries the future tense out of the page. The hero is exactly
+  what ships today. Six sections, one action, and a second screen that finally has room to be a
+  prescription.</p>
+  <p class="lede">Draft 04's switch is the runner-up and the fallback: if pushing the strength work proves
+  a tap too far in testing, the segment brings it back without reopening any other decision.</p>
+
+  <div class="annoted">
+    <div class="phone">
+      <div class="scroll" style="max-height:720px">
+        <div class="cover">
+          <div class="heroguard"><span>unchanged</span></div>
+          <svg class="mark" viewBox="0 0 72 72" fill="none" stroke="#c6f84f" stroke-width="2.2"
+               stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M40 14a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/>
+            <path d="M36 20 24 27l4 11-8 14M36 20l9 5 3 11M28 38l14 4 6 16M20 30l-8 4"/>
+          </svg>
+          <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+          <div class="cvbody">
+            <div class="eyebrow">Athletics – Endurance</div>
+            <div class="ctitle">Running</div>
+            <div class="cmeta">34 efforts – 284.6 km – since Mar 2025</div>
+          </div>
+        </div>
+        <div class="pad">
+
+          <div class="recmain">
+            <div class="lbl">Best 5 km</div>
+            <div class="val"><span class="v">22:41</span><span class="d">−1:12</span></div>
+            <div class="sub"><span>4:32 /km</span><span>28 Jul</span><span class="watch">Apple Watch</span></div>
+          </div>
+          <div class="rrow"><span class="k">1 km</span><span class="t">4:02</span>
+            <span class="r"><span>12 Jul</span><span class="watch">⌚</span></span></div>
+          <div class="rrow"><span class="k">10 km</span><span class="t">48:20<small>4:50 /km</small></span>
+            <span class="r"><span>6 Jul</span><span class="watch">⌚</span></span></div>
+          <div class="rrow"><span class="k">Half</span><span class="t">1:52:10<small>5:19 /km</small></span>
+            <span class="r"><span>6 Jul</span><span class="watch">⌚</span></span></div>
+          <div class="rrow none"><span class="k">Marathon</span><span class="t">Run one and it lands here</span>
+            <span class="r"></span></div>
+          <div class="door"><span class="g">→</span>
+            <span class="t"><b>Add a time we haven't measured</b><span>a race, a track session, a pool time</span></span>
+            <span class="c">›</span></div>
+
+          <div class="sec">
+            <div class="shead"><h4>Volume</h4><span class="meta">8 weeks – avg 20.6 km</span></div>
+            <div class="sbars">
+              <div class="avg" style="bottom:66px"></div>
+              <div class="sb"><i class="hard" style="height:6px"></i><i class="steady" style="height:11px"></i><i class="easy" style="height:30px"></i></div>
+              <div class="sb"><i class="hard" style="height:9px"></i><i class="steady" style="height:18px"></i><i class="easy" style="height:48px"></i></div>
+              <div class="sb"><i class="steady" style="height:14px"></i><i class="easy" style="height:46px"></i></div>
+              <div class="sb"><i class="hard" style="height:13px"></i><i class="steady" style="height:22px"></i><i class="easy" style="height:53px"></i></div>
+              <div class="sb void"><i style="height:3px"></i></div>
+              <div class="sb"><i class="hard" style="height:10px"></i><i class="steady" style="height:20px"></i><i class="easy" style="height:50px"></i></div>
+              <div class="sb"><i class="hard" style="height:16px"></i><i class="steady" style="height:28px"></i><i class="easy" style="height:60px"></i></div>
+              <div class="sb"><i class="hard" style="height:8px"></i><i class="steady" style="height:15px"></i><i class="easy" style="height:38px"></i></div>
+            </div>
+            <div class="axis"><span>22 Jun</span><span>This week – 18.4 km</span></div>
+            <div class="legend">
+              <div><i style="background:#c6f84f42"></i>Easy <span class="pv">58%</span></div>
+              <div><i style="background:#c6f84fad"></i>Steady <span class="pv">27%</span></div>
+              <div><i style="background:#c6f84f"></i>Hard <span class="pv">15%</span></div>
+            </div>
+          </div>
+
+          <div class="sec">
+            <div class="shead"><h4>Pace</h4><span class="meta">Same 8 weeks – /km</span></div>
+            <div class="duo">
+              <div><div class="v">4:51</div><div class="k">Average</div></div>
+              <div><div class="v">4:32</div><div class="k">Best</div></div>
+            </div>
+            <div class="lane" style="height:92px">
+              <svg viewBox="0 0 326 92" preserveAspectRatio="none" aria-hidden="true">
+                <defs><linearGradient id="pf3" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0" stop-color="#c6f84f" stop-opacity=".2"/>
+                  <stop offset="1" stop-color="#c6f84f" stop-opacity="0"/>
+                </linearGradient></defs>
+                <path d="M20 64 L61 50 L102 55 L143 36 L143 92 L20 92 Z" fill="url(#pf3)"/>
+                <path d="M184 42 L225 47 L266 15 L306 27 L306 92 L184 92 Z" fill="url(#pf3)"/>
+                <path d="M20 64 L61 50 L102 55 L143 36" fill="none" stroke="#c6f84f" stroke-width="2.2"
+                      stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                <path d="M184 42 L225 47 L266 15 L306 27" fill="none" stroke="#c6f84f" stroke-width="2.2"
+                      stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+                <circle cx="266" cy="15" r="4" fill="#c6f84f" stroke="#0c0d0c" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="axis"><span>22 Jun</span><span>Faster is higher</span></div>
+            <div class="gapnote"><i></i>Week of 20 Jul — nothing paced logged</div>
+          </div>
+
+          <div class="sec">
+            <div class="shead"><h4>Bests</h4><span class="meta">All time</span></div>
+            <div class="brow"><span class="k">Longest run</span>
+              <span class="r"><span class="v">21.1</span><span class="u">km</span></span><span class="d">6 Jul</span></div>
+            <div class="brow"><span class="k">Longest session</span>
+              <span class="r"><span class="v">1h 52m</span></span><span class="d">6 Jul</span></div>
+            <div class="brow"><span class="k">Biggest week</span>
+              <span class="r"><span class="v">31.2</span><span class="u">km</span></span><span class="d">28 Jul</span></div>
+          </div>
+
+          <div class="sec">
+            <div class="shead"><h4>Recent efforts</h4><span class="meta">34 logged</span></div>
+            <div class="erow"><div><div class="n">Long run</div><div class="sub"><span>3d ago</span><span class="watch">Apple Watch</span></div></div>
+              <div><div class="fig">18.4 km</div><div class="p">5:12 /km</div></div></div>
+            <div class="erow"><div><div class="n">Threshold</div><div class="sub"><span>6d ago</span><span class="watch">Apple Watch</span><span class="pr">5 km PB</span></div></div>
+              <div><div class="fig">8.0 km</div><div class="p">4:41 /km</div></div></div>
+            <div class="erow"><div><div class="n">Easy shakeout</div><div class="sub"><span>8d ago</span><span class="typed">Typed</span></div></div>
+              <div><div class="fig">6.2 km</div><div class="p">5:38 /km</div></div></div>
+            <div class="door"><span class="g">→</span><span class="t"><b>All 34 efforts</b><span>in History</span></span><span class="c">›</span></div>
+          </div>
+
+          <div class="sec" style="padding-bottom:12px">
+            <div class="door">
+              <span class="g">→</span>
+              <span class="t"><b>Strength that carries</b><span>3 lifts for Running – Beginner</span></span>
+              <span class="c">›</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dock"><div class="pill">Log Running session</div></div>
+    </div>
+
+    <div class="notes">
+      <div class="note hold"><div class="h"><i>A</i><b>The hero, as it ships</b></div>
+        <p>Same art, same rail, same 33px title, same count line, same Beginner accessory, same collapse.
+        <b>Nothing in this draft touches the hero system.</b> Everything below it changes so that the
+        hero's counts are the only place those counts appear.</p></div>
+      <div class="note"><div class="h"><i>B</i><b>The big rung, then the ladder</b></div>
+        <p>The sport's marker distance takes the 46px figure with its delta and its provenance; the rest
+        are hairline rows. <b>An unset rung is an invitation, not a dash</b> — "Run one and it lands here"
+        is a page that knows what you are working towards.</p></div>
+      <div class="note"><div class="h"><i>C</i><b>Typing is a door, not a field</b></div>
+        <p>The one writable thing is a door row at the end of the ladder and it opens a sheet. The reading
+        page never summons a keyboard, and the door earns its ring because it goes somewhere.</p></div>
+      <div class="note"><div class="h"><i>D</i><b>Volume — bars, with the effort in the fill</b></div>
+        <p>Height is the week's distance, the fill is that week's easy/steady/hard mix in one hue at three
+        densities. A whole section deleted and the bars say more.
+        <b>Fallback if the stack tests badly:</b> plain bars and keep the split strip — the rest of the
+        redesign does not depend on it.</p></div>
+      <div class="note"><div class="h"><i>E</i><b>Pace — still its own line, now in register</b></div>
+        <p>Separate section, separate grammar, same eight columns. <b>The break is a real week with
+        nothing paced in it</b> — today that week is deleted from the series and the axis is captioned
+        with someone else's date.</p></div>
+      <div class="note"><div class="h"><i>F</i><b>Bests keep only what a record is not</b></div>
+        <p>Fastest pace left with the ladder, which states it per distance. What remains are the three
+        maxima a ladder cannot express — longest run, longest session, biggest week — on the page's own
+        hairlines.</p></div>
+      <div class="note"><div class="h"><i>G</i><b>An effort that set a record says so</b></div>
+        <p>The one place chartreuse appears in the efforts list: the session that owns a rung. It ties the
+        ladder back to the log without a second list.</p></div>
+      <div class="note"><div class="h"><i>H</i><b>One dock, one verb</b></div>
+        <p>The only chartreuse pill on the record page logs a session. The prescription's action lives with
+        the prescription, one push away.</p></div>
+    </div>
+  </div>
+
+  <p class="lede" style="margin-top:72px"><b>The pushed screen.</b> Everything cut from the record, given a
+  place where it is the subject rather than the ninth section — and where its start button is the dock,
+  not a second pill competing with one.</p>
+
+  <div class="annoted">
+    <div class="phone">
+      <div class="scroll" style="max-height:620px">
+        <div class="cover short" style="min-height:126px">
+          <div class="crail"><span class="nav">←</span><span class="acc">Running</span></div>
+          <div class="cvbody">
+            <div class="eyebrow">Endurance – 6 in the pool</div>
+            <div class="ctitle sm">Strength that carries</div>
+          </div>
+        </div>
+        <div class="pad">
+          <div class="sec" style="padding-top:18px">
+            <div class="levels"><div class="on">BEGINNER</div><div>INTERM.</div><div>ADV.</div><div>ELITE</div></div>
+          </div>
+          <div class="sec" style="padding-top:6px">
+            <div class="shead"><h4>What running asks for</h4><span class="meta">Ranked</span></div>
+            <div class="dem"><span class="i">1</span><span class="t">Unilateral leg strength</span></div>
+            <div class="dem"><span class="i">2</span><span class="t">Posterior chain</span></div>
+            <div class="dem"><span class="i">3</span><span class="t">Ankle/tendon stiffness</span></div>
+            <div class="dem"><span class="i">4</span><span class="t">Running economy</span></div>
+          </div>
+          <div class="sec">
+            <div class="shead"><h4>Today's session</h4><span class="meta">From your lifts</span></div>
+            <div class="blk">
+              <div><div class="n">Bulgarian Split Squat</div><div class="d">Unilateral leg strength</div>
+                <div class="d" style="color:var(--dim);margin-top:6px">Fixes left-right imbalance — the #1 cause of running injury.</div></div>
+              <div style="text-align:right"><span class="s">3 × 8</span><div class="lb">70% of your split squat</div></div>
+            </div>
+            <div class="blk">
+              <div><div class="n">Romanian Deadlift</div><div class="d">Posterior chain</div>
+                <div class="d" style="color:var(--dim);margin-top:6px">Stronger hamstrings and glutes drive a more powerful stride.</div></div>
+              <div style="text-align:right"><span class="s">3 × 8</span><div class="lb">70% of 1RM 105 kg</div></div>
+            </div>
+            <div class="blk">
+              <div><div class="n">Calf Raise (slow)</div><div class="d">Ankle/tendon stiffness</div>
+                <div class="d" style="color:var(--dim);margin-top:6px">Builds the Achilles resilience runners chronically lack.</div></div>
+              <div style="text-align:right"><span class="s">3 × 12</span><div class="lb">Bodyweight, 3-1-3 tempo</div></div>
+            </div>
+            <div class="grow"><span class="plus">＋</span>3 more at Intermediate and above</div>
+          </div>
+          <div style="height:10px"></div>
+        </div>
+      </div>
+      <div class="dock"><div class="pill">Start today's session</div></div>
+    </div>
+
+    <div class="notes">
+      <div class="note"><div class="h"><i>I</i><b>The rationale rides its lift</b></div>
+        <p>"Why these lifts" was a second list of the same six exercises. The sentence belongs under the
+        block it explains — one list, explained in place, and a whole section gone.</p></div>
+      <div class="note"><div class="h"><i>J</i><b>Rank stated once</b></div>
+        <p>The demands keep their ordinal and lose the width ramp and the opacity ramp. The bar looked like
+        a measurement; it was arithmetic on the list index.</p></div>
+      <div class="note"><div class="h"><i>K</i><b>Locked lifts collapse to a count</b></div>
+        <p>Instead of four unreadable rows at 45% opacity, one expander: <b>bare ＋, no ring, ash not
+        chartreuse</b> — it grows in place, it does not go anywhere.</p></div>
+      <div class="note"><div class="h"><i>L</i><b>This screen exists with zero data</b></div>
+        <p>The prescription needs a sport and a level, not a history — which is exactly why it should not
+        be buried under an empty record. A sport you have never logged still has a door worth opening.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 7. EVERY SPORT ═════════════════════════════════════════════════ -->
+<section id="shapes">
+  <div class="sechead"><h2>It has to hold for sixty-five sports</h2><span class="n">07 — Configurations</span></div>
+  <p class="lede">The page configures itself from the catalogue record — that is the part of the current
+  design worth protecting, and the redesign extends it rather than replacing it. The ladder is one more
+  catalogue-driven section: present when the sport declares benchmark distances, absent when it does not,
+  never padded with an invented rung.</p>
+
+  <div class="gal" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:44px 26px">
+
+    <div class="spec" style="max-width:320px">
+      <div class="cap"><div class="n"><i>P</i>Paced, with a pool</div>
+        <h3>Swimming — 100 m, 400 m, 1 500 m</h3>
+        <p>The ladder is in metres and the pace splits per 100 m, both already in the catalogue record.
+        The big rung is the marker's distance.</p></div>
+      <div class="phone">
+        <div class="cover short" style="min-height:150px">
+          <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+          <div class="cvbody"><div class="eyebrow">Aquatics – Endurance</div>
+            <div class="ctitle sm">Swimming</div>
+            <div class="cmeta">22 efforts – 18 400 m – since Feb 2026</div></div>
+        </div>
+        <div class="pad" style="padding-bottom:16px">
+          <div class="recmain">
+            <div class="lbl">Best 100 m</div>
+            <div class="val"><span class="v" style="font-size:40px">1:22</span><span class="d">−0:03</span></div>
+            <div class="sub"><span>1:22 /100m</span><span>4 Aug</span><span class="watch">Apple Watch</span></div>
+          </div>
+          <div class="rrow"><span class="k">400 m</span><span class="t">6:44<small>1:41 /100m</small></span>
+            <span class="r"><span>28 Jul</span><span class="watch">⌚</span></span></div>
+          <div class="rrow none"><span class="k">1 500 m</span><span class="t">Swim one and it lands here</span><span class="r"></span></div>
+          <div class="door"><span class="g">→</span><span class="t"><b>Strength that carries</b><span>3 lifts at Beginner</span></span><span class="c">›</span></div>
+        </div>
+        <div class="dock"><div class="pill">Log Swimming session</div></div>
+      </div>
+    </div>
+
+    <div class="spec" style="max-width:320px">
+      <div class="cap"><div class="n"><i>T</i>Timed, with a pool</div>
+        <h3>Squash, Boxing, BJJ, Climbing</h3>
+        <p>No distance, so <b>no ladder</b> — the section is the typed marker alone, exactly as today, with
+        its provenance stated. Volume is minutes and there is no pace chart to register against.</p></div>
+      <div class="phone">
+        <div class="cover short" style="min-height:150px">
+          <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+          <div class="cvbody"><div class="eyebrow">Racket – Racquet</div>
+            <div class="ctitle sm">Squash</div>
+            <div class="cmeta">18 efforts – 19h 30m – since Nov 2025</div></div>
+        </div>
+        <div class="pad" style="padding-bottom:16px">
+          <div class="recmain">
+            <div class="lbl">Playing level</div>
+            <div class="val"><span class="v" style="font-size:26px">Club league, div 3</span></div>
+            <div class="sub"><span>Set 2 Aug</span><span class="typed">Typed</span></div>
+          </div>
+          <div class="sec" style="padding-top:8px">
+            <div class="shead"><h4>Volume</h4><span class="meta">8 weeks – avg 1h 05m</span></div>
+            <div class="bars" style="height:78px">
+              <div class="avg" style="bottom:48px"></div>
+              <div class="b" style="height:40px"></div><div class="b" style="height:78px"></div>
+              <div class="b" style="height:39px"></div><div class="b" style="height:59px"></div>
+              <div class="b" style="height:20px"></div><div class="b" style="height:59px"></div>
+              <div class="b" style="height:40px"></div><div class="b now" style="height:59px"></div>
+            </div>
+            <div class="axis"><span>22 Jun</span><span>1h 20m this week</span></div>
+            <p style="font:400 10px/1.5 var(--mono);color:var(--ash);margin-top:12px">Squash records duration only — no distance, no pace.</p>
+          </div>
+          <div class="door"><span class="g">→</span><span class="t"><b>Strength that carries</b><span>3 lifts at Beginner</span></span><span class="c">›</span></div>
+        </div>
+        <div class="dock"><div class="pill">Log Squash session</div></div>
+      </div>
+    </div>
+
+    <div class="spec" style="max-width:320px">
+      <div class="cap"><div class="n"><i>N</i>Timed, no pool</div>
+        <h3>Tennis, Golf, Sailing — 58 of them</h3>
+        <p>No catalogue <code class="f">sc</code> block, so no marker, no ladder, no prescription and no
+        door. The page is the record and nothing else — and it is honest about being short.</p></div>
+      <div class="phone">
+        <div class="cover short" style="min-height:130px">
+          <div class="crail"><span class="nav">←</span></div>
+          <div class="cvbody"><div class="eyebrow">Racket</div>
+            <div class="ctitle sm">Tennis</div>
+            <div class="cmeta">11 efforts – 14h 20m – since Jan 2026</div></div>
+        </div>
+        <div class="pad" style="padding-bottom:16px">
+          <div class="sec">
+            <div class="shead"><h4>Volume</h4><span class="meta">8 weeks – avg 1h 47m</span></div>
+            <div class="bars" style="height:70px">
+              <div class="avg" style="bottom:42px"></div>
+              <div class="b" style="height:56px"></div><div class="b" style="height:28px"></div>
+              <div class="b" style="height:70px"></div><div class="b" style="height:42px"></div>
+              <div class="b" style="height:2px"></div><div class="b" style="height:42px"></div>
+              <div class="b" style="height:56px"></div><div class="b now" style="height:28px"></div>
+            </div>
+            <div class="axis"><span>22 Jun</span><span>50m this week</span></div>
+          </div>
+          <div class="sec">
+            <div class="shead"><h4>Recent efforts</h4><span class="meta">11 logged</span></div>
+            <div class="erow"><div><div class="n">Tennis</div><div class="sub"><span>2d ago</span><span class="typed">Typed</span></div></div>
+              <div><div class="fig">50m</div></div></div>
+            <div class="erow"><div><div class="n">Tennis</div><div class="sub"><span>9d ago</span><span class="typed">Typed</span></div></div>
+              <div><div class="fig">1h 30m</div></div></div>
+            <div class="door"><span class="g">→</span><span class="t"><b>All 11 efforts</b><span>in History</span></span><span class="c">›</span></div>
+          </div>
+        </div>
+        <div class="dock"><div class="pill">Log Tennis session</div></div>
+      </div>
+    </div>
+
+    <div class="spec" style="max-width:320px">
+      <div class="cap"><div class="n"><i>Ø</i>Nothing logged</div>
+        <h3>The state every sport starts in</h3>
+        <p>Today this reads "Nothing logged yet" and then twelve hundred points of prescription.
+        <b>An empty record is the ladder you have not climbed yet</b> — every rung an invitation — plus the
+        door, which works from day one because a prescription needs a level, not a history.</p></div>
+      <div class="phone">
+        <div class="cover short" style="min-height:130px">
+          <div class="crail"><span class="nav">←</span><span class="acc">Beginner</span></div>
+          <div class="cvbody"><div class="eyebrow">Athletics – Endurance</div>
+            <div class="ctitle sm">Running</div></div>
+        </div>
+        <div class="pad" style="padding-bottom:16px">
+          <div class="empty" style="padding:34px 6px 26px">
+            <h4>Nothing logged yet</h4>
+            <p>Log a run and these fill with your own times.</p>
+          </div>
+          <div class="rrow none"><span class="k">1 km</span><span class="t">Not yet</span><span class="r"></span></div>
+          <div class="rrow none"><span class="k">5 km</span><span class="t">Not yet</span><span class="r"></span></div>
+          <div class="rrow none"><span class="k">10 km</span><span class="t">Not yet</span><span class="r"></span></div>
+          <div class="door"><span class="g">→</span>
+            <span class="t"><b>Know your times already?</b><span>type them and the page starts here</span></span>
+            <span class="c">›</span></div>
+          <div class="door"><span class="g">→</span><span class="t"><b>Strength that carries</b><span>3 lifts for Running – ready now</span></span><span class="c">›</span></div>
+        </div>
+        <div class="dock"><div class="pill">Log Running session</div></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══ 8. COST ════════════════════════════════════════════════════════ -->
+<section id="cost">
+  <div class="sechead"><h2>What it cost to build</h2><span class="n">08 — Shipped</span></div>
+  <p class="lede">Honest accounting, after the fact. Everything except the record ladder was deletion and
+  re-arrangement of figures the model already computed; the ladder was the one genuinely new piece of
+  product. No migration, no new endpoint, no schema change — as predicted, and worth saying because that
+  prediction is the kind that is usually wrong.</p>
   <p class="lede"><b>Mobile only.</b> The web twin this page was once built against no longer exists —
   <code class="f">apps/web/components/aurora/</code> is down to three files and none of them is a sport
   page. Every row below is one client plus core. (The mobile file's own header still describes itself as
@@ -1531,17 +2248,22 @@ tr:last-child td{border-bottom:0}
     </table>
   </div>
 
-  <p class="lede" style="margin-top:40px"><b>Order of work.</b> Ship the B1 fix on its own today. Then the
-  deletions — headline, totals, bests material — which need no new components and already halve the page.
-  Then the record ladder, which is the piece worth taking time over because it is the only one adding
-  something. Then the pushed screen, which is a move rather than a build. The registered pace line and the
-  stacked volume fill last: they are the only pieces with a design risk worth a device check, and the page
-  reads well without either.</p>
+  <p class="lede" style="margin-top:40px"><b>What is left.</b> A device round. Everything above is verified
+  the way a sandbox can verify it — 3 416 core tests, the mobile suite, both typechecks, a clean iOS bundle
+  export — and none of that has seen a phone. Three things to look at on the next TestFlight build: the
+  ladder's rungs under Dynamic Type (the rung labels sit in a fixed 78dp column so the times align, which
+  is the kind of decision large text punishes), the record sheet's keyboard behaviour, and whether the
+  stacked intensity fill is legible enough to close the one deferred item.</p>
+  <p class="lede"><b>Two calls made without asking, both reversible.</b> A cyclist's headline is a distance
+  record with the FTP as a secondary line, rather than the other way round — an FTP is watts, so it fills
+  no rung, and which of the two deserves the 46px slot is a judgement rather than a fact. And on a rung
+  where both exist, the better figure wins whatever its provenance: a typed 21:00 outranks a measured
+  22:41 until you actually run it. Say the word on either and both are small changes.</p>
 </section>
 
 <div class="foot">
-  <span>HYBRID — sport page redesign, rev 2</span>
-  <span>Drafts, not decisions</span>
+  <span>HYBRID — sport page redesign, rev 3</span>
+  <span>Built — one piece deferred</span>
   <span>design/sport-page-redesign.artifact.html</span>
 </div>
 

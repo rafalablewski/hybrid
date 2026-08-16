@@ -19,6 +19,7 @@ import {
   sportVolumeReading,
   SPORT_PAGE_RECENT,
 } from "./sport-page";
+import { formatDuration } from "./duration";
 import { OLYMPIC_SPORTS } from "./olympic-sports";
 import { SPORT_MARK_PATHS, sportMark, sportMarkPaths } from "./theme/sport-marks";
 import type { LoggedSession } from "./engines/session";
@@ -129,7 +130,6 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     expect(m.distanceUnit).toBe("km");
     expect(m.paceUnit).toBe("/km");
     expect(m.pace).not.toBeNull();
-    expect(m.totals.map((t) => t.id)).toEqual(["efforts", "hours", "distance", "week"]);
     expect(m.bests.map((b) => b.id)).toContain("longest");
     // Best pace is stated by the ladder's rungs now, so it is not a card too.
     expect(m.records.find((r) => r.km === 5)!.pace).not.toBeNull();
@@ -141,7 +141,6 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     expect(m.hasPace).toBe(false);
     expect(m.pace).toBeNull();
     expect(m.split).toBeNull();
-    expect(m.totals.map((t) => t.id)).toEqual(["efforts", "hours", "week"]);
     expect(m.bests.map((b) => b.id)).not.toContain("fastest");
     expect(m.bests.map((b) => b.id)).toContain("longestSession");
     // Duration is the truth it does have, so the one figure falls back to it.
@@ -150,18 +149,17 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
 
   it("prints every timed figure in hours AND minutes, carrying its own units", () => {
     const m = sportPageModel("Tennis", MIXED, { now: NOW });
-    // 75 + 60 logged minutes. This used to read "2:15 h" as the hero and a
-    // flat "2" in the totals row — the athlete had logged the 15.
+    // 75 + 60 logged minutes. This used to read "2:15 h" — a clock time
+    // wearing a duration's unit — and the totals row that carried it in two
+    // more places has since gone, so the surviving figures are the pins.
     expect(m.primary.value).toBe("2h 15min");
     expect(m.primary.unit).toBeNull();
-    expect(m.totals.find((c) => c.id === "hours")!.value).toBe("2h 15min");
-    expect(m.totals.find((c) => c.id === "hours")!.unit).toBeNull();
-    // The week cell and the longest session are durations too, so neither
-    // trails a separate "min" for the label to name a second time.
-    expect(m.totals.find((c) => c.id === "week")!.value).toBe("1h 15min");
-    expect(m.totals.find((c) => c.id === "week")!.unit).toBeNull();
+    // The longest session is a duration too, so it trails no separate "min"
+    // for the label to name a second time.
     expect(m.bests.find((b) => b.id === "longestSession")!.value).toBe("1h 15min");
     expect(m.bests.find((b) => b.id === "longestSession")!.unit).toBeNull();
+    // …and the week series, which the volume axis and its average read.
+    expect(formatDuration(m.weeks[m.weeks.length - 1]!.value)).toBe("1h 15min");
   });
 
   it("reads a pool sport in METRES at a per-hundred pace", () => {
@@ -169,7 +167,10 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     const m = sportPageModel("Swimming", swims, { now: NOW });
     expect(m.distanceUnit).toBe("m");
     expect(m.paceUnit).toBe("/100m");
-    expect(m.totals.find((t) => t.id === "distance")!.value).toBe("2\u2009400");
+    // Metres, grouped with a thin space — the meta line and the week series
+    // both read it through sportDistance.
+    expect(m.meta.distance).toBe("2\u2009400");
+    expect(sportDistance(m.weeks[m.weeks.length - 1]!.value / 1000, "m")).toBe("2\u2009400");
   });
 
   it("has no transfer section for the 58 sports with no pool", () => {

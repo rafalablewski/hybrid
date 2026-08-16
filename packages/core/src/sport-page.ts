@@ -137,17 +137,6 @@ export interface SportPrimary {
   at: string | null;
 }
 
-/** One cell of the totals row, in figure-order.ts's reading order — efforts,
- *  hours, distance, and then THIS WEEK, which is last because it is not a
- *  fourth measure but a second window on whichever measure the sport uses.
- *  `id` names the string the client localizes. */
-export interface SportTotal {
-  id: "efforts" | "hours" | "distance" | "week";
-  value: string;
-  /** The unit to name in the label ("km" / "m"), when the cell has one. */
-  unit: string | null;
-}
-
 /** A week bucket, in the sport's own measure. */
 export interface SportWeek {
   /** ISO start of the 7-day bucket. */
@@ -275,7 +264,6 @@ export interface SportPageModel {
   primary: SportPrimary;
   /** The catalog's marker prompt, when the sport has one and it is unfilled. */
   markerPrompt: { label: string; ph: string } | null;
-  totals: SportTotal[];
   weeks: SportWeek[];
   /** Mean of `weeks`, in the same measure. */
   weekAvg: number;
@@ -682,19 +670,13 @@ export function sportPageModel(
     primary = { kind: "time", value: formatDuration(totalsRaw.minutes), unit: null, label: null, delta: null, improving: null, trend: [], at: null };
   }
 
-  /* ── totals — the distance cell exists only when the sport measures one ── */
-  const thisWeek = weeks[weeks.length - 1] ?? { value: 0, efforts: 0, weekStart: new Date(now).toISOString() };
-  const totals: SportTotal[] = [{ id: "efforts", value: String(totalsRaw.efforts), unit: null }];
-  // Time logged reads in hours AND minutes: rounding to whole hours printed a
-  // flat "1" over 67 minutes of tennis, and the athlete had logged the 7.
-  totals.push({ id: "hours", value: formatDuration(totalsRaw.minutes), unit: null });
-  if (hasDistance) totals.push({ id: "distance", value: sportDistance(totalsRaw.distanceKm, distanceUnit), unit: distanceUnit });
-  totals.push({
-    id: "week",
-    value: hasDistance ? sportDistance(distanceUnit === "m" ? thisWeek.value / 1000 : thisWeek.value, distanceUnit) : formatDuration(thisWeek.value),
-    unit: hasDistance ? distanceUnit : null,
-  });
-
+  // NO TOTALS ROW. It printed efforts / hours / distance / this week, and the
+  // hero's own meta line states efforts, distance and since — two of the four,
+  // two hundred points above it. On a TIMED sport the third was worse than a
+  // repeat: `primary` falls through to total time, so the 46px headline and the
+  // 20px "Hours" cell printed the same string. `thisWeek` survives as the
+  // volume axis's own label, which is where a week belongs.
+  //
   /* ── the hero's meta line — facts about THIS instance ── */
   const meta = {
     efforts: totalsRaw.efforts,
@@ -726,7 +708,6 @@ export function sportPageModel(
     meta,
     primary,
     markerPrompt: sc ? { label: sc.marker.label, ph: sc.marker.ph } : null,
-    totals,
     weeks,
     // In the sport's own unit — metres for the pool, km for the road. Rounded
     // to the same two decimals the km figures show, so the average never
