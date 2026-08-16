@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput } from "react-native";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Animated, Easing, View, Text, TextInput } from "react-native";
 import {
   FOOD_ROLES, pantryShelves, pantryStats, roleCounts,
   type FoodRole, type PantryFood,
@@ -7,6 +7,7 @@ import {
 } from "@hybrid/core";
 import { fs, F, leading, tracking, PressScale as Pressable , trackFigure} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { AuroraIcon } from "./icons";
 import { ACard, DockRail, DockChip, GUTTER , RADIUS} from "./kit";
@@ -326,17 +327,61 @@ export function PantryScreen<T extends PantryFood>({
   );
 }
 
-/** The undo bar a held delete puts on screen. Chromeless and centred — it is a
- *  message with one control in it, not a card carrying a thing. */
+/**
+ * The undo bar a held delete puts on screen. Chromeless and centred — it is a
+ * message with one control in it, not a card carrying a thing.
+ *
+ * AND IT SHOWS ITS OWN WINDOW. The delete is HELD for `UNDO_MS` and then it is
+ * final, which is a real deadline the athlete was never told about: the bar sat
+ * there looking permanent and then vanished, and whether Undo was still there
+ * was a guess. A hairline drains under it in exactly that time — the only
+ * honest way to draw a countdown is to have it actually be the countdown.
+ *
+ * It is the ONE animation here. The bar itself arrives on the list's own commit
+ * (lib/list-motion, called by the screen that mounts it), so this component
+ * animates the thing only it knows: how much time is left.
+ *
+ * Under Reduce Motion the hairline does not travel — it is simply absent. A
+ * draining bar IS motion, with nothing to substitute: a static half-full bar
+ * would state a fraction that stops being true a moment later, which is worse
+ * than not drawing it. The label and the control are unchanged, so nothing that
+ * carries meaning is lost.
+ */
 export function UndoToast({ label, onUndo }: { label: string; onUndo: () => void }) {
   const { t } = useLang();
   const C = useTheme().palette;
+  const reduced = useReducedMotion();
+  const drain = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (reduced) return;
+    drain.setValue(1);
+    // Linear, deliberately: this is a clock, and a clock that eases is lying
+    // about how much time is left in the middle of its own run.
+    const run = Animated.timing(drain, { toValue: 0, duration: UNDO_MS, easing: Easing.linear, useNativeDriver: false });
+    run.start();
+    return () => run.stop();
+  }, [drain, reduced, label]);
+
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, marginTop: 14 }}>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{label}</Text>
-      <Pressable onPress={onUndo} hitSlop={8}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.pn.undo")}</Text>
-      </Pressable>
+    <View style={{ marginTop: 14 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14 }}>
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{label}</Text>
+        <Pressable onPress={onUndo} hitSlop={8}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.pn.undo")}</Text>
+        </Pressable>
+      </View>
+      {reduced ? null : (
+        <View style={{ height: 1, backgroundColor: C.line, marginTop: 8, borderRadius: RADIUS.mark, overflow: "hidden" }}>
+          <Animated.View
+            style={{
+              height: 1,
+              backgroundColor: withAlpha(C.lime, ALPHA.rim),
+              width: drain.interpolate({ inputRange: [0, 1], outputRange: ["0%", "100%"] }),
+            }}
+          />
+        </View>
+      )}
     </View>
   );
 }

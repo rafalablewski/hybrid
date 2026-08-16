@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { View, Text, Modal, Animated, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
-import { colors, durations } from "@hybrid/core";
+import { colors, durations, springs, springToRN } from "@hybrid/core";
 import { F, fs, PressScale } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -201,6 +201,9 @@ export function useHoldMenu({ items, onSelect, side, disabled }: {
 }): {
   anchorRef: React.RefObject<View | null>;
   holdProps: { onLongPress: () => void; delayLongPress: number };
+  /** THE LIFT — spread onto the held thing's own style so it rises while its
+   *  menu is up. Animated, so the caller's box must be an `Animated.View`. */
+  liftStyle: { transform: { scale: Animated.AnimatedInterpolation<number> }[] };
   /** The same rows as `accessibilityActions`, for the callers that pass them
    *  through — VoiceOver cannot hold anything. */
   a11yActions: { name: string; label: string }[];
@@ -209,7 +212,32 @@ export function useHoldMenu({ items, onSelect, side, disabled }: {
 } {
   const anchorRef = useRef<View>(null);
   const [anchor, setAnchor] = useState<HoldMenuAnchor | null>(null);
+  const reduced = useReducedMotion();
   const off = disabled || items.length === 0;
+
+  /**
+   * THE HELD THING RISES, and stays risen while its card is up.
+   *
+   * Without it the menu appears beside a row that never acknowledged being
+   * touched, and the card reads as belonging to the screen rather than to the
+   * thing under the finger — which is the whole grammar this gesture borrows.
+   * PressScale's own dip has already released by then (it ends on touch-up),
+   * so there is a gap in the feedback exactly where the card arrives.
+   *
+   * It scales UP, not down: a press goes in, a pick-up comes out. 1.02 is
+   * deliberately small — the row is a full-width object and anything more makes
+   * a list of them look elastic — and it rides `springs.press`, the token for
+   * exactly this feedback, so the lift and the tap dip share a curve.
+   *
+   * Under Reduce Motion it does not move. Nothing is lost: the haptic, the card
+   * itself and the scrim behind it all still say the row was taken.
+   */
+  const lift = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const to = anchor ? 1 : 0;
+    if (reduced) { lift.setValue(0); return; }
+    Animated.spring(lift, { toValue: to, useNativeDriver: true, ...springToRN(springs.press) }).start();
+  }, [anchor, lift, reduced]);
 
   const open = useCallback(() => {
     if (off) return;
@@ -222,6 +250,7 @@ export function useHoldMenu({ items, onSelect, side, disabled }: {
   return {
     anchorRef,
     holdProps: { onLongPress: open, delayLongPress: HOLD_MS },
+    liftStyle: { transform: [{ scale: lift.interpolate({ inputRange: [0, 1], outputRange: [1, 1.02] }) }] },
     a11yActions: items.map((i) => ({ name: i.key, label: i.label })),
     onA11yAction: (e) => {
       if (items.some((i) => i.key === e.nativeEvent.actionName)) onSelect(e.nativeEvent.actionName);
@@ -261,7 +290,7 @@ export function HoldMenu({
     <>
       {/* collapsable={false} keeps this View in the native tree — RN prunes
           layout-only Views on Android, and a pruned view cannot be measured. */}
-      <View ref={hold.anchorRef} collapsable={false}>
+      <Animated.View ref={hold.anchorRef} collapsable={false} style={hold.liftStyle}>
         <PressScale
           {...hold.holdProps}
           onPress={onPress}
@@ -273,7 +302,7 @@ export function HoldMenu({
         >
           {children}
         </PressScale>
-      </View>
+      </Animated.View>
       {hold.menu}
     </>
   );

@@ -383,10 +383,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // row EDITED becomes the athlete's own: correcting a size the catalog
   // published is exactly the moment their figure starts outranking it, which is
   // the tie-break core's SOURCE_RANK already encodes.
-  const addPack = () => setCreateForm((s) => s.packs.length >= MAX_FOOD_PORTIONS ? s : ({ ...s, packs: [...s.packs, { key: newPackKey(), size: "", label: "", source: "typed" }] }));
+  const addPack = () => {
+    if (createForm.packs.length >= MAX_FOOD_PORTIONS) { haptic.rigid(); return; } // as far as it goes
+    haptic.light();
+    listMotion(() => setCreateForm((s) => ({ ...s, packs: [...s.packs, { key: newPackKey(), size: "", label: "", source: "typed" }] })));
+  };
   const setPack = (key: string, patch: Partial<Pick<CreatePack, "size" | "label">>) =>
     setCreateForm((s) => ({ ...s, packs: s.packs.map((p) => p.key === key ? { ...p, ...patch, source: "typed" } : p) }));
-  const removePack = (key: string) => setCreateForm((s) => ({ ...s, packs: s.packs.filter((p) => p.key !== key) }));
+  const removePack = (key: string) => listMotion(() => setCreateForm((s) => ({ ...s, packs: s.packs.filter((p) => p.key !== key) })));
 
   // Add a saved product to the meal being composed (or bump its serving count if
   // already added); remove / re-count keep the summed macros in sync.
@@ -449,12 +453,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
    * thing being forgotten: leaving the stamps behind would keep ranking a food
    * to the top of this hour after it was taken off the list.
    */
-  const forgetRecent = (key: string) => setRecent((xs) => {
-    const next = xs.filter((x) => x.key !== key);
-    AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {});
+  const forgetRecent = (key: string) => {
+    // The row LEAVES rather than teleporting, and the list closes over it —
+    // lib/list-motion, the same commit the logger's set rows travel on. This is
+    // the moment the athlete caused, which is where motion does its actual job.
+    listMotion(() => setRecent((xs) => {
+      const next = xs.filter((x) => x.key !== key);
+      AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {});
+      return next;
+    }));
     haptic.warning();
-    return next;
-  });
+  };
   const goalName = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLose" : id === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
   const goalSub = (id: NutritionGoal) => t(id === "lose" ? "w.recovery.nutrition.goalLoseSub" : id === "gain" ? "w.recovery.nutrition.goalGainSub" : "w.recovery.nutrition.goalMaintainSub");
   const [f, setF] = useState({ kcal: "", protein: "", carbs: "", fat: "" });
@@ -607,6 +616,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const logEntry = async (e: { name: string; subname?: string | null; source: string; kcal: number; protein: number; carbs: number; fat: number; qty: number; amount?: number | null; amountUnit?: string | null; verifiedId?: string | null } & MicroFacts): Promise<boolean> => {
     const { ok } = await createFoodLog(e);
     if (!ok) { notify(t("w.recovery.nutrition.errSave"), t("w.recovery.nutrition.errSaveBody")); return false; }
+    // A SOFT LANDING, and it belongs HERE rather than at the seven call sites.
+    // lib/haptics asks for `soft` by name for a set being banked, and calls it
+    // "the difference between logging a set and pressing a button that happens
+    // to log a set" — a meal landing in the day is the same event. One gate, so
+    // a path added later cannot arrive silent (which is exactly how four
+    // ungated haptics got into the app before the `haptic` module existed).
+    haptic.soft();
     return true;
   };
   // ── YOUR RECIPES — open, save, delete, log ───────────────────────────────
@@ -797,9 +813,19 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const carried = portionAmount(portionQtyValue, next);
     setPortionUnitId(id);
     setPortionText(formatAmount(carried > 0 ? carried : next.initial));
-    haptic.light();
+    // `selection`, not `light`: this is a segmented control moving between
+    // discrete values, which is the first row of lib/haptics' table. `light` is
+    // for a control COMMITTING, and switching units commits nothing.
+    haptic.selection();
   };
-  const stepPortion = (d: number) => setPortionText(formatAmount(portionStep(portionTyped, portionUnitActive, d)));
+  const stepPortion = (d: number) => {
+    const next = portionStep(portionTyped, portionUnitActive, d);
+    // A stepper moving through discrete values taps `selection`; one that will
+    // not go further says `rigid`, because "that worked" and "that is as far as
+    // it goes" must not answer the same way (lib/haptics' own table).
+    if (next === portionTyped) haptic.rigid(); else haptic.selection();
+    setPortionText(formatAmount(next));
+  };
   /** The caption under the stepper: the measure's own symbol, the athlete's word
    *  for their container, or the generic "servings" / "pack". */
   const portionUnitLabel = (u: PortionUnit): string =>
@@ -1153,7 +1179,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     loadLibrary();
   };
 
-  const removeMeal = async (id: string) => { setMeals((xs) => xs.filter((x) => x.id !== id)); await deleteSavedMeal(id); };
+  const removeMeal = async (id: string) => {
+    haptic.warning();
+    listMotion(() => setMeals((xs) => xs.filter((x) => x.id !== id)));
+    await deleteSavedMeal(id);
+  };
 
   // "Create meal" from a recipe → save its PER-SERVE macros (recipeToMeal) into
   // the personal meal library, so a Full user can one-tap log a favourite recipe
@@ -1226,7 +1256,10 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // A second swipe while one is still pending commits the first: two rows can
     // leave, but only one of them can be the one Undo brings back.
     commitDeleteProduct();
-    setProducts((xs) => xs.filter((x) => x.id !== id));
+    // A destructive commit going through — the same warning the swipe fires, so
+    // the hold and the swipe feel identical as well as behaving identically.
+    haptic.warning();
+    listMotion(() => setProducts((xs) => xs.filter((x) => x.id !== id)));
     const timer = setTimeout(() => commitDeleteProduct(), UNDO_MS);
     pendingRef.current = { product: p, timer };
     setPendingDelete(p);
@@ -1237,7 +1270,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     clearTimeout(p.timer);
     pendingRef.current = null;
     setPendingDelete(null);
-    setProducts((xs) => xs.some((x) => x.id === p.product.id) ? xs : [...xs, p.product]);
+    listMotion(() => setProducts((xs) => xs.some((x) => x.id === p.product.id) ? xs : [...xs, p.product]));
   };
   useEffect(() => () => { const p = pendingRef.current; if (p) { clearTimeout(p.timer); void deleteFoodProduct(p.product.id); } }, []);
 
@@ -1358,7 +1391,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     const next = removeFoodPortion(productPortions(p), unitId);
     const before = products;
     const patched = { ...p, portions: next, packSize: null, packLabel: null } as FoodProductRow;
-    setProducts((xs) => xs.map((x) => x.id === p.id ? patched : x));
+    listMotion(() => setProducts((xs) => xs.map((x) => x.id === p.id ? patched : x)));
     // The open portion editor is looking at the same food: leaving its unit
     // switch showing a pack that no longer exists would be the screen and the
     // database disagreeing while the athlete watches.
@@ -2049,8 +2082,18 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             {packMsg ? (
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: leading(fs.nano) }}>{packMsg}</Text>
             ) : null}
+            {/* IT ROLLS. This is the one figure on the sheet the stepper exists
+                to move — press + and it changes under your thumb — and it was
+                the last big number in Nutrition that jump-cut while the day's
+                gap, the meal total and the ledger three inches away all
+                travelled. Same argument DayGap makes for its own hero: only the
+                changed digits move, so one event reads as one event. */}
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 20 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 48, letterSpacing: trackFigure(48), color: C.chalk }}>{sc(portion.kcal)}</Text>
+              <RollingNumber
+                value={String(sc(portion.kcal))}
+                align="center"
+                style={{ fontFamily: F.black, fontSize: 48, lineHeight: leading(48, "tight"), letterSpacing: trackFigure(48), color: C.chalk }}
+              />
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>kcal</Text>
             </View>
             <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>

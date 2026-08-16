@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { View, Text, type StyleProp, type ViewStyle } from "react-native";
+import { Animated, View, Text, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
@@ -620,7 +620,7 @@ function WholePack({ portion, onLog, menu, onMenu }: {
     <>
       {/* collapsable={false} keeps the box measurable — RN prunes layout-only
           Views on Android, and a pruned view has no rect to anchor to. */}
-      <View ref={hold.anchorRef} collapsable={false}>
+      <Animated.View ref={hold.anchorRef} collapsable={false} style={hold.liftStyle}>
         <AChip
           tone="action"
           label={portion.label}
@@ -633,7 +633,7 @@ function WholePack({ portion, onLog, menu, onMenu }: {
           onLongPress={hold.holdProps.onLongPress}
           delayLongPress={hold.holdProps.delayLongPress}
         />
-      </View>
+      </Animated.View>
       {hold.menu}
     </>
   );
@@ -673,7 +673,9 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
   // through the rotor.
   const held = { onLongPress: hold.holdProps.onLongPress, delayLongPress: hold.holdProps.delayLongPress };
   const body = (
-    <View ref={hold.anchorRef} collapsable={false} style={{ borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }}>
+    // Animated, because the hold LIFTS it: the row rises while its card is up,
+    // so the menu reads as belonging to the food rather than to the screen.
+    <Animated.View ref={hold.anchorRef} collapsable={false} style={[{ borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }, hold.liftStyle]}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingVertical: 12, paddingHorizontal: PICKER_EDGE }}>
         <Pressable onPress={onAdd} {...held} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
         <Pressable
@@ -707,7 +709,7 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
           ))}
         </View>
       ) : null}
-    </View>
+    </Animated.View>
   );
   // The swipe STAYS where it was. It is the same delete the hold's menu fires,
   // and a gesture people already have in their fingers is not worth taking away
