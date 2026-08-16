@@ -31,9 +31,9 @@
 // is derived from `cardioSeconds` (second-accurate) rather than from display
 // minutes.
 //
-// Pure and client-agnostic: apps/web/components/aurora/sport-page.tsx and
-// apps/mobile/components/aurora/sport-page.tsx render the same model, so the
-// two clients cannot branch differently on what a sport shows.
+// Pure and client-agnostic: apps/mobile/components/aurora/sport-page.tsx
+// renders this model and decides nothing of its own. (The web twin named here
+// went with the user-facing web client — the mobile page is the live one.)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { ChartReading } from "./chart-scrub";
@@ -191,15 +191,38 @@ export interface SportBest {
  * worse. That is the right direction for a number somebody might quote out
  * loud, and it is why the band has no lower half.
  *
- * WHAT THIS CANNOT DO, and it must be said in the explainer sheet too: a
- * `DeviceWorkout` is a workout SUMMARY — duration, distance, heart rate,
- * elevation. It carries no laps, no splits and no route (see session-device.ts),
- * so there is no way to extract the fastest 5 km from INSIDE an 8 km run. A
- * rung is an effort logged AT the distance. If lap events or workout routes are
- * ever imported, they feed these same rungs and nothing here changes shape —
- * only the accuracy improves.
+ * WHERE THE BAND DOES NOT APPLY — and this is the part to get right now that
+ * there are two kinds of candidate. The band exists because a LOGGED effort
+ * lands on a ragged distance: nobody runs exactly 5.000 km, so 5.2 has to be
+ * allowed to stand for 5. A `best` lap has no such problem — it is the fastest
+ * window covering EXACTLY the rung, measured off the recording's distance
+ * series (session-streams.ts `bestEffortsFromDistance`). Applying a 5% band to a
+ * figure that is already exact would let a 5.25 km window fill the 5 km rung
+ * and understate the athlete for no reason. So: efforts match on the band,
+ * segments match on equality. See `sportRecords`.
  */
 export const RECORD_BAND = 1.05;
+
+/**
+ * A BEST EFFORT taken from inside a recording — the fastest window covering
+ * exactly one catalog distance, as `SessionLap` stores it (kind `best`).
+ *
+ * This is what closes the ladder's old hole: an 8 km run contains a 5 km, and
+ * until the distance series was imported there was no way to say what it was
+ * run in. The window is found and stored on upload; the ladder just reads it.
+ *
+ * Deliberately minimal — no date, no provider. Both come from the SESSION, and
+ * core resolves them from the slice it already holds rather than trusting a
+ * caller to pair them up correctly (see `sportPageModel`).
+ */
+export interface SportSegmentBest {
+  /** The session the window was found in — how it is dated and attributed. */
+  sessionId: string;
+  /** The rung it covers, km. Exact by construction. */
+  distanceKm: number;
+  /** The window's time, seconds. */
+  seconds: number;
+}
 
 /** One rung of a sport's record ladder, filled or waiting. */
 export interface SportRecord {
@@ -226,6 +249,17 @@ export interface SportRecord {
   provider: string | null;
   /** True when the figure is the athlete's typed marker, not a logged effort. */
   typed: boolean;
+  /**
+   * True when the time was measured over EXACTLY this distance inside a
+   * recording, rather than being the clock of a whole logged effort.
+   *
+   * Not a disclaimer — the opposite. A segment figure is the more precise of
+   * the two: it covers the rung exactly, where a logged effort covers it plus
+   * whatever ragged remainder the athlete actually ran. Clients mark it so an
+   * athlete can tell a rung taken from a race apart from one found inside a
+   * long run, which is a real distinction to them even though both are true.
+   */
+  segment: boolean;
   /** Improvement over the previous best at THIS rung ("−1:12"), or null when
    *  it is the first one set. */
   delta: string | null;
@@ -416,26 +450,59 @@ function markerDelta(from: string, to: string): { delta: string; improving: bool
  *
  * `all` is the sport's efforts NEWEST-FIRST (as `efforts()` returns them),
  * already device-true. `markers` is the typed marker history, oldest → newest.
+ * `segments` are the athlete's stored `best` laps for THIS sport's sessions —
+ * the fastest window covering each rung, found inside a recording.
  *
- * Three things this does, in order of how easy they are to get wrong:
+ * Four things this does, in order of how easy they are to get wrong:
  *
- *  1. MATCHES on `RECORD_BAND` — at least the rung, at most 5% over. See that
- *     constant for why the band has no lower half.
- *  2. Walks the efforts CHRONOLOGICALLY so "the previous best" means the best
- *     that stood before this one beat it. A delta computed against the
- *     second-fastest-ever would say the same thing on a rung you improved in
- *     one jump as on a rung you have been chipping at for a year.
- *  3. Lets the TYPED marker fill its own rung, and only its own — a runner who
+ *  1. MATCHES TWO WAYS, because there are two kinds of candidate. A logged
+ *     EFFORT matches on `RECORD_BAND` — at least the rung, at most 5% over,
+ *     because nobody runs exactly 5.000 km. A SEGMENT matches on equality: it
+ *     is already the exact rung, and banding an exact figure would let a
+ *     5.25 km window stand for a 5 km and understate the athlete for nothing.
+ *  2. Walks CHRONOLOGICALLY so "the previous best" means the best that stood
+ *     before this one beat it. A delta computed against the second-fastest-ever
+ *     would say the same thing on a rung you improved in one jump as on a rung
+ *     you have been chipping at for a year.
+ *  3. Prefers the SEGMENT when one session offers both. A 5.02 km parkrun with
+ *     a route produces an effort candidate AND a segment candidate, and they
+ *     are the same run measured twice — keeping both would make the ladder show
+ *     the athlete beating themselves by four seconds on a run they did once.
+ *     The segment wins because it covers the rung exactly.
+ *  4. Lets the TYPED marker fill its own rung, and only its own — a runner who
  *     knows their parkrun time should see it — but only when it beats what was
  *     measured, and never without saying it was typed. Beat it with a logged
  *     effort and the rung flips to the measurement on its own.
  */
+/**
+ * How near a stored `best` lap must be to a rung to BE that rung, km.
+ *
+ * Half a metre — a float-comparison tolerance, not a band. A segment is derived
+ * at the catalog's own figure (session-streams.ts `lapDerivationFor` reads the
+ * same `OlympicSport.records`), so the two numbers are the same number and this
+ * only absorbs the round trip through storage. Anything looser would quietly
+ * become a second, undocumented band.
+ */
+const RUNG_EPSILON_KM = 0.0005;
+
+/** One thing that could fill a rung — a logged effort or a stored segment,
+ *  reduced to the fields the walk and the row need. */
+interface RecordCandidate {
+  seconds: number;
+  at: string;
+  sessionId: string;
+  provider: string | null;
+  secPerKm: number | null;
+  segment: boolean;
+}
+
 export function sportRecords(
   sport: OlympicSport | undefined,
   all: SportEffort[],
   markers: SportMarkerEntry[],
   distanceUnit: "km" | "m",
   pacePer: number,
+  segments: SportSegmentBest[] = [],
 ): SportRecord[] {
   const ladder = sport?.records ?? [];
   if (ladder.length === 0) return [];
@@ -473,18 +540,70 @@ export function sportRecords(
     }
   }
 
+  // WHEN a session happened and WHAT recorded it, by session id. A stored
+  // segment carries neither — both are facts about the session, and a segment
+  // that names a session this sport never held is simply not this sport's (the
+  // caller may hand over the athlete's whole `best` set; the absence of a
+  // session here is what filters it).
+  const sessionMeta = new Map<string, { at: string; provider: string | null }>();
+  for (const e of all)
+    if (!sessionMeta.has(e.sessionId)) sessionMeta.set(e.sessionId, { at: e.startedAt, provider: e.provider });
+
   const rows: SportRecord[] = ladder.map((rung) => {
-    let best: SportEffort | null = null;
-    let prevSec: number | null = null;
+    // A logged effort matches on the BAND (see RECORD_BAND); a segment matches
+    // on EQUALITY, because it was measured over exactly this distance.
+    const fromEfforts: RecordCandidate[] = [];
     for (const e of chron) {
       if (e.seconds == null || e.seconds <= 0) continue;
       if (e.distanceKm < rung.km || e.distanceKm > rung.km * RECORD_BAND) continue;
-      if (best == null) { best = e; continue; }
-      if (e.seconds < best.seconds!) { prevSec = best.seconds!; best = e; }
+      fromEfforts.push({
+        seconds: e.seconds,
+        at: e.startedAt,
+        sessionId: e.sessionId,
+        provider: e.provider,
+        secPerKm: e.secPerKm,
+        segment: false,
+      });
+    }
+    const fromSegments: RecordCandidate[] = [];
+    for (const s of segments) {
+      if (!(s.seconds > 0)) continue;
+      if (Math.abs(s.distanceKm - rung.km) > RUNG_EPSILON_KM) continue;
+      const meta = sessionMeta.get(s.sessionId);
+      if (!meta) continue;
+      fromSegments.push({
+        seconds: s.seconds,
+        at: meta.at,
+        sessionId: s.sessionId,
+        provider: meta.provider,
+        // Exact by construction: the window covers precisely `rung.km`.
+        secPerKm: Math.round(s.seconds / rung.km),
+        segment: true,
+      });
+    }
+
+    // ONE RUN, ONE CANDIDATE. A 5.02 km parkrun with a route yields both an
+    // effort candidate (the whole 5.02 km) and a segment candidate (the fastest
+    // 5.00 km inside it) — the same run, measured twice. Left in, the
+    // chronological walk would report the athlete beating themselves by four
+    // seconds on a run they did once. The segment wins: it covers the rung
+    // exactly, so it is the truer figure of the two. Efforts from OTHER
+    // sessions are untouched, and a session holding two efforts of this sport
+    // (a brick) still contributes both, exactly as it always has.
+    const claimed = new Set(fromSegments.map((c) => c.sessionId));
+    const merged = [...fromEfforts.filter((c) => !claimed.has(c.sessionId)), ...fromSegments].sort(
+      (a, b) => new Date(a.at).getTime() - new Date(b.at).getTime(),
+    );
+
+    let best: RecordCandidate | null = null;
+    let prevSec: number | null = null;
+    for (const c of merged) {
+      if (best == null) { best = c; continue; }
+      if (c.seconds < best.seconds) { prevSec = best.seconds; best = c; }
     }
 
     const isMarkerRung = markerRung != null && rung.km === markerRung.km;
-    const typedWins = isMarkerRung && typedSec != null && (best == null || typedSec < best.seconds!);
+    const typedWins = isMarkerRung && typedSec != null && (best == null || typedSec < best.seconds);
 
     const base = {
       km: rung.km,
@@ -504,11 +623,12 @@ export function sportRecords(
         sessionId: null,
         provider: null,
         typed: true,
+        segment: false,
         delta: typedPrev != null && typedPrev > typedSec! ? `−${clock(typedPrev - typedSec!)}` : null,
       };
     }
     if (best == null) {
-      return { ...base, time: null, pace: null, at: null, sessionId: null, provider: null, typed: false, delta: null };
+      return { ...base, time: null, pace: null, at: null, sessionId: null, provider: null, typed: false, segment: false, delta: null };
     }
     // A rung AT the pace split states its own pace: a 1 km time on a /km sport
     // and a 100 m time on a /100m sport ARE the pace, so printing both puts the
@@ -516,13 +636,14 @@ export function sportRecords(
     const rungIsSplit = Math.round(rung.km * 1000) === pacePer;
     return {
       ...base,
-      time: clock(best.seconds!),
+      time: clock(best.seconds),
       pace: best.secPerKm != null && !rungIsSplit ? sportPace(best.secPerKm, pacePer) : null,
-      at: best.startedAt,
+      at: best.at,
       sessionId: best.sessionId,
       provider: best.provider,
       typed: false,
-      delta: prevSec != null && prevSec > best.seconds! ? `−${clock(prevSec - best.seconds!)}` : null,
+      segment: best.segment,
+      delta: prevSec != null && prevSec > best.seconds ? `−${clock(prevSec - best.seconds)}` : null,
     };
   });
 
@@ -546,6 +667,17 @@ export interface SportPageOptions {
   levelIdx?: number;
   /** The sport's marker history, oldest → newest. */
   markers?: SportMarkerEntry[];
+  /**
+   * The athlete's stored `best` laps — the fastest window covering each catalog
+   * distance, found inside a recording (SessionLap kind `best`).
+   *
+   * Pass ALL of them, for every sport. The model attributes each one by its
+   * session id against the slice it has already narrowed, so a swim's 400 m
+   * best cannot land on the running page — and a caller that tried to pre-filter
+   * by sport would have to reimplement that narrowing, which is exactly the
+   * thing this file exists to keep in one place.
+   */
+  segmentBests?: SportSegmentBest[];
   weeks?: number;
   now?: number;
 }
@@ -661,7 +793,14 @@ export function sportPageModel(
   }
 
   /* ── the record ladder ── */
-  const records = sportRecords(sport, all, opts.markers ?? [], distanceUnit, pacePer);
+  const records = sportRecords(
+    sport,
+    all,
+    opts.markers ?? [],
+    distanceUnit,
+    pacePer,
+    opts.segmentBests ?? [],
+  );
 
   /* ── the one figure ── */
   const history = (opts.markers ?? []).filter((m) => m.value.trim().length > 0);

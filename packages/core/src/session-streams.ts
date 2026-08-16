@@ -37,6 +37,7 @@
  *
  * Pure. No IO, no clock.
  */
+import { olympicSport, sportPacePerMeters } from "./olympic-sports";
 
 /**
  * What a stream MEASURES. Each kind fixes its unit, so a value never needs to
@@ -610,6 +611,37 @@ export function sanitizeSessionLaps(input: unknown): SessionLap[] {
  * whole reason the distance series is worth keeping is that the questions it
  * answers become indexed rows.
  */
+/**
+ * WHAT TO DERIVE FOR AN ACTIVITY — the split interval and the record rungs,
+ * both read from the sport CATALOG rather than from a table written here.
+ *
+ * That is not tidiness. A stored `best` lap only ever gets read by the record
+ * ladder, and the ladder asks for the catalog's own rungs — so a rung derived
+ * at any other distance is a row nothing will ever look at, and a catalog rung
+ * with no row is a record that silently never fills. Reading `OlympicSport`
+ * makes the two the same list by construction: add a rung to a sport and the
+ * next upload derives it.
+ *
+ * The split follows the sport's own pace split (`pacePer`), so a pool splits at
+ * 100 m, an erg at 500 m and the road at 1 km — the same unit each sport's
+ * paces are already printed in.
+ *
+ * An unknown activity (a hand-typed name, a sport the catalog doesn't carry)
+ * gets kilometre splits and NO rungs: splits are descriptive and always true,
+ * while a rung is a claim about a benchmark distance, and inventing benchmark
+ * distances is exactly what the catalog exists to prevent.
+ */
+export function lapDerivationFor(activityLabel: string | null | undefined): {
+  splitKm: number;
+  rungsKm: number[];
+} {
+  const sport = activityLabel ? olympicSport(activityLabel) : undefined;
+  return {
+    splitKm: sportPacePerMeters(sport?.name ?? "") / 1000,
+    rungsKm: (sport?.records ?? []).map((r) => r.km),
+  };
+}
+
 export function deriveSessionLaps(
   streams: SessionStream[],
   deviceLaps: SessionLap[],

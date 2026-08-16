@@ -1,4 +1,4 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, SportSegmentBest } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, type HeatProtocol } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -134,6 +134,31 @@ export async function fetchSessions(opts?: { archived?: boolean }): Promise<Logg
     if (!res.ok) return [];
     const data = (await res.json()) as { sessions?: LoggedSession[] };
     return data.sessions ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The athlete's stored BEST EFFORTS — the fastest window covering each catalog
+ * distance, found inside their recordings (see core sportRecords /
+ * `segmentBests`).
+ *
+ * Fetched WHOLE, for every sport, because a lap row does not know what sport it
+ * belongs to — a session does. The sport page attributes each row by session id
+ * against the slice it has already narrowed, so the sport-narrowing rule stays
+ * in core rather than being reimplemented behind a query string.
+ *
+ * Empty on any failure: a record ladder that has never seen a segment is the
+ * ladder as it shipped, so this degrades to "no extra rungs" rather than to an
+ * error the page has to render.
+ */
+export async function fetchSessionBests(): Promise<SportSegmentBest[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/bests`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { bests?: SportSegmentBest[] };
+    return data.bests ?? [];
   } catch {
     return [];
   }

@@ -13,13 +13,15 @@ import Sheet from "./sheet";
  *
  *  1. A 5.2 km run fills the 5 km rung. That looks like a bug until you know
  *     the rule, and then it is obviously the safe direction.
- *  2. A 5 km INSIDE a long run does not fill it, which is the opposite of what
- *     Strava trains people to expect. Discovering that unexplained is how an
- *     athlete stops trusting every other number on the page.
+ *  2. A 5 km taken from INSIDE a long run fills it too — and is marked, so a
+ *     rung the athlete raced is distinguishable from one found in a training
+ *     run. Both are true; they are not the same story, and an athlete about to
+ *     quote a figure out loud is entitled to know which they have.
  *
  * So both are stated here, plainly, in the athlete's own terms — the second one
- * including WHY, because "we can't" invites "then fix it" and the honest answer
- * is that the watch hands us a summary and not a trace.
+ * including WHEN it applies, because it needs a recorded ROUTE (a bare summary
+ * has no trace to look inside), and an athlete whose watch recorded no route
+ * would otherwise be waiting for a rung that can never arrive.
  *
  * Copy lives in i18n (w.train.sportPage.rule*); the percentage comes from
  * RECORD_BAND itself, so the sentence cannot drift from the rule it describes.

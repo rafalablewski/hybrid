@@ -3,6 +3,7 @@ import {
   bestEffortsFromDistance,
   deriveSessionLaps,
   downsampleStream,
+  lapDerivationFor,
   enrichLaps,
   hrZoneSeconds,
   sanitizeSessionLaps,
@@ -277,6 +278,33 @@ describe("sanitizeSessionLaps", () => {
   it("is empty for junk", () => {
     expect(sanitizeSessionLaps(null)).toEqual([]);
     expect(sanitizeSessionLaps(["nope"])).toEqual([]);
+  });
+});
+
+describe("lapDerivationFor — the rungs come from the CATALOG", () => {
+  it("splits at the sport's own pace split", () => {
+    expect(lapDerivationFor("Running").splitKm).toBe(1);
+    expect(lapDerivationFor("Swimming").splitKm).toBe(0.1);
+    expect(lapDerivationFor("Rowing").splitKm).toBe(0.5);
+  });
+
+  it("derives exactly the rungs the record ladder asks for", () => {
+    // Not a hand-written table: these ARE OlympicSport.records, so a rung added
+    // to a sport is derived on the next upload rather than silently never
+    // filling.
+    expect(lapDerivationFor("Running").rungsKm).toEqual([1, 5, 10, 21.0975, 42.195]);
+    expect(lapDerivationFor("Swimming").rungsKm).toEqual([0.1, 0.4, 1.5]);
+    expect(lapDerivationFor("Cycling").rungsKm).toEqual([10, 40, 100]);
+  });
+
+  it("derives NO rungs for a sport the catalog gives none, or an unknown name", () => {
+    // Mountain Biking deliberately has no conventional distance; a hand-typed
+    // activity has no catalog entry at all. Splits stay (always true), rungs do
+    // not (a benchmark distance would be invented).
+    expect(lapDerivationFor("Mountain Biking").rungsKm).toEqual([]);
+    expect(lapDerivationFor("Backyard Sprints").rungsKm).toEqual([]);
+    expect(lapDerivationFor(null).rungsKm).toEqual([]);
+    expect(lapDerivationFor("Backyard Sprints").splitKm).toBe(1);
   });
 });
 

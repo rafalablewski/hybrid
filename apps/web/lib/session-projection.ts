@@ -2,6 +2,7 @@ import {
   bodyweightLookup,
   deriveSessionLaps,
   exerciseNameAliasMap,
+  lapDerivationFor,
   migrateBlocks,
   sessionSetFacts,
   streamSummary,
@@ -275,21 +276,10 @@ export async function writeSessionStreams(
   return { streams: streamRows.length, laps: lapRows.length };
 }
 
-/** The split interval and record rungs the ingest derives laps at, by activity.
- *  Metre sports split at 100 m and are chased over pool distances; everything
- *  on the road splits at 1 km. Deliberately small and explicit — an invented
- *  rung is the fabricated metric the sport catalog exists to prevent. */
-export function lapDerivationFor(activityLabel: string | null | undefined): {
-  splitKm: number;
-  rungsKm: number[];
-} {
-  const label = (activityLabel ?? "").toLowerCase();
-  if (label.includes("swim")) return { splitKm: 0.1, rungsKm: [0.1, 0.4, 1.5] };
-  if (label.includes("row")) return { splitKm: 0.5, rungsKm: [0.5, 2, 5] };
-  return { splitKm: 1, rungsKm: [1, 5, 10, 21.0975, 42.195] };
-}
-
-/** `deriveSessionLaps` with the activity's own split/rung set applied. */
+/** `deriveSessionLaps` with the activity's own split interval and record rungs
+ *  applied — both read from the sport catalog (core `lapDerivationFor`), so a
+ *  stored `best` lap is always at a distance the record ladder actually asks
+ *  for. A rung derived anywhere else is a row nothing will ever read. */
 export function lapsForRecording(
   streams: SessionStream[],
   deviceLaps: SessionLap[],
