@@ -19,6 +19,7 @@ import {
   sportVolumeReading,
   SPORT_PAGE_RECENT,
 } from "./sport-page";
+import { formatDuration } from "./duration";
 import { OLYMPIC_SPORTS } from "./olympic-sports";
 import { SPORT_MARK_PATHS, sportMark, sportMarkPaths } from "./theme/sport-marks";
 import type { LoggedSession } from "./engines/session";
@@ -129,9 +130,9 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     expect(m.distanceUnit).toBe("km");
     expect(m.paceUnit).toBe("/km");
     expect(m.pace).not.toBeNull();
-    expect(m.totals.map((t) => t.id)).toEqual(["efforts", "hours", "distance", "week"]);
-    expect(m.bests.map((b) => b.id)).toContain("fastest");
     expect(m.bests.map((b) => b.id)).toContain("longest");
+    // Best pace is stated by the ladder's rungs now, so it is not a card too.
+    expect(m.records.find((r) => r.km === 5)!.pace).not.toBeNull();
   });
 
   it("gives a TIMED sport no pace, no distance and no invented metric", () => {
@@ -140,7 +141,6 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     expect(m.hasPace).toBe(false);
     expect(m.pace).toBeNull();
     expect(m.split).toBeNull();
-    expect(m.totals.map((t) => t.id)).toEqual(["efforts", "hours", "week"]);
     expect(m.bests.map((b) => b.id)).not.toContain("fastest");
     expect(m.bests.map((b) => b.id)).toContain("longestSession");
     // Duration is the truth it does have, so the one figure falls back to it.
@@ -149,18 +149,17 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
 
   it("prints every timed figure in hours AND minutes, carrying its own units", () => {
     const m = sportPageModel("Tennis", MIXED, { now: NOW });
-    // 75 + 60 logged minutes. This used to read "2:15 h" as the hero and a
-    // flat "2" in the totals row — the athlete had logged the 15.
+    // 75 + 60 logged minutes. This used to read "2:15 h" — a clock time
+    // wearing a duration's unit — and the totals row that carried it in two
+    // more places has since gone, so the surviving figures are the pins.
     expect(m.primary.value).toBe("2h 15min");
     expect(m.primary.unit).toBeNull();
-    expect(m.totals.find((c) => c.id === "hours")!.value).toBe("2h 15min");
-    expect(m.totals.find((c) => c.id === "hours")!.unit).toBeNull();
-    // The week cell and the longest session are durations too, so neither
-    // trails a separate "min" for the label to name a second time.
-    expect(m.totals.find((c) => c.id === "week")!.value).toBe("1h 15min");
-    expect(m.totals.find((c) => c.id === "week")!.unit).toBeNull();
+    // The longest session is a duration too, so it trails no separate "min"
+    // for the label to name a second time.
     expect(m.bests.find((b) => b.id === "longestSession")!.value).toBe("1h 15min");
     expect(m.bests.find((b) => b.id === "longestSession")!.unit).toBeNull();
+    // …and the week series, which the volume axis and its average read.
+    expect(formatDuration(m.weeks[m.weeks.length - 1]!.value)).toBe("1h 15min");
   });
 
   it("reads a pool sport in METRES at a per-hundred pace", () => {
@@ -168,7 +167,10 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
     const m = sportPageModel("Swimming", swims, { now: NOW });
     expect(m.distanceUnit).toBe("m");
     expect(m.paceUnit).toBe("/100m");
-    expect(m.totals.find((t) => t.id === "distance")!.value).toBe("2\u2009400");
+    // Metres, grouped with a thin space — the meta line and the week series
+    // both read it through sportDistance.
+    expect(m.meta.distance).toBe("2\u2009400");
+    expect(sportDistance(m.weeks[m.weeks.length - 1]!.value / 1000, "m")).toBe("2\u2009400");
   });
 
   it("has no transfer section for the 58 sports with no pool", () => {
@@ -211,7 +213,7 @@ describe("sportPageModel — the page configures itself from the catalog", () =>
   it("never marks an AGGREGATE as measured — a week has no single recording behind it", () => {
     const measured = [effort("m1", "Tempo", "running", 1, 5, 20, { durationSec: 1181 })];
     const m = sportPageModel("Running", measured, { now: NOW });
-    expect(m.bests.find((b) => b.id === "fastest")!.provider).toBe("apple");
+    expect(m.bests.find((b) => b.id === "longest")!.provider).toBe("apple");
     expect(m.bests.find((b) => b.id === "biggestWeek")!.provider).toBeNull();
     expect(m.bests.find((b) => b.id === "biggestWeek")!.sessionId).toBeNull();
   });
@@ -489,5 +491,261 @@ describe("the cover art is a drawn mark, not an emoji", () => {
         expect(!(closed && arcs.length === 1 && !/[LHVC]/.test(d)), `${name}: ${d}`).toBe(true);
       }
     }
+  });
+});
+
+describe("the record ladder — a time at a distance", () => {
+  it("gives a ladder ONLY to the sports the catalog gives race distances", () => {
+    expect(sportPageModel("Running", RUNS, { now: NOW }).records.length).toBe(5);
+    // Squash has an sc block and a marker, and no distance at all.
+    expect(sportPageModel("Squash", MIXED, { now: NOW }).records).toEqual([]);
+    // Tennis has neither.
+    expect(sportPageModel("Tennis", MIXED, { now: NOW }).records).toEqual([]);
+  });
+
+  it("counts an effort a little LONGER than the rung, and never a shorter one", () => {
+    const runs = [
+      effort("a", "Parkrun", "running", 10, 5.2, 24), // 5.2 km — counts as a 5 km
+      effort("b", "Short", "running", 5, 4.9, 21), // 4.9 km — would flatter, so it does not
+    ];
+    const rung = sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("24:00");
+    expect(rung.sessionId).toBe("a");
+  });
+
+  it("drops an effort more than 5% over the rung — that is a longer run, not this one", () => {
+    const runs = [effort("a", "Long", "running", 4, 5.3, 26)];
+    expect(sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.km === 5)!.time).toBeNull();
+  });
+
+  it("reads the finishing time off the WATCH's seconds, not the rounded minutes", () => {
+    const runs = [effort("a", "Parkrun", "running", 6, 5, 23, { durationSec: 1361 })];
+    const rung = sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("22:41"); // 1361 s, not the logged 23:00
+    expect(rung.provider).toBe("apple");
+    expect(rung.typed).toBe(false);
+  });
+
+  it("rolls a long one into hours — a half marathon is not 112 minutes", () => {
+    const runs = [effort("a", "Half", "running", 20, 21.1, 112, { durationSec: 6730 })];
+    expect(sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.name === "half")!.time)
+      .toBe("1:52:10");
+  });
+
+  it("deltas against the best that STOOD, not the second fastest ever", () => {
+    // Chipped at over three attempts: 26:00 → 24:30 → 23:00. The delta the page
+    // shows is the last improvement (1:30), not the gap to the slowest.
+    const runs = [
+      effort("a", "Parkrun", "running", 40, 5, 26),
+      effort("b", "Parkrun", "running", 20, 5, 24.5),
+      effort("c", "Parkrun", "running", 5, 5, 23),
+    ];
+    const rung = sportPageModel("Running", runs, { now: NOW, weeks: 8 }).records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("23:00");
+    expect(rung.delta).toBe("−1:30");
+  });
+
+  it("has no delta on the first one set", () => {
+    const runs = [effort("a", "Parkrun", "running", 5, 5, 24)];
+    expect(sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.km === 5)!.delta).toBeNull();
+  });
+
+  it("lets a TYPED marker fill its own rung, marked as typed and with no derived pace", () => {
+    const m = sportPageModel("Running", [], {
+      now: NOW,
+      markers: [{ value: "22:41", at: new Date(NOW - DAY).toISOString() }],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("22:41");
+    expect(rung.typed).toBe(true);
+    expect(rung.provider).toBeNull();
+    // A typed time has no measured distance behind it — a pace off it is arithmetic on a claim.
+    expect(rung.pace).toBeNull();
+    // …and it fills ONLY its own rung.
+    expect(m.records.filter((r) => r.time != null)).toHaveLength(1);
+  });
+
+  it("hands the rung back to the measurement the moment a logged effort beats the typed one", () => {
+    const runs = [effort("a", "Parkrun", "running", 3, 5, 23, { durationSec: 1300 })]; // 21:40
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      markers: [{ value: "22:41", at: new Date(NOW - 30 * DAY).toISOString() }],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("21:40");
+    expect(rung.typed).toBe(false);
+    expect(rung.provider).toBe("apple");
+  });
+
+  it("never reads a non-clock marker as a time — a belt is not a 5 km", () => {
+    // BJJ has no ladder at all, but the guard is on the marker itself: a plain
+    // number would otherwise parse and land on a rung as seconds.
+    const m = sportPageModel("Cycling", [], {
+      now: NOW,
+      markers: [{ value: "240", at: new Date(NOW - DAY).toISOString() }],
+    });
+    expect(m.records.every((r) => r.time == null)).toBe(true);
+  });
+
+  it("states the rung in the sport's OWN unit — a swimmer's 100, not 0.1", () => {
+    const swims = [effort("s", "Swim", "swimming", 4, 0.1, 1, { durationSec: 82 })];
+    const m = sportPageModel("Swimming", swims, { now: NOW });
+    const rung = m.records.find((r) => r.km === 0.1)!;
+    expect(rung.value).toBe("100");
+    expect(rung.unit).toBe("m");
+    expect(rung.time).toBe("1:22");
+  });
+
+  it("promotes the MARKER's rung, and the page states it once", () => {
+    const runs = [
+      effort("a", "Parkrun", "running", 6, 5, 24),
+      effort("b", "Ten", "running", 12, 10, 50),
+    ];
+    const m = sportPageModel("Running", runs, { now: NOW });
+    const promoted = m.records.filter((r) => r.promoted);
+    expect(promoted).toHaveLength(1);
+    expect(promoted[0]!.km).toBe(5);
+    expect(promoted[0]!.time).toBe("24:00");
+    // The marker states this rung, so it does not also get a line of its own.
+    expect(m.markerAside).toBe(false);
+  });
+
+  it("keeps a marker that is NOT a distance on its own line — FTP is watts", () => {
+    const at = new Date(NOW - DAY).toISOString();
+    const m = sportPageModel("Cycling", [], { now: NOW, markers: [{ value: "240", at }] });
+    expect(m.records).toHaveLength(3);
+    // Watts fill no rung, so the figure needs a line of its own.
+    expect(m.markerAside).toBe(true);
+    // …and with nothing typed there is nothing to set aside.
+    expect(sportPageModel("Cycling", [], { now: NOW }).markerAside).toBe(false);
+  });
+
+  it("sets a typed figure aside when the ladder could not read it as a time", () => {
+    // "sub 25" is a marker on a rung-bearing sport that parses as no clock, so
+    // no rung carries it — without the aside the athlete's own figure would be
+    // rendered nowhere once a measured rung takes the headline.
+    const runs = [effort("a", "Parkrun", "running", 5, 5, 24)];
+    const m = sportPageModel("Running", runs, {
+      now: NOW,
+      markers: [{ value: "sub 25", at: new Date(NOW - DAY).toISOString() }],
+    });
+    expect(m.records.some((r) => r.typed)).toBe(false);
+    expect(m.markerAside).toBe(true);
+  });
+
+  it("does NOT set it aside when a rung is already carrying it", () => {
+    const m = sportPageModel("Running", [], {
+      now: NOW,
+      markers: [{ value: "22:41", at: new Date(NOW - DAY).toISOString() }],
+    });
+    expect(m.records.find((r) => r.km === 5)!.typed).toBe(true);
+    expect(m.markerAside).toBe(false);
+  });
+
+  it("does not let another sport's marker flag pick this page's headline", () => {
+    // Marathon shares the ROAD ladder, whose 5 km rung is flagged for RUNNING's
+    // marker. Marathon has no `sc` and no marker, so the flag is not about it.
+    // A 1 km AND a 5 km, so the two rules disagree: the marker rung is 5 km,
+    // the shortest SET rung is 1 km. Without that the test proves nothing.
+    const runs = [
+      effort("a", "Track 1 k", "running", 6, 1, 4),
+      effort("b", "Parkrun", "running", 12, 5, 24),
+    ];
+    // Running owns the 5 km marker, so it headlines the 5 km.
+    expect(sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.promoted)!.km).toBe(5);
+    // Marathon has no marker at all, so it falls to the shortest rung it has set.
+    expect(sportPageModel("Marathon", runs, { now: NOW }).records.find((r) => r.promoted)!.km).toBe(1);
+  });
+
+  it("promotes the shortest SET rung when the marker's own is still empty", () => {
+    const runs = [effort("b", "Ten", "running", 12, 10, 50)];
+    const m = sportPageModel("Running", runs, { now: NOW });
+    expect(m.records.find((r) => r.promoted)!.km).toBe(10);
+  });
+
+  it("promotes nothing on an empty ladder — a headline figure cannot be a blank", () => {
+    const m = sportPageModel("Running", [], { now: NOW });
+    expect(m.records.every((r) => !r.promoted)).toBe(true);
+    expect(m.records.every((r) => r.time == null)).toBe(true);
+  });
+
+  it("stops the best pace being the headline when a record can be", () => {
+    // The old page opened on best pace, then printed it again under Pace ›
+    // Best and a third time as the Bests rail's Fastest card.
+    const m = sportPageModel("Running", RUNS, { now: NOW });
+    expect(m.records.find((r) => r.promoted)!.time).toBe("24:00");
+    // The rung states the pace for its own distance, so the all-time "fastest"
+    // card — the same figure a third time — retires with it.
+    expect(m.bests.map((b) => b.id)).toEqual(["longest", "biggestWeek"]);
+  });
+});
+
+describe("a rung that IS the pace split", () => {
+  it("states the time once — a 1 km time on a /km sport is its own pace", () => {
+    const runs = [effort("a", "Track 1 k", "running", 4, 1, 4, { durationSec: 242 })];
+    const rung = sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.km === 1)!;
+    expect(rung.time).toBe("4:02");
+    expect(rung.pace).toBeNull();
+    // …while a rung above the split still carries one.
+    const ten = [effort("b", "Ten", "running", 4, 10, 48, { durationSec: 2900 })];
+    expect(sportPageModel("Running", ten, { now: NOW }).records.find((r) => r.km === 10)!.pace).toBe("4:50");
+  });
+
+  it("holds for the pool's own split too — a 100 m swim at /100m", () => {
+    const swims = [effort("s", "100 TT", "swimming", 3, 0.1, 1, { durationSec: 82 })];
+    const rung = sportPageModel("Swimming", swims, { now: NOW }).records.find((r) => r.km === 0.1)!;
+    expect(rung.time).toBe("1:22");
+    expect(rung.pace).toBeNull();
+  });
+});
+
+describe("the typed rung is a RECORD, not the latest typing", () => {
+  const at = (d: number) => new Date(NOW - d * DAY).toISOString();
+
+  it("keeps the FASTEST typing when a slower one is entered afterwards", () => {
+    // A rung labelled "Best 5 km" that reads the last entry would show 25:00
+    // the day after a 22:41 was typed. That is the athlete's current form, not
+    // their record, and the marker history exists so it need not be confused.
+    const m = sportPageModel("Running", [], {
+      now: NOW,
+      markers: [{ value: "22:41", at: at(30) }, { value: "25:00", at: at(2) }],
+    });
+    const rung = m.records.find((r) => r.km === 5)!;
+    expect(rung.time).toBe("22:41");
+    expect(rung.at).toBe(at(30));
+    expect(rung.typed).toBe(true);
+  });
+
+  it("deltas against the typing that STOOD, like a measured rung does", () => {
+    // 30:00 → 25:00 → 24:30 is a −0:30 improvement, not −5:30 against the
+    // first-ever entry — the same rule the measured rungs follow.
+    const m = sportPageModel("Running", [], {
+      now: NOW,
+      markers: [{ value: "30:00", at: at(90) }, { value: "25:00", at: at(40) }, { value: "24:30", at: at(3) }],
+    });
+    expect(m.records.find((r) => r.km === 5)!.delta).toBe("−0:30");
+  });
+
+  it("has no delta on the first typing", () => {
+    const m = sportPageModel("Running", [], { now: NOW, markers: [{ value: "24:30", at: at(3) }] });
+    expect(m.records.find((r) => r.km === 5)!.delta).toBeNull();
+  });
+});
+
+describe("the counts a door can promise", () => {
+  it("separates cardio BLOCKS from SESSIONS — a brick holds two of one", () => {
+    const brick: LoggedSession = {
+      id: "b1",
+      title: "Brick",
+      startedAt: new Date(NOW - DAY).toISOString(),
+      blocks: [
+        { kind: "cardio", name: "Easy run", discipline: "running", distance: 5, minutes: 26 },
+        { kind: "cardio", name: "Run off the bike", discipline: "running", distance: 3, minutes: 15 },
+      ],
+    } as LoggedSession;
+    const m = sportPageModel("Running", [brick], { now: NOW });
+    // Two efforts, ONE row in History — the door opens History, so it counts rows.
+    expect(m.meta.efforts).toBe(2);
+    expect(m.meta.sessions).toBe(1);
   });
 });

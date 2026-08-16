@@ -56,7 +56,7 @@ import {
   type EffortSplit,
   type WeekMileage,
 } from "./engines/running";
-import { mmss } from "./format";
+import { clock, mmss } from "./format";
 import { OLYMPIC_SPORTS, type OlympicSport, type PoolExercise } from "./olympic-sports";
 import { LEVELS, prescribeForSport, type SportPrescription } from "./sports";
 
@@ -137,17 +137,6 @@ export interface SportPrimary {
   at: string | null;
 }
 
-/** One cell of the totals row, in figure-order.ts's reading order — efforts,
- *  hours, distance, and then THIS WEEK, which is last because it is not a
- *  fourth measure but a second window on whichever measure the sport uses.
- *  `id` names the string the client localizes. */
-export interface SportTotal {
-  id: "efforts" | "hours" | "distance" | "week";
-  value: string;
-  /** The unit to name in the label ("km" / "m"), when the cell has one. */
-  unit: string | null;
-}
-
 /** A week bucket, in the sport's own measure. */
 export interface SportWeek {
   /** ISO start of the 7-day bucket. */
@@ -166,13 +155,17 @@ export interface SportEffort {
   minutes: number;
   /** Canonical seconds per km, or null when the effort was not paced. */
   secPerKm: number | null;
+  /** The effort's exact duration in SECONDS — the device's own clock where one
+   *  recorded it. A record is a finishing time, so it reads this rather than
+   *  `minutes`: rounding a 22:41 to 23 min would lose the record by 19s. */
+  seconds: number | null;
   /** The connector that recorded it ("apple"), or null when it was typed. */
   provider: string | null;
 }
 
 /** An all-time best. `effort`-backed bests carry the session they came from. */
 export interface SportBest {
-  id: "fastest" | "longest" | "longestSession" | "biggestWeek";
+  id: "longest" | "longestSession" | "biggestWeek";
   value: string;
   unit: string | null;
   /** ISO — the effort's date, or the week's start for `biggestWeek`. */
@@ -180,6 +173,66 @@ export interface SportBest {
   sessionId: string | null;
   /** The recording's connector, when a device measured this best. */
   provider: string | null;
+}
+
+/* ── 2b. THE RECORD LADDER — a time at a distance ────────────────────────── */
+
+/**
+ * How far PAST a rung an effort may run and still count for it.
+ *
+ * The asymmetry is the whole rule, and it is deliberate. An effort counts when
+ * it covered AT LEAST the rung and no more than 5% over:
+ *
+ *   5.2 km counts as a 5 km, because the extra 200 m can only make the time
+ *   WORSE — the figure understates the athlete, never the reverse.
+ *   4.9 km never counts, because calling it a 5 km would flatter them.
+ *
+ * So a rung is a FLOOR: never better than the truth, occasionally a little
+ * worse. That is the right direction for a number somebody might quote out
+ * loud, and it is why the band has no lower half.
+ *
+ * WHAT THIS CANNOT DO, and it must be said in the explainer sheet too: a
+ * `DeviceWorkout` is a workout SUMMARY — duration, distance, heart rate,
+ * elevation. It carries no laps, no splits and no route (see session-device.ts),
+ * so there is no way to extract the fastest 5 km from INSIDE an 8 km run. A
+ * rung is an effort logged AT the distance. If lap events or workout routes are
+ * ever imported, they feed these same rungs and nothing here changes shape —
+ * only the accuracy improves.
+ */
+export const RECORD_BAND = 1.05;
+
+/** One rung of a sport's record ladder, filled or waiting. */
+export interface SportRecord {
+  /** The rung, in km — the catalog's own figure, and the stable key. */
+  km: number;
+  /** The rung as a FIGURE in the sport's display unit ("5", "100"), or null
+   *  when the distance goes by a name instead. */
+  value: string | null;
+  /** The display unit for `value`; null alongside a named rung. */
+  unit: "km" | "m" | null;
+  /** The name a distance goes by, when it has one. Clients localize it — the
+   *  model states which distance it is, never what to call it in English. */
+  name: "half" | "marathon" | null;
+  /** The finishing time ("22:41", "1:52:10"), or null while the rung is unset. */
+  time: string | null;
+  /** What that time paces at, in the sport's own split. Null when unset, and
+   *  null on a TYPED rung — a typed 5 km time has no measured distance behind
+   *  it, so deriving a pace from it would be arithmetic on a claim. */
+  pace: string | null;
+  /** When it was set, ISO. */
+  at: string | null;
+  sessionId: string | null;
+  /** The connector that recorded it; null when typed or unset. */
+  provider: string | null;
+  /** True when the figure is the athlete's typed marker, not a logged effort. */
+  typed: boolean;
+  /** Improvement over the previous best at THIS rung ("−1:12"), or null when
+   *  it is the first one set. */
+  delta: string | null;
+  /** True for the ONE rung the page states large — see `primary` on the model,
+   *  which carries the same figure. A client renders the big figure from
+   *  `primary` and skips this rung in the ladder, so it can never print twice. */
+  promoted: boolean;
 }
 
 /** A pool exercise plus whether the chosen level has reached it. */
@@ -207,11 +260,10 @@ export interface SportPageModel {
   empty: boolean;
   /** The FACTS the hero's meta line states. Clients localize each one and join
    *  them with heroMetaLine() — the model never bakes English into a hero. */
-  meta: { efforts: number; distance: string | null; distanceUnit: "km" | "m"; firstAt: string | null };
+  meta: { efforts: number; sessions: number; distance: string | null; distanceUnit: "km" | "m"; firstAt: string | null };
   primary: SportPrimary;
   /** The catalog's marker prompt, when the sport has one and it is unfilled. */
   markerPrompt: { label: string; ph: string } | null;
-  totals: SportTotal[];
   weeks: SportWeek[];
   /** Mean of `weeks`, in the same measure. */
   weekAvg: number;
@@ -222,6 +274,21 @@ export interface SportPageModel {
   pace: { avgSecPerKm: number; bestSecPerKm: number; trend: number[]; weekStarts: string[]; prIndex: number } | null;
   /** Null unless the sport is paced and the split has minutes in it. */
   split: EffortSplit | null;
+  /**
+   * THE RECORD LADDER, ascending — empty for a sport the catalog gives no
+   * benchmark distances.
+   *
+   * WHICH FIGURE A CLIENT STATES LARGE, in one rule: the rung flagged
+   * `promoted` when there is one, else `primary`. A ladder is a stronger
+   * headline than anything `primary` can offer — "22:41 for 5 km" against "best
+   * pace 4:32 /km" — so `primary` is the fallback for the sports that have no
+   * ladder, or have one with nothing on it yet.
+   */
+  records: SportRecord[];
+  /** True when the athlete HAS typed a marker and no rung is carrying it — an
+   *  FTP in watts, or a figure the ladder could not read as a time. The client
+   *  gives it its own line; false means a rung already states it. */
+  markerAside: boolean;
   bests: SportBest[];
   /** Null for the 58 sports with no `sc` block — there is no strength to prescribe. */
   transfer: SportPrescription | null;
@@ -286,6 +353,7 @@ function efforts(slice: LoggedSession[]): SportEffort[] {
         // Derived from the device's exact seconds where there is a recording —
         // a pace computed off rounded minutes contradicts the panel beside it.
         secPerKm: distanceKm > 0 && sec != null && sec > 0 ? Math.round(sec / distanceKm) : null,
+        seconds: sec != null && sec > 0 ? sec : b.minutes && b.minutes > 0 ? Math.round(b.minutes * 60) : null,
         provider,
       });
     }
@@ -340,6 +408,135 @@ function markerDelta(from: string, to: string): { delta: string; improving: bool
   const sign = diff < 0 ? "−" : "+";
   const body = to.includes(":") ? mmss(Math.abs(diff)) : String(Math.round(Math.abs(diff) * 100) / 100);
   return { delta: `${sign}${body}`, improving };
+}
+
+/**
+ * THE RECORD LADDER for one sport — the athlete's best time at each distance
+ * the catalog says this sport is measured at.
+ *
+ * `all` is the sport's efforts NEWEST-FIRST (as `efforts()` returns them),
+ * already device-true. `markers` is the typed marker history, oldest → newest.
+ *
+ * Three things this does, in order of how easy they are to get wrong:
+ *
+ *  1. MATCHES on `RECORD_BAND` — at least the rung, at most 5% over. See that
+ *     constant for why the band has no lower half.
+ *  2. Walks the efforts CHRONOLOGICALLY so "the previous best" means the best
+ *     that stood before this one beat it. A delta computed against the
+ *     second-fastest-ever would say the same thing on a rung you improved in
+ *     one jump as on a rung you have been chipping at for a year.
+ *  3. Lets the TYPED marker fill its own rung, and only its own — a runner who
+ *     knows their parkrun time should see it — but only when it beats what was
+ *     measured, and never without saying it was typed. Beat it with a logged
+ *     effort and the rung flips to the measurement on its own.
+ */
+export function sportRecords(
+  sport: OlympicSport | undefined,
+  all: SportEffort[],
+  markers: SportMarkerEntry[],
+  distanceUnit: "km" | "m",
+  pacePer: number,
+): SportRecord[] {
+  const ladder = sport?.records ?? [];
+  if (ladder.length === 0) return [];
+
+  // Oldest → newest, so a running best can name what it displaced.
+  const chron = [...all].reverse();
+  // The ROAD ladder is SHARED, and its `marker: true` flag means "the rung this
+  // sport's sc.marker states". Marathon and Race Walking have no `sc` and no
+  // marker, so the flag is not about them — honouring it there would let a
+  // catalog fact from another sport decide this page's headline.
+  const markerRung = sport?.sc ? (ladder.find((r) => r.marker) ?? null) : null;
+  // THE TYPED RUNG TAKES THE BEST TYPING, NOT THE LAST ONE. A rung is labelled
+  // "Best 5 km"; reading the most recent entry would put 25:00 there the day
+  // after a 22:41 was typed, which is the athlete's CURRENT figure and not
+  // their record. The marker history exists precisely so this can be a record.
+  //
+  // A typed rung has to be a CLOCK. "Blue belt, 2 yrs" is a marker too, and it
+  // is not a time at a distance — markerNumber would happily turn "240" into a
+  // 4-minute 5 km.
+  const typedClocks = markers
+    .filter((m) => m.value.trim().length > 0 && m.value.includes(":"))
+    .map((m) => ({ sec: markerNumber(m.value), at: m.at }))
+    .filter((m): m is { sec: number; at: string } => m.sec != null);
+  // Walked in the order they were typed, so "the previous best" means the one
+  // that stood before this beat it — the same rule the measured rungs follow,
+  // rather than a baseline on the first-ever typing.
+  let typedSec: number | null = null;
+  let typedAt: string | null = null;
+  let typedPrev: number | null = null;
+  for (const t of typedClocks) {
+    if (typedSec == null || t.sec < typedSec) {
+      if (typedSec != null) typedPrev = typedSec;
+      typedSec = t.sec;
+      typedAt = t.at;
+    }
+  }
+
+  const rows: SportRecord[] = ladder.map((rung) => {
+    let best: SportEffort | null = null;
+    let prevSec: number | null = null;
+    for (const e of chron) {
+      if (e.seconds == null || e.seconds <= 0) continue;
+      if (e.distanceKm < rung.km || e.distanceKm > rung.km * RECORD_BAND) continue;
+      if (best == null) { best = e; continue; }
+      if (e.seconds < best.seconds!) { prevSec = best.seconds!; best = e; }
+    }
+
+    const isMarkerRung = markerRung != null && rung.km === markerRung.km;
+    const typedWins = isMarkerRung && typedSec != null && (best == null || typedSec < best.seconds!);
+
+    const base = {
+      km: rung.km,
+      value: rung.name ? null : sportDistance(rung.km, distanceUnit),
+      unit: rung.name ? null : distanceUnit,
+      name: rung.name ?? null,
+      promoted: false,
+    };
+
+    if (typedWins) {
+      return {
+        ...base,
+        time: clock(typedSec!),
+        // No measured distance behind a typed time, so no pace derived from it.
+        pace: null,
+        at: typedAt,
+        sessionId: null,
+        provider: null,
+        typed: true,
+        delta: typedPrev != null && typedPrev > typedSec! ? `−${clock(typedPrev - typedSec!)}` : null,
+      };
+    }
+    if (best == null) {
+      return { ...base, time: null, pace: null, at: null, sessionId: null, provider: null, typed: false, delta: null };
+    }
+    // A rung AT the pace split states its own pace: a 1 km time on a /km sport
+    // and a 100 m time on a /100m sport ARE the pace, so printing both puts the
+    // same figure on the row twice — the exact repetition this ladder replaced.
+    const rungIsSplit = Math.round(rung.km * 1000) === pacePer;
+    return {
+      ...base,
+      time: clock(best.seconds!),
+      pace: best.secPerKm != null && !rungIsSplit ? sportPace(best.secPerKm, pacePer) : null,
+      at: best.startedAt,
+      sessionId: best.sessionId,
+      provider: best.provider,
+      typed: false,
+      delta: prevSec != null && prevSec > best.seconds! ? `−${clock(prevSec - best.seconds!)}` : null,
+    };
+  });
+
+  // THE PROMOTED RUNG — the one the page states large. The sport's own marker
+  // distance when it has one, else the shortest rung that has been set. A
+  // ladder with nothing on it promotes nothing: an empty page has no headline
+  // record to state, and inventing one from the shortest EMPTY rung would put
+  // a blank where the biggest figure on the screen goes.
+  const promoted =
+    rows.find((r) => markerRung != null && r.km === markerRung.km && r.time != null) ??
+    rows.find((r) => r.time != null) ??
+    null;
+  if (promoted) promoted.promoted = true;
+  return rows;
 }
 
 /* ── 5. THE MODEL BUILDER ────────────────────────────────────────────────── */
@@ -416,24 +613,14 @@ export function sportPageModel(
   const rawSplit: EffortSplit | null = hasPace ? paceEffortSplit(slice) : null;
   const split = rawSplit && rawSplit.easy + rawSplit.moderate + rawSplit.hard > 0 ? rawSplit : null;
 
-  /* ── bests ── */
+  /* ── bests ──
+     No FASTEST card. Best pace used to sit here, and it was the same figure the
+     page had already stated twice: as the headline and again as Pace › Best.
+     Every sport now states it exactly once — a sport with a ladder states it
+     per rung (a 5 km time carries its own pace), and a paced sport without one
+     states it as `primary`. What is left here are the three maxima neither of
+     those can express. */
   const bests: SportBest[] = [];
-  if (hasPace) {
-    const fastest = pacedEfforts.reduce<SportEffort | null>(
-      (b, e) => (b == null || e.secPerKm! < b.secPerKm! ? e : b),
-      null,
-    );
-    if (fastest) {
-      bests.push({
-        id: "fastest",
-        value: sportPace(fastest.secPerKm!, pacePer),
-        unit: paceUnit,
-        at: fastest.startedAt,
-        sessionId: fastest.sessionId,
-        provider: fastest.provider,
-      });
-    }
-  }
   if (hasDistance) {
     const longest = all.reduce<SportEffort | null>((b, e) => (b == null || e.distanceKm > b.distanceKm ? e : b), null);
     if (longest && longest.distanceKm > 0) {
@@ -473,10 +660,25 @@ export function sportPageModel(
     });
   }
 
+  /* ── the record ladder ── */
+  const records = sportRecords(sport, all, opts.markers ?? [], distanceUnit, pacePer);
+
   /* ── the one figure ── */
   const history = (opts.markers ?? []).filter((m) => m.value.trim().length > 0);
   const latest = history[history.length - 1] ?? null;
   const oldest = history[0] ?? null;
+
+  // A TYPED MARKER NO RUNG IS CARRYING needs a line of its own, and this has to
+  // be the RUNTIME fact rather than a catalog one. Two ways it happens:
+  //   • the marker is not a distance at all (Cycling's FTP, in watts), so the
+  //     catalog gives it no rung to fill;
+  //   • the marker IS a rung, but what was typed is not a clock ("sub 25") or a
+  //     logged effort beat it — either way `sportRecords` left the rung
+  //     measured, and the typed figure has nowhere else to go.
+  // Gating this on the catalog alone hid the athlete's own figure in the second
+  // case. Where a rung IS carrying it, printing it again above would be the
+  // repetition this whole change removes.
+  const markerAside = latest != null && !records.some((r) => r.typed);
   let primary: SportPrimary;
   if (sc && latest) {
     const d = oldest && oldest !== latest ? markerDelta(oldest.value, latest.value) : null;
@@ -502,22 +704,21 @@ export function sportPageModel(
     primary = { kind: "time", value: formatDuration(totalsRaw.minutes), unit: null, label: null, delta: null, improving: null, trend: [], at: null };
   }
 
-  /* ── totals — the distance cell exists only when the sport measures one ── */
-  const thisWeek = weeks[weeks.length - 1] ?? { value: 0, efforts: 0, weekStart: new Date(now).toISOString() };
-  const totals: SportTotal[] = [{ id: "efforts", value: String(totalsRaw.efforts), unit: null }];
-  // Time logged reads in hours AND minutes: rounding to whole hours printed a
-  // flat "1" over 67 minutes of tennis, and the athlete had logged the 7.
-  totals.push({ id: "hours", value: formatDuration(totalsRaw.minutes), unit: null });
-  if (hasDistance) totals.push({ id: "distance", value: sportDistance(totalsRaw.distanceKm, distanceUnit), unit: distanceUnit });
-  totals.push({
-    id: "week",
-    value: hasDistance ? sportDistance(distanceUnit === "m" ? thisWeek.value / 1000 : thisWeek.value, distanceUnit) : formatDuration(thisWeek.value),
-    unit: hasDistance ? distanceUnit : null,
-  });
-
+  // NO TOTALS ROW. It printed efforts / hours / distance / this week, and the
+  // hero's own meta line states efforts, distance and since — two of the four,
+  // two hundred points above it. On a TIMED sport the third was worse than a
+  // repeat: `primary` falls through to total time, so the 46px headline and the
+  // 20px "Hours" cell printed the same string. `thisWeek` survives as the
+  // volume axis's own label, which is where a week belongs.
+  //
   /* ── the hero's meta line — facts about THIS instance ── */
   const meta = {
     efforts: totalsRaw.efforts,
+    // `efforts` counts cardio BLOCKS (a brick session holds two), which is the
+    // right figure for "how many times have I run". `sessions` is the row count
+    // in History, so a door that opens History has to promise this one — the
+    // two differ exactly when a session holds more than one block of a sport.
+    sessions: slice.length,
     distance: hasDistance && totalsRaw.distanceKm > 0 ? sportDistance(totalsRaw.distanceKm, distanceUnit) : null,
     distanceUnit,
     // The oldest effort in the slice — `all` is newest-first.
@@ -546,7 +747,6 @@ export function sportPageModel(
     meta,
     primary,
     markerPrompt: sc ? { label: sc.marker.label, ph: sc.marker.ph } : null,
-    totals,
     weeks,
     // In the sport's own unit — metres for the pool, km for the road. Rounded
     // to the same two decimals the km figures show, so the average never
@@ -554,6 +754,8 @@ export function sportPageModel(
     weekAvg: roundKm(weekAvg),
     pace,
     split,
+    records,
+    markerAside,
     bests,
     transfer,
     pool,

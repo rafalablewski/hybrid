@@ -36,7 +36,7 @@ import { join } from "node:path";
  * width and height are skipped — a 56×56 box at radius 28 is an avatar, not a
  * card, and a card never fixes its own height.
  *
- * IT IS A RATCHET, NOT A LINE IN THE SAND. There are 16 of these left (25 when
+ * IT IS A RATCHET, NOT A LINE IN THE SAND. There are 15 of these left (25 when
  * the rule was written), on screens this branch had no business rewriting, so
  * they are listed below with their counts. That makes the list do three jobs at
  * once: the cleared surfaces are pinned at zero and can never regress; a NEW
@@ -91,7 +91,11 @@ const RATCHET: Record<string, number> = {
   "components/aurora/settings.tsx": 1,
   // The analytics + detail screens.
   "components/aurora/progress.tsx": 1,
-  "components/aurora/sport-page.tsx": 1,
+  // sport-page.tsx is GONE from this list, and that is the ratchet working: the
+  // redesign's Bests rail was its one hand-rolled surface — 176-wide bordered
+  // cards on a page whose totals row was commented "facts on hairlines, no
+  // cards" — and it is hairline rows now. The count went 1 → 0 and the test
+  // failed until the win was locked in here, which is the whole point of it.
   "components/aurora/train.tsx": 1,
   "components/aurora/body-map.tsx": 1,
   "components/aurora/exercise-media.tsx": 1,

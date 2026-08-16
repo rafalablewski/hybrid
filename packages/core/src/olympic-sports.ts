@@ -51,6 +51,24 @@ export interface SportMarker {
   ph: string;
 }
 
+/**
+ * ONE RUNG of a sport's record ladder — a distance the sport is conventionally
+ * measured at, so "what do you run 5 km in" has somewhere to live.
+ *
+ * The distance is in KM because km is the storage unit everywhere; a 100 m swim
+ * is `0.1`. Display converts through the sport's own `distanceUnit`, so the
+ * rung is stated in the unit the athlete uses without the catalog holding two.
+ */
+export interface SportBenchmark {
+  /** The distance, in km. */
+  km: number;
+  /** A proper name, for the distances that have one instead of a figure. */
+  name?: "half" | "marathon";
+  /** True for the rung this sport's `sc.marker` states — the typed figure fills
+   *  it when nothing measured has, and the page states this rung large. */
+  marker?: boolean;
+}
+
 /** A transferable S&C exercise, tagged by the demand it trains + the min level. */
 export interface PoolExercise {
   name: string;
@@ -95,6 +113,20 @@ export interface OlympicSport {
    */
   pacePer?: number;
   /**
+   * THE RECORD LADDER — the distances this sport keeps personal bests at,
+   * ascending. Present ONLY where the sport has conventional race distances:
+   * a runner's 5 km and a swimmer's 100 m are real benchmarks, a mountain
+   * biker's "25 km" is a number somebody made up. A sport with no ladder shows
+   * no records section rather than one padded with invented rungs — the same
+   * discipline the rest of this catalog holds about metrics a sport lacks.
+   *
+   * Read by sportRecords() in sport-page.ts. See that file for the matching
+   * rule and, importantly, for what this CANNOT do: a device recording is a
+   * workout summary with no laps or route, so a rung is an effort logged AT
+   * the distance, never a segment extracted from a longer one.
+   */
+  records?: SportBenchmark[];
+  /**
    * S&C transfer-engine data — set only for the sports the app prescribes gym
    * work for (sports.ts / prescribeForSport read it). Absent = loggable but not
    * yet a prescribable S&C sport.
@@ -107,6 +139,18 @@ export interface OlympicSport {
 const TIME: SportMetric[] = ["duration"];
 const PACED: SportMetric[] = ["duration", "distance", "pace"];
 
+// Shared record ladders — the road and the pool both have a canonical set, and
+// two sports that race the same distances must not disagree about them.
+const ROAD: SportBenchmark[] = [
+  { km: 1 },
+  { km: 5, marker: true },
+  { km: 10 },
+  { km: 21.0975, name: "half" },
+  { km: 42.195, name: "marathon" },
+];
+const POOL: SportBenchmark[] = [{ km: 0.1, marker: true }, { km: 0.4 }, { km: 1.5 }];
+const ERG: SportBenchmark[] = [{ km: 0.5 }, { km: 2 }, { km: 5 }];
+
 /**
  * The catalog — Summer + Winter Olympic sports/disciplines an athlete would log
  * as a session. Endurance sports carry distance + pace; everything else is
@@ -115,7 +159,7 @@ const PACED: SportMetric[] = ["duration", "distance", "pace"];
 const CATALOG: OlympicSport[] = [
   // ---- Athletics ----
   {
-    name: "Running", icon: "🏃", category: "Athletics", metrics: PACED,
+    name: "Running", icon: "🏃", category: "Athletics", metrics: PACED, records: ROAD,
     sc: {
       family: "Endurance",
       marker: { label: "Current 5k time", ph: "e.g. 24:30" },
@@ -130,13 +174,13 @@ const CATALOG: OlympicSport[] = [
       ],
     },
   },
-  { name: "Marathon", icon: "🏅", category: "Athletics", metrics: PACED },
-  { name: "Race Walking", icon: "🚶", category: "Athletics", metrics: PACED },
+  { name: "Marathon", icon: "🏅", category: "Athletics", metrics: PACED, records: ROAD },
+  { name: "Race Walking", icon: "🚶", category: "Athletics", metrics: PACED, records: [{ km: 5 }, { km: 10 }, { km: 20 }] },
   { name: "Track & Field", icon: "🏟️", category: "Athletics", metrics: TIME },
 
   // ---- Aquatics ----
   {
-    name: "Swimming", icon: "🏊", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 100,
+    name: "Swimming", icon: "🏊", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 100, records: POOL,
     sc: {
       family: "Endurance",
       marker: { label: "100m time", ph: "e.g. 1:25" },
@@ -154,15 +198,17 @@ const CATALOG: OlympicSport[] = [
   { name: "Diving", icon: "🤿", category: "Aquatics", metrics: TIME },
   { name: "Artistic Swimming", icon: "🩰", category: "Aquatics", metrics: TIME },
   { name: "Water Polo", icon: "🤽", category: "Aquatics", metrics: TIME },
-  { name: "Rowing", icon: "🚣", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500 },
-  { name: "Canoe Sprint", icon: "🛶", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500 },
+  { name: "Rowing", icon: "🚣", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500, records: ERG },
+  { name: "Canoe Sprint", icon: "🛶", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500, records: [{ km: 0.2 }, { km: 0.5 }, { km: 1 }] },
   { name: "Canoe Slalom", icon: "🛶", category: "Aquatics", metrics: TIME },
   { name: "Sailing", icon: "⛵", category: "Aquatics", metrics: TIME },
   { name: "Surfing", icon: "🏄", category: "Aquatics", metrics: TIME },
 
   // ---- Cycling ----
+  // FTP is watts, not a time, so the cycling marker fills no rung — the ladder
+  // is distances, and the typed FTP keeps the line above it.
   {
-    name: "Cycling", icon: "🚴", category: "Cycling", metrics: PACED,
+    name: "Cycling", icon: "🚴", category: "Cycling", metrics: PACED, records: [{ km: 10 }, { km: 40 }, { km: 100 }],
     sc: {
       family: "Endurance",
       marker: { label: "FTP (watts)", ph: "e.g. 240" },
@@ -176,7 +222,10 @@ const CATALOG: OlympicSport[] = [
       ],
     },
   },
-  { name: "Track Cycling", icon: "🚲", category: "Cycling", metrics: PACED },
+  // The kilo and the pursuit, in km like the rest of this sport. The flying 200 m
+  // is a real track benchmark and is deliberately NOT here: this catalog entry
+  // reads in km, so it would render as "0.2 km" — a benchmark nobody calls that.
+  { name: "Track Cycling", icon: "🚲", category: "Cycling", metrics: PACED, records: [{ km: 1 }, { km: 4 }] },
   { name: "Mountain Biking", icon: "🚵", category: "Cycling", metrics: PACED },
   { name: "BMX", icon: "🚲", category: "Cycling", metrics: TIME },
 

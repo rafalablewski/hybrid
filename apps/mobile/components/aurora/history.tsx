@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef , ALPHA} from "@hybrid/core";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA} from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -75,6 +75,12 @@ function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: str
 export default function AuroraHistory() {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  // A SPORT FILTER, arriving from that sport's page. The sport page lists three
+  // recent efforts and ends in a door to "all N efforts" — a door that landed
+  // on unfiltered History would promise a number and show a different one.
+  const { sport: sportRaw } = useLocalSearchParams<{ sport?: string }>();
+  const sportParam = typeof sportRaw === "string" ? sportRaw.trim() : "";
+  const sportFilter = sportParam ? (sportFromSlug(sportParam) ?? sportParam) : null;
   const bw = useBodyweightLookup();
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
@@ -100,7 +106,21 @@ export default function AuroraHistory() {
   };
 
   const q = useSessionsQuery({ archived: showArchived });
-  const sessions = q.data ?? [];
+  // `sportSessions` is the sport page's own narrowing (discipline tag for an
+  // endurance sport, block name for a timed one), so the count on the door and
+  // the list behind it are the same slice by construction, not by coincidence.
+  //
+  // It SELECTS the rows and does not become them: that function also strips the
+  // non-matching blocks out of each session, which is right for an aggregate
+  // and wrong for a list — a brick session would summarise as the run alone and
+  // then open a detail with the ride in it too. So the ids come from the slice
+  // and the rows are the untouched sessions.
+  const sessions = useMemo(() => {
+    const all = q.data ?? [];
+    if (!sportFilter) return all;
+    const keep = new Set(sportSessions(all, sportFilter).map((s) => s.id));
+    return all.filter((s) => keep.has(s.id));
+  }, [q.data, sportFilter]);
   const loading = q.isPending;
   const refreshing = q.isFetching;
   useRefreshOnFocus(q.refetch);
@@ -127,18 +147,32 @@ export default function AuroraHistory() {
 
   const chip = (color: string, label: string, icon?: AuroraIconName) => <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: withAlpha(color, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 4 }}>{icon && <AuroraIcon name={icon} size={11} color={txt(C, color)} />}<Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, color) }}>{label}</Text></View>;
 
-  // Only archived sessions still render as the classic swipe list (restore /
-  // delete live behind the swipe); live history renders the merged layouts.
-  // Archived cards don't open the breakdown — the detail route only serves
-  // live sessions (fetchable by owner), so tapping would dead-end on notFound.
+  // TWO LISTS SHARE THIS ROW, and they are not the same list.
+  //
+  // ARCHIVED: restore / delete behind the swipe, and no tap — the detail route
+  // only serves live sessions (fetchable by owner), so tapping would dead-end
+  // on notFound.
+  //
+  // SPORT-FILTERED: live sessions, reached from that sport's page. They must
+  // OPEN, and they must not carry the archive actions — "Restore" is
+  // meaningless on a session that was never archived and "Delete" behind a
+  // swipe is a destructive action nobody came here for. Handing this row live
+  // data with the archived actions attached was how the filter first shipped.
   const renderItem = ({ item: s }: { item: LoggedSession }) => {
     const prCount = prCounts.get(s.id) ?? 0;
-    const actions: SwipeAction[] = [
-      { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => void manage.archive(s.id, false) },
-      { key: "delete", label: t("common.delete"), color: C.red, onPress: () => manage.confirmDelete(s) },
-    ];
+    const actions: SwipeAction[] = showArchived
+      ? [
+          { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => void manage.archive(s.id, false) },
+          { key: "delete", label: t("common.delete"), color: C.red, onPress: () => manage.confirmDelete(s) },
+        ]
+      : [];
     return (
-      <SwipeCard C={C} busy={manage.busyId === s.id} actions={actions}>
+      <SwipeCard
+        C={C}
+        busy={manage.busyId === s.id}
+        actions={actions}
+        onPress={showArchived ? undefined : () => router.push(`/session/${s.id}`)}
+      >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk }}>{s.title}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmt(s.startedAt)}</Text>
@@ -180,6 +214,10 @@ export default function AuroraHistory() {
   // persisted choice hydrates (view === null) nothing view-specific renders,
   // so the saved layout never flashes another one first.
   const hydrated = view !== null || showArchived;
+  // The five merged layouts (agenda, journal, weeks, timeline, blocks) lay a
+  // filtered slice over the WHOLE plan's schedule, which would draw ghost days
+  // for sessions the filter just removed. A filtered History is the plain list.
+  const listMode = showArchived || sportFilter != null;
 
   // THE HERO — rank `title`. History is an INFORMATION page: its subject is a
   // collection, and a collection has no portrait, so there is no art and the
@@ -196,7 +234,7 @@ export default function AuroraHistory() {
           Trade-off (known): unlike the archived-list rows, these aggregate
           layouts are NOT virtualized — revisit under the
           mobile-list-virtualization capability. */}
-      {!showArchived && view !== null && !loading && !q.isError && sessions.length > 0 && (() => { const V = VIEW_COMPONENTS[view]; return <V ctx={viewCtx} />; })()}
+      {!listMode && view !== null && !loading && !q.isError && sessions.length > 0 && (() => { const V = VIEW_COMPONENTS[view]; return <V ctx={viewCtx} />; })()}
     </>
   );
 
@@ -229,7 +267,11 @@ export default function AuroraHistory() {
     // track and the scroll clearance. A screen never trades virtualization for
     // a hero.
     <HeroScreen
-      hero={{ rank: "title", title: t("nav.history"), meta: [sessions.length ? `${sessions.length} ${t(showArchived ? "history.archived" : "nav.history")}` : null] }}
+      hero={{
+        rank: "title",
+        title: sportFilter ?? t("nav.history"),
+        meta: [sessions.length ? `${sessions.length} ${t(showArchived ? "history.archived" : "nav.history")}` : null],
+      }}
       back={() => router.back()}
       // The rail's trailing slot — ONE control, in the metadata voice. It used
       // to be a bordered pill in the title row, which is where History invented
@@ -237,10 +279,10 @@ export default function AuroraHistory() {
       accessory={<HeroAccessory label={t("history.archived")} active={showArchived} onPress={() => setShowArchived((v) => !v)} onDark={false} />}
       // The view switcher is a SUB-rail: it docks beneath the collapsed bar
       // rather than scrolling away, so the layout you are in stays addressable.
-      rail={!showArchived && view !== null ? <ViewSwitcher view={view} onChange={pickView} /> : undefined}
+      rail={!listMode && view !== null ? <ViewSwitcher view={view} onChange={pickView} /> : undefined}
       scroller={(scrollProps, railNode) => (
         <FlatList
-          data={showArchived && !loading && !q.isError ? sessions : []}
+          data={listMode && !loading && !q.isError ? sessions : []}
           keyExtractor={(s) => s.id}
           renderItem={renderItem}
           ListHeaderComponent={header(railNode)}
@@ -274,10 +316,14 @@ export default function AuroraHistory() {
  *  surface deciding by displacement on a spring nothing guarded. The geometry
  *  (88pt tiles, several of them) stays this card's own: unlike SwipeRow it can
  *  reveal more than one action, so its open position is not `swipe.action`. */
-function SwipeCard({ C, busy, actions, children }: {
+function SwipeCard({ C, busy, actions, onPress, children }: {
   C: Palette;
   busy: boolean;
+  /** Empty = no swipe at all (reveal is 0, so the gesture has nowhere to go). */
   actions: SwipeAction[];
+  /** Opens the row. A press while the actions are revealed closes them first —
+   *  the swipe is a mode, and the first tap out of a mode exits it. */
+  onPress?: () => void;
   children: ReactNode;
 }) {
   const TILE = 88;
@@ -298,7 +344,8 @@ function SwipeCard({ C, busy, actions, children }: {
   animateRef.current = animate;
   const pan = useRef(
     PanResponder.create({
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
+      onMoveShouldSetPanResponder: (_, g) =>
+        revealRef.current > 0 && Math.abs(g.dx) > 14 && Math.abs(g.dx) > Math.abs(g.dy) * 1.8,
       onPanResponderMove: (_, g) => {
         const base = openRef.current ? -revealRef.current : 0;
         tx.setValue(Math.min(0, rubberBand(base + g.dx, revealRef.current)));
@@ -307,7 +354,11 @@ function SwipeCard({ C, busy, actions, children }: {
         const base = openRef.current ? -revealRef.current : 0;
         // g.vx is px/ms; the shared rule is in px/s.
         const p = projectSwipe(base + g.dx, g.vx * 1000);
-        animateRef.current(p < -revealRef.current * swipe.openAt);
+        // With NO actions the reveal is 0, and `p < -0` is true for any
+        // leftward drag — the row would latch "open" with nothing behind it,
+        // fire a haptic, and swallow the next tap. A row with nothing to reveal
+        // cannot be open.
+        animateRef.current(revealRef.current > 0 && p < -revealRef.current * swipe.openAt);
       },
       onPanResponderTerminate: () => animateRef.current(openRef.current),
     }),
@@ -332,7 +383,12 @@ function SwipeCard({ C, busy, actions, children }: {
         <Animated.View {...pan.panHandlers} style={{ transform: [{ translateX: tx }], backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
           {/* CARD_PAD, not 16: the web twin of this very component has always
               been inset 20, so one swipe card read two ways by client. */}
-          <Pressable onPress={() => { if (openRef.current) animate(false); }} style={{ padding: CARD_PAD }}>
+          <Pressable
+            onPress={() => { if (openRef.current) { animate(false); return; } onPress?.(); }}
+            disabled={!onPress && actions.length === 0}
+            accessibilityRole={onPress ? "button" : undefined}
+            style={{ padding: CARD_PAD }}
+          >
             {children}
           </Pressable>
         </Animated.View>
