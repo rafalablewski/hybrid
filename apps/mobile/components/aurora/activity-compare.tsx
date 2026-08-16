@@ -3,7 +3,8 @@ import {
   comparisonBar, verdictLabelKey, ALPHA,
   type VerdictComparison, type ActivityMetric,
 } from "@hybrid/core";
-import { RADIUS, withAlpha } from "./kit";
+import { ASection, RADIUS, withAlpha } from "./kit";
+import { MeasureLine, MeasureTrack, MeasureScale, MEASURE_ROW_PAD } from "./measure-row";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, tracking } from "../../lib/ui";
 
@@ -17,11 +18,14 @@ import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, tracking } fro
  * two comparisons are computed on every render and thrown away. This page keeps
  * them: every metric against its own average, on one axis, one row each.
  *
- * IT IS THE BY-MUSCLE ROW, and deliberately so. Volume's "By muscle" list
- * (aurora/volume.tsx `MuscleRow`) is this app's answer to exactly this shape of
- * question — a measure, where it sits, and the landmarks it sits between — and
- * it had already settled every decision this page was re-litigating from
- * scratch. So the grammar is lifted whole rather than re-invented:
+ * IT IS THE BY-MUSCLE ROW — the same COMPONENT, not a copy of it. Volume's
+ * "By muscle" list (aurora/volume.tsx `MuscleRow`) is this app's answer to
+ * exactly this shape of question, and it had already settled every decision
+ * this page was re-litigating from scratch. The shared pieces live in
+ * aurora/measure-row.tsx and both screens read them, so the head's sizing, the
+ * rail's field and the landmark row's alignment can only ever change on both at
+ * once. This page was briefly a hand-rolled copy of that row, which is exactly
+ * the drift the shared component exists to end:
  *
  *   • The LABEL is the display face in chalk (`F.semi` at `fs.note`), not a mono
  *     uppercase kicker. It names a thing, and things get names, not labels.
@@ -37,6 +41,10 @@ import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, tracking } fro
  *   • Under it, the figures line up as a flat left-pinned row of equal columns,
  *     exactly as MEV / MAV / MRV do — so values align down the whole list
  *     instead of floating at two different indents.
+ *
+ * What is NOT shared is the geometry inside the rail, and it must not be:
+ * Volume normalises sets onto a landmark scale, this page maps a signed
+ * percentage onto a centre axis. The FIELD is common, the marks in it are not.
  *
  * ONE AXIS, AND THE AXIS IS THE ATHLETE'S OWN AVERAGE — not zero. Bar length is
  * per cent of that average, because per cent is the only unit tonnage (kg), a
@@ -105,20 +113,13 @@ export default function ActivityCompare({
 
   return (
     <View>
-      {/* The head is "By muscle"'s, to the token: display-face title left, mono
-          uppercase meta right, and no marker in front of either. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
-        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>
-          {t("w.home.cmp.title")}
-        </Text>
-        <Text
-          maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          numberOfLines={1}
-          style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}
-        >
-          {headline}
-        </Text>
-      </View>
+      {/* The head is the kit's ASection, not a hand-rolled copy of it — the
+          same component every other section head on the app uses, so this one
+          cannot drift into being the seventh spelling of "title left, mono meta
+          right". The meta names the AXIS, which is the one thing this page
+          adds; the WINDOW is deliberately absent, since the section head above
+          the card already carries it. */}
+      <ASection title={t("w.home.cmp.title")} meta={headline} />
 
       <View style={{ marginTop: 4 }}>
         {rows.map((r) => {
@@ -144,43 +145,19 @@ export default function ActivityCompare({
                     .replace("{d}", signed(r.metric, r.diff))
               }
               accessibilityHint={onOpen ? t("w.home.act.hint") : undefined}
-              style={{ paddingVertical: 12 }}
+              style={{ paddingVertical: MEASURE_ROW_PAD }}
             >
-              {/* NAME, FIGURE, CONTEXT — one baseline, MuscleRow's three slots. */}
-              <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 8 }}>
-                <Text
-                  maxFontSizeMultiplier={FIXED_FONT_SCALE}
-                  numberOfLines={1}
-                  style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}
-                >
-                  {t(verdictLabelKey(r.metric))}
-                </Text>
-                <Text
-                  maxFontSizeMultiplier={FIXED_FONT_SCALE}
-                  numberOfLines={1}
-                  style={{ fontFamily: F.monoBold, fontSize: fs.note, color: col ?? C.chalk }}
-                >
-                  {move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move)}%`}
-                </Text>
-                {move !== null && (
-                  <Text
-                    maxFontSizeMultiplier={FIXED_FONT_SCALE}
-                    numberOfLines={1}
-                    style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}
-                  >
-                    {signed(r.metric, r.diff)}
-                  </Text>
-                )}
-              </View>
+              <MeasureLine
+                name={t(verdictLabelKey(r.metric))}
+                figure={move === null ? "—" : `${move > 0 ? "+" : move < 0 ? "−" : ""}${Math.abs(move)}%`}
+                tone={col}
+                context={move === null ? null : signed(r.metric, r.diff)}
+              />
 
-              {/* THE TRACK. A rail on `C.ink`, the bar filled from the axis, and
-                  the axis itself cut into it as a notch — the muscle rail's
-                  construction exactly. It renders only when there is a baseline
-                  to draw an axis against: on a cold card the rows keep their
-                  figures and draw nothing, rather than measure against a
-                  baseline the card has already said it does not trust. */}
+              {/* The marks are this page's own — one bar off a centre axis. The
+                  rail they sit in is the shared one. */}
               {bar !== null && (
-                <View style={{ height: 11, borderRadius: RADIUS.pill, backgroundColor: C.ink, overflow: "hidden" }}>
+                <MeasureTrack>
                   {bar < 0 && (
                     <View style={{
                       position: "absolute", right: "50%", width: pct(Math.abs(bar) / 2),
@@ -195,35 +172,26 @@ export default function ActivityCompare({
                       backgroundColor: col ?? C.ash, opacity: 0.9,
                     }} />
                   )}
-                  {/* The axis, notched in LAST so it survives the fill — the same
-                      device MEV and MRV use over there. */}
+                  {/* The axis, notched in LAST so it survives the fill — the
+                      same device MEV and MRV use over there. */}
                   <View style={{ position: "absolute", left: "50%", top: 0, bottom: 0, width: 2, backgroundColor: withAlpha(C.chalk, ALPHA.rim) }} />
-                </View>
+                </MeasureTrack>
               )}
 
-              {/* THE TWO FIGURES, pinned left in equal columns — MEV / MAV / MRV
-                  down there, AVG / NOW up here, and for the same reason: the
-                  values line up down the whole list instead of floating at two
-                  different indents. The label is the quiet half and the figure
-                  the loud one, exactly as the landmark scale sets it. */}
-              <View style={{ flexDirection: "row", marginTop: 8 }}>
-                {([
-                  ["w.home.cmp.avg", move === null ? null : r.baseline],
-                  ["w.home.cmp.now", r.value],
-                ] as const).map(([key, val]) => (
-                  <View key={key} style={{ flex: 1 }}>
-                    {val !== null && (
-                      <Text
-                        maxFontSizeMultiplier={FIXED_FONT_SCALE}
-                        numberOfLines={1}
-                        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}
-                      >
-                        {t(key)} <Text style={{ fontSize: fs.micro, color: C.chalk }}>{fmt(r.metric, val)}</Text>
-                      </Text>
-                    )}
-                  </View>
-                ))}
-              </View>
+              {/* AVG / NOW where MEV / MAV / MRV sit. Not pressable here: the
+                  whole row already presses through to the breakdown. */}
+              {/* The AVG cell KEEPS ITS SLOT when there is no average to show —
+                  a metric with no baseline (a lifter's first logged run) would
+                  otherwise pull NOW into the left column while every row beside
+                  it kept NOW on the right, and the list stops lining up. An em
+                  dash says "there is no average", which is the true fact and
+                  the same one the figure above it is printing. */}
+              <MeasureScale
+                cells={[
+                  { key: "avg", label: t("w.home.cmp.avg"), value: move === null ? "—" : fmt(r.metric, r.baseline) },
+                  { key: "now", label: t("w.home.cmp.now"), value: fmt(r.metric, r.value) },
+                ]}
+              />
             </Pressable>
           );
         })}

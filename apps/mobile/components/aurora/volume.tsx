@@ -24,6 +24,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, space, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ADrawer, AHeading, ASection, CardFoot, RADIUS, withAlpha } from "./kit";
 import { HeroAccessory } from "./hero";
+import { MeasureLine, MeasureTrack, MeasureScale, MEASURE_ROW_PAD } from "./measure-row";
 import Sheet from "./sheet";
 import { haptic } from "../../lib/haptics";
 
@@ -924,19 +925,24 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
   const targetX = target ? railX(target.target, s.landmark) : null;
   const verdict = target ? targetVerdict(s.sets, target.target) : null;
   return (
-    <View style={{ paddingVertical: 12 }}>
+    <View style={{ paddingVertical: MEASURE_ROW_PAD }}>
       <Pressable
         onPress={onToggle}
         accessibilityRole="button"
         accessibilityLabel={`${label} – ${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}, ${t(ZONE_KEY[s.zone])}`}
       >
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 8 }}>
-          <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{label}</Text>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, color) }}>{setsLabel(s.sets)} {t("w.analyze.vol.sets")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{target ? `${t("w.analyze.vol.target")} ${target.target}` : t(ZONE_KEY[s.zone])}</Text>
-        </View>
+        {/* The shared measure row — aurora/measure-row.tsx. The Progress card's
+            comparison page reads the same three pieces, so the head's sizing,
+            the rail's field and the landmark row's alignment can only ever
+            change on both screens at once. */}
+        <MeasureLine
+          name={label}
+          figure={`${setsLabel(s.sets)} ${t("w.analyze.vol.sets")}`}
+          tone={txt(C, color)}
+          context={target ? `${t("w.analyze.vol.target")} ${target.target}` : t(ZONE_KEY[s.zone])}
+        />
 
-        <View style={{ height: 11, borderRadius: 6, backgroundColor: C.ink, overflow: "hidden" }}>
+        <MeasureTrack>
           {/* The track is itself the key: the productive band lit, the territory
               past the ceiling tinted, so the zones read even on an empty rail. */}
           <View style={{ position: "absolute", left: pct(g.bandStart), width: pct(g.bandEnd - g.bandStart), top: 0, bottom: 0, backgroundColor: withAlpha(C.lime, ALPHA.fill) }} />
@@ -961,33 +967,25 @@ function MuscleRow({ s, label, color, target, history, expanded, zone, showGloss
               <View pointerEvents="none" style={{ position: "absolute", left: pct(region.from), width: pct(region.to - region.from), top: 0, bottom: 0, borderLeftWidth: 1, borderRightWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.rim) }} />
             </>
           )}
-        </View>
+        </MeasureTrack>
       </Pressable>
 
       {/* This muscle's OWN scale — a plain three-column table pinned to the left
           edge, so the values line up down the whole list instead of floating at
           three different indents. Each cell is a control: tap it to spotlight
           that band and read what it means. */}
-      <View style={{ flexDirection: "row", marginTop: 8 }}>
-        {BAND_KEYS.map((k) => {
-          const on = zone === k;
-          return (
-            <Pressable
-              key={k}
-              onPress={() => onZone(k)}
-              hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              accessibilityLabel={`${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`}
-              style={{ flex: 1, opacity: zone && !on ? 0.4 : 1 }}
-            >
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: on ? txt(C, C.lime) : C.ash }}>
-                {BAND_LABEL[k]} <Text style={{ fontSize: fs.micro, color: C.chalk }}>{sc[k]}</Text>
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <MeasureScale
+        tone={txt(C, C.lime)}
+        cells={BAND_KEYS.map((k) => ({
+          key: k,
+          label: BAND_LABEL[k],
+          value: String(sc[k]),
+          onPress: () => onZone(k),
+          selected: zone === k,
+          dim: !!zone && zone !== k,
+          a11yLabel: `${BAND_LABEL[k]} ${sc[k]} – ${t(GLOSS_KEY[k])}`,
+        }))}
+      />
 
       {/* The definition of the spotlighted band, beside the finger. The band is
           REMEMBERED through the collapse — reading `zone` straight would empty
