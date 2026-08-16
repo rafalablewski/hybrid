@@ -638,3 +638,22 @@ describe("the record ladder — a time at a distance", () => {
     expect(m.bests.map((b) => b.id)).toEqual(["longest", "biggestWeek"]);
   });
 });
+
+describe("a rung that IS the pace split", () => {
+  it("states the time once — a 1 km time on a /km sport is its own pace", () => {
+    const runs = [effort("a", "Track 1 k", "running", 4, 1, 4, { durationSec: 242 })];
+    const rung = sportPageModel("Running", runs, { now: NOW }).records.find((r) => r.km === 1)!;
+    expect(rung.time).toBe("4:02");
+    expect(rung.pace).toBeNull();
+    // …while a rung above the split still carries one.
+    const ten = [effort("b", "Ten", "running", 4, 10, 48, { durationSec: 2900 })];
+    expect(sportPageModel("Running", ten, { now: NOW }).records.find((r) => r.km === 10)!.pace).toBe("4:50");
+  });
+
+  it("holds for the pool's own split too — a 100 m swim at /100m", () => {
+    const swims = [effort("s", "100 TT", "swimming", 3, 0.1, 1, { durationSec: 82 })];
+    const rung = sportPageModel("Swimming", swims, { now: NOW }).records.find((r) => r.km === 0.1)!;
+    expect(rung.time).toBe("1:22");
+    expect(rung.pace).toBeNull();
+  });
+});

@@ -199,7 +199,10 @@ export default function AuroraSportPage() {
       hero={{
         rank: "cover",
         title: name,
-        eyebrow: heroMetaLine([m.category, m.family]),
+        // Boxing is Combat / Combat, BJJ and Climbing the same shape — three
+        // sports whose category and S&C family are the same word, so the
+        // eyebrow read "Combat – Combat". Saying it twice is not a second fact.
+        eyebrow: heroMetaLine([m.category, m.family === m.category ? null : m.family]),
         // The drawn mark for this KIND of sport; the catalog emoji only when
         // the name is not in the catalog at all (a hand-typed activity).
         artPaths: sportMarkPaths(name),

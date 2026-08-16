@@ -486,10 +486,14 @@ export function sportRecords(
     if (best == null) {
       return { ...base, time: null, pace: null, at: null, sessionId: null, provider: null, typed: false, delta: null };
     }
+    // A rung AT the pace split states its own pace: a 1 km time on a /km sport
+    // and a 100 m time on a /100m sport ARE the pace, so printing both puts the
+    // same figure on the row twice — the exact repetition this ladder replaced.
+    const rungIsSplit = Math.round(rung.km * 1000) === pacePer;
     return {
       ...base,
       time: clock(best.seconds!),
-      pace: best.secPerKm != null ? sportPace(best.secPerKm, pacePer) : null,
+      pace: best.secPerKm != null && !rungIsSplit ? sportPace(best.secPerKm, pacePer) : null,
       at: best.startedAt,
       sessionId: best.sessionId,
       provider: best.provider,
