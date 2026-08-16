@@ -26,7 +26,7 @@ import {
   type BlockKind,
 } from "@hybrid/core";
 import { fetchRoutines, createRoutine, deleteRoutine, type Routine } from "./api";
-import { toast } from "../components/aurora/toast";
+import { allowFieldValue, refuseFieldValue } from "./field-guard";
 import { useLang } from "./i18n";
 
 const uid = () => Math.random().toString(36).slice(2);
@@ -53,10 +53,9 @@ const cloneBlock = (b: SessionBlock): EditableBlock => ({ ...(JSON.parse(JSON.st
  *  per-set editing over the same /api/templates persistence as the web twin. */
 export function useRoutineBuilder() {
   const { t } = useLang();
-  /** Say why the keystroke did not land — a field that silently stops taking
-   *  input reads as broken, and the bound is the whole answer. */
-  const refuse = (b: Bounds) =>
-    toast(t("w.train.blocks.maxValue").replace("{n}", String(b.max)).replace("{unit}", b.unit), "error");
+  /** Say why the keystroke did not land — shared with both loggers, so a bound
+   *  tightened in core cannot keep announcing the old number from here. */
+  const refuse = (b: Bounds) => refuseFieldValue(t, b);
   const [name, setName] = useState("New routine");
   const [items, setItems] = useState<EditableBlock[]>([]);
   const [routines, setRoutines] = useState<Routine[]>([]);
@@ -98,11 +97,7 @@ export function useRoutineBuilder() {
   const updateSet = (u: string, i: number, key: keyof StrengthSet, val: string) =>
     patch(u, (b) => {
       if (b.kind !== "strength") return b;
-      const bounds = setFieldBounds(b.name, key);
-      if (bounds && !allowsTyping(val, bounds)) {
-        refuse(bounds);
-        return b;
-      }
+      if (!allowFieldValue(t, val, setFieldBounds(b.name, key))) return b;
       return { ...b, sets: b.sets.map((s, j) => (j === i ? ({ ...s, [key]: val } as StrengthSet) : s)) };
     });
   // New set carries the previous set's load/reps forward (same behaviour as the

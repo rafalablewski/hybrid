@@ -21,8 +21,6 @@ import {
   cardioDiscipline,
   inspectEffort,
   inspectSet,
-  CONCERN_KEY,
-  type ConcernReason,
   rpeRirSwap,
   displayLoad,
   storeLoad,
@@ -41,6 +39,7 @@ import { track } from "../../lib/track";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
+import { ConcernLine } from "./concern-line";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
@@ -57,34 +56,6 @@ import { setLoggerPref } from "../../lib/logger-prefs";
 import { withAlpha } from "./field";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-
-/**
- * THE "ARE YOU SURE?" LINE — the softer half of the plausibility model, and a
- * routine is where it matters most: a prescription is re-logged every time the
- * routine is started, so an odd figure here is an odd figure forever, and
- * nobody re-reads a template they trust.
- *
- * Never blocks. The hard half already refused the impossible; this is for the
- * improbable-but-real, where an app that argues with a strong athlete is worse
- * than one that stays quiet. Sentence from core, so both clients say the same
- * thing.
- */
-function ConcernLine({ reason, C, t }: { reason: ConcernReason | null; C: Palette; t: (k: string) => string }) {
-  if (!reason) return null;
-  return (
-    <Text
-      style={{
-        fontFamily: F.mono,
-        fontSize: fs.nano,
-        color: txt(C, C.amber),
-        marginTop: 6,
-        lineHeight: leading(fs.nano),
-      }}
-    >
-      {t(CONCERN_KEY[reason])}
-    </Text>
-  );
-}
 
 const kindColor = (k: BlockKind, C: Palette) =>
   k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet;
@@ -526,7 +497,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 here becomes an odd figure in every session that follows it. */}
             {(() => {
               const c = inspectSet(b.name, s.load, s.reps);
-              return <ConcernLine reason={c.verdict === "check" ? c.reason : null} C={C} t={t} />;
+              return <ConcernLine reason={c.verdict === "check" ? c.reason : null} />;
             })()}
           </SwipeRow>
           </Animated.View>
@@ -639,7 +610,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           distanceKm: b.distance ?? null,
           minutes: b.minutes ?? null,
         });
-        return <ConcernLine reason={c.verdict === "check" ? c.reason : null} C={C} t={t} />;
+        return <ConcernLine reason={c.verdict === "check" ? c.reason : null} />;
       })()}
       {/* Modality extras — a swim never sees incline; a treadmill never sees stroke. */}
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: 10 }}>

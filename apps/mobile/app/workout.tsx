@@ -6,7 +6,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import { haptic } from "../lib/haptics";
-import { toast } from "../components/aurora/toast";
+import { ConcernLine } from "../components/aurora/concern-line";
+import { allowFieldValue } from "../lib/field-guard";
 import { animateListChange } from "../lib/list-motion";
 import { useSharedSurfaceSource, useSharedSurfaceTarget } from "../lib/shared-element";
 import {
@@ -37,8 +38,6 @@ import {
   cardioDiscipline,
   inspectEffort,
   inspectSet,
-  CONCERN_KEY,
-  type ConcernReason,
   distanceBounds,
   loadBounds,
   repsBounds,
@@ -767,37 +766,6 @@ export default function Workout() {
         return { ...x, name };
       }),
     );
-  /**
-   * THE FIELD CANNOT HOLD AN IMPOSSIBLE NUMBER.
-   *
-   * A slipped finger is the most common thing that happens in a logger, and its
-   * cost is nothing like proportionate: one 70 000 kg bench press or 5 200 km
-   * swim moves tonnage, e1RM, mileage, training load, ACWR, readiness and the
-   * cohort norms, and nothing downstream can tell it from a fact. The server
-   * refuses these too (that is the guard that counts — a client is advice), but
-   * being told after the workout is saved is far too late to fix a set you can
-   * no longer remember.
-   *
-   * So the keystroke is REFUSED, the way a maxLength refuses one: the digit
-   * simply does not appear. And it says why, because a field that silently stops
-   * accepting input reads as broken — the toast names the bound, in the field's
-   * OWN unit, so the answer is in the message rather than in a support thread.
-   *
-   * Only the impossible is refused. The "improbable but real" band (a 300 kg
-   * squat, a 100 km ride) is deliberately left alone: an app that cannot record
-   * an outlier is an app the best athletes cannot use.
-   */
-  const guardedFieldValue = (bounds: Bounds | null, next: string, unitLabel?: string): boolean => {
-    if (!bounds || allowsTyping(next, bounds)) return true;
-    toast(
-      t("w.train.blocks.maxValue")
-        .replace("{n}", String(bounds.max))
-        .replace("{unit}", unitLabel ?? bounds.unit),
-      "error",
-    );
-    return false;
-  };
-
   /** Which bounds a SET field is judged against — the load and rep ceilings read
    *  the exercise itself, since 120 is ordinary on a barbell and impossible on a
    *  kettlebell, and the rep field holds seconds for a hold and metres for a
@@ -812,40 +780,6 @@ export default function Workout() {
     return null;
   };
 
-  /**
-   * THE "ARE YOU SURE?" LINE — the softer half of the plausibility model.
-   *
-   * The hard half refuses a keystroke outright. This half is for the figures
-   * that are IMPROBABLE BUT REAL: a 300 kg squat, a 24-hour ride, a 160 km
-   * week. Refusing those would be worse than the typos it catches, because an
-   * app that cannot record an outlier is one the best athletes cannot use — so
-   * it never blocks anything. It says what is odd, once, next to the number,
-   * and gets out of the way.
-   *
-   * AMBER AND QUIET, not a dialog. A strong lifter would meet a modal every
-   * session, and a warning that interrupts is a warning people learn to dismiss
-   * without reading. A line under the figure they are looking at is seen at the
-   * moment it is cheap to fix and ignored at no cost when it is right.
-   *
-   * The sentence comes from core (`CONCERN_KEY`), so both clients say the same
-   * thing and neither invents its own wording.
-   */
-  const ConcernLine = ({ reason, align = "center" }: { reason: ConcernReason | null; align?: "center" | "left" }) =>
-    reason ? (
-      <Text
-        style={{
-          fontFamily: F.mono,
-          fontSize: fs.nano,
-          color: txt(C, C.amber),
-          marginTop: 8,
-          textAlign: align === "center" ? "center" : "left",
-          lineHeight: leading(fs.nano),
-        }}
-      >
-        {t(CONCERN_KEY[reason])}
-      </Text>
-    ) : null;
-
   const setSetField = (u: string, i: number, k: keyof WSet, v: string | boolean) =>
     setExercises((xs) =>
       xs.map((x) => {
@@ -857,10 +791,14 @@ export default function Workout() {
         // showing pounds.
         if (typeof v === "string") {
           const bounds = setFieldBounds(x.name, k);
-          if (bounds && k === "load" && prefs.units === "lb") {
-            const shown: Bounds = { ...bounds, max: Math.floor(kgToUnit(bounds.max, "lb")) };
-            if (!guardedFieldValue(shown, displayLoad(v, "lb"), "lb")) return x;
-          } else if (!guardedFieldValue(bounds, v)) return x;
+          // The load arrives already converted to kg by the caller, so it is
+          // judged against the stored bound — but the MESSAGE has to speak the
+          // athlete's own unit, or a lb user is told "max 1500 kg" about a
+          // field showing pounds.
+          const lb = k === "load" && prefs.units === "lb";
+          const shown = lb ? displayLoad(v, "lb") : v;
+          const opts = lb && bounds ? { max: Math.floor(kgToUnit(bounds.max, "lb")), unit: "lb" } : undefined;
+          if (!allowFieldValue(t, shown, bounds, opts)) return x;
         }
         return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, [k]: v } : s)) };
       }),
@@ -878,16 +816,12 @@ export default function Workout() {
         if (k === "distance") {
           const km = parseSportDistance(v, x.name);
           const b = distanceBounds(cardioDiscipline(x.name));
-          if (km != null && km > b.max) {
-            const unit = sportDistanceUnit(x.name);
-            toast(
-              t("w.train.blocks.maxValue")
-                .replace("{n}", unit === "m" ? String(Math.round(b.max * 1000)) : String(b.max))
-                .replace("{unit}", unit),
-              "error",
-            );
-            return x;
-          }
+          const unit = sportDistanceUnit(x.name);
+          const inUnit = unit === "m" ? { max: Math.round(b.max * 1000), unit } : undefined;
+          // Judged in the field's OWN unit: the value shown is metres for a pool
+          // swim and kilometres on the road, and comparing the raw string to a
+          // km bound would refuse the pool and wave through the road.
+          if (km != null && !allowFieldValue(t, unit === "m" ? String(km * 1000) : String(km), b, inUnit)) return x;
           return { ...x, [k]: v };
         }
         const bounds =
@@ -897,7 +831,7 @@ export default function Workout() {
           : k === "elevation" ? ELEVATION_BOUNDS
           : k === "zone" ? ZONE_BOUNDS
           : null;
-        if (!guardedFieldValue(bounds, v)) return x;
+        if (!allowFieldValue(t, v, bounds)) return x;
         return { ...x, [k]: v };
       }),
     );
