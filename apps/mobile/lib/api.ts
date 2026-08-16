@@ -140,6 +140,23 @@ export async function fetchSessions(opts?: { archived?: boolean }): Promise<Logg
 }
 
 /**
+ * Which of the athlete's sessions ALREADY have their recording stored — the
+ * backfill's skip list, so a GPS track is never re-read and re-uploaded for
+ * nothing. Empty on any failure, which makes the backfill try rather than skip;
+ * trying costs a wasted upload, skipping costs the trace forever.
+ */
+export async function fetchStreamedSessionIds(): Promise<string[]> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/streamed`, { headers: await authHeaders() });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { sessionIds?: string[] };
+    return Array.isArray(data.sessionIds) ? data.sessionIds : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * The athlete's stored BEST EFFORTS — the fastest window covering each catalog
  * distance, found inside their recordings (see core sportRecords /
  * `segmentBests`).

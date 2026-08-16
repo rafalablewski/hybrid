@@ -368,6 +368,24 @@ export const SIGNAL_BOUNDS: Record<string, Bounds> = {
   sleep: SLEEP_BOUNDS,
   sleepScore: { min: 0, max: 100, unit: "score" },
   bodyMass: BODY_MASS_BOUNDS,
+  bodyFat: BODY_FAT_BOUNDS,
+  leanMass: { min: 15, max: 200, softMin: 30, softMax: 110, unit: "kg" },
+  // WHAT THE WRIST REPORTS. Every ceiling is above the best figure ever
+  // measured and every floor below the worst survivable one, so these can only
+  // catch a broken read — a sensor that returns 0, a sentinel, a unit we
+  // mapped wrong — never a real athlete.
+  vo2Max: { min: 10, max: 100, softMin: 20, softMax: 75, unit: "ml/kg/min" },
+  steps: { min: 0, max: 200_000, softMax: 40_000, unit: "count" },
+  activeEnergy: { min: 0, max: 20_000, softMax: 3_000, unit: "kcal" },
+  restingEnergy: { min: 500, max: 6_000, softMin: 900, softMax: 3_500, unit: "kcal" },
+  exerciseMinutes: { min: 0, max: 1_440, softMax: 300, unit: "min" },
+  standHours: { min: 0, max: 24, softMax: 18, unit: "h" },
+  walkingHr: { min: 40, max: 200, softMin: 60, softMax: 140, unit: "bpm" },
+  respiratoryRate: { min: 4, max: 40, softMin: 8, softMax: 22, unit: "br/min" },
+  spo2: { min: 70, max: 100, softMin: 92, unit: "%" },
+  // A wrist temperature outside this is a watch left on a radiator.
+  wristTemp: { min: 25, max: 42, softMin: 32, softMax: 38.5, unit: "C" },
+  heartRateRecovery: { min: 1, max: 100, softMin: 10, softMax: 70, unit: "bpm" },
   // Session load / distance figures a wearable or a team system relays.
   totalDistance: { min: 0, max: 1_200_000, softMax: 40_000, unit: "m" },
   highSpeedRunning: { min: 0, max: 100_000, softMax: 5_000, unit: "m" },

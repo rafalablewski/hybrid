@@ -154,6 +154,8 @@ export const web_account = {
     "w.account.connections.hk-synced": "Synced",
     "w.account.connections.hk-samples": "new samples",
     "w.account.connections.hk-repaired": "matched sessions re-read from your watch",
+    "w.account.connections.hk-streamed": "sessions with their full recording fetched",
+    "w.account.connections.hk-history": "Still importing your older history — keep opening the app and it will finish on its own.",
 
     // --- upgrade (aurora/upgrade.tsx) ---
     "w.account.upgrade.cat-train": "Train smarter",
@@ -602,6 +604,8 @@ export const web_account = {
     "w.account.connections.hk-synced": "Zsynchronizowano",
     "w.account.connections.hk-samples": "nowych próbek",
     "w.account.connections.hk-repaired": "dopasowanych treningów odczytanych ponownie z zegarka",
+    "w.account.connections.hk-streamed": "treningów z pobranym pełnym zapisem",
+    "w.account.connections.hk-history": "Wciąż importujemy starszą historię — otwieraj aplikację, a dokończy się sama.",
 
     // --- upgrade ---
     "w.account.upgrade.cat-train": "Trenuj mądrzej",
