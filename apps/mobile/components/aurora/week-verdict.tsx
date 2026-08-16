@@ -295,7 +295,7 @@ export default function AuroraWeekVerdict({
   const [page, setPage] = useState(0);
   const [pageW, setPageW] = useState(0);
   // Each page's own height, so the card can be the height of the page it is on.
-  // Page one is ~157dp of content and page two ~455dp; a pager fixed to the
+  // Page one is ~157dp of content and page two ~390dp; a pager fixed to the
   // taller one leaves two hundred points of dead card under the figure row, on
   // the page an athlete sees first, every time.
   const [heights, setHeights] = useState<[number, number]>([0, 0]);

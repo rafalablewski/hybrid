@@ -325,21 +325,24 @@ describe("the comparison page", () => {
     expect(text).toContain("−75%");  // distance, the fall
   });
 
-  it("names the axis, and only the axis", () => {
+  it("wears the by-muscle head — a title, and a meta that names the axis", () => {
     const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
     const text = (container.textContent ?? "").toLowerCase();
-    // The head says what the comparison is drawn against and nothing else. The
-    // WINDOW is deliberately absent: the section head above the card already
-    // names it, and printing it twice is the redundancy the Progress cluster's
-    // sweep exists to catch.
-    expect(text).toContain("against your four-week average");
+    // Display-face title left, mono meta right, exactly as Volume's "By muscle"
+    // sets it. The meta names the AXIS and nothing else — the WINDOW is
+    // deliberately absent, since the section head above the card already names
+    // it and printing it twice is the redundancy the Progress sweep catches.
+    expect(text).toContain("by metric");
+    expect(text).toContain("vs four-week avg");
   });
 
-  it("states each move as a step, in the card's own idiom", () => {
+  it("puts both figures in the landmark scale's grammar", () => {
     const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
-    // "was X" needed a label; the arrow does not, and it is the same arrow the
-    // verdict prints when a percentage stops being a measurement.
-    expect(container.textContent ?? "").toContain("→");
+    const text = container.textContent ?? "";
+    // AVG / NOW are MEV / MAV / MRV's columns: a quiet label, a loud figure,
+    // pinned left so the values align down the whole list.
+    expect(text).toContain("AVG");
+    expect(text).toContain("NOW");
   });
 
   it("spells a row out for a screen reader, difference included", () => {
