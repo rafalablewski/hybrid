@@ -68,6 +68,7 @@ export * from "./nutrition-gap";
 export * from "./nutrition-targets";
 export * from "./serving-units";
 export * from "./portion";
+export * from "./tap-budget";
 export * from "./notes";
 export * from "./exercise-db";
 export * from "./exercise-profile";

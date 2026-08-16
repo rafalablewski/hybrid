@@ -1,5 +1,5 @@
-import { type ReactNode } from "react";
-import { View, Text, type StyleProp, type ViewStyle } from "react-native";
+import { useEffect, useRef, type ReactNode } from "react";
+import { Animated, View, Text, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { SvgXml } from "react-native-svg";
 import {
@@ -7,15 +7,17 @@ import {
   PICKER_SOURCES, pickerSourceLabelKey, figureText,
   type GapFigure, type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
-  ALPHA,
+  ALPHA, durations,
 } from "@hybrid/core";
 import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
+import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { withAlpha } from "./field";
-import { AMeter, ASegment , RADIUS} from "./kit";
+import { AMeter, ASegment, AChip , RADIUS} from "./kit";
 import { RollingNumber } from "./rolling-number";
 import SwipeRow from "../swipe-row";
+import { HoldMenu, useHoldMenu, type HoldMenuItem } from "../hold-menu";
 
 /**
  * THE PICKER'S GRID — three numbers, and every object on the screen sits on one
@@ -561,7 +563,110 @@ export function PickerDoor({ C, title, icon, onPress, last }: {
   );
 }
 
-export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, starred, onStar, onDelete, verified }: {
+/**
+ * A FOLD'S CHEVRON, which turns.
+ *
+ * Two blocks in Nutrition fold behind the words "More detail" — the Create
+ * form's label fields and the portion sheet's label panel — and both drew a
+ * static ⌄ that pointed down whether the block was open or shut. A state
+ * indicator that does not indicate the state is decoration, and one that snaps
+ * between two angles is a different thing appearing rather than the same thing
+ * turning. It rotates on `durations.fast`, the token for a press state and a
+ * dismissal, and it holds still under Reduce Motion — where the ARROW STILL
+ * POINTS THE RIGHT WAY, because the direction is meaning, not motion.
+ */
+export function FoldChevron({ open, color }: { open: boolean; color: string }) {
+  const reduced = useReducedMotion();
+  const turn = useRef(new Animated.Value(open ? 1 : 0)).current;
+  useEffect(() => {
+    if (reduced) { turn.setValue(open ? 1 : 0); return; }
+    Animated.timing(turn, { toValue: open ? 1 : 0, duration: durations.fast, useNativeDriver: true }).start();
+  }, [open, turn, reduced]);
+  return (
+    <Animated.View style={{ transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "180deg"] }) }] }}>
+      <IChevDown size={13} color={color} />
+    </Animated.View>
+  );
+}
+
+/**
+ * WHAT A HOLD OFFERS — written once, because the pantry and the picker show the
+ * same food and a menu that differed by door would read as two different foods.
+ * The destructive row is last and tinted; the card itself never confirms, since
+ * the surfaces behind it hold their deletes for Undo.
+ */
+export const savedFoodMenu = (t: (k: string) => string): HoldMenuItem[] => [
+  { key: "edit", label: t("w.recovery.nutrition.pt.editThisFood") },
+  { key: "delete", label: t("w.recovery.nutrition.hold.deleteFood"), destructive: true },
+];
+/** A remembered pack: the size the catalog published or the athlete typed. */
+export const packMenu = (t: (k: string) => string): HoldMenuItem[] => [
+  { key: "removePack", label: t("w.recovery.nutrition.hold.removePack"), destructive: true },
+];
+
+/**
+ * A PACK THIS FOOD COMES IN, offered on the row itself — one tap logs the whole
+ * bottle.
+ *
+ * It used to take five: open the picker, find the source, open the row's portion
+ * sheet, press the bottle on the unit switch, press Log. Four of those exist to
+ * answer a question the food already answered when the pack was recorded, and
+ * the whole point of recording it was that the athlete drinks the bottle. So the
+ * pack is on the row, where the ⊕ is.
+ *
+ * It wears the accent's RIM and the accent's type because it GOES — this is the
+ * ⊕'s own grammar at chip size, not the bare "usual" chips inside the portion
+ * sheet, which only set a number in a field. And it is HELD to be removed: a
+ * pack the catalog got wrong is corrected where it is wrong, not three screens
+ * away in a form.
+ */
+export interface RowPortion {
+  /** the portion unit's id (core `portionUnitId`) — stable across a re-sort */
+  id: string;
+  /** the container, in the athlete's own word — "bottle" */
+  label: string;
+  /** how big it is, in the food's own measure — "400 g" */
+  size: string;
+  /** what the chip MEANS, said in full for the screen reader — "Whole bottle".
+   *  The chip's own label is the short form because a row has nothing to tell it
+   *  apart from; a reader hearing it in a list does. */
+  a11y: string;
+}
+
+function WholePack({ portion, onLog, menu, onMenu }: {
+  portion: RowPortion; onLog: () => void;
+  menu?: HoldMenuItem[]; onMenu?: (key: string) => void;
+}) {
+  // The hold is offered only where the pack can actually be written back — a
+  // saved food. On a recent, which is a per-device copy, "Remove pack" would
+  // change nothing that survives the next log, so no hold is armed there and the
+  // chip is a plain AChip.
+  const { t } = useLang();
+  const hold = useHoldMenu({ items: menu ?? [], onSelect: (k) => onMenu?.(k), disabled: !onMenu });
+  return (
+    <>
+      {/* collapsable={false} keeps the box measurable — RN prunes layout-only
+          Views on Android, and a pruned view has no rect to anchor to. */}
+      <Animated.View ref={hold.anchorRef} collapsable={false} style={hold.liftStyle}>
+        <AChip
+          tone="action"
+          label={portion.label}
+          meta={portion.size}
+          // The chip PRINTS the container and its size; it is READ as the whole
+          // sentence, because a screen reader moving down a list has no adjacent
+          // chips to read the short form against.
+          a11yLabel={`${t("w.recovery.nutrition.addToMeal")}: ${portion.a11y}, ${portion.size}`}
+          onPress={onLog}
+          onLongPress={hold.holdProps.onLongPress}
+          delayLongPress={hold.holdProps.delayLongPress}
+        />
+      </Animated.View>
+      {hold.menu}
+    </>
+  );
+}
+
+export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, starred, onStar, onDelete, verified, menu, onMenu, portions, onLogPortion, portionMenu, onPortionMenu }: {
   C: ReturnType<typeof useTheme>["palette"]; name: string; subname?: string | null; meta: string; onAdd: () => void;
   /** This food would take the day past its energy target. Said in SAND on the
    *  figure line — the sport/caution accent, never the alert red, because going
@@ -572,25 +677,78 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
    *  a verified item opens its page; everything else just adds. */
   onOpen?: () => void;
   chevron?: boolean; starred?: boolean; onStar?: () => void; onDelete?: () => void; verified?: VerifiedStamp;
+  /** HOLD THE ROW — the app's one long-press menu (components/hold-menu.tsx).
+   *  Where a row's Edit and its Delete live now: the edit door used to be at the
+   *  bottom of the portion sheet, three taps inside the thing being edited, and
+   *  the delete was a swipe with nothing on screen saying it was there. */
+  menu?: HoldMenuItem[];
+  onMenu?: (key: string) => void;
+  /** the packs this food comes in — one tap each */
+  portions?: RowPortion[];
+  onLogPortion?: (unitId: string) => void;
+  /** the hold menu a PACK carries, when the food is one this app can write back
+   *  to. `onPortionMenu` gets the pack's unit id with the chosen action. */
+  portionMenu?: HoldMenuItem[];
+  onPortionMenu?: (unitId: string, key: string) => void;
 }) {
   const { t } = useLang();
+  const hold = useHoldMenu({ items: menu ?? [], onSelect: (k) => onMenu?.(k) });
+  // The hold has to be armed on the row's OWN pressables: an inner Pressable
+  // keeps the touch, so a long press on the ⊕ or the title never reaches a
+  // wrapper. The a11y actions ride the body, which is the row's one focusable
+  // region — VoiceOver cannot hold anything, so the same rows are reachable
+  // through the rotor.
+  const held = { onLongPress: hold.holdProps.onLongPress, delayLongPress: hold.holdProps.delayLongPress };
   const body = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingVertical: 12, paddingHorizontal: PICKER_EDGE, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }}>
-      <Pressable onPress={onAdd} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
-      <Pressable onPress={onOpen ?? onAdd} style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>
-          {verified ? <VerifiedMark C={C} /> : null}
-          {subname ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{subname}</Text> : null}
+    // Animated, because the hold LIFTS it: the row rises while its card is up,
+    // so the menu reads as belonging to the food rather than to the screen.
+    <Animated.View ref={hold.anchorRef} collapsable={false} style={[{ borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }, hold.liftStyle]}>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingVertical: 12, paddingHorizontal: PICKER_EDGE }}>
+        <Pressable onPress={onAdd} {...held} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
+        <Pressable
+          onPress={onOpen ?? onAdd}
+          {...held}
+          accessibilityActions={hold.a11yActions}
+          onAccessibilityAction={hold.onA11yAction}
+          style={{ flex: 1, minWidth: 0 }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{name}</Text>
+            {verified ? <VerifiedMark C={C} /> : null}
+            {subname ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, flexShrink: 1 }}>{subname}</Text> : null}
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: over ? txt(C, C.amber) : C.ash, marginTop: 3 }}>{meta}</Text>
+        </Pressable>
+        {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
+        {chevron ? <IChevRight size={18} color={C.ash} /> : null}
+      </View>
+      {/* The packs, on the title's own vertical — they belong to the food named
+          above them, not to the row's leading column. */}
+      {portions?.length && onLogPortion ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingLeft: PICKER_EDGE + ROW_LEAD + space.lg, paddingRight: PICKER_EDGE, paddingBottom: 12 }}>
+          {portions.map((p) => (
+            <WholePack
+              key={p.id} portion={p}
+              onLog={() => onLogPortion(p.id)}
+              menu={portionMenu}
+              onMenu={onPortionMenu ? (key) => onPortionMenu(p.id, key) : undefined}
+            />
+          ))}
         </View>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: over ? txt(C, C.amber) : C.ash, marginTop: 3 }}>{meta}</Text>
-      </Pressable>
-      {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
-      {chevron ? <IChevRight size={18} color={C.ash} /> : null}
-    </View>
+      ) : null}
+    </Animated.View>
   );
-  if (!onDelete) return body;
-  return <SwipeRow onDelete={onDelete} label={t("w.recovery.nutrition.remove")} background={C.ink}>{body}</SwipeRow>;
+  // The swipe STAYS where it was. It is the same delete the hold's menu fires,
+  // and a gesture people already have in their fingers is not worth taking away
+  // to prove a point about the new one.
+  return (
+    <>
+      {onDelete
+        ? <SwipeRow onDelete={onDelete} label={t("w.recovery.nutrition.remove")} background={C.ink}>{body}</SwipeRow>
+        : body}
+      {hold.menu}
+    </>
+  );
 }
 
 /** AURORA Nutrition (mobile) — the adaptive macro tracker on one restrained
