@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { addLocalDays, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { renderScreen } from "./render";
 
@@ -295,5 +295,80 @@ describe("the row's backgrounds", () => {
     for (const prefix of ["Tonnage", "Sessions", "Hours"]) {
       expect(bare(columnFor(prefix)!.style.backgroundColor)).toBe(true);
     }
+  });
+});
+
+/**
+ * THE SECOND PAGE — every metric against its own average.
+ *
+ * The figure row marks TWO of four metrics, because `best` and `worst` are the
+ * period's two ends and a row of totals has no room to argue about the middle.
+ * The other two comparisons were computed on every render and thrown away. The
+ * assertions here are that page two keeps them, that it says the same thing
+ * about the same week as the row one drag away, and that colour still marks
+ * only the two ends — a chart that lit every rise would put chartreuse on a
+ * column the row leaves in ash.
+ */
+describe("the comparison page", () => {
+  const textOf = () => (screen.getByText(/four-week average/i).closest("div")?.textContent ?? "");
+
+  it("carries a row for every figure, not just the two the row marks", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const text = container.textContent ?? "";
+
+    // All four metrics named, and all four moves stated — the two the sentence
+    // and the row can never get to are +0% and -0% nowhere: they are printed.
+    for (const label of ["Tonnage", "Sessions", "Hours", "Distance"]) {
+      expect(text).toContain(label);
+    }
+    expect(text).toContain("+33%");  // hours, the rise
+    expect(text).toContain("−75%");  // distance, the fall
+  });
+
+  it("names the axis, and only the axis", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const text = (container.textContent ?? "").toLowerCase();
+    // The head says what the comparison is drawn against and nothing else. The
+    // WINDOW is deliberately absent: the section head above the card already
+    // names it, and printing it twice is the redundancy the Progress cluster's
+    // sweep exists to catch.
+    expect(text).toContain("against your four-week average");
+  });
+
+  it("states each move as a step, in the card's own idiom", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    // "was X" needed a label; the arrow does not, and it is the same arrow the
+    // verdict prints when a percentage stops being a measurement.
+    expect(container.textContent ?? "").toContain("→");
+  });
+
+  it("spells a row out for a screen reader, difference included", () => {
+    renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    const labels = screen.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? "");
+    const row = labels.find((l) => l.includes("difference of"));
+    expect(row).toBeTruthy();
+    // A screen reader gets neither the bar's direction nor its length, so the
+    // sentence has to carry the percentage, both figures and the difference.
+    expect(row).toMatch(/%/);
+    expect(row).toMatch(/from .+ to /);
+  });
+
+  it("puts the page indicator under the card, as a pair", () => {
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    // Two dots, and the active one is the chartreuse pill (20dp wide).
+    const dots = [...container.querySelectorAll("div")].filter((d) => {
+      const s = (d as HTMLElement).style;
+      return s.height === "7px" && (s.width === "7px" || s.width === "20px");
+    });
+    expect(dots).toHaveLength(2);
+    expect(dots.filter((d) => (d as HTMLElement).style.width === "20px")).toHaveLength(1);
+  });
+
+  it("teaches the swipe once — the only thing on the card you cannot see", async () => {
+    // The hint starts hidden and can only ever appear (never flash in), so it
+    // arrives with the stored flag rather than on the first frame.
+    const { container } = renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
+    await waitFor(() =>
+      expect((container.textContent ?? "").toLowerCase()).toContain("swipe for every metric"));
   });
 });

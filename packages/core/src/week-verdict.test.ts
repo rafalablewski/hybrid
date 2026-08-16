@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, VERDICT_END_THRESHOLD_PCT, figureDeltaPct, figureDirection, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
+import { activityVerdict, weekVerdict, VERDICT_METRICS, VERDICT_PCT_CEILING, VERDICT_THRESHOLD_PCT, VERDICT_END_THRESHOLD_PCT, figureDeltaPct, figureDirection, activityComparison, comparisonBar, comparisonHeadKey, COMPARE_SCALE_PCT, verdictLeadKey, verdictShowsStep, verdictWhyKey, type ActivityVerdict } from "./week-verdict";
 import { resolveActivityRange } from "./activity-window";
 import { addLocalDays } from "./day-key";
 import type { LoggedSession, SessionBlock } from "./engines/session";
@@ -428,5 +428,102 @@ describe("activityVerdict — best / worst", () => {
       if (fig.metric === v.best) expect(figureDirection(fig)).toBe("up");
       if (fig.metric === v.worst) expect(figureDirection(fig)).toBe("down");
     }
+  });
+});
+
+/* ── THE COMPARISON PAGE ───────────────────────────────────────────────────
+   The figure row marks two of four metrics, because the two ENDS are all a row
+   of totals has room to argue about. The other two comparisons were computed
+   and thrown away on every render; the second page keeps them. */
+describe("activityComparison", () => {
+  it("carries every figure the row carries, in the row's order", () => {
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 9000, 60), run(2, 3.6)], d7());
+    const rows = activityComparison(v);
+
+    // Same population, same order — a chart that re-sorted itself would be the
+    // sorted-columns mistake the card already made once and fixed.
+    expect(rows.map((r) => r.metric)).toEqual(v.figures.map((f) => f.metric));
+  });
+
+  it("states the move three ways, and the difference needs no baseline", () => {
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 9000, 60), run(2, 3.6)], d7());
+    const tonnage = activityComparison(v).find((r) => r.metric === "tonnage")!;
+
+    expect(tonnage.baseline).toBe(5000);
+    expect(tonnage.value).toBe(9000);
+    expect(tonnage.deltaPct).toBe(80);
+    expect(tonnage.diff).toBe(4000);
+  });
+
+  it("agrees with the row above it about the two ends", () => {
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 9000, 60), run(2, 3.6)], d7());
+    const rows = activityComparison(v);
+
+    expect(rows.find((r) => r.end === "best")!.metric).toBe(v.best);
+    expect(rows.find((r) => r.end === "worst")!.metric).toBe(v.worst);
+    // …and nothing else is marked: a chart that lit every rise would put
+    // chartreuse on a column the row one swipe away leaves in ash.
+    expect(rows.filter((r) => r.end !== null)).toHaveLength(2);
+  });
+
+  it("uses the SAME percentage the figure row prints", () => {
+    const priors = [9, 16, 23, 30].flatMap((d) => [s(d, 5000, 60), run(d, 4)]);
+    const v = activityVerdict([...priors, s(2, 9000, 90), run(2, 3.6)], d7());
+    for (const r of activityComparison(v)) {
+      const fig = v.figures.find((f) => f.metric === r.metric)!;
+      expect(r.deltaPct).toBe(figureDeltaPct(fig));
+    }
+  });
+
+  it("draws no bar where there is no baseline to draw an axis against", () => {
+    const v = activityVerdict([s(2, 9000, 60)], d7());
+    expect(v.cold).toBe(true);
+    for (const r of activityComparison(v)) {
+      expect(r.deltaPct).toBeNull();
+      expect(comparisonBar(r)).toBeNull();
+      // The figures survive — a cold card shows them and makes no claim.
+      expect(Number.isFinite(r.value)).toBe(true);
+      expect(Number.isFinite(r.diff)).toBe(true);
+    }
+  });
+
+  it("pins the bar past the scale and lets the figure keep counting", () => {
+    const priors = [9, 16, 23].map((d) => s(d, 5000, 60));
+    const v = activityVerdict([...priors, s(30, 5000, 60), run(30, 0.4), s(2, 9000, 60), run(2, 6)], d7());
+    const distance = activityComparison(v).find((r) => r.metric === "distance")!;
+
+    expect(distance.deltaPct!).toBeGreaterThan(COMPARE_SCALE_PCT);
+    expect(comparisonBar(distance)).toBe(1);
+  });
+
+  it("maps a move onto the half-track, signed", () => {
+    const at = (pct: number) => comparisonBar({
+      metric: "hours", value: 0, baseline: 0, deltaPct: pct, diff: 0, end: null,
+    });
+    expect(at(0)).toBe(0);
+    expect(at(COMPARE_SCALE_PCT)).toBe(1);
+    expect(at(-COMPARE_SCALE_PCT)).toBe(-1);
+    expect(at(COMPARE_SCALE_PCT / 2)).toBeCloseTo(0.5);
+    expect(at(-100)).toBe(-1);
+  });
+});
+
+/* ── THE HEAD ──────────────────────────────────────────────────────────────
+   One line, and it says what the AXIS is. It must name the period it compares
+   against for the same reason the verdict's working-out does: a month's chart
+   quoting four weeks is a chart about the wrong thing. */
+describe("comparisonHeadKey", () => {
+  const forRange = (id: string) => comparisonHeadKey(activityVerdict([], resolveActivityRange(id, NOW)));
+
+  it("names the period it is drawn against", () => {
+    expect(forRange("week")).toBe("w.home.cmp.vsAvg");
+    expect(forRange("d7")).toBe("w.home.cmp.vsAvg");
+    expect(forRange("d30")).toBe("w.home.cmp.vsD30");
+    // A month is addressed by its own id ("m:YYYY-MM"), not the word.
+    expect(forRange("m:2026-06")).toBe("w.home.cmp.vsMonths");
+    expect(forRange("ytd")).toBe("w.home.cmp.vsYears");
   });
 });

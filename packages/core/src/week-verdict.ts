@@ -349,6 +349,73 @@ export function figureDirection(f: VerdictFigure): VerdictDirection {
 }
 
 /**
+ * THE COMPARISON ROW — one metric's whole move, for the card's second page.
+ *
+ * The figure row can mark only TWO of four metrics, because `best` and `worst`
+ * are the period's two ENDS and a row of totals has no room to argue about the
+ * middle. The other two comparisons are computed and thrown away on every
+ * render. This is that model, kept: value, the baseline it moved from, the
+ * signed per cent, the difference in the metric's own unit, and which end (if
+ * either) it is.
+ *
+ * PURE, and the same arithmetic the row above it uses — `figureDeltaPct` for the
+ * per cent, `best`/`worst` for the mark — so the chart and the figure one swipe
+ * away can never disagree about the same week. Nothing here formats: `diff` is
+ * canonical (kg, count, MINUTES, km), and the caller renders it through the
+ * athlete's own unit preference exactly as it renders `value`.
+ */
+export interface VerdictComparison {
+  metric: VerdictMetric;
+  /** Canonical unit, same as VerdictFigure. */
+  value: number;
+  baseline: number;
+  /** Signed % vs baseline, rounded. Null when there is no baseline to move
+   *  from — a different fact from "it did not move", and never rendered as 0. */
+  deltaPct: number | null;
+  /** `value - baseline`, canonical unit. Always defined; it needs no baseline
+   *  to be meaningful, which is why it survives where `deltaPct` is null. */
+  diff: number;
+  /** The end this figure is, if it is one — the mark the row above carries. */
+  end: "best" | "worst" | null;
+}
+
+/**
+ * How far a bar may travel before it pins, as a percentage. Past this the bar
+ * stops growing and the figure keeps counting: a chart that rescales to its
+ * biggest mover draws the same picture for a +4% week and a +40% one, so the
+ * length stops carrying magnitude at a glance and only the number does.
+ */
+export const COMPARE_SCALE_PCT = 50;
+
+/**
+ * The four rows, in VERDICT_METRICS order — the same order as the figure row,
+ * because a chart that re-sorted itself would be the sorted-columns mistake the
+ * card already made once and fixed.
+ */
+export const activityComparison = (v: ActivityVerdict): VerdictComparison[] =>
+  v.figures.map((f) => ({
+    metric: f.metric,
+    value: f.value,
+    baseline: f.baseline,
+    deltaPct: figureDeltaPct(f),
+    diff: f.value - f.baseline,
+    end: f.metric === v.best ? "best" : f.metric === v.worst ? "worst" : null,
+  }));
+
+/**
+ * A row's bar, as a signed fraction of the half-track: −1 is pinned hard left,
+ * +1 pinned hard right, 0 sitting on the axis. Null when the row has no
+ * baseline to draw an axis against — the cold card, where the rows keep their
+ * figures and draw no bars rather than measure against a baseline the card has
+ * already said it does not trust.
+ */
+export function comparisonBar(c: VerdictComparison): number | null {
+  if (c.deltaPct === null) return null;
+  const f = c.deltaPct / COMPARE_SCALE_PCT;
+  return Math.max(-1, Math.min(1, f));
+}
+
+/**
  * Whether the card should print the STEP ("0.1 → 6.8 km") instead of the
  * percentage. True past VERDICT_PCT_CEILING, where a ratio against a thin
  * baseline stops being a measurement and starts reading as a bug — a four-digit
@@ -369,6 +436,20 @@ export const verdictMetricKey = (m: VerdictMetric) =>
     tonnage: "w.home.week.mTonnage", sessions: "w.home.week.mSessions",
     hours: "w.home.week.mHours", distance: "w.home.week.mDistance",
   })[m];
+
+/**
+ * i18n key for the comparison page's head — the one line that says what the
+ * axis IS. It names the period it compares against, exactly as `verdictWhyKey`
+ * does, so a month's chart cannot read as if it were drawn against four weeks.
+ * The window itself is NOT restated here: the section head above the card
+ * already carries it, and printing it twice is the redundancy the Progress
+ * cluster's sweep exists to catch.
+ */
+export const comparisonHeadKey = (v: ActivityVerdict): string =>
+  v.range.kind === "month" ? "w.home.cmp.vsMonths"
+    : v.range.kind === "ytd" ? "w.home.cmp.vsYears"
+      : v.range.kind === "d30" ? "w.home.cmp.vsD30"
+        : "w.home.cmp.vsAvg";
 
 /** i18n key for the metric's column label under the hairline. */
 export const verdictLabelKey = (m: VerdictMetric) =>

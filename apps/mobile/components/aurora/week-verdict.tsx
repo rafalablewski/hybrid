@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, ScrollView, LayoutAnimation, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
   durationUnits, formatDuration,
   groupDistanceDisplay, fmtKm,
   verdictLeadKey, verdictWhyKey, verdictMetricKey, verdictLabelKey, verdictShowsStep, fmtTonnage,
-  figureDeltaPct, figureDirection,
+  figureDeltaPct, figureDirection, activityComparison, comparisonHeadKey,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
   type VerdictDirection, type WeightUnit,
 } from "@hybrid/core";
 import { ACard, withAlpha , RADIUS} from "./kit";
+import ActivityCompare from "./activity-compare";
 import PeriodRecords from "./period-records";
 import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import Sheet from "./sheet";
@@ -286,8 +287,46 @@ export default function AuroraWeekVerdict({
     setAll(false);
   };
 
+  // THE PAGER. The card is two pages wide: the verdict, and the comparison.
+  // `page` is the settled index (momentum end), `pageW` the content width the
+  // ScrollView measures for itself — the card's own inner width, not the
+  // screen's, since the pager lives INSIDE the card and its pages respect the
+  // card's padding (the full-bleed rule is for rails sitting on a screen).
+  const [page, setPage] = useState(0);
+  const [pageW, setPageW] = useState(0);
+  // Each page's own height, so the card can be the height of the page it is on.
+  // Page one is ~157dp of content and page two ~355dp; a pager fixed to the
+  // taller one leaves two hundred points of dead card under the figure row, on
+  // the page an athlete sees first, every time.
+  const [heights, setHeights] = useState<[number, number]>([0, 0]);
+  const pager = useRef<ScrollView | null>(null);
+
+  const measure = (i: 0 | 1) => (e: LayoutChangeEvent) => {
+    const h = Math.round(e.nativeEvent.layout.height);
+    setHeights((prev) => (Math.abs(prev[i] - h) < 1 ? prev : (i === 0 ? [h, prev[1]] : [prev[0], h])));
+  };
+
+  const settle = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const w = e.nativeEvent.layoutMeasurement.width || pageW || 1;
+    const i = Math.max(0, Math.min(1, Math.round(e.nativeEvent.contentOffset.x / w)));
+    if (i === page) return;
+    // The height change is the card growing under the athlete's own drag, so it
+    // eases rather than jumping. Reduce Motion is honoured by the platform:
+    // LayoutAnimation is a no-op when the setting is on.
+    LayoutAnimation.configureNext(LayoutAnimation.create(220, "easeInEaseOut", "scaleY"));
+    setPage(i);
+    if (!hinted) {
+      setHinted(true);
+      AsyncStorage.setItem(HINT_KEY, "1").catch(() => {});
+    }
+  };
+
   const v: ActivityVerdict = useMemo(() => activityVerdict(sessions, range, bw), [sessions, range, bw]);
   const summary = useMemo(() => activitySummary(sessions, range, bw), [sessions, range, bw]);
+  // The second page's model — the same figures, the same baselines and the same
+  // two ends the row above already carries, so the chart and the row can never
+  // disagree about one week.
+  const compare = useMemo(() => activityComparison(v), [v]);
 
   // ── Formatting. Canonical → display; tonnage honours the athlete's unit,
   // distance keeps the shared km precision, and minutes go through the shared
@@ -416,6 +455,39 @@ export default function AuroraWeekVerdict({
           the lower compartment could supply its own, and the compartment left
           with the drawer. */}
       <ACard>
+        {/* ── THE PAGER. The card is two pages wide now: the VERDICT, and the
+            COMPARISON. The figure row can mark only two of its four metrics
+            (`best` and `worst` are the period's two ENDS), so the other two
+            comparisons were computed on every render and thrown away; page two
+            keeps them. See aurora/activity-compare.tsx for why it is a page and
+            not a sheet.
+
+            It is the app's existing pager idiom — the same `pagingEnabled` +
+            `snapToInterval` + `decelerationRate="fast"` ScrollView that carries
+            workout-wrapped's slides, with that screen's dot indicator under it.
+
+            THE FULL-BLEED RULE DOES NOT APPLY. Screen-level rails must let their
+            cards slide under the physical screen edge; this pager sits INSIDE a
+            card, which is the rule's stated exception, so its pages respect the
+            card's padding and the card keeps its own gutter.
+
+            THE FILTER STAYS OUTSIDE IT, above the card. Both pages describe the
+            same window, so a control that changed on page two would be a second
+            period hiding behind a swipe. ─────────────────────────────────── */}
+        <ScrollView
+          ref={pager}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          decelerationRate="fast"
+          snapToInterval={pageW || undefined}
+          onLayout={(e) => setPageW(Math.round(e.nativeEvent.layout.width))}
+          onMomentumScrollEnd={settle}
+          // The card is the height of the page it is ON — see `heights` above.
+          style={{ height: heights[page] || undefined }}
+          contentContainerStyle={{ alignItems: "flex-start" }}
+        >
+          <View style={{ width: pageW || undefined }} onLayout={measure(0)}>
         {/* THE VERDICT — sentence, its working-out, and the signed delta. */}
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 16 }}>
           <View style={{ flex: 1 }}>
@@ -547,9 +619,46 @@ export default function AuroraWeekVerdict({
             at the column that opened the panel, and a sheet needs no pointing —
             see the file header. */}
 
+          </View>
+
+          {/* PAGE TWO — every metric against its own average, on one axis. */}
+          <View style={{ width: pageW || undefined }} onLayout={measure(1)}>
+            <ActivityCompare
+              rows={compare}
+              headline={t(comparisonHeadKey(v))}
+              fmt={fmt}
+              onOpen={openColumn}
+              t={t}
+            />
+          </View>
+        </ScrollView>
+
+        {/* THE PAGE INDICATOR — workout-wrapped's, verbatim: 7dp dots, the
+            active one a 20dp chartreuse pill. Reused rather than re-drawn,
+            because five rails once drew five different tails. */}
+        <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginTop: 14 }}>
+          {[0, 1].map((i) => (
+            <View
+              key={i}
+              accessibilityElementsHidden
+              importantForAccessibility="no-hide-descendants"
+              style={{
+                width: i === page ? 20 : 7, height: 7, borderRadius: RADIUS.pill,
+                backgroundColor: i === page ? C.lime : C.line,
+              }}
+            />
+          ))}
+        </View>
+
+        {/* THE HINT, ONCE, and it now teaches the SWIPE. The dots say there is
+            more, but they do not say what, and the second page is the only
+            thing on this card an athlete cannot find by looking at it — a
+            column is a large figure that obviously presses. It retires on the
+            first swipe OR the first column opened, whichever comes first, under
+            the key it always used. */}
         {!hinted && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
-            {t("w.home.act.hint")}
+            {t("w.home.cmp.hint")}
           </Text>
         )}
       </ACard>
