@@ -3,24 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { sketchBrief, sketchCoverage } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { fs, space,
-  INK,
-  INK2,
-  LINE,
-  LIME,
-  CHALK,
-  ASH,
-  AMBER,
-  RED,
-  ON_ACCENT,
-  disp,
-  cond,
-  mono,
-  Mono,
-  Card,
-  Chip,
-  txt,
-} from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 const BUCKET = "media";
 
@@ -339,7 +322,7 @@ const input: React.CSSProperties = {
   boxSizing: "border-box",
 };
 const primaryBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",
@@ -352,7 +335,7 @@ const primaryBtn: React.CSSProperties = {
   border: `1px solid ${LIME}`,
 };
 const miniBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.caption,
   fontWeight: 700,
   textTransform: "uppercase",

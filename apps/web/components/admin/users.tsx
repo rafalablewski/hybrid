@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, cond, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { useDialog } from "../../lib/use-dialog";
 import AdminAnonSessions from "./anon-sessions";
 import { Loading } from "../aurora/skeleton";
@@ -419,7 +419,7 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
       onClick={onClick}
       disabled={disabled}
       style={{
-        ...cond,
+        ...disp,
         fontSize: fs.body,
         fontWeight: 700,
         textTransform: "uppercase",

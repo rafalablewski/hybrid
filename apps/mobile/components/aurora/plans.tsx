@@ -331,7 +331,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{p.tag}</Text>
                   {p.hot && <View style={{ backgroundColor: withAlpha(C.lime, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.train.plans.popular")}</Text></View>}
                 </View>
-                <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 6 }}>{p.name}</Text>
                 <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
                   {hero.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 8 }}>

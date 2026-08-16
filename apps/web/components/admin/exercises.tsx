@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ALL_MUSCLES, LIBRARY_PATTERNS } from "@hybrid/core";
-import { fs, space,
+import {
+  fs,
+  space,
   INK,
   INK2,
   LINE,
@@ -13,7 +15,6 @@ import { fs, space,
   RED,
   ON_ACCENT,
   disp,
-  cond,
   mono,
   Mono,
   Card,
@@ -307,7 +308,7 @@ export default function AdminExercises() {
                     key={m}
                     onClick={() => toggleMuscle(m)}
                     style={{
-                      ...cond,
+                      ...disp,
                       fontSize: fs.body,
                       fontWeight: 700,
                       textTransform: "uppercase",
@@ -437,7 +438,7 @@ const input: React.CSSProperties = {
   boxSizing: "border-box",
 };
 const baseBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.bodyLg,
   fontWeight: 700,
   textTransform: "uppercase",
@@ -451,7 +452,7 @@ const primaryBtn: React.CSSProperties = { ...baseBtn, background: LIME, color: O
 const secondaryBtn: React.CSSProperties = { ...baseBtn, background: INK2, color: CHALK };
 const ghostBtn: React.CSSProperties = { ...baseBtn, background: "transparent", color: txt(ASH) };
 const miniBtn: React.CSSProperties = {
-  ...cond,
+  ...disp,
   fontSize: fs.body,
   fontWeight: 700,
   textTransform: "uppercase",

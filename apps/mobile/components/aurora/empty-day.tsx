@@ -64,7 +64,7 @@ export default function AEmptyDay({
         <EmptyGlyph copy={copy} color={copy.quiet ? withAlpha(C.ash, 0.5) : withAlpha(C.ash, 0.702)} />
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: 17, letterSpacing: tracking.display, color: copy.quiet ? C.ash : C.chalk, textAlign: "center" }}
+          style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, color: copy.quiet ? C.ash : C.chalk, textAlign: "center" }}
         >
           {t(copy.titleKey)}
         </Text>

@@ -198,7 +198,7 @@ export function SessionEditSheet({
     <Sheet visible={visible} onClose={onClose} scroll={false}>
             <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line, alignSelf: "center", marginBottom: 16 }} />
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-              <Text style={{ fontFamily: F.bold, fontSize: 17, color: C.chalk, flex: 1, paddingRight: 10 }}>{t("session.edit.title")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flex: 1, paddingRight: 10 }}>{t("session.edit.title")}</Text>
               <Pressable onPress={onClose} hitSlop={10}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("common.cancel")}</Text>
               </Pressable>

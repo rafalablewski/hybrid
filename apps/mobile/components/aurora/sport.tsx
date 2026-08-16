@@ -56,7 +56,7 @@ export default function AuroraSport() {
           box the exercise lists wear, because a sport is a thing you did, not a
           person. It drew bare here, which left the one list of activities in the
           app looking unlike every list of lifts. */}
-      <AMarkTile><Text style={{ fontSize: 17 }}>{e.icon}</Text></AMarkTile>
+      <AMarkTile><Text style={{ fontSize: fs.subtitle }}>{e.icon}</Text></AMarkTile>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
         <Text style={{ ...mono(fs.micro), marginTop: 3 }}>

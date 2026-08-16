@@ -628,7 +628,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
           <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
             {[1, 2, 3, 4, 5].map((n) => (
               <Pressable key={n} onPress={() => setRating(n)} accessibilityLabel={String(n)}>
-                <Text style={{ fontSize: 24, color: n <= rating ? C.gold : C.line }}>★</Text>
+                <Text style={{ fontSize: fs.display, color: n <= rating ? C.gold : C.line }}>★</Text>
               </Pressable>
             ))}
           </View>

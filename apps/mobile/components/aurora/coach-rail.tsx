@@ -78,7 +78,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
     <View style={{ marginTop: headerless ? 0 : 18 }}>
       {!headerless && (
         <View style={{ marginBottom: 10 }}>
-          <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: 17 }}>{t("w.explore.coaches")}</Text>
+          <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle }}>{t("w.explore.coaches")}</Text>
           <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.caption }}>{t("w.explore.coachSwipe")}</Text>
         </View>
       )}

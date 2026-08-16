@@ -398,7 +398,7 @@ export function UserRecipeEditor({
                 <StepButton label="+" small onPress={() => setQty(ing.id, ing.qty + stepFor(ing.qty))} />
               </View>
               <PressScale onPress={() => removeIngredient(ing.id)} accessibilityRole="button" accessibilityLabel={ing.name} hitSlop={HIT_SLOP} style={{ padding: 4 }}>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 17, color: C.ash }}>×</Text>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>×</Text>
               </PressScale>
             </View>
           ))

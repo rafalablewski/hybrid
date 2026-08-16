@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ago, until } from "@hybrid/core";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
-import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, cond, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
 import { Loading } from "../aurora/skeleton";
@@ -367,7 +367,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 title="Drag me onto the dropzone"
-                style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 700, padding: "10px 12px", borderRadius: "var(--r-field)", cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
+                style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, padding: "10px 12px", borderRadius: "var(--r-field)", cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
               >
                 <span style={{ color: txt(ASH) }}>⠿</span>
                 <span style={{ width: 7, height: 7, borderRadius: 99, background: DOT[a.status] ?? ASH }} />
@@ -417,7 +417,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
           <button className="pressable"
             disabled={busy || !agentId || !task.trim()}
             onClick={run}
-            style={{ ...cond, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
+            style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
           >
             {busy ? "Running…" : "Run"}
           </button>
@@ -607,7 +607,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
         <button className="pressable"
           disabled={busy || val === ""}
           onClick={log}
-          style={{ ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "7px 10px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(val === "" ? ASH : LIME), opacity: busy ? 0.5 : 1 }}
+          style={{ ...disp, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "7px 10px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(val === "" ? ASH : LIME), opacity: busy ? 0.5 : 1 }}
         >
           log
         </button>
@@ -716,10 +716,10 @@ function Approvals({ onChange }: { onChange: () => void }) {
               <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
             </div>
             <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
-              <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...cond, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
+              <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...disp, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
                 Approve &amp; run
               </button>
-              <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
+              <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...disp, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
                 Deny
               </button>
             </div>
@@ -757,7 +757,7 @@ function DigestCard() {
     <Card span={2}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <SectionHead title="Daily digest" kicker="last 24h – auto-posts to Slack via cron" />
-        <button className="pressable" disabled={busy} onClick={send} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
+        <button className="pressable" disabled={busy} onClick={send} style={{ ...disp, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
           {busy ? "Sending…" : "Send to Slack now"}
         </button>
       </div>
@@ -803,7 +803,7 @@ function MonthlyCostCard() {
     <Card span={2}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <SectionHead title="Monthly cost" kicker="real agent spend – auto-reports on the 1st" />
-        <button className="pressable" disabled={busy} onClick={send} style={{ ...cond, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
+        <button className="pressable" disabled={busy} onClick={send} style={{ ...disp, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "9px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: CHALK }}>
           {busy ? "Sending…" : "Send to Slack"}
         </button>
       </div>
@@ -881,7 +881,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <SectionHead title="Notifications" kicker={`${unread} unread – ${list.length} recent`} />
             {unread > 0 && (
-              <button className="pressable" disabled={busy} onClick={() => markRead()} style={{ ...cond, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "8px 12px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(ASH) }}>
+              <button className="pressable" disabled={busy} onClick={() => markRead()} style={{ ...disp, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "8px 12px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(ASH) }}>
                 Mark all read
               </button>
             )}

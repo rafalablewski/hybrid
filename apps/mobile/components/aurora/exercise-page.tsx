@@ -25,7 +25,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking, trackFigure} from "../../lib/ui";
+import { fs, F, leading, PressScale as Pressable, FIXED_FONT_SCALE , tracking, trackFigure} from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub } from "./chart-scrub";
 import { AuroraScreen, ASegment , RADIUS} from "./kit";
 import { kindStroke, TickerDelta } from "./exercise-widget";
@@ -620,7 +620,7 @@ export default function AuroraExercisePage() {
   // rather than a page that re-fetches. `hidden` masks the real text only while
   // the clone is inbound; every degraded path (no provider, failed measurement,
   // Reduce Motion) returns false and shows it immediately.
-  const heroStyle = { fontFamily: F.black, fontSize: 48, letterSpacing: trackFigure(48), lineHeight: 52, color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "tight"), color: C.chalk } as const;
   const heroShared = useSharedElementTarget(SHARED_ELEMENTS.exerciseHero, hero.v, heroStyle);
 
   useEffect(() => {

@@ -48,7 +48,7 @@ export default function AuroraConnections() {
           <Pressable key={p.id} onPress={() => router.push(`/connections/${p.id}`)}>
             <ACard style={{ marginTop: 16 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                <Text style={{ fontFamily: F.black, fontSize: 17, color: C.chalk }}>{p.label}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{p.label}</Text>
                 {chip(statusColor(status, C), statusLabel)}
               </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>{t("w.account.connections.provides")} {p.provides.join(", ")}</Text>
