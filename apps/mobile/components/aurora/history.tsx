@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, type MoodDef , ALPHA} from "@hybrid/core";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA} from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -75,6 +75,12 @@ function SessionNoteView({ C, s, t }: { C: Palette; s: LoggedSession; t: (k: str
 export default function AuroraHistory() {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  // A SPORT FILTER, arriving from that sport's page. The sport page lists three
+  // recent efforts and ends in a door to "all N efforts" — a door that landed
+  // on unfiltered History would promise a number and show a different one.
+  const { sport: sportRaw } = useLocalSearchParams<{ sport?: string }>();
+  const sportParam = typeof sportRaw === "string" ? sportRaw.trim() : "";
+  const sportFilter = sportParam ? (sportFromSlug(sportParam) ?? sportParam) : null;
   const bw = useBodyweightLookup();
   const router = useRouter();
   const [showArchived, setShowArchived] = useState(false);
@@ -100,7 +106,13 @@ export default function AuroraHistory() {
   };
 
   const q = useSessionsQuery({ archived: showArchived });
-  const sessions = q.data ?? [];
+  // `sportSessions` is the sport page's own narrowing (discipline tag for an
+  // endurance sport, block name for a timed one), so the count on the door and
+  // the list behind it are the same slice by construction, not by coincidence.
+  const sessions = useMemo(
+    () => (sportFilter ? sportSessions(q.data ?? [], sportFilter) : (q.data ?? [])),
+    [q.data, sportFilter],
+  );
   const loading = q.isPending;
   const refreshing = q.isFetching;
   useRefreshOnFocus(q.refetch);
@@ -180,6 +192,10 @@ export default function AuroraHistory() {
   // persisted choice hydrates (view === null) nothing view-specific renders,
   // so the saved layout never flashes another one first.
   const hydrated = view !== null || showArchived;
+  // The five merged layouts (agenda, journal, weeks, timeline, blocks) lay a
+  // filtered slice over the WHOLE plan's schedule, which would draw ghost days
+  // for sessions the filter just removed. A filtered History is the plain list.
+  const listMode = showArchived || sportFilter != null;
 
   // THE HERO — rank `title`. History is an INFORMATION page: its subject is a
   // collection, and a collection has no portrait, so there is no art and the
@@ -196,7 +212,7 @@ export default function AuroraHistory() {
           Trade-off (known): unlike the archived-list rows, these aggregate
           layouts are NOT virtualized — revisit under the
           mobile-list-virtualization capability. */}
-      {!showArchived && view !== null && !loading && !q.isError && sessions.length > 0 && (() => { const V = VIEW_COMPONENTS[view]; return <V ctx={viewCtx} />; })()}
+      {!listMode && view !== null && !loading && !q.isError && sessions.length > 0 && (() => { const V = VIEW_COMPONENTS[view]; return <V ctx={viewCtx} />; })()}
     </>
   );
 
@@ -229,7 +245,11 @@ export default function AuroraHistory() {
     // track and the scroll clearance. A screen never trades virtualization for
     // a hero.
     <HeroScreen
-      hero={{ rank: "title", title: t("nav.history"), meta: [sessions.length ? `${sessions.length} ${t(showArchived ? "history.archived" : "nav.history")}` : null] }}
+      hero={{
+        rank: "title",
+        title: sportFilter ?? t("nav.history"),
+        meta: [sessions.length ? `${sessions.length} ${t(showArchived ? "history.archived" : "nav.history")}` : null],
+      }}
       back={() => router.back()}
       // The rail's trailing slot — ONE control, in the metadata voice. It used
       // to be a bordered pill in the title row, which is where History invented
@@ -237,10 +257,10 @@ export default function AuroraHistory() {
       accessory={<HeroAccessory label={t("history.archived")} active={showArchived} onPress={() => setShowArchived((v) => !v)} onDark={false} />}
       // The view switcher is a SUB-rail: it docks beneath the collapsed bar
       // rather than scrolling away, so the layout you are in stays addressable.
-      rail={!showArchived && view !== null ? <ViewSwitcher view={view} onChange={pickView} /> : undefined}
+      rail={!listMode && view !== null ? <ViewSwitcher view={view} onChange={pickView} /> : undefined}
       scroller={(scrollProps, railNode) => (
         <FlatList
-          data={showArchived && !loading && !q.isError ? sessions : []}
+          data={listMode && !loading && !q.isError ? sessions : []}
           keyExtractor={(s) => s.id}
           renderItem={renderItem}
           ListHeaderComponent={header(railNode)}

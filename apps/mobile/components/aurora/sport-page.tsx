@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, TextInput, ScrollView } from "react-native";
+import { View, Text, TextInput } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,6 +24,7 @@ import {
   type SportBest,
   type SportChartReading,
   type SportPageModel,
+  type SportRecord,
   type SportStore,
   type SportWeek,
 
@@ -33,8 +34,10 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
-import { APill, AuroraScreen, GUTTER, RADIUS } from "./kit";
+import { APill, AuroraScreen, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
+import Sheet from "./sheet";
+import { DoorRow } from "./week-verdict";
 import { withAlpha } from "./field";
 
 const STORE_KEY = "hybrid.sport";
@@ -129,18 +132,15 @@ export default function AuroraSportPage() {
   const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
   const u = durationUnits(t);
-  const unitLabel = m.distanceUnit === "m" ? t("w.train.sportPage.metres") : t("w.train.sportPage.kilometres");
-  // The week cell reads "This week" whatever the sport measures: a timed
-  // sport's figure now carries its own units ("1h 15min"), so the label that
-  // used to name them ("Min this week") would be naming them twice.
-  const totalLabel = (id: string) =>
-    id === "efforts" ? t("w.train.sportPage.efforts")
-      : id === "distance" ? unitLabel
-      : id === "hours" ? t("w.train.sportPage.hours")
-      : t("w.train.sportPage.thisWeek");
+  /** The rung the page states large, or null for a sport with no ladder set. */
+  const headline = m.records.find((r) => r.promoted) ?? null;
+  /** A rung names itself: a figure with its unit, or the name it goes by. The
+   *  model states WHICH distance; what to call it in the athlete's language is
+   *  the client's job, which is why "half" arrives as a token and not as prose. */
+  const rungLabel = (r: SportRecord) =>
+    r.name ? t(`w.train.sportPage.${r.name}`) : `${r.value} ${r.unit}`;
   const bestLabel = (b: SportBest) =>
-    b.id === "fastest" ? t("w.train.sportPage.fastest")
-      : b.id === "longest" ? t("w.train.sportPage.longest")
+    b.id === "longest" ? t("w.train.sportPage.longest")
       : b.id === "longestSession" ? t("w.train.sportPage.longestSession")
       : t("w.train.sportPage.biggestWeek");
   const primaryLabel =
@@ -206,76 +206,114 @@ export default function AuroraSportPage() {
         />
       }
     >
-      {/* ── THE ONE FIGURE ── */}
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", gap: space.lg, paddingTop: space.xxl, paddingBottom: space.xl, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        <View style={{ flex: 1 }}>
-          <Text style={label()}>{primaryLabel}</Text>
-          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: space.ms }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
-            {!!m.primary.unit && <Text style={{ ...mono(fs.note), marginBottom: 6 }}>{m.primary.unit}</Text>}
+      {/* ── THE HEADLINE FIGURE ──────────────────────────────────────────
+          The record ladder's promoted rung when the sport has one, else the
+          model's `primary`. The TOTALS ROW that used to sit under this is gone:
+          it printed the efforts count and the total distance that the hero's
+          own meta line states two hundred points above it, and on a timed sport
+          its "Hours" cell was the headline figure again at a third of the size.
+          The hero counts; the page states a performance. */}
+      {headline ? (
+        <View style={{ paddingTop: space.xxl, paddingBottom: space.lg }}>
+          <Text style={label()}>{t("w.train.sportPage.bestAt").replace("{d}", rungLabel(headline))}</Text>
+          <View style={{ flexDirection: "row", alignItems: "flex-end", gap: space.ms, marginTop: space.ms }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{headline.time}</Text>
+            {!!headline.delta && (
+              <Text style={{ ...mono(fs.caption, txt(C, C.lime)), fontFamily: F.monoBold, marginBottom: 8 }}>{headline.delta}</Text>
+            )}
           </View>
-          {!!m.primary.delta && (
-            <Text style={{ ...mono(fs.caption, m.primary.improving ? txt(C, C.lime) : C.ash), fontFamily: F.monoBold, marginTop: space.ms }}>{m.primary.delta}</Text>
-          )}
-          {m.primary.kind === "marker" && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: space.xs }}>
-              {!!m.primary.at && <Text style={mono(fs.micro)}>{fmtDate(m.primary.at)}</Text>}
-              <Provenance provider={null} />
-            </View>
-          )}
-          {m.primary.kind !== "marker" && !m.hasDistance && !m.hasPace && (
-            <Text style={{ ...mono(fs.micro), marginTop: space.xs, lineHeight: leading(fs.micro) }}>{t("w.train.sportPage.timedOnly")}</Text>
-          )}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: space.md }}>
+            {!!headline.pace && <Text style={mono(fs.micro)}>{headline.pace} {m.paceUnit}</Text>}
+            {!!headline.at && <Text style={mono(fs.micro)}>{fmtDate(headline.at)}</Text>}
+            <Provenance provider={headline.provider} />
+          </View>
         </View>
-        {m.primary.trend.length >= 2 && <MarkerSpark trend={m.primary.trend} color={C.lime} />}
-      </View>
-
-      {/* The marker slot — a sport that has one, and the athlete's own figure. */}
-      {!!m.markerPrompt && (
-        <View style={{ paddingVertical: space.lg, borderBottomWidth: 1, borderBottomColor: C.line }}>
-          {draft === null ? (
-            <Pressable onPress={() => setDraft(m.primary.kind === "marker" ? m.primary.value : "")}>
-              <Text style={{ ...mono(fs.body, txt(C, C.lime)), fontFamily: F.monoBold }}>
-                {t("w.train.sportPage.addMarker").replace("{label}", m.markerPrompt.label)} →
-              </Text>
-            </Pressable>
-          ) : (
-            <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
-              <TextInput
-                autoFocus
-                value={draft}
-                onChangeText={setDraft}
-                onSubmitEditing={() => saveMarker(draft)}
-                placeholder={m.markerPrompt.ph}
-                placeholderTextColor={C.ash}
-                accessibilityLabel={m.markerPrompt.label}
-                style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
-              />
-              <Pressable onPress={() => saveMarker(draft)} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 18, paddingVertical: 12 }}>
-                <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.onAccent }}>{t("w.train.sportPage.save")}</Text>
-              </Pressable>
+      ) : m.empty ? (
+        // Nothing logged and no rung set: there is no performance to state, and
+        // `primary` would fall through to a 46px "0min".
+        <View style={{ alignItems: "center", paddingTop: space.huge, paddingBottom: space.xl }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.train.sportPage.emptyTitle")}</Text>
+          <Text style={{ ...mono(fs.body), marginTop: space.sm, textAlign: "center", lineHeight: leading(fs.body) }}>
+            {m.records.length > 0 ? t("w.train.sportPage.emptyRecords") : t("w.train.sportPage.emptyBody")}
+          </Text>
+        </View>
+      ) : (
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", gap: space.lg, paddingTop: space.xxl, paddingBottom: space.xl }}>
+          <View style={{ flex: 1 }}>
+            <Text style={label()}>{primaryLabel}</Text>
+            <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: space.ms }}>
+              <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
+              {!!m.primary.unit && <Text style={{ ...mono(fs.note), marginBottom: 6 }}>{m.primary.unit}</Text>}
             </View>
-          )}
-          <Text style={{ ...mono(fs.micro), marginTop: space.sm }}>{t("w.train.sportPage.markerHint")}</Text>
+            {!!m.primary.delta && (
+              <Text style={{ ...mono(fs.caption, m.primary.improving ? txt(C, C.lime) : C.ash), fontFamily: F.monoBold, marginTop: space.ms }}>{m.primary.delta}</Text>
+            )}
+            {m.primary.kind === "marker" && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: space.xs }}>
+                {!!m.primary.at && <Text style={mono(fs.micro)}>{fmtDate(m.primary.at)}</Text>}
+                <Provenance provider={null} />
+              </View>
+            )}
+            {m.primary.kind !== "marker" && !m.hasDistance && !m.hasPace && (
+              <Text style={{ ...mono(fs.micro), marginTop: space.xs, lineHeight: leading(fs.micro) }}>{t("w.train.sportPage.timedOnly")}</Text>
+            )}
+          </View>
+          {m.primary.trend.length >= 2 && <MarkerSpark trend={m.primary.trend} color={C.lime} />}
         </View>
       )}
 
-      {/* ── TOTALS — facts on hairlines, no cards ── */}
-      <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line }}>
-        {m.totals.map((cell, i) => (
-          <View key={cell.id} style={{ flex: 1, alignItems: "center", paddingVertical: space.lg, borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.heading, color: C.chalk }}>{cell.value}</Text>
-            <Text style={{ ...label(), fontSize: fs.nano, marginTop: 6, textAlign: "center" }}>{totalLabel(cell.id)}</Text>
+      {/* An FTP is watts, not a time at a distance, so it fills no rung and
+          keeps its own line beside the ladder. Where the marker IS a rung, the
+          rung above has already stated it. */}
+      {m.markerAside && m.primary.kind === "marker" && !!headline && (
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, paddingVertical: space.md, ...dividerTop }}>
+          <Text style={label()}>{m.primary.label}</Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.subtitle, color: C.chalk }}>{m.primary.value}</Text>
+            <Provenance provider={null} />
           </View>
-        ))}
-      </View>
-
-      {m.empty ? (
-        <View style={{ alignItems: "center", paddingVertical: space.huge }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.train.sportPage.emptyTitle")}</Text>
-          <Text style={{ ...mono(fs.body), marginTop: space.sm, textAlign: "center" }}>{t("w.train.sportPage.emptyBody")}</Text>
         </View>
-      ) : (
+      )}
+
+      {/* ── THE REST OF THE LADDER — the rungs the headline is not ── */}
+      {m.records.filter((r) => !r.promoted).map((r) => (
+        <View key={r.km} style={{ flexDirection: "row", alignItems: "baseline", gap: space.md, paddingVertical: space.md, ...dividerTop }}>
+          <Text numberOfLines={1} style={{ ...label(), width: 78 }}>{rungLabel(r)}</Text>
+          {r.time ? (
+            <>
+              <View style={{ flex: 1, flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
+                <Text style={{ fontFamily: F.monoBold, fontSize: fs.subtitle, color: C.chalk }}>{r.time}</Text>
+                {!!r.pace && <Text style={mono(fs.nano)}>{r.pace} {m.paceUnit}</Text>}
+              </View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                {!!r.at && <Text style={mono(fs.nano)}>{fmtDate(r.at)}</Text>}
+                <Provenance provider={r.provider} />
+              </View>
+            </>
+          ) : (
+            // An unset rung is an invitation, not a dash: the page knows what
+            // the athlete has not done yet, and saying so is worth more than
+            // an em-dash in a column.
+            <Text style={{ flex: 1, ...mono(fs.body) }}>{t("w.train.sportPage.recordUnset")}</Text>
+          )}
+        </View>
+      ))}
+
+      {/* Typing a time is a DOOR — it opens a sheet, so it earns its ring, and
+          the reading page never raises a keyboard of its own. */}
+      {!!m.markerPrompt && (
+        <View style={dividerTop}>
+          <DoorRow
+            title={t("w.train.sportPage.addRecord")}
+            sub={m.markerPrompt.label}
+            glyph="→"
+            onPress={() => setDraft(m.primary.kind === "marker" ? m.primary.value : "")}
+          />
+          <View style={{ height: space.md }} />
+        </View>
+      )}
+
+      {m.empty ? null : (
         <>
           {/* ── VOLUME ── */}
           <View style={{ marginTop: space.xxl }}>
@@ -317,8 +355,11 @@ export default function AuroraSportPage() {
                 bind={paceScrub.bind}
                 readout={chartReadout(paceRead, m.pace.trend.length)}
               />
+              {/* The trend SKIPS the weeks with nothing paced in it, so its first
+                  point is rarely the volume series' first week. Naming it with
+                  `weeks[0]` captioned this chart with someone else's date. */}
               <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm }}>
-                <Text style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</Text>
+                <Text style={mono(fs.nano)}>{fmtDate(m.pace.weekStarts[0] ?? "")}</Text>
                 <Text style={mono(fs.nano)}>{t("w.train.sportPage.fasterHigher")}</Text>
               </View>
             </View>
@@ -332,107 +373,49 @@ export default function AuroraSportPage() {
             </View>
           )}
 
-          {/* ── BESTS — a full-bleed rail: cards run under the screen edge ── */}
+          {/* ── BESTS — on the page's own hairlines, like every other figure.
+              These were 176-wide bordered cards in a rail, on a page whose
+              totals row was commented "facts on hairlines, no cards": two
+              materials for one job, and the fourth card off the screen edge.
+              All of them are visible at once now. ── */}
           {m.bests.length > 0 && (
             <View style={{ marginTop: space.xxl }}>
               <SectionHead title={t("w.train.sportPage.bests")} meta={t("w.train.sportPage.allTime")} />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ marginHorizontal: -GUTTER }}
-                contentContainerStyle={{ paddingHorizontal: GUTTER, gap: space.md }}
-              >
-                {m.bests.map((b) => (
-                  <View key={b.id} style={{ width: 176, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: space.lg }}>
-                    <Text style={{ ...label(), fontSize: fs.nano }}>{bestLabel(b)}</Text>
-                    <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4, marginTop: space.ms }}>
-                      <Text style={{ fontFamily: F.monoBold, fontSize: fs.heading, color: C.chalk }}>{b.value}</Text>
-                      {!!b.unit && <Text style={{ ...mono(fs.micro), marginBottom: 2 }}>{b.unit}</Text>}
-                    </View>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: space.sm }}>
-                      <Text style={mono(fs.nano)}>{fmtDate(b.at)}</Text>
-                      {!!b.sessionId && <Provenance provider={b.provider} />}
-                    </View>
+              {m.bests.map((b, i) => (
+                <View key={b.id} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, paddingVertical: space.md, ...(i ? dividerTop : null) }}>
+                  <Text style={label()}>{bestLabel(b)}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.subtitle, color: C.chalk }}>{b.value}</Text>
+                    {!!b.unit && <Text style={mono(fs.micro)}>{b.unit}</Text>}
+                    <Text style={mono(fs.nano)}>{fmtDate(b.at)}</Text>
+                    {!!b.sessionId && <Provenance provider={b.provider} />}
                   </View>
-                ))}
-              </ScrollView>
+                </View>
+              ))}
             </View>
           )}
         </>
       )}
 
-      {/* ── TRANSFER — only the sports that carry a pool ── */}
+      {/* ── STRENGTH THAT CARRIES — a DOOR, not two more sections ────────
+          Level, demands, prescription and rationale used to run on from here,
+          ending in a chartreuse pill that competed with the docked one. They
+          are their own screen now (sport-strength.tsx), which leaves this page
+          one action and lets the prescription own a dock of its own. The door
+          renders whenever the sport HAS a pool — including on a page with
+          nothing logged, because a prescription needs a level, not a history. */}
       {!!m.transfer && (
-        <>
-          <View style={{ marginTop: space.xxl }}>
-            <SectionHead title={t("w.train.sportPage.transfer")} meta={t("w.train.sportPage.transferMeta")} />
-            <View style={{ flexDirection: "row", gap: space.xs, marginBottom: space.lg }}>
-              {LEVELS.map((l, i) => {
-                const on = i === levelIdx;
-                return (
-                  <Pressable
-                    key={l}
-                    onPress={() => pickLevel(i)}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected: on }}
-                    style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : C.ink2 }}
-                  >
-                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: tracking.label, color: on ? C.onAccent : C.ash }}>{l.toUpperCase()}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-
-            {/* The demands, ranked as the data ranks them — the numbering IS the
-                priority order, not decoration. */}
-            <View style={{ marginBottom: space.lg }}>
-              {m.transfer.sport.demands.map((d, i) => (
-                <View key={d} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 9, ...(i ? dividerTop : null) }}>
-                  <Text style={{ ...mono(fs.micro), width: 16 }}>{i + 1}</Text>
-                  <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>{d}</Text>
-                  <View style={{ width: Math.max(12, 56 - i * 11), height: 3, borderRadius: 2, backgroundColor: C.lime, opacity: 1 - i * 0.2 }} />
-                </View>
-              ))}
-            </View>
-
-            {m.transfer.blocks.map((b) => (
-              <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: space.md, paddingVertical: space.md, ...dividerTop }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.name}</Text>
-                  <Text style={{ ...mono(fs.micro), marginTop: 4 }}>{b.demand}</Text>
-                </View>
-                <View style={{ alignItems: "flex-end", maxWidth: 170 }}>
-                  <View style={{ backgroundColor: withAlpha(C.lime, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 11, paddingVertical: 4 }}>
-                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: txt(C, C.lime) }}>{b.scheme}</Text>
-                  </View>
-                  <Text style={{ ...mono(fs.nano), marginTop: 6, textAlign: "right", lineHeight: leading(fs.nano) }}>
-                    {b.loadBasis ?? (b.bodyweight && b.measure === "reps" ? t("w.train.sport.bodyweightTempo") : "")}
-                  </Text>
-                </View>
-              </View>
-            ))}
-
-            <APill label={t("w.train.sportPage.startSession")} onPress={startTransfer} style={{ marginTop: space.lg }} />
-          </View>
-
-          {/* ── WHY THESE LIFTS ── */}
-          <View style={{ marginTop: space.xxl }}>
-            <SectionHead title={t("w.train.sportPage.whyTheseLifts")} meta={t("w.train.sportPage.poolMeta").replace("{n}", String(m.pool.length))} />
-            {m.pool.map((e, i) => (
-              <View key={e.name} style={{ paddingVertical: space.md, ...(i ? dividerTop : null), opacity: e.locked ? 0.45 : 1 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end", gap: space.md }}>
-                  <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-                  {e.locked ? (
-                    <Text style={{ ...label(), fontSize: fs.nano, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 3, overflow: "hidden" }}>{e.unlocksAt}</Text>
-                  ) : (
-                    <Text style={{ ...label(), fontSize: fs.nano }}>{e.demand}</Text>
-                  )}
-                </View>
-                <Text style={{ ...mono(fs.body), marginTop: 5, lineHeight: leading(fs.body) }}>{e.why}</Text>
-              </View>
-            ))}
-          </View>
-        </>
+        <View style={{ marginTop: space.xxl, ...dividerTop }}>
+          <DoorRow
+            title={t("w.train.sportPage.transferTitle")}
+            sub={t("w.train.sportPage.transferDoorSub")
+              .replace("{n}", String(m.transfer.blocks.length))
+              .replace("{sport}", name)
+              .replace("{level}", LEVELS[levelIdx] ?? "")}
+            glyph="→"
+            onPress={() => router.push(`/sport-strength?name=${encodeURIComponent(name)}`)}
+          />
+        </View>
       )}
 
       {/* ── RECENT EFFORTS ── */}
@@ -460,8 +443,40 @@ export default function AuroraSportPage() {
               </View>
             </Pressable>
           ))}
+          {/* A vertical list ends in a DOOR ROW of that list. This one stopped
+              at three efforts and offered no way to the rest of them. */}
+          <DoorRow
+            title={t("w.train.sportPage.allEfforts").replace("{n}", String(m.meta.efforts))}
+            sub={t("w.train.sportPage.inHistory")}
+            glyph="→"
+            onPress={() => router.push(`/history?sport=${encodeURIComponent(name)}`)}
+          />
         </View>
       )}
+
+      {/* THE RECORD SHEET — the page's one writable thing, off the page. */}
+      <Sheet
+        visible={draft !== null}
+        onClose={() => setDraft(null)}
+        title={m.markerPrompt?.label}
+        sub={t("w.train.sportPage.markerHint")}
+      >
+        <View style={{ flexDirection: "row", gap: space.sm, alignItems: "center" }}>
+          <TextInput
+            autoFocus
+            value={draft ?? ""}
+            onChangeText={setDraft}
+            onSubmitEditing={() => saveMarker(draft ?? "")}
+            placeholder={m.markerPrompt?.ph}
+            placeholderTextColor={C.ash}
+            accessibilityLabel={m.markerPrompt?.label}
+            style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
+          />
+          <Pressable onPress={() => saveMarker(draft ?? "")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 18, paddingVertical: 12 }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.onAccent }}>{t("w.train.sportPage.save")}</Text>
+          </Pressable>
+        </View>
+      </Sheet>
     </AuroraScreen>
   );
 }

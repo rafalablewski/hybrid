@@ -11,6 +11,23 @@ export function mmss(s: number): string {
   return `${Math.floor(c / 60)}:${String(c % 60).padStart(2, "0")}`;
 }
 
+/**
+ * Seconds → a RACE CLOCK: `m:ss` under an hour, `h:mm:ss` over it.
+ *
+ * `mmss` alone cannot state a long one — a 1 h 52 min half marathon comes out
+ * of it as "112:10", which is a lap count wearing a clock's punctuation. This
+ * is the formatter for any figure that is a *finishing time*; a duration the
+ * athlete is meant to read as an amount of training ("1h 52min") is
+ * formatDuration's job, not this one.
+ */
+export function clock(s: number): string {
+  const c = Math.max(0, Math.floor(s));
+  if (c < 3600) return mmss(c);
+  const h = Math.floor(c / 3600);
+  const m = Math.floor((c % 3600) / 60);
+  return `${h}:${String(m).padStart(2, "0")}:${String(c % 60).padStart(2, "0")}`;
+}
+
 /** ISO timestamp → a compact "time since" label (`just now` / `5m ago` /
  *  `3h ago` / `2d ago`). Never negative (a future instant reads as `just now`). */
 export function ago(iso: string, now: number = Date.now()): string {
