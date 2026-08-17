@@ -14,6 +14,7 @@ import { claimCoachInvite } from "./api";
 import { resetPersona } from "./persona";
 import { resetPlanMaxes } from "./plan-maxes";
 import { resetFlags } from "./flags";
+import { disablePush } from "./push";
 
 // Device-level prefs that may safely survive a sign-out (everything else under
 // the `hybrid.` namespace is user-scoped and is wiped so a shared device never
@@ -134,6 +135,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         role,
         entitlement,
         signOut: async () => {
+          // Retire this phone's push token FIRST, while the access token that
+          // authorises the call still exists. Without it, the account that just
+          // signed out keeps receiving its notifications on a phone somebody
+          // else may now be holding — a co-sign request naming a lift, on a
+          // borrowed handset. Best-effort, and never a reason to stay signed in.
+          await disablePush().catch(() => {});
           // Local scope — sign THIS device out; the explicit "sign out
           // everywhere" (account.ts) is the global one. Best-effort: a
           // failed/offline network revoke must never leave us signed in, so we

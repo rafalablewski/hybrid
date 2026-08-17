@@ -88,6 +88,7 @@ model User {
   hiddenHighlights  HiddenHighlight[]
   highlightOrder    HighlightOrder?
   notificationState NotificationState?
+  pushDevices       PushDevice[]
   templates         WorkoutTemplate[]
   savedMeals        SavedMeal[]
   foodProducts      FoodProduct[]
@@ -636,6 +637,60 @@ model NotificationState {
   unreadIds    String[]  @default([])
   dismissedIds String[]  @default([])
   updatedAt    DateTime  @updatedAt
+}
+
+// One phone that has agreed to be interrupted — the other half of the bell.
+//
+// NotificationState above is what you have SEEN; this is where something can be
+// SENT. Three notifications use it (core/push.ts): the morning readiness nudge,
+// a coach assignment, and a co-sign request. reference/sql-push-device.sql.
+//
+// WHY THE ROW CARRIES SO MUCH BESIDES THE TOKEN:
+//   • timezone — the nudge aims at the ATHLETE's 07:00. 07:00 UTC is 02:00 in
+//     Los Angeles, and one notification at two in the morning spends the
+//     permission for good.
+//   • locale — iOS renders a push from what the SERVER sent, so the server has
+//     to know the language. The device reports it at registration.
+//   • the three switches — a MIRROR of user_metadata.notifications (the account
+//     is still the source of truth, and every launch re-mirrors). The sender
+//     needs them in a WHERE clause; reading auth metadata per user would be an
+//     admin round-trip per recipient, which the hourly cron cannot afford.
+//   • environment — which APNs host answered for this token. Unknown until the
+//     first send, then remembered, so later sends skip the sandbox retry.
+//   • lastNudgeAt / nudgeStreak — the nudge's own bookkeeping: one per local
+//     day, and it stops after NUDGE_GIVE_UP unanswered mornings. A daily prompt
+//     to somebody who has stopped answering is how a whole app gets muted.
+//   • retiredAt — APNs said the token is dead (410 Unregistered / a bad token).
+//     Kept rather than deleted: the same device re-registers on next launch and
+//     the row is revived, so the history (and the streak) survives a reinstall.
+model PushDevice {
+  id             String    @id @default(cuid())
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  /// The APNs device token (hex). Unique across users: a phone handed to another
+  /// athlete re-registers the same token, and it must not then get both feeds.
+  token          String    @unique
+  platform       String    @default("ios")
+  /// "production" | "sandbox" | null (not yet known — see the sender's retry).
+  environment    String?
+  /// IANA zone, e.g. "Europe/Warsaw". Null = the nudge can't be timed; skipped.
+  timezone       String?
+  /// BCP-47 as reported by the device ("pl", "de-DE"). Null = English.
+  locale         String?
+  notifyCheckin  Boolean   @default(true)
+  notifyCoach    Boolean   @default(true)
+  notifyCosign   Boolean   @default(true)
+  lastPushAt     DateTime?
+  lastNudgeAt    DateTime?
+  nudgeStreak    Int       @default(0)
+  retiredAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // "every live device for this athlete" (the sender) and "every live device due
+  // a nudge" (the cron, which then filters by local hour in JS).
+  @@index([userId, retiredAt])
+  @@index([retiredAt, notifyCheckin])
 }
 
 // A reusable workout the coach (or athlete) builds once and assigns many times.

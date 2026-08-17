@@ -18,6 +18,7 @@ import { ThemeProvider, useTheme } from "../lib/theme";
 import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
 import { startIap } from "../lib/iap";
+import { usePushBridge } from "../lib/push";
 import { supabase } from "../lib/supabase";
 import { ErrorBoundary } from "../components/error-boundary";
 import { ToastHost } from "../components/aurora/toast";
@@ -74,6 +75,13 @@ function Shell() {
     startIap(() => { supabase.auth.refreshSession().catch(() => {}); }).then((c) => { cleanup = c; });
     return () => { cleanup?.(); };
   }, []);
+  // Push: re-register this phone's APNs token (it rotates), and route a tap to
+  // the surface the notification named. Mounted HERE, above the navigator, so a
+  // notification that launched the app still finds a router to push onto — and
+  // so there is exactly one set of listeners no matter which screen is up.
+  // Requests nothing: the permission is asked for in Settings and once after a
+  // check-in (lib/push.ts askPushOnce), never at launch.
+  usePushBridge();
   return (
     <NavScrollProvider>
       <StatusBar style="light" />

@@ -103,22 +103,58 @@ jobs:
           # stays ACTIVE-but-stale, gets reused by fetch-signing-files, and
           # fails the archive ("Provisioning profile doesn't include the
           # HealthKit capability" — runs 29661636610 / 29662930353). Enforce
-          # the capability here (no manual portal toggle) and delete this
-          # app's App Store profiles that predate it; a fresh one is minted
-          # below in seconds.
+          # every capability here (no manual portal toggle) and delete this
+          # app's App Store profiles that predate any of them; a fresh one is
+          # minted below in seconds.
+          #
+          # TWO capabilities now. PUSH_NOTIFICATIONS joined HEALTHKIT when the
+          # three retention notifications shipped: expo-notifications requests
+          # the `aps-environment` entitlement (app.json sets mode=production),
+          # and an App ID without Push Notifications produces a profile that
+          # does not include it — the identical stale-profile archive failure,
+          # for a different capability. Enabling it here is also what retired
+          # the build plugin that used to DELETE the aps-environment entitlement
+          # so an archive could pass without the capability: that plugin is
+          # gone, and remote push is why.
           BUNDLE_RESOURCE_ID=$(app-store-connect bundle-ids list \
             --bundle-id-identifier "$BUNDLE_ID" --strict-match-identifier --json | jq -r '.[0].id')
-          if ! app-store-connect bundle-ids capabilities "$BUNDLE_RESOURCE_ID" --json \
-              | jq -e 'map(select(.attributes.capabilityType == "HEALTHKIT")) | length > 0' >/dev/null; then
-            app-store-connect bundle-ids enable-capabilities "$BUNDLE_RESOURCE_ID" --capability HealthKit
-          fi
+
+          # $1 = the App Store Connect API value (what `capabilities` reports),
+          # $2… = the spellings to try on `enable-capabilities`. The CLI takes the
+          # DISPLAY name (hence "HealthKit" rather than HEALTHKIT), so the display
+          # form goes first and the raw API value is a fallback — a spelling that
+          # neither accepts must fail the job loudly here rather than surface as
+          # an opaque archive error twenty minutes later.
+          ensure_capability() {
+            local api="$1"; shift
+            if app-store-connect bundle-ids capabilities "$BUNDLE_RESOURCE_ID" --json \
+                | jq -e --arg cap "$api" 'map(select(.attributes.capabilityType == $cap)) | length > 0' >/dev/null; then
+              echo "Capability $api already enabled"
+              return 0
+            fi
+            for name in "$@"; do
+              if app-store-connect bundle-ids enable-capabilities "$BUNDLE_RESOURCE_ID" --capability "$name"; then
+                echo "Enabled capability $api (as '$name')"
+                return 0
+              fi
+            done
+            echo "::error::Could not enable the $api capability on $BUNDLE_ID — tried: $*"
+            return 1
+          }
+          ensure_capability HEALTHKIT HealthKit HEALTHKIT
+          ensure_capability PUSH_NOTIFICATIONS "Push Notifications" PUSH_NOTIFICATIONS PushNotifications
+
+          # A profile is stale if it is missing ANY entitlement the app requests.
           PROFILES_JSON=$(app-store-connect bundle-ids profiles --bundle-ids "$BUNDLE_RESOURCE_ID" --type IOS_APP_STORE --json)
           for PROFILE_ID in $(echo "$PROFILES_JSON" | jq -r '.[].id'); do
-            CONTENT=$(echo "$PROFILES_JSON" | jq -r --arg id "$PROFILE_ID" '.[] | select(.id == $id) | .attributes.profileContent')
-            if ! echo "$CONTENT" | base64 -d | grep -aq "com.apple.developer.healthkit"; then
-              echo "Deleting stale profile $PROFILE_ID (missing the healthkit entitlement)"
-              app-store-connect profiles delete "$PROFILE_ID"
-            fi
+            CONTENT=$(echo "$PROFILES_JSON" | jq -r --arg id "$PROFILE_ID" '.[] | select(.id == $id) | .attributes.profileContent' | base64 -d)
+            for ENTITLEMENT in com.apple.developer.healthkit aps-environment; do
+              if ! echo "$CONTENT" | grep -aq "$ENTITLEMENT"; then
+                echo "Deleting stale profile $PROFILE_ID (missing $ENTITLEMENT)"
+                app-store-connect profiles delete "$PROFILE_ID"
+                break
+              fi
+            done
           done
 
           app-store-connect fetch-signing-files "$BUNDLE_ID" \

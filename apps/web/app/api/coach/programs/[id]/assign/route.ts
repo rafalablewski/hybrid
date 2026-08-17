@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { coachProgramPush } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { sanitizeProgramWeeks, programAssignments } from "@/lib/coach-program";
+import { assignmentDayLabel, notify } from "@/lib/push";
 
 // Assign an authored program to a client (linkId) or a whole group (groupId),
 // materializing every week's days into dated Assignments from a start date.
@@ -62,6 +64,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       }),
       prisma.assignment.createMany({ data: rows }),
     ]);
+    // ONE notification per athlete, naming the program — never one per
+    // materialized session. A twelve-week program is dozens of dated rows, and
+    // dozens of pushes is the fastest way to have the channel muted for good.
+    // Sequential over the roster, and bounded: a group assign to fifty athletes
+    // must not hold the coach's request open while fifty APNs round trips run,
+    // so beyond the cap the calendar is still written and the notification is
+    // simply not sent — the assignment is the deliverable, the push is a bonus.
+    const NOTIFY_CAP = 25;
+    for (const cid of clientIds.slice(0, NOTIFY_CAP)) {
+      await notify(cid, "coach", (lang) =>
+        coachProgramPush({
+          coach: me.name ?? "",
+          program: program.name,
+          when: assignmentDayLabel(start, lang),
+          lang,
+        }),
+      );
+    }
+    if (clientIds.length > NOTIFY_CAP)
+      console.warn(`[push] program assign: notified ${NOTIFY_CAP} of ${clientIds.length} athletes (per-request cap)`);
+
     return NextResponse.json({ assigned: clientIds.length, sessions }, { status: 201 });
   } catch (e) {
     if (tableMissing(e))
