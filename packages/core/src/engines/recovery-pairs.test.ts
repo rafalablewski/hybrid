@@ -10,6 +10,9 @@ import {
   CLEARANCE_FACTOR_BOUNDS,
   MIN_RECOVERY_PAIRS,
   MIN_PAIR_FATIGUE,
+  CLEARANCE_FAST,
+  CLEARANCE_SLOW,
+  CLEARANCE_INTERVAL_FLOOR,
 } from "../feel-timing";
 import { athleteLandmarks } from "./landmark-resolve";
 import { checkinFromSoreness } from "../checkin-scales";
@@ -125,6 +128,33 @@ describe("the index across pairs", () => {
     const idx = recoveryIndex([fast(), fast(), fast()]);
     expect(idx.clearance).toBe("fast");
     expect(clearanceFactor(idx)).toBeGreaterThan(1);
+  });
+
+  it("states an interval, and it is the POPULATION corridor until pairs exist", () => {
+    // Unproven, the index reads 1.0 — the curve itself — so the band has to say
+    // "somewhere in the band everybody starts in" rather than implying the
+    // athlete has been measured at exactly average.
+    const none = recoveryIndex([]);
+    expect(none.lo).toBe(CLEARANCE_FAST);
+    expect(none.hi).toBe(CLEARANCE_SLOW);
+  });
+
+  it("…and once measured, the band is the standard error, never zero-width", () => {
+    // Three identical pairs have zero spread, which is not the same as having
+    // measured a ratio to three decimals — the floor is what stops the least
+    // evidence in the app producing the most confident claim on the screen.
+    const idx = recoveryIndex([slowPair(), slowPair(), slowPair()]);
+    expect(idx.hi - idx.lo).toBeGreaterThanOrEqual(2 * CLEARANCE_INTERVAL_FLOOR - 0.001);
+    expect(idx.lo).toBeLessThan(idx.index);
+    expect(idx.hi).toBeGreaterThan(idx.index);
+
+    // A spread of pairs widens it past the floor.
+    const mixed = recoveryIndex([
+      slowPair(),
+      recoveryCurve(feelReading(5, 0.5)!, feelReading(2, 12)!)!,
+      recoveryCurve(feelReading(4, 0.5)!, feelReading(5, 20)!)!,
+    ]);
+    expect(mixed.hi - mixed.lo).toBeGreaterThan(idx.hi - idx.lo);
   });
 
   it("is bounded — two taps a day is not a blood panel", () => {

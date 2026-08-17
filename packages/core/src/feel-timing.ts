@@ -345,11 +345,29 @@ export interface RecoveryIndex {
   /** Pairs behind it. */
   pairs: number;
   clearance: Clearance;
+  /**
+   * THE STATED INTERVAL, and it ships with the number for the same reason
+   * `MrvEstimate.lo/hi` does: an estimate shown bare reads as a measurement.
+   *
+   * Unproven (confidence 0) the band is the population's own ON-TRACK corridor,
+   * CLEARANCE_FAST…CLEARANCE_SLOW — the honest statement being "somewhere in the
+   * band everybody starts in", not a point estimate of 1.
+   *
+   * With pairs, it is the standard error of the weighted mean, widened to
+   * CLEARANCE_INTERVAL_FLOOR: two pairs that happen to agree to the decimal have
+   * not measured a ratio to three of them, and a zero-width interval would be
+   * the most confident claim on the screen off the least evidence in the app.
+   */
+  lo: number;
+  hi: number;
 }
 
 /** Two pairs is the floor: one is an anecdote, and a single bad night would
  *  otherwise move an athlete's recovery model. */
 export const MIN_RECOVERY_PAIRS = 2;
+
+/** The narrowest the clearance interval may ever be — see `RecoveryIndex.lo`. */
+export const CLEARANCE_INTERVAL_FLOOR = 0.05;
 
 /**
  * The athlete's recovery rate against the population curve, across every pair
@@ -359,7 +377,7 @@ export const MIN_RECOVERY_PAIRS = 2;
 export function recoveryIndex(curves: (RecoveryCurve | null)[]): RecoveryIndex {
   const usable = curves.filter((c): c is RecoveryCurve => !!c && c.weight > 0);
   if (usable.length < MIN_RECOVERY_PAIRS) {
-    return { index: 1, confidence: 0, pairs: usable.length, clearance: "onTrack" };
+    return { index: 1, confidence: 0, pairs: usable.length, clearance: "onTrack", lo: CLEARANCE_FAST, hi: CLEARANCE_SLOW };
   }
   let num = 0;
   let den = 0;
@@ -368,11 +386,26 @@ export function recoveryIndex(curves: (RecoveryCurve | null)[]): RecoveryIndex {
     den += c.weight;
   }
   const index = Math.round((num / den) * 1000) / 1000;
+  // The spread of the pairs around their own mean, weighted the same way the
+  // mean is, over the EFFECTIVE sample size — (Σw)²/Σw², which is the pair count
+  // when every pair carries equal weight and falls below it as the weights
+  // spread, so a handful of half-remembered reports cannot buy the narrow band
+  // that a handful of clean ones would.
+  let sqDev = 0;
+  let sqW = 0;
+  for (const c of usable) {
+    sqDev += c.weight * (c.ratio - index) ** 2;
+    sqW += c.weight ** 2;
+  }
+  const nEff = sqW > 0 ? (den * den) / sqW : usable.length;
+  const half = Math.max(CLEARANCE_INTERVAL_FLOOR, nEff > 0 ? Math.sqrt(sqDev / den) / Math.sqrt(nEff) : CLEARANCE_INTERVAL_FLOOR);
   return {
     index,
     confidence: Math.round(Math.min(0.8, 0.25 + (usable.length - MIN_RECOVERY_PAIRS) * 0.15) * 100) / 100,
     pairs: usable.length,
     clearance: index < CLEARANCE_FAST ? "fast" : index > CLEARANCE_SLOW ? "slow" : "onTrack",
+    lo: Math.round(Math.max(0, index - half) * 1000) / 1000,
+    hi: Math.round((index + half) * 1000) / 1000,
   };
 }
 

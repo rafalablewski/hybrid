@@ -54,8 +54,9 @@ import { web_train } from "./i18n-web/train";
 import { web_analyze } from "./i18n-web/analyze";
 import { web_teams } from "./i18n-web/teams";
 import { web_recovery } from "./i18n-web/recovery";
+import { web_learned } from "./i18n-web/learned";
 
-const WEB_BUNDLES = [web_home, web_account, web_train, web_analyze, web_teams, web_recovery] as const;
+const WEB_BUNDLES = [web_home, web_account, web_train, web_analyze, web_teams, web_recovery, web_learned] as const;
 
 const BASE: Record<Lang, Record<string, string>> = {
   en: {

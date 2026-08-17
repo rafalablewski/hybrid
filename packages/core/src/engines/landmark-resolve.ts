@@ -4,7 +4,7 @@ import { VOLUME_LANDMARKS, resolveLandmarks, type LandmarkOverrides, type Volume
 import { personalizeLandmarks, scaleLandmarks, isEmptyVolumeProfile, type AthleteVolumeProfile, type LandmarkFactor } from "./landmark-profile";
 import { adaptLandmarks, type MrvEstimate, type RecoveryReport } from "./landmark-adapt";
 import { athleteClearance, type RecoveryPair } from "./recovery-pairs";
-import { clearanceFactor, type RecoveryIndex } from "../feel-timing";
+import { clearanceFactor, CLEARANCE_FAST, CLEARANCE_SLOW, type RecoveryIndex } from "../feel-timing";
 
 /**
  * THE ONE PLACE LANDMARKS COME FROM.
@@ -92,7 +92,9 @@ export function athleteLandmarks(opts: AthleteLandmarkOptions = {}): ResolvedLan
   const factors: LandmarkFactor[] = [...(personal?.factors ?? [])];
   const clearance = opts.sessions?.length
     ? athleteClearance(opts.sessions, opts.recovery ?? [], { now: opts.now })
-    : { index: 1, confidence: 0, pairs: 0, clearance: "onTrack" as const, samples: [] };
+    // The same shape `recoveryIndex` returns with nothing to go on: neutral,
+    // zero confidence, and the population's own corridor as the interval.
+    : { index: 1, confidence: 0, pairs: 0, clearance: "onTrack" as const, lo: CLEARANCE_FAST, hi: CLEARANCE_SLOW, samples: [] };
   const clearanceMul = opts.adaptive === false ? 1 : clearanceFactor(clearance);
   if (clearanceMul !== 1) {
     landmarks = scaleLandmarks(landmarks, 1, clearanceMul);

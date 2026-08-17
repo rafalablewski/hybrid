@@ -54,5 +54,6 @@ export * from "./derivation";
 export * from "./composition";
 export * from "./segment";
 export * from "./readiness-deficit";
+export * from "./learned";
 export * from "./freshness-explain";
 export * from "./wearable-explain";
