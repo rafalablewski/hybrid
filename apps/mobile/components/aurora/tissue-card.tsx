@@ -39,13 +39,12 @@ function protocolDay(p: { injuryDate?: string | null }): number | null {
  *   calm     — title, one sentence, the axis, a quiet footer rail.
  *   open     — the same tissues as rows on the SAME axis, each carrying its
  *              own risk, calibrated probability and ACWR.
- *   flagged  — those rows open themselves, with the whole-body watch tiles and
+ *   flagged  — those rows open themselves, with the whole-body reading and
  *              the driver guidance.
  *   injured  — an open protocol takes over the card's body.
  */
 type Palette = ReturnType<typeof useTheme>["palette"];
 const riskColor = (b: RiskBand | string, C: Palette) => roleColor(C, riskRole(b));
-
 
 /** Zone tints for the axis, as hex alpha suffixes — low recedes, high reads
  *  as a wall. Mirrors ZONE_ALPHA on web. */
@@ -86,8 +85,6 @@ export default function TissueCard({
   // The area the athlete pointed at on the card's own body, if that is how
   // they got to the sheet — the flag and the protocol are one object.
   const [picking, setPicking] = useState<MuscleGroup | null | false>(false);
-  // ONE door for the whole block, so one boolean. The sheet reads the same
-  // `load` prop the block drew from, so nothing needs holding but "is it open".
   /**
    * WHICH DOOR IS OPEN, and it is two doors rather than one.
    *
