@@ -147,7 +147,10 @@ function Row({ C, row, label }: { C: Palette; row: LoadInput; label: string }) {
       <View style={{ width: 84, height: 6, borderRadius: RADIUS.mark, backgroundColor: C.ink, overflow: "hidden" }}>
         <View style={{ width: `${row.sharePct}%`, height: "100%", backgroundColor: row.dim ? withAlpha(paint, ALPHA.line) : paint }} />
       </View>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ width: 48, textAlign: "right", fontFamily: F.mono, fontSize: fs.caption, color: row.top ? C.chalk : C.ash }}>{row.value.toLocaleString()}</Text>
+      {/* `row.text`, never `row.value.toLocaleString()` — the headline above is
+          grouped by core, and a device-locale row would print the same number
+          in a different format three lines under it. */}
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ width: 48, textAlign: "right", fontFamily: F.mono, fontSize: fs.caption, color: row.top ? C.chalk : C.ash }}>{row.text}</Text>
     </View>
   );
 }

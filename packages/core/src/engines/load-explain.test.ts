@@ -36,6 +36,39 @@ describe("loadExplain", () => {
     expect(Number(loadExplain("strain", s).value.replace(/\s/g, ""))).toBe(s.strain);
   });
 
+  // The bug: the sheet's headline came through this module and its input rows
+  // called toLocaleString() themselves, so a German or Polish phone printed
+  // "2 546" at the top and "2.546" three lines below it. Every figure a client
+  // prints is formatted HERE, and grouped with a NO-BREAK space so a tile can
+  // never wrap one across two lines.
+  it("formats every printable figure itself, in one format", () => {
+    const s = state();
+    // The separator is a NO-BREAK space. Named, because it is invisible in
+    // source and a regular space would let the wrong character pass silently.
+    const NB = "\u00a0";
+    const grouped = new RegExp(`^\\d{1,3}(${NB}\\d{3})*$`);
+    for (const m of LOAD_METRICS) {
+      const e = loadExplain(m, s);
+      for (const r of e.inputs) {
+        expect(r.text, `${m}: ${r.key}`).toMatch(grouped);
+        expect(Number(r.text.split(NB).join("")), `${m}: ${r.key}`).toBe(r.value);
+      }
+      for (const step of e.steps) {
+        if (step.value === null) continue;
+        expect(step.value, `${m}: ${step.key}`).toMatch(new RegExp(`^(\\d{1,3}(${NB}\\d{3})*|\\d+\\.\\d{2})$`));
+      }
+      expect(e.value, m).not.toContain(",");
+      expect(e.value, m).not.toMatch(/\d\.\d{3}/); // never a locale thousands dot
+    }
+  });
+
+  it("carries a null step value for the line that states a method, not a figure", () => {
+    const e = loadExplain("acute", state());
+    const method = e.steps.find((x) => x.key === "w.injury.load.step.perSession")!;
+    expect(method.value).toBeNull();
+    expect(method.total).toBe(false);
+  });
+
   it("ends every ledger on that same figure — exactly one total line", () => {
     const s = state();
     for (const m of LOAD_METRICS) {

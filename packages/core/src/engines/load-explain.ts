@@ -53,7 +53,16 @@ export interface LoadInput {
   /** i18n key for the label; `{n}` is substituted with `arg` when present. */
   key: string;
   arg: number | null;
+  /** The raw figure, for anything that needs to compute with the row. */
   value: number;
+  /**
+   * The figure AS PRINTED — grouped here, not on the client, for the same
+   * reason `LoadStep.value` is. The sheet's headline came through this module
+   * and its input rows called `toLocaleString()` themselves, so on a Polish or
+   * German phone the same number appeared as "2 546" at the top of the sheet
+   * and "2.546" three lines below it.
+   */
+  text: string;
   /** Share of the block's LARGEST row, whole percent — what the bar draws.
    *  Against the max rather than the total, because these rows are a shape to
    *  read (which day was heavy?), not a composition to divide up. */
@@ -68,8 +77,12 @@ export interface LoadInput {
 /** One line of the arithmetic, in the order it is performed. */
 export interface LoadStep {
   key: string;
-  /** Formatted here, not on the client, so both clients print it identically. */
-  value: string;
+  /**
+   * Formatted here, not on the client, so both clients print it identically.
+   * NULL for a line that states the method rather than a figure ("each session:
+   * minutes × RPE") — the client renders the label alone.
+   */
+  value: string | null;
   /** The result line — the figure the tile prints. Exactly one step has it. */
   total: boolean;
 }
@@ -167,8 +180,18 @@ const MONOTONY_BANDS: { key: string; range: string; role: SemanticRole; max: num
 /** Whole-percent share of the block's largest row, safe when nothing loaded. */
 const shareOfMax = (v: number, max: number) => (max > 0 ? Math.round((v / max) * 100) : 0);
 
-/** A figure the ledger prints. Integers stay integers; ratios keep their 2dp. */
-const int = (n: number) => Math.round(n).toLocaleString("en-US").replace(/,/g, " ");
+/**
+ * A figure as this module prints it. Integers group in thousands with a
+ * NO-BREAK space; ratios keep their decimal places.
+ *
+ * The grouping is deliberately NOT the device's locale. These are arbitrary
+ * load units sitting inches from two ratios, and a German or Polish phone
+ * renders `toLocaleString()` as "2.546" — which beside "0.94" reads as a
+ * decimal, not as two and a half thousand. A space groups unambiguously in
+ * every language the app ships; NO-BREAK, so a tile can never wrap a figure
+ * across two lines.
+ */
+const int = (n: number) => Math.round(n).toLocaleString("en-US").replace(/,/g, " ");
 const dp = (n: number, places: number) => n.toFixed(places);
 
 /**
@@ -194,6 +217,7 @@ function dailyInputs(load: LoadState): LoadInput[] {
       key: offsetKey(i, "w.injury.load.day.yesterday", "w.injury.load.day.n", "w.injury.load.day.today"),
       arg: i >= 2 ? i : null,
       value: v,
+      text: int(v),
       sharePct: shareOfMax(v, max),
       top,
       dim: !top,
@@ -211,6 +235,7 @@ function weeklyInputs(load: LoadState): LoadInput[] {
       key: offsetKey(w.weeksAgo, "w.injury.load.week.last", "w.injury.load.week.n", "w.injury.load.week.this"),
       arg: w.weeksAgo >= 2 ? w.weeksAgo : null,
       value: w.load,
+      text: int(w.load),
       sharePct: shareOfMax(w.load, max),
       top,
       dim: !top,
@@ -272,7 +297,7 @@ export function loadExplain(metric: LoadMetric, load: LoadState): LoadExplain {
       inputs: dailyInputs(load),
       inputsHeadKey: "w.injury.load.inputs.days",
       steps: [
-        { key: "w.injury.load.step.perSession", value: "", total: false },
+        { key: "w.injury.load.step.perSession", value: null, total: false },
         { key: "w.injury.load.step.sumDays", value: int(load.acute), total: true },
       ],
       bands: [],
