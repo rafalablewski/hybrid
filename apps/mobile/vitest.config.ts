@@ -61,12 +61,22 @@ export default defineConfig({
             // Reads package.json + the SDK's own version table as DATA, so it
             // stays inside the boundary while covering every native module.
             "lib/expo-alignment.test.ts",
+            // EVALUATES app.config.js twice with the clock moved. The runtime
+            // version is a fingerprint of that config, so a value that changes
+            // between evaluations makes every OTA update undeliverable — silently,
+            // and for the life of the app.
+            "lib/build-number.test.ts",
             // Reads the INSTALLED HealthKit pod's Swift as text, to prove the
             // patch that removed its two fatalError()s is still applied.
             "lib/healthkit-patch.test.ts",
             // Reads healthkit.ts as text to pin WHICH types each permission ask
             // carries — the split that keeps the crashing ask off the tap path.
             "lib/healthkit-auth.test.ts",
+            // The watchdog RUNS here: a stack, a JSON blob and one AsyncStorage
+            // key, no native module anywhere in it. It is the only witness to a
+            // crash that leaves nothing else behind, so it is the one part of
+            // this path a test can actually settle rather than pin as text.
+            "lib/healthkit-watchdog.test.ts",
             // Reads the Create Food form's default serving out of the source as
             // TEXT and then runs it through the real core readers, so it proves
             // a screen invariant without importing the screen.

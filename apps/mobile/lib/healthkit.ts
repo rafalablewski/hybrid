@@ -436,17 +436,96 @@ function forgetAskedCache(): void {
   askedCache.clear();
 }
 
+/**
+ * WHICH OF THESE IDENTIFIERS THE BRIDGE CAN ACTUALLY BUILD AN HKObjectType FOR.
+ *
+ * The gate above rests on `unnecessary` meaning "every type in the set has been
+ * put to the store". It does not — not on its own — and the hole is in the
+ * bridge, one call below us:
+ *
+ *  • `objectTypesFromArray` resolves each identifier and SWALLOWS the ones it
+ *    can't, with a console warning and nothing else. Four of the nine distance
+ *    identifiers in WORKOUT_READ_TYPES are iOS 18 additions, so on iOS 17 the
+ *    set that reaches HealthKit is smaller than the one we handed over.
+ *  • `getRequestStatusForAuthorization` then SHORT-CIRCUITS on an empty set:
+ *    "Both toRead and toShare are empty, returning 'unnecessary' status".
+ *
+ * Put together, `unnecessary` is returned BOTH when every type has been asked
+ * about and when the bridge could resolve none of them — and the gate could not
+ * tell those apart. It answered "safe to read" for a set the store had never
+ * heard of, and the next line queried it: the library's own documented crash,
+ * reached through the guard that exists to prevent it. That is the shape of the
+ * report the watchdog kept failing to place — the app closing on the import tap,
+ * with nothing left behind, because this call was never a named span either.
+ *
+ * So the availability probe runs first and the STATUS IS ASKED ONLY ABOUT THE
+ * TYPES THE BRIDGE SAID IT COULD BUILD. That is what makes `unnecessary` mean
+ * something: the answer now covers a set that is known non-empty and known
+ * resolvable, and the reads that follow only ever touch those same types.
+ *
+ * Note the deliberate asymmetry with the iOS 17 case: the resolvable SUBSET is
+ * what gets asked and read, not "all or nothing". Requiring the whole list to
+ * resolve would take the import out on every iOS the newest distance types
+ * predate — a regression dressed as a safety check.
+ *
+ * `null` means THE PROBE TOLD US NOTHING, and the caller then uses the whole set
+ * — exactly what shipped before this existed. That distinction is the difference
+ * between hardening the gate and killing the feature with it, so it is drawn
+ * carefully rather than by a truthy check:
+ *
+ *  • no such function in this native binary (a JS-only update running against an
+ *    older build), or the call threw;
+ *  • or the answer came back without a single one of the requested identifiers in
+ *    it. Off-iOS this library's own shim resolves `{}` for this call, and a shape
+ *    we cannot read is indistinguishable from that. Reading `{}` as "none of them
+ *    are buildable" would refuse every import on the spot — turning a crash we
+ *    are not sure we have into a dead feature we certainly would.
+ *
+ * An empty array is therefore only ever returned when the probe was READ and
+ * genuinely reported nothing buildable, which is the one state worth refusing.
+ */
+async function buildableTypes(hk: HK, types: readonly string[]): Promise<string[] | null> {
+  const probe = hk.areObjectTypesAvailableAsync as
+    | ((ids: readonly string[]) => Promise<Record<string, boolean>>)
+    | undefined;
+  if (typeof probe !== "function") return null;
+  let built: Record<string, boolean>;
+  try {
+    built = await probe.call(hk, types);
+  } catch {
+    return null;
+  }
+  // Did it answer about THESE types at all? A dictionary keyed by the identifiers
+  // we passed is the only shape we can draw a conclusion from.
+  if (!built || !types.some((t) => typeof built[t] === "boolean")) return null;
+  return types.filter((t) => built[t] === true);
+}
+
 async function storeHasAsked(hk: HK, types: readonly string[]): Promise<boolean> {
   const key = types.join(",");
   if (askedCache.has(key)) return true;
-  try {
-    const status = await hk.getRequestStatusForAuthorization({ toRead: types as never });
-    if ((status as unknown as number) !== AUTH_ALREADY_ASKED) return false;
-  } catch {
-    return false;
-  }
-  askedCache.add(key);
-  return true;
+  // Under the watchdog like every other native call in this file. It was the
+  // exception, and it is the FIRST call the import tap makes — so a process that
+  // died here left an empty marker and the crash went unattributed twice.
+  const ok = await nativeSpan(
+    "auth-status",
+    async () => {
+      const buildable = await buildableTypes(hk, types);
+      const ask = buildable ?? [...types];
+      // AN EMPTY SET IS NOT AN ANSWER. The bridge would report `unnecessary` for
+      // it and we would read types the store was never asked about.
+      if (ask.length === 0) return false;
+      try {
+        const status = await hk.getRequestStatusForAuthorization({ toRead: ask as never });
+        return (status as unknown as number) === AUTH_ALREADY_ASKED;
+      } catch {
+        return false;
+      }
+    },
+    false,
+  );
+  if (ok) askedCache.add(key);
+  return ok;
 }
 
 /** Whether the trace under a recording can be read at all on this device: the
@@ -456,6 +535,34 @@ async function storeHasAsked(hk: HK, types: readonly string[]): Promise<boolean>
 export async function streamReadGranted(): Promise<boolean> {
   const hk = loadHealthKit();
   return hk ? storeHasAsked(hk, STREAM_READ_TYPES) : false;
+}
+
+/**
+ * THE TRACE ROW'S STATE, WITHOUT SPENDING A NATIVE CALL ON THE IMPORT TAP.
+ *
+ * The import sheet needs both halves of this the moment it opens, to decide
+ * whether the trace row is an offer or a state. It used to get them by calling
+ * `streamReadGranted()` there — which put HKWorkoutRouteTypeIdentifier and the
+ * two cycling types to HealthKit on the exact tap athletes report the app
+ * closing on. Not a permission sheet, so the auth test never caught it; a native
+ * call against the series types all the same, on the one path this file spends
+ * nothing on them.
+ *
+ * It is also unnecessary, and that is what makes this a deletion rather than a
+ * trade. `proven` is only ever written by a trace read that CAME BACK, and that
+ * read is itself behind the grant — so `proven` implies `granted`, and an
+ * unproven phone cannot be in the granted-and-proven state the sheet is asking
+ * about. Reading `proven` costs one AsyncStorage get.
+ *
+ * The one visible consequence: a phone that granted the types but has never
+ * completed a read reports `granted: false` here, so its row reads as the offer
+ * ("get the full recording") rather than as a state. Tapping it re-asks, iOS
+ * shows nothing for types it has already put, and the fetch runs — which is the
+ * behaviour the row promises either way.
+ */
+export async function streamReadState(): Promise<{ granted: boolean; proven: boolean }> {
+  const proven = await streamsProven();
+  return { granted: proven ? await streamReadGranted() : false, proven };
 }
 
 /** "functionalStrengthTraining" (the enum's name) → "Functional Strength

@@ -201,7 +201,18 @@ jobs:
           # 2024-01-01 UTC (~78M today). It's monotonic with the wall clock,
           # always far above any previously-uploaded build, and needs no API call
           # or stored state — so a re-run or retry can never reuse a build number.
-          # 1704067200 = 2024-01-01T00:00:00Z. (Same scheme as app.config.js.)
+          # 1704067200 = 2024-01-01T00:00:00Z.
+          #
+          # THIS STEP IS THE ONLY PLACE THE CLOCK MAY BE READ, and it matters that
+          # it runs AFTER `expo prebuild`. app.config.js used to compute the same
+          # value, which meant the clock was inside the Expo config — and the
+          # config is what `runtimeVersion: {policy: "fingerprint"}` hashes. The
+          # project therefore had a different runtime version every second, so an
+          # `eas update` published from it carried a fingerprint no installed build
+          # could ever have: it would succeed and reach nothing. The config is
+          # deterministic now (apps/mobile/lib/build-number.test.ts fails if that
+          # regresses); do not move this back into it. The archive picks the number
+          # up from here because agvtool rewrites the generated project in place.
           BUILD=$(( $(date -u +%s) - 1704067200 ))
           echo "Setting CFBundleVersion to $BUILD"
           agvtool new-version -all "$BUILD"

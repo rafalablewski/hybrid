@@ -89,6 +89,54 @@ describe("HealthKit authorization is split where the crash was", () => {
     expect(SRC).not.toMatch(/askedLevel|ASKED_KEY/);
   });
 
+  it("the gate never reads a set the bridge could not build", () => {
+    // THE HOLE THE GATE INHERITED FROM THE FLAG IT REPLACED. The bridge drops
+    // identifiers it can't resolve (four of the nine distance types are iOS 18
+    // additions) and then reports `unnecessary` for an EMPTY set — so
+    // "unnecessary" meant either "all asked" or "none resolved", and the gate
+    // answered "safe to read" for types the store had never heard of. Which is
+    // the library's own documented crash, reached through the guard against it.
+    const gate = body("storeHasAsked");
+    expect(gate, "the gate must probe what the bridge can build").toContain("buildableTypes");
+    // The status is asked ONLY about the buildable subset — never the raw list.
+    expect(gate).toMatch(/toRead: ask/);
+    expect(gate, "an empty set must not read as asked").toMatch(/ask\.length === 0/);
+    // The subset, not all-or-nothing: requiring every type to resolve would take
+    // the import out on every iOS the newest distance identifiers predate.
+    expect(body("buildableTypes")).toContain("areObjectTypesAvailableAsync");
+  });
+
+  it("every native call in the bridge is a named span", () => {
+    // A marker on disk is the whole diagnosis, and it can only name a call that
+    // pushed one. `storeHasAsked` was the exception AND the first call the import
+    // tap makes, so the two builds that shipped the watchdog were blind to
+    // precisely the call that runs first.
+    expect(body("storeHasAsked")).toMatch(/nativeSpan\(\s*\n?\s*"auth-status"/);
+    const watchdog = readFileSync(join(__dirname, "healthkit-watchdog.ts"), "utf8");
+    expect(watchdog, "auth-status must be a declared step").toContain('| "auth-status"');
+  });
+
+  it("the import tap puts no series type to the store", () => {
+    // `streamReadGranted()` is `getRequestStatusForAuthorization` against the
+    // route + cycling types. Not a permission sheet — so the rules above never
+    // caught it — but a native call against the series types all the same, and
+    // the sheet made it on open, on the exact tap the crash is reported on.
+    // `streamReadState` reaches it only when `streamsProven` already says a read
+    // has come back on this phone.
+    const state = body("streamReadState");
+    expect(state).toContain("streamsProven");
+    expect(state).toMatch(/proven \? await streamReadGranted\(\)/);
+
+    const sheet = SCREEN("device-import.tsx");
+    // The sheet's OPEN reads the state; the only bare `streamReadGranted` left in
+    // it is the re-read after the athlete's own tap on the trace row.
+    expect(sheet).toContain("setTrace(await streamReadState())");
+    expect(
+      (sheet.match(/streamReadGranted\(\)/g) ?? []).length,
+      "device-import may call streamReadGranted only from the trace row's tap",
+    ).toBe(1);
+  });
+
   it("the trace read is quarantined until it has returned once", () => {
     // The unattended pass may not be the first thing on a phone to meet that
     // native call — see `streamsProven`.
