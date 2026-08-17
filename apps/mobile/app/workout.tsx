@@ -53,6 +53,7 @@ import {
   formatCardioPr,
   cardioPace,
   blockSummary,
+  strengthSetSummary,
   lastStrengthByLift,
   supersetLabels,
   toggleSuperset,
@@ -150,7 +151,7 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE , tracking, trackFigure} from "../lib/ui";
+import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking, trackFigure, useRowEntrance} from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon, Glyph } from "../components/aurora/icons";
@@ -176,16 +177,11 @@ import { Mark } from "../components/aurora/mark";
 
 const uid = () => Math.random().toString(36).slice(2);
 
-// Present the rest-done notification even with the app foregrounded (sound +
-// banner), so the cue lands whether the phone is in your hand or your pocket.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: false,
-  }),
-});
+// The foreground presentation rule (rest cue: sound + banner, but never a row
+// left in Notification Centre) moved to lib/push.ts, which the app shell
+// imports. `setNotificationHandler` is GLOBAL and last-writer-wins, so with one
+// here and one there, which rule was live depended on which screen the athlete
+// happened to open first. One handler, branching on remote-vs-local.
 
 type WKind = "strength" | "cardio" | "conditioning";
 
@@ -248,11 +244,23 @@ type WExercise = {
   group?: string;
 };
 
+/**
+ * A fresh set, optionally carrying the previous one's numbers forward.
+ *
+ * Load and reps carry; EFFORT DOES NOT. Carry-over exists so the next set
+ * arrives as a plan you only have to correct — but an RPE is not a plan, it is
+ * an observation of a set that has happened, and copying it forward had the
+ * logger assert an effort for work not yet done: a brand-new set arrived
+ * pre-rated at 8 on an amber chip, indistinguishable from one the athlete had
+ * actually judged, and if they never touched it that guess was what got saved.
+ * (The BUILDER's carry-over does copy it, and should: there an RPE is a
+ * prescription — a target to hit, authored in advance.)
+ */
 const emptySet = (from?: WSet): WSet => ({
   uid: uid(),
   reps: from?.reps ?? "",
   load: from?.load ?? "",
-  rpe: from?.rpe ?? "",
+  rpe: "",
   done: false,
 });
 
@@ -353,8 +361,12 @@ export default function Workout() {
   // a ⋯ zone, and absorbed the standalone preset rail with them.
   const [specialUid, setSpecialUid] = useState<string | null>(null);
   // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
-  // exercise (only one set is active per exercise, so keying by uid is enough).
-  const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
+  // SET. It was keyed by EXERCISE, on the reasoning that only one set is active
+  // per exercise — true, but the state outlived the set it was opened for:
+  // banking never cleared it, so opening the pill row, picking nothing and
+  // logging the set left the row sitting open on the NEXT set. A set's own uid
+  // is unique across the session, so the row closes with the set that owns it.
+  const [rpeOpenSet, setRpeOpenSet] = useState<string | null>(null);
   // Which exercise has its detail sheet up (per-set bar speed + live summary).
   const [sheetUid, setSheetUid] = useState<string | null>(null);
   // Finish, tapped: the dock swaps to a confirm IN PLACE rather than throwing a
@@ -372,6 +384,14 @@ export default function Workout() {
   const [error, setError] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [restSince, setRestSince] = useState<number | null>(null);
+  // Disarming the timer UNMOUNTS the rest banner — a block the height of two rows
+  // leaving the top of the scroller. `stopRest` is the one door for that, so the
+  // three ways to dismiss it (the banner's own ■ Stop rest, the capsule's toggle,
+  // the "off" pref) can't disagree about whether it travels.
+  const stopRest = () => {
+    animateListChange(reducedMotion);
+    setRestSince(null);
+  };
   const [restNow, setRestNow] = useState(0);
   const [restTarget, setRestTarget] = useState<number | null>(DEFAULT_REST);
   const restFired = useRef(false);
@@ -454,6 +474,11 @@ export default function Workout() {
     AsyncStorage.getItem(TIP_KEY).then((v) => setShowTip(v !== "1")).catch(() => {});
   }, []);
   const dismissTip = () => {
+    // A whole card leaving the top of the scroller, so it travels like any other
+    // removal — otherwise everything below it jumps up by the card's height. The
+    // one call from toggleDone already has an animation armed for that commit;
+    // arming it twice is the same config and costs nothing.
+    animateListChange(reducedMotion);
     setShowTip(false);
     AsyncStorage.setItem(TIP_KEY, "1").catch(() => {});
   };
@@ -711,11 +736,17 @@ export default function Workout() {
     setExercises(blocksToExercises(r.blocks));
   };
 
-  // EVERY MUTATION OF THE LIST TRAVELS. `animateListChange` before the commit
+  // EVERY MUTATION OF EITHER LIST TRAVELS. `animateListChange` before the commit
   // animates all of its consequences at once — the row arriving or leaving AND
   // the rows below opening or closing the gap. Without it the user's own edit
   // is the one moment in the app with no motion at all: a card appears fully
   // formed mid-list, or vanishes and everything under it teleports up.
+  //
+  // This sentence used to say "the list", singular, and mean only the EXERCISE
+  // mutations below — which is how six of the seven SET mutations went on
+  // teleporting under a comment that read like a guarantee. The set list has its
+  // own door now (`commitSets`); a claim this broad is worth only as much as the
+  // narrowest path it actually covers.
   const addExercise = (name: string, kind?: WKind) => {
     addExercises([{ name, kind }]);
   };
@@ -845,55 +876,65 @@ export default function Workout() {
         return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, load: nextKg } : s)) };
       }),
     );
-  const addSet = (u: string) => {
+  /**
+   * THE ONE DOOR every change to a SET LIST goes through — and it animates.
+   *
+   * This is a door rather than a habit because the habit had already failed.
+   * `animateListChange` sat on the EXERCISE mutations (add, remove, reorder) and
+   * on exactly one of the set mutations — plain "Add set" — while six others
+   * teleported: the presets rail replacing a whole queue, all three special-set
+   * adders, the auto warm-up ramp, and, worst of all, BANKING A SET. Banking is
+   * the most-repeated interaction in the app and by far the biggest layout
+   * change on the screen (a hero block the height of four rows is replaced by a
+   * one-line ledger row, while the next set's hero opens below it) — and it was
+   * the one moment with no motion at all. Nothing about a scattered call before
+   * each `setExercises` makes the next one added remember, so the reminder is
+   * now the only route in.
+   *
+   * NOT everything that writes a set belongs here, and the exclusions are the
+   * point: `setSetField` runs per KEYSTROKE and `bumpLoad` per tap — a value
+   * changing inside a row that stays put is not a layout change, and animating
+   * it would spring the card on every digit. `removeSet` stays out too, because
+   * its only caller is a SwipeRow and closing the gap after a swipe belongs to
+   * the gesture that opened it.
+   */
+  const commitSets = (u: string, fn: (sets: WSet[]) => WSet[]) => {
     animateListChange(reducedMotion);
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
-    );
+    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: fn(x.sets) } : x)));
   };
+  const addSet = (u: string) =>
+    commitSets(u, (sets) => [...sets, emptySet(prefs.carryOver ? sets[sets.length - 1] : undefined)]);
   // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
   // in one tap. Each rep count is a SINGLE number (project rule), carrying the
   // current load. Banked sets are kept; the un-banked plan is replaced.
   const applyPreset = (u: string, count: number, reps: number) =>
-    setExercises((xs) =>
-      xs.map((x) => {
-        if (x.uid !== u) return x;
-        const done = x.sets.filter((s) => s.done);
-        const load = [...x.sets].reverse().find((s) => s.load)?.load ?? "";
-        const work: WSet[] = Array.from({ length: count }, () => ({ uid: uid(), load, reps: String(reps), rpe: "", done: false }));
-        return { ...x, sets: [...done, ...work] };
-      }),
-    );
+    commitSets(u, (sets) => {
+      const done = sets.filter((s) => s.done);
+      const load = [...sets].reverse().find((s) => s.load)?.load ?? "";
+      const work: WSet[] = Array.from({ length: count }, () => ({ uid: uid(), load, reps: String(reps), rpe: "", done: false }));
+      return [...done, ...work];
+    });
   // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
   const addDropSet = (u: string) =>
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), drop: true }] } : x)),
-    );
+    commitSets(u, (sets) => [...sets, { ...emptySet(), drop: true }]);
   // A warm-up ramp set — excluded from working volume/PRs, kept for the velocity profile.
   const addWarmupSet = (u: string) =>
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), role: "warmup" as SetRole }] } : x)),
-    );
+    commitSets(u, (sets) => [...sets, { ...emptySet(), role: "warmup" as SetRole }]);
   // A cool-down set — light back-off work, excluded from working volume/PRs like a warm-up.
   const addCooldownSet = (u: string) =>
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), role: "cooldown" as SetRole }] } : x)),
-    );
+    commitSets(u, (sets) => [...sets, { ...emptySet(), role: "cooldown" as SetRole }]);
   // Auto warm-up ramp: prepend ~40/60/80% sets up to the heaviest working load.
   const addWarmupRamp = (u: string) =>
-    setExercises((xs) =>
-      xs.map((x) => {
-        if (x.uid !== u) return x;
-        const workingMax = Math.max(
-          0,
-          ...x.sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)),
-        );
-        const ramp = warmupRamp(workingMax);
-        if (!ramp.length) return x;
-        const rampSets: WSet[] = ramp.map((step) => ({ uid: uid(), load: String(step.load), reps: String(step.reps), rpe: "", done: false, role: "warmup" }));
-        return { ...x, sets: [...rampSets, ...x.sets] };
-      }),
-    );
+    commitSets(u, (sets) => {
+      const workingMax = Math.max(
+        0,
+        ...sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)),
+      );
+      const ramp = warmupRamp(workingMax);
+      if (!ramp.length) return sets;
+      const rampSets: WSet[] = ramp.map((step) => ({ uid: uid(), load: String(step.load), reps: String(step.reps), rpe: "", done: false, role: "warmup" }));
+      return [...rampSets, ...sets];
+    });
   // The set's type, CHOSEN rather than cycled — the control behind it is a
   // picker now, so tapping four times to reach the fourth state is over.
   const setTypeTo = (u: string, i: number, type: SetType) =>
@@ -912,8 +953,13 @@ export default function Workout() {
     if (scheme) applyPreset(u, scheme.sets, scheme.reps);
   };
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
-  const supersetWithPrev = (u: string) =>
+  // Joining puts a ⛓ A1/A2 badge into the card header and swaps the control's
+  // label, which reflows the lift's name beside it — small, but a layout change
+  // the user asked for, so it travels like the rest.
+  const supersetWithPrev = (u: string) => {
+    animateListChange(reducedMotion);
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
+  };
   // No animateListChange here: the only caller is a SwipeRow, and closing the
   // gap after a swipe-delete belongs to SwipeRow itself now.
   const removeSet = (u: string, i: number) =>
@@ -922,17 +968,15 @@ export default function Workout() {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.
     const restTaken = val && restSince != null ? Math.floor((Date.now() - restSince) / 1000) : undefined;
-    setExercises((xs) =>
-      xs.map((x) =>
-        x.uid === u
-          ? {
-              ...x,
-              // Un-ticking clears the recorded rest too, so a stale value can't
-              // persist if you re-do the set without the timer running.
-              sets: x.sets.map((s, j) => (j === i ? { ...s, done: val, rest: val ? restTaken : undefined } : s)),
-            }
-          : x,
-      ),
+    // Through commitSets, so the collapse TRAVELS. Banking swaps a hero block
+    // for a one-line row and opens the next set's hero underneath — the largest
+    // layout change the screen makes, and until now the only one that happened
+    // between two frames with nothing in between. Re-opening a banked row is the
+    // same change played backwards and gets the same motion.
+    commitSets(u, (sets) =>
+      // Un-ticking clears the recorded rest too, so a stale value can't
+      // persist if you re-do the set without the timer running.
+      sets.map((s, j) => (j === i ? { ...s, done: val, rest: val ? restTaken : undefined } : s)),
     );
     if (!val) return;
     if (showTip) dismissTip(); // first banked set — the guide has done its job
@@ -954,7 +998,7 @@ export default function Workout() {
       midSuperset = members[members.length - 1]?.uid !== ex.uid;
     }
     if (nextIsDrop || midSuperset || !prefs.restTimer) {
-      setRestSince(null); // suppress any lingering rest banner (or timer disabled)
+      stopRest(); // suppress any lingering rest banner (or timer disabled)
       return;
     }
     setRestSince(Date.now());
@@ -1186,10 +1230,10 @@ export default function Workout() {
     const next = !prefs.restTimer;
     haptic.light();
     setLoggerPref("restTimer", next);
-    if (!next) setRestSince(null);
+    if (!next) stopRest();
   };
   const pickRestPref = (v: string) => {
-    if (v === "off") { setLoggerPref("restTimer", false); setRestSince(null); return; }
+    if (v === "off") { setLoggerPref("restTimer", false); stopRest(); return; }
     setLoggerPref("restTimer", true);
     setLoggerPref("restSeconds", Number(v));
   };
@@ -1402,7 +1446,7 @@ export default function Workout() {
                   ) : null}
                 </View>
                 <Pressable
-                  onPress={() => setRestSince(null)}
+                  onPress={stopRest}
                   hitSlop={8}
                   style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.field, borderWidth: 1, borderColor: accent }}
                 >
@@ -1564,7 +1608,13 @@ export default function Workout() {
                                   const set = !!rpeShown;
                                   return (
                                     <Pressable
-                                      onPress={() => setRpeOpenUid((u) => (u === x.uid ? null : x.uid))}
+                                      // The pill row is a DISCLOSURE, so opening
+                                      // it grows the card and shifts everything
+                                      // below — the same kind of layout change as
+                                      // a set arriving, and it was popping in
+                                      // fully formed with the rows beneath
+                                      // teleporting down.
+                                      onPress={() => { animateListChange(reducedMotion); setRpeOpenSet((u) => (u === s.uid ? null : s.uid)); }}
                                       hitSlop={6}
                                       style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: set ? withAlpha(C.amber, 0.5) : C.line, backgroundColor: set ? withAlpha(C.amber, ALPHA.fill) : "transparent" }}
                                     >
@@ -1598,7 +1648,11 @@ export default function Workout() {
                                   />
                                 ) : (
                                   <Pressable
-                                    onPress={() => setSpecialUid((u) => (u === x.uid ? null : x.uid))}
+                                    // Same disclosure as the RPE pill row: the
+                                    // panel opens INSIDE the card and pushes the
+                                    // sets below it down, so it grows rather than
+                                    // appearing over them.
+                                    onPress={() => { animateListChange(reducedMotion); setSpecialUid((u) => (u === x.uid ? null : x.uid)); }}
                                     hitSlop={8}
                                     accessibilityRole="button"
                                     accessibilityLabel={t("workout.setOptions")}
@@ -1652,8 +1706,14 @@ export default function Workout() {
                                 RPE scale, RIR-labelled when swapped); tapping a
                                 pill sets the number and closes. Tap the picked
                                 value again to clear it. */}
-                            {prefs.detailed && rpeOpenUid === x.uid && (
-                              <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                            {prefs.detailed && rpeOpenSet === s.uid && (
+                              // A REAL conditional mount, unlike the row above, so
+                              // its entrance needs no component boundary to fire —
+                              // but it gets the same native-driver rise for the same
+                              // reason: `animateListChange` would open the gap and
+                              // this makes the pills arrive into it even if that
+                              // request is declined.
+                              <RpeScaleRow>
                                 <Pressable onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
                                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
                                 </Pressable>
@@ -1663,7 +1723,7 @@ export default function Workout() {
                                   return (
                                     <Pressable
                                       key={val}
-                                      onPress={() => { setSetField(x.uid, i, "rpe", on ? "" : val); setRpeOpenUid(null); }}
+                                      onPress={() => { animateListChange(reducedMotion); setSetField(x.uid, i, "rpe", on ? "" : val); setRpeOpenSet(null); }}
                                       accessibilityRole="button"
                                       accessibilityState={{ selected: on }}
                                       style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.chalk : C.line, backgroundColor: on ? withAlpha(C.chalk, ALPHA.fill) : C.ink2 }}
@@ -1672,31 +1732,75 @@ export default function Workout() {
                                     </Pressable>
                                   );
                                 })}
-                              </View>
+                              </RpeScaleRow>
                             )}
                                                     </View>
                         ) : (() => {
                           // Banked / queued → quiet one-line row (tap a banked one
                           // to re-open it as the active card).
-                          const loadPart = !bw && s.load ? `${displayLoad(s.load, prefs.units)} ${unitLabel}` : "";
-                          const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";
-                          const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";
+                          //
+                          // The load × reps line is the SHARED per-set formatter —
+                          // the same core function the "last time" reference a few
+                          // lines above reads through. This row used to build its
+                          // own, and the two had already drifted: it special-cased
+                          // only pure bodyweight, so an assisted pull-up printed
+                          // "20 kg × 5" here (as if you had ADDED 20) while the
+                          // reference above it correctly wrote "−20×5".
+                          const summary = strengthSetSummary(x.name, s, { style: "row", units: prefs.units });
+                          // THE EFFORT SURVIVES THE COLLAPSE. It used not to: this
+                          // row was built from load and reps alone, so the RPE you
+                          // had just tapped on the chip above stopped being drawn
+                          // the moment the set banked — stored on the set, saved
+                          // onto the block, printed back in the session breakdown
+                          // at home, and invisible on the one screen you read while
+                          // actually training. Worse, the fresh set's chip then read
+                          // "–", so the card claimed no effort had been rated
+                          // anywhere in the exercise.
+                          //
+                          // It keeps the chip's own word and colour, so it reads as
+                          // the same value that just collapsed rather than as a new
+                          // fact, and it renders NOTHING when unset: the row only
+                          // grows a fourth column when there is something to say,
+                          // which is what makes a fourth column affordable on a
+                          // small phone at all.
+                          //
+                          // AND THE EFFORT YIELDS THE COLOUR. This comment used to
+                          // claim the token was "sand, not the summary's amber" —
+                          // which is false, they are the same constant (C.amber IS
+                          // sand), and a caution set therefore painted BOTH columns
+                          // the same colour with nothing to say which fact was being
+                          // reported. That is the objection that ruled out putting
+                          // the effort inside the summary string; a weaker version of
+                          // it applies to the column beside it. So: normally the
+                          // token carries the chip's amber, because matching the chip
+                          // is the entire argument for the token. On a FLAGGED set
+                          // the amber belongs to the figures — "check this number" —
+                          // and the effort drops to ash: still there, still legible,
+                          // no longer competing for a meaning it does not own.
+                          const effort = prefs.detailed ? rpeRirSwap(s.rpe, prefs.rpeAsRir) : "";
+                          const effortLabel = effort ? `${prefs.rpeAsRir ? "RIR" : "RPE"} ${effort}` : "";
+                          // A COMPONENT, not another inline <View> — and that is
+                          // load-bearing, not tidiness. Both branches of this
+                          // ternary used to render a plain <View>, which React
+                          // reconciles as the SAME view updated in place: no
+                          // unmount, no mount, so no entrance could ever fire and
+                          // the whole collapse depended on LayoutAnimation being
+                          // honoured. React always remounts across a type change,
+                          // so rendering the row as `BankedSetRow` is what makes its
+                          // native-driver entrance a guarantee instead of a hope.
                           return (
-                            // Quiet ledger row — a plain hairline-separated line,
-                            // not a boxed mini-card (no card-in-card).
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6), opacity: focus === "done" ? 0.62 : 0.72 }}>
-                              <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{setTypeBadge(s, i)}</Text>
-                              {/* A collapsed row SIGNALS; the expanded one
-                                  explains. Its own figures turn amber rather
-                                  than gaining a badge — the row is already
-                                  three columns wide on a small phone, and
-                                  tapping it re-opens the set where the full
-                                  sentence is waiting. */}
-                              <Pressable style={{ flex: 1 }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
-                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash }}>{summary}</Text>
-                              </Pressable>
-                              <Text style={{ fontFamily: F.black, fontSize: fs.body, color: s.done ? txt(C, C.lime) : C.ash }}>{s.done ? "✓" : "○"}</Text>
-                            </View>
+                            <BankedSetRow
+                              badge={setTypeBadge(s, i)}
+                              badgeColor={typeAccent ? txt(C, typeAccent) : C.ash}
+                              summary={summary}
+                              summaryColor={odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash}
+                              effortLabel={effortLabel}
+                              effortColor={odd ? C.ash : txt(C, C.amber)}
+                              done={s.done}
+                              dim={focus === "done" ? 0.62 : 0.72}
+                              onReopen={s.done ? () => toggleDone(x.uid, i, false) : undefined}
+                              C={C}
+                            />
                           );
                         })()}
                       </SwipeRow>
@@ -2358,6 +2462,82 @@ function ExerciseSheet({
       {body}
       {order}
     </Sheet>
+  );
+}
+
+/** The RPE scale's row — the disclosure arriving, on the native driver.
+ *  NOT named `…PillRow`: the design-token ratchet reads a `Chip|Pill|Tag`
+ *  suffix as a hand-rolled chip primitive that should have converged on
+ *  AChip, and it was right to — this holds the pills, it is not one. */
+function RpeScaleRow({ children }: { children: React.ReactNode }) {
+  const enter = useRowEntrance(6);
+  return (
+    <Animated.View style={[{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 6 }, enter]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+/**
+ * A BANKED OR QUEUED SET — the quiet one-line ledger row a set collapses into.
+ *
+ * NOT `LedgerRow`: that name belongs to the readiness signature ring
+ * (aurora/readiness-object.tsx) and core's one-ring guard fails any second
+ * DEFINITION of it, because the Performance screen once kept its own copy of
+ * that ring and its paint helpers. Two unrelated rows, one name, is how that
+ * starts.
+ *
+ * A plain hairline-separated line, not a boxed mini-card (no card-in-card).
+ *
+ * IT IS A COMPONENT SO THAT IT MOUNTS. The active set and this row are the two
+ * branches of one ternary, and while both rendered a bare <View> React
+ * reconciled them as the same view and updated it in place — nothing mounted,
+ * nothing unmounted, so there was no moment an entrance could attach to and the
+ * entire collapse rode on LayoutAnimation being honoured by native. React always
+ * remounts across a component-type change, so this boundary is what turns the
+ * entrance below into a guarantee. See `useRowEntrance` for why a guarantee was
+ * wanted: every way LayoutAnimation can be declined on the New Architecture
+ * fails silently and looks exactly like a design with no animation in it.
+ *
+ * The two mechanisms are complementary, not redundant. `animateListChange` makes
+ * the NEIGHBOURS travel — the rows below closing the gap, which no per-row
+ * animation can reach. This makes the ARRIVING row travel, on the native driver,
+ * whether or not the request was granted.
+ */
+function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, effortColor, done, dim, onReopen, C }: {
+  badge: string;
+  badgeColor: string;
+  summary: string;
+  summaryColor: string;
+  /** "RPE 8" / "RIR 2", already swapped for the pref. Empty = unrated, draw nothing. */
+  effortLabel: string;
+  effortColor: string;
+  done: boolean;
+  /** Resting opacity — banked reads quieter than queued. */
+  dim: number;
+  onReopen?: () => void;
+  C: Palette;
+}) {
+  const enter = useRowEntrance();
+  return (
+    <Animated.View style={[{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6) }, enter, { opacity: Animated.multiply(enter.opacity, dim) }]}>
+      <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: badgeColor }}>{badge}</Text>
+      {/* A collapsed row SIGNALS; the expanded one explains. A plausibility
+          concern turns these figures amber rather than gaining a badge of its
+          own — the row is narrow on a small phone, and tapping it re-opens the
+          set where the full sentence is waiting.
+
+          The effort rides INSIDE the re-open target, not beside it: the number
+          you want to correct is the most likely reason to tap this row, so it
+          had better be part of the button. */}
+      <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={onReopen}>
+        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: summaryColor }}>{summary}</Text>
+        {effortLabel ? (
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: effortColor }}>{effortLabel}</Text>
+        ) : null}
+      </Pressable>
+      <Text style={{ fontFamily: F.black, fontSize: fs.body, color: done ? txt(C, C.lime) : C.ash }}>{done ? "✓" : "○"}</Text>
+    </Animated.View>
   );
 }
 

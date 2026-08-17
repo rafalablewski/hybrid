@@ -71,6 +71,11 @@ export default defineConfig({
             // TEXT and then runs it through the real core readers, so it proves
             // a screen invariant without importing the screen.
             "lib/nutrition-form.test.ts",
+            // Reads the live logger as TEXT to prove every set-list mutation
+            // arms a layout animation before it commits. A missing one is the
+            // quietest bug we can ship — correct code, passing tests, an app
+            // that just feels cheap — and it is only visible on a device.
+            "lib/list-motion.test.ts",
           ],
         },
       },
@@ -90,6 +95,7 @@ export default defineConfig({
             "expo-secure-store": stub("native.tsx"),
             "expo-file-system": stub("native.tsx"),
             "expo-sharing": stub("native.tsx"),
+            "expo-notifications": stub("native.tsx"),
             // LAST: a prefix alias, so every entry above wins over it.
             "react-native": "react-native-web",
           },

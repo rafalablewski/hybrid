@@ -11,6 +11,8 @@ import {
   conditioningSummary,
   cardioSummary,
   blockSummary,
+  strengthSetSummary,
+  strengthSetsSummary,
   pacePerKm,
   supersetLabels,
   toggleSuperset,
@@ -626,5 +628,65 @@ describe("sessionMeta", () => {
     const s = cardio([{ kind: "cardio", name: "Swimming", distance: 0.2, minutes: 10 }]);
     expect(sessionMeta(s)).not.toMatch(/\d{1,2}:\d{2}\s*$/); // no trailing wall-clock time
     expect(sessionMeta(s)).not.toContain("19:33");
+  });
+});
+
+// The per-set formatter the live logger's collapsed ledger row and the
+// block-level set list BOTH read through. Two styles, one implementation —
+// the row used to roll its own, which is how an assisted lift ended up
+// printing "20 kg × 5" in the ledger and "−20×5" in the reference above it.
+describe("strengthSetSummary", () => {
+  const set = { load: "100", reps: "5" };
+
+  it("compact is unchanged for an external lift, dashes holding the empty halves", () => {
+    expect(strengthSetSummary("Back Squat", set)).toBe("100×5");
+    expect(strengthSetSummary("Back Squat", { load: "", reps: "5" })).toBe("–×5");
+    expect(strengthSetSummary("Back Squat", { load: "100", reps: "" })).toBe("100×–");
+    expect(strengthSetSummary("Back Squat", { load: "", reps: "" })).toBe("–×–");
+  });
+
+  it("row names the unit and the measure, and drops what is missing", () => {
+    expect(strengthSetSummary("Back Squat", set, { style: "row" })).toBe("100 kg × 5 reps");
+    expect(strengthSetSummary("Back Squat", { load: "", reps: "5" }, { style: "row" })).toBe("5 reps");
+    expect(strengthSetSummary("Back Squat", { load: "100", reps: "" }, { style: "row" })).toBe("100 kg");
+    // Nothing typed at all — an em dash, not a row of dashes: one set alone on a
+    // line reads a "–×–" as a typo rather than as a gap.
+    expect(strengthSetSummary("Back Squat", { load: "", reps: "" }, { style: "row" })).toBe("—");
+  });
+
+  it("row converts the load into the athlete's unit (storage stays kg)", () => {
+    expect(strengthSetSummary("Back Squat", set, { style: "row", units: "lb" })).toBe("220 lb × 5 reps");
+    expect(strengthSetSummary("Back Squat", set, { style: "row", units: "kg" })).toBe("100 kg × 5 reps");
+  });
+
+  it("a bodyweight lift IS its reps — no load on either side of the ×", () => {
+    expect(strengthSetSummary("Pull-Up", { load: "", reps: "8" })).toBe("8");
+    expect(strengthSetSummary("Pull-Up", { load: "", reps: "8" }, { style: "row" })).toBe("8 reps");
+    // A stray load on a bodyweight lift is still not a load to show.
+    expect(strengthSetSummary("Pull-Up", { load: "20", reps: "8" }, { style: "row" })).toBe("8 reps");
+  });
+
+  it("signs the load it means: + on the belt, − off the stack — in BOTH styles", () => {
+    expect(strengthSetSummary("Weighted Pull-Up", { load: "20", reps: "5" })).toBe("+20×5");
+    expect(strengthSetSummary("Assisted Pull-Up", { load: "20", reps: "5" })).toBe("−20×5");
+    // THE DRIFT THIS FIXES: the logger's row printed these as a plain external
+    // "20 kg × 5" — as if 20 kg had been ADDED to an assisted pull-up.
+    expect(strengthSetSummary("Weighted Pull-Up", { load: "20", reps: "5" }, { style: "row" })).toBe("+20 kg × 5 reps");
+    expect(strengthSetSummary("Assisted Pull-Up", { load: "20", reps: "5" }, { style: "row" })).toBe("−20 kg × 5 reps");
+    // Unweighted, it degrades to the bodyweight reading rather than to dashes.
+    expect(strengthSetSummary("Weighted Pull-Up", { load: "", reps: "5" }, { style: "row" })).toBe("5 reps");
+  });
+
+  it("reads the lift's own measure — seconds for a hold, metres for a carry", () => {
+    expect(strengthSetSummary("Plank", { load: "", reps: "45" })).toBe("45 s");
+    expect(strengthSetSummary("Plank", { load: "", reps: "45" }, { style: "row" })).toBe("45 s");
+    expect(strengthSetSummary("Farmer Carry", { load: "32", reps: "40" }, { style: "row" })).toBe("32 kg × 40 m");
+  });
+
+  it("the set LIST is the per-set formatter, joined — so the two cannot drift", () => {
+    expect(strengthSetsSummary({ kind: "strength", name: "Assisted Pull-Up", sets: [{ load: "20", reps: "5" }, { load: "20", reps: "4" }] }))
+      .toBe("−20×5, −20×4");
+    expect(strengthSetsSummary({ kind: "strength", name: "Pull-Up", sets: [{ load: "", reps: "8" }, { load: "", reps: "6" }] }))
+      .toBe("8, 6");
   });
 });

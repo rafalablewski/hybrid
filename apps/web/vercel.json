@@ -6,6 +6,10 @@
       "schedule": "0 8 * * *"
     },
     {
+      "path": "/api/cron/push",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/agent-digest",
       "schedule": "5 8 * * *"
     },

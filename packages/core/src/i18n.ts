@@ -738,6 +738,22 @@ const BASE: Record<Lang, Record<string, string>> = {
     "analytics.privacy.athlete": "Your own training data only. Nothing here is visible to other athletes.",
     "analytics.privacy.coach": "Only athletes who accepted you (mutual consent). Aggregate roster view — private athlete notes excluded.",
     "analytics.privacy.operator": "Platform aggregates only — no access to any individual's private training data.",
+    // Push notifications. Rendered by iOS from what the SERVER sent, so the
+    // server — not the device — resolves the language, from the locale the
+    // device reported when it registered its token (see push.ts).
+    "push.checkin.title": "Today's readiness read",
+    "push.checkin.body": "One read before you train — it sets what the plan asks of you today.",
+    "push.coach.title": "{coach} assigned you a session",
+    "push.coach.body": "{session} – {when}",
+    "push.coach.body-undated": "{session}",
+    "push.coach.title-program": "{coach} assigned you a program",
+    "push.coach.body-program": "{program} – starts {when}",
+    "push.coach.body-program-undated": "{program}",
+    "push.coach.fallback-coach": "Your coach",
+    "push.cosign.title": "Co-sign request",
+    "push.cosign.body": "{from} asks you to confirm their {lift} at {load}.",
+    "push.cosign.body-noload": "{from} asks you to confirm their {lift}.",
+    "push.cosign.fallback-athlete": "Someone",
   },
   pl: {
     "nav.today": "Dziś",
@@ -1398,6 +1414,21 @@ const BASE: Record<Lang, Record<string, string>> = {
     "analytics.privacy.athlete": "Wyłącznie Twoje dane treningowe. Nic tutaj nie jest widoczne dla innych sportowców.",
     "analytics.privacy.coach": "Tylko sportowcy, którzy Cię zaakceptowali (obustronna zgoda). Widok zbiorczy — prywatne notatki są wyłączone.",
     "analytics.privacy.operator": "Wyłącznie dane zbiorcze platformy — bez dostępu do prywatnych danych treningowych kogokolwiek.",
+    // Powiadomienia push — renderowane przez iOS z tego, co wysłał SERWER, więc
+    // serwer dobiera język z locale zarejestrowanego urządzenia (push.ts).
+    "push.checkin.title": "Gotowość na dziś",
+    "push.checkin.body": "Jeden odczyt przed treningiem — od niego zależy, o co poprosi Cię dziś plan.",
+    "push.coach.title": "Nowa sesja od {coach}",
+    "push.coach.body": "{session} – {when}",
+    "push.coach.body-undated": "{session}",
+    "push.coach.title-program": "Nowy program od {coach}",
+    "push.coach.body-program": "{program} – start: {when}",
+    "push.coach.body-program-undated": "{program}",
+    "push.coach.fallback-coach": "Twój trener",
+    "push.cosign.title": "Prośba o poświadczenie",
+    "push.cosign.body": "{from} prosi o potwierdzenie: {lift} na {load}.",
+    "push.cosign.body-noload": "{from} prosi o potwierdzenie: {lift}.",
+    "push.cosign.fallback-athlete": "Ktoś",
   },
   de: {
     "nav.today": "Heute",
@@ -2057,6 +2088,21 @@ const BASE: Record<Lang, Record<string, string>> = {
     "analytics.privacy.athlete": "Nur deine eigenen Trainingsdaten. Nichts davon ist für andere Sportler sichtbar.",
     "analytics.privacy.coach": "Nur Sportler, die dich akzeptiert haben (beidseitige Zustimmung). Aggregierte Kaderansicht — private Notizen ausgenommen.",
     "analytics.privacy.operator": "Nur Plattform-Aggregate — kein Zugriff auf private Trainingsdaten einzelner Personen.",
+    // Push notifications — rendered by iOS from what the SERVER sent, so the
+    // server resolves the language from the device's registered locale (push.ts).
+    "push.checkin.title": "Bereitschaft für heute",
+    "push.checkin.body": "Eine Einschätzung, bevor du trainierst — sie bestimmt, was der Plan heute von dir verlangt.",
+    "push.coach.title": "Neue Einheit von {coach}",
+    "push.coach.body": "{session} – {when}",
+    "push.coach.body-undated": "{session}",
+    "push.coach.title-program": "Neues Programm von {coach}",
+    "push.coach.body-program": "{program} – Start: {when}",
+    "push.coach.body-program-undated": "{program}",
+    "push.coach.fallback-coach": "Dein Coach",
+    "push.cosign.title": "Bitte um Gegenzeichnung",
+    "push.cosign.body": "{from} bittet dich zu bestätigen: {lift} mit {load}.",
+    "push.cosign.body-noload": "{from} bittet dich zu bestätigen: {lift}.",
+    "push.cosign.fallback-athlete": "Jemand",
   },
 };
 
