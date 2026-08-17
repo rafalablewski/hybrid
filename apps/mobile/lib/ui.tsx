@@ -136,6 +136,72 @@ export function useEntrance() {
   );
 }
 
+/**
+ * A ONE-SHOT ENTRANCE FOR A ROW THAT APPEARS INSIDE AN ALREADY-FOCUSED SCREEN —
+ * and, deliberately, the one kind of motion that CANNOT be silently absent.
+ *
+ * `useEntrance` above is keyed to screen FOCUS, so it is no use to a row that
+ * arrives mid-screen. The obvious alternative for those is `animateListChange`
+ * (LayoutAnimation), and it is still the right tool for the surrounding reflow:
+ * one call animates every consequence of a commit, including the rows below
+ * closing a gap, which no per-row animation can reach.
+ *
+ * But LayoutAnimation is a REQUEST to native, and on the New Architecture it is
+ * a request that can be declined. React Native 0.85.3 gates it behind two
+ * feature flags (JS `isLayoutAnimationEnabled`, C++ `enableLayoutAnimationsOnIOS`),
+ * its own source still calls iOS Fabric support "conditionally enabled (pending
+ * fully shipping; this is a temporary state)", `Platform.isDisableAnimations`
+ * can switch it off wholesale, and the surface that needs it most here — the
+ * live logger — is presented as a `fullScreenModal`, which is its own view
+ * controller and the configuration Fabric handles least well. Every one of those
+ * fails the same way: silently, with no error, looking exactly like a design
+ * that simply has no animation.
+ *
+ * This does not ask. `Animated` on the NATIVE DRIVER is the most load-bearing
+ * animation path in React Native, it is independent of LayoutAnimation, Fabric
+ * flags and the surface, it runs on the UI thread so a busy JS thread cannot
+ * eat it, and this app already proves it works on device (HubDissolve above,
+ * and the logger's own finish summary). If the row mounts, it moves.
+ *
+ * So the two are used TOGETHER and neither is redundant: LayoutAnimation makes
+ * the neighbours travel where it is honoured, and this makes the arriving row
+ * travel whether it is honoured or not.
+ *
+ * NOTE ON MOUNTING. This fires on mount, so the caller must actually mount:
+ * two branches of a ternary that both render a `<View>` reconcile as the SAME
+ * view and update in place. Rendering one branch as a distinct COMPONENT is
+ * what guarantees the remount — React always remounts across a type change —
+ * which is why the logger's ledger row is its own component.
+ *
+ * Reduce Motion substitutes the cross-dissolve rather than snapping, matching
+ * `useEntrance` and `animateListChange`: the rise is dropped, the fade is kept,
+ * so the arrival is still perceptible.
+ */
+export function useRowEntrance(distance = 8): { opacity: Animated.Value; transform?: { translateY: Animated.AnimatedInterpolation<number> }[] } {
+  const enter = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
+  useEffect(() => {
+    const anim = reducedMotion
+      ? Animated.timing(enter, { toValue: 1, duration: durations.reduced, easing: Easing.linear, useNativeDriver: true })
+      : Animated.spring(enter, { toValue: 1, ...springToRN(springs.slide), useNativeDriver: true });
+    anim.start();
+    return () => anim.stop();
+    // Mount-only: `enter` is stable, and re-running on a Reduce Motion toggle
+    // would replay the entrance of every row already on screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return useMemo(
+    () =>
+      reducedMotion
+        ? { opacity: enter }
+        : {
+            opacity: enter,
+            transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-distance, 0] }) }],
+          },
+    [enter, reducedMotion, distance],
+  );
+}
+
 // THE HUB DISSOLVE — what a screen's CONTENT does when it shows as one of
 // Today's hub tabs (Dashboard / Performance / Feed). The hub chrome above it
 // (profile row + pills) holds perfectly still and the pills' flying lens owns

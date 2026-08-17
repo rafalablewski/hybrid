@@ -151,7 +151,7 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE , tracking, trackFigure} from "../lib/ui";
+import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE , tracking, trackFigure, useRowEntrance} from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -1705,7 +1705,13 @@ export default function Workout() {
                                 pill sets the number and closes. Tap the picked
                                 value again to clear it. */}
                             {prefs.detailed && rpeOpenSet === s.uid && (
-                              <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 6 }}>
+                              // A REAL conditional mount, unlike the row above, so
+                              // its entrance needs no component boundary to fire —
+                              // but it gets the same native-driver rise for the same
+                              // reason: `animateListChange` would open the gap and
+                              // this makes the pills arrive into it even if that
+                              // request is declined.
+                              <RpeScaleRow>
                                 <Pressable onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
                                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
                                 </Pressable>
@@ -1724,7 +1730,7 @@ export default function Workout() {
                                     </Pressable>
                                   );
                                 })}
-                              </View>
+                              </RpeScaleRow>
                             )}
                                                     </View>
                         ) : (() => {
@@ -1771,29 +1777,28 @@ export default function Workout() {
                           // no longer competing for a meaning it does not own.
                           const effort = prefs.detailed ? rpeRirSwap(s.rpe, prefs.rpeAsRir) : "";
                           const effortLabel = effort ? `${prefs.rpeAsRir ? "RIR" : "RPE"} ${effort}` : "";
+                          // A COMPONENT, not another inline <View> — and that is
+                          // load-bearing, not tidiness. Both branches of this
+                          // ternary used to render a plain <View>, which React
+                          // reconciles as the SAME view updated in place: no
+                          // unmount, no mount, so no entrance could ever fire and
+                          // the whole collapse depended on LayoutAnimation being
+                          // honoured. React always remounts across a type change,
+                          // so rendering the row as `LedgerRow` is what makes its
+                          // native-driver entrance a guarantee instead of a hope.
                           return (
-                            // Quiet ledger row — a plain hairline-separated line,
-                            // not a boxed mini-card (no card-in-card).
-                            <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6), opacity: focus === "done" ? 0.62 : 0.72 }}>
-                              <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{setTypeBadge(s, i)}</Text>
-                              {/* A collapsed row SIGNALS; the expanded one
-                                  explains. A plausibility concern turns these
-                                  figures amber rather than gaining a badge of
-                                  its own — the row is narrow on a small phone,
-                                  and tapping it re-opens the set where the full
-                                  sentence is waiting. */}
-                              {/* The effort rides INSIDE the re-open target, not
-                                  beside it: the number you want to correct is the
-                                  most likely reason to tap this row, so it had
-                                  better be part of the button. */}
-                              <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
-                                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash }}>{summary}</Text>
-                                {effortLabel ? (
-                                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: odd ? C.ash : txt(C, C.amber) }}>{effortLabel}</Text>
-                                ) : null}
-                              </Pressable>
-                              <Text style={{ fontFamily: F.black, fontSize: fs.body, color: s.done ? txt(C, C.lime) : C.ash }}>{s.done ? "✓" : "○"}</Text>
-                            </View>
+                            <LedgerRow
+                              badge={setTypeBadge(s, i)}
+                              badgeColor={typeAccent ? txt(C, typeAccent) : C.ash}
+                              summary={summary}
+                              summaryColor={odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash}
+                              effortLabel={effortLabel}
+                              effortColor={odd ? C.ash : txt(C, C.amber)}
+                              done={s.done}
+                              dim={focus === "done" ? 0.62 : 0.72}
+                              onReopen={s.done ? () => toggleDone(x.uid, i, false) : undefined}
+                              C={C}
+                            />
                           );
                         })()}
                       </SwipeRow>
@@ -2455,6 +2460,76 @@ function ExerciseSheet({
       {body}
       {order}
     </Sheet>
+  );
+}
+
+/** The RPE scale's row — the disclosure arriving, on the native driver.
+ *  NOT named `…PillRow`: the design-token ratchet reads a `Chip|Pill|Tag`
+ *  suffix as a hand-rolled chip primitive that should have converged on
+ *  AChip, and it was right to — this holds the pills, it is not one. */
+function RpeScaleRow({ children }: { children: React.ReactNode }) {
+  const enter = useRowEntrance(6);
+  return (
+    <Animated.View style={[{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 6 }, enter]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+/**
+ * A BANKED OR QUEUED SET — the quiet one-line ledger row a set collapses into.
+ *
+ * A plain hairline-separated line, not a boxed mini-card (no card-in-card).
+ *
+ * IT IS A COMPONENT SO THAT IT MOUNTS. The active set and this row are the two
+ * branches of one ternary, and while both rendered a bare <View> React
+ * reconciled them as the same view and updated it in place — nothing mounted,
+ * nothing unmounted, so there was no moment an entrance could attach to and the
+ * entire collapse rode on LayoutAnimation being honoured by native. React always
+ * remounts across a component-type change, so this boundary is what turns the
+ * entrance below into a guarantee. See `useRowEntrance` for why a guarantee was
+ * wanted: every way LayoutAnimation can be declined on the New Architecture
+ * fails silently and looks exactly like a design with no animation in it.
+ *
+ * The two mechanisms are complementary, not redundant. `animateListChange` makes
+ * the NEIGHBOURS travel — the rows below closing the gap, which no per-row
+ * animation can reach. This makes the ARRIVING row travel, on the native driver,
+ * whether or not the request was granted.
+ */
+function LedgerRow({ badge, badgeColor, summary, summaryColor, effortLabel, effortColor, done, dim, onReopen, C }: {
+  badge: string;
+  badgeColor: string;
+  summary: string;
+  summaryColor: string;
+  /** "RPE 8" / "RIR 2", already swapped for the pref. Empty = unrated, draw nothing. */
+  effortLabel: string;
+  effortColor: string;
+  done: boolean;
+  /** Resting opacity — banked reads quieter than queued. */
+  dim: number;
+  onReopen?: () => void;
+  C: Palette;
+}) {
+  const enter = useRowEntrance();
+  return (
+    <Animated.View style={[{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6) }, enter, { opacity: Animated.multiply(enter.opacity, dim) }]}>
+      <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: badgeColor }}>{badge}</Text>
+      {/* A collapsed row SIGNALS; the expanded one explains. A plausibility
+          concern turns these figures amber rather than gaining a badge of its
+          own — the row is narrow on a small phone, and tapping it re-opens the
+          set where the full sentence is waiting.
+
+          The effort rides INSIDE the re-open target, not beside it: the number
+          you want to correct is the most likely reason to tap this row, so it
+          had better be part of the button. */}
+      <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={onReopen}>
+        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: summaryColor }}>{summary}</Text>
+        {effortLabel ? (
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: effortColor }}>{effortLabel}</Text>
+        ) : null}
+      </Pressable>
+      <Text style={{ fontFamily: F.black, fontSize: fs.body, color: done ? txt(C, C.lime) : C.ash }}>{done ? "✓" : "○"}</Text>
+    </Animated.View>
   );
 }
 

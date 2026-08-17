@@ -169,4 +169,52 @@ describe("live logger — every set-list mutation travels", () => {
         .toContain("animateListChange(reducedMotion)");
     }
   });
+
+  /**
+   * THE BELT AND THE BRACES.
+   *
+   * Everything above asks native to animate. `animateListChange` is a REQUEST,
+   * and on the New Architecture it is one that can be declined — two feature
+   * flags, `Platform.isDisableAnimations`, and iOS Fabric support that RN's own
+   * source calls "a temporary state". Worse, the screen that needs it most is
+   * presented as a `fullScreenModal`: its own view controller, the configuration
+   * Fabric handles least well. Every one of those declines SILENTLY and is
+   * indistinguishable from a design with no animation in it.
+   *
+   * So the collapse does not depend on the request being granted. The banked row
+   * is a COMPONENT with a native-driver entrance, and that is what these check —
+   * including the part that is easy to undo by accident: if the row is ever
+   * inlined back into the ternary as a bare <View>, React reconciles it with the
+   * active block instead of remounting it, nothing mounts, and the entrance
+   * silently stops firing while still being present in the code.
+   */
+  it("the banked row animates without asking native — a component, so it mounts", () => {
+    expect(src, "the ledger row must be rendered as <LedgerRow>, not an inline <View>: React reconciles two <View> branches as one view and updates in place, so nothing mounts and no entrance can fire")
+      .toContain("<LedgerRow");
+    const comp = src.slice(src.indexOf("function LedgerRow("));
+    expect(comp.slice(0, 900), "LedgerRow must run useRowEntrance").toContain("useRowEntrance()");
+    expect(comp.slice(0, 900), "LedgerRow's root must be an Animated.View carrying that entrance").toContain("<Animated.View");
+  });
+
+  it("the RPE disclosure animates without asking native either", () => {
+    expect(src, "the pill row must be wrapped in <RpeScaleRow> so it carries an entrance").toContain("<RpeScaleRow>");
+    const comp = src.slice(src.indexOf("function RpeScaleRow("));
+    expect(comp.slice(0, 500)).toContain("useRowEntrance(");
+    expect(comp.slice(0, 500)).toContain("<Animated.View");
+  });
+
+  it("the entrance runs on the NATIVE driver and honours Reduce Motion", () => {
+    // Native driver is the whole point: it runs on the UI thread, so it is
+    // immune to a busy JS thread AND to every LayoutAnimation gate. And the
+    // Reduce Motion branch must SUBSTITUTE a cross-dissolve, not snap — an
+    // arrival the user cannot perceive is the bug this file is about.
+    const ui = readFileSync(join(__dirname, "ui.tsx"), "utf8");
+    const at = ui.indexOf("export function useRowEntrance");
+    expect(at, "useRowEntrance not found in lib/ui.tsx").toBeGreaterThan(-1);
+    const body = ui.slice(at, at + 1600);
+    expect(body.match(/useNativeDriver: true/g) ?? [], "both branches must use the native driver").toHaveLength(2);
+    expect(body, "must not fall back to the JS driver").not.toContain("useNativeDriver: false");
+    expect(body, "Reduce Motion must keep the fade (durations.reduced), not snap").toContain("durations.reduced");
+    expect(body, "the non-reduced curve is the shared slide spring, so both mechanisms agree").toContain("springs.slide");
+  });
 });
