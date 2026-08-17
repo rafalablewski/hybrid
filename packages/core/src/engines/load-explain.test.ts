@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { computeLoad } from "./load";
-import { loadExplain, LOAD_METRICS, LOAD_METRIC_LABEL_KEY, type LoadMetric } from "./load-explain";
+import { computeLoad, type AcwrBand, type LoadState } from "./load";
+import {
+  loadExplain, loadVerdict, monotonyBand, LOAD_METRICS, LOAD_METRIC_LABEL_KEY,
+  LOAD_VERDICT_KEYS, type LoadMetric, type MonotonyBand,
+} from "./load-explain";
 import { makeT } from "../i18n";
 import type { LoggedSession } from "./session";
 
@@ -221,5 +224,104 @@ describe("computeLoad exposes what the explainer narrates", () => {
     expect(s.dailySd).toBeGreaterThan(0);
     // Within a hundredth — all three fields are rounded to 2dp independently.
     expect(Math.abs(s.dailyMean / s.dailySd - s.monotony)).toBeLessThan(0.01);
+  });
+});
+
+describe("loadVerdict — the sentence over the figures", () => {
+  it("names the ACWR band and the monotony band it was composed from", () => {
+    const s = state();
+    const v = loadVerdict(s)!;
+    expect(v).not.toBeNull();
+    expect(v.acwrBand).toBe(s.band);
+    expect(v.monotonyBand).toBe(monotonyBand(s.monotony));
+    expect(v.key).toBe(LOAD_VERDICT_KEYS.find((k) => k === v.key));
+  });
+
+  // The honest answer, not a hedge: without ~2 weeks there is no "what you
+  // normally do" to compare against, so half the sentence would be invented.
+  it("returns null while the ratio is still building", () => {
+    const thin = computeLoad(
+      [{ id: "a", title: "S", startedAt: ago(0), blocks: [{ kind: "conditioning", name: "Row", minutes: 30, rpe: 7 }] }],
+      NOW,
+    );
+    expect(thin.enoughHistory).toBe(false);
+    expect(loadVerdict(thin)).toBeNull();
+  });
+
+  it("takes the heavier of the two readings as its severity", () => {
+    const s = state();
+    const v = loadVerdict(s)!;
+    // A sweet-spot ratio under a samey week must not report itself as `go`.
+    if (v.acwrBand === "sweet-spot" && v.monotonyBand !== "varied") {
+      expect(v.role).not.toBe("go");
+    }
+    expect(["go", "info", "caution", "danger"]).toContain(v.role);
+  });
+
+  it("enumerates all twelve sentences, and every one resolves in EN/PL/DE", () => {
+    expect(LOAD_VERDICT_KEYS).toHaveLength(12);
+    expect(new Set(LOAD_VERDICT_KEYS).size).toBe(12);
+    for (const lang of ["en", "pl", "de"] as const) {
+      const t = makeT(lang);
+      for (const k of LOAD_VERDICT_KEYS) {
+        expect(t(k), `${lang}: ${k}`).not.toBe(k);
+        // Whole sentences, not fragments — each must end in a full stop, or a
+        // joined `${a} ${b}` would slip through looking like copy.
+        expect(t(k).trim(), `${lang}: ${k}`).toMatch(/[.!]$/);
+      }
+      for (const k of [
+        "w.injury.load.sheetTitle", "w.injury.load.readFrom",
+        "w.injury.load.theWeek", "w.injury.load.allFigures", "w.injury.load.dayTotal",
+      ]) {
+        expect(t(k), `${lang}: ${k}`).not.toBe(k);
+      }
+    }
+  });
+
+  it("reaches all twelve — one key per band pair, none colliding", () => {
+    // loadVerdict reads exactly three fields, so a synthetic state covers the
+    // matrix completely and honestly; a log sweep could only ever sample it.
+    const at = (band: AcwrBand, monotony: number): LoadState => ({
+      ...state(), band, monotony, enoughHistory: true,
+    });
+    const acwr: AcwrBand[] = ["detraining", "sweet-spot", "caution", "danger"];
+    const monos: [number, MonotonyBand][] = [[1.2, "varied"], [1.7, "watch"], [2.4, "same"]];
+    const keys = new Set<string>();
+    for (const b of acwr) {
+      for (const [m, name] of monos) {
+        const v = loadVerdict(at(b, m))!;
+        expect(v.monotonyBand, `${b}/${name}`).toBe(name);
+        expect(v.acwrBand, `${b}/${name}`).toBe(b);
+        expect(LOAD_VERDICT_KEYS, `${b}/${name}`).toContain(v.key);
+        keys.add(v.key);
+      }
+    }
+    // Every pair gets its own sentence, and the enumeration is exactly the set.
+    expect(keys.size).toBe(12);
+    expect([...keys].sort()).toEqual([...LOAD_VERDICT_KEYS].sort());
+  });
+
+  it("never lets an insufficient band reach the sentence table", () => {
+    // Belt and braces: `enoughHistory` true with an insufficient band should
+    // not index VERDICT_ACWR and produce "...verdict.undefined.varied".
+    const s = { ...state(), band: "insufficient" as AcwrBand, enoughHistory: true };
+    expect(loadVerdict(s)).toBeNull();
+  });
+});
+
+describe("monotonyBand", () => {
+  it("bands on Foster's edges, and one function does it for both callers", () => {
+    expect(monotonyBand(1.2)).toBe("varied");
+    expect(monotonyBand(1.49)).toBe("varied");
+    expect(monotonyBand(1.5)).toBe("watch");
+    expect(monotonyBand(1.99)).toBe("watch");
+    expect(monotonyBand(2)).toBe("same");
+    expect(monotonyBand(3.4)).toBe("same");
+  });
+
+  it("agrees with the band the explainer lights", () => {
+    const s = state();
+    const lit = loadExplain("monotony", s).bands.find((b) => b.active)!;
+    expect(lit.key).toBe(`w.injury.load.mono.${monotonyBand(s.monotony)}`);
   });
 });

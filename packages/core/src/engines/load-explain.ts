@@ -1,5 +1,5 @@
 import { acwrRole, type SemanticRole } from "../semantic";
-import type { LoadState } from "./load";
+import type { AcwrBand, LoadState } from "./load";
 
 /**
  * WHAT ACWR, S-RPE, MONOTONY AND STRAIN ACTUALLY MEAN.
@@ -39,11 +39,20 @@ export type LoadMetric = "acwr" | "acute" | "monotony" | "strain";
 
 export const LOAD_METRICS: LoadMetric[] = ["acwr", "acute", "monotony", "strain"];
 
-/** The tile's short mono label — the SAME keys the four columns used, so the
- *  vocabulary the athlete already learned survives the redesign. */
+/**
+ * The figure's short mono label.
+ *
+ * Three of the four are the labels the old four-up grid used, because the
+ * vocabulary an athlete has already learned is worth keeping. The fourth is
+ * not: "s-RPE 7d" is an ACRONYM FOR A THING rather than the thing's name, and
+ * on a block whose whole purpose is to stop stating numbers nobody can read it
+ * was the one label that needed no defending. ACWR stays — it IS the metric's
+ * name, the sentence above now carries the meaning, and an athlete who wants to
+ * look it up needs the real term to look up.
+ */
 export const LOAD_METRIC_LABEL_KEY: Record<LoadMetric, string> = {
   acwr: "w.home.cockpit.acwr",
-  acute: "w.home.cockpit.srpe",
+  acute: "w.injury.load.label.acute",
   monotony: "w.home.cockpit.monotony",
   strain: "w.home.cockpit.strain",
 };
@@ -171,11 +180,20 @@ const ACWR_BANDS: { band: string; key: string; range: string }[] = [
  * where the figure sits; if a future engine ever bands monotony, it moves there
  * and this reads it, not the other way round.
  */
-const MONOTONY_BANDS: { key: string; range: string; role: SemanticRole; max: number }[] = [
-  { key: "w.injury.load.mono.varied", range: "< 1.5", role: "go", max: 1.5 },
-  { key: "w.injury.load.mono.watch", range: "1.5–2.0", role: "caution", max: 2 },
-  { key: "w.injury.load.mono.same", range: "> 2.0", role: "danger", max: Infinity },
+export type MonotonyBand = "varied" | "watch" | "same";
+
+const MONOTONY_BANDS: { band: MonotonyBand; key: string; range: string; role: SemanticRole; max: number }[] = [
+  { band: "varied", key: "w.injury.load.mono.varied", range: "< 1.5", role: "go", max: 1.5 },
+  { band: "watch", key: "w.injury.load.mono.watch", range: "1.5–2.0", role: "caution", max: 2 },
+  { band: "same", key: "w.injury.load.mono.same", range: "> 2.0", role: "danger", max: Infinity },
 ];
+
+/** Which monotony rung a figure sits on. Exported because the verdict sentence
+ *  bands on it too, and two callers banding the same number by hand is how the
+ *  edges drift. */
+export function monotonyBand(monotony: number): MonotonyBand {
+  return (MONOTONY_BANDS.find((b) => monotony < b.max) ?? MONOTONY_BANDS[2]!).band;
+}
 
 /** Whole-percent share of the block's largest row, safe when nothing loaded. */
 const shareOfMax = (v: number, max: number) => (max > 0 ? Math.round((v / max) * 100) : 0);
@@ -305,7 +323,8 @@ export function loadExplain(metric: LoadMetric, load: LoadState): LoadExplain {
   }
 
   if (metric === "monotony") {
-    const stop = MONOTONY_BANDS.find((b) => load.monotony < b.max) ?? MONOTONY_BANDS[2]!;
+    const band = monotonyBand(load.monotony);
+    const stop = MONOTONY_BANDS.find((b) => b.band === band)!;
     return {
       ...base,
       value: dp(load.monotony, 2),
@@ -344,3 +363,94 @@ export function loadExplain(metric: LoadMetric, load: LoadState): LoadExplain {
     bands: [],
   };
 }
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * THE VERDICT — the sentence that replaced the four-up readout.
+ *
+ * The block used to be four bare figures, and the fix that first shipped was to
+ * make each figure BIGGER and give each one a door. That treated the symptom.
+ * The grid's real problem was that it was UNACCOMPANIED: four numerals doing
+ * the work of a sentence, with nothing above them saying what they meant
+ * together. Four ⓘ buttons in a row are four admissions of the same thing.
+ *
+ * So the block leads with a sentence now, and the figures go back to being
+ * small — they are no longer the ones explaining, they are the receipts you can
+ * check. This is the grammar the card already speaks: `injuryHeadlineKey` puts
+ * one display-face sentence over the risk axis for exactly the same reason.
+ *
+ * IT IS TWO READINGS, NOT FOUR. The sentence has two clauses because the block
+ * has two independent questions in it:
+ *
+ *   HOW MUCH — ACWR: is this week above or below what you normally do?
+ *   WHAT SHAPE — monotony: did the week have hard days and easy days, or did
+ *                every day look the same?
+ *
+ * The other two figures are not dropped from the sentence out of brevity —
+ * they carry no independent claim. `acute` is one side of the ACWR ratio, and
+ * `strain` is LITERALLY acute × monotony, so a clause about strain would be
+ * the first two clauses said a third time.
+ *
+ * A FULL MATRIX, NOT COMPOSED HALVES. Twelve whole sentences rather than two
+ * fragments joined by a conjunction: Polish and German inflect the second
+ * clause against the first, and a `${a} ${b}` sentence is how an app ends up
+ * speaking English grammar in three languages. The cost is 12 keys × 3
+ * languages, paid once.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+export interface LoadVerdict {
+  /** i18n key for the whole sentence. */
+  key: string;
+  /** The two readings the sentence was composed from, so a surface can point at
+   *  the figure behind each clause without re-banding anything. */
+  acwrBand: AcwrBand;
+  monotonyBand: MonotonyBand;
+  /** The heavier of the two readings — one severity, for anything that needs
+   *  exactly one. The sentence itself is NOT painted from it: the card's own
+   *  headline is chalk, and a coloured paragraph would out-shout it. */
+  role: SemanticRole;
+}
+
+/** The ACWR half of the sentence, as a key fragment. `insufficient` never
+ *  reaches here — `loadVerdict` returns null before it can. */
+const VERDICT_ACWR: Record<Exclude<AcwrBand, "insufficient">, string> = {
+  detraining: "under",
+  "sweet-spot": "usual",
+  caution: "up",
+  danger: "spike",
+};
+
+/** Rank a role so two readings can be compared without a second table. */
+const SEVERITY: Record<SemanticRole, number> = {
+  go: 0, info: 1, premium: 1, neutral: 1, caution: 2, danger: 3,
+};
+
+const MONOTONY_ROLE: Record<MonotonyBand, SemanticRole> = {
+  varied: "go", watch: "caution", same: "danger",
+};
+
+/**
+ * The one-sentence read of the week's whole-body load.
+ *
+ * NULL while the ratio is still building. That is the honest answer, not a
+ * hedge: without ~2 weeks of history there is no "what you normally do" to
+ * compare against, so half the sentence would be invented. The card already
+ * has a state for this — it prints what it is waiting for instead.
+ */
+export function loadVerdict(load: LoadState): LoadVerdict | null {
+  if (!load.enoughHistory || load.band === "insufficient") return null;
+  const mono = monotonyBand(load.monotony);
+  const acwrRoleValue = acwrRole(load.band);
+  const monoRole = MONOTONY_ROLE[mono];
+  return {
+    key: `w.injury.load.verdict.${VERDICT_ACWR[load.band]}.${mono}`,
+    acwrBand: load.band,
+    monotonyBand: mono,
+    role: SEVERITY[monoRole] > SEVERITY[acwrRoleValue] ? monoRole : acwrRoleValue,
+  };
+}
+
+/** Every sentence key the verdict can produce — so a test can prove all twelve
+ *  resolve in every language without constructing twelve logs. */
+export const LOAD_VERDICT_KEYS: string[] = Object.values(VERDICT_ACWR).flatMap((a) =>
+  (["varied", "watch", "same"] as MonotonyBand[]).map((m) => `w.injury.load.verdict.${a}.${m}`),
+);

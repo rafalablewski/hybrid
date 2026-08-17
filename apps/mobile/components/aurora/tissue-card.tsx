@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text } from "react-native";
 import {
   tissueAxis, injuryHeadlineKey, INJURY_AREA_KEY,
   computeInjuryRisk, computeLoad, riskRole, RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
-  loadExplain, LOAD_METRICS, LOAD_METRIC_LABEL_KEY,
-  type LoadExplain, type LoadMetric,
+  loadExplain, loadVerdict, LOAD_METRICS, LOAD_METRIC_LABEL_KEY,
+  type LoadExplain,
   type RiskBand, type RiskDriverKind, type TissueRow,
   type MuscleGroup, type TissueRisk,
 
@@ -12,7 +12,7 @@ import {
 import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import { ACard, CardFoot, ActionPill , RADIUS} from "./kit";
 import LoadSheet from "./load-sheet";
@@ -46,12 +46,6 @@ function protocolDay(p: { injuryDate?: string | null }): number | null {
 type Palette = ReturnType<typeof useTheme>["palette"];
 const riskColor = (b: RiskBand | string, C: Palette) => roleColor(C, riskRole(b));
 
-/** The whole-body rail's tile width, and the snap step that goes with it. A
- *  tile has to hold a label, a 26pt figure and a plain-English read on one
- *  line each — the four-up grid it replaced had ~85dp per figure and shrank
- *  every one of them to fit. */
-const TILE_W = 156;
-const TILE_GAP = 8;
 
 /** Zone tints for the axis, as hex alpha suffixes — low recedes, high reads
  *  as a wall. Mirrors ZONE_ALPHA on web. */
@@ -92,14 +86,16 @@ export default function TissueCard({
   // The area the athlete pointed at on the card's own body, if that is how
   // they got to the sheet — the flag and the protocol are one object.
   const [picking, setPicking] = useState<MuscleGroup | null | false>(false);
-  // Which whole-body figure the athlete asked about. The METRIC is held, not
-  // the explanation: `loadExplain` reads the same `load` prop the tile drew
-  // from, so re-deriving it on render can't drift from what is on screen.
-  const [metric, setMetric] = useState<LoadMetric | null>(null);
+  // ONE door for the whole block, so one boolean. The sheet reads the same
+  // `load` prop the block drew from, so nothing needs holding but "is it open".
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   const refresh = () => { fetchRtpProtocols().then(setProtocols); };
   useEffect(() => { refresh(); }, []);
 
+  // NULL while the ratio is still building — there is no "what you normally
+  // do" to compare against yet, so half the sentence would be invented.
+  const verdict = hasData ? loadVerdict(load) : null;
   const active = protocols.filter((p) => p.status !== "abandoned");
   const alert = hasData && axis.flaggedCount > 0;
   const rowsOpen = rowsOverride ?? alert;
@@ -187,8 +183,8 @@ export default function TissueCard({
         onOpened={refresh}
       />
 
-      {/* THE FOUR FIGURES' OWN DOOR — one sheet, whichever tile opened it. */}
-      <LoadSheet explain={metric ? loadExplain(metric, load) : null} onClose={() => setMetric(null)} />
+      {/* THE BLOCK'S DOOR — one sheet for the sentence and all four figures. */}
+      <LoadSheet load={sheetOpen ? load : null} onClose={() => setSheetOpen(false)} />
 
       {/* THE PANEL — moved wholesale out of the card body and into the foot's
           drawer, so it opens from under the shape that raised the question
@@ -217,35 +213,51 @@ export default function TissueCard({
             {/* WHOLE-BODY — labelled, because the ratio in the rows above is each
                 tissue's own and this is a different measurement.
 
-                A RAIL, NOT A FOUR-UP GRID. Four figures shared one card-width
-                row, which left each about 85dp: enough for the numeral and a
-                truncated mono label, and nothing else. So three of the four
-                shipped as bare numbers — "1.8 MONOTONY", "4554 STRAIN" — under
-                a single footnote that explained only ACWR. A figure an athlete
-                cannot interpret is a figure that teaches them to skip the
-                block, and there was no room in the grid to say more.
+                A SENTENCE, THEN THE RECEIPTS. This shipped twice. It was four
+                bare numerals in a four-up grid under a footnote that explained
+                only the first of them; the first fix made each figure bigger,
+                put it on a scrolling rail and gave each one its own ⓘ. That
+                treated the symptom. Four explainer buttons in a row are four
+                admissions that four figures failed to communicate, and the
+                grid's real problem was never that it was small — it was
+                UNACCOMPANIED. Four numerals were doing the work of a sentence.
 
-                On a rail each tile gets its full width back and can carry the
-                three things a figure needs: its name, its value, and a
-                plain-English read of what that value means. THE FULL-BLEED
-                SLIDER RULE DOES NOT APPLY — this rail sits inside a card,
-                which is the rule's stated exception, so it respects the card's
-                gutter rather than sliding under the screen edge. */}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 16, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
-            {load.enoughHistory ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                decelerationRate="fast"
-                snapToInterval={TILE_W + TILE_GAP}
-                contentContainerStyle={{ gap: TILE_GAP, paddingRight: 4 }}
+                So the block leads with the sentence (`loadVerdict`, two
+                clauses: how much, and what shape), and the figures go back to
+                being small because they are no longer the ones explaining —
+                they are receipts you can check. This is the grammar the card
+                already speaks: `injuryHeadlineKey` puts one display-face
+                sentence over the risk axis for exactly the same reason.
+
+                NO BOXES. The tissue rows above are type on the card; a row of
+                bordered tiles here made one card hold two treatments of the
+                same kind of information. And ONE door, on the block, not four
+                — the sheet is organised around the claim now, not around the
+                implementation. */}
+            {verdict ? (
+              <Pressable
+                onPress={() => setSheetOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel={`${t("w.injury.wholeBody")}. ${t(verdict.key)} ${t("w.injury.load.explainCta")}`}
+                style={{ marginTop: 18 }}
               >
-                {LOAD_METRICS.map((m) => (
-                  <LoadTile key={m} C={C} t={t} explain={loadExplain(m, load)} onOpen={() => setMetric(m)} />
-                ))}
-              </ScrollView>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.injury.wholeBody")}</Text>
+                  {/* ⓘ bare — the glyph is already a ring (house rule). */}
+                  <AuroraIcon name="info" size={15} color={C.ash} />
+                </View>
+                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, lineHeight: leading(16), color: C.chalk }}>
+                  {t(verdict.key)}
+                </Text>
+                <View style={{ flexDirection: "row", marginTop: 18, gap: 6 }}>
+                  {LOAD_METRICS.map((m) => <Receipt key={m} C={C} t={t} explain={loadExplain(m, load)} />)}
+                </View>
+              </Pressable>
             ) : (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
+              <View style={{ marginTop: 18 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
+              </View>
             )}
 
             {/* THE BODY — the same tissues again, anatomically. The mannequin is
@@ -364,41 +376,34 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
 }
 
 /**
- * ONE WHOLE-BODY FIGURE, as a tile on the rail: its name, its value, and what
- * that value means in words — the third line being the one the grid had no
- * room for.
+ * ONE WHOLE-BODY FIGURE, as a receipt under the sentence.
  *
- * THE WHOLE TILE IS THE DOOR, with ⓘ as the visible affordance. A 15dp glyph
- * is a 15dp target, and the thing the athlete is actually pointing at when
- * they want to know what "STRAIN" is, is the word STRAIN. The glyph is drawn
- * BARE: it is already a ring, and per the house rule a ring is never drawn
- * around a glyph that is one.
+ * Chromeless on purpose. It wore a filled, bordered, 12dp-rounded tile in the
+ * previous cut, which put a row of boxes directly under a list of tissue rows
+ * that are bare type on the card — one card, two treatments of the same kind
+ * of information. A figure is not a THING you can open; it is evidence for the
+ * sentence above it, and evidence does not need a container.
+ *
+ * It is also small again, and that is the point rather than a regression: the
+ * numerals stopped being the ones doing the explaining, so they no longer have
+ * to be big enough to carry a meaning they never could.
  */
-function LoadTile({ C, t, explain, onOpen }: {
+function Receipt({ C, t, explain }: {
   C: Palette;
   t: (k: string) => string;
   explain: LoadExplain;
-  onOpen: () => void;
 }) {
-  const label = t(LOAD_METRIC_LABEL_KEY[explain.metric]);
-  // A figure that carries no verdict is drawn in CHALK, not in the neutral
-  // accent: `neutral` resolves to ash, and ash on a 26pt numeral reads as
-  // disabled rather than as unbanded. Only the two banded figures spend a hue.
+  // Same rule the sheet follows: `neutral` resolves to ash, which on a figure
+  // reads as disabled rather than as unbanded. Only the two banded figures
+  // spend a hue — the other two are chalk.
   const paint = explain.role === "neutral" ? C.chalk : txt(C, roleColor(C, explain.role));
   return (
-    <Pressable
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`${label} ${explain.value}. ${t("w.injury.load.explainCta")}`}
-      style={{ width: TILE_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, padding: 12 }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text numberOfLines={1} maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
-        <AuroraIcon name="info" size={15} color={C.ash} />
-      </View>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.display, letterSpacing: trackFigure(fs.display), color: paint, marginTop: 8 }}>{explain.value}</Text>
-      <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 3 }}>{t(explain.readKey)}</Text>
-    </Pressable>
+    <View style={{ flex: 1, minWidth: 0 }}>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: paint }}>{explain.value}</Text>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>
+        {t(LOAD_METRIC_LABEL_KEY[explain.metric])}
+      </Text>
+    </View>
   );
 }
 
