@@ -3,8 +3,9 @@ import { View } from "react-native";
 import { adminGet } from "../../lib/admin-api";
 import { fs, space, Mono, Kicker, LoadSwap } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { Stat, ErrorNote } from "./_kit";
+import { Stat, ErrorNote, Legend } from "./_kit";
 import { ACard, cardStack, AMeter } from "../aurora/kit";
+import TheNumber from "./athlete-weeks";
 
 // Mobile Overview — parity with apps/web/components/admin/overview.tsx, fed by
 // GET /api/admin/stats. Web draws recharts line/bar charts; on mobile we keep the
@@ -48,20 +49,19 @@ export default function AdminOverview() {
 
         return (
           <View>
+            {/* THE NUMBER leads the console. Everything below it is context: the
+                counters used to sit here as seven equal hero tiles, which is how a
+                registration count came to look like the same kind of fact as a week
+                of labeled training. It isn't one, so it no longer reads as one. */}
+            <TheNumber />
+
             <Row2>
-              <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} color={palette.lime} />
-              <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" color={palette.lime} />
-            </Row2>
-            <Row2>
-              <Stat label="Sessions logged" value={s.sessions.toLocaleString()} />
+              <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" />
               <Stat label="Active coaches" value={s.coaches.toLocaleString()} color={palette.violet} />
             </Row2>
             <Row2>
               <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} color={palette.violet} />
-              <Stat label="Avg sessions / user" value={s.totalUsers ? (s.sessions / s.totalUsers).toFixed(1) : "0"} />
-            </Row2>
-            <Row2>
-              <Stat label="30d activation" value={s.totalUsers ? `${Math.round((s.mau / s.totalUsers) * 100)}%` : "0%"} color={palette.lime} />
+              <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} />
             </Row2>
 
             {/* Growth — the web line chart's underlying numbers as paired bar rows. */}
@@ -151,13 +151,4 @@ function Row2({ children }: { children: React.ReactNode }) {
   );
 }
 
-function Legend({ color, label }: { color: string; label: string }) {
-  const { palette } = useTheme();
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-      <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: color }} />
-      <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{label}</Mono>
-    </View>
-  );
-}
 

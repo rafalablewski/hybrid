@@ -219,6 +219,24 @@ export function FilterGroup<T extends string>({
   );
 }
 
+/**
+ * A chart legend swatch + label — for the admin panels that draw their series
+ * as meter rows rather than as a chart (Overview's growth block, the athlete-
+ * weeks ledger). Lives here because it was already drawn twice, and a legend
+ * whose dot size differs between two panels of the same console is exactly the
+ * drift the shared kit exists to stop. The swatch is SEMANTIC (it identifies a
+ * series), which is why the no-decorative-marker rule does not reach it.
+ */
+export function Legend({ color, label }: { color: string; label: string }) {
+  const { palette } = useTheme();
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+      <View style={{ width: 9, height: 9, borderRadius: RADIUS.pill, backgroundColor: color }} />
+      <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{label}</Mono>
+    </View>
+  );
+}
+
 /** A simple key/value row for detail lists. */
 export function KV({ k, v }: { k: string; v: ReactNode }) {
   const { palette } = useTheme();
