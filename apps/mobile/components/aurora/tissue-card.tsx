@@ -1,17 +1,21 @@
 import { useEffect, useState } from "react";
-import { View, Text } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import {
   tissueAxis, injuryHeadlineKey, INJURY_AREA_KEY,
   computeInjuryRisk, computeLoad, riskRole, RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
-  type AcwrBand, type RiskBand, type RiskDriverKind, type TissueRow,
+  loadExplain, LOAD_METRICS, LOAD_METRIC_LABEL_KEY,
+  type LoadExplain, type LoadMetric,
+  type RiskBand, type RiskDriverKind, type TissueRow,
   type MuscleGroup, type TissueRisk,
 
   ALPHA,} from "@hybrid/core";
 import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { AuroraIcon } from "./icons";
 import { ACard, CardFoot, ActionPill , RADIUS} from "./kit";
+import LoadSheet from "./load-sheet";
 import { InjurySheet, RiskBody } from "./protocol";
 import { withAlpha } from "./field";
 
@@ -41,8 +45,13 @@ function protocolDay(p: { injuryDate?: string | null }): number | null {
  */
 type Palette = ReturnType<typeof useTheme>["palette"];
 const riskColor = (b: RiskBand | string, C: Palette) => roleColor(C, riskRole(b));
-const acwrColor = (b: AcwrBand, C: Palette): string =>
-  b === "sweet-spot" ? C.lime : b === "caution" ? C.amber : b === "danger" ? C.red : b === "detraining" ? C.blue : C.ash;
+
+/** The whole-body rail's tile width, and the snap step that goes with it. A
+ *  tile has to hold a label, a 26pt figure and a plain-English read on one
+ *  line each — the four-up grid it replaced had ~85dp per figure and shrank
+ *  every one of them to fit. */
+const TILE_W = 156;
+const TILE_GAP = 8;
 
 /** Zone tints for the axis, as hex alpha suffixes — low recedes, high reads
  *  as a wall. Mirrors ZONE_ALPHA on web. */
@@ -83,6 +92,10 @@ export default function TissueCard({
   // The area the athlete pointed at on the card's own body, if that is how
   // they got to the sheet — the flag and the protocol are one object.
   const [picking, setPicking] = useState<MuscleGroup | null | false>(false);
+  // Which whole-body figure the athlete asked about. The METRIC is held, not
+  // the explanation: `loadExplain` reads the same `load` prop the tile drew
+  // from, so re-deriving it on render can't drift from what is on screen.
+  const [metric, setMetric] = useState<LoadMetric | null>(null);
 
   const refresh = () => { fetchRtpProtocols().then(setProtocols); };
   useEffect(() => { refresh(); }, []);
@@ -174,6 +187,9 @@ export default function TissueCard({
         onOpened={refresh}
       />
 
+      {/* THE FOUR FIGURES' OWN DOOR — one sheet, whichever tile opened it. */}
+      <LoadSheet explain={metric ? loadExplain(metric, load) : null} onClose={() => setMetric(null)} />
+
       {/* THE PANEL — moved wholesale out of the card body and into the foot's
           drawer, so it opens from under the shape that raised the question
           rather than snapping into place. Web parity. */}
@@ -199,18 +215,35 @@ export default function TissueCard({
             )}
 
             {/* WHOLE-BODY — labelled, because the ratio in the rows above is each
-                tissue's own and this is a different measurement. */}
+                tissue's own and this is a different measurement.
+
+                A RAIL, NOT A FOUR-UP GRID. Four figures shared one card-width
+                row, which left each about 85dp: enough for the numeral and a
+                truncated mono label, and nothing else. So three of the four
+                shipped as bare numbers — "1.8 MONOTONY", "4554 STRAIN" — under
+                a single footnote that explained only ACWR. A figure an athlete
+                cannot interpret is a figure that teaches them to skip the
+                block, and there was no room in the grid to say more.
+
+                On a rail each tile gets its full width back and can carry the
+                three things a figure needs: its name, its value, and a
+                plain-English read of what that value means. THE FULL-BLEED
+                SLIDER RULE DOES NOT APPLY — this rail sits inside a card,
+                which is the rule's stated exception, so it respects the card's
+                gutter rather than sliding under the screen edge. */}
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 16, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
             {load.enoughHistory ? (
-              <>
-                <View style={{ flexDirection: "row", gap: 1, backgroundColor: C.line, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, overflow: "hidden" }}>
-                  <Watch C={C} label={t("w.home.cockpit.acwr")} value={load.acwr.toFixed(2)} color={txt(C, acwrColor(load.band, C))} />
-                  <Watch C={C} label={t("w.home.cockpit.srpe")} value={load.acute.toLocaleString()} />
-                  <Watch C={C} label={t("w.home.cockpit.monotony")} value={load.monotony.toFixed(1)} />
-                  <Watch C={C} label={t("w.home.cockpit.strain")} value={load.strain.toLocaleString()} />
-                </View>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: leading(fs.nano), marginTop: 8 }}>{t("w.injury.acwrNote")}</Text>
-              </>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                decelerationRate="fast"
+                snapToInterval={TILE_W + TILE_GAP}
+                contentContainerStyle={{ gap: TILE_GAP, paddingRight: 4 }}
+              >
+                {LOAD_METRICS.map((m) => (
+                  <LoadTile key={m} C={C} t={t} explain={loadExplain(m, load)} onOpen={() => setMetric(m)} />
+                ))}
+              </ScrollView>
             ) : (
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
             )}
@@ -330,12 +363,42 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
   );
 }
 
-function Watch({ C, label, value, color }: { C: Palette; label: string; value: string; color?: string }) {
+/**
+ * ONE WHOLE-BODY FIGURE, as a tile on the rail: its name, its value, and what
+ * that value means in words — the third line being the one the grid had no
+ * room for.
+ *
+ * THE WHOLE TILE IS THE DOOR, with ⓘ as the visible affordance. A 15dp glyph
+ * is a 15dp target, and the thing the athlete is actually pointing at when
+ * they want to know what "STRAIN" is, is the word STRAIN. The glyph is drawn
+ * BARE: it is already a ring, and per the house rule a ring is never drawn
+ * around a glyph that is one.
+ */
+function LoadTile({ C, t, explain, onOpen }: {
+  C: Palette;
+  t: (k: string) => string;
+  explain: LoadExplain;
+  onOpen: () => void;
+}) {
+  const label = t(LOAD_METRIC_LABEL_KEY[explain.metric]);
+  // A figure that carries no verdict is drawn in CHALK, not in the neutral
+  // accent: `neutral` resolves to ash, and ash on a 26pt numeral reads as
+  // disabled rather than as unbanded. Only the two banded figures spend a hue.
+  const paint = explain.role === "neutral" ? C.chalk : txt(C, roleColor(C, explain.role));
   return (
-    <View style={{ flex: 1, backgroundColor: C.ink2, paddingVertical: 10, paddingHorizontal: 8, alignItems: "center" }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: color ?? C.chalk }}>{value}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 2 }}>{label}</Text>
-    </View>
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      accessibilityLabel={`${label} ${explain.value}. ${t("w.injury.load.explainCta")}`}
+      style={{ width: TILE_W, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, padding: 12 }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Text numberOfLines={1} maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
+        <AuroraIcon name="info" size={15} color={C.ash} />
+      </View>
+      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.display, letterSpacing: trackFigure(fs.display), color: paint, marginTop: 8 }}>{explain.value}</Text>
+      <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 3 }}>{t(explain.readKey)}</Text>
+    </Pressable>
   );
 }
 
