@@ -49,6 +49,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export type HealthStep =
   /** requestAuthorization for the workout/daily types — the permission sheet. */
   | "auth"
+  /**
+   * getRequestStatusForAuthorization — the GATE every read is behind.
+   *
+   * It was the one native call in the bridge with no name, and it is the FIRST
+   * one the import tap makes. So the span the athlete's crash happened in could
+   * not be recorded, and the previous build's whole diagnosis — a marker on disk
+   * naming the call — was blind to exactly the call that runs first.
+   */
+  | "auth-status"
   /** queryWorkoutSamples + the per-recording read behind it. */
   | "workouts"
   /** The daily biometrics relay (quantity + category samples). */
