@@ -644,6 +644,11 @@ export function APressCard({
  * fix is not to sweep the call sites onto a primitive that does not fit them;
  * it is to give the primitive the size class it was missing.
  *
+ * Its geometry deliberately MATCHES the button it replaces at the size that
+ * mattered — 8/12 against SButton's `small` 7/12 — because none of this has been
+ * seen on a phone, and a migration that also restyles 23 rows is two changes
+ * arriving as one. The 44dp floor is the only thing that moved.
+ *
  * `compact` is CONTENT-SIZED and quieter — but `minHeight: HIT_TARGET` is
  * declared on the same node as `regular`, so the drawing shrinks and the TARGET
  * does not. That is the whole distinction SButton failed to make: it shrank the
@@ -807,7 +812,7 @@ export function APill({
           // Was absent, because APill was only ever stretched by its parent.
           // Button's inline callers need it, and on a full-width pill it just
           // insets a label that is centred anyway.
-          paddingHorizontal: compact ? space.ms : space.xxl,
+          paddingHorizontal: compact ? space.md : space.xxl,
           alignItems: "center",
           justifyContent: "center",
           minHeight: HIT_TARGET,

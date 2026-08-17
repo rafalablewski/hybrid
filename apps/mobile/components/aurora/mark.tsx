@@ -13,14 +13,18 @@ export function Mark({
   mark,
   size = 22,
   color,
+  label,
   style,
 }: {
   mark: MarkValue;
   size?: number;
   color: ColorValue;
+  /** See `Glyph.label` — an accessible name for a mark that carries meaning on
+   *  its own. Omitted = decorative, hidden from the accessibility tree. */
+  label?: string;
   style?: StyleProp<ViewStyle>;
 }) {
   return mark.kind === "sport"
-    ? <SportMark sport={mark.sport} size={size} color={color} style={style} />
-    : <Glyph name={mark.name} size={size} color={color} style={style} />;
+    ? <SportMark sport={mark.sport} size={size} color={color} label={label} style={style} />
+    : <Glyph name={mark.name} size={size} color={color} label={label} style={style} />;
 }

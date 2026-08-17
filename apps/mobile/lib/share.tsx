@@ -61,7 +61,7 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
           {stats.bests.slice(0, 4).map((b) => (
             <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
-                {b.pr ? <Glyph name="trophy" size={fs.bodyLg} color={C.lime} /> : null}
+                {b.pr ? <Glyph name="trophy" size={fs.bodyLg} color={C.lime} label={t("w.train.logger.newPr")} /> : null}
                 <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{b.name}</Text>
               </View>
               <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.weight, units)}</Text>
@@ -111,7 +111,7 @@ export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: str
             <Kicker>{t("summary.todaysBests")}</Kicker>
             {stats.bests.slice(0, 5).map((b) => (
               <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>{b.pr ? <Glyph name="trophy" size={width * 0.042} color={C.lime} /> : null}<Text style={{ fontFamily: F.semi, fontSize: width * 0.042, color: C.chalk }}>{b.name}</Text></View>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>{b.pr ? <Glyph name="trophy" size={width * 0.042} color={C.lime} label={t("w.train.logger.newPr")} /> : null}<Text style={{ fontFamily: F.semi, fontSize: width * 0.042, color: C.chalk }}>{b.name}</Text></View>
                 <Text style={{ fontFamily: F.bold, fontSize: width * 0.042, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.weight, units)}</Text>
               </View>
             ))}
@@ -290,7 +290,7 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
           <Text style={{ fontFamily: F.black, fontSize: width * 0.07, color: st.barFill, marginBottom: width * 0.05 }}>{slide.headline}</Text>
           {slide.rows.slice(0, 6).map((r, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>{r.hot ? <Glyph name="trophy" size={width * 0.044} color={st.text} /> : null}<Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: st.text }}>{r.left}</Text></View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>{r.hot ? <Glyph name="trophy" size={width * 0.044} color={st.text} label={t("w.train.logger.newPr")} /> : null}<Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: st.text }}>{r.left}</Text></View>
               <Text style={{ fontFamily: F.bold, fontSize: width * 0.044, color: r.hot ? st.barFill : st.text }}>{r.right}</Text>
             </View>
           ))}

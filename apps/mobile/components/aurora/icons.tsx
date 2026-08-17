@@ -78,10 +78,29 @@ export const SOURCES: Partial<Record<AuroraIconName, ReturnType<typeof require>>
  * "#fff" — a colour the palette does not contain — so every call site that
  * forgot to pass one drew pure white on near-black, off-palette, and nothing
  * failed. A required colour is how that stops happening.
+ *
+ * ── `label`, AND WHY A DRAWN MARK NEEDS ONE WHERE AN EMOJI DID NOT ─────────
+ *
+ * This is the cost of the emoji sweep, and it was nearly missed. An emoji is
+ * TEXT: VoiceOver reads 🥇 as "1st place medal" and 🏆 as "trophy" with no
+ * effort from the caller. A stroked <Svg> is silent. So every place a
+ * pictograph was carrying meaning ON ITS OWN — the leaderboard's podium ranks,
+ * the PR marker beside a lift — swapping it for a drawn mark did not just
+ * change the drawing, it deleted the information for anyone not looking at the
+ * screen.
+ *
+ * The contract, matching `AMarkTile`'s: pass `label` when the mark SAYS
+ * something its surroundings do not. With no label the mark is declared
+ * DECORATIVE and hidden from the accessibility tree — silent by default rather
+ * than silent by accident, so a screen reader never announces "image" at a
+ * shape that means nothing.
  */
-function Stroked({ paths, size, color, style }: { paths: string[]; size: number; color: ColorValue; style?: StyleProp<ViewStyle> }) {
+function Stroked({ paths, size, color, label, style }: { paths: string[]; size: number; color: ColorValue; label?: string; style?: StyleProp<ViewStyle> }) {
+  const a11y = label
+    ? { accessible: true, accessibilityRole: "image" as const, accessibilityLabel: label }
+    : { accessibilityElementsHidden: true, importantForAccessibility: "no" as const };
   return (
-    <Svg width={size} height={size} viewBox="0 0 72 72" fill="none" style={style}>
+    <Svg width={size} height={size} viewBox="0 0 72 72" fill="none" style={style} {...a11y}>
       {paths.map((d, i) => (
         <Path
           key={i}
@@ -100,14 +119,18 @@ export function Glyph({
   name,
   size = 22,
   color,
+  label,
   style,
 }: {
   name: GlyphName;
   size?: number;
   color: ColorValue;
+  /** An accessible name — give one only where the mark says something its
+   *  surroundings do not. Omitted = decorative, and hidden from VoiceOver. */
+  label?: string;
   style?: StyleProp<ViewStyle>;
 }) {
-  return <Stroked paths={glyphPaths(name)} size={size} color={color} style={style} />;
+  return <Stroked paths={glyphPaths(name)} size={size} color={color} label={label} style={style} />;
 }
 
 /**
@@ -125,16 +148,20 @@ export function SportMark({
   size = 22,
   color,
   fallback = "target",
+  label,
   style,
 }: {
   sport: string;
   size?: number;
   color: ColorValue;
   fallback?: GlyphName;
+  /** See `Glyph.label`. A sport row usually names the sport in text beside the
+   *  mark, so this is normally left off. */
+  label?: string;
   style?: StyleProp<ViewStyle>;
 }) {
   const paths = sportMarkPaths(sport);
-  return <Stroked paths={paths.length ? paths : glyphPaths(fallback)} size={size} color={color} style={style} />;
+  return <Stroked paths={paths.length ? paths : glyphPaths(fallback)} size={size} color={color} label={label} style={style} />;
 }
 
 export function AuroraIcon({

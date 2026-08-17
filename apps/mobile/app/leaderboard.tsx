@@ -32,7 +32,7 @@ export default function LeaderboardScreen() {
     <Pressable onPress={() => { if (!r.isMe && r.handle) { armPerson(r.handle); seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
       <View style={{ width: 28, alignItems: "center", justifyContent: "center" }}>
         {r.rank <= 3
-          ? <Glyph name="medal" size={22} color={MEDAL_INK[r.rank - 1]!} />
+          ? <Glyph name="medal" size={22} color={MEDAL_INK[r.rank - 1]!} label={`#${r.rank}`} />
           : <Text style={{ fontFamily: F.bold, color: C.ash, fontSize: 14 }}>{r.rank}</Text>}
       </View>
       <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
