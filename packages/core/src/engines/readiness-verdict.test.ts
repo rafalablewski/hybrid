@@ -186,6 +186,45 @@ describe("readinessVerdict — one line, and what the door may promise", () => {
     expect(v.deficit).toBe(100 - Number(readinessWhy(LOADED, TIRED_BIO)[0]!.match(/(\d+)\/100/)![1]));
     expect(v.deficit).toBeGreaterThanOrEqual(0);
   });
+
+  it("reads the SAME day the ring does — the heat prior reaches the door too", () => {
+    // THE DEFECT THIS PINS. `readinessDeficit` has always taken the heat
+    // credit; `readinessVerdict` did not, so it computed a second split from a
+    // different reading of one day. The door's label comes off the verdict and
+    // the ledger behind it comes off the deficit, so on any day with a logged
+    // sauna the door promised "Where the 33 went" and opened onto rows summing
+    // to 28 — with "Spent 28" printed on the bar between them.
+    //
+    // A credit big enough to move the score, chosen so the assertion is about
+    // agreement rather than about a rounding tie.
+    const heat = 3;
+    const withHeat = readinessVerdict(LOADED, undefined, heat);
+    const ring = readinessDeficit(LOADED, undefined, heat);
+    expect(withHeat.deficit).toBe(ring.deficit);
+    expect(withHeat.reasons).toBe(ring.costs.length);
+    // And the credit is genuinely doing something here, so the equality above
+    // is not two identical calls agreeing by accident.
+    expect(withHeat.deficit).toBeLessThan(readinessVerdict(LOADED).deficit);
+  });
+
+  it("agrees with the ring for every heat credit the engine can hand it", () => {
+    // The whole 0..HEAT_CREDIT_MAX range, on a log with a real deficit and with
+    // and without a wearable — the door's promise must equal the ledger's sum
+    // and its count must equal the number of rows, always.
+    for (const heat of [0, 1, 2, 3]) {
+      for (const bio of [undefined, TIRED_BIO]) {
+        const v = readinessVerdict(LOADED, bio, heat);
+        const d = readinessDeficit(LOADED, bio, heat);
+        expect(v.deficit, `heat ${heat}`).toBe(d.deficit);
+        expect(v.reasons, `heat ${heat}`).toBe(d.costs.length);
+        expect(v.doorKey).toBe(v.deficit > 0 ? "w.home.readiness.door" : "w.home.readiness.doorClear");
+      }
+    }
+  });
+
+  it("defaults the credit to nothing, so an unwired caller reads exactly as before", () => {
+    expect(readinessVerdict(LOADED, TIRED_BIO)).toEqual(readinessVerdict(LOADED, TIRED_BIO, 0));
+  });
 });
 
 describe("readinessReasonsKey — plural forms the engine owns, not the clients", () => {

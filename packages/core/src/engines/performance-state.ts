@@ -320,10 +320,25 @@ export const READINESS_VERDICT_KEY: Record<ReadinessVerdictKind, string> = {
  * Agreement with the derivation is structural, not editorial: the limiter
  * threshold is the same constant, and the reason count is the length of the
  * very array the door opens onto.
+ *
+ * THE HEAT PRIOR HAS TO COME IN HERE TOO, and its absence was a live defect.
+ * `readinessDeficit` takes the heat credit; this did not, so it computed a
+ * SECOND split from a different reading of the same day. On any day with a
+ * logged sauna the two disagreed by exactly the credit — the door said "Where
+ * the 33 went" off this function while the ledger it opened summed to 28 off
+ * the ring's, and the bar beside it printed "Spent 28". A door that promises a
+ * figure the thing behind it does not add up to is the precise failure the sum
+ * law exists to make impossible, reintroduced one layer up by passing one term
+ * to one caller.
+ *
+ * It is OPTIONAL and defaults to 0, so every caller that has no heat signal to
+ * pass resolves exactly as before; the two surfaces that draw the ring pass the
+ * same `heatAdj` they hand `readinessDeficit`, from the one reading of the day
+ * their block computes. Pinned by readiness-verdict.test.ts.
  */
-export function readinessVerdict(log: TrainingLog, bio?: Biometrics): ReadinessVerdict {
+export function readinessVerdict(log: TrainingLog, bio?: Biometrics, heatAdj = 0): ReadinessVerdict {
   const fatigue = computeFatigue(log);
-  const split = readinessDeficit(log, bio);
+  const split = readinessDeficit(log, bio, heatAdj);
   const deficit = split.deficit;
   // The count is the number of LEDGER ROWS behind the door, not the number of
   // English sentences: the door opens onto the split now, and the prose it used
