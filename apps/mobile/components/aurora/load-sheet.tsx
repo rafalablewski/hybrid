@@ -156,7 +156,11 @@ function Only({ C, t, explain }: { C: Palette; t: T; explain: LoadExplain }) {
       {/* THE FIGURE, with the unit said out loud — "4 554" alone invites a
           comparison with somebody else's 4 554, and there is none to make. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: trackFigure(44), color: paintOf(C, explain) }}>{explain.value}</Text>
+        {/* `fs.stat`, not a raw 44 — the rung exists for exactly this, the one
+            big figure at the head of an explainer sheet. freshness-sheet's
+            twin still carries a grandfathered 44 and is 2dp shy; aligning it
+            is its own change, not this one's to make. */}
+        <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: paintOf(C, explain) }}>{explain.value}</Text>
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(explain.unitKey)}</Text>
       </View>
 
