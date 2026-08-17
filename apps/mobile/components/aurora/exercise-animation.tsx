@@ -6,7 +6,6 @@ import { useTheme, type Palette } from "../../lib/theme";
 
 /**
  * The PROCEDURAL movement demo (mobile) — the stick figure, and only that.
- * Parity: apps/web/components/aurora/exercise-animation.tsx.
  *
  * Callers wanting "whatever we show for this lift" should use exercise-media.tsx
  * instead: it renders the hand-drawn art once a lift is drawn and falls back to

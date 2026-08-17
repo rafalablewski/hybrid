@@ -9,8 +9,7 @@ import { F, fs, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../.
 import { RADIUS } from "./kit";
 
 /**
- * ASATELLITE — the ONE neutral glass button, and the TWIN of
- * apps/web/components/aurora/satellite.tsx.
+ * ASATELLITE — the ONE neutral glass button.
  *
  * A satellite orbits a filled primary: Pause and Finish beside Log set, the
  * ✕ / ★ / → around Share on the finish summary. The geometry and the floor's

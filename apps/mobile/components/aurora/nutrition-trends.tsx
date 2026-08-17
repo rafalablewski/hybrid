@@ -17,8 +17,7 @@ import { ACard, ASegment, RADIUS } from "./kit";
 import GroupMark from "./group-mark";
 
 /**
- * NUTRITION TRENDS (mobile) — the twin of
- * apps/web/components/aurora/nutrition-trends.tsx.
+ * NUTRITION TRENDS (mobile).
  *
  * See that file's note. In short: every figure comes from @hybrid/core's
  * nutritionAnalytics and none is computed here; findings lead and the

@@ -17,10 +17,11 @@
 // The title already says which sport it is; the art says what kind of thing it
 // is, at 9% opacity, behind it.
 //
-// Shape data only — no React, no platform APIs. The renderers are
-// apps/web/components/aurora/sport-mark.tsx and
-// apps/mobile/components/aurora/sport-mark.tsx, exactly as device-marks.ts is
-// drawn by the two device-mark renderers.
+// Shape data only — no React, no platform APIs. There is no dedicated
+// sport-mark component: `sportMarkPaths()` is stroked straight into the hero's
+// `artPaths` slot (apps/mobile/components/aurora/sport-page.tsx), because a
+// sport mark is only ever cover art and a component whose one job is to be
+// passed to one prop is a layer, not an abstraction.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { OLYMPIC_SPORTS, type SportCategory } from "../olympic-sports";

@@ -6,14 +6,12 @@
 // very top of a TAB ROOT and nowhere else — a pushed screen has a hero rail
 // instead, and a sub-view inside a tab has its own back-header.
 //
-// It shipped as forty lines of JSX typed twice — once inside
-// apps/mobile/components/aurora/home.tsx and once inside
-// apps/web/components/aurora/today.tsx — under a comment on each side saying
-// "mirrors the other". They had already drifted where it counts: the flanking
-// tiles were 42 on the phone against 44 in the browser (and 42 is under the
-// 44 pt minimum tap target), and an athlete with no name got "·" on one client
-// and "A" on the other. Both are now stated once, here, and rendered by twin
-// components (apps/{web,mobile}/components/aurora/app-header.tsx) that no
+// It shipped as forty lines of JSX typed twice — once inside each client's
+// home screen — under a comment on each side saying "mirrors the other". They
+// had already drifted where it counts: the flanking tiles were 42 on the phone
+// against 44 in the browser (and 42 is under the 44 pt minimum tap target), and
+// an athlete with no name got "·" on one client and "A" on the other. The
+// numbers are stated once, here, and rendered by a component that no
 // screen may pass a style to.
 //
 // THE THREE-COLUMN RULE is the reason the numbers matter. The row is a fixed

@@ -14,7 +14,6 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 
 /**
  * THE READINESS EXPLAINER (mobile) — the door under the reading in Recover.
- * Mirrors apps/web/components/aurora/readiness-sheet.tsx block for block.
  *
  * The Recover cluster's card leads with one word at display weight, and that
  * word governs the day: it scales the load on the next session, it decides

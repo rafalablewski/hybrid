@@ -25,7 +25,7 @@ import { FeedMenuTrigger } from "../components/feed-menu";
 import { usePersonSource } from "../lib/shared-element";
 
 /**
- * THE POST (mobile) — twin of apps/web/components/feed-post.tsx.
+ * THE POST (mobile).
  *
  * A workout is ONE post, and this is the post: who trained, the whole workout
  * (every figure, every record it set, every exercise and every set), the same

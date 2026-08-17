@@ -5,7 +5,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
-/* HYBRID design tokens — mirror packages/core/src/brand.ts.
+/* HYBRID design tokens — mirror packages/core/src/theme/tokens.ts.
    Exposed to Tailwind v4 via @theme so utilities like bg-ink / text-lime work. */
 @theme {
   --color-ink: #0c0d0c;
@@ -221,17 +221,26 @@ html {
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   AURORA TEMPLATE — global softening. When [data-template="aurora"] is set
-   on <html> (mirrored from the per-device template pref by TemplateSync),
-   every app-shell screen picks up the rounded Aurora feel without touching
-   each component. Dedicated Aurora screens (login, landing) carry the full
-   layout; this just rounds the shared surfaces. Brand tokens/fonts unchanged.
+   AURORA — global softening. Every app-shell screen picks up the rounded
+   Aurora feel without touching each component. Dedicated Aurora screens
+   (login, landing) carry the full layout; this just rounds the shared
+   surfaces. Brand tokens/fonts unchanged.
+
+   THESE RULES USED TO BE GATED on [data-template="aurora"], an attribute a
+   client component (TemplateSync) mirrored onto <html> from a per-device
+   preference — a preference that could only ever hold one value, since
+   `TemplateName` was a union of one and `resolveTemplate()` returned "aurora"
+   for any input. So the gate was a dead branch with a React component, a hook,
+   a localStorage key and a set of never-served fallback values attached to it,
+   all to answer a question with one answer. The gate is gone and the rules
+   apply directly. `:root` is kept as the qualifier on the class overrides
+   below so their specificity is unchanged — dropping it entirely would drop
+   them to a tie with the Tailwind utilities they exist to beat.
    ════════════════════════════════════════════════════════════════════ */
 /* Radius tokens — the shared lib/ui primitives read these (inline styles can't
-   be reached by a class selector), so swapping them here re-rounds every Card,
-   Chip, Select, input and tooltip across the whole app at once. */
-:root { --r-card: 16px; --r-chip: 5px; --r-field: 9px; --r-tip: 8px; }
-[data-template="aurora"] { --r-card: 28px; --r-chip: 999px; --r-field: 16px; --r-tip: 14px; }
+   be reached by a class selector), so these re-round every Card, Chip, Select,
+   input and tooltip across the whole app at once. */
+:root { --r-card: 28px; --r-chip: 999px; --r-field: 16px; --r-tip: 14px; }
 
 /* AURORA cards drop the frosted Liquid-Glass material for the SOLID ink2 surface
    used by the bespoke Aurora screens (cockpit/profile/today): solid background,
@@ -239,7 +248,7 @@ html {
    shared Card/Stat/ChartFrame (settings, admin, analytics) reads as Aurora, not
    the old translucent "liquid glass" look. The decorative glass layers (grain,
    conic rim, moving sheen) are switched off below. */
-[data-template="aurora"] .liquid-glass {
+:root .liquid-glass {
   border-radius: var(--r-card);
   border: 1px solid var(--color-line);
   background: var(--color-ink2);
@@ -247,23 +256,23 @@ html {
   backdrop-filter: none;
   box-shadow: var(--shadow-card);
 }
-[data-template="aurora"] .liquid-glass::before,
-[data-template="aurora"] .liquid-glass::after,
-[data-template="aurora"] .liquid-glass > .lg-sheen { display: none; }
+:root .liquid-glass::before,
+:root .liquid-glass::after,
+:root .liquid-glass > .lg-sheen { display: none; }
 /* No hover lift on the solid Aurora cards — these are content surfaces, not
    interactive glass tiles. */
-[data-template="aurora"] .liquid-glass.lg-hover:hover { transform: none; }
-[data-template="aurora"] input,
-[data-template="aurora"] select,
-[data-template="aurora"] textarea { border-radius: var(--r-field); }
-[data-template="aurora"] .rounded-md { border-radius: 14px; }
-[data-template="aurora"] .rounded-lg { border-radius: 18px; }
-[data-template="aurora"] .rounded-xl { border-radius: 22px; }
-[data-template="aurora"] .rounded-2xl { border-radius: 28px; }
+:root .liquid-glass.lg-hover:hover { transform: none; }
+:root input,
+:root select,
+:root textarea { border-radius: var(--r-field); }
+:root .rounded-md { border-radius: 14px; }
+:root .rounded-lg { border-radius: 18px; }
+:root .rounded-xl { border-radius: 22px; }
+:root .rounded-2xl { border-radius: 28px; }
 /* the frosted sidebar + command hub soften too — and the admin sidebar drops
    the classic frosted glass for a solid Aurora surface (matching .liquid-glass
    above), so the operator console reads as Aurora rather than the old theme. */
-[data-template="aurora"] .lg-sidebar {
+:root .lg-sidebar {
   border-radius: 0 28px 28px 0;
   background: var(--color-ink2);
   -webkit-backdrop-filter: none;
@@ -523,9 +532,9 @@ html {
 /* ════════════════════════════════════════════════════════════════════
    SCREEN TRANSITIONS — the paired, directional system.
 
-   Curves and durations are GENERATED from packages/core/src/motion.ts and
-   pasted here; apps/web/lib/motion-tokens.test.ts regenerates them and fails
-   if this block drifts from core, so the two clients can't fall out of step.
+   Curves and durations are GENERATED from packages/core/src/motion.ts by
+   apps/web/scripts/gen-motion-css.mjs and pasted here, so this block cannot
+   drift from the springs the app actually runs.
 
    Each spring is declared TWICE: a bezier approximation first, then the exact
    spring as a linear() easing. An engine without linear() keeps the first

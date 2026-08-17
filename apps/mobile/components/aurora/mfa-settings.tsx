@@ -13,11 +13,11 @@ type Enroll = { factorId: string; secret: string; uri: string };
 
 /**
  * Two-factor (TOTP) enrolment + management — the MOBILE twin of web's
- * <MfaSettings/> (apps/web/components/account/mfa.tsx). Uses Supabase Auth's MFA
- * API directly (enroll → challenge → verify → unenroll / listFactors) and the
- * shared core helper `isValidTotpCode`. Adding a verified factor makes the next
- * sign-in require a one-time code (the login step-up, handled separately);
- * removing the last factor drops the account back to single-factor.
+ * <MfaSettings/>. Uses Supabase Auth's MFA API directly (enroll → challenge →
+ * verify → unenroll / listFactors) and the shared core helper
+ * `isValidTotpCode`. Adding a verified factor makes the next sign-in require a
+ * one-time code (the login step-up, handled separately); removing the last
+ * factor drops the account back to single-factor.
  *
  * The QR is the hand-rolled `QrMatrix` reused from coach-invite (renders the
  * `otpauth://` URI Supabase returns) — no QR/svg dependency, so the iOS export

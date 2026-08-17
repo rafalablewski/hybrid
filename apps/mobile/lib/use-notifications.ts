@@ -7,7 +7,7 @@ import { qk, useSessionsQuery, useCheckinsQuery } from "./queries";
 import { useNotifRead } from "./notif-read";
 
 /**
- * The notification feed, live. Mirrors apps/web/lib/use-notifications.ts.
+ * The notification feed, live.
  *
  * ONE hook so the Home bell badge and the notifications screen are literally
  * the same number — they used to be two computations over two sources (the

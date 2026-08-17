@@ -1,11 +1,11 @@
 // Settings information architecture — the SINGLE SOURCE OF TRUTH for how the
 // account/settings area is categorised and ordered on BOTH clients. The web
-// (apps/web/components/account-settings.tsx) and mobile
-// (apps/mobile/components/aurora/settings.tsx) render the SAME groups, in the
-// same order, with the same titles/subtitles/icons — an Instagram-style
-// grouped hub (group label → list of categories → each category expands to its
-// controls). The actual control widgets stay per-client (React DOM vs React
-// Native), but the hierarchy can't drift because it lives here.
+// and mobile (apps/mobile/components/aurora/settings.tsx) render the SAME
+// groups, in the same order, with the same titles/subtitles/icons — an
+// Instagram-style grouped hub (group label → list of categories → each
+// category expands to its controls). The actual control widgets stay per-
+// client (React DOM vs React Native), but the hierarchy can't drift because it
+// lives here.
 
 import type { AuroraIconName } from "./theme/icons";
 

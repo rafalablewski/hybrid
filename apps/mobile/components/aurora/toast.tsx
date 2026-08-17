@@ -14,7 +14,7 @@ import { RADIUS } from "./kit";
 
 /**
  * THE TOAST — one small glass chip for a one-line outcome ("Following",
- * "Reported"), TWIN of apps/web/components/aurora/toast.tsx.
+ * "Reported").
  *
  * It exists because the native overflow menu DISMISSES on select: the RN menu
  * card used to hold its row open and tag it with the result in place, and a

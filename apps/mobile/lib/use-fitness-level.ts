@@ -25,8 +25,6 @@ export interface FitnessLevelRead {
  * the Profile badge, and the working on the Volume screen — and they must never
  * be able to disagree. They cannot, because they all read this: one estimate
  * per screen load, from one set of inputs.
- *
- * Mirrors apps/web/lib/use-fitness-level.ts.
  */
 export function useFitnessLevel(sessions: LoggedSession[]): FitnessLevelRead {
   const prefs = useLoggerPrefs();

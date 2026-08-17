@@ -7,8 +7,7 @@ import { leading, tracking, fs, space, F, PressScale as Pressable, FIXED_FONT_SC
 import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
- *  (apps/web/components/aurora/team-compare.tsx), so a coach reads the same
- *  columns on either client. */
+ * , so a coach reads the same columns on either client. */
 const METRICS = [
   { key: "e1rm", label: "w.teams.compare.metricE1rm", unit: "kg", color: "lime" },
   { key: "estVel1rm", label: "w.teams.compare.metricVel1rm", unit: "kg", color: "violet" },

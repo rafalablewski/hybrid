@@ -1,8 +1,7 @@
 /**
- * Provider-agnostic analytics shim (mobile). Mirror of apps/web/lib/track.ts so
- * both clients instrument the same funnel through the same call shape. No
- * provider is wired yet (see the `funnel-analytics` capability — BLOCKED on a
- * provider + key); safe no-op until then, dev-logging for local inspection.
+ * Provider-agnostic analytics shim (mobile). No provider is wired yet (see the
+ * `funnel-analytics` capability — BLOCKED on a provider + key); safe no-op
+ * until then, dev-logging for local inspection.
  */
 type Props = Record<string, string | number | boolean | undefined>;
 

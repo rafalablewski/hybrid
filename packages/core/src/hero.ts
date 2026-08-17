@@ -31,9 +31,15 @@
 // magic numbers in two trees (`delta * 0.62`, `delta * 0.45`, …) are computed
 // here, once, and unit-tested.
 //
-// Clients:  apps/mobile/components/aurora/hero.tsx
-//           apps/web/components/aurora/hero.tsx
+// Client:   apps/mobile/components/aurora/hero.tsx
 // Spec:     reference/hero-system.md (incl. the SwiftUI-native architecture)
+//
+// ONE CLIENT, and the paragraph above is now history rather than instruction:
+// the web hero was deleted with the web client in Aug 2026, so "both clients
+// import it" describes why these numbers are here, not a second renderer to
+// keep in step. The contract still belongs in core — the engines and the admin
+// panel read this module too, and a spatial system that lives in a component
+// is a system that gets re-derived the next time someone writes a screen.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import { fs } from "./scale";
@@ -162,15 +168,21 @@ export const HERO = {
   /** Fraction of the track over which full-colour art must fully retire. */
   colourArtOut: 0.77,
 
-  /** Motion. One family, one curve — the standard iOS interactive spring.
-   *  Collapse itself is NOT animated: it tracks the finger 1:1. These govern
-   *  the discrete moves (dock arrival, snap settle, cross-fades). */
+  /** Motion. Collapse itself is NOT animated — it tracks the finger 1:1 — so
+   *  the only thing left to state here is the dock's arrival offset.
+   *
+   *  THERE WAS A SEVENTH SPRING HERE, and its problem was where it lived, not
+   *  what it was: `spring: { response: .42, damping: .86 }`, plus a `duration`
+   *  and a `snapDuration` beside it. motion.ts says every spring in the system
+   *  is a token in `springs`, and motion.test.ts holds all of those to the 450ms
+   *  ceiling — "a spring that isn't here is a spring nothing is checking". This
+   *  one wasn't there. It also spelled its second parameter `damping` where a
+   *  `Spring` says `dampingFraction`, so it would not even have type-checked as
+   *  one, and nothing read any of the three: `rise` was the only field with a
+   *  caller. An unchecked spring nobody used is how the selection lens ended up
+   *  40% over the same ceiling — so it is deleted rather than moved. Hero motion
+   *  that needs a spring takes a token from `springs`, under the guard. */
   motion: {
-    /** iOS `.smooth`-equivalent — the app's one transition curve. */
-    duration: 0.32,
-    /** The snap settle after a release mid-track. */
-    snapDuration: 0.26,
-    spring: { response: 0.42, damping: 0.86 },
     /** How far a docked element rises as it arrives. */
     rise: 10,
   },

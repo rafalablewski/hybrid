@@ -17,11 +17,11 @@ import { sapi } from "./social-api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
- * SAVED POSTS + SHARING (mobile). Twin of apps/web/lib/feed-actions.ts — the
- * state shape, the storage key, the SYNC POLICY and the share payload all come
- * from @hybrid/core (feed-actions.ts), so the two clients cannot drift on what
- * a "saved post" is, on what a shared link says, or on what happens when two
- * devices disagree.
+ * SAVED POSTS + SHARING (mobile). The state shape, the storage key, the SYNC
+ * POLICY and the share payload all come from @hybrid/core (feed-actions.ts), so
+ * what a "saved post" IS, what a shared link says, and what happens when two
+ * devices disagree are answered there — not re-decided here, and not re-decided
+ * by the server either.
  *
  * THE DEVICE COPY IS NOT A CACHE. AsyncStorage is what the UI reads, which is
  * why a bookmark fills on the press frame and why the shelf still opens with no

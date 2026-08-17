@@ -20,7 +20,7 @@ import { useLang } from "../lib/i18n";
 import { WatchGlyph } from "./feed-card";
 
 /**
- * THE WORKOUT, IN FULL (mobile) — twin of apps/web/components/feed-workout.tsx.
+ * THE WORKOUT, IN FULL (mobile).
  *
  * A feed row shows two or three top sets on purpose; the stream is a stream.
  * The POST (app/post.tsx) shows THIS: every figure the session can honestly

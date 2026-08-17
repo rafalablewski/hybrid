@@ -49,8 +49,7 @@
 // Adding a manufacturer means measuring it the same way, not eyeballing a
 // scale — and the suite holds the line on both constants.
 //
-// Shape data only: no React, no platform APIs. The renderers are
-// apps/web/components/aurora/device-mark.tsx and
+// Shape data only: no React, no platform APIs. The renderer is
 // apps/mobile/components/aurora/device-mark.tsx.
 
 import { colors } from "./theme/tokens";

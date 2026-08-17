@@ -22,9 +22,9 @@ import { sportMarkPaths } from "./theme/sport-marks";
 // for no gain. Two lifts on the same gear SHOULD look the same: that's a fact
 // about the pair, not a collision like CC/CC was.
 //
-// Shape data only — no React, no platform APIs. Stroke paths in the same 72-unit
-// box as theme/icons.ts, so one renderer shape serves both clients:
-// apps/web/components/aurora/exercise-mark.tsx and
+// Shape data only — no React, no platform APIs. Stroke paths in the same
+// 72-unit box as theme/icons.ts, so a mark sits at the icon set's own optical
+// weight wherever it is drawn. Renderer:
 // apps/mobile/components/aurora/exercise-mark.tsx.
 //
 // NOTE on arcs: every closed circle here is drawn as TWO half-arcs. A single arc

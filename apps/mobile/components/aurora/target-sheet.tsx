@@ -15,7 +15,7 @@ import { APill, RADIUS } from "./kit";
 import Sheet from "./sheet";
 
 /**
- * MANUAL TARGETS (mobile) — the twin of apps/web/components/aurora/target-sheet.tsx.
+ * MANUAL TARGETS (mobile).
  *
  * FOUR BOXES, AND AN EMPTY ONE MEANS SOMETHING: blank is not zero and not
  * unset — it means that figure keeps adapting, and the placeholder shows what

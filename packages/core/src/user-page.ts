@@ -21,11 +21,9 @@
 //
 // This module is the pure, client-agnostic half of that page: the response
 // shape, which tabs exist for a given payload, which actions the viewer may
-// take, and the ONE address the page answers to on each client. Both clients
-// import it, so the two can't drift the way the two drawers did.
+// take, and the ONE address the page answers to.
 //
-// Clients:  apps/web/components/user-page.tsx   (?s=user&u=<handle>)
-//           apps/mobile/app/u/[handle].tsx      (/u/<handle>)
+// Client:   apps/mobile/app/u/[handle].tsx            (/u/<handle>)
 // Server:   apps/web/app/api/social/user/[handle]/route.ts
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -278,8 +276,10 @@ export function userPagePath(handle: string): string {
   return `/u/${encodeURIComponent(handle.toLowerCase())}`;
 }
 
-/** The page's address in the WEB shell, whose screens live in the query string
- *  (apps/web/lib/deep-link.ts): `u` names which person is open. */
+/** The page's address in the WEB shell, whose screens lived in the query
+ *  string: `u` named which person was open. The shell is retired; this is kept
+ *  because old links and shares are still out there carrying that address, and
+ *  the deep-link reader needs to know what it is looking at. */
 export function userPageHref(handle: string): string {
   return `/app?s=user&u=${encodeURIComponent(handle.toLowerCase())}`;
 }

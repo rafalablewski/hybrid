@@ -5,7 +5,7 @@ import { durations, springs, springToRN } from "@hybrid/core";
 
 /**
  * LIST MOTION (mobile) — insertions, deletions, sorts and reorders that MOVE
- * instead of teleporting. The twin of apps/web/lib/list-motion.ts.
+ * instead of teleporting.
  *
  * The audit found zero LayoutAnimation calls in the app: deleting a set removed
  * the row and every row below jumped up by its height, inserting one popped it

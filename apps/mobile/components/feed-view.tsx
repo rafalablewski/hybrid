@@ -24,11 +24,11 @@ import { useConfirm } from "./aurora/confirm";
 import { usePersonSource } from "../lib/shared-element";
 
 /**
- * CONNECT — the feed (mobile). Twin of apps/web/components/social-feed.tsx.
- * Both screens render the shared card model from core (feed-card.ts), and the
- * order is the spec's (reference/feed-spec.html, D2): co-sign inbox → feed
- * tabs → the always-open composer → the stream → the caught-up marker, which
- * hands the athlete back to the bar rather than to more scrolling.
+ * CONNECT — the feed (mobile). It renders the shared card model from core
+ * (feed-card.ts) rather than a shape of its own, and the order is the spec's
+ * (reference/feed-spec.html, D2): co-sign inbox → feed tabs → the always-open
+ * composer → the stream → the caught-up marker, which hands the athlete back
+ * to the bar rather than to more scrolling.
  */
 type FeedTab = "forYou" | "following";
 
@@ -195,8 +195,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
           box is always one tap from typing, and its toolbar arrives with the
           intent to post rather than sitting dimmed through every read. It bleeds under the screen gutter exactly
           like the timeline rows below it, so its hairline and the stream's run
-          the same edge-to-edge width. Twin of web's Composer
-          (apps/web/components/social-feed.tsx). */}
+          the same edge-to-edge width. */}
       <View style={{ marginHorizontal: -GUTTER, paddingHorizontal: GUTTER, paddingTop: 10, paddingBottom: 8, borderTopWidth: 1, borderTopColor: C.line }}>
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
           <Avatar url={me?.avatarUrl} name={me?.displayName} handle={me?.handle} size={40} />
