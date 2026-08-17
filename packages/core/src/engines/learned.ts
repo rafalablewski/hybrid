@@ -133,6 +133,11 @@ export const LEARNED_CAUSE_KEY: Record<ReadinessCostKind, string> = {
   tissue: "w.learned.causeTissue",
   conditioning: "w.learned.causeConditioning",
   wearable: "w.learned.causeWearable",
+  // The readiness engine learned a fifth cause (the nutrition → training join)
+  // while this screen was being built, and it is a good one for a MONTH: eating
+  // under is a habit rather than an incident, so a month is the window in which
+  // it stops being one bad day and starts being the reason.
+  fuel: "w.learned.causeFuel",
   ceiling: "w.learned.causeCeiling",
 };
 

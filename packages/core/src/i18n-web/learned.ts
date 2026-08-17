@@ -69,6 +69,7 @@ export const web_learned = {
     "w.learned.causeTissue": "tissue load",
     "w.learned.causeConditioning": "conditioning",
     "w.learned.causeWearable": "wearable",
+    "w.learned.causeFuel": "under-fuelling",
     "w.learned.causeCeiling": "the scale’s ceiling",
 
     // Intervals
@@ -132,6 +133,7 @@ export const web_learned = {
     "w.learned.causeTissue": "obciążenie tkanek",
     "w.learned.causeConditioning": "kondycja",
     "w.learned.causeWearable": "wearable",
+    "w.learned.causeFuel": "niedobór energii",
     "w.learned.causeCeiling": "sufit skali",
 
     "w.learned.intervalBelief": "prawdopodobnie między",
@@ -193,6 +195,7 @@ export const web_learned = {
     "w.learned.causeTissue": "Gewebelast",
     "w.learned.causeConditioning": "Ausdauerlast",
     "w.learned.causeWearable": "Wearable",
+    "w.learned.causeFuel": "zu wenig gegessen",
     "w.learned.causeCeiling": "Skalenobergrenze",
 
     "w.learned.intervalBelief": "wahrscheinlich zwischen",

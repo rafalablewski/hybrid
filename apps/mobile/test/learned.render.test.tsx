@@ -62,6 +62,10 @@ vi.mock("../lib/api", () => ({
 vi.mock("../lib/queries", () => ({
   useSessionsQuery: () => ({ data: sessions, isFetching: false, refetch: () => {} }),
   useHeatSignalsQuery: () => ({ data: [] }),
+  // The food log, which the volume model reads for energy availability (the
+  // nutrition → training join). Empty here: this fixture's athlete logs
+  // training and check-ins, so the scale is what answers that question.
+  useNutritionSignalsQuery: () => ({ data: [] }),
   useCheckinsQuery: () => ({ data: checkins }),
 }));
 
