@@ -14,6 +14,7 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { registerPerson, useSharedSurfaceTarget } from "../../lib/shared-element";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
+import { useTouchLight } from "./touch-light";
 import { LiquidSeg } from "./liquid-seg";
 import { RollingNumber } from "./rolling-number";
 import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
@@ -782,6 +783,20 @@ export function APill({
 
   const stateLabel = state === "saving" ? (savingLabel ?? label) : state === "saved" ? (savedLabel ?? label) : label;
 
+  // THE PRESS THE MATERIAL WOULD HAVE ANSWERED. A `soft` pill on iOS wears real
+  // Liquid Glass, but as a BACKDROP — `GlassSurface` is pointerEvents="none" and
+  // RN takes the touch, so the material never sees the press and never lights
+  // itself. Every other variant is the app's own paint and never could.
+  //
+  // THE POOL IS THE LABEL'S COLOUR, which is the only value that already knows
+  // whether this pill is dark or bright. Chalk on a dark `soft` pill lights it;
+  // chalk on the chartreuse primary would be invisible, and there `fg` is the
+  // ink the label is set in, so the pool DEEPENS instead. Both read as light
+  // arriving at the touch point, which is the same trade the real material makes
+  // when it tints itself against what is under it. `overflow: "hidden"` below is
+  // what clips it, and it was already there.
+  const { handlers: lit, light } = useTouchLight(fg);
+
   // The caller's style is SPLIT (core `splitBoxStyle`): how-I-sit-in-my-parent
   // goes on the shake wrapper, which is the node the caller's row actually
   // sees; what-I-look-like stays on the pill. Without this the wrapper swallows
@@ -791,6 +806,7 @@ export function APill({
     <Animated.View style={[{ transform: [{ translateX: shake }] }, outer as StyleProp<ViewStyle>]}>
     <PressScale
       onPress={onPress}
+      {...lit}
       // A button mid-commit must not accept a second one. This is the gate the
       // hand-rolled copies each remembered separately (`disabled={saving}`).
       disabled={disabled || busy}
@@ -830,6 +846,7 @@ export function APill({
       ]}
     >
       {glassSoft && <GlassSurface radius={RADIUS.pill} />}
+      {light}
       {/* THE WIDTH-HOLDER. The idle label is always laid out, and only its
           opacity changes — so the pill's size is a function of its LABEL and
           never of its state. This is the layout shift the audit names: a
@@ -929,9 +946,16 @@ export function AChip({
   const { palette } = useTheme();
   const tint = txt(palette, accent ?? palette.lime) ?? palette.lime;
   const acts = tone === "action";
+  // A chip is the smallest control the app asks a moving thumb to hit, which is
+  // where lighting the POINT rather than the surface earns most: at 44dp the
+  // scale-down is a few pixels of travel and easy to miss mid-scroll. The pool
+  // takes the chip's own tint, so a selected chip lights in its accent and a
+  // resting one in ash.
+  const { handlers: lit, light } = useTouchLight(selected || acts ? tint : palette.ash);
   return (
     <PressScale
       onPress={onPress}
+      {...lit}
       onLongPress={onLongPress}
       delayLongPress={delayLongPress}
       accessibilityRole="button"
@@ -945,8 +969,13 @@ export function AChip({
         borderWidth: 1,
         borderColor: acts ? withAlpha(tint, ALPHA.rim) : selected ? tint : palette.line,
         backgroundColor: selected && !acts ? withAlpha(tint, ALPHA.solid) : "transparent",
+        // The clip the touch light's contract requires. Safe to set here and
+        // nowhere near a card: a chip has no `cardShadow()` for masksToBounds
+        // to take with it.
+        overflow: "hidden",
       }}
     >
+      {light}
       {/* The meta gets a row of its own rather than the pill becoming one: a
           `flexDirection: "row"` on the container above would re-centre the label
           on every one of the 37 chips that have never passed a meta. */}

@@ -156,6 +156,7 @@ export * from "./full-benefits";
 export * from "./scale";
 export * from "./hero";
 export * from "./satellite";
+export * from "./touch-light";
 export * from "./hub-masthead";
 export * from "./app-header";
 export * from "./streak-mark";

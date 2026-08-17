@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { AURORA_ICON_PATHS, SATELLITE, type AuroraIconName } from "@hybrid/core";
 import { AuroraIcon } from "./icons";
 import { GlassSatellite, GlassSurface, LIQUID_GLASS_RENDERED, LIQUID_GLASS_SUPPORTED, type SFSymbol } from "./swiftui";
+import { useTouchLight } from "./touch-light";
 import { withAlpha } from "./field";
 import { useTheme } from "../../lib/theme";
 import { F, fs, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -31,6 +32,14 @@ import { RADIUS } from "./kit";
  *
  * So every satellite in the app wears real glass on iOS 26 and one rim
  * everywhere else, whichever renderer answers.
+ *
+ * AND BOTH ANSWER THE PRESS THE SAME WAY. A glass BACKDROP is not an
+ * interactive one: `GlassSurface` is `pointerEvents="none"` and React Native
+ * takes the touch, so the RN branch got none of the material's press behaviour
+ * — the native satellite lit up under the finger and its neighbour, the same
+ * control with a mark SF Symbols does not carry, only shrank 3%. `useTouchLight`
+ * closes that: the floor draws the pool the material would have. The clip this
+ * component already had for its own fill is what makes the pool possible.
  */
 export default function ASatellite({
   onPress,
@@ -80,6 +89,9 @@ export default function ASatellite({
   const tint = fg ?? C.chalk;
   // Native only when there is a symbol to draw with and no state to carry.
   const native = LIQUID_GLASS_RENDERED && !!glyph && on === undefined;
+  // The pool takes the satellite's own foreground — an amber pause lights amber
+  // — so the light reads as coming from the control rather than laid over it.
+  const { handlers: lit, light } = useTouchLight(tint);
   const face = native ? (
     <GlassSatellite
       onPress={onPress}
@@ -94,6 +106,7 @@ export default function ASatellite({
   ) : (
     <Pressable
       onPress={onPress}
+      {...lit}
       accessibilityRole="button"
       accessibilityLabel={a11y}
       accessibilityState={{ selected: on ?? false }}
@@ -118,6 +131,9 @@ export default function ASatellite({
       }}
     >
       {LIQUID_GLASS_SUPPORTED && <GlassSurface radius={size / 2} />}
+      {/* ON the surface, under the mark: the light is in the material, not seen
+          through it — the same order `APressCard` puts its glow in. */}
+      {light}
       {mark == null ? null : typeof mark !== "string" ? (
         mark
       ) : mark in AURORA_ICON_PATHS ? (
