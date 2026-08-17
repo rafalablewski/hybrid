@@ -278,7 +278,10 @@ export interface SportPoolEntry extends PoolExercise {
 
 export interface SportPageModel {
   name: string;
-  icon: string;
+  /** NO `icon`. The page knows the sport's NAME, and a sport's drawing is
+   *  resolved from that by `sportMark()` — see OlympicSport. A stored glyph
+   *  beside a resolver is a second answer waiting to disagree with the first,
+   *  and the stored one here was an emoji. */
   category: string;
   /** The S&C family ("Endurance", "Combat", …), or null for a sport with no pool. */
   family: string | null;
@@ -874,7 +877,6 @@ export function sportPageModel(
 
   return {
     name: sportName,
-    icon: sport?.icon ?? DISCIPLINE_META[cardioDiscipline(sportName)].emoji,
     category: sport?.category ?? "",
     family: sc?.family ?? null,
     hasDistance,
@@ -955,7 +957,6 @@ export function sportPaceReading(m: SportPageModel, index: number): SportChartRe
 /** One row of the Sport index: a sport, plus what the athlete has done in it. */
 export interface SportIndexEntry {
   name: string;
-  icon: string;
   category: string;
   /** The S&C family ("Endurance", "Combat", …), or null without a pool. */
   family: string | null;
@@ -1032,7 +1033,6 @@ export function sportIndex(sessions: LoggedSession[]): { yours: SportIndexEntry[
     const cat = OLYMPIC_SPORTS[name];
     return {
       name,
-      icon: cat?.icon ?? "🎯",
       category: cat?.category ?? "",
       family: cat?.sc?.family ?? null,
       hasTransfer: !!cat?.sc,
@@ -1061,7 +1061,6 @@ export function searchSports(query: string): SportIndexEntry[] {
     .filter((s) => !q || s.name.toLowerCase().includes(q) || s.category.toLowerCase().includes(q))
     .map((s) => ({
       name: s.name,
-      icon: s.icon,
       category: s.category,
       family: s.sc?.family ?? null,
       hasTransfer: !!s.sc,

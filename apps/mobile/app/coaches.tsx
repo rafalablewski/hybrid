@@ -18,6 +18,7 @@ import { GlassToggle } from "../components/glass-toggle";
 import { useConfirm } from "../components/aurora/confirm";
 import { usePersonSource } from "../lib/shared-element";
 import { useListMotion } from "../lib/list-motion";
+import { Glyph } from "../components/aurora/icons";
 
 /**
  * THE MARKETPLACE (mobile) — the directory, and a coach's own storefront EDITOR.
@@ -56,7 +57,7 @@ function Storefront() {
 
         return (
           <View>
-            {!data.handle && <ACard style={cardStack}><Text style={{ color: txt(C, C.amber) }}>⚠ {t("w.coaches.claimHandle")}</Text></ACard>}
+            {!data.handle && <ACard style={cardStack}><View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Glyph name="warn" size={fs.body + 2} color={txt(C, C.amber) as string} /><Text style={{ color: txt(C, C.amber), flex: 1 }}>{t("w.coaches.claimHandle")}</Text></View></ACard>}
             <ACard style={cardStack}>
               <Text style={{ color: C.chalk, fontFamily: F.bold, marginBottom: 12 }}>{t("w.coaches.yourStorefront")}</Text>
               <TextInput value={form.headline} onChangeText={(v) => setForm({ ...form, headline: v })} placeholder={t("w.coaches.headline")} placeholderTextColor={C.ash} style={inp} />

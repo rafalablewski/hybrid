@@ -18,6 +18,7 @@ import {
   type Recipe,
   type RecipeMeal,
 } from "./recipes";
+import { markPaths } from "./theme/mark";
 
 /** The client-side chrome recipeCoverView() asks for, in English. */
 const T = {
@@ -57,7 +58,7 @@ describe("recipeCoverView", () => {
   it("fills every cover slot from the recipe", () => {
     const c = recipeCoverView(ramen, T);
     expect(c.accent).toBe(RECIPE_TINT_COLOR.amber);
-    expect(c.glyph).toBe(ramen.emoji);
+    expect(c.mark).toEqual(ramen.mark);
     expect(c.chip).toBe("Lunch");
     expect(c.duration).toBe("15 MIN");
     expect(c.title).toBe("Ramen");
@@ -181,7 +182,7 @@ describe("the recipes library — the Plans tab's three levels, on food", () => 
   it("has cover art and a blurb for every collection, including the empty one", () => {
     for (const key of RECIPE_COLLECTIONS) {
       const meta = RECIPE_COLLECTION_META[key];
-      expect(meta.glyph).toBeTruthy();
+      expect(markPaths(meta.mark).length).toBeGreaterThan(0);
       expect(meta.note.length).toBeGreaterThan(20);
       expect(RECIPE_TINT_COLOR[meta.tint]).toMatch(/^#[0-9a-f]{6}$/i);
     }
@@ -191,7 +192,7 @@ describe("the recipes library — the Plans tab's three levels, on food", () => 
 
   it("shrinks a recipe to a tile without losing its numbers", () => {
     const tile = recipeTileView(recipeById("ramen") as Recipe, { mins: (n) => `${n} min`, kcal: (n) => `${n} kcal` });
-    expect(tile).toEqual({ accent: RECIPE_TINT_COLOR.amber, glyph: "🍜", title: "Ramen", count: "15 MIN", meta: "540 kcal" });
+    expect(tile).toEqual({ accent: RECIPE_TINT_COLOR.amber, mark: { kind: "glyph", name: "bowl" }, title: "Ramen", count: "15 MIN", meta: "540 kcal" });
   });
 
   it("gives a recipe card the three numbers that separate it from its neighbours", () => {
@@ -214,7 +215,7 @@ describe("recipeCookView — the plate the cook screen wears", () => {
   it("wears the recipe's own cover slots, with the counter where time sits", () => {
     const c = recipeCookView(ramen, 1, CK);
     expect(c.accent).toBe(RECIPE_TINT_COLOR.amber);
-    expect(c.glyph).toBe("🍜");
+    expect(c.mark).toEqual({ kind: "glyph", name: "bowl" });
     expect(c.chip).toBe("Lunch");
     expect(c.title).toBe("Ramen");
     expect(c.count).toBe("STEP 2 OF 5");

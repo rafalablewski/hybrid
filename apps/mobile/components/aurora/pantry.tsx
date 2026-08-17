@@ -9,10 +9,10 @@ import { fs, F, leading, tracking, PressScale as Pressable , trackFigure} from "
 import { useTheme, txt } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
-import { AuroraIcon } from "./icons";
+import { AuroraIcon, Glyph } from "./icons";
 import { ACard, DockRail, DockChip, GUTTER , RADIUS} from "./kit";
 import GroupMark from "./group-mark";
-import { FoodRow, IClose, IPlus, Glyph, savedFoodMenu, packMenu, type RowPortion } from "./nutrition-kit";
+import { FoodRow, savedFoodMenu, packMenu, type RowPortion } from "./nutrition-kit";
 import { withAlpha } from "./field";
 
 /**
@@ -118,7 +118,7 @@ export function PantrySearchToggle({ open, onToggle }: { open: boolean; onToggle
       hitSlop={8}
       style={{ width: 44, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: open ? C.lime : C.line, alignItems: "center", justifyContent: "center" }}
     >
-      {open ? <IClose size={18} color={C.chalk} /> : <AuroraIcon name="search" size={18} color={C.chalk} />}
+      {open ? <Glyph name="close" size={18} color={C.chalk} /> : <AuroraIcon name="search" size={18} color={C.chalk} />}
     </Pressable>
   );
 }
@@ -211,7 +211,7 @@ export function PantryScreen<T extends PantryFood>({
             />
             {query ? (
               <Pressable onPress={() => onQuery("")} accessibilityLabel={t("w.recovery.nutrition.clear")} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>×</Text></Pressable>
-            ) : <Glyph name="scan" size={17} color={C.ash} strokeWidth={4} />}
+            ) : <Glyph name="scan" size={17} color={C.ash} />}
           </View>
           {searchHint}
         </View>
@@ -309,7 +309,7 @@ export function PantryScreen<T extends PantryFood>({
 
       {canCreate ? (
         <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14 }}>
-          <IPlus size={15} color={txt(C, C.lime)} strokeWidth={2.2} />
+          <Glyph name="plus" size={15} color={txt(C, C.lime)} />
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
         </Pressable>
       ) : (

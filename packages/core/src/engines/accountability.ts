@@ -139,7 +139,7 @@ function intervene(band: EngagementBand, daysSinceLast: number, str: StreakInfo)
       return {
         type: "celebrate",
         urgency: "none",
-        headline: `${str.current}-day streak 🔥`,
+        headline: `${str.current}-day streak`,
         message: "You're on a roll — your consistency is doing the work. Keep it rolling.",
       };
     case "steady":

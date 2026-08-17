@@ -73,10 +73,10 @@ export default function AdminAgentRuns() {
           href={`/api/admin/agent-runs/export${filter === "all" ? "" : `?status=${filter}`}`}
           style={{ ...mono, fontSize: fs.body, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH), marginLeft: "auto", textDecoration: "none" }}
         >
-          ⬇ CSV
+          CSV
         </a>
         <button className="pressable" onClick={() => window.print()} style={{ ...mono, fontSize: fs.body, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
-          🖨 PDF
+          PDF
         </button>
         <button className="pressable" onClick={load} style={{ ...mono, fontSize: fs.body, padding: "7px 12px", borderRadius: 999, cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
           ↻ refresh

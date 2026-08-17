@@ -11,8 +11,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
 import { APill, ACard, ACheckMark, ASection, AMeter, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
-import { Glyph } from "./nutrition-kit";
+import { AuroraIcon, Glyph } from "./icons";
 import { withAlpha } from "./field";
 
 /**
@@ -85,7 +84,7 @@ export function NutritionNudgeLine({ nudge }: { nudge: NutritionNudgeShape }) {
     <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 12, paddingHorizontal: 4, paddingTop: 16, paddingBottom: 2 }}>
       {nudge.kind === "on-track"
         ? <AuroraIcon name="check" size={17} color={accent} style={{ marginTop: 1 }} />
-        : <View style={{ marginTop: 1 }}><Glyph name="spark" size={17} color={accent} strokeWidth={5} /></View>}
+        : <View style={{ marginTop: 1 }}><Glyph name="spark" size={17} color={accent} /></View>}
       <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{text}</Text>
     </View>
   );
@@ -164,7 +163,7 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
           ) : null}
           {!full ? (
             <Pressable onPress={onUpgrade} style={{ flexDirection: "row", alignItems: "center", gap: 12, marginTop: 16, backgroundColor: withAlpha(pa.fill, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.line), borderRadius: RADIUS.field, padding: 16 }}>
-              <Glyph name="spark" size={19} color={pa.text} strokeWidth={5} />
+              <Glyph name="spark" size={19} color={pa.text} />
               <View style={{ flex: 1 }}>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.deepInsights")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.recovery.nutrition.deepInsightsSub")}</Text>
@@ -273,7 +272,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8, textAlign: "center", lineHeight: leading(fs.caption) }}>{t("w.recovery.nutrition.trialSub")}</Text>
             <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, marginTop: 16 }}>$9.99<Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text></Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3 }}>{t("w.recovery.nutrition.trialNote")}</Text>
-            <Pressable onPress={onUpgrade} style={{ alignSelf: "stretch", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: pa.fill, borderRadius: RADIUS.field, paddingVertical: 16, marginTop: 16 }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.recovery.nutrition.startTrial")}</Text><Glyph name="chevron" size={15} color={pa.ink} strokeWidth={6} /></Pressable>
+            <Pressable onPress={onUpgrade} style={{ alignSelf: "stretch", flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, backgroundColor: pa.fill, borderRadius: RADIUS.field, paddingVertical: 16, marginTop: 16 }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.recovery.nutrition.startTrial")}</Text><Glyph name="chevron" size={15} color={pa.ink} /></Pressable>
           </ACard>
           {/* The FREE alternative — a limited plan to start on now, no card
               needed. Full is the trial card above; this is the way out that

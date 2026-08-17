@@ -5,7 +5,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Defs, RadialGradient, Rect, Stop } from "react-native-svg";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { HERO, HERO_INK, HERO_INLINE_TITLE, SHARED_ELEMENTS, heroGeometry, heroRailPin, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram , ALPHA} from "@hybrid/core";
+import { HERO, HERO_INK, HERO_INLINE_TITLE, SHARED_ELEMENTS, heroGeometry, heroRailPin, heroSnapTarget, planCoverView, type GoalNode, type GoalPlan, type PlanProgram, type Mark as MarkValue , ALPHA} from "@hybrid/core";
 import { AURORA_NAV_BAR_HEIGHT, auroraScrollClearance } from "../lib/layout";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScroll } from "../lib/nav-scroll";
@@ -15,6 +15,7 @@ import { leading, tracking, fs, F, useEntrance, PressScale as Pressable, FIXED_F
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { AuroraField, withAlpha , RADIUS} from "./aurora/kit";
 import { HeroAccessory, HeroEyebrow, HeroMetadata, HeroNav, HeroTitle } from "./aurora/hero";
+import { Mark } from "./aurora/mark";
 import { haptic } from "../lib/haptics";
 
 /** The cover scaffold's content gutter. Exported because the `rail` slot is
@@ -97,7 +98,16 @@ const BLEED = (() => {
  *  scaffold with its plan-count label in the duration slot. */
 export interface CoverSpec {
   accent: string;
-  glyph: string;
+  /** A TYPOGRAPHIC emblem — the geometric marks the plan goals and the two
+   *  library roots wear (`◈`, `▲`, `◉`). Deliberately type, not a picture; see
+   *  core plans.ts. A cover carries this OR `mark`, never both. */
+  glyph?: string;
+  /** A DRAWN mark, stroked at emblem scale. Takes precedence over `glyph`.
+   *  This is what the `recipe` plate wears now: it used to be the dish EMOJI at
+   *  fontSize 214, which is also why the type ratchet had to except two
+   *  off-ladder sizes as "artwork, not type". Stroke geometry ghosts at 9%
+   *  white; a colour pictograph desaturated to grey is a smudge. */
+  mark?: MarkValue;
   chip: string;
   /** top-right mono label — "8 WEEKS" on a plan, "1 PLAN" on a goal. */
   duration: string;
@@ -282,7 +292,7 @@ export function CoverScreen({
   const D = HERO.detent;
   const glyphCounter = clamp([0, delta], [0, delta * (emblem ? HERO.parallax.emblem : HERO.parallax.art)]);
   // A monochrome ghost can survive into the pinned bar as texture; the recipe
-  // plate is a full-colour emoji, so it has to be gone by the time the bar is.
+  // the plate is the subject in its own colour, so it goes by the time the bar does.
   const glyphFade = plate ? clamp([0, delta * HERO.colourArtOut], [1, HERO.artFloor.colour]) : clamp([0, delta], [1, HERO.artFloor.ghost]);
   const scrimFade = clamp([0, delta], [1, 0]);
   const bigFade = clamp([0, delta * D.titleOut], [1, 0]);
@@ -442,22 +452,39 @@ export function CoverScreen({
             </Animated.View>
             {/* the art — parallax drift against the frame. On the goal emblem it
                 IS the subject: bigger, brighter, deeper. */}
-            <Animated.Text
-              pointerEvents="none"
-              style={{
-                position: "absolute",
-                top: insets.top - (plate ? 0 : emblem ? 4 : 26),
-                right: plate ? -18 : emblem ? -30 : -10,
-                fontSize: emblem ? 214 : 150,
-                lineHeight: emblem ? 222 : 158,
-                // the dish keeps its own colour; every other cover art is a ghost
-                ...(plate ? null : { color: `rgba(255,255,255,${emblem ? 0.09 : 0.07})` }),
-                opacity: glyphFade,
-                transform: [{ translateY: glyphCounter }],
-              }}
-            >
-              {cover.glyph}
-            </Animated.Text>
+            {cover.mark ? (
+              <Animated.View
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  top: insets.top - (plate ? 0 : emblem ? 4 : 26),
+                  right: plate ? -18 : emblem ? -30 : -10,
+                  opacity: glyphFade,
+                  transform: [{ translateY: glyphCounter }],
+                }}
+              >
+                {/* A DRAWN cover art. The dish is stroked in its own tint (it is
+                    the subject); every other drawn art is the ghost white the
+                    glyph covers use. */}
+                <Mark mark={cover.mark} size={emblem ? 214 : 150} color={plate ? accent : `rgba(255,255,255,${emblem ? 0.09 : 0.07})`} />
+              </Animated.View>
+            ) : (
+              <Animated.Text
+                pointerEvents="none"
+                style={{
+                  position: "absolute",
+                  top: insets.top - (emblem ? 4 : 26),
+                  right: emblem ? -30 : -10,
+                  fontSize: emblem ? 214 : 150,
+                  lineHeight: emblem ? 222 : 158,
+                  color: `rgba(255,255,255,${emblem ? 0.09 : 0.07})`,
+                  opacity: glyphFade,
+                  transform: [{ translateY: glyphCounter }],
+                }}
+              >
+                {cover.glyph}
+              </Animated.Text>
+            )}
 
             {/* THE RAIL — the system's spatial constant: same y, same 40pt
                 circular nav button, same trailing metadata slot as every other

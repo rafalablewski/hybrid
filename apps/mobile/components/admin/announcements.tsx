@@ -223,7 +223,7 @@ export default function AdminAnnouncements() {
 
                 <View style={{ marginBottom: 16 }}>
                   <PillBtn
-                    label={draft.pinned ? "📌 Pinned banner — on" : "Pin as a banner — off"}
+                    label={draft.pinned ? "Pinned banner — on" : "Pin as a banner — off"}
                     outline={!draft.pinned}
                     color={palette.amber}
                     onPress={() => setDraft({ ...draft, pinned: !draft.pinned })}

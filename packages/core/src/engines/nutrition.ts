@@ -13,6 +13,7 @@ import type { Signal } from "./signals";
 import { localDayKey, localTodayKey, dayKeyDiff } from "../day-key";
 import { type NutritionFacts, scaleFacts, unknown } from "../food-facts";
 import { judge, signalBounds } from "../plausibility";
+import { glyphMark, type Mark } from "../theme/mark";
 
 const DAY = 86_400_000;
 const KCAL_PER_KG = 7700; // ~energy in 1 kg of body mass
@@ -493,7 +494,7 @@ export function panelStatus(day: NutritionDay, kcalTarget: number): PanelStatus[
 export interface MealPreset {
   id: string;
   labelKey: string;
-  emoji: string;
+  mark: Mark;
   kcal: number;
   protein: number; // g
   carbs: number; // g
@@ -501,10 +502,10 @@ export interface MealPreset {
 }
 
 export const MEAL_PRESETS: MealPreset[] = [
-  { id: "breakfast-oats-eggs", labelKey: "w.recovery.nutrition.preset.breakfast", emoji: "🍳", kcal: 520, protein: 32, carbs: 55, fat: 18 },
-  { id: "lunch-chicken-rice", labelKey: "w.recovery.nutrition.preset.lunch", emoji: "🥗", kcal: 680, protein: 52, carbs: 78, fat: 16 },
-  { id: "dinner-salmon-potato", labelKey: "w.recovery.nutrition.preset.dinner", emoji: "🍽️", kcal: 740, protein: 46, carbs: 60, fat: 30 },
-  { id: "snack-yogurt-berries", labelKey: "w.recovery.nutrition.preset.snack", emoji: "🥤", kcal: 210, protein: 20, carbs: 22, fat: 4 },
+  { id: "breakfast-oats-eggs", labelKey: "w.recovery.nutrition.preset.breakfast", mark: glyphMark("sunrise"), kcal: 520, protein: 32, carbs: 55, fat: 18 },
+  { id: "lunch-chicken-rice", labelKey: "w.recovery.nutrition.preset.lunch", mark: glyphMark("sun"), kcal: 680, protein: 52, carbs: 78, fat: 16 },
+  { id: "dinner-salmon-potato", labelKey: "w.recovery.nutrition.preset.dinner", mark: glyphMark("moon"), kcal: 740, protein: 46, carbs: 60, fat: 30 },
+  { id: "snack-yogurt-berries", labelKey: "w.recovery.nutrition.preset.snack", mark: glyphMark("cup"), kcal: 210, protein: 20, carbs: 22, fat: 4 },
 ];
 
 /** The four macro signals a premade meal writes when logged — the SAME Signal
@@ -803,18 +804,23 @@ export interface FuelPlate {
  *  log, a food-search hit) — mirrors the Diary's "Other" group. */
 export const FUEL_PLATE_OTHER = "other";
 
-const MEAL_PART_EMOJI: Record<string, string> = {
-  breakfast: "🍳",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🥤",
+const MEAL_PART_MARK: Record<string, Mark> = {
+  breakfast: glyphMark("sunrise"),
+  lunch: glyphMark("sun"),
+  dinner: glyphMark("moon"),
+  snack: glyphMark("cup"),
 };
 
-/** The glyph for a part of the day — the SAME emoji its quick-log preset uses,
- *  so a meal reads identically on the rail and in the day's summary. A custom
- *  part (or "other") gets the neutral cutlery mark. */
-export function mealPartEmoji(key: string): string {
-  return MEAL_PART_EMOJI[key] ?? "🍴";
+/** The mark for a part of the day — the SAME one its quick-log preset uses, so
+ *  a meal reads identically on the rail and in the day's summary. A custom part
+ *  (or "other") gets the neutral cutlery mark.
+ *
+ *  These four were 🍳 🥗 🍽️ 🥤 and are now the day's own arc — sunrise, sun,
+ *  moon — with the mug for what falls between. The nutrition glyph set was
+ *  drawn for exactly this and the picker had been using it (`presetGlyph`)
+ *  while the rail beside it drew pictographs. */
+export function mealPartMark(key: string): Mark {
+  return MEAL_PART_MARK[key] ?? glyphMark("fork-knife");
 }
 
 /** A readable label for a CUSTOM part key ("pre-workout" → "Pre-workout"), for
@@ -914,7 +920,7 @@ export interface FuelRailPreset {
   name: string;
   /** the part of the day it logs to */
   source: string;
-  emoji: string;
+  mark: Mark;
   kcal: number;
   protein: number; // g
   carbs: number; // g
@@ -928,7 +934,7 @@ export interface FuelRailChip {
   kind: "own" | "preset";
   name: string;
   source: string;
-  emoji: string;
+  mark: Mark;
   kcal: number;
   protein: number;
   carbs: number;
@@ -1025,7 +1031,7 @@ export function fuelRail(
     kind: "own",
     name: c.name,
     source: c.source,
-    emoji: mealPartEmoji(c.source),
+    mark: mealPartMark(c.source),
     kcal: c.kcal,
     protein: c.protein,
     carbs: c.carbs,
@@ -1038,7 +1044,7 @@ export function fuelRail(
     kind: "preset",
     name: p.name,
     source: p.source,
-    emoji: p.emoji,
+    mark: p.mark,
     kcal: p.kcal,
     protein: p.protein,
     carbs: p.carbs,

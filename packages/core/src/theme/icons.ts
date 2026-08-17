@@ -211,10 +211,21 @@ export const AURORA_ICON_PATHS: Record<AuroraIconName, string[]> = {
  * ONE monoline icon language and never falls back to an emoji.
  */
 export type NutritionGlyphName =
-  | "sunrise" | "sun" | "moon" | "cup" | "bowl"
+  | "sunrise" | "sun" | "cup" | "bowl"
   | "water" | "scan" | "mic" | "spark" | "target" | "chevron"
   // the Nutrition hub bento's five destinations (nutrition-hub.ts)
-  | "diary" | "chart" | "scale" | "box";
+  | "diary" | "chart" | "scale" | "box"
+  // THE DISH MARKS. A recipe, a saved meal and a meal-part each used to carry
+  // an EMOJI (🍜 🥗 🍳 🥑 🌯 🍲 🥣 🍚). These replace them, and they follow
+  // sport-marks.ts's rule verbatim: THE MARK NAMES THE KIND, NOT THE INSTANCE.
+  // There are not eight distinctive silhouettes between noodles and rice, and
+  // pretending otherwise means eight near-duplicates to keep in step. The title
+  // already says which dish it is; the mark says what kind of thing it is.
+  | "leaf" | "egg" | "apple" | "grain";
+
+/** `moon` is the AURORA kit's crescent (AURORA_ICON_PATHS). Nutrition shipped a
+ *  SECOND crescent of its own for "dinner" — two drawings of one noun, which is
+ *  the drift this file exists to prevent. Deleted; dinner reads the kit's. */
 
 export const NUTRITION_GLYPHS: Record<NutritionGlyphName, string[]> = {
   // morning — sun over a horizon with three short rays
@@ -225,8 +236,6 @@ export const NUTRITION_GLYPHS: Record<NutritionGlyphName, string[]> = {
     "M36 9 L36 17", "M36 55 L36 63", "M9 36 L17 36", "M55 36 L63 36",
     "M16.9 16.9 L22.6 22.6", "M55.1 55.1 L49.4 49.4", "M55.1 16.9 L49.4 22.6", "M16.9 55.1 L22.6 49.4",
   ],
-  // evening — crescent moon
-  moon: ["M46 12 A26 26 0 1 0 46 60 A20 20 0 1 1 46 12 Z"],
   // between meals — a mug with steam
   cup: ["M18 26 L54 26 L50 52 a6 6 0 0 1 -6 5 L28 57 a6 6 0 0 1 -6 -5 Z", "M54 31 a8 8 0 0 1 0 15", "M30 12 q4 5 0 9", "M42 12 q4 5 0 9"],
   // generic meal — a bowl with rising steam
@@ -263,6 +272,21 @@ export const NUTRITION_GLYPHS: Record<NutritionGlyphName, string[]> = {
   // YOUR PRODUCTS — a carton seen in three-quarter, the universal "packaged
   // food" mark, and the one shape that can't be confused with a saved meal.
   box: ["M36 11 L61 24 L61 48 L36 61 L11 48 L11 24 Z", "M11 24 L36 37 L61 24", "M36 37 L36 61"],
+  // GREENS — a leaf with its midrib. Salads, and anything plant-forward.
+  leaf: ["M57 13C34 13 17 26 17 45a17 17 0 0 0 34 1C54 35 57 24 57 13Z", "M22 57C30 43 40 33 52 27"],
+  // EGGS — the protein-forward plate, and the one shape no other dish borrows.
+  egg: ["M36 10C22 10 16 30 16 42a20 20 0 0 0 40 0C56 30 50 10 36 10Z"],
+  // FRUIT — the between-meals mark, and the snack category's own.
+  apple: [
+    "M36 22C30 16 20 17 17 26 13 38 20 58 28 60c4 1 6-1 8-1s4 2 8 1c8-2 15-22 11-34-3-9-13-10-19-4Z",
+    "M36 22c0-6 3-11 9-12",
+  ],
+  // GRAINS — a wheat ear. Porridge, rice, and the carbohydrate side of a plate.
+  grain: [
+    "M36 62V26",
+    "M36 26q-11-3-11-13 11 2 11 13", "M36 26q11-3 11-13-11 2-11 13",
+    "M36 41q-11-3-11-13 11 2 11 13", "M36 41q11-3 11-13-11 2-11 13",
+  ],
 };
 
 /**
@@ -306,6 +330,152 @@ export const HUB_GLYPHS: Record<HubGlyphName, string[]> = {
     "M13 59c0-10 7.5-16 17-16s17 6 17 16",
   ],
 };
+
+/**
+ * PRODUCT glyphs — the marks this product needs that a generic UI kit has no
+ * drawing for.
+ *
+ * WHY THIS SET EXISTS. The design audit found THREE icon languages sharing one
+ * product: the line-glyph set, the drawn sport marks (used at exactly two
+ * sites), and Apple emoji everywhere else — medals on the leaderboard, trophies
+ * in the logger, a barbell for a strength session, faces for how a set felt,
+ * sometimes framed INSIDE the app's own bespoke mark tiles. An emoji in a mark
+ * tile is the tell: the tile is the app's drawing and its contents are the
+ * platform's, at a stroke weight nobody chose, in a colour the palette does not
+ * contain, redrawn by every OS.
+ *
+ * Every glyph below replaces a specific emoji, named at its definition. Once
+ * they exist there is no rendered emoji left in the product, which is what
+ * `design-tokens.test.ts` now holds HARD.
+ *
+ * Same 72×72 stroke convention as everything above it, so these carry identical
+ * optical weight beside the kit icons at `auroraIconStroke(size)`.
+ */
+export type ProductGlyphName =
+  // 🏅 🥇 🥈 🥉 — a placing. ONE drawing; the rank is the COLOUR (gold/silver/
+  // bronze), which is how a medal works and how the palette already speaks.
+  | "medal"
+  // 🏋️ — a strength session, the shape the bottom nav already draws for Train.
+  | "barbell"
+  // ⛓ — a superset. Two lifts joined, and the app's only chain.
+  | "link"
+  // ⚠ — a warning that is not yet a risk (risk is red, and has its own colour).
+  | "warn"
+  // ⟲ — work not yet pushed to the server.
+  | "sync"
+  // THE FOUR THE NUTRITION KIT HAD AND THE SHARED SET DID NOT. Nutrition
+  // shipped eleven icons of its own in a 24-unit box at strokeWidth ~2 (the
+  // shared set is a 72-unit box at `auroraIconStroke`), which is how one screen
+  // came to draw the app's icons ~40% heavier than the screen beside it — and
+  // its renderer defaulted to "#fff", a colour the palette does not contain.
+  // Seven of the eleven were already in the shared set under another name
+  // (chevron-down, chevron, plus, bolt, stopwatch, add-square, and its own
+  // `Glyph`); these four were genuinely missing, so they are drawn here rather
+  // than kept in a second kit.
+  | "close" | "barcode" | "trash" | "star"
+  // 😌 🙂 😤 🥵 💀 / 😖 😐 💪 / ⚡ 😮‍💨 🫠 🥴 — the five-step effort, fatigue and
+  // mood scales, which between them spent fourteen emoji on one question asked
+  // three ways. One drawn ramp, tinted by the `tone` each level already
+  // carries, so the mark and its colour say the same thing.
+  | "face-easy" | "face-steady" | "face-solid" | "face-hard" | "face-spent";
+
+export const PRODUCT_GLYPHS: Record<ProductGlyphName, string[]> = {
+  // A disc on a ribbon, with a star struck into it. Drawn at leaderboard row
+  // size (20–24) first: the star is five strokes, not a filled polygon, so it
+  // survives the ramp to a 44dp podium tile without turning into a blob.
+  medal: [
+    "M25 10 33 33", "M47 10 39 33",
+    "M36 32a16 16 0 1 0 0 32 16 16 0 1 0 0-32Z",
+    "M36 40 39 46.5 46 47.5 41 52.5 42.2 59.5 36 56.2 29.8 59.5 31 52.5 26 47.5 33 46.5Z",
+  ],
+  // The Train glyph (AURORA_TRAIN_GLYPH below) as a member of the set, so a
+  // strength session can be marked anywhere without the nav's inline copy.
+  barbell: ["M12 27v18M21 21v30M51 21v30M60 27v18M21 36h30"],
+  link: [
+    "M27 45a15 15 0 0 0 21.21 0l10.62-10.62a15 15 0 0 0-21.21-21.21l-5.31 5.31",
+    "M45 27a15 15 0 0 0-21.21 0l-10.62 10.62a15 15 0 0 0 21.21 21.21l5.31-5.31",
+  ],
+  warn: ["M36 12 63 58H9Z", "M36 30v13", "M36 50v1"],
+  close: ["M18 18 54 54", "M54 18 18 54"],
+  // A barcode's frame with the code line through it — the SCAN glyph is a
+  // viewfinder (point the camera), this is the printed thing you point it at.
+  barcode: [
+    "M9 24v-7.5a7.5 7.5 0 0 1 7.5-7.5H24", "M48 9h7.5A7.5 7.5 0 0 1 63 16.5V24",
+    "M63 48v7.5a7.5 7.5 0 0 1-7.5 7.5H48", "M24 63h-7.5A7.5 7.5 0 0 1 9 55.5V48",
+    "M19.5 36h33",
+  ],
+  trash: ["M12 21h48", "M27 21v-6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v6", "M18 21l3 39a3 3 0 0 0 3 3h24a3 3 0 0 0 3-3l3-39", "M30 33v18", "M42 33v18"],
+  star: ["M36 9 45.3 27.9 66 30.9 51 45.6 54.6 66.3 36 56.4 17.4 66.3 21 45.6 6 30.9 26.7 27.9Z"],
+  sync: ["M13 36a23 23 0 0 1 39-16.3L58 25", "M58 13v12H46", "M59 36a23 23 0 0 1-39 16.3L14 47", "M14 59V47h12"],
+
+  // THE EFFORT RAMP. One head, five expressions. The differences are deliberate
+  // and ordered — the brow drops and the mouth turns as the effort rises — so
+  // the five read as a SCALE at 21dp, which is the size the check-in draws them
+  // at with no label beside them.
+  "face-easy": [
+    "M36 8a28 28 0 1 0 0 56 28 28 0 1 0 0-56Z",
+    "M22 31q5-5 10 0", "M40 31q5-5 10 0",
+    "M24 43q12 11 24 0",
+  ],
+  "face-steady": [
+    "M36 8a28 28 0 1 0 0 56 28 28 0 1 0 0-56Z",
+    "M26 29v3", "M46 29v3",
+    "M26 44q10 7 20 0",
+  ],
+  "face-solid": [
+    "M36 8a28 28 0 1 0 0 56 28 28 0 1 0 0-56Z",
+    "M20 23 31 27", "M52 23 41 27",
+    "M26 32v3", "M46 32v3",
+    "M26 46h20",
+  ],
+  "face-hard": [
+    "M36 8a28 28 0 1 0 0 56 28 28 0 1 0 0-56Z",
+    "M21 30h10", "M41 30h10",
+    "M36 42a7 6 0 1 0 0.1 0Z",
+  ],
+  "face-spent": [
+    "M36 8a28 28 0 1 0 0 56 28 28 0 1 0 0-56Z",
+    "M20 24 31 30", "M52 24 41 30",
+    "M22 35h8", "M42 35h8",
+    "M24 50q6-6 12 0t12 0",
+  ],
+};
+
+/**
+ * THE ONE GLYPH VOCABULARY.
+ *
+ * Four path maps ship above — the design kit, the nutrition extension, the Today
+ * hub's three, and the product marks. They are four ORIGINS, not four
+ * languages: identical box, identical stroke rule, identical renderer. This
+ * union and `glyphPaths` are how a call site says "draw this mark" without
+ * having to know which file the drawing came from, and they are what makes
+ * "one icon language" a thing a test can check rather than a thing prose
+ * claims.
+ *
+ * The DRAWN SPORT MARKS (theme/sport-marks.ts) stay a separate union on
+ * purpose. They answer a different question — not "which mark" but "which
+ * SPORT", resolved from a name through `sportMark()` — and they are the one set
+ * whose members are chosen by data rather than by a designer at a call site.
+ */
+export type GlyphName = AuroraIconName | NutritionGlyphName | HubGlyphName | ProductGlyphName;
+
+const ALL_GLYPHS: Record<string, string[]> = {
+  ...AURORA_ICON_PATHS,
+  ...NUTRITION_GLYPHS,
+  ...HUB_GLYPHS,
+  ...PRODUCT_GLYPHS,
+};
+
+/** name → path data, across every origin. The renderers (`<Glyph>` on both
+ *  clients) are the only callers that need this; everything else names a glyph
+ *  and lets the component find it. */
+export function glyphPaths(name: GlyphName): string[] {
+  return ALL_GLYPHS[name] ?? [];
+}
+
+/** Every name the one vocabulary answers to — for the guard that holds the four
+ *  origins collision-free. */
+export const GLYPH_NAMES = Object.keys(ALL_GLYPHS) as GlyphName[];
 
 /**
  * AURORA nav glyphs — maps EVERY NAV_ITEMS id to a design-kit line icon (icons1/

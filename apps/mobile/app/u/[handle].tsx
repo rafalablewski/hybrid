@@ -49,6 +49,7 @@ import { Avatar, Empty, SButton, Stars, levelInk } from "../../components/social
 import FeedCard from "../../components/feed-card";
 import { Comments } from "../../components/feed-comments";
 import { usePersonSource } from "../../lib/shared-element";
+import { Glyph } from "../../components/aurora/icons";
 
 /**
  * THE INDIVIDUAL USER PAGE (mobile) — twin of apps/web/components/user-page.tsx.
@@ -316,7 +317,7 @@ export default function UserScreen() {
       {/* ── THE QUIET VERBS ── never beside the ones you're meant to use. */}
       {rel !== "self" ? (
         <View style={{ flexDirection: "row", gap: 16, marginTop: 24, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
-          <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.bold }}>⚐ {t("w.social.report")}</Text></Pressable>
+          <Pressable onPress={doReport} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><Glyph name="flag" size={fs.caption} color={C.ash} /><Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.bold }}>{t("w.social.report")}</Text></Pressable>
           <Pressable onPress={doBlock}><Text style={{ color: txt(C, C.red), fontSize: fs.caption, fontFamily: F.bold }}>⊘ {t("w.social.block")}</Text></Pressable>
         </View>
       ) : null}
@@ -343,7 +344,7 @@ function Overview({ data, cmp, name, onCompare, busy }: {
     return (
       <View style={{ marginTop: 16, backgroundColor: C.ink2, borderRadius: 14, padding: 16 }}>
         <Text style={{ color: C.ash, fontSize: fs.body, lineHeight: leading(fs.body) }}>
-          🔒 {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : followsUser(rel) ? "" : t("w.social.followToSee")}
+          {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : followsUser(rel) ? "" : t("w.social.followToSee")}
         </Text>
       </View>
     );

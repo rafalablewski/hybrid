@@ -45,6 +45,7 @@ import { activitySummary, activityBaselineWindows, type ActivityGroupKind, type 
 import type { BodyweightInput } from "./bodyweight";
 import type { CardioDiscipline, LoggedSession } from "./engines/session";
 import { VERDICT_THRESHOLD_PCT, type VerdictDirection } from "./week-verdict";
+import type { Mark } from "./theme/mark";
 
 /** The two group kinds this section owns. */
 const OWNED: ReadonlySet<ActivityGroupKind> = new Set<ActivityGroupKind>(["endurance", "sport"]);
@@ -61,8 +62,8 @@ export interface EnduranceSlice {
    *  label because "Squash" is not a translatable app string. */
   labelKey: string | null;
   label: string | null;
-  /** A semantic sport glyph (never a decorative marker). */
-  icon: string;
+  /** The slice's drawing — see ActivityGroupMeta.mark. */
+  mark: Mark;
   /** The slice's natural distance unit — metres for pool and ergo sports. */
   unit: "km" | "m";
   minutes: number;
@@ -154,7 +155,7 @@ function windowSlice(
       discipline: g.discipline,
       labelKey: g.labelKey,
       label: g.label,
-      icon: g.icon,
+      mark: g.mark,
       unit: g.unit,
       minutes: minutesById.get(g.id) ?? 0,
       distanceKm: kmById.get(g.id) ?? 0,

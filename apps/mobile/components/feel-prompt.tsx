@@ -20,6 +20,8 @@ import { useLang } from "../lib/i18n";
 import { leading, fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
+import { Mark } from "./aurora/mark";
+import type { Mark as MarkValue } from "@hybrid/core";
 
 /**
  * "How did that feel?" — THE IMMEDIATE READ.
@@ -107,7 +109,7 @@ export function FeelPrompt({
   const rel = load != null ? relativeEffort(load, baseline) : null;
 
   const row = (
-    levels: readonly { value: number; labelKey: string; emoji: string }[],
+    levels: readonly { value: number; labelKey: string; mark: MarkValue }[],
     picked: number | null,
     onPick: (v: number) => void,
   ) => (
@@ -128,7 +130,7 @@ export function FeelPrompt({
               backgroundColor: on ? withAlpha(C.lime, ALPHA.solid) : compact ? C.ink2 : C.ink,
             }}
           >
-            <Text style={{ fontSize: 21, opacity: on ? 1 : 0.55 }}>{l.emoji}</Text>
+            <Mark mark={l.mark} size={21} color={on ? txt(C, C.lime) as string : C.ash} />
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? txt(C, C.lime) : C.ash }}>{t(l.labelKey)}</Text>
           </Pressable>
         );

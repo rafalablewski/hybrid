@@ -56,6 +56,7 @@ import { WorkoutWrapped } from "../../components/workout-wrapped";
 import { SessionEditSheet } from "../../components/session-edit";
 import PrAttestationPanel from "../../components/pr-attestation";
 import { withAlpha } from "../../components/aurora/field";
+import { Glyph } from "../../components/aurora/icons";
 
 const fmtDate = (iso: string) =>
   new Date(iso).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
@@ -158,10 +159,10 @@ export default function SessionDetail() {
       {prs.length + cardioPrs.length > 1 && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 14 }}>
           {prs.map((p) => (
-            <Text key={p.lift} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>🏆 {prLine(p, t, units)}</Text>
+            <View key={p.lift} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.gold} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{prLine(p, t, units)}</Text></View>
           ))}
           {cardioPrs.map((p) => (
-            <Text key={`${p.move}-${p.kind}`} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 6 }}>🏃 {cardioPrLineDetail(p, t)}</Text>
+            <View key={`${p.move}-${p.kind}`} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.gold} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{cardioPrLineDetail(p, t)}</Text></View>
           ))}
         </View>
       )}
@@ -187,19 +188,20 @@ export default function SessionDetail() {
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
+                {prSet.has(b.name) || (b.kind === "cardio" && cardioPrMoves.has(b.name)) ? <Glyph name="trophy" size={fs.body} color={C.gold} /> : null}
                 {b.kind === "conditioning" ? (
                   <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>
-                    {prSet.has(b.name) ? "🏆 " : ""}{b.name}
+                    {b.name}
                   </Text>
                 ) : (
                   <Pressable onPress={() => router.push({ pathname: "/exercise", params: { name: b.name } })}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>
-                      {prSet.has(b.name) ? "🏆 " : ""}{b.kind === "cardio" && cardioPrMoves.has(b.name) ? "🏃 " : ""}{b.name} <Text style={{ color: C.ash, fontSize: fs.body }}>›</Text>
+                      {b.name} <Text style={{ color: C.ash, fontSize: fs.body }}>›</Text>
                     </Text>
                   </Pressable>
                 )}
                 {ssLabels[i] && (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>⛓ {ssLabels[i]}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}><Glyph name="link" size={fs.nano} color={txt(C, C.lime) as string} /><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{ssLabels[i]}</Text></View>
                 )}
               </View>
               {/* The heaviest weight actually moved — an athlete reads this as

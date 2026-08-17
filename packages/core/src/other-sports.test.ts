@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { otherSportLanes, otherSportReading, sportWeekBars, otherSportTotals, OTHER_SPORT_WEEKS } from "./other-sports";
 import type { LoggedSession, SessionBlock } from "./engines/session";
+import { sportMark } from "./theme/sport-marks";
 
 const NOW = Date.parse("2026-07-31T12:00:00.000Z");
 const DAY = 86_400_000;
@@ -35,17 +36,19 @@ describe("otherSportLanes", () => {
     expect(lanes.map((l) => l.sport).sort()).toEqual(["Badminton", "Squash", "Tennis"]);
   });
 
-  it("carries the catalog's icon and category", () => {
+  it("carries the catalog's category, and no glyph of its own", () => {
     const [tennis] = otherSportLanes([sess(1, "Tennis", 90, "sport")], NOW);
-    expect(tennis!.icon).toBe("🎾");
     expect(tennis!.category).toBe("Racket");
+    // The lane names the SPORT; the drawing is resolved from that name.
+    expect(sportMark(tennis!.sport)).toBe("racket");
+    expect(tennis).not.toHaveProperty("icon");
   });
 
-  it("falls back to a generic marker for a sport that isn't in the catalog", () => {
+  it("keeps an uncatalogued sport, with no category and no drawing", () => {
     const [made] = otherSportLanes([sess(1, "Kabaddi", 50, "sport")], NOW);
     expect(made!.sport).toBe("Kabaddi");
-    expect(made!.icon).toBe("🎯");
     expect(made!.category).toBeNull();
+    expect(sportMark(made!.sport)).toBeNull();
   });
 
   it("sums efforts and minutes, and remembers the most recent effort", () => {

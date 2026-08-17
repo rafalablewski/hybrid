@@ -680,6 +680,76 @@ describe("colour arithmetic", () => {
   });
 });
 
+describe("icons", () => {
+  /**
+   * THE PICTOGRAPHIC RANGES — colour emoji, the things a platform draws for you.
+   *
+   * Deliberately NOT "every non-ASCII character". The app's vocabulary includes
+   * TYPOGRAPHIC marks that are monochrome, take the text colour, and are set in
+   * a font: the geometric plan/goal emblems (▲ ◈ ◉ ⬡ ◍ ✚), the ✦ premium
+   * signifier the house rules sanction by name, ✓ ✕ ★ ☆, the arrows, ⌁, ☰. Those
+   * are TYPE and stay. What is banned is the pictograph — a picture the OS
+   * substitutes its own artwork for, in colours the palette does not contain,
+   * at a weight nobody chose, differently on every device.
+   */
+  const EMOJI = /[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F2FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu;
+  // The typographic marks that fall inside those blocks and are NOT pictographs.
+  const TYPE_MARKS = new Set("✓✦★☆✕✗→←↑↓↔⇄↺↻↳↗↦⇒⬡⬢❚✎♥⚑↯❖⦿⬗⌁☰✚➔➜".split(""));
+
+  it("HARD — the app draws its own marks; no emoji anywhere on the glass", () => {
+    // THE FINDING (design audit, Aug 2026): "Three icon languages share one
+    // product: 94 custom line glyphs, hand-drawn sport marks used at exactly two
+    // sites, and Apple emoji everywhere else — medals on the leaderboard,
+    // trophies in the logger, sometimes framed inside the app's own bespoke
+    // mark tiles."
+    //
+    // The emoji were STRUCTURAL, not sprinkled. A dozen core data types declared
+    // `icon: string` / `emoji: string` holding a literal pictograph — the sport
+    // catalog's 65, the achievements, the recipes, the meal parts, the effort
+    // and fatigue and mood scales, the fun-fact tiers — and every renderer drew
+    // them with <Text>. Sweeping call sites would have left the fields and the
+    // fields would have refilled. So the FIELDS changed type to core's `Mark`
+    // (theme/mark.ts), a closed union of the two languages that survive: a
+    // glyph name, or a sport. `string` is not a member, so a pictograph can no
+    // longer be typed into one at all.
+    //
+    // HARD from the start, and it has to be: this is the rule a single hurried
+    // commit re-breaks, and one emoji beside the drawn set is more visibly
+    // wrong than twenty were when twenty was the house style.
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      text.split("\n").forEach((line, i) => {
+        if (/^\s*(?:\/\/|\/?\*)/.test(line)) return; // a comment may NAME what it replaced
+        const found = [...line.matchAll(EMOJI)].map((m) => m[0]).filter((c) => !TYPE_MARKS.has(c));
+        if (found.length) bad.push(`${path}:${i + 1}  ${found.join("")}`);
+      });
+    }
+    expect(bad, `\nemoji on the glass — draw it with <Glyph>, <SportMark> or <Mark>:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — a mark is drawn by the shared renderer, never by a <Text>", () => {
+    // The other half of the rule. Banning the CHARACTER is not enough if a
+    // screen can still put a `glyph`/`icon` string into a <Text> and size it
+    // like art — that is how the recipe tile came to watermark a dish at
+    // fontSize 78 and a plan cover at 118, the two sizes the type ratchet had
+    // to except as "artwork, not type".
+    //
+    // A `<Text>` whose ONLY child is a bare `{x.icon}` / `{x.emoji}` / `{x.glyph}`
+    // expression is that shape. The typographic emblem families are the
+    // exception and they say so by name: plan-hero's `cover.glyph`, the
+    // guidance sections, the chooser cards.
+    const EXEMPT = /cover\.glyph|GLYPHS\[|s\.icon\b/;
+    const bad = FILES.flatMap(({ path, text }) =>
+      text.split("\n").flatMap((line, i) =>
+        /<Text[^>]*>\{[a-zA-Z]+\.(icon|emoji)\}<\/Text>/.test(line) && !EXEMPT.test(line)
+          ? [`${path}:${i + 1}`]
+          : [],
+      ),
+    );
+    expect(bad, `\na mark rendered as type — use <Mark mark={…} />:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
 describe("presentation", () => {
   it("HARD — no system alerts; the app draws its own decisions", () => {
     // Was 34 Alert.alert calls plus an iOS-only Alert.prompt. They were not

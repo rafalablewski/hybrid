@@ -4,15 +4,16 @@ import {
   doneReceipt,
   feelSamples,
   loadBaseline,
-  sessionIcon,
+  sessionMark,
   type LoggedSession,
 
   ALPHA,} from "@hybrid/core";
-import { useTheme } from "../lib/theme";
+import { useTheme, txt } from "../lib/theme";
 import { fs, F, FIXED_FONT_SCALE } from "../lib/ui";
 import { withAlpha , RADIUS} from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import { FeelPrompt } from "./feel-prompt";
+import { Mark } from "./aurora/mark";
 
 /**
  * RATE THIS SESSION — the question, brought to wherever the session already is.
@@ -76,7 +77,7 @@ export default function FeelSheet({
         <>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 12, marginBottom: 18 }}>
             <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(C.blue, ALPHA.solid) }}>
-              <Text style={{ fontSize: fs.title }}>{sessionIcon(session)}</Text>
+              <Mark mark={sessionMark(session)} size={fs.title} color={txt(C, C.blue) as string} />
             </View>
             <Text
               maxFontSizeMultiplier={FIXED_FONT_SCALE}

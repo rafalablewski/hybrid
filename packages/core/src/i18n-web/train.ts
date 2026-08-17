@@ -172,7 +172,7 @@ export const web_train = {
     // run-track.tsx
     "w.train.runTrack.title": "Run tracking",
     "w.train.runTrack.intro": "Track a run — time it, log the distance, save it to your history.",
-    "w.train.runTrack.liveRouteMap": "📍 Live route map",
+    "w.train.runTrack.liveRouteMap": "Live route map",
     "w.train.runTrack.mapNote": "GPS route tracking goes live in the native app build (the map needs on-device location). Timing & distance below work everywhere.",
     "w.train.runTrack.time": "Time",
     "w.train.runTrack.distance": "Distance",
@@ -585,7 +585,7 @@ export const web_train = {
     // run-track.tsx
     "w.train.runTrack.title": "Śledzenie biegu",
     "w.train.runTrack.intro": "Śledź bieg — odmierz czas, zapisz dystans, zachowaj go w historii.",
-    "w.train.runTrack.liveRouteMap": "📍 Mapa trasy na żywo",
+    "w.train.runTrack.liveRouteMap": "Mapa trasy na żywo",
     "w.train.runTrack.mapNote": "Śledzenie trasy GPS będzie dostępne w natywnej wersji aplikacji (mapa wymaga lokalizacji w urządzeniu). Czas i dystans poniżej działają wszędzie.",
     "w.train.runTrack.time": "Czas",
     "w.train.runTrack.distance": "Dystans",
@@ -990,7 +990,7 @@ export const web_train = {
     // run-track.tsx
     "w.train.runTrack.title": "Lauf-Tracking",
     "w.train.runTrack.intro": "Verfolge einen Lauf — stoppe die Zeit, protokolliere die Distanz, speichere ihn in deiner Historie.",
-    "w.train.runTrack.liveRouteMap": "📍 Live-Streckenkarte",
+    "w.train.runTrack.liveRouteMap": "Live-Streckenkarte",
     "w.train.runTrack.mapNote": "GPS-Streckenverfolgung wird in der nativen App-Version verfügbar (die Karte braucht Standort auf dem Gerät). Zeit & Distanz unten funktionieren überall.",
     "w.train.runTrack.time": "Zeit",
     "w.train.runTrack.distance": "Distanz",

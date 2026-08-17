@@ -1,4 +1,5 @@
 import type { CardioDiscipline, LoggedSession } from "./engines/session";
+import { glyphMark, sportMarkOf, type Mark } from "./theme/mark";
 import { paceClock } from "./engines/session";
 import { runTotals, disciplineSessions, type RunTotals } from "./engines/running";
 
@@ -20,8 +21,13 @@ export interface DisciplineMeta {
   discipline: CardioDiscipline;
   /** i18n key for the display name (mobile i18n; English fallback in the value). */
   labelKey: string;
-  /** Tile glyph — a semantic sport emoji, not a decorative marker. */
-  emoji: string;
+  /**
+   * The discipline's own drawing. Was an emoji (🏃 🚴 🏊 🚣 ⛷️ 🚶 🔥 🎾); it is
+   * a `Mark` now, so five of the eight resolve through the DRAWN sport marks
+   * that already existed for them and the other three name a glyph. See
+   * theme/mark.ts.
+   */
+  mark: Mark;
   mode: DisciplineMode;
   /** Metres per pace split — 1000 (/km), 100 (/100m swim), 500 (/500m row). */
   pacePer: number;
@@ -46,14 +52,14 @@ export const ENDURANCE_DISCIPLINES: CardioDiscipline[] = [
 ];
 
 export const DISCIPLINE_META: Record<CardioDiscipline, DisciplineMeta> = {
-  running: { discipline: "running", labelKey: "endurance.running", emoji: "🏃", mode: "pace", pacePer: 1000, distanceUnit: "km" },
-  cycling: { discipline: "cycling", labelKey: "endurance.cycling", emoji: "🚴", mode: "speed", pacePer: 1000, distanceUnit: "km" },
-  swimming: { discipline: "swimming", labelKey: "endurance.swimming", emoji: "🏊", mode: "pace", pacePer: 100, distanceUnit: "m" },
-  rowing: { discipline: "rowing", labelKey: "endurance.rowing", emoji: "🚣", mode: "pace", pacePer: 500, distanceUnit: "m" },
-  skiing: { discipline: "skiing", labelKey: "endurance.skiing", emoji: "⛷️", mode: "pace", pacePer: 1000, distanceUnit: "km" },
-  walking: { discipline: "walking", labelKey: "endurance.walking", emoji: "🚶", mode: "pace", pacePer: 1000, distanceUnit: "km" },
-  other: { discipline: "other", labelKey: "endurance.other", emoji: "🔥", mode: "pace", pacePer: 1000, distanceUnit: "km" },
-  sport: { discipline: "sport", labelKey: "endurance.sport", emoji: "🎾", mode: "timed", pacePer: 1000, distanceUnit: "km" },
+  running: { discipline: "running", labelKey: "endurance.running", mark: sportMarkOf("Running"), mode: "pace", pacePer: 1000, distanceUnit: "km" },
+  cycling: { discipline: "cycling", labelKey: "endurance.cycling", mark: sportMarkOf("Cycling"), mode: "speed", pacePer: 1000, distanceUnit: "km" },
+  swimming: { discipline: "swimming", labelKey: "endurance.swimming", mark: sportMarkOf("Swimming"), mode: "pace", pacePer: 100, distanceUnit: "m" },
+  rowing: { discipline: "rowing", labelKey: "endurance.rowing", mark: sportMarkOf("Rowing"), mode: "pace", pacePer: 500, distanceUnit: "m" },
+  skiing: { discipline: "skiing", labelKey: "endurance.skiing", mark: sportMarkOf("Cross-Country Skiing"), mode: "pace", pacePer: 1000, distanceUnit: "km" },
+  walking: { discipline: "walking", labelKey: "endurance.walking", mark: sportMarkOf("Race Walking"), mode: "pace", pacePer: 1000, distanceUnit: "km" },
+  other: { discipline: "other", labelKey: "endurance.other", mark: glyphMark("flame"), mode: "pace", pacePer: 1000, distanceUnit: "km" },
+  sport: { discipline: "sport", labelKey: "endurance.sport", mark: sportMarkOf("Tennis"), mode: "timed", pacePer: 1000, distanceUnit: "km" },
 };
 
 export interface DisciplineSummary extends RunTotals {

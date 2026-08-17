@@ -1,6 +1,13 @@
 import { type ColorValue, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { AURORA_ICON_PATHS, auroraIconStroke, type AuroraIconName } from "@hybrid/core";
+import {
+  AURORA_ICON_PATHS,
+  auroraIconStroke,
+  glyphPaths,
+  sportMarkPaths,
+  type AuroraIconName,
+  type GlyphName,
+} from "@hybrid/core";
 
 /**
  * Aurora line icons (mobile) — TRUE VECTORS via react-native-svg, stroked from
@@ -57,6 +64,79 @@ export const SOURCES: Partial<Record<AuroraIconName, ReturnType<typeof require>>
   "fork-knife": require("../../assets/icons/fork-knife.png"),
 };
 
+/**
+ * THE RENDERER. One stroked 72-box, used by every mark the app draws.
+ *
+ * `Glyph` takes any name in the one vocabulary (core `GlyphName` — the design
+ * kit, the nutrition extension, the Today hub's three, the product marks) and
+ * `SportMark` takes a SPORT and resolves its drawing. Between them there is no
+ * third way to put a picture on the glass, which is the whole finding: this
+ * component and the emoji ban in design-tokens.test.ts are two halves of one
+ * rule.
+ *
+ * `color` has no default on purpose. The old nutrition renderer defaulted to
+ * "#fff" — a colour the palette does not contain — so every call site that
+ * forgot to pass one drew pure white on near-black, off-palette, and nothing
+ * failed. A required colour is how that stops happening.
+ */
+function Stroked({ paths, size, color, style }: { paths: string[]; size: number; color: ColorValue; style?: StyleProp<ViewStyle> }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 72 72" fill="none" style={style}>
+      {paths.map((d, i) => (
+        <Path
+          key={i}
+          d={d}
+          stroke={color}
+          strokeWidth={auroraIconStroke(size)}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </Svg>
+  );
+}
+
+export function Glyph({
+  name,
+  size = 22,
+  color,
+  style,
+}: {
+  name: GlyphName;
+  size?: number;
+  color: ColorValue;
+  style?: StyleProp<ViewStyle>;
+}) {
+  return <Stroked paths={glyphPaths(name)} size={size} color={color} style={style} />;
+}
+
+/**
+ * A SPORT's own drawing, resolved from its name through core's `sportMark()`.
+ *
+ * The marks shipped in Aug 2026 and were drawn at exactly TWO sites — the sport
+ * page's hero and its collapsed bar — while every other surface that names a
+ * sport (the quick picker, the other-sports lanes, an activity row, a session
+ * row, the endurance lanes) drew the catalog EMOJI. This component is what a
+ * row calls; `fallback` is the mark for a sport with no drawing of its own,
+ * and it is a GLYPH, never a picture from the platform.
+ */
+export function SportMark({
+  sport,
+  size = 22,
+  color,
+  fallback = "target",
+  style,
+}: {
+  sport: string;
+  size?: number;
+  color: ColorValue;
+  fallback?: GlyphName;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const paths = sportMarkPaths(sport);
+  return <Stroked paths={paths.length ? paths : glyphPaths(fallback)} size={size} color={color} style={style} />;
+}
+
 export function AuroraIcon({
   name,
   size = 22,
@@ -68,18 +148,5 @@ export function AuroraIcon({
   color?: ColorValue;
   style?: StyleProp<ViewStyle>;
 }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 72 72" fill="none" style={style}>
-      {AURORA_ICON_PATHS[name].map((d, i) => (
-        <Path
-          key={i}
-          d={d}
-          stroke={color ?? "#000"}
-          strokeWidth={auroraIconStroke(size)}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      ))}
-    </Svg>
-  );
+  return <Stroked paths={AURORA_ICON_PATHS[name]} size={size} color={color ?? "#000"} style={style} />;
 }

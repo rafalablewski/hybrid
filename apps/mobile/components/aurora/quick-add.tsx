@@ -12,8 +12,8 @@ import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
-import { IBarcode, IClose, PICKER_EDGE, ROW_LEAD } from "./nutrition-kit";
+import { AuroraIcon, Glyph } from "./icons";
+import { PICKER_EDGE, ROW_LEAD } from "./nutrition-kit";
 
 /**
  * THE PICKER FIELD (mobile) — the twin of apps/web/components/aurora/quick-add.tsx.
@@ -82,13 +82,13 @@ export function PickerField({ value, onChange, onSubmit, onScan, onCancel, input
       />
       {typed ? (
         <PressScale onPress={() => onChange("")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.clear")} hitSlop={HIT_SLOP}>
-          <IClose size={18} color={C.ash} />
+          <Glyph name="close" size={18} color={C.ash} />
         </PressScale>
       ) : onScan ? (
         // Scanning is the same question asked with a camera, so where the field
         // is always present it stays the field's trailing glyph.
         <PressScale onPress={onScan} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.scan.title")} hitSlop={HIT_SLOP}>
-          <IBarcode size={20} color={C.ash} />
+          <Glyph name="barcode" size={20} color={C.ash} />
         </PressScale>
       ) : null}
     </View>

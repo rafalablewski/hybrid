@@ -17,7 +17,7 @@ import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { APill, ACard, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
+import { AuroraIcon, Glyph } from "./icons";
 import Sheet from "./sheet";
 import { useListMotion } from "../../lib/list-motion";
 
@@ -202,7 +202,7 @@ export function UserRecipeShelf({
               style={{ flexDirection: "row", alignItems: "center", gap: space.md, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14, marginTop: space.sm }}
             >
               <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontSize: 19 }}>{r.emoji ?? "🍲"}</Text>
+                <Glyph name="bowl" size={19} color={C.ash} />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{r.name}</Text>

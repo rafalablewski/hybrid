@@ -30,7 +30,8 @@ type Entry = {
   name: string;
   kind: BlockKind;
   /** Sport glyph, for catalog sports. */
-  icon?: string;
+  /** set for a SPORT row — the drawn sport mark replaces the implement mark */
+  sport?: string;
   /** How many times the athlete has logged it — ranks their own lifts first. */
   count?: number;
 };
@@ -140,7 +141,7 @@ export default function ExercisePickerSheet({ visible, onClose, onPick, onPickMa
     const sports = olympicSportsByCategory().map((g) => ({
       key: `sport:${g.category}`,
       label: g.category,
-      entries: g.sports.map((s): Entry => ({ name: s.name, kind: "cardio" as BlockKind, icon: s.icon })),
+      entries: g.sports.map((s): Entry => ({ name: s.name, kind: "cardio" as BlockKind, sport: s.name })),
     }));
     return [...ex, ...sports];
   }, [catalog, categoryByName, aliases, t]);
@@ -452,7 +453,7 @@ const Row = memo(function Row({ entry, onPick, onLongPress, queued, multi }: {
           and a person keeps the circle. It carries the drawn demo once it
           exists and the implement mark until then; sports keep their glyph.
           The box is the kit's: six surfaces drew their own before it existed. */}
-      <AuroraExerciseAvatar name={entry.name} icon={entry.icon} tint={tint} glyph={24} />
+      <AuroraExerciseAvatar name={entry.name} sport={entry.sport} tint={tint} glyph={24} />
       <View style={{ flex: 1 }}>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{entry.name}</Text>
         {!!gear && (

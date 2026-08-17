@@ -303,7 +303,7 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
           {a.name}
         </Text>
         <Mono color={palette.ash} style={{ fontSize: fs.micro }}>
-          {a.role} – {a.model.replace("claude-", "")}{a.runtime === "managed" ? " – 🧠" : ""}
+          {a.role} – {a.model.replace("claude-", "")}{a.runtime === "managed" ? " – managed" : ""}
         </Mono>
       </View>
     </View>
@@ -339,7 +339,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
         <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: DOT(palette)[s.status] ?? palette.ash }} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: palette.chalk }} numberOfLines={1}>{s.name}</Text>
-          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – 🧠" : ""}</Mono>
+          <Mono color={palette.ash} style={{ fontSize: fs.micro }}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – managed" : ""}</Mono>
         </View>
         <Chip color={s.authority === "executive" ? palette.violet : palette.ash}>{s.authority}</Chip>
       </View>

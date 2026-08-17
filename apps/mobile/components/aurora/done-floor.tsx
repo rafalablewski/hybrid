@@ -1,5 +1,5 @@
 import { View, Text } from "react-native";
-import { alsoTodayCopy, isRated, sessionIcon, sessionMeta, type LoggedSession, type WeightUnit , ALPHA} from "@hybrid/core";
+import { alsoTodayCopy, isRated, sessionMark, sessionMeta, type LoggedSession, type WeightUnit , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -8,6 +8,7 @@ import { ArrowGlyph } from "./cta-label";
 import SwipeRow from "../swipe-row";
 import AActionPair from "./action-pair";
 import { useConfirm } from "./confirm";
+import { Mark } from "./mark";
 
 // ── AURORA Done floor (mobile) ──────────────────────────────────────────────
 // What was ACTUALLY logged on the viewed day — one row per session — as the
@@ -143,7 +144,7 @@ export default function DoneFloor({
             <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
               <Pressable onPress={() => onOpen(s.id)} accessibilityRole="button" accessibilityLabel={s.title} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 8 }}>
                 <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: withAlpha(onPlanRow ? C.lime : C.blue, ALPHA.solid) }}>
-                  <Text style={{ fontSize: fs.title }}>{sessionIcon(s)}</Text>
+                  <Mark mark={sessionMark(s)} size={fs.title} color={onPlanRow ? txt(C, C.lime) as string : txt(C, C.blue) as string} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>

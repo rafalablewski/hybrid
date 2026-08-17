@@ -1,6 +1,7 @@
 import { fmtTonnage, type WeightUnit } from "../units";
 import { roundKm } from "../distance";
 import { isWorkingSet, sessionVolume, type SessionBlock } from "./session";
+import { glyphMark, sportMarkOf, type Mark } from "../theme/mark";
 
 /**
  * Playful "Hevy-style" post-workout comparisons — turn a session's raw effort
@@ -20,45 +21,62 @@ export interface FunFact {
   value: number;
   /** i18n sentence key; its value contains "{amount}". */
   key: string;
-  /** a big emoji for the slide flourish. */
-  emoji: string;
+  /**
+   * The slide's flourish, drawn.
+   *
+   * It used to be a per-tier EMOJI — 🐼 at 100 kg, 🎹 at 500, 🦛 at 1000, 🐘 at
+   * 5000 — twenty pictographs chosen one tier at a time, watermarked at 22% of
+   * the slide width. There is no line glyph for a panda and there should not
+   * be: the comparison is the SENTENCE's job, and the sentence already says it.
+   * The mark now states the METRIC instead, which is a thing the app's own
+   * vocabulary can say, and it says it once per metric rather than once per
+   * tier.
+   */
+  mark: Mark;
 }
+
+/** The mark a fact wears, by the metric it is about. Three decisions, not
+ *  twenty. */
+const FUN_FACT_MARK: Record<"volume" | "reps" | "distance", Mark> = {
+  volume: glyphMark("barbell"),
+  reps: glyphMark("sync"),
+  distance: sportMarkOf("Running"),
+};
 
 interface Tier {
   min: number;
   key: string;
-  emoji: string;
 }
 
 // Ascending thresholds. The highest tier a value reaches wins. The lowest
 // (min ~0) tier is the entry level so ANY non-empty workout still gets a fact.
 const VOLUME_TIERS: Tier[] = [
-  { min: 1, key: "funfact.vol.s", emoji: "🎒" },
-  { min: 100, key: "funfact.vol.0", emoji: "🐼" },
-  { min: 250, key: "funfact.vol.1", emoji: "🥤" },
-  { min: 500, key: "funfact.vol.2", emoji: "🎹" },
-  { min: 1000, key: "funfact.vol.3", emoji: "🦛" },
-  { min: 2000, key: "funfact.vol.4", emoji: "🚗" },
-  { min: 5000, key: "funfact.vol.5", emoji: "🐘" },
-  { min: 10000, key: "funfact.vol.6", emoji: "🚌" },
+  { min: 1, key: "funfact.vol.s" },
+  { min: 100, key: "funfact.vol.0" },
+  { min: 250, key: "funfact.vol.1" },
+  { min: 500, key: "funfact.vol.2" },
+  { min: 1000, key: "funfact.vol.3" },
+  { min: 2000, key: "funfact.vol.4" },
+  { min: 5000, key: "funfact.vol.5" },
+  { min: 10000, key: "funfact.vol.6" },
 ];
 
 const REPS_TIERS: Tier[] = [
-  { min: 1, key: "funfact.reps.s", emoji: "🙌" },
-  { min: 50, key: "funfact.reps.0", emoji: "💪" },
-  { min: 100, key: "funfact.reps.1", emoji: "😅" },
-  { min: 200, key: "funfact.reps.2", emoji: "🔁" },
-  { min: 400, key: "funfact.reps.3", emoji: "🤖" },
-  { min: 800, key: "funfact.reps.4", emoji: "🥵" },
+  { min: 1, key: "funfact.reps.s" },
+  { min: 50, key: "funfact.reps.0" },
+  { min: 100, key: "funfact.reps.1" },
+  { min: 200, key: "funfact.reps.2" },
+  { min: 400, key: "funfact.reps.3" },
+  { min: 800, key: "funfact.reps.4" },
 ];
 
 const DIST_TIERS: Tier[] = [
-  { min: 0.5, key: "funfact.dist.s", emoji: "👟" },
-  { min: 3, key: "funfact.dist.0", emoji: "🏃" },
-  { min: 5, key: "funfact.dist.1", emoji: "🏞️" },
-  { min: 10, key: "funfact.dist.2", emoji: "🔥" },
-  { min: 21, key: "funfact.dist.3", emoji: "🏅" },
-  { min: 42, key: "funfact.dist.4", emoji: "🏆" },
+  { min: 0.5, key: "funfact.dist.s" },
+  { min: 3, key: "funfact.dist.0" },
+  { min: 5, key: "funfact.dist.1" },
+  { min: 10, key: "funfact.dist.2" },
+  { min: 21, key: "funfact.dist.3" },
+  { min: 42, key: "funfact.dist.4" },
 ];
 
 /** Index of the highest tier the value reaches, or -1 if it clears none. */
@@ -84,7 +102,7 @@ export function workoutFunFact(input: { volume: number; reps: number; distanceKm
   for (const c of candidates) if (c.idx > best.idx) best = c; // strict → earlier metric wins ties
   if (best.idx < 0) return null;
   const tier = best.tiers[best.idx]!;
-  return { metric: best.metric, value: best.value, key: tier.key, emoji: tier.emoji };
+  return { metric: best.metric, value: best.value, key: tier.key, mark: FUN_FACT_MARK[best.metric] };
 }
 
 /** Totals → fun fact, computed straight from a session's blocks. */

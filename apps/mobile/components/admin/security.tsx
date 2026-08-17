@@ -73,7 +73,7 @@ export default function AdminSecurity() {
             {d.posture.criticalOpen > 0 && (
               <ACard accent={palette.red} style={cardStack}>
                 <Mono color={palette.red} style={{ fontSize: fs.body, lineHeight: leading(fs.body, "snug") }}>
-                  ⚠ {d.posture.criticalOpen} critical control(s) not yet passing — address before launch.
+                  {d.posture.criticalOpen} critical control(s) not yet passing — address before launch.
                 </Mono>
               </ACard>
             )}

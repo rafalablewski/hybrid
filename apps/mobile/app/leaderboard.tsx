@@ -10,8 +10,11 @@ import { getLeaderboard } from "../lib/social-api";
 import { Avatar, Empty } from "../components/social-kit";
 import { useNavScrollProps } from "../lib/nav-scroll";
 import { usePersonSource } from "../lib/shared-element";
+import { Glyph } from "../components/aurora/icons";
 
-const MEDAL = ["🥇", "🥈", "🥉"];
+/** The podium's three inks. ONE drawn medal, three colours — which is how a
+ *  medal actually works, and what the 🥇🥈🥉 triple was standing in for. */
+const MEDAL_INK = ["#d4af37", "#b9bcc0", "#b3814f"] as const;
 
 export default function LeaderboardScreen() {
   // The face travels into the page this opens — see lib/shared-element.
@@ -28,7 +31,11 @@ export default function LeaderboardScreen() {
 
   const renderRow = ({ item: r }: { item: any }) => (
     <Pressable onPress={() => { if (!r.isMe && r.handle) { armPerson(r.handle); seedPerson({ handle: r.handle, displayName: r.displayName, avatarUrl: r.avatarUrl }); router.push(userPagePath(r.handle)); } }} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: r.isMe ? C.ink2 : "transparent", borderRadius: 10, paddingHorizontal: 6 }}>
-      <Text style={{ width: 28, textAlign: "center", fontFamily: F.bold, color: r.rank <= 3 ? C.amber : C.ash, fontSize: r.rank <= 3 ? 18 : 14 }}>{MEDAL[r.rank - 1] ?? r.rank}</Text>
+      <View style={{ width: 28, alignItems: "center", justifyContent: "center" }}>
+        {r.rank <= 3
+          ? <Glyph name="medal" size={22} color={MEDAL_INK[r.rank - 1]!} />
+          : <Text style={{ fontFamily: F.bold, color: C.ash, fontSize: 14 }}>{r.rank}</Text>}
+      </View>
       <Avatar url={r.avatarUrl} name={r.displayName} handle={r.handle} size={38} />
       <View style={{ flex: 1 }}>
         <Text style={{ color: C.chalk, fontFamily: F.bold }}>{r.isMe ? t("w.social.you") : r.displayName || `@${r.handle}`}</Text>

@@ -43,6 +43,7 @@ import { AuroraIcon } from "./icons";
 import { StreakMark } from "./streak-mark";
 import { ArrowGlyph } from "./cta-label";
 import { withAlpha } from "./field";
+import { Mark } from "./mark";
 
 type P = ReturnType<typeof useTheme>["palette"];
 
@@ -512,7 +513,7 @@ export default function AuroraProfile() {
                       justifyContent: "center",
                     }}
                   >
-                    <Text style={{ fontSize: fs.display, opacity: a.earned ? 1 : 0.38 }}>{a.icon}</Text>
+                    <Mark mark={a.mark} size={fs.display} color={a.earned ? txt(C, C.lime) as string : C.ash} />
                   </View>
                   <View style={{ width: 48, height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 8, overflow: "hidden" }}>
                     <View style={{ width: `${Math.max(6, pct)}%`, height: "100%", borderRadius: 2, backgroundColor: a.earned ? C.lime : withAlpha(C.lime, 0.6) }} />

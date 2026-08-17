@@ -5,6 +5,7 @@ import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED
 import { useDialog } from "../../lib/use-dialog";
 import AdminAnonSessions from "./anon-sessions";
 import { Loading } from "../aurora/skeleton";
+import { Glyph } from "@/components/aurora/icons";
 
 type Row = {
   id: string;
@@ -760,9 +761,9 @@ function DeleteAccountDialog({
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 14 }}>
           <div
             aria-hidden
-            style={{ width: 42, height: 42, flexShrink: 0, borderRadius: "50%", background: `${RED}18`, border: `1px solid ${RED}55`, display: "grid", placeItems: "center", color: txt(RED), fontSize: 22 }}
+            style={{ width: 42, height: 42, flexShrink: 0, borderRadius: "50%", background: `${RED}18`, border: `1px solid ${RED}55`, display: "grid", placeItems: "center", color: txt(RED) }}
           >
-            ⚠
+            <Glyph name="warn" size={22} />
           </div>
           <div>
             <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={RED}>Permanent deletion</Mono>

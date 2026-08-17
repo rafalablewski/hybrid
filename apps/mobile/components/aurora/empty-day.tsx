@@ -6,6 +6,7 @@ import { useLang } from "../../lib/i18n";
 import { leading, fs, F, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import { withAlpha } from "./field";
+import { Glyph } from "./icons";
 
 // ── AURORA Empty day (mobile) ───────────────────────────────────────────────
 // THE one drawing for a day with nothing on it. There used to be three, all
@@ -36,7 +37,7 @@ import { withAlpha } from "./field";
  *  today gets the check ring, which is the shape the day is waiting to fill. */
 function EmptyGlyph({ copy, color }: { copy: EmptyDayCopy; color: string }) {
   if (copy.tense === "past") {
-    return <Text style={{ fontSize: 30, lineHeight: leading(30, "tight"), color }}>☾</Text>;
+    return <Glyph name="moon" size={30} color={color} />;
   }
   return <AuroraIcon name="check-circle" size={34} color={color} />;
 }
