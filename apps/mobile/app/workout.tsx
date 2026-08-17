@@ -155,7 +155,6 @@ import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon, Glyph } from "../components/aurora/icons";
 import type { AuroraIconName } from "@hybrid/core";
-import { useTemplate } from "../lib/template";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER , RADIUS} from "../components/aurora/kit";
 import { GlassSelectMenu, GlassToolbarGroup, LIQUID_GLASS_RENDERED } from "../components/aurora/swiftui";
 import ASatellite from "../components/aurora/satellite";
@@ -165,15 +164,15 @@ import { coverInsets } from "../lib/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Mark } from "../components/aurora/mark";
 
-// Aurora rounds everything more — pill CTAs and softer cards/banners. These
-// helpers let the live logger pick up the new look without duplicating its
-// (large, stateful) logic; classic radii are preserved when not on Aurora.
-const auroraRadii = (aurora: boolean) => ({
-  cta: aurora ? 999 : 14,
-  banner: aurora ? 16 : 12,
-  field: aurora ? 16 : 10,
-  chip: aurora ? 999 : 10,
-});
+// THE LOGGER'S PRIVATE RADIUS VOCABULARY IS GONE. It was a four-name ladder —
+// cta / banner / field / chip — built by a helper that took a boolean and
+// returned one of two sets. The boolean was `template === "aurora"`, and
+// `TemplateName` is a union of ONE, so the second set could never render: a
+// dead branch feeding a private vocabulary, in the app's most-used screen. The
+// live values were 999 / 16 / 16 / 999, which are exactly the kit's own
+// `RADIUS.pill` and `RADIUS.field`, so the whole thing said in four local names
+// what the design system already said in two shared ones. Call sites read
+// RADIUS directly now.
 
 const uid = () => Math.random().toString(36).slice(2);
 
@@ -324,8 +323,6 @@ export default function Workout() {
   const reducedMotion = useReducedMotion();
   const { palette: C, scheme } = useTheme();
   const pa = usePremiumAccent();
-  const aurora = useTemplate().template === "aurora";
-  const R = auroraRadii(aurora);
   const router = useRouter();
   const { t } = useLang();
   const { session, ready } = useSession();
@@ -1212,7 +1209,7 @@ export default function Workout() {
           absolute child is laid out inside its parent's PADDING box, so putting
           it under the safe-area pad would stop the wash at the status bar and
           draw a seam across the top of the screen. */}
-      {aurora && <AuroraField />}
+      <AuroraField />
       {/* The safe-area pad is the SCREEN's, applied here rather than by a native
           SafeAreaView — see `safe` above. */}
       <View style={{ flex: 1, paddingTop: safe.top }}>
@@ -1367,10 +1364,10 @@ export default function Workout() {
         {/* Bodyweight nudge — a bodyweight lift is on the board but no weight is
             on file, so its tonnage would read 0. Set it inline; the live volume
             recomputes and the card self-dismisses. */}
-        {needsBw && <BodyweightNudge C={C} R={R} t={t} units={prefs.units} />}
+        {needsBw && <BodyweightNudge C={C} t={t} units={prefs.units} />}
 
         {showTip && (
-          <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, padding: 16, marginBottom: 16 }}>
+          <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16, marginBottom: 16 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("workout.tipTitle")}</Text>
               <Pressable onPress={dismissTip} hitSlop={8}>
@@ -1393,7 +1390,7 @@ export default function Workout() {
           // out of the label for that reason (the words around them never move).
           const clock = restTarget == null ? mmss(restNow) : done ? `+${mmss(restNow - restTarget)}` : mmss(remaining!);
           return (
-            <View style={{ backgroundColor: withAlpha(accent, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(accent, ALPHA.edge), borderRadius: R.banner, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
+            <View style={{ backgroundColor: withAlpha(accent, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(accent, ALPHA.edge), borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 }}>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, accent) }}>
@@ -1407,7 +1404,7 @@ export default function Workout() {
                 <Pressable
                   onPress={() => setRestSince(null)}
                   hitSlop={8}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: R.field, borderWidth: 1, borderColor: accent }}
+                  style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.field, borderWidth: 1, borderColor: accent }}
                 >
                   <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: txt(C, accent) }}>■ {t("workout.stopRest")}</Text>
                 </Pressable>
@@ -1419,7 +1416,7 @@ export default function Workout() {
                     <Pressable
                       key={sec}
                       onPress={() => pickRest(sec)}
-                      style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: R.field, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? withAlpha(C.blue, ALPHA.fill) : "transparent" }}
+                      style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? C.blue : C.line, backgroundColor: on ? withAlpha(C.blue, ALPHA.fill) : "transparent" }}
                     >
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.blue) : C.ash }}>{sec < 120 ? `${sec}s` : `${sec / 60}m`}</Text>
                     </Pressable>
@@ -1484,7 +1481,7 @@ export default function Workout() {
                   <Pressable
                     onPress={() => supersetWithPrev(nextUid)}
                     hitSlop={6}
-                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: R.field, borderWidth: 1, borderColor: joined ? withAlpha(C.chalk, ALPHA.rim) : C.line, backgroundColor: joined ? withAlpha(C.chalk, ALPHA.wash) : "transparent" }}
+                    style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.field, borderWidth: 1, borderColor: joined ? withAlpha(C.chalk, ALPHA.rim) : C.line, backgroundColor: joined ? withAlpha(C.chalk, ALPHA.wash) : "transparent" }}
                   >
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                       <Glyph name="link" size={fs.micro} color={joined ? C.chalk : C.ash} />
@@ -1605,7 +1602,7 @@ export default function Workout() {
                                     hitSlop={8}
                                     accessibilityRole="button"
                                     accessibilityLabel={t("workout.setOptions")}
-                                    style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: R.field, borderWidth: typeAccent ? 1 : 0, borderColor: typeAccent ?? "transparent", backgroundColor: typeAccent ? withAlpha(typeAccent, ALPHA.fill) : "transparent" }}
+                                    style={{ flexDirection: "row", alignItems: "center", gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: RADIUS.field, borderWidth: typeAccent ? 1 : 0, borderColor: typeAccent ?? "transparent", backgroundColor: typeAccent ? withAlpha(typeAccent, ALPHA.fill) : "transparent" }}
                                   >
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: typeAccent ? txt(C, typeAccent) : C.ash }}>
                                       {typeAccent ? setTypeBadge(s, i) : t("workout.setTypeWorking").toUpperCase()}
@@ -1740,7 +1737,7 @@ export default function Workout() {
                   const ai = activeSetIndex(x.sets);
                   const current = ai >= 0 ? setType(x.sets[ai]!) : "working";
                   return (
-                  <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: R.banner, backgroundColor: C.ink2, overflow: "hidden" }}>
+                  <View style={{ marginTop: 8, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, backgroundColor: C.ink2, overflow: "hidden" }}>
                     {SET_TYPE_OPTIONS.map((o, ii) => (
                       <Pressable
                         key={o.id}
@@ -1775,7 +1772,7 @@ export default function Workout() {
                       {prefs.quickIncrement > 0 && (
                         <View style={{ flexDirection: "row", gap: space.xs, alignItems: "center" }}>
                           {([-prefs.quickIncrement, prefs.quickIncrement] as const).map((d) => (
-                            <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: R.field, borderWidth: 1, borderColor: C.line }}>
+                            <Pressable key={d} onPress={() => bumpLastLoad(x.uid, d)} style={{ paddingVertical: 5, paddingHorizontal: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line }}>
                               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>{d > 0 ? `+${d}` : d}</Text>
                             </Pressable>
                           ))}
@@ -1937,17 +1934,17 @@ export default function Workout() {
             <Pressable
               onPress={loadPrescribed}
               // free users see the sand "Full" upsell accent; athletes (already unlocked) keep lime — parity with the web logger
-              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: isAthlete ? C.lime : pa.fill, borderRadius: R.cta, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: withAlpha(isAthlete ? C.lime : pa.fill, ALPHA.wash) }}
+              style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", borderWidth: 1, borderColor: isAthlete ? C.lime : pa.fill, borderRadius: RADIUS.pill, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: withAlpha(isAthlete ? C.lime : pa.fill, ALPHA.wash) }}
             >
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: isAthlete ? txt(C, C.lime) : pa.text }}>✦ {t("train.start")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{!isAthlete ? t("train.premium") : recent.length > 0 ? t("train.aiReadiness") : t("train.aiCoach")}</Text>
             </Pressable>
             {routines.length > 0 && (
-              <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: R.cta, padding: 12 }}>
+              <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 12 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginBottom: 8 }}>{t("train.routines")}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
                   {routines.map((r) => (
-                    <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, borderRadius: R.chip, paddingVertical: 8, paddingHorizontal: 12 }}>
+                    <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
                       <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{r.name}</Text>
                     </Pressable>
                   ))}
@@ -2403,8 +2400,6 @@ function Summary({
   haptics: boolean;
 }) {
   const C = useTheme().palette;
-  const aurora = useTemplate().template === "aurora";
-  const R = auroraRadii(aurora);
   // THE TROPHY CHIP — where the record lift's PR badge LANDS
   // (SHARED_ELEMENTS.prBadge): the badge that appeared on the exercise card
   // when the record set banked flies here, so the win arrives carried rather
@@ -2542,7 +2537,7 @@ function Summary({
       {/* Both backdrops sit OUTSIDE the safe-area pad — they are `absoluteFill`,
           and an absolute child lays out inside its parent's padding box, so
           padding above them would stop the field at the status bar. */}
-      {aurora && <AuroraField />}
+      <AuroraField />
       <FinishField />
       <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingTop: safe.top + 16, paddingBottom: safe.bottom + 28, flexGrow: 1 }}>
         {/* The one exit — where dismissal muscle memory expects it. Guests leave
@@ -2642,7 +2637,7 @@ function Summary({
                 backgroundColor: withAlpha(C.lime, ALPHA.solid),
                 borderWidth: 1,
                 borderColor: withAlpha(C.lime, ALPHA.rim),
-                borderRadius: R.cta,
+                borderRadius: RADIUS.pill,
                 paddingVertical: 16,
                 alignItems: "center",
                 marginTop: 16,
@@ -2655,7 +2650,7 @@ function Summary({
             </View>
             <Pressable
               onPress={() => router.replace("/login?mode=signup")}
-              style={{ backgroundColor: C.violet, borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
+              style={{ backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
             >
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("summary.guestSave")}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, opacity: 0.8, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
@@ -2683,7 +2678,7 @@ function Summary({
                   backgroundColor: withAlpha(C.lime, ALPHA.solid),
                   borderWidth: 1,
                   borderColor: withAlpha(C.lime, ALPHA.rim),
-                  borderRadius: R.cta,
+                  borderRadius: RADIUS.pill,
                   paddingVertical: 16,
                   alignItems: "center",
                 }}
@@ -2781,7 +2776,6 @@ function FinishField() {
 // error; logging/building one-offs stays free.
 function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: SessionBlock[]; t: (k: string) => string; startOpen?: boolean }) {
   const C = useTheme().palette;
-  const R = auroraRadii(useTemplate().template === "aurora");
   const router = useRouter();
   const persona = usePersona();
   // The Liquid-Field summary opens the composer straight from the ★ satellite
@@ -2813,7 +2807,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
         <Pressable
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "save-routine" }); router.push("/upgrade"); }}
-          style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 12, alignItems: "center", marginTop: 12 }}
+          style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 12 }}
         >
           <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.train.logger.routineUnlock")}</Text>
         </Pressable>
@@ -2824,7 +2818,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
     return (
       <Pressable
         onPress={() => setOpen(true)}
-        style={{ borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: R.cta, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
+        style={{ borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
       >
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
       </Pressable>
@@ -2847,12 +2841,12 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
         onChangeText={setName}
         placeholder="Routine name"
         placeholderTextColor={C.ash}
-        style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 10 }}
+        style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 }}
       />
       <Pressable
         onPress={save}
         disabled={state === "saving"}
-        style={{ backgroundColor: C.lime, borderRadius: R.cta, paddingVertical: 12, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
+        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
       </Pressable>
@@ -2865,13 +2859,12 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
 // expands to an input that PATCHes the saved session's title.
 function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string | null; value: string; onRenamed: (title: string) => void; t: (k: string) => string }) {
   const C = useTheme().palette;
-  const R = auroraRadii(useTemplate().template === "aurora");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(value);
 
   if (!open)
     return (
-      <Pressable onPress={() => setOpen(true)} style={{ alignSelf: "center", marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 16 }}>
+      <Pressable onPress={() => setOpen(true)} style={{ alignSelf: "center", marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>✎ {t("summary.nameOptional")}</Text>
       </Pressable>
     );
@@ -2894,9 +2887,9 @@ function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string |
         onSubmitEditing={commit}
         placeholder={t("workout.nameWorkout")}
         placeholderTextColor={C.ash}
-        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 10, textAlign: "center" }}
+        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10, textAlign: "center" }}
       />
-      <Pressable onPress={commit} style={{ backgroundColor: C.lime, borderRadius: R.field, paddingVertical: 10, paddingHorizontal: 16 }}>
+      <Pressable onPress={commit} style={{ backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 10, paddingHorizontal: 16 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>✓</Text>
       </Pressable>
     </View>
@@ -2908,7 +2901,6 @@ function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string |
 // link like the rename; pill → composer → saved. Mirrors the web SessionNote.
 function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string) => string }) {
   const C = useTheme().palette;
-  const R = auroraRadii(useTemplate().template === "aurora");
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [note, setNote] = useState("");
@@ -2922,7 +2914,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
 
   if (!open)
     return (
-      <Pressable onPress={() => setOpen(true)} style={{ alignSelf: "center", marginTop: 10, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: R.cta, paddingVertical: 8, paddingHorizontal: 16 }}>
+      <Pressable onPress={() => setOpen(true)} style={{ alignSelf: "center", marginTop: 10, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>✎ {t("w.train.note.add")}</Text>
       </Pressable>
     );
@@ -2947,7 +2939,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
         placeholder={t("w.train.note.ph")}
         placeholderTextColor={C.ash}
         multiline
-        style={{ minHeight: 44, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: R.field, paddingHorizontal: 12, paddingVertical: 8, textAlignVertical: "top" }}
+        style={{ minHeight: 44, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 8, textAlignVertical: "top" }}
       />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 10 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.train.note.mood-q")}</Text>
@@ -2971,7 +2963,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
           );
         })}
       </View>
-      <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: R.field, paddingVertical: 12, alignItems: "center", opacity: saving ? 0.6 : 1 }}>
+      <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center", opacity: saving ? 0.6 : 1 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>
       </Pressable>
     </View>
@@ -3056,7 +3048,7 @@ function LiveStat({
 // session has a bodyweight lift and no weight is on file (its tonnage would
 // read 0). Set it inline: POST /api/body then refreshBodyweight() recomputes
 // the live volume and the card self-dismisses. Parity with the web logger.
-function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof auroraRadii>; t: (k: string) => string; units: WeightUnit }) {
+function BodyweightNudge({ C, t, units }: { C: Palette; t: (k: string) => string; units: WeightUnit }) {
   const [val, setVal] = useState("");
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [dismissed, setDismissed] = useState(false);
@@ -3080,7 +3072,7 @@ function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof 
     refreshBodyweight();
   };
   return (
-    <View style={{ backgroundColor: withAlpha(a, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(a, ALPHA.edge), borderRadius: R.banner, padding: 16, marginBottom: 16 }}>
+    <View style={{ backgroundColor: withAlpha(a, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(a, ALPHA.edge), borderRadius: RADIUS.field, padding: 16, marginBottom: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
         <Glyph name="scale" size={fs.body + 2} color={txt(C, a) as string} />
         <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, a), flex: 1 }}>{t("w.train.logger.bwNudgeTitle")}</Text>
@@ -3090,7 +3082,7 @@ function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof 
       </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption), marginBottom: 10 }}>{t("w.train.logger.bwNudgeBody")}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: state === "error" ? C.red : C.line, borderRadius: R.field, paddingHorizontal: 12 }}>
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", backgroundColor: C.ink2, borderWidth: 1, borderColor: state === "error" ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 12 }}>
           <TextInput
             value={val}
             onChangeText={(v) => { setVal(v); if (state === "error") setState("idle"); }}
@@ -3102,7 +3094,7 @@ function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof 
           />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{units}</Text>
         </View>
-        <Pressable onPress={save} disabled={state === "saving"} style={{ backgroundColor: a, borderRadius: R.cta, paddingVertical: 10, paddingHorizontal: 16, opacity: state === "saving" ? 0.6 : 1 }}>
+        <Pressable onPress={save} disabled={state === "saving"} style={{ backgroundColor: a, borderRadius: RADIUS.pill, paddingVertical: 10, paddingHorizontal: 16, opacity: state === "saving" ? 0.6 : 1 }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.caption, color: C.onAccent }}>
             {state === "saving" ? t("live.bwNudgeSaving") : state === "saved" ? t("w.train.logger.bwNudgeSaved") : t("w.train.logger.bwNudgeSave")}
           </Text>
@@ -3115,13 +3107,12 @@ function BodyweightNudge({ C, R, t, units }: { C: Palette; R: ReturnType<typeof 
 
 function Cell({ value, onChange, done, active, keyboard = "numeric" }: { value: string; onChange: (v: string) => void; done?: boolean; active?: boolean; keyboard?: "numeric" | "default" }) {
   const C = useTheme().palette;
-  const R = auroraRadii(useTemplate().template === "aurora");
   return (
     <TextInput
       value={value}
       onChangeText={onChange}
       keyboardType={keyboard}
-      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: active ? "transparent" : C.ink2, borderWidth: 1, borderColor: active ? withAlpha(C.lime, ALPHA.rim) : C.line, borderRadius: R.field, paddingVertical: 10 }}
+      style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, color: done ? C.ash : C.chalk, textAlign: "center", backgroundColor: active ? "transparent" : C.ink2, borderWidth: 1, borderColor: active ? withAlpha(C.lime, ALPHA.rim) : C.line, borderRadius: RADIUS.field, paddingVertical: 10 }}
     />
   );
 }

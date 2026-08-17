@@ -7,7 +7,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 
 /**
- * NUTRITION HUB BENTO (mobile) — twin of apps/web/components/aurora/nutrition-hub.tsx.
+ * NUTRITION HUB BENTO (mobile).
  *
  * Replaces the flat wrapped row of mono-uppercase words that used to carry the
  * five deep destinations at the bottom of the Nutrition home. They had no

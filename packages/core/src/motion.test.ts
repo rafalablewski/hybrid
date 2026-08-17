@@ -26,8 +26,57 @@ import {
   COVER_SCREENS,
   NAV_ROOT_ORDER,
 } from "./motion";
+import { AURORA_NAV_TABS } from "./nav-bar";
+import { readFileSync, readdirSync } from "node:fs";
+import { resolve, join } from "node:path";
 
 describe("springs", () => {
+  it("HARD — no spring is defined outside the token set", () => {
+    // motion.ts states the rule: "Every spring in the system. Anything that
+    // MOVES uses one of these, and motion.test.ts holds all of them to the
+    // 450ms ceiling — so a spring that isn't here is a spring nothing is
+    // checking." That was true of the tokens and unenforced everywhere else,
+    // and hero.ts had quietly carried a seventh — `{ response: .42, damping:
+    // .86 }`, outside this file's jurisdiction, unread by any caller, and
+    // misspelling `dampingFraction` badly enough that it could not have typed
+    // as a Spring. It is deleted; this is what stops the eighth.
+    //
+    // `response` is the signature: it is SwiftUI's parameterisation and this
+    // system's, and nothing else in the codebase uses the word as a key. A
+    // genuine new spring belongs in `springs`, where the ceiling can see it.
+    const ROOT = resolve(__dirname, "../../..");
+    const walk = (dir: string, out: string[] = []): string[] => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        if (e.name === "node_modules" || e.name.startsWith(".") || e.name === "ios" || e.name === "android") continue;
+        const p = join(dir, e.name);
+        if (e.isDirectory()) walk(p, out);
+        else if (/\.tsx?$/.test(e.name)) out.push(p);
+      }
+      return out;
+    };
+    // Comments stripped: this rule has to be quoted in the prose that records
+    // what was removed, here and in hero.ts, and a guard that its own
+    // documentation trips is a guard nobody keeps.
+    const strip = (src: string) => src.replace(/\/\/[^\n]*/g, "").replace(/\/\*[\s\S]*?\*\//g, "");
+    const offenders: string[] = [];
+    for (const dir of [resolve(ROOT, "packages/core/src"), resolve(ROOT, "apps/mobile"), resolve(ROOT, "apps/web")]) {
+      for (const f of walk(dir)) {
+        // motion.ts declares the tokens; this file checks them. capabilities.ts
+        // is the ledger — its `hero-motion-spring` entry QUOTES the deleted
+        // spring so the reasoning survives the code, which is the whole point
+        // of a retired entry, and comment-stripping cannot see inside a string.
+        if (f.endsWith("/motion.ts") || f.endsWith("/motion.test.ts") || f.endsWith("/capabilities.ts")) continue;
+        if (/\bresponse:\s*[\d.]/.test(strip(readFileSync(f, "utf8")))) offenders.push(f.slice(ROOT.length + 1));
+      }
+    }
+    expect(
+      offenders,
+      offenders.length
+        ? `\nThese declare a spring outside \`springs\`, where the 450ms ceiling cannot see it:\n  ${offenders.join("\n  ")}`
+        : "",
+    ).toEqual([]);
+  });
+
   it("keeps the press spring's shipped values", () => {
     // Was `springs.nav`, named for global-nav.tsx — a component deleted when the
     // bottom bar became the system tab bar. The numbers never changed; press
@@ -155,6 +204,17 @@ describe("screenTransition", () => {
     expect(screenTransition("today", "messages")).toEqual({ kind: "sibling", dir: 1 });
     expect(screenTransition("messages", "nutrition")).toEqual({ kind: "sibling", dir: -1 });
     expect(NAV_ROOT_ORDER.indexOf("more" as never)).toBe(-1);
+  });
+
+  it("HARD — the motion order IS the bar order, plus the detached verb", () => {
+    // This has drifted twice in the same direction: the list kept ranking the
+    // retired More tab, and did not rank Messages when Messages took that slot.
+    // Both times two roots sitting side by side in the bar animated as a
+    // drill-down on web while the native bar swapped them as siblings. Prose
+    // did not catch either, so the bar is now the source and this is the check.
+    expect(NAV_ROOT_ORDER.slice(0, AURORA_NAV_TABS.length)).toEqual(AURORA_NAV_TABS.map((t) => t.id));
+    expect(NAV_ROOT_ORDER[NAV_ROOT_ORDER.length - 1]).toBe("train");
+    expect(NAV_ROOT_ORDER).toHaveLength(AURORA_NAV_TABS.length + 1);
   });
 
   it("resolves client-specific ids onto their nav root", () => {

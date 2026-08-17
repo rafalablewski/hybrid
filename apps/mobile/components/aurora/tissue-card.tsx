@@ -28,9 +28,9 @@ function protocolDay(p: { injuryDate?: string | null }): number | null {
 }
 
 /**
- * TISSUE — one card for injury risk AND return-to-play. The mobile twin of
- * apps/web/components/aurora/tissue-card.tsx; both plot from `tissueAxis`
- * (@hybrid/core), so every tick and bar sits at an identical position.
+ * TISSUE — one card for injury risk AND return-to-play. It plots from
+ * `tissueAxis` (@hybrid/core), so where a tick or a bar sits is computed once
+ * and tested, not laid out by eye here.
  *
  *   calm     — title, one sentence, the axis, a quiet footer rail.
  *   open     — the same tissues as rows on the SAME axis, each carrying its

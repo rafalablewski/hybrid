@@ -16,7 +16,7 @@ import { AuroraIcon, Glyph } from "./icons";
 import { PICKER_EDGE, ROW_LEAD } from "./nutrition-kit";
 
 /**
- * THE PICKER FIELD (mobile) — the twin of apps/web/components/aurora/quick-add.tsx.
+ * THE PICKER FIELD (mobile).
  *
  * This used to be quick add sitting ABOVE a database search: two inputs, ninety
  * pixels apart, in the same shape with the same left-hand glyph. It is now the

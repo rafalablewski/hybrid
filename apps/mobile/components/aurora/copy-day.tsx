@@ -15,7 +15,7 @@ import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 
 /**
- * COPY A DAY (mobile) — the twin of apps/web/components/aurora/copy-day.tsx.
+ * COPY A DAY (mobile).
  *
  * See that file's note. In short: two steps, and the second is the point — the
  * sheet states the plan (how many items, how much energy, and whether the

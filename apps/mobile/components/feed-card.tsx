@@ -32,10 +32,9 @@ import { GUTTER, RADIUS, Avatar } from "./aurora/kit";
 import { FeedContextMenu, FeedMenuTrigger } from "./feed-menu";
 
 /**
- * THE FEED ROW (mobile) — twin of apps/web/components/feed-card.tsx. Both
- * render the SAME `FeedDetail` computed in core (packages/core/src/feed-card.ts),
- * so the zones, the moment weighting and the provenance rules are one
- * implementation with two renderers.
+ * THE FEED ROW (mobile). Both render the SAME `FeedDetail` computed in core
+ * (packages/core/src/feed-card.ts), so the zones, the moment weighting and the
+ * provenance rules are one implementation with two renderers.
  *
  * A post is a full-width ROW, not a card: no surface, no border radius, just a
  * hairline under each post, and the row bleeds under AuroraScreen's 12dp gutter

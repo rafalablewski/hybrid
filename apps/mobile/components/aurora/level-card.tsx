@@ -15,9 +15,8 @@ import { ACard, CardFoot } from "./kit";
 import { withAlpha } from "./field";
 
 /**
- * YOUR LEVEL — the Performance card. The mobile twin of
- * apps/web/components/aurora/level-card.tsx; both read the same estimate and
- * render the same four beats, so neither client can say a different word.
+ * YOUR LEVEL — the Performance card. The estimate it renders comes from core,
+ * so this file decides how the four beats READ and never what they say.
  *
  * THE READING ORDER IS THE DESIGN. Four beats, each skippable, none load-bearing
  * for the one before it:

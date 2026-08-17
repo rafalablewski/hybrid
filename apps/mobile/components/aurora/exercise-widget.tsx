@@ -177,8 +177,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
 /**
  * EXERCISES — the Today favourites rail (variant B, "the chart is the card").
  * Swipeable full-bleed cards, one per purpose; tap opens the exercise page.
- * Parity: apps/web/components/aurora/exercise-widget.tsx; prototype
- * reference/exercises-widget-preview-ive.html.
+ * Prototype: reference/exercises-widget-preview-ive.html.
  *
  * THE RAIL IS PINNABLE. Auto-fill (one card per purpose, most-trained first) is
  * a guess about what the athlete cares about; the lift they are actually

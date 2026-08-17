@@ -22,7 +22,7 @@ import Sheet from "./sheet";
 import { useListMotion } from "../../lib/list-motion";
 
 /**
- * YOUR RECIPES (mobile) — the twin of apps/web/components/aurora/user-recipes.tsx.
+ * YOUR RECIPES (mobile).
  *
  * See that file's note. In short: a user recipe is an ARITHMETIC OBJECT, so
  * there is no macro form anywhere on this screen — you add foods and quantities

@@ -11,7 +11,7 @@ import { useListMotion } from "../../lib/list-motion";
 import { SportMark } from "./icons";
 
 /**
- * AURORA Sport — the INDEX (mobile twin of apps/web/components/aurora/sport.tsx).
+ * AURORA Sport — the INDEX.
  *
  * This screen used to BE the sport experience: a chip picker over one shared
  * body, so a sport was a filter rather than a place. Now every sport has its own

@@ -374,7 +374,7 @@ describe("leading and tracking", () => {
     // fifth is the portion stepper's −, whose box was 26 on a size of 24: once
     // the size took a rung the pair read as a 1.0 ratio, which is nobody's
     // choice, it is two numbers that used to be different.)
-    burnDown(hits(/lineHeight:\s*\d/g), 41, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    burnDown(hits(/lineHeight:\s*\d/g), 40, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking names its token; a big figure derives it", () => {
@@ -459,7 +459,15 @@ describe("geometry", () => {
     // 162 → 160, re-measured rather than moved: two sites went with other work
     // and nobody re-pinned. Which is the discipline in this file's header — a
     // ceiling above its count is a budget for more of the thing.
-    burnDown(hits(/borderRadius:\s*\d/g), 160, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 160 → 159: the admin console drew its chart legend swatch twice, once per
+    // panel, and the second copy was about to become a third. One `Legend` in
+    // the admin _kit now serves both, on RADIUS.pill.
+    //
+    // 159 → 158, and the leading ceiling 41 → 40, on the MERGE of the icon
+    // convergence with the subtraction pass — neither branch alone freed them.
+    // Cross-rule slack is exactly what the anti-slack assertion is for, and a
+    // merge is where it accumulates fastest.
+    burnDown(hits(/borderRadius:\s*\d/g), 158, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -1009,11 +1017,23 @@ describe("presentation", () => {
     // the count fell 31 → 29 with nothing fixed. A rename must never be able to
     // shrink another rule's coverage; `inner` (12) and `field` (16) are the two
     // rungs inside the old 1x/2x range, so they are spelled here as well.
+    //
+    // 31 → 35, AND THE DEBT DID NOT GROW — the guard's EYES did. That is the
+    // same lesson as the paragraph above, running the other way. The live
+    // logger kept a private four-name radius vocabulary (`R.cta`, `R.banner`,
+    // `R.field`, `R.chip`) built by a helper that branched on the dead template
+    // flag; its live values were the kit's own `RADIUS.pill` and `RADIUS.field`
+    // said in local words. Four hand-rolled lime pills wrote `borderRadius:
+    // R.cta` and were therefore invisible here — not fixed, just unspellable.
+    // With the private vocabulary deleted and the call sites on RADIUS, this
+    // rule can finally see all of them. Re-pinning UP is allowed for exactly
+    // this reason and no other: the ceiling must reflect what the debt IS, and
+    // a number kept low by a blind spot is worse than an honest larger one.
     const RAD = String.raw`(?:999|RADIUS\.(?:pill|inner|field)|1[0-9]\b|2[0-9]\b)`;
     const found = hits(new RegExp(
       String.raw`backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*${RAD}` +
       String.raw`|borderRadius:\s*${RAD}[^\n]*backgroundColor:\s*(?:C|palette)\.lime`, "g"));
-    burnDown(found, 31, "2026-12-31", "hand-rolled lime pill → <APill />");
+    burnDown(found, 35, "2026-12-31", "hand-rolled lime pill → <APill />");
   });
 
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {

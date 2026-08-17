@@ -22,12 +22,11 @@ const fillOpacity = (intensity: number): number =>
 /**
  * The exercise BODY-MAP (mobile) — a front + back mannequin whose muscles glow
  * in proportion to that lift's share of effort (the same muscleActivation data
- * as the ranked bars). Resolves the spec from @hybrid/core (exerciseBodyMap) and
- * switches on its `kind`: TODAY the procedural `schematic` renderer; when
+ * as the ranked bars). Resolves the spec from @hybrid/core (exerciseBodyMap)
+ * and switches on its `kind`: TODAY the procedural `schematic` renderer; when
  * commissioned anatomical illustration lands, populate core's SKETCH_BODY_ART
  * and the `sketch` branch composites base art + per-muscle overlays — the
- * muscle/cues section never changes. Parity:
- * apps/web/components/aurora/body-map.tsx. Returns null for an unknown name.
+ * muscle/cues section never changes. Returns null for an unknown name.
  */
 export default function AuroraBodyMap({ name, t }: { name: string; t: (k: string) => string }) {
   const map = exerciseBodyMap(name);

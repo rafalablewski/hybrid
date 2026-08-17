@@ -99,6 +99,7 @@ export * from "./biometrics";
 export * from "./connectors";
 export * from "./benchmarks";
 export * from "./datanet";
+export * from "./athlete-weeks";
 export * from "./interval";
 export * from "./activity";
 export * from "./feed-live";

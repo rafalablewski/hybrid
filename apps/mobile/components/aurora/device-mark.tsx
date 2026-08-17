@@ -10,10 +10,9 @@ import {
 } from "@hybrid/core";
 
 /**
- * DEVICE MARK (mobile) — the logo a matched session signs itself with, drawn as
- * a true vector from the shared @hybrid/core path data. The web renderer
- * (apps/web/components/aurora/device-mark.tsx) draws the SAME paths, so the two
- * clients are pixel-identical at every size.
+ * DEVICE MARK (mobile) — the logo a matched session signs itself with, drawn
+ * as a true vector from the shared @hybrid/core path data. The web renderer
+ * draws the SAME paths, so the two clients are pixel-identical at every size.
  *
  * There is deliberately NO `color` prop. A manufacturer's logo reproduces in
  * solid black or solid white and nothing else, so the caller names the SURFACE

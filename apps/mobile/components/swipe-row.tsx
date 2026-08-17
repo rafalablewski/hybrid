@@ -15,13 +15,12 @@ import { useReducedMotion } from "../lib/use-reduced-motion";
 // notifications list.
 //
 // THE RELEASE RULE is velocity projection, not displacement: the row commits
-// from where the finger is HEADING (@hybrid/core projectSwipe), so a fast flick
-// that only travelled 35px opens instead of snapping shut. Past the action
-// width the travel rubber-bands rather than hitting a clamp, and a swipe that
-// crosses `swipe.fullAt` of the row deletes outright with no second tap — the
-// iOS full-swipe. Every constant is shared with the web twin
-// (apps/web/components/swipe-row.tsx) because the two had drifted on all of
-// them while each claiming to mirror the other.
+// from where the finger is HEADING (@hybrid/core projectSwipe), so a fast
+// flick that only travelled 35px opens instead of snapping shut. Past the
+// action width the travel rubber-bands rather than hitting a clamp, and a
+// swipe that crosses `swipe.fullAt` of the row deletes outright with no second
+// tap — the iOS full-swipe. Every constant is shared with the web twin because
+// the two had drifted on all of them while each claiming to mirror the other.
 //
 // A row can also carry a LEADING action, revealed by swiping RIGHT (the
 // notifications list uses it for "Unread"). Both sides obey the same grammar:

@@ -9,8 +9,6 @@ import AdminOverview from "../../components/admin/overview";
 import AdminUsers from "../../components/admin/users";
 import AdminDirectory from "../../components/admin/directory";
 import AdminModeration from "../../components/admin/moderation";
-import AdminAgentHQ from "../../components/admin/hq";
-import AdminAgents from "../../components/admin/agents";
 import AdminAnnouncements from "../../components/admin/announcements";
 import AdminExercises from "../../components/admin/exercises";
 import AdminMedia from "../../components/admin/media";
@@ -31,8 +29,6 @@ const BODIES: Record<AdminSectionId, () => React.JSX.Element> = {
   users: AdminUsers,
   directory: AdminDirectory,
   moderation: AdminModeration,
-  hq: AdminAgentHQ,
-  agents: AdminAgents,
   announcements: AdminAnnouncements,
   exercises: AdminExercises,
   media: AdminMedia,

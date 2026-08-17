@@ -12,6 +12,11 @@ describe("aurora nav bar contract", () => {
     // which nobody's daily loop includes opening. It moved to the side menu
     // behind the Today header's avatar (side-menu.ts), and the slot went to
     // Messages: a place with its own unread state that you come back to.
+    //
+    // The slot is held on the strength of the feature being BUILT — an audit
+    // cut it while the screen behind it was a placeholder, and that finding
+    // stands until conversations actually land there. What the placeholder may
+    // never do is fake them; the guard for that is below.
     const ids = AURORA_NAV_TABS.map((t) => t.id) as string[];
     expect(ids).not.toContain("more");
     expect(ids[2]).toBe("messages");

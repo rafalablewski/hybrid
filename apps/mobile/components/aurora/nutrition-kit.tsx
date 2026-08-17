@@ -76,11 +76,10 @@ export const MACRO_FILL = { protein: "blue", carbs: "amber", fat: "violet" } as 
 /**
  * THE NUTRITION KIT (mobile) — the vocabulary every Nutrition screen draws in.
  *
- * The twin of apps/web/components/aurora/nutrition-kit.tsx; see that file for
- * why these left nutrition.tsx. In short: each is a pure presentational piece
- * with explicit props that shared a 3 381-line file only because that is where
- * it was first written, and a primitive nobody can import is a primitive that
- * gets re-drawn the next time a screen needs it.
+ * WHY THESE LEFT nutrition.tsx: each is a pure presentational piece with
+ * explicit props that shared a 3 381-line file only because that is where it
+ * was first written, and a primitive nobody can import is a primitive that gets
+ * re-drawn the next time a screen needs it.
  */
 
 /**
@@ -111,8 +110,7 @@ export const macroKcal = (protein: string, carbs: string, fat: string) => Math.r
 //
 // Three levels, one object at three compressions, exactly as Plans does it:
 // the library root (a soft cover + shelves of covers), a collection (its own
-// cover + the recipes as cards), and the recipe itself. Web parity:
-// apps/web/components/aurora/nutrition.tsx.
+// cover + the recipes as cards), and the recipe itself.
 
 /** A collection's display name — the meals borrow the meal-part vocabulary the
  *  rest of nutrition uses, the cross-cut borrows the filter chip's. */

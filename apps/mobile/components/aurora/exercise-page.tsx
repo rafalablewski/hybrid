@@ -588,8 +588,7 @@ function SlideChart({ C, slide, stroke, units, t }: { C: Palette; slide: Exercis
 /**
  * The individual exercise page (variant B): no boxes — one hero number pairs
  * with one full-bleed chart and follows the swipe; hairline segments, a quiet
- * ALL STATS expansion and a typographic substats row. Parity:
- * apps/web/components/aurora/exercise-page.tsx.
+ * ALL STATS expansion and a typographic substats row.
  */
 export default function AuroraExercisePage() {
   const { palette: C } = useTheme();

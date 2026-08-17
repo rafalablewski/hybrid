@@ -17,9 +17,8 @@ import { Mark } from "./mark";
 /**
  * THE RECIPE LIBRARY (mobile) — the curated, read-only shelves.
  *
- * The twin of apps/web/components/aurora/recipe-library.tsx. These are the
- * READ-ONLY half; the athlete's own recipes live in aurora/user-recipes.tsx and
- * share no model with them.
+ * These are the READ-ONLY half; the athlete's own recipes live in aurora/user-
+ * recipes.tsx and share no model with them.
  */
 
 export function collectionTitle(key: RecipeCollection, t: (k: string) => string): string {

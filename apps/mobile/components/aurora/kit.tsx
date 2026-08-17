@@ -982,11 +982,10 @@ const chipLabel = (label: string, count: number | undefined, color: string) => (
 /**
  * THE DOCK RAIL — the strip of chips that docks beneath the collapsed hero.
  *
- * The exact twin of apps/web/components/aurora/dock-rail.tsx. Both clients
- * import every number from packages/core/src/dock-rail.ts, which also carries
- * the diagnosis this replaces: the rail was authored four separate times
- * (History web, History mobile, Plans web, Plans mobile) and twelve properties
- * were decided independently in each. Design sheet:
+ * Both clients import every number from packages/core/src/dock-rail.ts, which
+ * also carries the diagnosis this replaces: the rail was authored four
+ * separate times (History web, History mobile, Plans web, Plans mobile) and
+ * twelve properties were decided independently in each. Design sheet:
  * reference/dock-rail-design.html.
  *
  * NOT `AChip`, which mobile History used to borrow. AChip is an IN-CONTENT
@@ -2080,8 +2079,6 @@ export function ADrawer({ open, children }: { open: boolean; children: ReactNode
  * not a prop. An action that must live near the footer belongs INSIDE the panel
  * (see the injury pill in tissue-card.tsx), where it cannot be mistaken for a
  * disclosure.
- *
- * Mirrors apps/web/components/aurora/card-foot.tsx.
  */
 
 /* ── THE PEOPLE PRIMITIVES ────────────────────────────────────────────────────

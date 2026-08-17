@@ -10,9 +10,8 @@ import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
 const fmtDate = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "—");
 
 /** AURORA Squad Monitor (mobile) — the twin of the web Team Monitor
- *  (apps/web/components/aurora/team-monitor.tsx), on the same /api/coach/squad
- *  payload and the same shared `athleteSegment` engine, so the segments, flags
- *  and ordering match exactly.
+ * , on the same /api/coach/squad payload and the same shared `athleteSegment`
+ * engine, so the segments, flags and ordering match exactly.
  *
  *  The web version is an 8-column table; a phone can't carry that, so each
  *  athlete becomes a card carrying the same eight facts. The summary strip,

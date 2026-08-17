@@ -48,6 +48,18 @@ import type { AuroraIconName } from "./theme/icons";
  * one gesture from every hub tab, costing the bar nothing. What a tab slot IS
  * for is a place with its own state that you come back to — which is exactly
  * what a conversation is.
+ *
+ * THE SLOT WAS BRIEFLY CUT, AND THE ARGUMENT FOR CUTTING IT IS WORTH KEEPING
+ * IN VIEW WHILE THE FEATURE IS BUILT. An audit (Aug 2026) called it correctly
+ * as it then stood: the bar has four positions, the product has four jobs, and
+ * a quarter of the scarcest surface the app owns was spent on a screen whose
+ * whole content was an admission that direct messages do not exist. The screen
+ * was honest about it — no sample threads, no fabricated unread count, no badge
+ * — and the honesty was never in question; the placement was. The slot is held
+ * because DMs are now being built (`direct-messages` in capabilities.ts), which
+ * is the one thing that answers the objection. Until conversations actually
+ * land here, the audit's finding stands against this slot, and the placeholder
+ * still must not fake the feature.
  */
 export type AuroraNavTabId = "today" | "nutrition" | "messages" | "profile";
 

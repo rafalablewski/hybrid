@@ -35,8 +35,7 @@ import { ACard, APressCard, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } fr
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
-// behind the History screen's view switcher — parity with
-// apps/web/components/aurora/history-views.tsx. All grouping math lives in
+// behind the History screen's view switcher. All grouping math lives in
 // @hybrid/core (engines/history-views.ts); these components only render.
 // Session cards use the "headline number" treatment: one large figure
 // (sessionHeadline), one mono meta line — each fact stated exactly once.

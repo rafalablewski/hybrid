@@ -6,7 +6,6 @@ import { useSession } from "@/lib/session";
 import { fs, space, INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useIsMobile } from "@/lib/use-media-query";
-import { useTemplate } from "@/lib/use-template";
 import { AuroraIcon } from "@/components/aurora/icons";
 import type { AuroraIconName } from "@hybrid/core";
 import AdminOverview from "./overview";
@@ -80,10 +79,10 @@ export default function AdminPanel() {
       document.body.style.overflow = prev;
     };
   }, [isMobile, drawerOpen]);
-  // Aurora rounds the console chrome too (pill nav + softer cards); the section
-  // bodies pick up the skin via the shared template-aware lib/ui primitives.
-  const aurora = useTemplate().template === "aurora";
-  const navRadius = aurora ? 999 : 9;
+  // The console chrome is Aurora: pill nav, softer cards. It used to ask the
+  // template hook first and branch to a 9px radius and a second icon set — an
+  // arm nothing could reach, because `TemplateName` was a union of one.
+  const navRadius = 999;
 
   // The operator console is admin-only. The `/api/admin/*` routes already
   // enforce this server-side (requireAdmin), but the UI shell must not render

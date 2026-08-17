@@ -17,8 +17,8 @@ import { withAlpha } from "./field";
 /**
  * NUTRITION PANELS (mobile) — the pieces the hub renders but does not own.
  *
- * The twin of apps/web/components/aurora/nutrition-panels.tsx: the goal
- * overview, the first-run wizard, the coach nudge and the weight trend.
+ * The goal overview, the first-run wizard, the coach nudge and the weight
+ * trend — rendered by the hub, owned here.
  */
 
 export function CDivider({ label, tier, premium }: { label: string; tier?: string; premium?: boolean }) {

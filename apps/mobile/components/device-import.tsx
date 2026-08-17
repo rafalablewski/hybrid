@@ -73,9 +73,8 @@ const brief = (i: DeviceImportItem): boolean => i.workout.durationMin < DEVICE_I
  * models. The import now finishes ON the question instead, with the athlete
  * still in front of it and the session still the thing they are thinking about.
  *
- * Web parity: apps/web/components/device-import.tsx renders the same plan and
- * the same auto-import switch; only the READ is native (see capabilities.ts —
- * device-import).
+ * renders the same plan and the same auto-import switch; only the READ is
+ * native (see capabilities.ts — device-import).
  */
 export function DeviceImportSheet({
   sessions,

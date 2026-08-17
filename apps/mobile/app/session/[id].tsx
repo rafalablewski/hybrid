@@ -48,7 +48,6 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useSessionActions } from "../../lib/session-actions";
 import { fs, space, Kicker, Mono, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
-import { useTemplate } from "../../lib/template";
 import { useChartScrub } from "../../components/aurora/chart-scrub";
 import { AuroraScreen, ACard, cardStack, APill } from "../../components/aurora/kit";
 import { HeroNav } from "../../components/aurora/hero";
@@ -90,12 +89,11 @@ export default function SessionDetail() {
       void q.refetch();
     }
   }, [id, q.data, q.refetch]);
-  // Aurora wraps the review in the airy AuroraScreen (blob field + nav
-  // clearance); classic keeps the glass Screen. Same content either way — the
-  // shared Card/Mono primitives already round up on Aurora.
-  const aurora = useTemplate().template === "aurora";
-  const wrap = (node: ReactNode) =>
-    <AuroraScreen>{node}</AuroraScreen>;
+  // The review is wrapped in the airy AuroraScreen (blob field + nav
+  // clearance). This used to read the template flag and never use it: the
+  // ternary that once chose a glass Screen had already collapsed to one arm,
+  // and the flag was left behind reading a union of one.
+  const wrap = (node: ReactNode) => <AuroraScreen>{node}</AuroraScreen>;
 
   if (all === null) {
     return wrap(<Loading />);
@@ -157,7 +155,7 @@ export default function SessionDetail() {
       </Mono>
 
       {prs.length + cardioPrs.length > 1 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: aurora ? 20 : 16, padding: 16, marginTop: 14 }}>
+        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 14 }}>
           {prs.map((p) => (
             <View key={p.lift} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.gold} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{prLine(p, t, units)}</Text></View>
           ))}

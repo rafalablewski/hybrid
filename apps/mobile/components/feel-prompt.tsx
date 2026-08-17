@@ -50,8 +50,6 @@ import type { Mark as MarkValue } from "@hybrid/core";
  *    answer is still worth having (effort feeds every load model) and the card
  *    says plainly what a late answer is worth rather than scoring it in silence.
  * Both are seeded from the stored value, so nobody is asked twice.
- *
- * Web parity: apps/web/components/aurora/feel-prompt.tsx.
  */
 export function FeelPrompt({
   sessionId,
