@@ -10,19 +10,31 @@
  *  under one sub-header on both clients). */
 export type PrefRowDef = { key: string; title: string; desc: string; group: string };
 
-/** Notification channels. Stored under user_metadata.notifications.{key}. */
+/**
+ * Notification channels. Stored under user_metadata.notifications.{key}.
+ *
+ * ONE ROW PER NOTIFICATION THAT EXISTS — no more. These four rows used to
+ * include a weekly recap and product news, neither of which the app has ever
+ * been able to send: there was no delivery channel at all until push shipped
+ * (core/push.ts). A switch that governs nothing is the same lie as a badge that
+ * cannot reach zero, so the two undeliverable rows were retired with that
+ * change and the remaining three are exactly the three notifications push
+ * sends. `PUSH_PREF_KEY` maps each kind to its key here, and the server honours
+ * it — the sender reads the mirror of these switches on the device row, so an
+ * athlete who turns one off stops receiving it rather than stops seeing it.
+ *
+ * Add a row here only alongside the notification it turns off.
+ */
 export const ACCOUNT_NOTIF_DEFAULTS: Record<string, boolean> = {
-  weeklyRecap: true,
-  coachMessages: true,
   checkinReminders: true,
-  productUpdates: false,
+  coachMessages: true,
+  cosignRequests: true,
 };
 
 export const ACCOUNT_NOTIF_ROWS: PrefRowDef[] = [
-  { key: "weeklyRecap", title: "Weekly recap", desc: "Your Sunday training summary.", group: "Training" },
-  { key: "checkinReminders", title: "Check-in reminders", desc: "A nudge when your weekly check-in is due.", group: "Training" },
-  { key: "coachMessages", title: "Coach messages", desc: "When your coach replies to a check-in or assigns work.", group: "Coaching" },
-  { key: "productUpdates", title: "Product updates", desc: "Occasional news about new features.", group: "Product" },
+  { key: "checkinReminders", title: "Morning readiness nudge", desc: "A reminder at 07:00 when today's readiness read is still open.", group: "Training" },
+  { key: "coachMessages", title: "Coach assignments", desc: "When your coach assigns you a session.", group: "Coaching" },
+  { key: "cosignRequests", title: "Co-sign requests", desc: "When somebody asks you to witness a lift they claim.", group: "Records" },
 ];
 
 /** Privacy switches. Stored under user_metadata.privacy.{key}. */

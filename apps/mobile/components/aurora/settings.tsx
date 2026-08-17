@@ -9,6 +9,7 @@ import { clearDraft } from "../../lib/draft";
 import { useSession } from "../../lib/session";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useAccountSettings } from "../../lib/account";
+import { pushSupported, usePushSwitch } from "../../lib/push";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -71,6 +72,8 @@ export default function AuroraSettings({ landOn }: {
   const { t, lang, setLang } = useLang();
   const { signOut, name, role, entitlement } = useSession();
   const acct = useAccountSettings();
+  // The push master switch (permission + this phone's registration).
+  const push = usePushSwitch();
   // Mode toggle — Full (athlete) is a paid upgrade; a CLIENT chooses casual vs
   // athlete, mirroring web's useClientPersonaChoice()/setClientPersona().
   const paid = entitlement === "paid";
@@ -157,13 +160,40 @@ export default function AuroraSettings({ landOn }: {
         return (
       <>
         <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: leading(fs.micro), marginBottom: 12, marginLeft: 4 }}>{t("w.account.settings.notifications-desc")}</Text>
+        {/* THE MASTER SWITCH FIRST, because it is a different KIND of thing from
+            the three under it: this one asks iOS for permission and registers
+            this phone (lib/push.ts), while those three choose what may be sent
+            to it. `blocked` is the state the switch alone can't say — iOS never
+            shows the prompt twice, so once refused the only way through is the
+            Settings app, and the row says that instead of flicking back with no
+            explanation. Hidden entirely off iOS: Android delivery is FCM, a
+            separate key and sender, and a switch for it would be a promise. */}
+        {pushSupported() && (
+          <Section label={t("w.account.settings.push-section")}>
+            <ToggleRow
+              C={C}
+              title={t("w.account.settings.push-t")}
+              desc={push.blocked ? t("w.account.settings.push-blocked") : t("w.account.settings.push-d")}
+              on={push.on}
+              onToggle={push.toggle}
+              disabled={!acct.authOn || push.busy}
+              noBorder
+            />
+          </Section>
+        )}
         {groupRows(ACCOUNT_NOTIF_ROWS).map((g) => (
           <Section key={g.group} label={g.group}>
             {g.items.map((row, i) => (
-              <ToggleRow key={row.key} C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn} noBorder={i === 0} />
+              // Disabled while push is off: the switch would otherwise let an
+              // athlete pick which of three notifications to receive on a phone
+              // that has agreed to receive none.
+              <ToggleRow key={row.key} C={C} title={t(`w.account.settings.notif-${row.key}-t`)} desc={t(`w.account.settings.notif-${row.key}-d`)} on={!!acct.notif[row.key]} onToggle={() => acct.toggleNotif(row.key)} disabled={!acct.authOn || (pushSupported() && !push.on)} noBorder={i === 0} />
             ))}
           </Section>
         ))}
+        {pushSupported() && !push.on && (
+          <Text style={{ fontFamily: F.reg, fontSize: fs.micro, color: C.ash, lineHeight: leading(fs.micro), marginLeft: 4 }}>{t("w.account.settings.push-off-note")}</Text>
+        )}
       </>
         );
       case "privacy":

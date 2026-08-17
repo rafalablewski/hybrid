@@ -176,16 +176,11 @@ import { Mark } from "../components/aurora/mark";
 
 const uid = () => Math.random().toString(36).slice(2);
 
-// Present the rest-done notification even with the app foregrounded (sound +
-// banner), so the cue lands whether the phone is in your hand or your pocket.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: false,
-  }),
-});
+// The foreground presentation rule (rest cue: sound + banner, but never a row
+// left in Notification Centre) moved to lib/push.ts, which the app shell
+// imports. `setNotificationHandler` is GLOBAL and last-writer-wins, so with one
+// here and one there, which rule was live depended on which screen the athlete
+// happened to open first. One handler, branching on remote-vs-local.
 
 type WKind = "strength" | "cardio" | "conditioning";
 
