@@ -68,3 +68,20 @@ const secure = new Map<string, string>();
 export const getItemAsync = async (k: string) => secure.get(k) ?? null;
 export const setItemAsync = async (k: string, v: string) => void secure.set(k, v);
 export const deleteItemAsync = async (k: string) => void secure.delete(k);
+
+/* ── expo-notifications (push + the rest-timer cue) ──────────────────────── */
+/** Reached by IMPORT alone, like expo-file-system above: the drawer pulls in
+ *  settings, settings pulls in lib/push, and lib/push installs the foreground
+ *  presentation handler at module scope — so these have to EXIST or every screen
+ *  below the drawer dies at import. Each one is a no-op that denies permission,
+ *  which keeps the gate off every path that would register a token. */
+export const setNotificationHandler = () => {};
+export const getPermissionsAsync = async () => ({ status: "undetermined" as const });
+export const requestPermissionsAsync = async () => ({ status: "undetermined" as const });
+export const getDevicePushTokenAsync = async () => ({ type: "ios" as const, data: "" });
+export const getLastNotificationResponseAsync = async () => null;
+export const addNotificationResponseReceivedListener = () => ({ remove() {} });
+export const addPushTokenListener = () => ({ remove() {} });
+export const scheduleNotificationAsync = async () => "stub-notification-id";
+export const cancelScheduledNotificationAsync = async () => {};
+export const SchedulableTriggerInputTypes = { TIME_INTERVAL: "timeInterval" } as const;

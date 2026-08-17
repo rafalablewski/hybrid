@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { migrateBlocks, blockBestE1rm, type StrengthBlock } from "@hybrid/core";
+import { migrateBlocks, blockBestE1rm, cosignRequestPush, fmtWeight, type StrengthBlock } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited, rateLimit } from "@/lib/guard";
 import { prisma } from "@/lib/db";
 import { tableMissing, blockedIdsFor } from "@/lib/social";
+import { notify } from "@/lib/push";
 
 // Verified Strength Record, tier 2 — witness co-signing.
 //
@@ -108,6 +109,32 @@ export async function POST(request: Request) {
       update: {},
       create: { ownerId: me.id, witnessId: witnessProfile.userId, sessionId, lift, e1rm, topLoad },
     });
+
+    // Ask the witness where they actually are. A co-sign request has no value to
+    // either side until it is answered, and the witness has no reason to be
+    // inside HYBRID at the moment somebody else claims a lift — this is the one
+    // of the three notifications whose absence made a whole feature (tier-2
+    // verified records) depend on the two of you being in the same room.
+    // Only for a request still OPEN: re-asking on an already-cosigned row
+    // returns the finished attestation unchanged, and must not re-notify.
+    if (attestation.status === "pending") {
+      const mine = await prisma.socialProfile.findUnique({
+        where: { userId: me.id },
+        select: { handle: true, displayName: true },
+      });
+      // kg — the canonical storage unit. The witness's own lb/kg preference is a
+      // device preference the server can't see, and a load in the wrong unit
+      // would misstate the very number they are being asked to vouch for.
+      await notify(witnessProfile.userId, "cosign", (lang) =>
+        cosignRequestPush({
+          from: mine?.displayName || (mine?.handle ? `@${mine.handle}` : "") || me.name || "",
+          lift,
+          load: topLoad ? fmtWeight(topLoad, "kg") : undefined,
+          lang,
+        }),
+      );
+    }
+
     return NextResponse.json({ attestation: { id: attestation.id, status: attestation.status } }, { status: 201 });
   } catch (e) {
     if (tableMissing(e)) return NextResponse.json({ error: "unavailable" }, { status: 503 });

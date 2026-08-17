@@ -1339,6 +1339,50 @@ export async function pushNotifOps(ops: unknown[]): Promise<{ state: unknown; sy
   }
 }
 
+/**
+ * Register this phone as somewhere a notification can be SENT — the other half
+ * of the bell (../lib/push.ts explains what travels with the token and why).
+ *
+ * Returns null when the server couldn't be reached at all, and
+ * `{ stored, configured }` otherwise: `stored: false` means the PushDevice table
+ * isn't migrated yet, `configured: false` means the deployment has no APNs key,
+ * so the phone is registered and nothing will arrive. Both are real answers
+ * rather than exceptions — the app works either way, it just stays quiet.
+ */
+export async function registerPushDevice(input: {
+  token: string;
+  platform?: "ios" | "android";
+  timezone?: string;
+  locale?: string;
+  prefs?: Record<string, boolean>;
+}): Promise<{ stored: boolean; configured: boolean } | null> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/notifications/devices`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify(input),
+    });
+    if (!res.ok) return null;
+    const d = (await res.json()) as { stored?: boolean; configured?: boolean };
+    return { stored: d.stored === true, configured: d.configured === true };
+  } catch {
+    return null;
+  }
+}
+
+/** Stop sending to this phone (push turned off, or signed out on this device). */
+export async function unregisterPushDevice(token: string): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/notifications/devices?token=${encodeURIComponent(token)}`, {
+      method: "DELETE",
+      headers: await authHeaders(),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function updateAssignment(id: string, status: "completed" | "skipped" | "assigned"): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/assignments/${id}`, {

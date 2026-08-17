@@ -8,6 +8,7 @@ import {
 import { supabase, isSupabaseConfigured } from "./supabase";
 import { useSession } from "./session";
 import { exportAccountData } from "./api";
+import { mirrorPushPrefs } from "./push";
 
 // The account-settings logic, shared by BOTH mobile Settings variants (classic
 // app/settings.tsx + components/aurora/settings.tsx) so they stay in lockstep
@@ -80,6 +81,10 @@ export function useAccountSettings() {
     const next = { ...notif, [k]: !notif[k] };
     setNotif(next);
     if (authOn) supabase.auth.updateUser({ data: { notifications: next } }).catch(() => {});
+    // And down to THIS phone's device row, which is what the push sender reads
+    // (it can't fetch auth metadata per recipient). The account stays the source
+    // of truth; the device row is a mirror — see lib/push.ts mirrorPushPrefs.
+    mirrorPushPrefs(next).catch(() => {});
   };
   const togglePriv = (k: string) => {
     const next = { ...priv, [k]: !priv[k] };

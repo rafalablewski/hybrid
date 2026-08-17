@@ -16,6 +16,7 @@ import {
 
   ALPHA,} from "@hybrid/core";
 import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } from "../../lib/api";
+import { askPushOnce } from "../../lib/push";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
@@ -249,6 +250,13 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
     // feeling card + the prescription's readiness nudge — so the write has to
     // drop it, or the athlete's own answer is the thing that looks stale.
     revalidate.checkins();
+    // THE ONE PLACE THE APP ASKS FOR NOTIFICATION PERMISSION BY ITSELF, and the
+    // moment is the argument for it: the athlete has just done the exact thing
+    // the morning nudge exists to bring them back for, so "shall I remind you
+    // tomorrow?" is a question they can answer. Asked once ever, and only if iOS
+    // has never asked (lib/push.ts askPushOnce) — a prompt at launch would spend
+    // the single permission on somebody who hasn't seen a readiness read yet.
+    askPushOnce().catch(() => {});
     onDone?.();
   };
 
