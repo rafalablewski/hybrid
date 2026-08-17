@@ -61,6 +61,11 @@ export default defineConfig({
             // Reads package.json + the SDK's own version table as DATA, so it
             // stays inside the boundary while covering every native module.
             "lib/expo-alignment.test.ts",
+            // EVALUATES app.config.js twice with the clock moved. The runtime
+            // version is a fingerprint of that config, so a value that changes
+            // between evaluations makes every OTA update undeliverable — silently,
+            // and for the life of the app.
+            "lib/build-number.test.ts",
             // Reads the INSTALLED HealthKit pod's Swift as text, to prove the
             // patch that removed its two fatalError()s is still applied.
             "lib/healthkit-patch.test.ts",

@@ -1,32 +1,62 @@
-// Dynamic Expo config. Keeps app.json as the static source of truth for
-// everything and ONLY computes the native build number automatically, so every
-// TestFlight / Play upload gets a fresh, strictly-increasing version without
-// anyone hand-editing app.json. (App Store Connect rejects an upload whose
-// CFBundleVersion isn't higher than the last one — that's the 409 this fixes.)
+// Dynamic Expo config. app.json is the static source of truth for everything;
+// this file adds only what has to be computed.
 //
-// Build-number resolution, in order:
-//   1. APP_BUILD_NUMBER — an explicit integer from CI, when you want full
-//      control (e.g. set it to ${{ github.run_number }} or $BUILD_NUMBER).
-//   2. Automatic: SECONDS since a fixed epoch (2024-01-01 UTC). This always
-//      increases as the clock moves, is always far above any number already
-//      uploaded, and needs no CI state or git history — so a re-run, a retry,
-//      or a brand-new pipeline can never collide with the previous build. The
-//      one-second granularity keeps even back-to-back retries distinct.
+// THE BUILD NUMBER IS NO LONGER ONE OF THOSE THINGS, and the reason is the whole
+// point of this comment.
 //
-// Note: when EAS Build is used with eas.json `appVersionSource: "remote"`, EAS
-// manages versions on its own server and ignores these local fields — that's
-// fine; this covers the local-prebuild → app-store-connect path that doesn't.
+// It used to be derived from the clock: seconds since 2024-01-01, so every upload
+// got a strictly-higher CFBundleVersion with no CI state and no hand-editing
+// (App Store Connect 409s an upload whose build number isn't higher than the
+// last, which was a real and repeated failure). Correct about the 409, and it
+// made over-the-air updates undeliverable by construction.
+//
+// `app.json` sets `runtimeVersion: { policy: "fingerprint" }`. The fingerprint
+// hashes the evaluated Expo config, INCLUDING these version fields — so a value
+// derived from Date.now() gave the project a different runtime version every
+// second:
+//
+//   run 1: 328037069ea246638f53d612d1b504dfebe22a0d
+//   run 2: be4d94800a1076b3ed075032281dc3c2f9259835   (same commit, 2s later)
+//
+// A binary is stamped with the fingerprint computed when it was built, and it
+// accepts only updates published under that same runtime version. So an
+// `eas update` published from this config was tagged with a fingerprint no
+// installed build had ever had: it would publish successfully, report success,
+// and reach no phone at all.
+//
+// Whether that has already cost a shipped fix is unknown — publishing needs Expo
+// auth, which the `eas-update` capability records as never set up, so it is
+// likely nobody had reached the failure yet. That does not make it less of a bug:
+// it is a trap armed to spring the first time somebody relies on OTA, and it
+// fails by reporting success, which is the worst way for a release path to fail.
+//
+// So the clock is out of the config, and the increasing number comes from the
+// place that actually needs it, AFTER the fingerprint has been computed:
+//
+//   • iOS release (.github/workflows/mobile-release.yml) — `agvtool new-version`
+//     stamps CFBundleVersion with seconds-since-2024 in its own step, which runs
+//     after `expo prebuild`. That step was ALREADY doing this; the config's copy
+//     was redundant on this path and only ever poisoned the fingerprint. The 409
+//     protection is untouched.
+//   • EAS Build — eas.json sets `appVersionSource: "remote"` with `autoIncrement`
+//     on the production profile, so EAS assigns versions server-side and ignores
+//     local fields entirely.
+//   • Android has no release pipeline yet. versionCode comes from app.json (or
+//     Expo's default). WHEN ONE IS ADDED it must stamp the number in the
+//     pipeline, the same way the iOS one does — putting it back here would put
+//     the clock back in the fingerprint and break OTA again.
+//
+// APP_BUILD_NUMBER still overrides both, for a pipeline that wants explicit
+// control (e.g. ${{ github.run_number }}). It is deterministic within a run, so
+// it is safe for the fingerprint — a fixed integer hashes the same every time it
+// is evaluated. Anything derived from the current time is not, and must not go
+// here. lib/build-number.test.ts fails if the config stops being stable.
 
-// 2024-01-01T00:00:00Z, in whole seconds. Frozen — never move this backward, or
-// build numbers would regress below ones already uploaded.
-const EPOCH_SECONDS = Date.UTC(2024, 0, 1) / 1000;
-
-function resolveBuildNumber() {
+/** An explicit build number from CI, or null to leave app.json's alone.
+ *  MUST NOT depend on the clock — see the note above. */
+function explicitBuildNumber() {
   const explicit = process.env.APP_BUILD_NUMBER;
-  if (explicit && /^\d+$/.test(explicit)) return Number(explicit);
-  // Seconds since the epoch: monotonic, ~78M today, well under the uint32 /
-  // Google Play (2.1e9) ceilings for the next century.
-  return Math.floor(Date.now() / 1000 - EPOCH_SECONDS);
+  return explicit && /^\d+$/.test(explicit) ? Number(explicit) : null;
 }
 
 // ── Apple targets (widget + Watch app), strictly opt-in ─────────────────────
@@ -42,7 +72,7 @@ const WITH_APPLE_TARGETS = process.env.WITH_APPLE_TARGETS === "1";
 const APP_GROUP = "group.com.hybriddomain.xyz";
 
 export default ({ config }) => {
-  const build = resolveBuildNumber();
+  const build = explicitBuildNumber();
   return {
     ...config,
     // No appleTeamId on purpose: in CI, codemagic's `xcode-project use-profiles`
@@ -52,7 +82,7 @@ export default ({ config }) => {
       : config.plugins,
     ios: {
       ...config.ios,
-      buildNumber: String(build),
+      ...(build != null ? { buildNumber: String(build) } : {}),
       ...(WITH_APPLE_TARGETS
         ? {
             entitlements: {
@@ -62,6 +92,9 @@ export default ({ config }) => {
           }
         : {}),
     },
-    android: { ...config.android, versionCode: build },
+    android: {
+      ...config.android,
+      ...(build != null ? { versionCode: build } : {}),
+    },
   };
 };
