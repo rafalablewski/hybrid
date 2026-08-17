@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useMemo } from "react";
 import {
   athleteLandmarks,
   measuredProfile, withMeasured, measuredFields,
@@ -13,8 +12,6 @@ import { useLoggerPrefs } from "./logger-prefs";
 import { setQuestionnaire, useQuestionnaireSync } from "./questionnaire";
 import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
 import { useFitnessLevel } from "./use-fitness-level";
-
-type Experience = AthleteVolumeProfile["experience"];
 
 /**
  * THE VOLUME MODEL, RESOLVED ONCE.
@@ -55,21 +52,14 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // measure at all, since the scale cannot say how much of a kilogram was
   // muscle — reads the diary or nothing.
   const { data: nutritionSignals = [] } = useNutritionSignalsQuery();
-  const [intake, setIntake] = useState<{ experience?: Experience; daysPerWeek?: number }>({});
-  useEffect(() => {
-    let alive = true;
-    Promise.all([AsyncStorage.getItem("hybrid.experience"), AsyncStorage.getItem("hybrid.daysPerWeek")])
-      .then(([exp, rawDays]) => {
-        if (!alive) return;
-        const days = Number(rawDays);
-        setIntake({
-          experience: exp === "beginner" || exp === "intermediate" || exp === "advanced" ? exp : undefined,
-          daysPerWeek: Number.isFinite(days) && days > 0 ? days : undefined,
-        });
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
+  // THE INTAKE FALLBACK IS GONE, because it never worked. It read training age
+  // and weekly frequency from `hybrid.experience` / `hybrid.daysPerWeek` —
+  // device keys NOTHING on either client has ever written (`git log -S` finds
+  // no writer in the whole history), so the fallback resolved to `{}` for every
+  // athlete who ever used the app while appearing to carry setup's answers
+  // forward. Setup writes those answers straight onto the questionnaire now
+  // (lib/use-onboarding.ts), which is `prefs.volumeProfile` — read below like
+  // any other answer, with no second path to disagree with it.
 
   // The check-in history on the engine's own terms — shared with the heat
   // clearance comparison via lib/use-recovery-reports.ts.
@@ -98,7 +88,7 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // half of it: MEV/MRV are lifting landmarks, and a fast 10 km cannot say how
   // many sets of squats an athlete recovers from.
   const { estimate: levelEstimate } = useFitnessLevel(sessions);
-  const statedExperience = prefs.volumeProfile.experience ?? intake.experience;
+  const statedExperience = prefs.volumeProfile.experience;
   const experience = useMemo(
     () => resolveExperience(statedExperience, levelEstimate),
     [statedExperience, levelEstimate],
@@ -107,9 +97,8 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   const profile = useMemo<AthleteVolumeProfile>(() => ({
     ...withMeasured(prefs.volumeProfile, measured),
     experience: experience.experience,
-    daysPerWeek: prefs.volumeProfile.daysPerWeek ?? intake.daysPerWeek,
     bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight ?? undefined,
-  }), [prefs.volumeProfile, measured, intake, bodyweight, experience.experience]);
+  }), [prefs.volumeProfile, measured, bodyweight, experience.experience]);
 
   /**
    * EVERYTHING THAT MAKES A LANDMARK, MINUS THE LOG — as one object.

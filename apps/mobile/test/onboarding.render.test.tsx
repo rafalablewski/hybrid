@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent } from "@testing-library/react";
-import { ONBOARDING_PERSONA_CHOICES } from "@hybrid/core";
+import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES } from "@hybrid/core";
 import { renderScreen as render } from "./render";
 import Onboarding from "../components/aurora/onboarding";
 
@@ -35,6 +35,9 @@ vi.mock(import("../lib/api"), async (importOriginal) => ({
  *  seeded with the question's `casual` default). */
 const UNPICKED = ONBOARDING_PERSONA_CHOICES[1]!.label;
 
+/** The age question, as the app ships it — asked fifth, unanswerable by default. */
+const AGE_Q = DEFAULT_ONBOARDING_QUESTIONS.find((q) => q.engineKey === "ageYears")!;
+
 /** The row as the user sees it: everything inside the pressable it lives in. */
 function row(container: HTMLElement, label: string): HTMLElement {
   const text = Array.from(container.querySelectorAll("div")).find((d) => d.textContent === label && !d.children.length);
@@ -65,5 +68,52 @@ describe("the onboarding wizard's option row", () => {
     // the same invariant press-scale.render asserts one primitive down: what a
     // component declares survives to the DOM.
     expect(surface(picked).style.borderTopColor).not.toBe(restColour);
+  });
+});
+
+/**
+ * A NUMBER QUESTION MUST NOT SHOW A FIGURE IT WAS NEVER GIVEN.
+ *
+ * The intake asks for age and body mass now, and neither ships a
+ * `defaultValue` — deliberately, because the client seeds every answer from its
+ * default, so a default here would mean an athlete who stepped past the screen
+ * had "80 kg" written down as their own body mass. That is a fabricated
+ * measurement, and the volume model goes on to explain the athlete's recovery
+ * ceiling with it.
+ *
+ * The guard is on the RENDER because that is where it would be given away: a
+ * screen showing "80" over a "Next" button has told the athlete they answered,
+ * whatever the answer map holds.
+ */
+describe("a number the athlete has not answered", () => {
+  const next = (container: HTMLElement) => {
+    const btn = Array.from(container.querySelectorAll('[role="button"]')).find(
+      (b) => (b as HTMLElement).getAttribute("aria-label")?.toLowerCase().includes("next"),
+    ) as HTMLElement | undefined;
+    if (!btn) throw new Error("no Next control");
+    fireEvent.click(btn);
+  };
+
+  it("offers a control to start one instead of a seeded figure", () => {
+    const { container } = render(<Onboarding />);
+    // persona → goal → experience → sex → AGE. Only the goal is `required`, so
+    // it is the one step Next will not leave until something is picked; the
+    // rest carry defaults or are deliberately skippable.
+    next(container);
+    fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
+    next(container); // → experience
+    next(container); // → sex
+    next(container); // → age
+    const body = container.textContent ?? "";
+    // Non-vacuity: the assertions below are trivially true on any screen that
+    // is not this one, so prove we arrived. The title is core's own — the mock
+    // returns null questions, so the wizard runs the shipped set.
+    expect(body).toContain(AGE_Q.title);
+    // The seed is 30 and the range starts at 10. Neither may be on screen: the
+    // question is unanswered and has to look it.
+    expect(body).not.toMatch(/\b30\b/);
+    // Ninety segments is the failure this control replaced — a `number`
+    // question used to draw one option per step.
+    expect(container.querySelectorAll('[role="radio"]').length).toBeLessThan(10);
   });
 });

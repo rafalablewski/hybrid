@@ -190,7 +190,17 @@ export default function AuroraHome() {
   const awayFromDashboard = useRef(false);
   if (tab !== "dashboard") awayFromDashboard.current = true;
   const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [prefExp, setPrefExp] = useState<Experience | undefined>(undefined);
+  /**
+   * TRAINING AGE COMES FROM THE QUESTIONNAIRE, not from a device key.
+   *
+   * This read `hybrid.experience` out of AsyncStorage — a key NOTHING on either
+   * client has ever written (`git log -S` finds no writer in the whole
+   * history). So `prescribeSession` below has always been handed
+   * `experience: undefined`, for every athlete, including the ones who had just
+   * answered the question during setup. The questionnaire is where that answer
+   * lives now, and it is read rather than hoped for.
+   */
+  const prefExp: Experience | undefined = useLoggerPrefs().volumeProfile.experience;
   const [prefEquip, setPrefEquip] = useState<Equipment | undefined>(undefined);
   // Drives the pull-to-refresh spinner and NOTHING else. It must never gate
   // content: flipping a rendered card back to a skeleton because a background
@@ -276,9 +286,11 @@ export default function AuroraHome() {
   // (lib/ui): same Reduce-Motion guard + JS-driver blank-screen fix as the shell.
   const enterStyle = useEntrance();
 
-  // Onboarding prefs that tailor the prescription (client-only).
+  // Equipment is the one intake answer with no questionnaire home — it decides
+  // which movements may be prescribed, not how much work you recover from — so
+  // it keeps a device key. The difference from before is that setup now WRITES
+  // it (lib/use-onboarding.ts); this read used to be answered by nothing.
   useEffect(() => {
-    AsyncStorage.getItem("hybrid.experience").then((v) => { if (v === "beginner" || v === "intermediate" || v === "advanced") setPrefExp(v); }).catch(() => {});
     AsyncStorage.getItem("hybrid.equipment").then((v) => { if (v === "full" || v === "home" || v === "minimal") setPrefEquip(v); }).catch(() => {});
   }, []);
 

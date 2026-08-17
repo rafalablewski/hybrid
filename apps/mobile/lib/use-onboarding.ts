@@ -3,6 +3,9 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   onboardingQuestionsForClient,
   recommendFromAnswers,
+  questionnaireFromAnswers,
+  extractEngineAnswers,
+  isEmptyVolumeProfile,
   DEFAULT_ONBOARDING_QUESTIONS,
   type OnboardingQuestion,
   type OnboardingAnswerMap,
@@ -10,6 +13,8 @@ import {
 } from "@hybrid/core";
 import { fetchOnboardingQuestions, submitOnboarding as apiSubmit } from "./api";
 import { setClientPersona } from "./persona";
+import { getLoggerPrefs } from "./logger-prefs";
+import { setQuestionnaire } from "./questionnaire";
 
 export type AnswerValue = string | number | string[];
 
@@ -48,8 +53,27 @@ export function useOnboarding() {
   return { questions, answers, setAnswer, plan, loading };
 }
 
-/** Persist onboarding: mirror persona into the persona store, save answers +
- *  enroll, and set the same-device "done" fallback flag. */
+/**
+ * Persist onboarding: mirror persona into the persona store, CARRY THE ANSWERS
+ * ONTO THE QUESTIONNAIRE, save + enroll, and set the same-device "done" flag.
+ *
+ * ── THE MIDDLE STEP IS NEW, AND IT SHOULD NEVER HAVE BEEN MISSING ──────────
+ *
+ * The answers went to the server and stopped. Three consumers read them back
+ * from device keys — `hybrid.experience`, `hybrid.daysPerWeek`,
+ * `hybrid.equipment` — that NO code on either client has ever written; `git
+ * log -S` finds no writer in the whole history. The volume model's intake
+ * fallback was therefore always empty, and `prescribeSession` on Today ran with
+ * `experience: undefined` and `equipment: undefined` for every athlete who had
+ * just been asked both. They answered, and the app forgot on the way out of the
+ * room.
+ *
+ * So the questionnaire — which is read by every engine and now syncs to the
+ * account — is the destination. Equipment is the one intake answer with no
+ * questionnaire home (it shapes which movements may be prescribed, not how much
+ * you recover), so it keeps a device key; the difference is that something
+ * writes it now.
+ */
 export async function finishOnboarding(
   questions: OnboardingQuestion[],
   answers: OnboardingAnswerMap,
@@ -60,6 +84,19 @@ export async function finishOnboarding(
     const v = answers[personaQ.key];
     if (v === "casual" || v === "athlete") setClientPersona(v);
   }
+
+  // The intake's answers win over anything already on the profile — they were
+  // just given, deliberately, on a screen that asked for them. Skipped
+  // questions contribute nothing (questionnaireFromAnswers applies no
+  // defaults), so re-running setup can never blank an answer.
+  const fromIntake = questionnaireFromAnswers(questions, answers);
+  if (!isEmptyVolumeProfile(fromIntake)) {
+    setQuestionnaire({ ...getLoggerPrefs().volumeProfile, ...fromIntake });
+  }
+  try {
+    await AsyncStorage.setItem("hybrid.equipment", extractEngineAnswers(questions, answers).equipment);
+  } catch { /* ignore */ }
+
   const ok = await apiSubmit(answers as Record<string, unknown>, plan ? { goalLabel: plan.goalLabel, planId: plan.planId } : null);
   try { await AsyncStorage.setItem("hybrid.onboarded", "1"); } catch { /* ignore */ }
   return ok;

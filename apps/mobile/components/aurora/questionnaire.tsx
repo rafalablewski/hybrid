@@ -5,7 +5,7 @@ import {
   factorLabelKey, factorAffectsKey, factorPercent,
   blockKindKey, resolveBlock, blockRamp, MUSCLE_GROUP_KEY,
   type Question, type QuestionnaireSection, type SectionProgress,
-  type AthleteVolumeProfile, type MuscleGroup, type VolumeBlock, type VolumeLandmark,
+  type AthleteVolumeProfile, type LoggedSession, type MuscleGroup, type VolumeBlock, type VolumeLandmark,
   ALPHA,
 } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
@@ -14,9 +14,10 @@ import { useVolumeModel } from "../../lib/use-volume-model";
 import { setQuestionnaire } from "../../lib/questionnaire";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP, TABULAR } from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
-import { AuroraScreen, ACard, ADrawer, ASection, AScrubField, AStepper, ACheckMark, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, ADrawer, APressCard, ASection, AScrubField, AStepper, ACheckMark, RADIUS, withAlpha } from "./kit";
+import { ArrowGlyph } from "./cta-label";
 
 /** The seven group names, from core — see volume-view.ts. A copy written from
  *  the group names prints a raw key for `posterior`, whose key is
@@ -104,7 +105,7 @@ export default function AuroraQuestionnaire() {
       onRefresh={refetch}
       hero={{ rank: "title", title: t("w.quiz.title"), meta: [t("w.quiz.sub")] }}
     >
-      <Standing C={C} t={t} score={progress.score} answered={answered} total={total} />
+      <Standing C={C} t={t} score={progress.score} answered={answered} total={total} next={progress.next} />
 
       {QUESTIONNAIRE.map((section) => (
         <SectionCard
@@ -166,29 +167,44 @@ export default function AuroraQuestionnaire() {
  * total` is printed beside it precisely because the weighted figure is not a
  * count and should not be mistaken for one.
  */
-function Standing({ C, t, score, answered, total }: {
+function Standing({ C, t, score, answered, total, next }: {
   C: Palette; t: (k: string) => string; score: number; answered: number; total: number;
+  /** The heaviest question still unanswered — the sentence's subject. */
+  next: Question | null;
 }) {
   return (
     <ACard solid style={{ marginTop: space.lg }}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+      {/* THE SENTENCE IS THE HERO, NOT THE SCORE.
+          This card led with the completeness figure at fs.stat — 46dp of `0%`
+          as the first thing on a screen about yourself. That is a CHORE METER:
+          it grades the athlete on arrival, in the app's own units, for the
+          crime of being new. And it is the machine's anxiety rather than the
+          athlete's question — nobody opens this wanting to know their
+          percentage; they open it wanting to know what the app thinks they are
+          and what it would do with one more answer.
+          So the lead is what the model still needs, said as a sentence with a
+          subject a person recognises ("Next — body mass"). The figure keeps
+          its place beside the track it belongs to, at reading size, where it
+          annotates progress instead of pronouncing on it. */}
+      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, lineHeight: leading(fs.heading, "snug") }}>
+        {next ? t("w.quiz.leadNext").replace("{q}", t(next.labelKey)) : t("w.quiz.leadDone")}
+      </Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginTop: space.sm }}>
+        {t(next ? "w.quiz.knownWhy" : "w.quiz.knownComplete")}
+      </Text>
+
+      <View style={{ height: 3, borderRadius: RADIUS.pill, backgroundColor: C.ink, marginTop: space.lg, overflow: "hidden" }}>
+        <View style={{ width: pct(score), height: "100%", backgroundColor: C.lime }} />
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, marginTop: space.sm }}>
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: fs.stat, color: C.chalk, lineHeight: leading(fs.stat, "tight"), letterSpacing: trackFigure(fs.stat) }}
+          style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: C.ash }}
         >
-          {Math.round(score * 100)}%
-        </Text>
-        <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>
-          {t("w.quiz.known")}
+          {`${Math.round(score * 100)}% ${t("w.quiz.known")}`}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{`${answered}/${total}`}</Text>
       </View>
-      <View style={{ height: 3, borderRadius: RADIUS.pill, backgroundColor: C.ink, marginTop: space.md, overflow: "hidden" }}>
-        <View style={{ width: pct(score), height: "100%", backgroundColor: C.lime }} />
-      </View>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginTop: space.md }}>
-        {t(score >= 1 ? "w.quiz.knownComplete" : "w.quiz.knownWhy")}
-      </Text>
     </ACard>
   );
 }
@@ -746,3 +762,65 @@ function Pill({ C, on, label, onPress, role = "radio" }: {
 /** Re-exported for the volume screen's "about you" door, so the two surfaces
  *  cannot disagree about which questions exist. */
 export const ASKED_QUESTIONS = QUESTIONNAIRE.flatMap((s) => s.questions.filter(isAsked));
+
+/**
+ * ABOUT YOU — the card on Profile, and the questionnaire's permanent home.
+ *
+ * ── WHY PROFILE, AND NOT AN ANALYSIS TAB ───────────────────────────────────
+ *
+ * The questionnaire had two doors, both of them deep inside Performance: one in
+ * a sheet reached through a drawer on the Volume card, one at the foot of the
+ * monthly story. Both are places you arrive at having already gone looking. A
+ * screen that holds a person's body, training age and recovery is not something
+ * anyone should have to hunt for — and when they do go looking, they look where
+ * their name and their photo are. Profile is where identity lives.
+ *
+ * It is deliberately placed directly under `LearnedLead`, and the pairing is
+ * the point: what the app WORKED OUT about you, then what you TOLD it. Two
+ * halves of one question, answered by two different authorities, adjacent.
+ *
+ * The card leads with the gap rather than the score. "Next: body mass" is a
+ * thing a person can act on; a percentage on its own is a grade.
+ */
+export function AboutYouLead({ sessions, onOpen }: { sessions: LoggedSession[]; onOpen: () => void }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  const { measuredKeys, profile } = useVolumeModel(sessions);
+  const progress = useMemo(
+    () => questionnaireProgress(profile, measuredKeys as Set<string>),
+    [profile, measuredKeys],
+  );
+  const answered = progress.sections.reduce((n, s) => n + s.answered, 0);
+  const total = progress.sections.reduce((n, s) => n + s.total, 0);
+  const headline = progress.next ? t(progress.next.labelKey) : t("w.quiz.leadDone");
+
+  return (
+    <APressCard
+      solid
+      onPress={onOpen}
+      a11yLabel={[t("w.quiz.title"), headline, `${answered}/${total}`].filter(Boolean).join(" – ")}
+      style={{ marginBottom: space.lg }}
+    >
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
+            {t("w.quiz.title")}
+          </Text>
+          <Text numberOfLines={2} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: space.xxs }}>
+            {progress.complete ? t("w.quiz.leadDone") : t("w.quiz.leadNext").replace("{q}", headline)}
+          </Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 2, flexWrap: "wrap" }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: trackFigure(fs.title), color: C.chalk, ...TABULAR }}>
+              {`${Math.round(progress.score * 100)}%`}
+            </Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.quiz.leadUnit")}</Text>
+          </View>
+          <Text style={{ marginTop: space.xxs, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>
+            {t("w.quiz.leadMeta").replace("{n}", String(answered)).replace("{m}", String(total))}
+          </Text>
+        </View>
+        <ArrowGlyph size={16} color={txt(C, C.lime)} />
+      </View>
+    </APressCard>
+  );
+}

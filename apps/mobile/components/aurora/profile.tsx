@@ -42,6 +42,7 @@ import { NAV_HREF } from "../../lib/nav-href";
 import { AuroraIcon } from "./icons";
 import { StreakMark } from "./streak-mark";
 import { LearnedLead } from "./learned";
+import { AboutYouLead } from "./questionnaire";
 import { ArrowGlyph } from "./cta-label";
 import { withAlpha } from "./field";
 import { Mark } from "./mark";
@@ -247,6 +248,18 @@ export default function AuroraProfile() {
           could show you, and until now they were three levels deep behind a
           disclosure on another tab. See components/aurora/learned.tsx. */}
       <LearnedLead sessions={sessions} onOpen={() => router.push("/learned")} />
+
+      {/* …and its other half. What the app WORKED OUT about you, then what you
+          TOLD it — two authorities on the same question, adjacent, because
+          neither is complete alone and the second is the one you can act on.
+
+          The questionnaire had no home before this. Its two doors were both
+          deep inside Performance (a sheet reached through a drawer on the
+          Volume card, and the foot of the monthly story), which is to say it
+          could only be found by someone already looking for it. A screen
+          holding a person's body, training age and recovery belongs where
+          their name and their photo are. */}
+      <AboutYouLead sessions={sessions} onOpen={() => router.push("/questionnaire")} />
 
       {/* SET UP YOUR PROFILE — owner-only nudge at the very top; hides once the
           profile has a photo + bio. (This screen is always your own.) */}

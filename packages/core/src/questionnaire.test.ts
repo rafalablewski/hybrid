@@ -6,10 +6,12 @@ import {
   isScored,
   question,
   questionnaireProgress,
+  questionnaireFromAnswers,
   type Question,
   type QuestionKey,
 } from "./questionnaire";
 import { VOLUME_PROFILE_FIELDS } from "./engines/athlete-profile";
+import { DEFAULT_ONBOARDING_QUESTIONS, onboardingQuestionsForClient } from "./onboarding";
 import { personalizeLandmarks, sanitizeVolumeProfile, type AthleteVolumeProfile } from "./engines/landmark-profile";
 
 /** A legal answer to any question, for the round-trip and factor checks. */
@@ -217,6 +219,76 @@ describe("progress", () => {
   it("survives a null profile", () => {
     expect(questionnaireProgress(null).score).toBe(0);
     expect(questionnaireProgress(undefined).next?.key).toBe("experience");
+  });
+});
+
+describe("what setup already asked", () => {
+  const qs = onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS);
+
+  it("carries the intake's answers onto the profile", () => {
+    const p = questionnaireFromAnswers(qs, {
+      persona: "athlete", goal: "hybrid", experience: "advanced",
+      sex: "F", age: 34, bodyweight: 61.5, days: 5, equipment: "full",
+    });
+    expect(p).toEqual({ experience: "advanced", sex: "F", ageYears: 34, bodyweightKg: 61.5, daysPerWeek: 5 });
+  });
+
+  /**
+   * THE REGRESSION THAT MOTIVATED THE MAPPING. The intake's answers used to
+   * reach the server and stop: three consumers read them from device keys no
+   * writer on either client has ever set, so `prescribeSession` ran with
+   * `experience: undefined` for every athlete who had just answered it.
+   */
+  it("reaches the estimate — an intake answer moves the multipliers", () => {
+    const bare = personalizeLandmarks({});
+    const fromIntake = personalizeLandmarks(questionnaireFromAnswers(qs, { experience: "advanced", days: 5 }));
+    expect(fromIntake.stimulus).not.toBe(bare.stimulus);
+    expect(fromIntake.recovery).toBeGreaterThan(bare.recovery);
+  });
+
+  it("takes an athlete most of the way before their first session", () => {
+    const p = questionnaireFromAnswers(qs, { experience: "intermediate", sex: "M", age: 28, bodyweight: 79, days: 4 });
+    // experience .27 + sex .08 + age .13 + mass .17 + days .11 = .76
+    expect(questionnaireProgress(p).score).toBe(0.76);
+  });
+
+  /** A default written into the profile is an answer nobody gave. The three
+   *  body questions therefore ship WITHOUT one — a skipped question has to stay
+   *  visibly unanswered rather than silently become 80 kg. */
+  it("stores nothing for a question the athlete skipped", () => {
+    expect(questionnaireFromAnswers(qs, {})).toEqual({});
+    for (const key of ["sex", "age", "bodyweight"]) {
+      expect(qs.find((q) => q.key === key)?.defaultValue, key).toBeUndefined();
+    }
+  });
+
+  it("refuses an intake answer that a typed one would also be refused", () => {
+    const p = questionnaireFromAnswers(qs, { age: 4, bodyweight: 0.5, sex: "yes" });
+    expect(p.ageYears).toBeUndefined();
+    expect(p.bodyweightKg).toBeUndefined();
+    expect(p.sex).toBeUndefined();
+  });
+
+  it("asks every question whose engine key is a questionnaire field", () => {
+    const asked = new Set(qs.map((q) => q.engineKey).filter(Boolean));
+    for (const k of ["experience", "sex", "ageYears", "bodyweightKg", "daysPerWeek"]) {
+      expect(asked, k).toContain(k);
+    }
+  });
+
+  /**
+   * The normalizer is a VALIDATOR, and an engine key it does not name is not
+   * rejected — it is silently set to undefined. It held a hand-copied duplicate
+   * of the union, which is how three questions shipped answered and connected
+   * to nothing. Both now derive from ONBOARDING_ENGINE_KEYS; this is the guard
+   * that keeps a fourth from doing it again.
+   */
+  it("survives the normalizer with its engine key intact", () => {
+    for (const q of DEFAULT_ONBOARDING_QUESTIONS) {
+      if (!q.engineKey) continue;
+      const seen = qs.find((x) => x.key === q.key);
+      expect(seen?.engineKey, `${q.key} lost its engine key`).toBe(q.engineKey);
+    }
   });
 });
 

@@ -1,5 +1,6 @@
 import type { Sex } from "./benchmarks";
-import type { LandmarkFactor } from "./engines/landmark-profile";
+import type { OnboardingAnswerMap, OnboardingEngineKey, OnboardingQuestion } from "./onboarding";
+import { sanitizeVolumeProfile, type AthleteVolumeProfile, type LandmarkFactor } from "./engines/landmark-profile";
 import {
   VOLUME_PROFILE_FIELDS,
   VOLUME_PROFILE_FIELD_KEY,
@@ -251,6 +252,59 @@ export const QUESTIONNAIRE: QuestionnaireSection[] = [
 
 /** Every question, flat, in section order. */
 export const QUESTIONS: Question[] = QUESTIONNAIRE.flatMap((s) => s.questions);
+
+/**
+ * THE ANSWERS SETUP ALREADY COLLECTED, ON THE QUESTIONNAIRE'S TERMS.
+ *
+ * Setup is the only moment an athlete expects to be asked about themselves, and
+ * the intake already asks five questions — of which training age, sessions per
+ * week and (since Aug 2026) sex, age and body mass are questionnaire answers.
+ * This is the ONE mapping from one to the other.
+ *
+ * ── WHY IT HAD TO EXIST ────────────────────────────────────────────────────
+ *
+ * There was no mapping at all. The intake's answers went to the server and
+ * stopped there, while three consumers read them from device keys —
+ * `hybrid.experience`, `hybrid.daysPerWeek`, `hybrid.equipment` — that NOTHING
+ * on either client has ever written. `git log -S` finds no writer in the whole
+ * history. So the volume model's intake fallback was always empty, and, worse,
+ * `prescribeSession` on Today has always run with `experience: undefined` and
+ * `equipment: undefined`: the athlete answered, and every engine downstream was
+ * told nothing. It is the same defect as the dropped `sex` field, three more
+ * times, and it is why the answers now go to ONE destination that is read
+ * rather than three keys that are not.
+ *
+ * Everything lands through `sanitizeVolumeProfile` — the same validator the
+ * clients and the API save through — so an intake answer cannot enter the
+ * profile by a route with looser bounds than a typed one.
+ */
+export function questionnaireFromAnswers(
+  questions: OnboardingQuestion[],
+  answers: OnboardingAnswerMap,
+): AthleteVolumeProfile {
+  const read = (k: OnboardingEngineKey): unknown => {
+    const q = questions.find((x) => x.engineKey === k);
+    if (!q) return undefined;
+    const v = answers[q.key];
+    // NOTE the deliberate absence of a `?? q.defaultValue` fallback, which
+    // `extractEngineAnswers` does have and needs — it must always hand the plan
+    // recommender a complete set. This one must not: a default written into the
+    // profile is an answer the athlete never gave, and the profile is where
+    // "we don't know" has to stay distinguishable from "we guessed".
+    return v === undefined || v === null || v === "" ? undefined : v;
+  };
+  const n = (v: unknown): number | undefined => {
+    const x = typeof v === "number" ? v : Number(v);
+    return Number.isFinite(x) ? x : undefined;
+  };
+  return sanitizeVolumeProfile({
+    experience: read("experience"),
+    sex: read("sex"),
+    ageYears: n(read("ageYears")),
+    bodyweightKg: n(read("bodyweightKg")),
+    daysPerWeek: n(read("daysPerWeek")),
+  });
+}
 
 /** One question by key — the lookup both clients would otherwise hand-roll. */
 export function question(key: QuestionKey): Question | undefined {

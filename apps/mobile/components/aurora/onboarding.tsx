@@ -20,7 +20,7 @@ import {
   HIT_SLOP, LoadSwap, Skeleton, useEntrance,
 } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ACard, ACheckMark, APill, ASegment, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
+import { ACard, ACheckMark, APill, ASegment, AScrubField, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 
 /**
@@ -385,13 +385,7 @@ function QuestionBody({
     );
   }
 
-  if (q.kind === "number") {
-    const min = q.min ?? 1, max = q.max ?? 7, step = q.step ?? 1;
-    const value = Number(answers[q.key] ?? q.defaultValue ?? min);
-    const opts: number[] = [];
-    for (let v = min; v <= max; v += step) opts.push(v);
-    return <ASegment options={opts.map((d) => ({ id: String(d), label: `${d}×` }))} value={String(value)} onPick={(v) => setAnswer(q.key, Number(v))} />;
-  }
+  if (q.kind === "number") return <NumberStep q={q} answers={answers} setAnswer={setAnswer} />;
 
   if (q.kind === "text") {
     // Keep the wizard keyboard-free; free-text questions are collected on web.
@@ -453,6 +447,86 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
  * 120ms fade on one row; the cost is nothing and the alternative is stacking
  * two copies of every label to cross-fade them.
  */
+/**
+ * A NUMBER, ANSWERED THE WAY ITS RANGE DESERVES.
+ *
+ * Every `number` question used to render as an `ASegment` with one option per
+ * step. That is right for "how many days a week" — seven options, all visible,
+ * pick one. It is unusable for anything wider, and the intake now asks two:
+ * age would have drawn NINETY segments and body mass five hundred and fifty
+ * ONE, in a horizontal control on a 390dp screen. (An admin could already
+ * author such a question from the panel, so the trap predates these two.)
+ *
+ * So: a narrow range keeps the segments, and anything wider takes the kit's
+ * scrub field — drag the figure to travel, ＋/− to land exactly, which is the
+ * same control the questionnaire screen uses for the same values.
+ *
+ * AN UNANSWERED QUESTION SHOWS NO FIGURE. The body questions ship without a
+ * `defaultValue` precisely so a skipped one stays unanswered, and rendering the
+ * seed as though it were an answer would hand that guarantee straight back —
+ * the athlete would step past a screen reading "80 kg" and have said it.
+ */
+function NumberStep({ q, answers, setAnswer }: {
+  q: OnboardingQuestion;
+  answers: Record<string, AnswerValue | null | undefined>;
+  setAnswer: (key: string, value: AnswerValue) => void;
+}) {
+  const C = useTheme().palette;
+  const { t } = useLang();
+  const min = q.min ?? 1, max = q.max ?? 7, step = q.step ?? 1;
+  const raw = answers[q.key] ?? q.defaultValue;
+  const value = raw === undefined || raw === null || raw === "" ? null : Number(raw);
+
+  // The segmented control stays for a range a thumb can take in at a glance.
+  const steps = Math.floor((max - min) / step) + 1;
+  if (steps <= SEGMENT_MAX) {
+    const opts: number[] = [];
+    for (let v = min; v <= max; v += step) opts.push(v);
+    return (
+      <ASegment
+        options={opts.map((d) => ({ id: String(d), label: `${d}×` }))}
+        value={String(value ?? q.defaultValue ?? min)}
+        onPick={(v) => setAnswer(q.key, Number(v))}
+      />
+    );
+  }
+
+  if (value == null) {
+    return (
+      <APill
+        label={t("w.quiz.answer")}
+        onPress={() => { haptic.selection(); setAnswer(q.key, seedFor(q, min, max)); }}
+      />
+    );
+  }
+  const dp = String(step).split(".")[1]?.length ?? 0;
+  return (
+    <AScrubField
+      value={value}
+      onChange={(v) => setAnswer(q.key, v)}
+      min={min}
+      max={max}
+      step={step}
+      format={(v) => v.toFixed(dp)}
+      a11y={q.title}
+    />
+  );
+}
+
+/** Above this many steps a segmented control stops being a row of options and
+ *  becomes a ribbon nobody can hit. */
+const SEGMENT_MAX = 8;
+
+/** Where the control opens — never shown until the athlete asks for it. The
+ *  questionnaire's own seeds, by engine key, so the two screens open the same
+ *  question at the same figure; otherwise the midpoint of the range. */
+function seedFor(q: OnboardingQuestion, min: number, max: number): number {
+  const byKey: Record<string, number> = { ageYears: 30, bodyweightKg: 80, daysPerWeek: 4 };
+  const seed = q.engineKey ? byKey[q.engineKey] : undefined;
+  const v = seed ?? Math.round((min + max) / 2);
+  return Math.min(max, Math.max(min, v));
+}
+
 function Choice({ active, title, sub, onPress }: { active: boolean; title: string; sub: string; onPress: () => void }) {
   const { palette } = useTheme();
   const on = useRef(new Animated.Value(active ? 1 : 0)).current;
