@@ -727,11 +727,17 @@ export default function Workout() {
     setExercises(blocksToExercises(r.blocks));
   };
 
-  // EVERY MUTATION OF THE LIST TRAVELS. `animateListChange` before the commit
+  // EVERY MUTATION OF EITHER LIST TRAVELS. `animateListChange` before the commit
   // animates all of its consequences at once — the row arriving or leaving AND
   // the rows below opening or closing the gap. Without it the user's own edit
   // is the one moment in the app with no motion at all: a card appears fully
   // formed mid-list, or vanishes and everything under it teleports up.
+  //
+  // This sentence used to say "the list", singular, and mean only the EXERCISE
+  // mutations below — which is how six of the seven SET mutations went on
+  // teleporting under a comment that read like a guarantee. The set list has its
+  // own door now (`commitSets`); a claim this broad is worth only as much as the
+  // narrowest path it actually covers.
   const addExercise = (name: string, kind?: WKind) => {
     addExercises([{ name, kind }]);
   };
@@ -861,55 +867,65 @@ export default function Workout() {
         return { ...x, sets: x.sets.map((s, j) => (j === i ? { ...s, load: nextKg } : s)) };
       }),
     );
-  const addSet = (u: string) => {
+  /**
+   * THE ONE DOOR every change to a SET LIST goes through — and it animates.
+   *
+   * This is a door rather than a habit because the habit had already failed.
+   * `animateListChange` sat on the EXERCISE mutations (add, remove, reorder) and
+   * on exactly one of the set mutations — plain "Add set" — while six others
+   * teleported: the presets rail replacing a whole queue, all three special-set
+   * adders, the auto warm-up ramp, and, worst of all, BANKING A SET. Banking is
+   * the most-repeated interaction in the app and by far the biggest layout
+   * change on the screen (a hero block the height of four rows is replaced by a
+   * one-line ledger row, while the next set's hero opens below it) — and it was
+   * the one moment with no motion at all. Nothing about a scattered call before
+   * each `setExercises` makes the next one added remember, so the reminder is
+   * now the only route in.
+   *
+   * NOT everything that writes a set belongs here, and the exclusions are the
+   * point: `setSetField` runs per KEYSTROKE and `bumpLoad` per tap — a value
+   * changing inside a row that stays put is not a layout change, and animating
+   * it would spring the card on every digit. `removeSet` stays out too, because
+   * its only caller is a SwipeRow and closing the gap after a swipe belongs to
+   * the gesture that opened it.
+   */
+  const commitSets = (u: string, fn: (sets: WSet[]) => WSet[]) => {
     animateListChange(reducedMotion);
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, emptySet(prefs.carryOver ? x.sets[x.sets.length - 1] : undefined)] } : x)),
-    );
+    setExercises((xs) => xs.map((x) => (x.uid === u ? { ...x, sets: fn(x.sets) } : x)));
   };
+  const addSet = (u: string) =>
+    commitSets(u, (sets) => [...sets, emptySet(prefs.carryOver ? sets[sets.length - 1] : undefined)]);
   // Popular preset schemes (⋯ menu) — lay out the whole exercise's working sets
   // in one tap. Each rep count is a SINGLE number (project rule), carrying the
   // current load. Banked sets are kept; the un-banked plan is replaced.
   const applyPreset = (u: string, count: number, reps: number) =>
-    setExercises((xs) =>
-      xs.map((x) => {
-        if (x.uid !== u) return x;
-        const done = x.sets.filter((s) => s.done);
-        const load = [...x.sets].reverse().find((s) => s.load)?.load ?? "";
-        const work: WSet[] = Array.from({ length: count }, () => ({ uid: uid(), load, reps: String(reps), rpe: "", done: false }));
-        return { ...x, sets: [...done, ...work] };
-      }),
-    );
+    commitSets(u, (sets) => {
+      const done = sets.filter((s) => s.done);
+      const load = [...sets].reverse().find((s) => s.load)?.load ?? "";
+      const work: WSet[] = Array.from({ length: count }, () => ({ uid: uid(), load, reps: String(reps), rpe: "", done: false }));
+      return [...done, ...work];
+    });
   // A drop set is a lighter continuation of the previous set (no rest), added pre-flagged.
   const addDropSet = (u: string) =>
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), drop: true }] } : x)),
-    );
+    commitSets(u, (sets) => [...sets, { ...emptySet(), drop: true }]);
   // A warm-up ramp set — excluded from working volume/PRs, kept for the velocity profile.
   const addWarmupSet = (u: string) =>
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), role: "warmup" as SetRole }] } : x)),
-    );
+    commitSets(u, (sets) => [...sets, { ...emptySet(), role: "warmup" as SetRole }]);
   // A cool-down set — light back-off work, excluded from working volume/PRs like a warm-up.
   const addCooldownSet = (u: string) =>
-    setExercises((xs) =>
-      xs.map((x) => (x.uid === u ? { ...x, sets: [...x.sets, { ...emptySet(), role: "cooldown" as SetRole }] } : x)),
-    );
+    commitSets(u, (sets) => [...sets, { ...emptySet(), role: "cooldown" as SetRole }]);
   // Auto warm-up ramp: prepend ~40/60/80% sets up to the heaviest working load.
   const addWarmupRamp = (u: string) =>
-    setExercises((xs) =>
-      xs.map((x) => {
-        if (x.uid !== u) return x;
-        const workingMax = Math.max(
-          0,
-          ...x.sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)),
-        );
-        const ramp = warmupRamp(workingMax);
-        if (!ramp.length) return x;
-        const rampSets: WSet[] = ramp.map((step) => ({ uid: uid(), load: String(step.load), reps: String(step.reps), rpe: "", done: false, role: "warmup" }));
-        return { ...x, sets: [...rampSets, ...x.sets] };
-      }),
-    );
+    commitSets(u, (sets) => {
+      const workingMax = Math.max(
+        0,
+        ...sets.filter((s) => s.role !== "warmup" && s.role !== "cooldown").map((s) => parseFloat(s.load)).filter((n) => Number.isFinite(n)),
+      );
+      const ramp = warmupRamp(workingMax);
+      if (!ramp.length) return sets;
+      const rampSets: WSet[] = ramp.map((step) => ({ uid: uid(), load: String(step.load), reps: String(step.reps), rpe: "", done: false, role: "warmup" }));
+      return [...rampSets, ...sets];
+    });
   // The set's type, CHOSEN rather than cycled — the control behind it is a
   // picker now, so tapping four times to reach the fourth state is over.
   const setTypeTo = (u: string, i: number, type: SetType) =>
@@ -938,17 +954,15 @@ export default function Workout() {
     // Banking a set also records the rest that preceded it — the gap since the
     // last set was banked (the live timer) is saved on the set as real data.
     const restTaken = val && restSince != null ? Math.floor((Date.now() - restSince) / 1000) : undefined;
-    setExercises((xs) =>
-      xs.map((x) =>
-        x.uid === u
-          ? {
-              ...x,
-              // Un-ticking clears the recorded rest too, so a stale value can't
-              // persist if you re-do the set without the timer running.
-              sets: x.sets.map((s, j) => (j === i ? { ...s, done: val, rest: val ? restTaken : undefined } : s)),
-            }
-          : x,
-      ),
+    // Through commitSets, so the collapse TRAVELS. Banking swaps a hero block
+    // for a one-line row and opens the next set's hero underneath — the largest
+    // layout change the screen makes, and until now the only one that happened
+    // between two frames with nothing in between. Re-opening a banked row is the
+    // same change played backwards and gets the same motion.
+    commitSets(u, (sets) =>
+      // Un-ticking clears the recorded rest too, so a stale value can't
+      // persist if you re-do the set without the timer running.
+      sets.map((s, j) => (j === i ? { ...s, done: val, rest: val ? restTaken : undefined } : s)),
     );
     if (!val) return;
     if (showTip) dismissTip(); // first banked set — the guide has done its job
@@ -1574,7 +1588,13 @@ export default function Workout() {
                                   const set = !!rpeShown;
                                   return (
                                     <Pressable
-                                      onPress={() => setRpeOpenSet((u) => (u === s.uid ? null : s.uid))}
+                                      // The pill row is a DISCLOSURE, so opening
+                                      // it grows the card and shifts everything
+                                      // below — the same kind of layout change as
+                                      // a set arriving, and it was popping in
+                                      // fully formed with the rows beneath
+                                      // teleporting down.
+                                      onPress={() => { animateListChange(reducedMotion); setRpeOpenSet((u) => (u === s.uid ? null : s.uid)); }}
                                       hitSlop={6}
                                       style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: set ? withAlpha(C.amber, 0.5) : C.line, backgroundColor: set ? withAlpha(C.amber, ALPHA.fill) : "transparent" }}
                                     >
@@ -1673,7 +1693,7 @@ export default function Workout() {
                                   return (
                                     <Pressable
                                       key={val}
-                                      onPress={() => { setSetField(x.uid, i, "rpe", on ? "" : val); setRpeOpenSet(null); }}
+                                      onPress={() => { animateListChange(reducedMotion); setSetField(x.uid, i, "rpe", on ? "" : val); setRpeOpenSet(null); }}
                                       accessibilityRole="button"
                                       accessibilityState={{ selected: on }}
                                       style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.chalk : C.line, backgroundColor: on ? withAlpha(C.chalk, ALPHA.fill) : C.ink2 }}

@@ -23,7 +23,27 @@ import { durations, springs, springToRN } from "@hybrid/core";
  * clients use, so a row closing a gap travels on the curve a screen does.
  */
 
-// Android needs this opted into explicitly; on iOS (and on Fabric) it is on.
+// WHERE THIS ACTUALLY RUNS, checked against the installed RN (0.85.3) rather
+// than assumed, because a no-op here is invisible and this file's whole job is
+// motion the user is supposed to notice:
+//
+//   iOS + Fabric — ON. Two gates, both defaulting true: the JS flag
+//     `ReactNativeFeatureFlags.isLayoutAnimationEnabled` (LayoutAnimation.js
+//     returns early without it) and the C++ `enableLayoutAnimationsOnIOS`.
+//     RN's own source still calls iOS Fabric support "conditionally enabled
+//     (pending fully shipping; this is a temporary state)", so treat it as a
+//     thing to re-check when `expo` moves, not as a permanent guarantee.
+//   Android + Fabric — OFF, and the call below does not change that:
+//     `setLayoutAnimationEnabledExperimental` is the pre-Fabric switch, and the
+//     flag that decides it now is C++ `enableLayoutAnimationsOnAndroid`, which
+//     defaults FALSE in 0.85.3. The call is kept because it is still correct on
+//     a non-Fabric Android build and costs nothing on a Fabric one. The product
+//     ships to the App Store, so this is a note, not a blocker — but list
+//     motion should not be described as cross-platform until it is.
+//
+// Also: do NOT reach for `LayoutAnimation.setEnabled()` to force this. In
+// 0.85.3 its body is `isLayoutAnimationEnabled = isLayoutAnimationEnabled` —
+// an upstream self-assignment that does nothing at all.
 if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
