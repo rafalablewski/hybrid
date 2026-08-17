@@ -136,12 +136,37 @@ describe("live logger — every set-list mutation travels", () => {
     }
   });
 
-  it("the RPE disclosure animates too — it grows the card", () => {
-    // Opening the pill row shifts everything below it, which is the same kind of
-    // layout change as a set arriving. It is not a set mutation, so the door
-    // cannot cover it; this is what keeps it honest.
-    const chip = src.slice(src.indexOf("setRpeOpenSet((u) =>") - 400, src.indexOf("setRpeOpenSet((u) =>") + 80);
-    expect(chip, "the RPE chip must arm a layout animation when it toggles the pill row")
-      .toContain("animateListChange(reducedMotion)");
+  /**
+   * The rest of the class, which the door cannot cover because none of these are
+   * set mutations — they mount or unmount a BLOCK. Asking "did you fix all?" is
+   * what turned these up: four more surfaces in the same logger changing the same
+   * screen's layout between two frames, after the seven set paths were done.
+   * Each is checked by the setter that performs it, since that is the thing a
+   * future edit would move.
+   */
+  const BLOCK_CHANGES: { setter: string; what: string; window?: number }[] = [
+    { setter: "setRpeOpenSet((u) =>", what: "the RPE pill row — opens inside the card and pushes the sets below it down" },
+    { setter: "setSpecialUid((u) =>", what: "the what-kind-of-set panel — the same disclosure one card over" },
+    { setter: "setShowTip(false)", what: "dismissing the coach tip — a whole card leaves the top of the scroller" },
+    { setter: "setRestSince(null)", what: "stopping the rest countdown — a two-row banner unmounts (via stopRest)" },
+    { setter: "toggleSuperset(xs,", what: "joining a superset — a ⛓ badge enters the card header and reflows the name" },
+  ];
+
+  it("every block that mounts or unmounts in the logger travels too", () => {
+    for (const { setter, what, window = 420 } of BLOCK_CHANGES) {
+      const at = src.indexOf(setter);
+      expect(at, `${setter} not found — has the logger changed shape? (${what})`).toBeGreaterThan(-1);
+      // Only ONE occurrence should need checking; if a second appears, it is a
+      // second path to the same layout change and must be routed through the
+      // first (that is why stopRest exists).
+      expect(
+        src.indexOf(setter, at + 1),
+        `${setter} appears more than once — give it one door, like stopRest, so the two paths ` +
+          `cannot disagree about whether ${what} animates`,
+      ).toBe(-1);
+      const near = src.slice(Math.max(0, at - window), at + setter.length);
+      expect(near, `${what} — must arm animateListChange(reducedMotion)`)
+        .toContain("animateListChange(reducedMotion)");
+    }
   });
 });

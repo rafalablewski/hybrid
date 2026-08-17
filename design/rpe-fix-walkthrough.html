@@ -335,6 +335,15 @@
           The big figures are fixed in this demo — change the lift and the unit to vary
           them. Everything else is live.
         </p>
+        <p class="hint">
+          <strong style="color:var(--page-warn)">On the motion:</strong> the page's
+          animation is <em>illustrative and deliberately louder than the app.</em> The
+          token pops and the lost value visibly evaporates so the difference is legible
+          in a browser. On device the collapse is one <code>LayoutAnimation</code> on the
+          shared <code>springs.slide</code> curve at <code>durations.collapse</code>
+          180&nbsp;ms — the row travels and the token arrives with it, with no pop of its
+          own. Don't read the flourishes here as shipped behaviour.
+        </p>
       </div>
 
       <div class="panelcol">

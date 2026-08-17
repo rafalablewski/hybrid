@@ -388,6 +388,14 @@ export default function Workout() {
   const [error, setError] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [restSince, setRestSince] = useState<number | null>(null);
+  // Disarming the timer UNMOUNTS the rest banner — a block the height of two rows
+  // leaving the top of the scroller. `stopRest` is the one door for that, so the
+  // three ways to dismiss it (the banner's own ■ Stop rest, the capsule's toggle,
+  // the "off" pref) can't disagree about whether it travels.
+  const stopRest = () => {
+    animateListChange(reducedMotion);
+    setRestSince(null);
+  };
   const [restNow, setRestNow] = useState(0);
   const [restTarget, setRestTarget] = useState<number | null>(DEFAULT_REST);
   const restFired = useRef(false);
@@ -470,6 +478,11 @@ export default function Workout() {
     AsyncStorage.getItem(TIP_KEY).then((v) => setShowTip(v !== "1")).catch(() => {});
   }, []);
   const dismissTip = () => {
+    // A whole card leaving the top of the scroller, so it travels like any other
+    // removal — otherwise everything below it jumps up by the card's height. The
+    // one call from toggleDone already has an animation armed for that commit;
+    // arming it twice is the same config and costs nothing.
+    animateListChange(reducedMotion);
     setShowTip(false);
     AsyncStorage.setItem(TIP_KEY, "1").catch(() => {});
   };
@@ -944,8 +957,13 @@ export default function Workout() {
     if (scheme) applyPreset(u, scheme.sets, scheme.reps);
   };
   // Superset: group this exercise with the one directly above it (A1/A2/A3…).
-  const supersetWithPrev = (u: string) =>
+  // Joining puts a ⛓ A1/A2 badge into the card header and swaps the control's
+  // label, which reflows the lift's name beside it — small, but a layout change
+  // the user asked for, so it travels like the rest.
+  const supersetWithPrev = (u: string) => {
+    animateListChange(reducedMotion);
     setExercises((xs) => toggleSuperset(xs, xs.findIndex((x) => x.uid === u), uid));
+  };
   // No animateListChange here: the only caller is a SwipeRow, and closing the
   // gap after a swipe-delete belongs to SwipeRow itself now.
   const removeSet = (u: string, i: number) =>
@@ -984,7 +1002,7 @@ export default function Workout() {
       midSuperset = members[members.length - 1]?.uid !== ex.uid;
     }
     if (nextIsDrop || midSuperset || !prefs.restTimer) {
-      setRestSince(null); // suppress any lingering rest banner (or timer disabled)
+      stopRest(); // suppress any lingering rest banner (or timer disabled)
       return;
     }
     setRestSince(Date.now());
@@ -1216,10 +1234,10 @@ export default function Workout() {
     const next = !prefs.restTimer;
     haptic.light();
     setLoggerPref("restTimer", next);
-    if (!next) setRestSince(null);
+    if (!next) stopRest();
   };
   const pickRestPref = (v: string) => {
-    if (v === "off") { setLoggerPref("restTimer", false); setRestSince(null); return; }
+    if (v === "off") { setLoggerPref("restTimer", false); stopRest(); return; }
     setLoggerPref("restTimer", true);
     setLoggerPref("restSeconds", Number(v));
   };
@@ -1432,7 +1450,7 @@ export default function Workout() {
                   ) : null}
                 </View>
                 <Pressable
-                  onPress={() => setRestSince(null)}
+                  onPress={stopRest}
                   hitSlop={8}
                   style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 10, paddingVertical: 5, borderRadius: RADIUS.field, borderWidth: 1, borderColor: accent }}
                 >
@@ -1628,7 +1646,11 @@ export default function Workout() {
                                   />
                                 ) : (
                                   <Pressable
-                                    onPress={() => setSpecialUid((u) => (u === x.uid ? null : x.uid))}
+                                    // Same disclosure as the RPE pill row: the
+                                    // panel opens INSIDE the card and pushes the
+                                    // sets below it down, so it grows rather than
+                                    // appearing over them.
+                                    onPress={() => { animateListChange(reducedMotion); setSpecialUid((u) => (u === x.uid ? null : x.uid)); }}
                                     hitSlop={8}
                                     accessibilityRole="button"
                                     accessibilityLabel={t("workout.setOptions")}
