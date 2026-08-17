@@ -56,6 +56,20 @@ export function riskRole(band: string): SemanticRole {
   return "danger";
 }
 
+/**
+ * ACWR band → state role. Both ENDS of the ratio are a state, not a failure:
+ * detraining is `info` rather than `caution`, because coming back off a quiet
+ * spell is a fact about the last four weeks and not something to fix today —
+ * the same reading `hpiRole` gives "moderate".
+ */
+export function acwrRole(band: string): SemanticRole {
+  if (band === "sweet-spot") return "go";
+  if (band === "detraining") return "info";
+  if (band === "caution") return "caution";
+  if (band === "danger") return "danger";
+  return "neutral";
+}
+
 /** Accountability band → state role. */
 export function accountabilityRole(band: string): SemanticRole {
   if (band === "thriving" || band === "steady") return "go";

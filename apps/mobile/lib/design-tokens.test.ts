@@ -374,7 +374,7 @@ describe("leading and tracking", () => {
     // fifth is the portion stepper's −, whose box was 26 on a size of 24: once
     // the size took a rung the pair read as a 1.0 ratio, which is nobody's
     // choice, it is two numbers that used to be different.)
-    burnDown(hits(/lineHeight:\s*\d/g), 40, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    burnDown(hits(/lineHeight:\s*\d/g), 39, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking names its token; a big figure derives it", () => {
@@ -463,11 +463,14 @@ describe("geometry", () => {
     // panel, and the second copy was about to become a third. One `Legend` in
     // the admin _kit now serves both, on RADIUS.pill.
     //
-    // 159 → 158, and the leading ceiling 41 → 40, on the MERGE of the icon
-    // convergence with the subtraction pass — neither branch alone freed them.
+    // 159 → 147, and the leading ceiling 41 → 39, across the MERGE of the icon
+    // convergence with the subtraction pass. Two sites neither branch freed
+    // alone; the other eleven went with the agent console the subtraction pass
+    // deleted, which this branch had resurrected by touching it — a file kept
+    // alive by a one-character emoji fix on a screen main had removed.
     // Cross-rule slack is exactly what the anti-slack assertion is for, and a
     // merge is where it accumulates fastest.
-    burnDown(hits(/borderRadius:\s*\d/g), 158, "2027-02-28", "raw borderRadius → RADIUS.*");
+    burnDown(hits(/borderRadius:\s*\d/g), 147, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 

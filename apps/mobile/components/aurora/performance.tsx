@@ -27,12 +27,11 @@ import {
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  velocityProfiles, hpiRole, hpiBandKey, readinessRole, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
-  readinessVerdict, readinessReasonsKey, readinessDeficit, readinessRingTicks, readinessRingSegments,
-  readinessFacts, KEPT_ARC_ALPHA, heatAdjustment,
+  velocityProfiles, hpiRole, hpiBandKey, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
+  readinessVerdict, readinessDeficit, readinessFacts, heatAdjustment,
   localDayKey, INJURY_AREA_KEY,
   freshnessExplain, wearableExplain, wearableSourcePhrase,
-  type CapabilityMovement, type FreshnessPillar, type ReadinessFact, type RingSegment, type SemanticRole,
+  type CapabilityMovement, type FreshnessPillar,
   type WearableExplain,
 
   ALPHA,} from "@hybrid/core";
@@ -45,7 +44,7 @@ import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, Ring, withAlpha, ASection } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, withAlpha, ASection } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import GroupMark from "./group-mark";
 import AuroraVolume from "./volume";
@@ -53,6 +52,9 @@ import { AuroraIcon } from "./icons";
 import TissueCard from "./tissue-card";
 import LevelCard from "./level-card";
 import ReadinessFace from "./readiness-face";
+// THE DAY OBJECT and its door — the one readiness ring, shared with Today.
+import { ReadinessDayCard } from "./readiness-ring";
+import ReadinessDaySheet from "./readiness-day-sheet";
 import FreshnessSheet from "./freshness-sheet";
 import WearableSheet from "./wearable-sheet";
 import FetchError from "./fetch-error";
@@ -60,22 +62,12 @@ import { CtaLabel } from "./cta-label";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
-const readyColor = (v: number, C: Palette) => roleColor(C, readinessRole(v));
-/**
- * A semantic role as a colour to DRAW WITH — the accent-TEXT tone, not the raw
- * fill. `roleColor` returns the fill, which is tuned to sit under something;
- * `txt()` maps a fill to the AA-guarded tone.
- */
-const rolePaint = (C: Palette, role: SemanticRole) => txt(C, roleColor(C, role));
-/**
- * One run of the readiness ring, painted. The role AND whether the run is held
- * back both come from the segment, so the ring, the proportional bar and the
- * ledger's swatches resolve the same colour from the same field — and neither
- * client can re-derive the kept arc's colour into a collision again. Mirrors
- * web's segPaint.
- */
-const segPaint = (C: Palette, s: Pick<RingSegment, "role" | "dim">) =>
-  s.dim ? withAlpha(rolePaint(C, s.role), KEPT_ARC_ALPHA) : rolePaint(C, s.role);
+// NO readiness paint helpers here any more. `readyColor`, `rolePaint` and
+// `segPaint` all lived in this file, and a byte-identical set lived in the web
+// twin; they now live once, beside the ring they paint
+// (aurora/readiness-ring.tsx). Re-deriving the kept arc's colour at a call site
+// is what once let a −3 wearable share its hue with 17 ticks of kept score, so
+// the rule is that a run's paint comes off the run and from nowhere else.
 /** The plot's box — the SAME box web uses, because both clients now stroke the
  *  same paths from the same shared geometry. react-native-svg is already in the
  *  app (the injury mannequin), so mobile no longer has to approximate the chart
@@ -194,24 +186,19 @@ function Full({ top }: { top?: ReactNode }) {
   // carries only what the ledger's rows CAN'T — the limiting tissue's own
   // fatigue, the energy-system load, and a wearable nudge that has no row at
   // all when it gave points back.
-  const verdictReadiness = useMemo(() => readinessVerdict(log, bio), [log, bio]);
+  // heatAdj is passed HERE TOO. The verdict computes its own split for the
+  // door's label and its count, so a verdict read without the credit promises
+  // a figure the ledger behind it does not sum to (engines/performance-state.ts).
+  const verdictReadiness = useMemo(() => readinessVerdict(log, bio, heatAdj), [log, bio, heatAdj]);
   const facts = useMemo(() => readinessFacts(log, bio, heatAdj), [log, bio, heatAdj]);
   // The ring accounts for the whole 100: what today kept, and what each cause
   // took. `kept` IS the score the figure prints, so the arcs and the number can
   // never be two readings of the same day.
   const deficit = useMemo(() => readinessDeficit(log, bio, heatAdj), [log, bio, heatAdj]);
-  const ringTicks = useMemo(() => readinessRingTicks(deficit), [deficit]);
-  // The same runs the ticks are built from — the bar below the door draws these
-  // directly, so it can't disagree with the arcs above it.
-  const ringSegs = useMemo(() => readinessRingSegments(deficit), [deficit]);
-  const keptPaint = segPaint(C, { role: readinessRole(deficit.kept), dim: true });
+  // The runs, the paint, the bar, the ledger and the provenance line all live in
+  // the shared object now (aurora/readiness-ring.tsx). This screen holds the one
+  // reading of the day and hands it over.
   const [whyOpen, setWhyOpen] = useState(false);
-  // The provenance line, resolved. A positive wearable nudge has to keep its
-  // sign — it's the one fact here that can read either way.
-  const factLine = (f: ReadinessFact) =>
-    t(f.key)
-      .replace("{tissue}", f.muscle ? t(`w.home.today.muscle.${f.muscle}`) : "")
-      .replace("{n}", f.value > 0 && f.key === "w.home.readiness.factWearable" ? `+${f.value}` : String(f.value));
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   // WHICH FRESHNESS COLUMN IS OPEN, and the explanation behind it — computed
   // only while the sheet is up, from the SAME engine the columns print.
@@ -366,6 +353,18 @@ function Full({ top }: { top?: ReactNode }) {
             </View>
             <FreshnessSheet explain={freshExplain} onClose={() => setFreshOpen(null)} />
             <WearableSheet explain={wearableOpen ? wearable : null} onClose={() => setWearableOpen(false)} />
+            {/* THE EXPLAINED DAY — the readiness ring's own door, the same
+                sheet Today opens. It sits beside the freshness and wearable
+                explainers because it is the third of the same kind: every
+                figure on this card opens onto its inputs, its arithmetic and
+                its caveat. */}
+            <ReadinessDaySheet
+              deficit={whyOpen ? deficit : null}
+              facts={facts}
+              verdict={verdictReadiness}
+              rx={rx}
+              onClose={() => setWhyOpen(false)}
+            />
 
             {/* CAPABILITY — freshness rises on a layoff; this does not. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
@@ -413,129 +412,49 @@ function Full({ top }: { top?: ReactNode }) {
             </View>
 
             <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
-              {/* THE MASTHEAD — the ring and the line it draws, as ONE row. The
-                  breakdown used to live in this row's right-hand column, which
-                  starts a third of the way across the card; everything below the
-                  headline is now a sibling of this row, at full card width.
-                  Mirrors web. */}
-              <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-                {/* THE DEFICIT RING — the kept run in the readiness band's own
-                    colour HELD BACK to KEPT_ARC_ALPHA, then one run per cause at
-                    full strength. Both the role and the holding-back come from
-                    the segment (see readiness-deficit.ts): deriving the kept
-                    colour here is what let a −3 wearable share its hue with 17
-                    ticks of kept score. Mirrors web. */}
-                <Ring
-                  value={deficit.kept}
-                  size={56}
-                  color={readyColor(deficit.kept, C)}
-                  track={C.line}
-                  tickColors={ringTicks.map((s) => segPaint(C, s))}
-                >
-                  <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{deficit.kept}</Text>
-                </Ring>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.home.cockpit.todayReadiness")}</Text>
-                  {/* THE FACE — one line, naming the limiter and nothing else. */}
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 3, lineHeight: leading(fs.subtitle) }}>
-                    {t(verdictReadiness.key).replace(
-                      "{tissue}",
-                      verdictReadiness.muscle ? t(`w.home.today.muscle.${verdictReadiness.muscle}`) : "",
-                    )}
-                  </Text>
-                </View>
-              </View>
+              {/* THE DAY OBJECT — the SAME card Today wears, from the same
+                  component (aurora/readiness-ring.tsx). This block used to be a
+                  hand-rolled ring, a hand-rolled bar, a hand-rolled ledger and
+                  a chevron expander, roughly 120 lines of it, living only here;
+                  Today drew a bare 44dp gauge of the same number. One object
+                  now, on both screens, opening one explanation.
+
+                  IT IS A SHEET, NOT AN EXPANDER, and that is the change worth
+                  writing down. The derivation used to unfold in place, pushing
+                  the rest of a long page down under it — which is why it could
+                  only ever be a footnote to the card and never the thing the
+                  card is FOR. In a sheet the ring is drawn at 112 with its runs
+                  actually separable, and it has room for the two facts the
+                  expander never had: the scale's own floor, when the arithmetic
+                  kept falling after the number stopped, and what the figure
+                  selects for today's session. */}
+              <ReadinessDayCard
+                deficit={deficit}
+                verdict={verdictReadiness}
+                onOpen={() => setWhyOpen(true)}
+                style={{ backgroundColor: "transparent", borderWidth: 0, padding: 0 }}
+              />
 
               {/* READINESS NUDGE — the one-tap check-in moved today's load;
-                  glanceable, tinted in the feeling's own accent. On its OWN line
-                  now: inside the old column it broke mid-sentence. Mirrors web. */}
+                  glanceable, tinted in the feeling's own accent. It stays on
+                  the CARD rather than moving into the sheet with everything
+                  else, because it is not part of the derivation: the score
+                  picks the movement, and this is the athlete's own answer
+                  scaling the bar. Two different claims, so two different
+                  places. (The sheet states it too, under what the number
+                  selects, where the distinction is spelt out.) */}
               {rx.readinessAdjust && (() => {
                 const adj = rx.readinessAdjust!;
                 const tint = C[READINESS_FACE[adj.feeling].accent];
                 const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
                 const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
                 return (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 12, paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS.pill, backgroundColor: withAlpha(tint, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(tint, ALPHA.line) }}>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 14, paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS.pill, backgroundColor: withAlpha(tint, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(tint, ALPHA.line) }}>
                     <ReadinessFace feeling={adj.feeling} scale={0.5} />
                     <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, tint) }}>{label}</Text>
                   </View>
                 );
               })()}
-
-              {/* THE DOOR — the derivation, one tap down, spanning the card so
-                  the count lands on its right edge. It counts the ROWS behind
-                  it, so it can't promise three reasons and open onto two. */}
-              {deficit.costs.length > 0 && verdictReadiness.kind !== "empty" && (
-                <View style={{ marginTop: 14, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 11 }}>
-                  <Pressable
-                    onPress={() => setWhyOpen((v) => !v)}
-                    hitSlop={6}
-                    accessibilityRole="button"
-                    accessibilityState={{ expanded: whyOpen }}
-                    style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12 }}
-                  >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
-                      {t(verdictReadiness.doorKey).replace("{n}", String(verdictReadiness.deficit))}
-                    </Text>
-                    <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                      <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.chalk }}>
-                        {t(readinessReasonsKey(verdictReadiness.reasons)).replace("{n}", String(verdictReadiness.reasons))}
-                      </Text>
-                      <AuroraIcon name="chevron-down" size={12} color={C.ash} style={whyOpen ? { transform: [{ rotate: "180deg" }] } : undefined} />
-                    </View>
-                  </Pressable>
-                  {whyOpen && (
-                    <View>
-                      {/* THE BAR — the ring's own runs, straightened out. It
-                          reads the SAME segments the arcs do, so the two cannot
-                          disagree. Mirrors web. */}
-                      <View style={{ flexDirection: "row", gap: 2, height: 10, marginTop: 12 }}>
-                        {ringSegs.map((s, i) => (
-                          <View key={i} style={{ flex: s.points, minWidth: 6, borderRadius: 2, backgroundColor: segPaint(C, s) }} />
-                        ))}
-                      </View>
-                      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
-                          {t("w.home.readiness.barKept").replace("{n}", String(deficit.kept))}
-                        </Text>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
-                          {t("w.home.readiness.barSpent").replace("{n}", String(deficit.deficit))}
-                        </Text>
-                      </View>
-
-                      {/* THE LEDGER — the arcs, as arithmetic you can audit.
-                          Same points, same order, same paint as the ring; the
-                          engine guarantees the rows sum to the figure inside it.
-                          The total carries the kept swatch, so every colour on
-                          the ring is named by a row. */}
-                      <View style={{ gap: 7, marginTop: 14 }}>
-                        <LedgerRow C={C} label={t("w.home.readiness.baseline")} value="100" />
-                        {deficit.costs.map((c, i) => (
-                          <LedgerRow
-                            key={i}
-                            C={C}
-                            swatch={rolePaint(C, c.role)}
-                            label={t(c.key).replace("{tissue}", c.muscle ? t(`w.home.today.muscle.${c.muscle}`) : "")}
-                            value={`−${c.points}`}
-                            tint={rolePaint(C, c.role)}
-                          />
-                        ))}
-                        <View style={{ height: 1, backgroundColor: C.line }} />
-                        <LedgerRow C={C} swatch={keptPaint} label={t("w.home.readiness.total")} value={String(deficit.kept)} strong />
-                      </View>
-
-                      {/* PROVENANCE — the measured inputs the rows can't carry.
-                          This replaces three sentences that restated the rows in
-                          English-only prose. Mirrors web. */}
-                      {facts.length > 0 && (
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 12, lineHeight: leading(fs.nano) + 3 }}>
-                          {`${t("w.home.readiness.provFrom")} – ${facts.map(factLine).join(", ")}`}
-                        </Text>
-                      )}
-                    </View>
-                  )}
-                </View>
-              )}
             </View>
           </>
         ) : sessionsRead.ready ? (
@@ -693,20 +612,6 @@ function velocityValue(profiles: ReturnType<typeof velocityProfiles>): string | 
  */
 function Rule({ C, w, h, mt }: { C: Palette; w: number | `${number}%`; h: number; mt?: number }) {
   return <View style={{ width: w, height: h, borderRadius: h / 2, backgroundColor: C.line, opacity: 0.45, marginTop: mt }} />;
-}
-
-/** One row of the readiness ledger: the arc's own colour, what it is, what it
- *  cost. Tabular by construction — every value sits on the same right edge. */
-function LedgerRow({
-  C, label, value, swatch, tint, strong,
-}: { C: Palette; label: string; value: string; swatch?: string; tint?: string; strong?: boolean }) {
-  return (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-      <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: swatch ?? "transparent" }} />
-      <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: strong ? C.chalk : C.ash }} numberOfLines={2}>{label}</Text>
-      <Text style={{ fontFamily: strong ? F.monoBold : F.mono, fontSize: fs.caption, color: strong ? C.chalk : tint ?? C.ash }}>{value}</Text>
-    </View>
-  );
 }
 
 /** The state card's unknown state. Occupies roughly the shape of the real thing

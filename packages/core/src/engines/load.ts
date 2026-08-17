@@ -136,6 +136,18 @@ export interface LoadState {
   strain: number;
   /** load per week for the last 4 weeks, newest first */
   weekly: { weeksAgo: number; load: number }[];
+  /**
+   * The last 7 days' load, one entry per day, index 0 = today. These are the
+   * ITEMS `acute` is the sum of and `monotony` is the spread of — carried out
+   * of the engine so an explainer can show the athlete the same seven numbers
+   * the ratio was computed from rather than re-deriving them from rounded
+   * totals. See load-explain.ts.
+   */
+  daily: number[];
+  /** mean of `daily` — the numerator of monotony, unrounded intent, 2dp. */
+  dailyMean: number;
+  /** population SD of `daily` — the denominator of monotony, 2dp. */
+  dailySd: number;
   enoughHistory: boolean;
 }
 
@@ -192,6 +204,9 @@ export function computeLoad(sessions: LoggedSession[], now = Date.now()): LoadSt
     monotony: Math.round(monotony * 100) / 100,
     strain,
     weekly,
+    daily: week.map((v) => Math.round(v)),
+    dailyMean: Math.round(mean * 100) / 100,
+    dailySd: Math.round(sd * 100) / 100,
     enoughHistory,
   };
 }

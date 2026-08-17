@@ -14,7 +14,9 @@ import {
   toBiometrics,
   heatAdjustment,
   velocityProfiles,
-  readinessRole,
+  readinessDeficit,
+  readinessVerdict,
+  readinessFacts,
   quickCheckinFeeling,
   quickCheckinPatch,
   checkinScaleFeeling,
@@ -88,6 +90,9 @@ import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
 import ReadinessSheet from "./readiness-sheet";
+// THE DAY OBJECT and its door — the one readiness ring, shared with Performance.
+import { ReadinessDayCard } from "./readiness-ring";
+import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
 import AuroraEnduranceSummary from "./endurance-summary";
@@ -119,7 +124,10 @@ import { withAlpha } from "./field";
 type P = ReturnType<typeof useTheme>["palette"];
 // State colours resolve through the SHARED semantic vocabulary (@hybrid/core
 // semantic.ts) via theme.roleColor, so web + mobile can't drift on meaning.
-const readyColor = (v: number, C: P) => roleColor(C, readinessRole(v));
+// The readiness band's own colour is no longer derived here at all: it comes off
+// the ring's segments (aurora/readiness-ring.tsx segPaint), because deriving it
+// at the call site is what once let a −3 wearable share its hue with 17 ticks of
+// kept score.
 
 /**
  * AURORA home — the rounded Aurora skin of the full classic Today cockpit, at
@@ -352,6 +360,21 @@ export default function AuroraHome() {
     () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj }),
     [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj],
   );
+  // ── THE DAY OBJECT ────────────────────────────────────────────────────────
+  // Today's readiness, split into what it kept and what each cause took. ONE
+  // reading of the day feeds all three: the same `log`, `bio` and `heatAdj` the
+  // prescription above already read, so the ring, its face and its ledger can
+  // never be three readings of one morning. `kept` IS `rx.readiness` — the same
+  // computeReadiness call — which is what lets this replace the bare dial that
+  // used to sit on the plan card rather than sit beside it as a second number.
+  const deficit = useMemo(() => readinessDeficit(log, bio, heatAdj), [log, bio, heatAdj]);
+  // heatAdj is passed here TOO, and it has to be: the verdict computes its own
+  // split for the door's count and its label, so a verdict read without the
+  // credit promises a figure the ledger behind it does not sum to (see
+  // engines/performance-state.ts).
+  const readyVerdict = useMemo(() => readinessVerdict(log, bio, heatAdj), [log, bio, heatAdj]);
+  const readyFacts = useMemo(() => readinessFacts(log, bio, heatAdj), [log, bio, heatAdj]);
+  const [dayOpen, setDayOpen] = useState(false);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
@@ -571,10 +594,6 @@ export default function AuroraHome() {
       ? t(mast.diffDays < 0 ? "w.home.today.daysBack" : "w.home.today.daysOut").replace("{n}", String(Math.abs(mast.diffDays)))
       : null;
 
-  // Readiness (and the AI prescription it feeds) is only real when there's
-  // logged history — a bare macrocycle phase (auto-created at onboarding) must
-  // never surface a fabricated score/session, so this gates on hasData alone.
-  const planReadiness = hasData;
   // The plan-card CTA follows YOUR PLAN when enrolled (source=plan prefills the
   // named plan's day), then the AI-prescribed session for PREMIUM athletes, then
   // an empty start. AI is paid-only, so casual/guests never get source=ai here.
@@ -726,6 +745,38 @@ export default function AuroraHome() {
           title={mastTitle}
         />
 
+        {/* ═════ THE DAY OBJECT — the readiness ring, and it sits HERE ═════
+            Above the first cluster and below the head, in its own right,
+            because it is neither the day's work nor a piece of chrome: the
+            masthead names the day, this states what shape the day is in, and
+            the TRAIN cluster below gives the work that follows from it. That
+            order is the argument for the position — read the state, then read
+            the session it selected.
+
+            IT USED TO BE A BARE DIAL, and the difference is the whole point.
+            The ring lived inside the plan card as a 44dp gauge of the same
+            number: no tick colours, so it accounted for nothing; no label, so
+            nothing said what the number was; no door, so a figure the entire
+            product is built to be able to defend could not be questioned; and
+            it rendered on exactly ONE of this screen's four branches — an
+            athlete on the date-anchored week rail or in logbook mode never saw
+            it at all. Meanwhile the Performance screen drew the real ring, with
+            its runs and its ledger, behind a paywall and a scroll. Two rings,
+            one day, and the one on the screen everyone opens every morning was
+            the one that could not explain itself.
+
+            Now there is ONE ring (aurora/readiness-ring.tsx), drawn here on
+            every branch and again on Performance from the same component, and
+            both open the same explanation. Gated on `hasData` for the reason
+            the plan card's own comment gives: a bare onboarding macrocycle must
+            never surface a fabricated readiness score, and an empty log has
+            nothing to subtract from. ═════ */}
+        {!initialLoad && isAthlete && hasData && readyVerdict.kind !== "empty" && (
+          <View style={{ marginBottom: 16 }}>
+            <ReadinessDayCard deficit={deficit} verdict={readyVerdict} onOpen={() => setDayOpen(true)} />
+          </View>
+        )}
+
         {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the
             path to one) and, below it, what was actually done. First of the
             FOUR themed clusters the whole dashboard scroll is organised into
@@ -837,19 +888,14 @@ export default function AuroraHome() {
           </View>
         ) : (
         <ACard>
-            {/* On a plan, Start is the full-width action anchored BELOW the lifts;
-                the only thing riding the top row is the readiness dial, and only
-                once there's logged history — a bare onboarding macrocycle must
-                never surface a fabricated readiness score. (Plan-less athletes
-                with history land in logbook mode, so this card only ever renders
-                the plan hero or the cold-start skeleton.) */}
-            {!initialLoad && isAthlete && planReadiness && plan ? (
-              <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
-                <Ring value={rx.readiness} size={44} color={readyColor(rx.readiness, C)} track={C.line}>
-                  <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{rx.readiness}</Text>
-                </Ring>
-              </View>
-            ) : null}
+            {/* NO READINESS DIAL ON THIS CARD ANY MORE. It used to ride this
+                card's top row, right-aligned, as a bare 44dp gauge — and it was
+                the only place on Today the number appeared, which meant it
+                appeared on one of this screen's four branches. It is now the
+                day object above the whole cluster (see the block under the
+                masthead), where it renders on every branch, carries its own
+                accounting and opens its own derivation. Start stays the
+                full-width action anchored BELOW the lifts. */}
             {plan ? (
               <>
                 {/* NOT `fs.headline`, deliberately — hub-masthead.test.ts bans that
@@ -1209,6 +1255,19 @@ export default function AuroraHome() {
           scrolling its summary to the last panel, which nobody does, which is
           why those sessions were counting for nothing in the load model. */}
       <FeelSheet session={rating} sessions={sessions} visible={rating != null} onClose={() => setRating(null)} />
+
+      {/* THE EXPLAINED DAY — what the readiness ring opens into. The ring's own
+          door, mounted here rather than inside the card so the card stays what
+          it is: three things and a press. Handed the SAME deficit, facts and
+          verdict the card is drawn from, and today's prescription, so nothing
+          in the sheet is a second computation of the morning. */}
+      <ReadinessDaySheet
+        deficit={dayOpen ? deficit : null}
+        facts={readyFacts}
+        verdict={readyVerdict}
+        rx={hasData ? rx : null}
+        onClose={() => setDayOpen(false)}
+      />
 
       {/* QUICK START sheet — re-launch a saved routine (favourites + rediscover). */}
       <QuickStartSheet
