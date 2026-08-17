@@ -2,12 +2,13 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import {
   loadExplain, loadVerdict, LOAD_METRICS, LOAD_METRIC_LABEL_KEY,
-  type LoadState, type LoadExplain, type LoadInput, type LoadStep, type LoadBandStop,
+  type LoadState, type LoadExplain, type LoadInput, type LoadMetric,
+  type LoadStep, type LoadBandStop,
 
   ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, fs, F, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, F, FIXED_FONT_SCALE } from "../../lib/ui";
 import { withAlpha, RADIUS } from "./kit";
 import Sheet from "./sheet";
 
@@ -15,14 +16,10 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 type T = (k: string) => string;
 
 /**
- * THE WHOLE-BODY LOAD SHEET (mobile) — the ONE door under the block.
+ * THE WHOLE-BODY LOAD SHEET (mobile) — TWO DOORS, one panel.
  *
- * It opened four ways in the previous cut, one per figure, each onto the same
- * five-part explainer. That was four doors to four versions of one subject, and
- * the seven daily loads — the shared input behind every one of the four figures
- * — were itemised four separate times.
- *
- * So this sheet is organised around THE CLAIM, not around the implementation:
+ * `focus === null` — the ⓘ on the block was tapped, so the subject is the whole
+ * reading and the sheet is organised around THE CLAIM:
  *
  *   THE SENTENCE   — the verdict the block leads with, repeated at the top so
  *                    the sheet answers the thing you tapped.
@@ -34,23 +31,39 @@ type T = (k: string) => string;
  *                    a function of them.
  *   THE FIGURES    — all four in full: what each is, its ledger, its caveat.
  *
+ * `focus === a metric` — a RECEIPT was tapped, so the subject is that figure
+ * and nothing else. The reader asked a narrower question and gets a narrower
+ * answer: the figure, what it is, its scale, its own inputs, its arithmetic,
+ * its caveat. Sending them into the full reading would make them scroll past
+ * three figures they did not ask about, which is the failure mode the combined
+ * sheet was built to avoid — not a licence to answer only in aggregate.
+ *
+ * Both modes share every primitive below, so a band ladder or a ledger cannot
+ * come out differently depending on which door you used.
+ *
  * Everything is READ off `loadExplain` / `loadVerdict` (@hybrid/core), which
  * narrate the very `LoadState` the card was drawn from — never a second
  * computation.
  */
-export default function LoadSheet({ load, onClose }: {
+export default function LoadSheet({ load, focus, onClose }: {
   /** The state to explain, or null when the sheet is closed. */
   load: LoadState | null;
+  /** One figure, or null for the whole reading. */
+  focus?: LoadMetric | null;
   onClose: () => void;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  // Hold the last state through the EXIT animation — reading `load` directly
-  // empties the panel on the first frame of the slide-down, so the athlete
-  // watches a blank sheet leave. Same device as the freshness sheet's.
-  const held = useRef<LoadState | null>(load);
-  useEffect(() => { if (load) held.current = load; }, [load]);
-  const s = load ?? held.current;
+  // Hold the last state AND the door it was opened by through the EXIT
+  // animation. Reading the props directly empties the panel on the first frame
+  // of the slide-down — and holding the state without the focus is worse than
+  // not holding at all: the sheet would flip from one figure to all four on its
+  // way out. Same device as the freshness sheet's, with the pair kept together.
+  const held = useRef<{ s: LoadState; focus: LoadMetric | null } | null>(null);
+  useEffect(() => { if (load) held.current = { s: load, focus: focus ?? null }; }, [load, focus]);
+  const shown = load ? { s: load, focus: focus ?? null } : held.current;
+  const s = shown?.s ?? null;
+  const only = shown?.focus ?? null;
 
   const verdict = s ? loadVerdict(s) : null;
   const explains = s ? LOAD_METRICS.map((m) => loadExplain(m, s)) : [];
@@ -61,9 +74,20 @@ export default function LoadSheet({ load, onClose }: {
   const acwr = byMetric.acwr;
   const monotony = byMetric.monotony;
 
+  const focused = only ? byMetric[only] : null;
+
   return (
-    <Sheet visible={!!load} onClose={onClose} title={t("w.injury.load.sheetTitle")} sub={t("w.injury.load.sub")}>
-      {s && acwr && monotony ? (
+    <Sheet
+      visible={!!load}
+      onClose={onClose}
+      // The title names what you opened: the metric when you tapped its figure,
+      // the block when you tapped the ⓘ.
+      title={focused ? t(focused.titleKey) : t("w.injury.load.sheetTitle")}
+      sub={t("w.injury.load.sub")}
+    >
+      {focused ? (
+        <Only C={C} t={t} explain={focused} />
+      ) : s && acwr && monotony ? (
         <View style={{ gap: 24 }}>
           {/* THE SENTENCE — what the block said, said again here. In chalk, at
               the card's own headline weight: a coloured paragraph would
@@ -108,6 +132,66 @@ export default function LoadSheet({ load, onClose }: {
         </View>
       ) : null}
     </Sheet>
+  );
+}
+
+/**
+ * ONE FIGURE, ON ITS OWN — what a tapped receipt opens.
+ *
+ * The five-part shape freshness-explain established: the figure with its unit
+ * spelled out, what it is, the scale with your rung marked, the inputs it was
+ * built from, the arithmetic ending on the figure at the top, and what it
+ * refuses to claim. The two unbanded figures simply render no scale block —
+ * strain sits on no published ladder, and drawing one would be this sheet
+ * making a claim the engine never made.
+ *
+ * Its inputs are its OWN: the four weeks for a ratio, the seven days for a
+ * weekly total. The combined sheet draws the week once because everything in
+ * it shares those seven numbers; here there is only one figure, so its inputs
+ * belong beside it.
+ */
+function Only({ C, t, explain }: { C: Palette; t: T; explain: LoadExplain }) {
+  return (
+    <View style={{ gap: 24 }}>
+      {/* THE FIGURE, with the unit said out loud — "4 554" alone invites a
+          comparison with somebody else's 4 554, and there is none to make. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
+        <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: trackFigure(44), color: paintOf(C, explain) }}>{explain.value}</Text>
+        <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(explain.unitKey)}</Text>
+      </View>
+
+      <Block C={C} head={t("w.injury.load.whatHead")}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(explain.whatKey)}</Text>
+      </Block>
+
+      {explain.bands.length > 0 && (
+        <Block C={C} head={t("w.injury.load.bandsHead")}>
+          <View style={{ gap: 7 }}>
+            {explain.bands.map((b, i) => <Band key={i} C={C} band={b} label={t(b.key)} />)}
+          </View>
+        </Block>
+      )}
+
+      <Block C={C} head={t(explain.inputsHeadKey)} meta={t("w.injury.load.colLoad")}>
+        <View style={{ gap: 9 }}>
+          {explain.inputs.map((r, i) => (
+            <Row key={i} C={C} row={r} label={r.arg === null ? t(r.key) : t(r.key).replace("{n}", String(r.arg))} />
+          ))}
+        </View>
+      </Block>
+
+      <Block C={C} head={t("w.injury.load.howHead")}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginBottom: 12 }}>{t(explain.howKey)}</Text>
+        <View style={{ gap: 7 }}>
+          {explain.steps.map((s, i) => <Step key={i} C={C} step={s} t={t} />)}
+        </View>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 12 }}>{t("w.injury.load.rounding")}</Text>
+      </Block>
+
+      <Block C={C} head={t("w.injury.load.limitHead")}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t(explain.limitKey)}</Text>
+      </Block>
+    </View>
   );
 }
 

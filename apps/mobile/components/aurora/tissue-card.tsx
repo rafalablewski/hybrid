@@ -4,7 +4,7 @@ import {
   tissueAxis, injuryHeadlineKey, INJURY_AREA_KEY,
   computeInjuryRisk, computeLoad, riskRole, RISK_DRIVER_LABEL_KEY, RISK_DRIVER_EXPLAIN_KEY,
   loadExplain, loadVerdict, LOAD_METRICS, LOAD_METRIC_LABEL_KEY,
-  type LoadExplain,
+  type LoadExplain, type LoadMetric,
   type RiskBand, type RiskDriverKind, type TissueRow,
   type MuscleGroup, type TissueRisk,
 
@@ -88,7 +88,20 @@ export default function TissueCard({
   const [picking, setPicking] = useState<MuscleGroup | null | false>(false);
   // ONE door for the whole block, so one boolean. The sheet reads the same
   // `load` prop the block drew from, so nothing needs holding but "is it open".
-  const [sheetOpen, setSheetOpen] = useState(false);
+  /**
+   * WHICH DOOR IS OPEN, and it is two doors rather than one.
+   *
+   *   false        — closed.
+   *   "all"        — the ⓘ on the block: the whole reading, the sentence and
+   *                  every figure behind it.
+   *   a LoadMetric — one receipt was tapped: that figure alone.
+   *
+   * The block's claim and its evidence are different questions, and a reader
+   * who taps "1.79 MONOTONY" has asked the second one. Sending them to a sheet
+   * that opens on the sentence and makes them scroll past three other figures
+   * answers a question they did not ask.
+   */
+  const [sheet, setSheet] = useState<LoadMetric | "all" | false>(false);
 
   const refresh = () => { fetchRtpProtocols().then(setProtocols); };
   useEffect(() => { refresh(); }, []);
@@ -184,7 +197,7 @@ export default function TissueCard({
       />
 
       {/* THE BLOCK'S DOOR — one sheet for the sentence and all four figures. */}
-      <LoadSheet load={sheetOpen ? load : null} onClose={() => setSheetOpen(false)} />
+      <LoadSheet load={sheet === false ? null : load} focus={sheet === "all" ? null : sheet || null} onClose={() => setSheet(false)} />
 
       {/* THE PANEL — moved wholesale out of the card body and into the foot's
           drawer, so it opens from under the shape that raised the question
@@ -231,28 +244,47 @@ export default function TissueCard({
 
                 NO BOXES. The tissue rows above are type on the card; a row of
                 bordered tiles here made one card hold two treatments of the
-                same kind of information. And ONE door, on the block, not four
-                — the sheet is organised around the claim now, not around the
-                implementation. */}
+                same kind of information.
+
+                TWO DOORS, AND THEY ANSWER DIFFERENT QUESTIONS. The ⓘ sits on
+                the block and opens the whole reading — the sentence, both
+                bands it was composed from, the week behind them, every figure.
+                Each RECEIPT is its own door onto that figure alone. This is
+                not the four-doors-in-a-row the rail was rightly criticised
+                for: there, four explainer buttons were the ONLY way in and
+                each one admitted its tile had failed to communicate. Here the
+                sentence already communicates, and a receipt is a figure you
+                can interrogate if you want to — an affordance, not a
+                confession. A reader who taps "1.79 MONOTONY" asked about
+                monotony, and should not have to scroll past three other
+                figures to be answered. */}
             {verdict ? (
-              <Pressable
-                onPress={() => setSheetOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel={`${t("w.injury.wholeBody")}. ${t(verdict.key)} ${t("w.injury.load.explainCta")}`}
-                style={{ marginTop: 18 }}
-              >
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.injury.wholeBody")}</Text>
-                  {/* ⓘ bare — the glyph is already a ring (house rule). */}
-                  <AuroraIcon name="info" size={15} color={C.ash} />
+              <View style={{ marginTop: 18 }}>
+                {/* THE CLAIM — eyebrow, ⓘ and the sentence are one target. */}
+                <Pressable
+                  onPress={() => setSheet("all")}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t("w.injury.wholeBody")}. ${t(verdict.key)} ${t("w.injury.load.explainCta")}`}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                    <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.injury.wholeBody")}</Text>
+                    {/* ⓘ bare — the glyph is already a ring (house rule). */}
+                    <AuroraIcon name="info" size={15} color={C.ash} />
+                  </View>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, lineHeight: leading(16), color: C.chalk }}>
+                    {t(verdict.key)}
+                  </Text>
+                </Pressable>
+                {/* THE EVIDENCE — each figure its own target. The row cancels
+                    the receipts' vertical padding (`-RECEIPT_PAD`) so touch
+                    height reaches 44dp without the figures moving a pixel —
+                    the same device CoachRail uses for its bleed. */}
+                <View style={{ flexDirection: "row", marginTop: 18 - RECEIPT_PAD, marginBottom: -RECEIPT_PAD, gap: 6 }}>
+                  {LOAD_METRICS.map((m) => (
+                    <Receipt key={m} C={C} t={t} explain={loadExplain(m, load)} onOpen={() => setSheet(m)} />
+                  ))}
                 </View>
-                <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, lineHeight: leading(16), color: C.chalk }}>
-                  {t(verdict.key)}
-                </Text>
-                <View style={{ flexDirection: "row", marginTop: 18, gap: 6 }}>
-                  {LOAD_METRICS.map((m) => <Receipt key={m} C={C} t={t} explain={loadExplain(m, load)} />)}
-                </View>
-              </Pressable>
+              </View>
             ) : (
               <View style={{ marginTop: 18 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
@@ -388,22 +420,42 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
  * numerals stopped being the ones doing the explaining, so they no longer have
  * to be big enough to carry a meaning they never could.
  */
-function Receipt({ C, t, explain }: {
+/**
+ * The vertical padding each receipt carries purely to be tappable. A figure
+ * over a label is about 33dp of type; 6dp top and bottom lifts the touch box
+ * to ~45dp, which is the floor a thumb needs. The row cancels it with a
+ * matching negative margin, so this buys touch height and costs no layout.
+ */
+const RECEIPT_PAD = 6;
+
+/** ONE FIGURE, and its own door. Chromeless — a receipt is type on the card,
+ *  like the tissue rows above it, and a pressable is not a reason to draw a
+ *  box around something. */
+function Receipt({ C, t, explain, onOpen }: {
   C: Palette;
   t: (k: string) => string;
   explain: LoadExplain;
+  onOpen: () => void;
 }) {
   // Same rule the sheet follows: `neutral` resolves to ash, which on a figure
   // reads as disabled rather than as unbanded. Only the two banded figures
   // spend a hue — the other two are chalk.
   const paint = explain.role === "neutral" ? C.chalk : txt(C, roleColor(C, explain.role));
+  const label = t(LOAD_METRIC_LABEL_KEY[explain.metric]);
   return (
-    <View style={{ flex: 1, minWidth: 0 }}>
+    <Pressable
+      onPress={onOpen}
+      accessibilityRole="button"
+      // The figure, what it reads as, and the way in — a screen reader gets no
+      // "these four are a row of buttons" cue from the layout.
+      accessibilityLabel={`${label} ${explain.value}, ${t(explain.readKey)}. ${t("w.injury.load.explainCta")}`}
+      style={{ flex: 1, minWidth: 0, paddingVertical: RECEIPT_PAD }}
+    >
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: paint }}>{explain.value}</Text>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>
-        {t(LOAD_METRIC_LABEL_KEY[explain.metric])}
+        {label}
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
