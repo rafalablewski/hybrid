@@ -599,8 +599,8 @@
       </div>
       <div class="vcard">
         <span class="vk">@hybrid/mobile test</span>
-        <span class="vv">171 ✓</span>
-        <span class="vn">All pass. Carries the design-token ratchets, which is the gate a raw fontSize or letterSpacing fails.</span>
+        <span class="vv">177 ✓</span>
+        <span class="vn">All pass, 6 of them new — the list-motion guard. Also carries the design-token ratchets, the gate a raw fontSize or letterSpacing fails.</span>
       </div>
       <div class="vcard">
         <span class="vk">mobile typecheck</span>
@@ -614,11 +614,27 @@
       </div>
       <div class="vcard">
         <span class="vk">web typecheck</span>
-        <span class="vv warn">21 pre-existing</span>
-        <span class="vn">Prisma-client errors in the device-recording routes. Identical count with the change stashed — not mine, not touched.</span>
+        <span class="vv">clean</span>
+        <span class="vn">It reported 21 errors for most of this session. They were <strong>phantoms</strong> — see below.</span>
       </div>
     </div>
 
+    <p class="prose">
+      <strong>The 21 that were not there.</strong> For most of this session
+      <code>@hybrid/web typecheck</code> failed with 21 errors saying
+      <code>SessionSet</code>, <code>SessionStream</code> and <code>SessionLap</code> do not
+      exist on <code>PrismaClient</code>. They were reported here as pre-existing and out of
+      scope — twice — which was the wrong call. The models <em>do</em> exist
+      (<code>prisma/schema.prisma</code> lines 983, 1073, 1133); the generated <em>types</em>
+      did not, because nothing in a fresh container runs <code>prisma generate</code> — there
+      is no postinstall hook, and only <code>build</code> does it. One command cleared all 21.
+      Vercel was never affected (<code>build</code> generates first) and neither was CI (which
+      generates immediately before its typecheck step, for exactly this reason). Only the
+      sandbox was stale — and it would have been stale for every future session, producing 21
+      errors indistinguishable from real ones, naming real files and real models, whose obvious
+      "fix" is to edit working code. The SessionStart hook now generates the client, mirroring
+      CI. <code>pnpm typecheck</code> passes across all three packages.
+    </p>
     <p class="prose">
       <strong>This page is checked, not just written.</strong> The simulation above needs
       plain-JS copies of four functions to run standalone, and a demo that quietly
