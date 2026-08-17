@@ -136,11 +136,10 @@ describe("navForPersona", () => {
     // is paid). PLUS the Social surface (everyone): the friends feed, find
     // friends, the friends leaderboard and the coach marketplace. (The public
     // profile lives inside the account Profile screen, not its own nav item.)
-    // The Help center (the side menu's footer) is universal too — support is
-    // not depth anyone pays for. There is no Messages entry at any tier: the
-    // feature is unbuilt, so nothing lists it.
+    // Messages (the bar's third slot, ex-More) and the Help center (the side
+    // menu's footer) are universal too — neither is depth anyone pays for.
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
-      ["builder", "calendar", "checkin", "coaches", "discover", "exercises", "feed", "help", "history", "leaderboard", "log", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "saved", "settings", "statistics", "timer", "today"],
+      ["builder", "calendar", "checkin", "coaches", "discover", "exercises", "feed", "help", "history", "leaderboard", "log", "messages", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "saved", "settings", "statistics", "timer", "today"],
     );
   });
 

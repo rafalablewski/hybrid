@@ -351,6 +351,8 @@ export const AURORA_NAV_ICONS: Record<string, AuroraIconName> = {
   upgrade: "offer",
   // social + marketplace
   feed: "list-play",
+  // Direct messages — the envelope, the same mark the bottom bar draws.
+  messages: "mail",
   discover: "user-add",
   // The same glyph the feed row's bookmark draws — the affordance link matters
   // more than uniqueness here, and this map already reuses glyphs across groups

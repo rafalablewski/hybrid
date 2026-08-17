@@ -199,15 +199,18 @@ describe("screenTransition", () => {
     expect(screenTransition("nutrition", "today")).toEqual({ kind: "sibling", dir: -1 });
     expect(screenTransition("today", "profile")).toEqual({ kind: "sibling", dir: 1 });
     expect(screenTransition("profile", "nutrition")).toEqual({ kind: "sibling", dir: -1 });
+    // Messages took More's capsule slot; the motion order has to follow the bar
+    // (it once didn't, and Today ⇄ Messages drilled down instead of sliding).
+    expect(screenTransition("today", "messages")).toEqual({ kind: "sibling", dir: 1 });
+    expect(screenTransition("messages", "nutrition")).toEqual({ kind: "sibling", dir: -1 });
     expect(NAV_ROOT_ORDER.indexOf("more" as never)).toBe(-1);
-    expect(NAV_ROOT_ORDER.indexOf("messages" as never)).toBe(-1);
   });
 
   it("HARD — the motion order IS the bar order, plus the detached verb", () => {
     // This has drifted twice in the same direction: the list kept ranking the
-    // retired More tab, and then kept ranking Messages after Messages left the
-    // capsule. Both times two roots sitting side by side in the bar animated as
-    // a drill-down on web while the native bar swapped them as siblings. Prose
+    // retired More tab, and did not rank Messages when Messages took that slot.
+    // Both times two roots sitting side by side in the bar animated as a
+    // drill-down on web while the native bar swapped them as siblings. Prose
     // did not catch either, so the bar is now the source and this is the check.
     expect(NAV_ROOT_ORDER.slice(0, AURORA_NAV_TABS.length)).toEqual(AURORA_NAV_TABS.map((t) => t.id));
     expect(NAV_ROOT_ORDER[NAV_ROOT_ORDER.length - 1]).toBe("train");

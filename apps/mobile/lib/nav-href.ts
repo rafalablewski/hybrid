@@ -45,6 +45,7 @@ export const NAV_HREF: Record<string, Href> = {
   nutrition: "/nutrition",
   progress: "/progress",
   feed: "/feed",
+  messages: "/(tabs)/messages",
   discover: "/discover",
   saved: "/saved",
   leaderboard: "/leaderboard",

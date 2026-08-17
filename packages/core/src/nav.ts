@@ -197,11 +197,11 @@ export const NAV_ITEMS: NavItem[] = [
 
   // ---- Social (everyone) — follow friends, browse results, find a coach ----
   { id: "feed", label: "Feed", group: "social" },
-  // NO MESSAGES ENTRY. Direct messages are not built — no thread model, no
-  // delivery, no unread state — and the placeholder screen that said so has
-  // been deleted along with its bar slot (nav-bar.ts). A menu that lists a
-  // destination is promising one; this list carries no entry until there is
-  // something behind it. Tracked as `direct-messages` in capabilities.ts.
+  // Direct messages. On the BOTTOM BAR (it took More's slot — see nav-bar.ts),
+  // and listed here too so it is findable by name like every other destination.
+  // The feature itself is UNDER CONSTRUCTION — the screen behind this is still
+  // the placeholder, which is why `direct-messages` remains `planned`.
+  { id: "messages", label: "Messages", group: "social" },
   { id: "discover", label: "Find friends", group: "social" },
   // The shelf behind the feed's bookmark. Also reached from a glyph on the
   // feed's own tab row (the same pattern Find friends uses) — but it is a real

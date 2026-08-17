@@ -644,21 +644,21 @@ export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELE
    ──────────────────────────────────────────────────────────────────────── */
 
 /**
- * The bottom-nav destinations, in BAR ORDER: the capsule's three places
- * (Today – Nutrition – Profile, nav-bar.ts AURORA_NAV_TABS) and then Train,
- * whose action circle sits detached to the capsule's right. Moving between two
- * of these is a SIBLING move and travels horizontally in this order; anything
- * else is a drill-down.
+ * The bottom-nav destinations, in BAR ORDER: the capsule's four places
+ * (Today – Nutrition – Messages – Profile, nav-bar.ts AURORA_NAV_TABS) and then
+ * Train, whose action circle sits detached to the capsule's right. Moving
+ * between two of these is a SIBLING move and travels horizontally in this
+ * order; anything else is a drill-down.
  *
  * Kept here rather than in nav.ts because it is the *motion* ordering (what sits
  * left of what on screen), not the nav taxonomy. It still has to FOLLOW the
- * bar, and it has twice failed to: it kept ranking the retired More tab, then
- * ranked Messages after Messages left the capsule. Either way two roots sitting
- * beside each other animate as a drill-down while the native bar swaps them as
- * siblings. This list is now checked against AURORA_NAV_TABS by motion.test.ts
- * so the bar cannot change without it.
+ * bar, and it has twice failed to: it kept ranking the retired More tab, and
+ * it did not rank Messages when Messages took that slot. Either way two roots
+ * sitting beside each other animate as a drill-down while the native bar swaps
+ * them as siblings. This list is now checked against AURORA_NAV_TABS by
+ * motion.test.ts so the bar cannot change without it.
  */
-export const NAV_ROOT_ORDER = ["today", "nutrition", "profile", "train"] as const;
+export const NAV_ROOT_ORDER = ["today", "nutrition", "messages", "profile", "train"] as const;
 
 /** Aliases so a client's own screen id resolves to its nav root. */
 // The social screens (feed / discover / coaches / leaderboard) used to alias to

@@ -101,11 +101,7 @@ const RATCHET: Record<string, number> = {
   "components/aurora/exercise-media.tsx": 1,
   "app/statistics.tsx": 1,
   "app/help.tsx": 1,
-  // app/(tabs)/messages.tsx is GONE from this list because the screen is gone:
-  // the Messages tab was a placeholder announcing that direct messages do not
-  // exist, and its one hand-rolled card went with the slot. Deleting the screen
-  // is the cheapest way to clear a ratchet entry, and the only one that also
-  // gives the athlete back a quarter of the bar.
+  "app/(tabs)/messages.tsx": 1,
 };
 
 function walk(dir: string, out: string[] = []): string[] {

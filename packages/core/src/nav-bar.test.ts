@@ -2,21 +2,24 @@ import { describe, it, expect } from "vitest";
 import { AURORA_NAV_TABS, AURORA_NAV_ACTIONS, AURORA_NAV_GEOMETRY, auroraNavAction, NAV_SURFACE_FOOD_PICKER, formatSessionElapsed } from "./nav-bar";
 
 describe("aurora nav bar contract", () => {
-  it("carries the three places in the capsule", () => {
-    expect(AURORA_NAV_TABS).toHaveLength(3);
-    expect(AURORA_NAV_TABS.map((t) => t.id)).toEqual(["today", "nutrition", "profile"]);
+  it("carries the four places in the capsule", () => {
+    expect(AURORA_NAV_TABS).toHaveLength(4);
+    expect(AURORA_NAV_TABS.map((t) => t.id)).toEqual(["today", "nutrition", "messages", "profile"]);
   });
 
-  it("spends no slot on a feature that does not exist yet", () => {
+  it("spends the third slot on a destination, not on a directory", () => {
     // More was a springboard of ~40 launcher tiles — a directory of screens,
     // which nobody's daily loop includes opening. It moved to the side menu
-    // behind the Today header's avatar (side-menu.ts). The slot then went to
-    // MESSAGES, whose screen honestly announced that direct messages are not
-    // built — which spent a quarter of the app's scarcest surface on a room
-    // with nothing in it. A tab is earned by having something behind it.
+    // behind the Today header's avatar (side-menu.ts), and the slot went to
+    // Messages: a place with its own unread state that you come back to.
+    //
+    // The slot is held on the strength of the feature being BUILT — an audit
+    // cut it while the screen behind it was a placeholder, and that finding
+    // stands until conversations actually land there. What the placeholder may
+    // never do is fake them; the guard for that is below.
     const ids = AURORA_NAV_TABS.map((t) => t.id) as string[];
     expect(ids).not.toContain("more");
-    expect(ids).not.toContain("messages");
+    expect(ids[2]).toBe("messages");
   });
 
   it("spends the second slot on a daily loop, not on discovery", () => {
@@ -42,7 +45,7 @@ describe("aurora nav bar contract", () => {
   it("resolves the action per surface: Train by default, the surface's own verb where it differs", () => {
     expect(auroraNavAction("feed")).toBe("post");
     expect(auroraNavAction(NAV_SURFACE_FOOD_PICKER)).toBe("search");
-    for (const surface of ["today", "nutrition", "profile", "train", "log", "performance", null, undefined]) {
+    for (const surface of ["today", "nutrition", "messages", "profile", "train", "log", "performance", null, undefined]) {
       expect(auroraNavAction(surface), String(surface)).toBe("train");
     }
   });
