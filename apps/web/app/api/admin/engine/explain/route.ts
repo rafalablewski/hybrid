@@ -11,12 +11,24 @@ import {
   readinessWhy,
   whatIfBio,
   whatIfLog,
+  whatIfHeat,
+  whatIfFuel,
+  fuelAdjustment,
+  FUEL_MIN_DAYS,
+  FUEL_PENALTY_MAX,
+  HEAT_CREDIT_MAX,
+  HEAT_WINDOW_H,
   SAMPLE_BIOMETRICS,
   SAMPLE_TRAINING_LOG,
+  sampleHeatSignals,
+  sampleNutritionSignals,
   SPIKE_ONSET_PRIOR,
   type Biometrics,
   type EffortModel,
   type EffortTrend,
+  type FuelSignalRow,
+  type HeatProtocol,
+  type HeatSignalRow,
   type TrainingLog,
   type WhatIf,
 } from "@hybrid/core";
@@ -61,9 +73,33 @@ export async function POST(request: Request) {
     hrv: isFiniteOr(body.whatIf?.hrv),
     restingHr: isFiniteOr(body.whatIf?.restingHr),
     sleep: isFiniteOr(body.whatIf?.sleep),
+    // THE REST OF THE PANEL'S SLIDERS, and their absence here was a live
+    // disagreement rather than a missing feature. The console renders one
+    // simulated state and this endpoint narrated a DIFFERENT one: an operator
+    // simulating a sauna, or no wearable, or a 75%-of-maintenance cut, got an
+    // explanation of the untransformed athlete captioned "this is the live
+    // state". Every field the panel can move has to arrive here, or the
+    // narrative is confidently describing numbers that are not on screen.
+    heatMinutes: isFiniteOr(body.whatIf?.heatMinutes) != null
+      ? Math.max(0, Math.min(180, isFiniteOr(body.whatIf?.heatMinutes)!))
+      : undefined,
+    heatTempC: isFiniteOr(body.whatIf?.heatTempC) != null
+      ? Math.max(40, Math.min(120, isFiniteOr(body.whatIf?.heatTempC)!))
+      : undefined,
+    heatHoursAgo: isFiniteOr(body.whatIf?.heatHoursAgo) != null
+      ? Math.max(0, Math.min(HEAT_WINDOW_H, isFiniteOr(body.whatIf?.heatHoursAgo)!))
+      : undefined,
+    heatProtocol: body.whatIf?.heatProtocol === "steam" || body.whatIf?.heatProtocol === "infrared"
+      ? (body.whatIf.heatProtocol as HeatProtocol)
+      : undefined,
+    intakePct: isFiniteOr(body.whatIf?.intakePct) != null
+      ? Math.max(0, Math.min(300, isFiniteOr(body.whatIf?.intakePct)!))
+      : undefined,
+    noWearable: body.whatIf?.noWearable === true,
   };
   const whatIfActive =
-    whatIf.loadPct !== 100 || whatIf.hrv != null || whatIf.restingHr != null || whatIf.sleep != null;
+    whatIf.loadPct !== 100 || whatIf.hrv != null || whatIf.restingHr != null || whatIf.sleep != null ||
+    whatIf.heatMinutes != null || whatIf.intakePct != null || whatIf.noWearable === true;
 
   // Assemble inputs server-side: the sample athlete, or a real user's stored data.
   let log: TrainingLog = SAMPLE_TRAINING_LOG;
@@ -73,6 +109,14 @@ export async function POST(request: Request) {
   // The effort model behind the numbers — see the grounding line below for why
   // the narrative needs it.
   let effort: { model: EffortModel; trend: EffortTrend | null; rated: number } | null = null;
+  // THE TWO SIGNAL STREAMS THE SCORE READS. Without them this endpoint built a
+  // trace with heatAdj and fuelAdj at zero while the Engine Room panel beside
+  // it passed both — so the console and its own explanation printed different
+  // readiness numbers for the same athlete, and the narrative attributed the
+  // gap to whatever it COULD see.
+  const now = Date.now();
+  let heatSignals: HeatSignalRow[] = sampleHeatSignals(now);
+  let nutritionSignals: FuelSignalRow[] = sampleNutritionSignals(now);
   if (body.userId) {
     const user = await prisma.user.findUnique({
       where: { id: String(body.userId) },
@@ -82,6 +126,8 @@ export async function POST(request: Request) {
     const inputs = await athleteInputs(user.id);
     log = inputs.log;
     bio = inputs.bio;
+    heatSignals = inputs.heatSignals;
+    nutritionSignals = inputs.nutritionSignals;
     subject = `athlete ${user.id}`;
     const samples = effortSamples(inputs.sessions);
     effort = { model: deriveEffortModel(samples), trend: effortTrend(samples), rated: samples.length };
@@ -93,7 +139,6 @@ export async function POST(request: Request) {
       orderBy: { ts: "desc" },
       take: 200,
     });
-    const now = Date.now();
     spikeOnset = derivePersonalization(
       acwrEventsFromHistory(
         log,
@@ -113,8 +158,18 @@ export async function POST(request: Request) {
   const { coeffs, version } = await activeCalibration();
   const simLog = whatIfActive ? whatIfLog(log, whatIf.loadPct) : log;
   const simBio = whatIfActive ? whatIfBio(bio, whatIf) : bio;
-  const trace = computeEngineTrace(simLog, simBio, { coeffs, spikeOnset });
-  const actual = whatIfActive ? computeEngineTrace(log, bio, { coeffs, spikeOnset }) : trace;
+  const simHeatSignals = whatIfActive ? whatIfHeat(heatSignals, whatIf, now) : heatSignals;
+  // The fuel read is computed ONCE from the real log and the what-if overrides
+  // the ramp's input rather than the rows — see whatIfFuel: fabricating a
+  // fortnight of eating would simulate the ESTIMATOR, not the athlete.
+  const fuel = fuelAdjustment(nutritionSignals, { now });
+  const simFuel = whatIfActive ? whatIfFuel(fuel, whatIf) : fuel;
+  const trace = computeEngineTrace(simLog, simBio, {
+    coeffs, spikeOnset, heatSignals: simHeatSignals, fuel: simFuel, now,
+  });
+  const actual = whatIfActive
+    ? computeEngineTrace(log, bio, { coeffs, spikeOnset, heatSignals, fuel, now })
+    : trace;
 
   // WHY THIS LINE EXISTS: the log these numbers come from is personalTrainingLog,
   // so a session the athlete rated carries THEIR reported effort rather than the
@@ -138,6 +193,36 @@ export async function POST(request: Request) {
         : "Not enough rated sessions yet for a trend.") +
       " Rated sessions enter the training log at the athlete's OWN reported intensity, so this directly shapes the ACWR and injury numbers above.";
 
+  // WHY THIS LINE EXISTS, and it is the same argument as the effort line above.
+  // A fuel term of zero has TWO completely different causes — the athlete eats
+  // at maintenance, or their log cannot support a reading — and on every
+  // athlete-facing surface both render identically, as an arc that is not
+  // drawn. A model told only the score would read "no fuel cost" as a finding
+  // about their eating when it is often a finding about their LOGGING, and
+  // would then hand the operator a confident sentence about an athlete who has
+  // told us nothing. So the absence is described as an absence, with its reason.
+  const fb = trace.fuel.balance;
+  const fuelLine = !fb.sufficient
+    ? `Energy availability: NOT MEASURED — ${
+        fb.reason === "noLog" ? `nothing logged in the last ${fb.windowDays} days`
+        : fb.reason === "tooFewDays" ? `only ${fb.days} usable day${fb.days === 1 ? "" : "s"} logged of the ${fb.windowDays}-day window (needs ${FUEL_MIN_DAYS})`
+        : "no maintenance estimate is available yet (needs a weigh-in or a stated bodyweight)"
+      }. The fuel term is ABSENT, not zero: this says nothing about how this athlete eats, only that their diary cannot support a reading. Do not describe their nutrition as adequate.`
+    : `Energy availability: ${fb.days} of the last ${fb.windowDays} days logged, mean intake ${fb.avgIntake} kcal against an estimated maintenance of ${fb.maintenance} kcal (${fb.maintenanceBasis}) — ${
+        (fb.balancePct ?? 0) < 0 ? `${Math.abs(Math.round((fb.balancePct ?? 0) * 100))}% UNDER` : `${Math.round((fb.balancePct ?? 0) * 100)}% over`
+      } maintenance, costing readiness ${trace.state.readiness.fuelAdj} point${trace.state.readiness.fuelAdj === -1 ? "" : "s"} (floor −${FUEL_PENALTY_MAX}). This term only ever costs points; a surplus earns none. It is NOT suppressed by a wearable — HRV measures autonomic state, this measures fuel.${
+        fb.proteinGPerKg != null ? ` Protein averages ${fb.proteinGPerKg.toFixed(2)} g/kg, which scales the weekly volume CEILING rather than today's readiness.` : ""
+      }`;
+
+  // The heat prior needs the same treatment for the same reason, and its
+  // suppression rule makes the silent case worse: a credit of +0 on an athlete
+  // with a wearable is the rule working, not an athlete who never saunas.
+  const heatLine = trace.heat.sittings.length === 0
+    ? `Heat: no sauna logged in the last ${HEAT_WINDOW_H} h, so the prior contributes +0.`
+    : trace.heat.suppressed
+      ? `Heat: ${trace.heat.sittings.length} sitting(s) logged in the last ${HEAT_WINDOW_H} h, but the credit is SUPPRESSED to +0 because a fresh wearable reading already measures what the sauna did. The sauna is not being ignored — it is being counted once, by the wearable.`
+      : `Heat: ${trace.heat.minutes} min logged in the last ${HEAT_WINDOW_H} h (${trace.heat.equivMin.toFixed(1)} equivalent minutes), crediting readiness +${trace.heat.points} (cap +${HEAT_CREDIT_MAX}).`;
+
   // Deterministic fallback — the engines' own explanation, always available.
   const engineLines = [
     trace.state.summary,
@@ -152,6 +237,8 @@ export async function POST(request: Request) {
     // otherwise the fallback explains an ACWR without naming the input that
     // moved it most.
     effortLine,
+    fuelLine,
+    heatLine,
   ];
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -189,7 +276,13 @@ export async function POST(request: Request) {
 
   const userMsg = `Subject: ${subject}. Sessions in the log: ${log.length}. Calibration model: ${version}. ${personalLine} ${effortLine}
 HPI ${trace.state.hpi.score}/100 (${trace.state.hpi.band}); components — strength ${trace.state.hpi.components.strength}, endurance ${trace.state.hpi.components.endurance}, recovery ${trace.state.hpi.components.recovery >= 0 ? "+" : ""}${trace.state.hpi.components.recovery}; limiter: ${trace.state.hpi.limiter}.
-Readiness ${trace.state.readiness.score}/100 (wearable adjustment ${trace.state.readiness.bioAdj >= 0 ? "+" : ""}${trace.state.readiness.bioAdj}).
+Readiness ${trace.state.readiness.score}/100 — adjustments: wearable ${trace.state.readiness.bioAdj >= 0 ? "+" : ""}${trace.state.readiness.bioAdj}, heat +${trace.state.readiness.heatAdj}, fuel ${trace.state.readiness.fuelAdj}. Where the missing points went: ${
+    trace.deficit.costs.length
+      ? trace.deficit.costs.map((c) => `${c.kind}${c.muscle ? ` (${c.muscle})` : ""} −${c.points}`).join(", ") + ` — these sum with the kept ${trace.deficit.kept} to exactly 100`
+      : "nothing was lost"
+  }.
+${fuelLine}
+${heatLine}
 State drivers: ${drivers || "(none notable)"}.
 Injury risk overall ${trace.injury.overall}/100 (${trace.injury.band}), calibrated p(injury) ${(trace.injury.prob * 100).toFixed(1)}%.
 Per tissue:

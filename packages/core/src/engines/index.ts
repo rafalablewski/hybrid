@@ -4,6 +4,7 @@ export * from "./sample-data";
 export * from "./fatigue";
 export * from "./readiness";
 export * from "./heat";
+export * from "./fuel";
 export * from "./progression";
 export * from "./periodization";
 export * from "./prescription";

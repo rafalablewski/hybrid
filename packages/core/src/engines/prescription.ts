@@ -105,6 +105,12 @@ export interface PrescribeOptions {
    * wired to the signals prescribes exactly what it prescribed before.
    */
   heatAdj?: number;
+  /**
+   * The energy-availability cost (engines/fuel.ts), −FUEL_PENALTY_MAX..0. Same
+   * contract as `heatAdj` — optional, additive, and a caller that has not been
+   * wired to the food log prescribes exactly what it prescribed before.
+   */
+  fuelAdj?: number;
 }
 
 /**
@@ -123,10 +129,11 @@ export function prescribeSession(
   opts?: PrescribeOptions,
 ): Prescription {
   const fatigue = computeFatigue(log);
-  // The heat prior rides the same score everything else reads. Bounded at
-  // HEAT_CREDIT_MAX by design, so it is a nudge to prescribed load and never a
-  // jump — which is the intended blast radius of a self-reported input.
-  const { score: readiness, bioAdj } = computeReadiness(fatigue, bio, opts?.heatAdj ?? 0);
+  // The heat prior and the fuel cost ride the same score everything else reads.
+  // Both are bounded by design (HEAT_CREDIT_MAX, FUEL_PENALTY_MAX), so each is
+  // a nudge to prescribed load and never a jump — which is the intended blast
+  // radius of a self-reported input.
+  const { score: readiness, bioAdj } = computeReadiness(fatigue, bio, opts?.heatAdj ?? 0, opts?.fuelAdj ?? 0);
 
   const experience = opts?.experience ?? "intermediate";
   const equipment = opts?.equipment ?? "full";

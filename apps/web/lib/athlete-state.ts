@@ -26,7 +26,7 @@ export async function athleteInputs(userId: string) {
   // publish the admin library first or every library-named lift attributes to no
   // tissue at all (zero fatigue / injury load).
   await publishExerciseCatalog();
-  const [rows, sigRows, heatRows, checkinRows] = await Promise.all([
+  const [rows, sigRows, heatRows, nutritionRows, checkinRows] = await Promise.all([
     // Archived sessions are excluded from analytics (the athlete hid them).
     prisma.session.findMany({ where: { userId, archivedAt: null }, orderBy: { startedAt: "desc" }, take: 30 }),
     prisma.signal.findMany({ where: { userId }, orderBy: { ts: "desc" }, take: 200 }),
@@ -39,6 +39,20 @@ export async function athleteInputs(userId: string) {
       where: { userId, kind: { in: ["sauna", "saunaTemp"] } },
       orderBy: { ts: "desc" },
       take: 120,
+    }),
+    // THE FOOD LOG, on its own for the same reason and with the argument turned
+    // around: nutrition rows are what CROWD the unfiltered read above. One
+    // logged food writes up to eight of them, so the 200-row window covers
+    // barely a week for a diligent logger — and engines/fuel.ts needs fourteen
+    // days of completed intake measured against a maintenance estimate fitted
+    // over twenty-eight. The stream that evicts everyone else is the one stream
+    // that cannot afford to be evicted by its own volume. `bodyMass` rides
+    // along because maintenance and the protein-per-kg figure both read it, and
+    // fetching it twice would be two windows that can disagree.
+    prisma.signal.findMany({
+      where: { userId, kind: { in: ["energyIntake", "protein", "bodyMass"] } },
+      orderBy: { ts: "desc" },
+      take: 400,
     }),
     // THE CHECK-IN HISTORY, with every read each day carries. The Engine Room's
     // clearance split is a comparison of the athlete's own recovery pairs, and a
@@ -101,6 +115,15 @@ export async function athleteInputs(userId: string) {
     ts: r.ts.toISOString(),
   }));
 
+  const nutritionSignals: Signal[] = nutritionRows.map((r) => ({
+    athleteId: r.userId,
+    kind: r.kind as Signal["kind"],
+    value: r.value,
+    unit: r.unit,
+    source: r.source,
+    ts: r.ts.toISOString(),
+  }));
+
   const recovery = recoveryReports(
     (checkinRows as {
       weekOf: Date; soreness: number | null; sleep: number | null; energy: number | null;
@@ -125,7 +148,7 @@ export async function athleteInputs(userId: string) {
   // the derived log — the effort model reads each session's reported feeling
   // against the effort its blocks imply, which the TrainingLog has already
   // collapsed away.
-  return { log, bio, sessions, heatSignals, recovery, sessionCount: sessions.length };
+  return { log, bio, sessions, heatSignals, nutritionSignals, recovery, sessionCount: sessions.length };
 }
 
 /**

@@ -1,6 +1,7 @@
 import type { BodyweightPoint } from "../bodyweight";
 import { isPlausibleHeightCm } from "../units";
 import { heatWeeklyFrequency, type HeatSignalRow } from "./heat";
+import { energyBalance, energyStateFromIntake, type EnergyBalance, type FuelSignalRow } from "./fuel";
 import type { RecoveryReport } from "./landmark-adapt";
 import type { AthleteVolumeProfile } from "./landmark-profile";
 
@@ -24,9 +25,26 @@ import type { AthleteVolumeProfile } from "./landmark-profile";
  *      instead (landmark-adapt.ts), where a flat week is evidence about that
  *      week rather than a standing claim about the athlete.
  *
- * Energy availability comes from the bodyweight trend rather than from calorie
- * logging, because the scale is the outcome and the food log is the estimate:
- * an athlete losing weight IS in a deficit whatever the diary says.
+ * ENERGY AVAILABILITY HAS TWO PATHS, and which one wins was the question this
+ * module got wrong for a year. The old rule was "the scale, always" — the scale
+ * is the outcome and the food log is the estimate, so an athlete losing weight
+ * IS in a deficit whatever the diary says. That reasoning is still correct and
+ * it was still the wrong rule, because the scale answers LATE and sometimes
+ * never: `bodyweightTrend` needs three weigh-ins spanning a fortnight before it
+ * will speak at all, water masks the first fortnight of any cut, and an athlete
+ * who never steps on a scale gets no answer ever — while their food log has
+ * held the answer since day four.
+ *
+ * So the log LEADS and the scale BACKS IT UP: `energyStateFromIntake` where the
+ * diary can support a reading (see engines/fuel.ts for the gates it has to
+ * clear, which are deliberately strict), `energyBalanceFromBodyweight` where it
+ * cannot. The scale did not lose its argument; it lost its monopoly, and it
+ * still catches the athlete whose logging is fiction — because when the log is
+ * too thin to clear the gates, that IS the fallback firing.
+ *
+ * PROTEIN has only the one path. There is no outcome measure for it — the scale
+ * cannot tell you how much of a kilogram was muscle — so it is read from the
+ * log or it is not read at all.
  */
 
 const DAY = 86_400_000;
@@ -35,8 +53,21 @@ const DAY = 86_400_000;
 export interface MeasuredProfile {
   /** Mean check-in sleep (1–5) over the window. */
   sleep?: number;
-  /** Energy availability, read off the bodyweight trend. */
+  /** Energy availability — from the food log where it can be read, from the
+   *  bodyweight trend where it cannot. `nutritionBasis` says which. */
   nutrition?: AthleteVolumeProfile["nutrition"];
+  /**
+   * Which path produced `nutrition`. Not decoration: the two are different
+   * claims with different lags, and a surface that says "measured" without
+   * saying measured HOW cannot be argued with. Absent when `nutrition` is.
+   */
+  nutritionBasis?: "intake" | "bodyweight";
+  /** Mean daily protein per kg of body mass, from the food log. */
+  proteinGPerKg?: number;
+  /** The whole energy read behind the two fields above, so a surface can quote
+   *  the figures (days logged, average intake, maintenance) without recomputing
+   *  it — and can explain a SILENCE, which is the case that needs explaining. */
+  energy?: EnergyBalance;
   /** Standing height, from the body log (Profile → Body & progress). Not
    *  inferred from anything — it is the athlete's own measurement, read from
    *  where they already entered it so they never type it twice. */
@@ -158,6 +189,13 @@ export function measuredProfile(
      *  field on the profile: there is no form for it anywhere and there never
      *  will be — the athlete has already told us by logging. */
     heatSignals?: HeatSignalRow[];
+    /**
+     * The athlete's `energyIntake` / `protein` / `bodyMass` rows — the food
+     * log, on the engine's terms. Omitted and energy availability falls back to
+     * the bodyweight trend exactly as it did before this existed, which is also
+     * what happens when the log is too thin to clear fuel.ts's gates.
+     */
+    nutritionSignals?: FuelSignalRow[];
     now?: number;
   } = {},
 ): MeasuredProfile {
@@ -167,10 +205,28 @@ export function measuredProfile(
     out.sleep = sleep;
     out.measured.push("sleep");
   }
-  const nutrition = energyBalanceFromBodyweight(opts.bodyweight ?? [], { now: opts.now });
+
+  // ── ENERGY AVAILABILITY: the log leads, the scale backs it up ─────────────
+  // Both are computed; the log wins where it can support a reading. The scale's
+  // answer is not a worse version of the same measurement — it is the one that
+  // survives an athlete who logs nothing, and it stays exactly as it was.
+  const energy = energyBalance(opts.nutritionSignals ?? [], { now: opts.now });
+  out.energy = energy;
+  const fromIntake = energyStateFromIntake(energy);
+  const fromScale = energyBalanceFromBodyweight(opts.bodyweight ?? [], { now: opts.now });
+  const nutrition = fromIntake ?? fromScale;
   if (nutrition) {
     out.nutrition = nutrition;
+    out.nutritionBasis = fromIntake ? "intake" : "bodyweight";
     out.measured.push("nutrition");
+  }
+  // Protein has no second path — read from the log or not read at all. Gated on
+  // its OWN sufficiency flag rather than on `energy.sufficient`: protein needs
+  // no maintenance estimate, so an athlete whose maintenance is still unknown
+  // has a perfectly readable protein average.
+  if (energy.proteinSufficient && energy.proteinGPerKg != null && energy.proteinGPerKg > 0) {
+    out.proteinGPerKg = energy.proteinGPerKg;
+    out.measured.push("proteinGPerKg");
   }
   // Height is KNOWN rather than derived when the body log holds one — the same
   // "don't ask for what you already have" rule, applied to a measurement the
@@ -201,6 +257,10 @@ export function withMeasured(stored: AthleteVolumeProfile, measured: MeasuredPro
     sleep: stored.sleep ?? measured.sleep,
     heat: measured.heat,
     nutrition: stored.nutrition ?? measured.nutrition,
+    // Always measured, never stored — like `heat`, and for the same reason:
+    // there is no form for it, `sanitizeVolumeProfile` deliberately does not
+    // list it, so it can never arrive here as something the athlete typed.
+    proteinGPerKg: measured.proteinGPerKg,
     heightCm: stored.heightCm ?? measured.heightCm,
   };
 }

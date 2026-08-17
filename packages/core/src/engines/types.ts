@@ -97,6 +97,14 @@ export interface Readiness {
    * wearable measures what the sauna did, so the prior stands down.
    */
   heatAdj: number;
+  /**
+   * −FUEL_PENALTY_MAX..0 from how far rolling logged intake sits below this
+   * athlete's own maintenance estimate (engines/fuel.ts). Never POSITIVE — a
+   * deficit costs points, a surplus earns none — and never suppressed by a
+   * wearable, because a fortnight's energy availability and last night's HRV
+   * are different quantities rather than two accounts of one night.
+   */
+  fuelAdj: number;
 }
 
 export interface ProgressionSignal {

@@ -133,7 +133,7 @@ describe("readinessVerdict — one line, and what the door may promise", () => {
       const v = readinessVerdict(log, bio);
       if (v.kind === "clear" || v.kind === "empty") continue;
       const top = [...readinessDeficit(log, bio).costs].sort((a, b) => b.points - a.points)[0]!;
-      const expected = { tissue: "limiter", conditioning: "engine", wearable: "recovery", ceiling: "clear" }[top.kind];
+      const expected = { tissue: "limiter", conditioning: "engine", fuel: "fuel", wearable: "recovery", ceiling: "clear" }[top.kind];
       expect(v.kind).toBe(expected);
     }
   });

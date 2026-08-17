@@ -23,6 +23,10 @@ import {
   HEAT_CREDIT_MAX, HEAT_HALF_LIFE_H, HEAT_INTENSITY_MAX, HEAT_PROTOCOLS,
   HEAT_PROTOCOL_LIST, HEAT_REF_C, HEAT_TAU_MIN, HEAT_WINDOW_H, type HeatAdjustment,
 } from "./heat";
+import {
+  FUEL_DEADBAND_PCT, FUEL_MIN_DAYS, FUEL_MIN_DAY_KCAL, FUEL_PENALTY_MAX,
+  FUEL_SATURATION_PCT, type FuelAdjustment,
+} from "./fuel";
 import { computeHpi, enduranceFatigue, HYBRID_WEIGHTS, type HpiWeights } from "./hpi";
 import {
   calibrateRisk,
@@ -69,13 +73,18 @@ const MUSCLE_LABEL: Record<MuscleGroup, string> = {
 };
 
 /** Readiness, derived step by step from the athlete's own inputs. */
-export function deriveReadiness(log: TrainingLog, bio?: Biometrics, heat?: HeatAdjustment): Derivation {
+export function deriveReadiness(
+  log: TrainingLog,
+  bio?: Biometrics,
+  heat?: HeatAdjustment,
+  fuel?: FuelAdjustment,
+): Derivation {
   const fatigue = computeFatigue(log);
   const vals = ALL_MUSCLES.map((m) => fatigue.muscles[m]);
   const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
   const endFat = enduranceFatigue(fatigue);
   const base = 100 - avg * MUSCLE_SLOPE - endFat * ENDURANCE_SLOPE;
-  const live = computeReadiness(fatigue, bio, heat?.points ?? 0);
+  const live = computeReadiness(fatigue, bio, heat?.points ?? 0, fuel?.points ?? 0);
 
   const steps: DerivationStep[] = [
     {
@@ -157,15 +166,56 @@ export function deriveReadiness(log: TrainingLog, bio?: Biometrics, heat?: HeatA
     steps.push({ label: "Heat adjustment", math: `no sitting in the last ${HEAT_WINDOW_H} h → +0` });
   }
 
+  // ── ENERGY AVAILABILITY ───────────────────────────────────────────────────
+  // Printed WHENEVER a fuel read was attempted, including — especially — when
+  // it came back insufficient. Same argument as the heat block above: a term
+  // that silently reads +0 is indistinguishable from a term that was never
+  // computed, and here the difference is the whole point of the join. "This
+  // athlete logs nothing" and "this athlete eats at maintenance" are opposite
+  // findings that would otherwise render identically.
+  if (fuel) {
+    const b = fuel.balance;
+    if (!b.sufficient) {
+      steps.push({
+        label: "Fuel — not enough logged",
+        math: `${b.days} usable day${b.days === 1 ? "" : "s"} of ${b.windowDays}, maintenance ${b.maintenance ?? "—"} → −0`,
+        note: `reason: ${b.reason} — needs ${FUEL_MIN_DAYS} completed days over ${FUEL_MIN_DAY_KCAL} kcal AND a maintenance estimate; an absent term reads absent rather than as "eating fine"`,
+      });
+    } else {
+      steps.push({
+        label: `Fuel — rolling intake, last ${b.windowDays} days`,
+        math: `${b.days} usable days, mean ${b.avgIntake} kcal vs maintenance ${b.maintenance} → ${sign(b.balanceKcal ?? 0)} kcal/day = ${sign((b.balancePct ?? 0) * 100)}%`,
+        note: `maintenance basis: ${b.maintenanceBasis}; today is EXCLUDED (a day in progress is always short) and days under ${FUEL_MIN_DAY_KCAL} kcal are read as gaps in the record, not as fasts`,
+      });
+      steps.push({
+        label: "Fuel — severity ramp",
+        math: `clamp((${f2(-(b.balancePct ?? 0))} − ${FUEL_DEADBAND_PCT}) / (${FUEL_SATURATION_PCT} − ${FUEL_DEADBAND_PCT}), 0, 1) = ${f2(fuel.severity)}`,
+        note: `the deadband is the UNDER-REPORTING allowance: logged intake runs 10–20% low, so a paper deficit inside ${FUEL_DEADBAND_PCT * 100}% is more likely the logging than the athlete`,
+      });
+      steps.push({
+        label: "Fuel adjustment",
+        math: `−round(${FUEL_PENALTY_MAX} × ${f2(fuel.severity)}) = ${sign(live.fuelAdj)}`,
+        note: `never positive — a surplus earns nothing, because "ate over maintenance therefore more recovered" is a bonus for overfeeding. Capped at ${FUEL_PENALTY_MAX} against the wearable's ±15, and NOT suppressed by a wearable: HRV measures autonomic state, this measures fuel`,
+      });
+    }
+    if (b.proteinGPerKg != null) {
+      steps.push({
+        label: "Protein (volume ceilings, not readiness)",
+        math: `${f2(b.proteinGPerKg)} g/kg over ${b.proteinDays} day${b.proteinDays === 1 ? "" : "s"}${b.bodyMassKg ? ` at ${f1(b.bodyMassKg)} kg` : ""}`,
+        note: "feeds PROTEIN_RECOVERY on the MRV side only — protein limits the material available for repair, which is a ceiling question, not a today question",
+      });
+    }
+  }
+
   steps.push({
     label: "Final score",
-    math: `clamp(round(${f1(base)} ${sign(live.bioAdj)} ${sign(live.heatAdj)}), ${READINESS_FLOOR}, ${READINESS_CEILING}) = ${live.score}`,
+    math: `clamp(round(${f1(base)} ${sign(live.bioAdj)} ${sign(live.heatAdj)} ${sign(live.fuelAdj)}), ${READINESS_FLOOR}, ${READINESS_CEILING}) = ${live.score}`,
   });
 
   // WHERE THE MISSING POINTS WENT — the same split the athlete's ring draws,
   // printed here so the console and the card can be checked against each other
   // rather than trusted separately.
-  const split = readinessDeficit(log, bio, heat?.points ?? 0);
+  const split = readinessDeficit(log, bio, heat?.points ?? 0, fuel?.points ?? 0);
   if (split.costs.length) {
     steps.push({
       label: "Deficit attribution (the athlete's ring)",
@@ -182,6 +232,7 @@ export function deriveReadiness(log: TrainingLog, bio?: Biometrics, heat?: HeatA
 const COST_LABEL: Record<ReadinessCostKind, string> = {
   tissue: "tissue",
   conditioning: "conditioning",
+  fuel: "fuel",
   wearable: "wearable",
   ceiling: "scale ceiling",
 };

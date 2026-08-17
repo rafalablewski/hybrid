@@ -28,14 +28,14 @@ import {
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
   velocityProfiles, hpiRole, hpiBandKey, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
-  readinessVerdict, readinessDeficit, readinessFacts, heatAdjustment,
+  readinessVerdict, readinessDeficit, readinessFacts, heatAdjustment, fuelAdjustment,
   localDayKey, INJURY_AREA_KEY,
   freshnessExplain, wearableExplain, wearableSourcePhrase,
   type CapabilityMovement, type FreshnessPillar,
   type WearableExplain,
 
   ALPHA,} from "@hybrid/core";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useNutritionSignalsQuery, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
@@ -135,6 +135,7 @@ function Full({ top }: { top?: ReactNode }) {
   // Fetched by KIND rather than sliced out of `signals` — that stream is the
   // newest rows of any kind, and the food log writes up to eight per meal.
   const { data: heatSignals = [] } = useHeatSignalsQuery();
+  const { data: nutritionSignals = [] } = useNutritionSignalsQuery();
   const checkins = checkinsRead.data ?? [];
   const macro = macroRead.data?.macro ?? null;
   const currentWeek = macroRead.data?.currentWeek ?? 1;
@@ -181,7 +182,14 @@ function Full({ top }: { top?: ReactNode }) {
   // of the block reads is what keeps the prior from ever stacking on a
   // measurement.
   const heatAdj = useMemo(() => heatAdjustment(heatSignals, { bio }).points, [heatSignals, bio]);
-  const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined, heatAdj }), [log, bio, profiles, todayFeeling, heatAdj]);
+  // …and the fuel cost, on the same one-reading-of-the-day contract. `today` is
+  // a dependency rather than an argument: the intake window is measured against
+  // Date.now() at memo time, so an app left open across midnight would keep
+  // excluding yesterday as "today" without it. It takes no `bio` — energy
+  // availability is not suppressed by a wearable the way the heat prior is.
+  const fuel = useMemo(() => fuelAdjustment(nutritionSignals), [nutritionSignals, today]);
+  const fuelAdj = fuel.points;
+  const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined, heatAdj, fuelAdj }), [log, bio, profiles, todayFeeling, heatAdj, fuelAdj]);
   // The block's face, and the measured inputs behind its door. `readinessFacts`
   // carries only what the ledger's rows CAN'T — the limiting tissue's own
   // fatigue, the energy-system load, and a wearable nudge that has no row at
@@ -189,12 +197,12 @@ function Full({ top }: { top?: ReactNode }) {
   // heatAdj is passed HERE TOO. The verdict computes its own split for the
   // door's label and its count, so a verdict read without the credit promises
   // a figure the ledger behind it does not sum to (engines/performance-state.ts).
-  const verdictReadiness = useMemo(() => readinessVerdict(log, bio, heatAdj), [log, bio, heatAdj]);
-  const facts = useMemo(() => readinessFacts(log, bio, heatAdj), [log, bio, heatAdj]);
+  const verdictReadiness = useMemo(() => readinessVerdict(log, bio, heatAdj, fuelAdj), [log, bio, heatAdj, fuelAdj]);
+  const facts = useMemo(() => readinessFacts(log, bio, heatAdj, fuel), [log, bio, heatAdj, fuel]);
   // The ring accounts for the whole 100: what today kept, and what each cause
   // took. `kept` IS the score the figure prints, so the arcs and the number can
   // never be two readings of the same day.
-  const deficit = useMemo(() => readinessDeficit(log, bio, heatAdj), [log, bio, heatAdj]);
+  const deficit = useMemo(() => readinessDeficit(log, bio, heatAdj, fuelAdj), [log, bio, heatAdj, fuelAdj]);
   // The runs, the paint, the bar, the ledger and the provenance line all live in
   // the shared object now (aurora/readiness-ring.tsx). This screen holds the one
   // reading of the day and hands it over.
