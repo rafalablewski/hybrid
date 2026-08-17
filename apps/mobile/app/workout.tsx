@@ -1784,10 +1784,10 @@ export default function Workout() {
                           // unmount, no mount, so no entrance could ever fire and
                           // the whole collapse depended on LayoutAnimation being
                           // honoured. React always remounts across a type change,
-                          // so rendering the row as `LedgerRow` is what makes its
+                          // so rendering the row as `BankedSetRow` is what makes its
                           // native-driver entrance a guarantee instead of a hope.
                           return (
-                            <LedgerRow
+                            <BankedSetRow
                               badge={setTypeBadge(s, i)}
                               badgeColor={typeAccent ? txt(C, typeAccent) : C.ash}
                               summary={summary}
@@ -2479,6 +2479,12 @@ function RpeScaleRow({ children }: { children: React.ReactNode }) {
 /**
  * A BANKED OR QUEUED SET — the quiet one-line ledger row a set collapses into.
  *
+ * NOT `LedgerRow`: that name belongs to the readiness signature ring
+ * (aurora/readiness-object.tsx) and core's one-ring guard fails any second
+ * DEFINITION of it, because the Performance screen once kept its own copy of
+ * that ring and its paint helpers. Two unrelated rows, one name, is how that
+ * starts.
+ *
  * A plain hairline-separated line, not a boxed mini-card (no card-in-card).
  *
  * IT IS A COMPONENT SO THAT IT MOUNTS. The active set and this row are the two
@@ -2496,7 +2502,7 @@ function RpeScaleRow({ children }: { children: React.ReactNode }) {
  * animation can reach. This makes the ARRIVING row travel, on the native driver,
  * whether or not the request was granted.
  */
-function LedgerRow({ badge, badgeColor, summary, summaryColor, effortLabel, effortColor, done, dim, onReopen, C }: {
+function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, effortColor, done, dim, onReopen, C }: {
   badge: string;
   badgeColor: string;
   summary: string;

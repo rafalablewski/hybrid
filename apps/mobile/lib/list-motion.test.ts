@@ -189,11 +189,11 @@ describe("live logger — every set-list mutation travels", () => {
    * silently stops firing while still being present in the code.
    */
   it("the banked row animates without asking native — a component, so it mounts", () => {
-    expect(src, "the ledger row must be rendered as <LedgerRow>, not an inline <View>: React reconciles two <View> branches as one view and updates in place, so nothing mounts and no entrance can fire")
-      .toContain("<LedgerRow");
-    const comp = src.slice(src.indexOf("function LedgerRow("));
-    expect(comp.slice(0, 900), "LedgerRow must run useRowEntrance").toContain("useRowEntrance()");
-    expect(comp.slice(0, 900), "LedgerRow's root must be an Animated.View carrying that entrance").toContain("<Animated.View");
+    expect(src, "the ledger row must be rendered as <BankedSetRow>, not an inline <View>: React reconciles two <View> branches as one view and updates in place, so nothing mounts and no entrance can fire")
+      .toContain("<BankedSetRow");
+    const comp = src.slice(src.indexOf("function BankedSetRow("));
+    expect(comp.slice(0, 900), "BankedSetRow must run useRowEntrance").toContain("useRowEntrance()");
+    expect(comp.slice(0, 900), "BankedSetRow's root must be an Animated.View carrying that entrance").toContain("<Animated.View");
   });
 
   it("the RPE disclosure animates without asking native either", () => {
