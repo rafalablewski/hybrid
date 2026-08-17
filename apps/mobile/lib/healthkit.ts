@@ -468,22 +468,37 @@ function forgetAskedCache(): void {
  * resolve would take the import out on every iOS the newest distance types
  * predate — a regression dressed as a safety check.
  *
- * `null` means this native binary has no probe at all (a JS-only update running
- * against an older build). Then the whole set is used, which is exactly what
- * shipped before: refusing to read on account of a missing diagnostic would
- * break the feature for a reason that is not the crash.
+ * `null` means THE PROBE TOLD US NOTHING, and the caller then uses the whole set
+ * — exactly what shipped before this existed. That distinction is the difference
+ * between hardening the gate and killing the feature with it, so it is drawn
+ * carefully rather than by a truthy check:
+ *
+ *  • no such function in this native binary (a JS-only update running against an
+ *    older build), or the call threw;
+ *  • or the answer came back without a single one of the requested identifiers in
+ *    it. Off-iOS this library's own shim resolves `{}` for this call, and a shape
+ *    we cannot read is indistinguishable from that. Reading `{}` as "none of them
+ *    are buildable" would refuse every import on the spot — turning a crash we
+ *    are not sure we have into a dead feature we certainly would.
+ *
+ * An empty array is therefore only ever returned when the probe was READ and
+ * genuinely reported nothing buildable, which is the one state worth refusing.
  */
 async function buildableTypes(hk: HK, types: readonly string[]): Promise<string[] | null> {
   const probe = hk.areObjectTypesAvailableAsync as
     | ((ids: readonly string[]) => Promise<Record<string, boolean>>)
     | undefined;
   if (typeof probe !== "function") return null;
+  let built: Record<string, boolean>;
   try {
-    const built = await probe.call(hk, types);
-    return types.filter((t) => built?.[t] === true);
+    built = await probe.call(hk, types);
   } catch {
-    return [];
+    return null;
   }
+  // Did it answer about THESE types at all? A dictionary keyed by the identifiers
+  // we passed is the only shape we can draw a conclusion from.
+  if (!built || !types.some((t) => typeof built[t] === "boolean")) return null;
+  return types.filter((t) => built[t] === true);
 }
 
 async function storeHasAsked(hk: HK, types: readonly string[]): Promise<boolean> {
