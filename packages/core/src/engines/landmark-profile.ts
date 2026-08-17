@@ -412,12 +412,29 @@ export function scaleLandmarks(
   return out;
 }
 
-/** Validate an untrusted profile (it round-trips through client storage). */
+/**
+ * Validate an untrusted profile (it round-trips through client storage, and now
+ * through the account — see apps/web/app/api/questionnaire/route.ts).
+ *
+ * THIS FUNCTION IS THE SAVE. Every questionnaire answer passes through it on the
+ * way to storage, so a key it does not name is not "unvalidated" — it is
+ * DISCARDED, silently, on the next write. `sex` was such a key from the day the
+ * field was added: the form offered the toggle, the athlete tapped it, the
+ * engine read `profile.sex` on the other side and always got undefined. Every
+ * female athlete was therefore scored against the published (male) strength and
+ * pace bar — the exact failure the field was added to fix — and the toggle
+ * never even lit, because the UI reads back what was stored.
+ *
+ * So: when a field is added to `AthleteVolumeProfile`, it is added HERE in the
+ * same change. `questionnaire.test.ts` asserts the round trip for every question
+ * the questionnaire asks, which is what turns that sentence into a guard.
+ */
 export function sanitizeVolumeProfile(raw: unknown): AthleteVolumeProfile {
   const out: AthleteVolumeProfile = {};
   if (!raw || typeof raw !== "object") return out;
   const r = raw as Record<string, unknown>;
   if (r.experience === "beginner" || r.experience === "intermediate" || r.experience === "advanced") out.experience = r.experience;
+  if (r.sex === "M" || r.sex === "F") out.sex = r.sex;
   const range = (v: unknown, lo: number, hi: number): number | undefined => {
     const n = num(v);
     return n !== undefined && n >= lo && n <= hi ? n : undefined;

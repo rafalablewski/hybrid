@@ -36,6 +36,7 @@ export * from "./trajectory-plot";
 export * from "./engines";
 export * from "./tissue-axis";
 export * from "./volume-view";
+export * from "./questionnaire";
 export * from "./plans";
 export * from "./plan-day";
 export * from "./plan-program";

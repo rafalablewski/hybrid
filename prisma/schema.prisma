@@ -68,6 +68,25 @@ model User {
   // (reference/sql-plan-maxes.sql).
   planMaxes Json @default("{}")
 
+  // THE QUESTIONNAIRE — everything the athlete has told the app about
+  // themselves: sex, age, height, body mass, training age, years lifting,
+  // sessions per week, typical sleep and stress, energy intake. Shape and
+  // validation are `sanitizeVolumeProfile` in packages/core (one definition of
+  // a legal answer, shared by the clients and this column's API).
+  //
+  // It lived ONLY in each device's own storage until Aug 2026, which had two
+  // consequences worth naming. It did not follow the athlete between devices,
+  // so one person got two different volume models. And the SERVER could not
+  // read it — which mattered most for `sex`, because every strength and pace
+  // threshold in the app is published for a male athlete and shifted from
+  // there, so a public badge scored against the men's bar while her own card
+  // scored her correctly. Two surfaces disagreeing about the same person.
+  //
+  // Read/written via /api/questionnaire and mirrored on each device. Soft-
+  // guarded (raw queries) so the app runs before the column is migrated
+  // (reference/sql-questionnaire.sql).
+  questionnaire Json @default("{}")
+
   sessions          Session[]
   // The queryable projections of those sessions (see SessionSet). Denormalised
   // with a userId of their own so a cross-athlete aggregate never joins Session.

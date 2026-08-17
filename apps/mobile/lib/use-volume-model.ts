@@ -9,7 +9,8 @@ import {
 } from "@hybrid/core";
 import { useHeatSignalsQuery, useNutritionSignalsQuery } from "./queries";
 import { useRecoveryReports } from "./use-recovery-reports";
-import { useLoggerPrefs, setLoggerPref } from "./logger-prefs";
+import { useLoggerPrefs } from "./logger-prefs";
+import { setQuestionnaire, useQuestionnaireSync } from "./questionnaire";
 import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
 import { useFitnessLevel } from "./use-fitness-level";
 
@@ -31,6 +32,10 @@ type Experience = AthleteVolumeProfile["experience"];
  */
 export function useVolumeModel(sessions: LoggedSession[]) {
   const prefs = useLoggerPrefs();
+  // Pull the account's answers once — whichever surface resolves the model
+  // first. Everything below reads `prefs.volumeProfile`, so the hydrate lands
+  // as an ordinary preference change and every reader re-resolves together.
+  useQuestionnaireSync();
 
   // What we already know about the athlete elsewhere in the app fills the gaps
   // the volume profile leaves — nobody should have to type their bodyweight
@@ -147,10 +152,19 @@ export function useVolumeModel(sessions: LoggedSession[]) {
     [landmarkOptions, sessions, recovery],
   );
 
+  /**
+   * Save an answer — on this device and on the ACCOUNT.
+   *
+   * It used to be a bare `setLoggerPref`, which is to say the questionnaire was
+   * device-local: the same athlete got two different volume models on two
+   * phones, and the server — which scores the public level badge — could not
+   * read a word of it. lib/questionnaire.ts writes both, and carries the rule
+   * for what happens when two devices disagree.
+   */
   const setProfile = (patch: Partial<AthleteVolumeProfile>) => {
     const next = { ...prefs.volumeProfile, ...patch };
     for (const k of Object.keys(next) as (keyof AthleteVolumeProfile)[]) if (next[k] === undefined) delete next[k];
-    setLoggerPref("volumeProfile", next);
+    setQuestionnaire(next);
   };
 
   return { prefs, recovery, measured, measuredKeys, levelEstimate, experience, profile, landmarkOptions, resolved, baseline, setProfile };

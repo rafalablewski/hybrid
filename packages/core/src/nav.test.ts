@@ -305,7 +305,7 @@ describe("promoted destinations", () => {
     expect(analyze).toEqual(["performance", "history"]);
     // And the depth is behind them, not deleted — every promoted analysis
     // screen still routes, and still means something to the persona gate.
-    for (const id of ["trends", "velocity", "statistics", "volume-model"]) {
+    for (const id of ["trends", "velocity", "statistics", "questionnaire"]) {
       const item = NAV_ITEMS.find((i) => i.id === id);
       expect(item?.promotedTo, id).toBeTruthy();
       expect(navVisibleTo("admin", id), id).toBe(true);

@@ -1,0 +1,26 @@
+-- HYBRID — the athlete questionnaire, on the account.
+-- Run in the Supabase SQL Editor (the agent can't reach the DB from its sandbox).
+--
+-- Adds a JSONB column to the User table holding everything the athlete has told
+-- the app about themselves — the answers the volume/readiness model is built
+-- from:
+--
+--   {"sex":"F","ageYears":31,"heightCm":171,"bodyweightKg":64.5,
+--    "experience":"intermediate","trainingYears":4,"daysPerWeek":5,
+--    "sleep":4,"stress":2,"nutrition":"maintenance"}
+--
+-- Shape and validation are `sanitizeVolumeProfile` in packages/core — one
+-- definition of a legal answer, shared by both clients and /api/questionnaire.
+--
+-- Until this runs, the answers live ONLY on-device (AsyncStorage) and the
+-- /api/questionnaire read/write soft-degrades to a no-op, exactly like the other
+-- reference-SQL-gated columns. Once applied:
+--
+--   * the questionnaire follows the athlete between devices, instead of one
+--     person carrying two different volume models;
+--   * the SERVER can read `sex`, which is what stops a public badge being scored
+--     against the published (male) bar while her own card scores her correctly.
+--
+-- Idempotent — safe to run more than once.
+alter table "User"
+  add column if not exists "questionnaire" jsonb not null default '{}'::jsonb;

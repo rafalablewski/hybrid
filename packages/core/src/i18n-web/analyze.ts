@@ -41,21 +41,19 @@ export const web_analyze = {
 
     // volume
     "w.analyze.vol.title": "Volume",
-    // THE MODEL, on its own route. The landmark fields, the profile form and
-    // the model switches used to live inside the Volume screen behind an edit
-    // toggle — around fifty controls inside a read surface, where a mistyped
-    // number silently rewrote every band and verdict above it with no
-    // confirmation and no way to see what changed.
-    "w.analyze.model.title": "Volume model",
-    "w.analyze.model.sub": "The numbers your bands are built from — and what your edits changed.",
-    "w.analyze.model.open": "Edit the model",
-    "w.analyze.model.changed": "What your edits changed",
-    "w.analyze.model.noChanges": "You haven't overridden anything yet. Every band is the model's own estimate.",
+    // THE MODEL — now a disclosure inside the QUESTIONNAIRE rather than a
+    // screen of its own. These fields, the profile form and the switches once
+    // lived inside the Volume screen behind an edit toggle (fifty controls in a
+    // read surface, where a mistyped number silently rewrote every band above
+    // it); then on a route named after the machine, where a dozen questions
+    // about a person sat at the same weight as thirty-five landmark fields. The
+    // questions are the screen now (w.quiz.*) and this is what is behind it.
+    // The door names the DESTINATION, which is the person, not the machine.
+    "w.analyze.model.open": "About you",
     "w.analyze.model.landmarks": "Landmarks",
-    "w.analyze.model.landmarksSub": "Five numbers per muscle. Leave one blank to use the estimate.",
+    "w.analyze.model.landmarksSub": "Five numbers per muscle. Move one and the estimate it replaced is shown beneath it.",
     "w.analyze.model.behaviour": "How the model behaves",
     "w.analyze.model.estimate": "estimate",
-    "w.analyze.model.yours": "yours",
     "w.analyze.vol.subtitle": "Weekly working sets against your own landmarks.",
     "w.analyze.vol.range7d": "Last 7 days",
     "w.analyze.vol.heroCaption": "muscles in their productive range",
@@ -213,6 +211,46 @@ export const web_analyze = {
     "w.analyze.vol.levelUnconfirmed": "From a single effort — log another and this firms up.",
     "w.analyze.vol.ofBodyweight": "× bodyweight",
     "w.analyze.vol.measured": "measured",
+
+    // ── THE QUESTIONNAIRE ────────────────────────────────────────────────
+    // The screen was "Volume model" — named after the machine, with a dozen
+    // questions about a person buried among thirty-five landmark fields at the
+    // same weight. These are the questions' own strings; the section titles say
+    // what they ask ABOUT, never what the engine does with the answer.
+    "w.quiz.title": "About you",
+    "w.quiz.sub": "What the model knows — and what it would do with one more answer.",
+    "w.quiz.known": "of the estimate rests on answers we have",
+    "w.quiz.knownWhy": "Everything below is optional. Each answer replaces a population average with you, and nothing is asked twice — where the app can read it from your log, it already has.",
+    "w.quiz.knownComplete": "Everything that moves the estimate is answered. From here only your training sharpens it.",
+    "w.quiz.measured": "Measured",
+    "w.quiz.answer": "Answer",
+    "w.quiz.clear": "Clear",
+    "w.quiz.reset": "Clear everything and start again",
+    "w.quiz.body.title": "Your body",
+    "w.quiz.body.blurb": "The frame the work is done by — and the bar you are scored against.",
+    "w.quiz.training.title": "Your training",
+    "w.quiz.training.blurb": "How long you have trained, and how often. The heaviest answers on this screen.",
+    "w.quiz.recovery.title": "Your recovery",
+    "w.quiz.recovery.blurb": "What you absorb the work with. This is the half that sets the ceiling.",
+    "w.quiz.fuel.title": "Your fuel",
+    "w.quiz.fuel.blurb": "Whether there is energy to repair with, and material to repair from.",
+    "w.quiz.field.trainingYears": "Years lifting",
+    "w.quiz.why.trainingYears": "Sharpens the tier above it. Under a year reads as beginner however you describe yourself; five years reads as advanced.",
+    "w.quiz.why.heat": "Read from your logged sauna sittings. Regular heat exposure earns a small credit on what you can absorb.",
+    "w.quiz.why.protein": "Read from your food log. Energy decides whether there is fuel to repair with; protein decides whether there is material to repair from.",
+    "w.quiz.scale.sleepLow": "Broken",
+    "w.quiz.scale.sleepHigh": "Excellent",
+    "w.quiz.scale.stressLow": "Calm",
+    "w.quiz.scale.stressHigh": "Very stressed",
+    "w.quiz.unit.years": "yr",
+    "w.quiz.unit.cm": "cm",
+    "w.quiz.unit.kg": "kg",
+    "w.quiz.unit.perWeek": "/wk",
+    "w.quiz.unit.gPerKg": "g/kg",
+    "w.quiz.changed.title": "What your answers changed",
+    "w.quiz.changed.none": "Nothing yet — your bands are still the population table. Answer anything above and the multiplier it earned shows up here.",
+    "w.quiz.machine.title": "The model itself",
+    "w.quiz.machine.blurb": "The per-muscle landmarks, the adaptive ceiling and the block. Outputs, not questions.",
     "w.analyze.vol.measuredWhy": "The green fields are read from your own data — sleep from your check-ins, body mass from your weigh-ins, energy intake from the trend on the scale. Type over any of them and your number wins.",
 
     // volume — the block ramp (MEV → MAV → deload)
@@ -536,16 +574,11 @@ export const web_analyze = {
 
     // volume
     "w.analyze.vol.title": "Objętość",
-    "w.analyze.model.title": "Model objętości",
-    "w.analyze.model.sub": "Liczby, na których stoją Twoje zakresy — i co zmieniły Twoje edycje.",
-    "w.analyze.model.open": "Edytuj model",
-    "w.analyze.model.changed": "Co zmieniły Twoje edycje",
-    "w.analyze.model.noChanges": "Nic jeszcze nie nadpisałeś. Każdy zakres to własne oszacowanie modelu.",
+    "w.analyze.model.open": "O Tobie",
     "w.analyze.model.landmarks": "Progi",
-    "w.analyze.model.landmarksSub": "Pięć liczb na partię. Zostaw puste, aby użyć oszacowania.",
+    "w.analyze.model.landmarksSub": "Pięć liczb na partię. Zmień którąś, a pod nią pokaże się oszacowanie, które zastąpiła.",
     "w.analyze.model.behaviour": "Jak działa model",
     "w.analyze.model.estimate": "oszacowanie",
-    "w.analyze.model.yours": "Twoje",
     "w.analyze.vol.subtitle": "Tygodniowe serie robocze względem Twoich punktów odniesienia.",
     "w.analyze.vol.range7d": "Ostatnie 7 dni",
     "w.analyze.vol.heroCaption": "mięśni w zakresie produktywnym",
@@ -700,6 +733,42 @@ export const web_analyze = {
     "w.analyze.vol.levelUnconfirmed": "Z jednej próby — zapisz kolejną, a wynik się ustabilizuje.",
     "w.analyze.vol.ofBodyweight": "× masy ciała",
     "w.analyze.vol.measured": "zmierzone",
+
+    // ── KWESTIONARIUSZ ───────────────────────────────────────────────────
+    "w.quiz.title": "O Tobie",
+    "w.quiz.sub": "Co model o Tobie wie — i co zrobiłby z jeszcze jedną odpowiedzią.",
+    "w.quiz.known": "szacunku opiera się na tym, co już wiemy",
+    "w.quiz.knownWhy": "Wszystko poniżej jest opcjonalne. Każda odpowiedź zastępuje średnią populacyjną Tobą, a o nic nie pytamy dwa razy — jeśli app może to odczytać z Twojego dziennika, już to ma.",
+    "w.quiz.knownComplete": "Wszystko, co przesuwa szacunek, jest uzupełnione. Od teraz wyostrza go już tylko Twój trening.",
+    "w.quiz.measured": "Zmierzone",
+    "w.quiz.answer": "Odpowiedz",
+    "w.quiz.clear": "Wyczyść",
+    "w.quiz.reset": "Wyczyść wszystko i zacznij od nowa",
+    "w.quiz.body.title": "Twoje ciało",
+    "w.quiz.body.blurb": "Struktura, która wykonuje pracę — i poprzeczka, do której Cię porównujemy.",
+    "w.quiz.training.title": "Twój trening",
+    "w.quiz.training.blurb": "Jak długo trenujesz i jak często. Najcięższe odpowiedzi na tym ekranie.",
+    "w.quiz.recovery.title": "Twoja regeneracja",
+    "w.quiz.recovery.blurb": "To, czym przyswajasz pracę. Ta połowa ustala sufit.",
+    "w.quiz.fuel.title": "Twoje paliwo",
+    "w.quiz.fuel.blurb": "Czy jest energia do naprawy i materiał, z którego naprawiać.",
+    "w.quiz.field.trainingYears": "Lat na siłowni",
+    "w.quiz.why.trainingYears": "Wyostrza poziom powyżej. Poniżej roku czytamy jako początkujący, jakkolwiek siebie opiszesz; pięć lat jako zaawansowany.",
+    "w.quiz.why.heat": "Odczytane z zalogowanych sesji w saunie. Regularne ciepło daje niewielki bonus do tego, co przyswoisz.",
+    "w.quiz.why.protein": "Odczytane z dziennika żywienia. Energia decyduje, czy jest czym naprawiać; białko — z czego.",
+    "w.quiz.scale.sleepLow": "Przerywany",
+    "w.quiz.scale.sleepHigh": "Doskonały",
+    "w.quiz.scale.stressLow": "Spokój",
+    "w.quiz.scale.stressHigh": "Bardzo duży stres",
+    "w.quiz.unit.years": "lat",
+    "w.quiz.unit.cm": "cm",
+    "w.quiz.unit.kg": "kg",
+    "w.quiz.unit.perWeek": "/tydz.",
+    "w.quiz.unit.gPerKg": "g/kg",
+    "w.quiz.changed.title": "Co zmieniły Twoje odpowiedzi",
+    "w.quiz.changed.none": "Jeszcze nic — Twoje pasma to wciąż tabela populacyjna. Odpowiedz na cokolwiek powyżej, a mnożnik, który to dało, pojawi się tutaj.",
+    "w.quiz.machine.title": "Sam model",
+    "w.quiz.machine.blurb": "Punkty odniesienia dla mięśni, adaptacyjny sufit i blok. To wyniki, nie pytania.",
     "w.analyze.vol.measuredWhy": "Zielone pola pochodzą z Twoich danych — sen z check-inów, masa ciała z ważeń, podaż energii z trendu na wadze. Wpisz własną wartość, a Twoja liczba wygrywa.",
 
     // volume — rampa bloku (MEV → MAV → deload)
@@ -1020,16 +1089,11 @@ export const web_analyze = {
 
     // volume
     "w.analyze.vol.title": "Volumen",
-    "w.analyze.model.title": "Volumen-Modell",
-    "w.analyze.model.sub": "Die Zahlen hinter deinen Bändern — und was deine Änderungen bewirkt haben.",
-    "w.analyze.model.open": "Modell bearbeiten",
-    "w.analyze.model.changed": "Was deine Änderungen bewirkt haben",
-    "w.analyze.model.noChanges": "Du hast noch nichts überschrieben. Jedes Band ist die Schätzung des Modells.",
+    "w.analyze.model.open": "Über dich",
     "w.analyze.model.landmarks": "Landmarken",
-    "w.analyze.model.landmarksSub": "Fünf Zahlen pro Muskel. Leer lassen, um die Schätzung zu nutzen.",
+    "w.analyze.model.landmarksSub": "Fünf Zahlen pro Muskel. Ändere eine, und die ersetzte Schätzung erscheint darunter.",
     "w.analyze.model.behaviour": "Wie das Modell arbeitet",
     "w.analyze.model.estimate": "Schätzung",
-    "w.analyze.model.yours": "deins",
     "w.analyze.vol.subtitle": "Wöchentliche Arbeitssätze gegenüber deinen eigenen Richtwerten.",
     "w.analyze.vol.range7d": "Letzte 7 Tage",
     "w.analyze.vol.heroCaption": "Muskeln im produktiven Bereich",
@@ -1184,6 +1248,42 @@ export const web_analyze = {
     "w.analyze.vol.levelUnconfirmed": "Aus einem einzigen Versuch — logge einen weiteren, dann festigt sich das.",
     "w.analyze.vol.ofBodyweight": "× Körpergewicht",
     "w.analyze.vol.measured": "gemessen",
+
+    // ── DER FRAGEBOGEN ───────────────────────────────────────────────────
+    "w.quiz.title": "Über dich",
+    "w.quiz.sub": "Was das Modell weiß — und was es mit einer weiteren Antwort täte.",
+    "w.quiz.known": "der Schätzung beruht auf vorhandenen Antworten",
+    "w.quiz.knownWhy": "Alles unten ist freiwillig. Jede Antwort ersetzt einen Bevölkerungsdurchschnitt durch dich, und nichts wird zweimal gefragt — was die App aus deinem Log lesen kann, hat sie bereits.",
+    "w.quiz.knownComplete": "Alles, was die Schätzung bewegt, ist beantwortet. Ab hier schärft sie nur noch dein Training.",
+    "w.quiz.measured": "Gemessen",
+    "w.quiz.answer": "Antworten",
+    "w.quiz.clear": "Löschen",
+    "w.quiz.reset": "Alles löschen und neu beginnen",
+    "w.quiz.body.title": "Dein Körper",
+    "w.quiz.body.blurb": "Der Rahmen, der die Arbeit leistet — und die Messlatte, an der du gemessen wirst.",
+    "w.quiz.training.title": "Dein Training",
+    "w.quiz.training.blurb": "Wie lange du trainierst und wie oft. Die schwersten Antworten auf diesem Bildschirm.",
+    "w.quiz.recovery.title": "Deine Regeneration",
+    "w.quiz.recovery.blurb": "Womit du die Arbeit aufnimmst. Diese Hälfte setzt die Decke.",
+    "w.quiz.fuel.title": "Dein Treibstoff",
+    "w.quiz.fuel.blurb": "Ob Energie zum Reparieren da ist und Material, woraus repariert wird.",
+    "w.quiz.field.trainingYears": "Jahre im Training",
+    "w.quiz.why.trainingYears": "Schärft die Stufe darüber. Unter einem Jahr liest sich als Anfänger, wie du dich auch beschreibst; fünf Jahre als fortgeschritten.",
+    "w.quiz.why.heat": "Aus deinen protokollierten Saunagängen gelesen. Regelmäßige Hitze bringt einen kleinen Bonus auf das, was du aufnimmst.",
+    "w.quiz.why.protein": "Aus deinem Ernährungslog gelesen. Energie entscheidet, ob Treibstoff zum Reparieren da ist; Protein, woraus repariert wird.",
+    "w.quiz.scale.sleepLow": "Unruhig",
+    "w.quiz.scale.sleepHigh": "Ausgezeichnet",
+    "w.quiz.scale.stressLow": "Ruhig",
+    "w.quiz.scale.stressHigh": "Sehr gestresst",
+    "w.quiz.unit.years": "J.",
+    "w.quiz.unit.cm": "cm",
+    "w.quiz.unit.kg": "kg",
+    "w.quiz.unit.perWeek": "/Wo.",
+    "w.quiz.unit.gPerKg": "g/kg",
+    "w.quiz.changed.title": "Was deine Antworten verändert haben",
+    "w.quiz.changed.none": "Noch nichts — deine Bänder sind weiterhin die Bevölkerungstabelle. Beantworte irgendetwas oben, und der dadurch verdiente Multiplikator erscheint hier.",
+    "w.quiz.machine.title": "Das Modell selbst",
+    "w.quiz.machine.blurb": "Die Landmarken je Muskel, die adaptive Decke und der Block. Ergebnisse, keine Fragen.",
     "w.analyze.vol.measuredWhy": "Die grünen Felder stammen aus deinen eigenen Daten — Schlaf aus deinen Check-ins, Körpermasse aus deinen Wiegungen, Energiezufuhr aus dem Trend auf der Waage. Trag etwas ein und deine Zahl gewinnt.",
 
     // volume — die Blockrampe (MEV → MAV → Deload)

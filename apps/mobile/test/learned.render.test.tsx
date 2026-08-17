@@ -57,6 +57,12 @@ const { sessions, checkins } = history(NOW);
 vi.mock("../lib/api", () => ({
   fetchFlagState: async () => ({ flags: {}, values: {} }),
   fetchTranslationOverrides: async () => ({}),
+  // The volume model hydrates the questionnaire from the account on first use
+  // (lib/questionnaire.ts). Empty here: this fixture's athlete is defined by the
+  // log and the on-device profile, and a server answer arriving mid-assert would
+  // be a second source for the same numbers.
+  fetchQuestionnaire: async () => ({}),
+  saveQuestionnaire: async () => true,
 }));
 
 vi.mock("../lib/queries", () => ({
