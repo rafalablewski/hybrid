@@ -144,6 +144,85 @@ export function useEntrance() {
   );
 }
 
+/**
+ * A ONE-SHOT ENTRANCE FOR A ROW THAT APPEARS INSIDE AN ALREADY-FOCUSED SCREEN —
+ * and, deliberately, the one kind of motion that CANNOT be silently absent.
+ *
+ * `useEntrance` above is keyed to screen FOCUS, so it is no use to a row that
+ * arrives mid-screen. The obvious alternative for those is `animateListChange`
+ * (LayoutAnimation), and it is still the right tool for the surrounding reflow:
+ * one call animates every consequence of a commit, including the rows below
+ * closing a gap, which no per-row animation can reach.
+ *
+ * But LayoutAnimation is a REQUEST to native, and on the New Architecture it is
+ * a request that can be declined. React Native 0.85.3 gates it behind two
+ * feature flags (JS `isLayoutAnimationEnabled`, C++ `enableLayoutAnimationsOnIOS`),
+ * its own source still calls iOS Fabric support "conditionally enabled (pending
+ * fully shipping; this is a temporary state)", `Platform.isDisableAnimations`
+ * can switch it off wholesale, and the surface that needs it most here — the
+ * live logger — is presented as a `fullScreenModal`, which is its own view
+ * controller and the configuration Fabric handles least well. Every one of those
+ * fails the same way: silently, with no error, looking exactly like a design
+ * that simply has no animation.
+ *
+ * This does not ask. `Animated` is independent of LayoutAnimation, of the
+ * feature flags, and of the surface: it commits through the ordinary renderer,
+ * so there is nothing to decline. If the row mounts, it moves.
+ *
+ * ON THE JS DRIVER, AND THAT IS THE WHOLE POINT OF THIS PARAGRAPH. The obvious
+ * choice here is `useNativeDriver: true` — UI thread, immune to a JS stall — and
+ * it is the WRONG one, for a reason this codebase has already paid for on
+ * device. `useEntrance` above ran exactly that and had to be changed: under
+ * Fabric, a native-driver OPACITY animation started from JS can lose the
+ * JS-start-vs-native-mount race and strand the view at its initial value, which
+ * is opacity 0 (facebook/react-native#12453). It shipped as a blank screen on
+ * an iPhone 15 while faster devices won the race.
+ *
+ * Here the stranded value would be an INVISIBLE BANKED SET — the precise bug
+ * this row exists to fix, reintroduced in a worse form and only on some phones.
+ * A frame of jank if the JS thread is busy is a trade worth making against
+ * that; a one-shot spring on one row costs nothing measurable, and the fade is
+ * the part that must land, every time, on every device.
+ *
+ * So the two are used TOGETHER and neither is redundant: LayoutAnimation makes
+ * the neighbours travel where it is honoured, and this makes the arriving row
+ * travel whether it is honoured or not.
+ *
+ * NOTE ON MOUNTING. This fires on mount, so the caller must actually mount:
+ * two branches of a ternary that both render a `<View>` reconcile as the SAME
+ * view and update in place. Rendering one branch as a distinct COMPONENT is
+ * what guarantees the remount — React always remounts across a type change —
+ * which is why the logger's ledger row is its own component.
+ *
+ * Reduce Motion substitutes the cross-dissolve rather than snapping, matching
+ * `useEntrance` and `animateListChange`: the rise is dropped, the fade is kept,
+ * so the arrival is still perceptible.
+ */
+export function useRowEntrance(distance = 8): { opacity: Animated.Value; transform?: { translateY: Animated.AnimatedInterpolation<number> }[] } {
+  const enter = useRef(new Animated.Value(0)).current;
+  const reducedMotion = useReducedMotion();
+  useEffect(() => {
+    const anim = reducedMotion
+      ? Animated.timing(enter, { toValue: 1, duration: durations.reduced, easing: Easing.linear, useNativeDriver: false })
+      : Animated.spring(enter, { toValue: 1, ...springToRN(springs.slide), useNativeDriver: false });
+    anim.start();
+    return () => anim.stop();
+    // Mount-only: `enter` is stable, and re-running on a Reduce Motion toggle
+    // would replay the entrance of every row already on screen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return useMemo(
+    () =>
+      reducedMotion
+        ? { opacity: enter }
+        : {
+            opacity: enter,
+            transform: [{ translateY: enter.interpolate({ inputRange: [0, 1], outputRange: [-distance, 0] }) }],
+          },
+    [enter, reducedMotion, distance],
+  );
+}
+
 // THE HUB DISSOLVE — what a screen's CONTENT does when it shows as one of
 // Today's hub tabs (Dashboard / Performance / Feed). The hub chrome above it
 // (profile row + pills) holds perfectly still and the pills' flying lens owns

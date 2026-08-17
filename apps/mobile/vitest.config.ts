@@ -71,6 +71,11 @@ export default defineConfig({
             // TEXT and then runs it through the real core readers, so it proves
             // a screen invariant without importing the screen.
             "lib/nutrition-form.test.ts",
+            // Reads the live logger as TEXT to prove every set-list mutation
+            // arms a layout animation before it commits. A missing one is the
+            // quietest bug we can ship — correct code, passing tests, an app
+            // that just feels cheap — and it is only visible on a device.
+            "lib/list-motion.test.ts",
           ],
         },
       },

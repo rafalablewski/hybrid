@@ -1,0 +1,1049 @@
+<title>Banking a Set</title>
+<style>
+  :root{
+    /* PRODUCT tokens — packages/core/src/theme/tokens.ts. Fixed in both page
+       themes: the phone below IS the app, and the app is one world. */
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c6f84f; --amber:#d0cd94; --clay:#d56f3e; --teal:#3c787e;
+
+    /* PAGE chrome — theme-aware; bare :root is the light set. */
+    --page:#f1f2ec;
+    --page-fg:#14160e;
+    --page-dim:#585d4f;
+    --page-faint:#8b8f81;
+    --page-rule:#d9dccf;
+    --page-panel:#e7e9df;
+    --page-panel2:#dfe2d6;
+    --page-accent:#4e6a0d;
+    --page-good:#3f6b2c;
+    --page-warn:#8d4315;
+    --page-chip:rgba(78,106,13,.10);
+    --page-warnchip:rgba(141,67,21,.10);
+    --page-goodchip:rgba(63,107,44,.10);
+
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page:#060705; --page-fg:#eef0e9; --page-dim:#8b8f86; --page-faint:#5d6257;
+      --page-rule:#1d201c; --page-panel:#0f110f; --page-panel2:#161816;
+      --page-accent:#c6f84f; --page-good:#9ed36a; --page-warn:#e08a5f;
+      --page-chip:rgba(198,248,79,.12); --page-warnchip:rgba(224,138,95,.13);
+      --page-goodchip:rgba(158,211,106,.12);
+    }
+  }
+  :root[data-theme="dark"]{
+    --page:#060705; --page-fg:#eef0e9; --page-dim:#8b8f86; --page-faint:#5d6257;
+    --page-rule:#1d201c; --page-panel:#0f110f; --page-panel2:#161816;
+    --page-accent:#c6f84f; --page-good:#9ed36a; --page-warn:#e08a5f;
+    --page-chip:rgba(198,248,79,.12); --page-warnchip:rgba(224,138,95,.13);
+    --page-goodchip:rgba(158,211,106,.12);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--page);color:var(--page-fg);font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;padding:52px 20px 110px;
+  }
+  .wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:60px}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  :focus-visible{outline:2px solid var(--page-accent);outline-offset:2px;border-radius:3px}
+
+  /* ── head ─────────────────────────────────────────────────── */
+  .head{display:flex;flex-direction:column;gap:16px;max-width:72ch}
+  .eyebrow{margin:0;font:600 11px/1 var(--mono);letter-spacing:.22em;
+    text-transform:uppercase;color:var(--page-accent)}
+  h1{margin:0;font-size:clamp(31px,5.2vw,50px);line-height:1.01;letter-spacing:-.04em;
+    font-weight:800;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--page-faint)}
+  .lede{margin:0;font-size:16.5px;line-height:1.62;color:var(--page-dim)}
+  .lede strong{color:var(--page-fg);font-weight:600}
+  code{font-family:var(--mono);font-size:.87em;color:var(--page-fg);
+    background:var(--page-chip);padding:1px 5px;border-radius:3px}
+
+  /* ── section furniture ────────────────────────────────────── */
+  section{display:flex;flex-direction:column;gap:24px}
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:18px;
+    border-top:1px solid var(--page-rule);padding-top:15px;flex-wrap:wrap}
+  .sechead h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.022em}
+  .sechead .tag{margin:0;font:500 11px/1 var(--mono);letter-spacing:.15em;
+    text-transform:uppercase;color:var(--page-faint)}
+  .prose{margin:0;max-width:68ch;font-size:15.5px;line-height:1.66;color:var(--page-dim)}
+  .prose strong{color:var(--page-fg);font-weight:600}
+
+  /* ══ THE RIG ═══════════════════════════════════════════════ */
+  .rig{display:grid;grid-template-columns:376px 1fr;gap:30px;align-items:start}
+  @media (max-width:900px){.rig{grid-template-columns:1fr}}
+
+  /* the build switch — the page's one bold move */
+  .switch{display:flex;flex-direction:column;gap:12px}
+  .switchlab{font:600 10.5px/1 var(--mono);letter-spacing:.17em;
+    text-transform:uppercase;color:var(--page-faint)}
+  .toggle{display:grid;grid-template-columns:1fr 1fr;gap:0;border-radius:999px;
+    border:1px solid var(--page-rule);background:var(--page-panel);padding:3px;position:relative}
+  .toggle button{padding:11px 8px;border-radius:999px;font:700 12.5px/1 var(--mono);
+    letter-spacing:.1em;text-transform:uppercase;color:var(--page-faint);
+    transition:color .22s ease;position:relative;z-index:1}
+  .toggle .knob{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);
+    border-radius:999px;background:var(--page-warnchip);border:1px solid var(--page-warn);
+    transition:transform .34s cubic-bezier(.34,1.3,.5,1),background .28s ease,border-color .28s ease}
+  .toggle[data-build="after"] .knob{transform:translateX(100%);
+    background:var(--page-goodchip);border-color:var(--page-good)}
+  .toggle[data-build="before"] button[data-b="before"]{color:var(--page-warn)}
+  .toggle[data-build="after"] button[data-b="after"]{color:var(--page-good)}
+
+  /* the phone */
+  .phone{background:var(--ink);border-radius:24px;padding:12px;border:1px solid var(--line);
+    box-shadow:0 20px 50px -28px rgba(0,0,0,.7)}
+  .acard{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:14px}
+  .xhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .tile{width:36px;height:36px;border-radius:3px;background:var(--ink2);
+    border:1px solid var(--line);display:grid;place-items:center;font-size:17px;flex:none}
+  .xname{font:800 16px/1.2 var(--sans);color:var(--chalk);letter-spacing:-.01em;flex:1;
+    min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .xkill{color:var(--ash);font-size:13px;flex:none}
+  .lastline{font:400 11px/1.3 var(--mono);color:var(--ash);margin-bottom:9px}
+
+  /* active set block */
+  .active{padding:12px 0}
+  .setlab{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .kicker{font:400 10px/1 var(--mono);letter-spacing:.13em;text-transform:uppercase;color:var(--ash)}
+  .right{margin-left:auto;display:flex;align-items:center;gap:7px}
+  .rest{font:400 10px/1 var(--mono);color:var(--ash)}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;
+    border:1px solid var(--line);background:transparent;cursor:pointer;
+    transition:border-color .2s ease,background .2s ease}
+  .chip .lab{font:400 10px/1 var(--mono);letter-spacing:.07em;color:var(--ash)}
+  .chip .val{font:700 10px/1 var(--mono);color:var(--ash)}
+  .chip[data-set="1"]{border-color:rgba(208,205,148,.5);background:rgba(208,205,148,.12)}
+  .chip[data-set="1"] .lab,.chip[data-set="1"] .val{color:var(--amber)}
+  .type{font:400 11px/1 var(--mono);color:var(--ash)}
+  .figs{display:flex;align-items:baseline;justify-content:center;flex-wrap:wrap}
+  .fig{font:900 46px/1.05 var(--sans);letter-spacing:-1.6px;color:var(--chalk);
+    font-variant-numeric:tabular-nums}
+  .unit{font:400 16px/1 var(--mono);color:var(--ash);margin-left:5px}
+  .times{font:400 26px/1 var(--sans);color:var(--ash);margin:0 4px}
+
+  /* the RPE pill row */
+  .pills{display:flex;align-items:center;gap:6px;margin-top:12px}
+  .pills .swap{font:400 10px/1 var(--mono);letter-spacing:.08em;color:var(--ash);
+    flex:none;cursor:pointer;padding:4px 2px}
+  .pill{flex:1;min-width:0;padding:8px 2px;border-radius:999px;border:1px solid var(--line);
+    background:var(--ink2);font:400 12px/1 var(--mono);color:var(--ash);
+    transition:transform .16s ease,border-color .18s ease,color .18s ease}
+  .pill[data-on="1"]{border-color:var(--chalk);background:rgba(243,244,239,.12);
+    color:var(--chalk);font-weight:700}
+  .pill:hover{transform:translateY(-1px)}
+
+  /* the banked ledger row — the subject */
+  .row{display:flex;align-items:center;gap:10px;padding:12px 2px;position:relative;
+    border-bottom:1px solid rgba(36,39,36,.6);opacity:.62}
+  .row.queued{opacity:.72}
+  .row .badge{width:20px;flex:none;font:400 12px/1 var(--mono);color:var(--ash)}
+  .row .hit{flex:1;min-width:0;display:flex;align-items:center;gap:10px;cursor:pointer;
+    background:none;text-align:left}
+  .row .sum{flex:1;min-width:0;font:400 13px/1.25 var(--mono);color:var(--ash);
+    font-variant-numeric:tabular-nums}
+  .row .tok{font:400 10px/1 var(--mono);letter-spacing:.07em;color:var(--amber);flex:none}
+  .row .check{font:900 13px/1 var(--sans);flex:none}
+  .row.done .check{color:var(--lime)}
+  .row.queued .check{color:var(--ash)}
+  /* the value evaporating — BEFORE build only */
+  .evap{position:absolute;right:26px;top:11px;font:400 10px/1 var(--mono);
+    letter-spacing:.07em;color:var(--amber);pointer-events:none}
+
+  .addset{display:flex;align-items:center;gap:8px;padding-top:12px;cursor:pointer}
+  .addset .plus{font:400 16px/1 var(--mono);color:var(--chalk)}
+  .addset .word{font:700 13px/1 var(--sans);color:var(--chalk)}
+  .dock{display:flex;align-items:center;gap:9px;margin-top:12px}
+  .dock .primary{flex:1;padding:15px 10px;border-radius:999px;background:var(--lime);
+    color:#111;font:800 15px/1 var(--sans);letter-spacing:-.01em;
+    transition:transform .14s ease,filter .2s ease}
+  .dock .primary:hover{transform:translateY(-1px);filter:brightness(1.06)}
+  .dock .primary[disabled]{opacity:.34;cursor:not-allowed;transform:none;filter:none}
+  .dock .sat{width:46px;padding:15px 0;border-radius:999px;border:1px solid var(--line);
+    color:var(--ash);font:700 13px/1 var(--mono)}
+
+  /* ── the rig's controls + ledger ───────────────────────────── */
+  .panelcol{display:flex;flex-direction:column;gap:22px}
+  .ctrls{display:flex;flex-direction:column;gap:16px;background:var(--page-panel);
+    border:1px solid var(--page-rule);border-radius:14px;padding:18px}
+  .crow{display:flex;flex-direction:column;gap:8px}
+  .crow > .k{font:600 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;
+    color:var(--page-faint)}
+  .seg{display:flex;flex-wrap:wrap;gap:6px}
+  .seg button{padding:7px 12px;border-radius:999px;border:1px solid var(--page-rule);
+    font:500 12px/1 var(--mono);color:var(--page-dim);background:var(--page);
+    transition:border-color .18s ease,color .18s ease,background .18s ease}
+  .seg button[aria-pressed="true"]{border-color:var(--page-accent);color:var(--page-accent);
+    background:var(--page-chip);font-weight:700}
+  .hint{margin:0;font-size:13px;line-height:1.5;color:var(--page-faint)}
+
+  /* the event ledger */
+  .ledger{background:var(--page-panel);border:1px solid var(--page-rule);border-radius:14px;
+    display:flex;flex-direction:column;overflow:hidden}
+  .ledger .lhead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    padding:14px 18px;border-bottom:1px solid var(--page-rule)}
+  .ledger .lhead h3{margin:0;font-size:14.5px;font-weight:700;letter-spacing:-.01em}
+  .ledger .lhead .n{font:500 10px/1 var(--mono);letter-spacing:.15em;
+    text-transform:uppercase;color:var(--page-faint)}
+  .ledger ol{margin:0;padding:10px 0;list-style:none;max-height:340px;overflow-y:auto;
+    display:flex;flex-direction:column}
+  .ledger li{display:grid;grid-template-columns:16px 1fr;gap:11px;padding:8px 18px;
+    font-size:13.5px;line-height:1.5;color:var(--page-dim)}
+  .ledger li .m{font:700 12px/1.45 var(--mono)}
+  .ledger li b{font-weight:600;color:var(--page-fg)}
+  .ledger li.bad .m{color:var(--page-warn)}
+  .ledger li.bad b{color:var(--page-warn)}
+  .ledger li.good .m{color:var(--page-good)}
+  .ledger li.neu .m{color:var(--page-faint)}
+  .ledger .empty{padding:20px 18px;font-size:13.5px;color:var(--page-faint);font-style:italic}
+  .ledger li mono,.ledger li .c{font-family:var(--mono);font-size:.92em}
+
+  /* ── change cards ─────────────────────────────────────────── */
+  .changes{display:flex;flex-direction:column;gap:30px}
+  .change{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:26px;align-items:start}
+  @media (max-width:880px){.change{grid-template-columns:1fr}}
+  .cmeta{display:flex;flex-direction:column;gap:12px}
+  .cwhere{font:400 10.5px/1.5 var(--mono);letter-spacing:.08em;color:var(--page-faint);
+    word-break:break-word}
+  .cmeta h3{margin:0;font-size:18.5px;font-weight:800;letter-spacing:-.02em}
+  .cmeta p{margin:0;font-size:14.5px;line-height:1.6;color:var(--page-dim)}
+  .cmeta p strong{color:var(--page-fg);font-weight:600}
+  .tryit{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
+    padding:7px 12px;border-radius:999px;background:var(--page-chip);
+    border:1px solid var(--page-accent);font:600 11px/1.35 var(--mono);
+    letter-spacing:.04em;color:var(--page-accent);text-align:left}
+  .diff{background:var(--page-panel);border:1px solid var(--page-rule);border-radius:11px;
+    overflow-x:auto;font:400 12px/1.72 var(--mono);padding:12px 0}
+  .diff .ln{display:block;padding:0 15px;white-space:pre;color:var(--page-dim)}
+  .diff .ln.del{background:var(--page-warnchip);color:var(--page-warn);
+    box-shadow:inset 2px 0 0 var(--page-warn)}
+  .diff .ln.add{background:var(--page-goodchip);color:var(--page-good);
+    box-shadow:inset 2px 0 0 var(--page-good)}
+  .diff .ln.ctx{color:var(--page-faint)}
+
+  /* ── truth table ──────────────────────────────────────────── */
+  .tablewrap{overflow-x:auto;border:1px solid var(--page-rule);border-radius:12px}
+  table{border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px}
+  th,td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--page-rule)}
+  thead th{font:600 10px/1.4 var(--mono);letter-spacing:.15em;text-transform:uppercase;
+    color:var(--page-faint);background:var(--page-panel);white-space:nowrap}
+  tbody tr:last-child td{border-bottom:none}
+  td.lift{font-weight:600}
+  td.mode{font:400 11px/1.4 var(--mono);color:var(--page-faint)}
+  td.out{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+  td.out.was{color:var(--page-dim)}
+  tr[data-drift="1"] td.out.was{color:var(--page-warn);background:var(--page-warnchip)}
+  tr[data-drift="1"] td.out.now{color:var(--page-good);background:var(--page-goodchip)}
+  .flag{display:inline-block;margin-left:7px;font:700 9.5px/1 var(--mono);
+    letter-spacing:.11em;color:var(--page-warn);vertical-align:middle}
+
+  /* ── verify ───────────────────────────────────────────────── */
+  .verify{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+  .vcard{border:1px solid var(--page-rule);border-radius:12px;padding:16px 18px;
+    display:flex;flex-direction:column;gap:7px;background:var(--page-panel)}
+  .vcard .vk{font:600 10px/1.3 var(--mono);letter-spacing:.15em;text-transform:uppercase;
+    color:var(--page-faint)}
+  .vcard .vv{font:800 25px/1 var(--sans);letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums;color:var(--page-good)}
+  .vcard .vv.warn{color:var(--page-warn)}
+  .vcard .vn{font-size:12.5px;line-height:1.5;color:var(--page-dim)}
+  .foot{border-top:1px solid var(--page-rule);padding-top:16px;
+    font:400 11.5px/1.75 var(--mono);color:var(--page-faint)}
+  .foot a{color:var(--page-accent)}
+
+  /* ══ animation ═════════════════════════════════════════════ */
+  @keyframes bankIn{
+    0%{opacity:0;transform:translateY(-14px) scale(.97)}
+    60%{opacity:.62}
+    100%{opacity:.62;transform:none}
+  }
+  .row.animBank{animation:bankIn .46s cubic-bezier(.22,.9,.3,1) both}
+  @keyframes tokLand{
+    0%{opacity:0;transform:translateY(-9px) scale(.7)}
+    55%{opacity:1;transform:translateY(0) scale(1.22)}
+    100%{opacity:1;transform:none}
+  }
+  .tok.animTok{animation:tokLand .58s .12s cubic-bezier(.3,1.4,.4,1) both}
+  @keyframes evaporate{
+    0%{opacity:.95;transform:none;filter:blur(0)}
+    100%{opacity:0;transform:translateY(-26px) scale(.72);filter:blur(3px)}
+  }
+  .evap{animation:evaporate 1.15s .14s ease-out both}
+  @keyframes riseIn{
+    0%{opacity:0;transform:translateY(13px)}
+    100%{opacity:1;transform:none}
+  }
+  .active.animRise{animation:riseIn .42s .06s cubic-bezier(.22,.9,.3,1) both}
+  @keyframes pillsOpen{
+    0%{opacity:0;transform:translateY(-7px) scaleY(.72);transform-origin:top}
+    100%{opacity:1;transform:none}
+  }
+  .pills.animPills{animation:pillsOpen .3s cubic-bezier(.22,.9,.3,1) both}
+  @keyframes chipPop{
+    0%{transform:scale(1)}45%{transform:scale(1.16)}100%{transform:scale(1)}
+  }
+  .chip.animChip{animation:chipPop .34s ease-out both}
+  @keyframes stale{
+    0%,100%{border-color:var(--line)}
+    35%,65%{border-color:var(--clay);background:rgba(213,111,62,.14)}
+  }
+  .pills.animStale{animation:stale 1.5s ease-in-out 2}
+  @keyframes logIn{0%{opacity:0;transform:translateX(-8px)}100%{opacity:1;transform:none}}
+  .ledger li.animLog{animation:logIn .3s ease-out both}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0ms!important;
+      transition-duration:.001ms!important}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="head">
+    <p class="eyebrow">Session walkthrough – live</p>
+    <h1>Banking a set <em>— flip the build and watch the number survive, or not</em></h1>
+    <p class="lede">
+      Everything from this session, running. The switch below really does swap the
+      code paths: <strong>BEFORE</strong> runs the row formatter and carry-over rules as
+      they shipped, <strong>AFTER</strong> runs what is on the branch now. Both
+      implementations are ported line for line from
+      <code>packages/core/src/engines/session.ts</code> and
+      <code>apps/mobile/app/workout.tsx</code>, so the difference you see is the diff.
+    </p>
+  </header>
+
+  <!-- ══ THE RIG ═══════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>The logger, both ways</h2>
+      <p class="tag">Tap the chip → pick an effort → Log set</p>
+    </div>
+
+    <div class="rig">
+      <div class="switch">
+        <p class="switchlab">Build</p>
+        <div class="toggle" id="toggle" data-build="after">
+          <span class="knob" aria-hidden="true"></span>
+          <button data-b="before" id="bBefore" aria-pressed="false">Before</button>
+          <button data-b="after" id="bAfter" aria-pressed="true">After</button>
+        </div>
+        <div class="phone" id="phone"></div>
+        <p class="hint">
+          The big figures are fixed in this demo — change the lift and the unit to vary
+          them. Everything else is live.
+        </p>
+        <p class="hint">
+          <strong style="color:var(--page-warn)">On the motion:</strong> the page's
+          animation is <em>illustrative and deliberately louder than the app.</em> The
+          token pops and the lost value visibly evaporates so the difference is legible
+          in a browser. On device the collapse is one <code>LayoutAnimation</code> on the
+          shared <code>springs.slide</code> curve at <code>durations.collapse</code>
+          180&nbsp;ms — the row travels and the token arrives with it, with no pop of its
+          own. Don't read the flourishes here as shipped behaviour.
+        </p>
+      </div>
+
+      <div class="panelcol">
+        <div class="ctrls">
+          <div class="crow">
+            <span class="k">Lift — picks the load mode</span>
+            <div class="seg" id="segLift"></div>
+          </div>
+          <div class="crow">
+            <span class="k">Preferences</span>
+            <div class="seg" id="segPrefs"></div>
+          </div>
+          <div class="crow">
+            <span class="k">Reset</span>
+            <div class="seg">
+              <button id="btnReset">↺ Fresh exercise</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ledger">
+          <div class="lhead">
+            <h3>What the build just did</h3>
+            <span class="n" id="ledgerCount">0 events</span>
+          </div>
+          <ol id="ledger"><li class="empty" style="display:block">Nothing yet — set an RPE and log the set.</li></ol>
+        </div>
+      </div>
+    </div>
+
+    <p class="prose">
+      <strong>The fastest way to see the bug:</strong> leave the build on BEFORE, tap the
+      <code>RPE –</code> chip, pick <code>8</code>, then hit <strong>Log set</strong>. The 8
+      lifts off the collapsing row and evaporates. Flip to AFTER and do it again: the same
+      8 lands in the row as a token and stays there. Then try <strong>＋ Add set</strong> on
+      each build, and try opening the chip and logging <em>without</em> picking anything.
+    </p>
+  </section>
+
+  <!-- ══ THE CHANGES ═══════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>The four changes</h2>
+      <p class="tag">Each one has a control above that demonstrates it</p>
+    </div>
+
+    <div class="changes">
+
+      <article class="change">
+        <div class="cmeta">
+          <p class="cwhere">apps/mobile/app/workout.tsx — the collapsed ledger row</p>
+          <h3>The effort survives the collapse</h3>
+          <p>
+            The row grows a fourth column carrying the chip's own word and colour, through
+            <code>rpeRirSwap</code> so the RIR preference follows it. It renders
+            <strong>nothing</strong> when the set is unrated — which is what makes a fourth
+            column affordable on a small phone at all — and it rides <em>inside</em> the
+            row's re-open target, because the number you want to correct is the likeliest
+            reason to tap the row.
+          </p>
+          <span class="tryit">Pick an RPE, then Log set — on both builds</span>
+        </div>
+        <div class="diff">
+<span class="ln ctx">  &lt;Pressable style={{ flex: 1 }} onPress={…}&gt;</span>
+<span class="ln ctx">    &lt;Text …&gt;{summary}&lt;/Text&gt;</span>
+<span class="ln del">- &lt;/Pressable&gt;</span>
+<span class="ln add">+   {effortLabel ? (</span>
+<span class="ln add">+     &lt;Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano,</span>
+<span class="ln add">+       letterSpacing: tracking.label, color: txt(C, C.amber) }}&gt;{effortLabel}&lt;/Text&gt;</span>
+<span class="ln add">+   ) : null}</span>
+<span class="ln add">+ &lt;/Pressable&gt;</span>
+<span class="ln ctx">  &lt;Text …&gt;{s.done ? "✓" : "○"}&lt;/Text&gt;</span>
+        </div>
+      </article>
+
+      <article class="change">
+        <div class="cmeta">
+          <p class="cwhere">packages/core/src/engines/session.ts — strengthSetSummary</p>
+          <h3>One formatter for one set</h3>
+          <p>
+            The row had rolled its own <code>load × reps</code> line, and the two had
+            already drifted: it special-cased only pure <code>bodyweight</code>, so an
+            <strong>assisted</strong> pull-up printed <code>20 kg × 5</code> in the ledger —
+            reading as if 20 kg had been <em>added</em> — while the "last time" reference
+            three lines above it wrote <code>−20×5</code>. Now both read one function, with
+            two styles for the two genuinely different readings.
+          </p>
+          <span class="tryit">Switch the lift to Assisted Pull-Up, then flip the build</span>
+        </div>
+        <div class="diff">
+<span class="ln del">- const loadPart = !bw &amp;&amp; s.load ? `${displayLoad(s.load, prefs.units)} ${unitLabel}` : "";</span>
+<span class="ln del">- const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";</span>
+<span class="ln del">- const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";</span>
+<span class="ln add">+ const summary = strengthSetSummary(x.name, s, { style: "row", units: prefs.units });</span>
+<span class="ln ctx"></span>
+<span class="ln ctx">  // core — the per-set half of strengthSetsSummary</span>
+<span class="ln add">+ const sign = mode === "bodyweight-plus" ? "+" : mode === "assisted" ? "−" : "";</span>
+<span class="ln add">+ const loaded = mode !== "bodyweight" &amp;&amp; !!s.load;</span>
+        </div>
+      </article>
+
+      <article class="change">
+        <div class="cmeta">
+          <p class="cwhere">apps/mobile/app/workout.tsx — emptySet</p>
+          <h3>Carry-over stopped copying the effort</h3>
+          <p>
+            A new set arrived pre-rated at the last set's RPE, on an amber chip
+            indistinguishable from one the athlete had actually judged — and if they never
+            touched it, <strong>that guess was what saved</strong>. Load and reps are a plan
+            worth carrying; an RPE is an observation of a set that has happened. The
+            Builder's carry-over still copies it, and should: there an RPE is a
+            prescription, authored in advance.
+          </p>
+          <span class="tryit">Rate a set, log it, then ＋ Add set — on both builds</span>
+        </div>
+        <div class="diff">
+<span class="ln ctx">  const emptySet = (from?: WSet): WSet =&gt; ({</span>
+<span class="ln ctx">    uid: uid(),</span>
+<span class="ln ctx">    reps: from?.reps ?? "",</span>
+<span class="ln ctx">    load: from?.load ?? "",</span>
+<span class="ln del">-   rpe: from?.rpe ?? "",</span>
+<span class="ln add">+   rpe: "",</span>
+<span class="ln ctx">    done: false,</span>
+<span class="ln ctx">  });</span>
+        </div>
+      </article>
+
+      <article class="change">
+        <div class="cmeta">
+          <p class="cwhere">apps/mobile/app/workout.tsx — the RPE disclosure state</p>
+          <h3>The pill row closes with its own set</h3>
+          <p>
+            It was keyed by <em>exercise</em>, on the reasoning that only one set is active
+            per exercise. True — but the state outlived the set it was opened for, because
+            banking never cleared it: open the pill row, pick nothing, log the set, and the
+            row was sitting open on the <strong>next</strong> set. A set's own uid is unique
+            across the session.
+          </p>
+          <span class="tryit">Open the chip, pick nothing, Log set — watch BEFORE flash</span>
+        </div>
+        <div class="diff">
+<span class="ln del">- const [rpeOpenUid, setRpeOpenUid] = useState&lt;string | null&gt;(null);</span>
+<span class="ln add">+ const [rpeOpenSet, setRpeOpenSet] = useState&lt;string | null&gt;(null);</span>
+<span class="ln ctx"></span>
+<span class="ln del">- onPress={() =&gt; setRpeOpenUid((u) =&gt; (u === x.uid ? null : x.uid))}</span>
+<span class="ln add">+ onPress={() =&gt; setRpeOpenSet((u) =&gt; (u === s.uid ? null : s.uid))}</span>
+<span class="ln del">- {prefs.detailed &amp;&amp; rpeOpenUid === x.uid &amp;&amp; (</span>
+<span class="ln add">+ {prefs.detailed &amp;&amp; rpeOpenSet === s.uid &amp;&amp; (</span>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ══ MOTION ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>The motion that was never there</h2>
+      <p class="tag">Flip <em>Motion off</em> above to feel what shipped</p>
+    </div>
+    <p class="prose">
+      Reported separately, and the larger finding: <strong>"I think I never saw them in
+      my app."</strong> Correct. Four things were checked before anything was changed,
+      because a no-op in motion code is invisible and guessing at it wastes a device
+      build. The plumbing turned out to be <strong>sound</strong> — against the installed
+      RN 0.85.3 the JS gate <code>isLayoutAnimationEnabled</code> and the C++
+      <code>enableLayoutAnimationsOnIOS</code> both default true, so the first suspicion
+      (that <code>newArchEnabled</code> makes <code>LayoutAnimation</code> a no-op under
+      Fabric) was <em>wrong</em> for this version. <code>useReducedMotion</code> defaults
+      false. The tokens are real. The defect was simply that
+      <code>animateListChange</code> was never called for eleven of the layout changes
+      the logger makes.
+    </p>
+    <p class="prose">
+      It sat under a comment reading <em>"EVERY MUTATION OF THE LIST TRAVELS"</em>,
+      which is how it survived: the sentence meant the <em>exercise</em> list, said "the
+      list", and read like a guarantee. The fix is a door —
+      <code>commitSets</code> arms the animation, then commits — so the seven set
+      mutations cannot forget. The four block changes are not set mutations, so they arm
+      it themselves, and the three ways to dismiss the rest banner were collapsed into
+      one <code>stopRest</code> so they cannot disagree.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>What you tap</th><th>What jumped before</th><th>Routed through</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="lift">Log set ✓</td><td>A hero block four rows tall replaced by a one-line row, and the next set's hero opening below it — the most-repeated interaction in the app</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">＋ Add set</td><td>Nothing — this was the one path that already animated</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">A preset scheme (3×3 … 10×10)</td><td>The whole un-banked queue replaced; up to ten rows at once for GVT</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">Drop set</td><td>A row appearing fully formed at the end of the list</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">Warm-up set</td><td>Same</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">Cool-down set</td><td>Same</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">Auto warm-up ramp</td><td>Three rows PREPENDED — every set below shunted down at once</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">The RPE chip</td><td>The pill row popping in and shoving the sets below it down</td><td class="out">itself</td></tr>
+          <tr><td class="lift">The set-type control</td><td>The same disclosure, one card over — fixing one and not its twin was the inconsistency the door was built to end</td><td class="out">itself</td></tr>
+          <tr><td class="lift">✕ on the coach tip</td><td>A whole card leaving the top of the scroller; everything below jumped up by its height</td><td class="out">itself</td></tr>
+          <tr><td class="lift">■ Stop rest</td><td>A two-row banner unmounting, reachable three ways</td><td class="out">stopRest</td></tr>
+          <tr><td class="lift">⛓ Superset</td><td>A badge entering the card header and reflowing the lift's name beside it</td><td class="out">itself</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose">
+      <strong>Four things still do not animate, deliberately.</strong> Renaming a lift
+      writes per keystroke. <code>setSetField</code> and the load stepper change a value
+      inside a row that stays put — animating those would spring the card on every digit.
+      The drag <em>commit</em> stays still because the displaced rows are already standing
+      in their new slots, and a layout animation would drag them back across a distance
+      they had just crossed. And the hydration paths replace the whole board on load,
+      where there is no prior position to travel from. Each is named in
+      <code>apps/mobile/lib/list-motion.test.ts</code> with its reason — an allowlist
+      rather than a count, because the exemptions are judgements, and naming them forces
+      whoever adds the next one to decide which kind theirs is. That is the decision that
+      got skipped eleven times.
+    </p>
+  </section>
+
+  <!-- ══ TRUTH TABLE ═══════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>Every load mode, both formatters</h2>
+      <p class="tag">Computed live — flagged rows are where the row used to lie</p>
+    </div>
+    <p class="prose">
+      One set of <code>load 20 / reps 5</code> (or the lift's own seed), rendered by the row's
+      old private formatter and by the shared one. Follows the unit preference above.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Lift</th><th>Load mode</th><th>Row, before</th><th>Row, after</th>
+            <th>Set list (compact)</th>
+          </tr>
+        </thead>
+        <tbody id="truth"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ══ VERIFY ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>What was run</h2>
+      <p class="tag">On the branch, this session</p>
+    </div>
+    <div class="verify">
+      <div class="vcard">
+        <span class="vk">@hybrid/core test</span>
+        <span class="vv">3632 ✓</span>
+        <span class="vn">All pass, 7 of them new — the formatter's two styles including the weighted / assisted signing.</span>
+      </div>
+      <div class="vcard">
+        <span class="vk">@hybrid/mobile test</span>
+        <span class="vv">177 ✓</span>
+        <span class="vn">All pass, 6 of them new — the list-motion guard. Also carries the design-token ratchets, the gate a raw fontSize or letterSpacing fails.</span>
+      </div>
+      <div class="vcard">
+        <span class="vk">mobile typecheck</span>
+        <span class="vv">clean</span>
+        <span class="vn">And <code>expo export --platform ios</code> bundles at 12&nbsp;MB, which catches import-time errors tsc cannot.</span>
+      </div>
+      <div class="vcard">
+        <span class="vk">@hybrid/web test</span>
+        <span class="vv">158 ✓</span>
+        <span class="vn">Including 6 new ones that guard <em>this page</em> — see below.</span>
+      </div>
+      <div class="vcard">
+        <span class="vk">web typecheck</span>
+        <span class="vv">clean</span>
+        <span class="vn">It reported 21 errors for most of this session. They were <strong>phantoms</strong> — see below.</span>
+      </div>
+    </div>
+
+    <p class="prose">
+      <strong>The 21 that were not there.</strong> For most of this session
+      <code>@hybrid/web typecheck</code> failed with 21 errors saying
+      <code>SessionSet</code>, <code>SessionStream</code> and <code>SessionLap</code> do not
+      exist on <code>PrismaClient</code>. They were reported here as pre-existing and out of
+      scope — twice — which was the wrong call. The models <em>do</em> exist
+      (<code>prisma/schema.prisma</code> lines 983, 1073, 1133); the generated <em>types</em>
+      did not, because nothing in a fresh container runs <code>prisma generate</code> — there
+      is no postinstall hook, and only <code>build</code> does it. One command cleared all 21.
+      Vercel was never affected (<code>build</code> generates first) and neither was CI (which
+      generates immediately before its typecheck step, for exactly this reason). Only the
+      sandbox was stale — and it would have been stale for every future session, producing 21
+      errors indistinguishable from real ones, naming real files and real models, whose obvious
+      "fix" is to edit working code. The SessionStart hook now generates the client, mirroring
+      CI. <code>pnpm typecheck</code> passes across all three packages.
+    </p>
+    <p class="prose">
+      <strong>This page is checked, not just written.</strong> The simulation above needs
+      plain-JS copies of four functions to run standalone, and a demo that quietly
+      disagrees with the code is worse than no demo, because it is convincing.
+      <code>apps/web/__tests__/demo-port-fidelity.test.ts</code> therefore reads this
+      file's own script — everything between its <code>PORT:START</code> and
+      <code>PORT:END</code> markers — evaluates it, and sweeps it against
+      <code>@hybrid/core</code> across all <strong>882</strong> combinations of lift, load,
+      rep count, unit and style. Nothing is duplicated in the test; change
+      <code>strengthSetSummary</code> and this page fails the build until it is updated
+      too. It was confirmed to fail: breaking the port's sign logic turns 6 passes into
+      2 failures naming the exact case.
+    </p>
+  </section>
+
+  <p class="foot">
+    Both formatters, <code>displayLoad</code>, <code>rpeRirSwap</code> and
+    <code>RPE_SCALE</code> in this page are ports of the real source, and the phone is drawn
+    from the product's own tokens at real sizes — fs.nano 10, fs.caption 12, fs.body 13,
+    fs.stat 46, RADIUS.card 28, RADIUS.mark 3. The diagnosis and the three treatments that
+    were rejected live in <code>design/rpe-invisible-after-banking.html</code>.
+  </p>
+
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ── ports of the real source ──────────────────────────────── */
+  /* The page claims these are faithful ports, and that claim is CHECKED rather
+     than asserted: apps/web/__tests__/demo-port-fidelity.test.ts extracts
+     everything between these two markers, runs it, and sweeps it against the
+     real @hybrid/core functions across every lift × load × reps × unit × style.
+     Change the source and this demo fails the build until it is updated too —
+     which is the only way a page like this stays true. Do not remove the
+     markers, and keep the ports free of DOM access so they can be evaluated
+     standalone. */
+  /* PORT:START */
+  const KG_PER_LB = 0.45359237;
+  const kgToUnit = (kg, u) => (u === "lb" ? kg / KG_PER_LB : kg);
+  const roundDisp = (v, u) => (u === "lb" ? Math.round(v) : Math.round(v * 2) / 2);
+  function displayLoad(kgStr, u) {
+    if (u === "kg") return kgStr;
+    const n = parseFloat(kgStr);
+    if (!Number.isFinite(n)) return kgStr;
+    return String(roundDisp(kgToUnit(n, u), u));
+  }
+  function rpeRirSwap(value, asRir) {
+    if (!asRir) return value;
+    const n = parseFloat(value);
+    if (!Number.isFinite(n)) return value;
+    return String(Math.max(0, Math.round((10 - n) * 10) / 10));
+  }
+  const RPE_SCALE = [
+    { rpe: 10, rir: "0" }, { rpe: 9.5, rir: "0–1" }, { rpe: 9, rir: "1" },
+    { rpe: 8, rir: "2" }, { rpe: 7, rir: "3" }, { rpe: 6, rir: "4+" }, { rpe: 5, rir: "5+" },
+  ];
+
+  const LIFTS = {
+    "Back Squat":       { mode: "external",        measure: "reps",     glyph: "🏋", load: "100", reps: "5",  last: "95×5, 95×5, 95×5" },
+    "Assisted Pull-Up": { mode: "assisted",        measure: "reps",     glyph: "💪", load: "20",  reps: "6",  last: "−20×6, −20×5" },
+    "Weighted Pull-Up": { mode: "bodyweight-plus", measure: "reps",     glyph: "💪", load: "20",  reps: "5",  last: "+20×5, +15×6" },
+    "Pull-Up":          { mode: "bodyweight",      measure: "reps",     glyph: "💪", load: "",    reps: "8",  last: "8, 7, 6" },
+    "Plank":            { mode: "bodyweight",      measure: "time",     glyph: "🧘", load: "",    reps: "45", last: "45 s, 45 s" },
+    "Farmer Carry":     { mode: "external",        measure: "distance", glyph: "🧳", load: "32",  reps: "40", last: "32×40" },
+  };
+
+  // AFTER — core strengthSetSummary, ported verbatim.
+  function strengthSetSummary(name, s, opts = {}) {
+    const ex = LIFTS[name];
+    const mode = ex ? ex.mode : "external";
+    const measure = ex && ex.measure === "time" ? "s" : ex && ex.measure === "distance" ? "m" : "reps";
+    const sign = mode === "bodyweight-plus" ? "+" : mode === "assisted" ? "−" : "";
+    const loaded = mode !== "bodyweight" && !!s.load;
+    if (opts.style === "row") {
+      const unit = opts.units === "lb" ? "lb" : "kg";
+      const load = loaded ? `${sign}${displayLoad(s.load, opts.units || "kg")} ${unit}` : "";
+      const reps = s.reps ? `${s.reps} ${measure}` : "";
+      return [load, reps].filter(Boolean).join(" × ") || "—";
+    }
+    const bare = s.reps ? `${s.reps}${measure === "reps" ? "" : " " + measure}` : "–";
+    if (loaded) return `${sign}${s.load}×${s.reps || "–"}`;
+    return mode === "external" ? `–×${s.reps || "–"}` : bare;
+  }
+
+  // BEFORE — the private line the row used to build for itself.
+  function oldRowSummary(name, s, units) {
+    const ex = LIFTS[name];
+    const bw = ex && ex.mode === "bodyweight";
+    const unitLabel = units === "lb" ? "lb" : "kg";
+    const measureLabel = ex && ex.measure === "time" ? "s" : ex && ex.measure === "distance" ? "m" : "reps";
+    const loadPart = !bw && s.load ? `${displayLoad(s.load, units)} ${unitLabel}` : "";
+    const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";
+    return [loadPart, repsPart].filter(Boolean).join(" × ") || "—";
+  }
+  /* PORT:END */
+
+  /* ── state ─────────────────────────────────────────────────── */
+  let seq = 0;
+  const uid = () => `s${++seq}`;
+  const S = {
+    build: "after",
+    motion: true,   // the layout animation the app was missing entirely
+    lift: "Back Squat",
+    units: "kg",
+    asRir: false,
+    detailed: true,
+    sets: [],
+    openSet: null,   // AFTER — keyed by the set's own uid
+    openEx: false,   // BEFORE — one flag for the whole exercise
+    log: [],
+    anim: {},
+  };
+
+  function seed() {
+    const L = LIFTS[S.lift];
+    S.sets = [0, 1, 2].map(() => ({ uid: uid(), load: L.load, reps: L.reps, rpe: "", done: false }));
+    S.openSet = null;
+    S.openEx = false;
+    S.anim = {};
+  }
+
+  const activeIndex = () => S.sets.findIndex((s) => !s.done);
+  const effortWord = () => (S.asRir ? "RIR" : "RPE");
+  const isOpen = (set) => (S.build === "before" ? S.openEx : S.openSet === set.uid);
+
+  function say(tone, html) {
+    S.log.unshift({ tone, html, fresh: true });
+    if (S.log.length > 40) S.log.pop();
+  }
+
+  /* ── actions ───────────────────────────────────────────────── */
+  function toggleChip(set) {
+    if (S.build === "before") S.openEx = !S.openEx;
+    else S.openSet = S.openSet === set.uid ? null : set.uid;
+    if (isOpen(set)) S.anim.pills = true;
+    render();
+  }
+
+  function pickRpe(set, val) {
+    const on = set.rpe === val;
+    set.rpe = on ? "" : val;
+    if (S.build === "before") S.openEx = false; else S.openSet = null;
+    S.anim.chip = set.uid;
+    const shown = rpeRirSwap(set.rpe, S.asRir);
+    say("neu", on
+      ? `Effort cleared on set ${S.sets.indexOf(set) + 1}.`
+      : `Set ${S.sets.indexOf(set) + 1} rated <b>${effortWord()} ${shown}</b> — stored on the set as RPE ${set.rpe}.`);
+    render();
+  }
+
+  function logSet() {
+    const i = activeIndex();
+    if (i < 0) return;
+    const set = S.sets[i];
+    set.done = true;
+    S.anim.bank = set.uid;
+    S.anim.rise = true;
+
+    const n = i + 1;
+    if (set.rpe) {
+      const shown = rpeRirSwap(set.rpe, S.asRir);
+      if (S.build === "before") {
+        S.anim.evap = set.uid;
+        say("bad", `Set ${n} banked — and <b>${effortWord()} ${shown} vanished</b>. The row's line is load and reps only, so the value is stored, saveable, and undrawn.`);
+      } else {
+        S.anim.tok = set.uid;
+        say("good", `Set ${n} banked — <b>${effortWord()} ${shown}</b> collapsed into the row as a token, same word, same colour.`);
+      }
+    } else {
+      say("neu", `Set ${n} banked with no effort rated — the row stays three columns wide.`);
+    }
+
+    // The disclosure state, on each build.
+    if (S.build === "before" && S.openEx) {
+      S.anim.stale = true;
+      say("bad", `The pill row was open on set ${n} and <b>banking never cleared it</b> — it is now sitting open on set ${n + 1}, keyed to the exercise rather than the set.`);
+    }
+    if (S.build === "after" && S.openSet === set.uid) {
+      S.openSet = null;
+      say("good", `The pill row closed with the set that owned it — <code class="c">rpeOpenSet</code> held set ${n}'s uid, and set ${n} is no longer active.`);
+    }
+    render();
+  }
+
+  function addSet() {
+    const last = S.sets[S.sets.length - 1];
+    const carried = { uid: uid(), load: last ? last.load : "", reps: last ? last.reps : "", rpe: "", done: false };
+    if (S.build === "before" && last && last.rpe) {
+      carried.rpe = last.rpe; // emptySet: rpe: from?.rpe ?? ""
+      const shown = rpeRirSwap(carried.rpe, S.asRir);
+      say("bad", `Set added — and carry-over <b>copied ${effortWord()} ${shown} onto it</b>. Nothing has been lifted yet, and if it is never touched that guess is what saves.`);
+    } else if (last && last.rpe) {
+      say("good", `Set added carrying load and reps. <b>The effort did not come with it</b> — an RPE is an observation, not a plan.`);
+    } else {
+      say("neu", "Set added, carrying the previous load and reps.");
+    }
+    S.sets.push(carried);
+    S.anim.rise = true;
+    render();
+  }
+
+  function reopen(set) {
+    if (!set.done) return;
+    set.done = false;
+    S.anim.rise = true;
+    say("neu", `Set ${S.sets.indexOf(set) + 1} re-opened — tapping a banked row makes it the active card again, which is why the effort token lives inside that tap target.`);
+    render();
+  }
+
+  /* ── render ────────────────────────────────────────────────── */
+  const el = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+  function rowSummary(set) {
+    return S.build === "before"
+      ? oldRowSummary(S.lift, set, S.units)
+      : strengthSetSummary(S.lift, set, { style: "row", units: S.units });
+  }
+
+  function renderPhone() {
+    // ONE gate for every animation class. With motion off, the commit still
+    // happens — rows just arrive fully formed and everything below teleports,
+    // which is exactly what banking a set did before this session.
+    const A = S.motion ? S.anim : {};
+    const L = LIFTS[S.lift];
+    const ai = activeIndex();
+    const total = S.sets.length;
+    const bw = L.mode === "bodyweight";
+    const unitLabel = S.units === "lb" ? "lb" : "kg";
+    const measureLabel = L.measure === "time" ? "s" : L.measure === "distance" ? "m" : "reps";
+    let h = `<div class="acard">
+      <div class="xhead">
+        <span class="tile">${L.glyph}</span>
+        <span class="xname">${esc(S.lift)}</span>
+        <span class="xkill">✕</span>
+      </div>
+      <div class="lastline">Last time – ${esc(L.last)}</div>`;
+
+    S.sets.forEach((set, i) => {
+      if (i === ai) {
+        const shown = S.detailed ? rpeRirSwap(set.rpe, S.asRir) : "";
+        const open = isOpen(set);
+        h += `<div class="active ${A.rise ? "animRise" : ""}">
+          <div class="setlab">
+            <span class="kicker">Set ${i + 1} of ${total} — up now</span>
+            <span class="right">
+              <span class="rest">Rest 1:30</span>
+              ${S.detailed ? `<button class="chip ${A.chip === set.uid ? "animChip" : ""}" data-set="${shown ? 1 : 0}"
+                 data-act="chip" data-uid="${set.uid}"
+                 aria-label="Set the effort for set ${i + 1}">
+                <span class="lab">${effortWord()}</span><span class="val">${shown || "–"}</span>
+              </button>` : ""}
+              <span class="type">WORKING ⌄</span>
+            </span>
+          </div>
+          <div class="figs">
+            <span class="fig">${esc(bw ? set.reps : displayLoad(set.load, S.units) || "0")}</span>
+            <span class="unit">${bw ? measureLabel : unitLabel}</span>
+            ${bw ? "" : `<span class="times">×</span><span class="fig">${esc(set.reps || "0")}</span><span class="unit">${measureLabel}</span>`}
+          </div>`;
+        if (S.detailed && open) {
+          h += `<div class="pills ${A.pills ? "animPills" : ""} ${A.stale ? "animStale" : ""}">
+            <button class="swap" data-act="swap">${effortWord()} ⇄</button>`;
+          RPE_SCALE.slice().reverse().forEach((step) => {
+            const val = String(step.rpe);
+            const on = set.rpe === val;
+            h += `<button class="pill" data-on="${on ? 1 : 0}" data-act="pill" data-uid="${set.uid}" data-val="${val}"
+                    aria-pressed="${on}">${S.asRir ? step.rir : val}</button>`;
+          });
+          h += `</div>`;
+        }
+        h += `</div>`;
+      } else {
+        const shownTok = S.detailed ? rpeRirSwap(set.rpe, S.asRir) : "";
+        const tok = S.build === "after" && shownTok ? `${effortWord()} ${shownTok}` : "";
+        const evap = A.evap === set.uid ? `${effortWord()} ${rpeRirSwap(set.rpe, S.asRir)}` : "";
+        h += `<div class="row ${set.done ? "done" : "queued"} ${A.bank === set.uid ? "animBank" : ""}">
+          <span class="badge">${i + 1}</span>
+          <button class="hit" data-act="reopen" data-uid="${set.uid}"
+            ${set.done ? "" : "disabled style=\"cursor:default\""}
+            aria-label="Set ${i + 1}, ${esc(rowSummary(set))}${tok ? ", " + tok : ""}${set.done ? ". Tap to re-open" : ""}">
+            <span class="sum">${esc(rowSummary(set))}</span>
+            ${tok ? `<span class="tok ${A.tok === set.uid ? "animTok" : ""}">${tok}</span>` : ""}
+          </button>
+          <span class="check">${set.done ? "✓" : "○"}</span>
+          ${evap ? `<span class="evap">${evap}</span>` : ""}
+        </div>`;
+      }
+    });
+
+    h += `<div class="addset" role="button" tabindex="0" data-act="add">
+        <span class="plus">＋</span><span class="word">Add set</span>
+      </div>
+      <div class="dock">
+        <button class="sat">❚❚</button>
+        <button class="primary" data-act="log" ${ai < 0 ? "disabled" : ""}>${ai < 0 ? "All sets banked" : "Log set ✓"}</button>
+        <button class="sat">⚑</button>
+      </div>
+    </div>`;
+    el("phone").innerHTML = h;
+  }
+
+  function renderLedger() {
+    const ol = el("ledger");
+    el("ledgerCount").textContent = `${S.log.length} event${S.log.length === 1 ? "" : "s"}`;
+    if (!S.log.length) {
+      ol.innerHTML = `<li class="empty" style="display:block">Nothing yet — set an RPE and log the set.</li>`;
+      return;
+    }
+    const mark = { bad: "✕", good: "✓", neu: "·" };
+    ol.innerHTML = S.log.map((e) => `<li class="${e.tone} ${e.fresh ? "animLog" : ""}">
+      <span class="m">${mark[e.tone]}</span><span>${e.html}</span></li>`).join("");
+    S.log.forEach((e) => { e.fresh = false; });
+  }
+
+  function renderTruth() {
+    const probe = { load: "20", reps: "5" };
+    el("truth").innerHTML = Object.keys(LIFTS).map((name) => {
+      const L = LIFTS[name];
+      const s = { load: L.mode === "bodyweight" ? "" : probe.load, reps: probe.reps };
+      const was = oldRowSummary(name, s, S.units);
+      const now = strengthSetSummary(name, s, { style: "row", units: S.units });
+      const compact = strengthSetSummary(name, s);
+      const drift = was !== now;
+      return `<tr data-drift="${drift ? 1 : 0}">
+        <td class="lift">${esc(name)}</td>
+        <td class="mode">${L.mode} / ${L.measure}</td>
+        <td class="out was">${esc(was)}${drift ? '<span class="flag">WRONG</span>' : ""}</td>
+        <td class="out now">${esc(now)}</td>
+        <td class="out">${esc(compact)}</td>
+      </tr>`;
+    }).join("");
+  }
+
+  function renderControls() {
+    el("segLift").innerHTML = Object.keys(LIFTS).map((n) =>
+      `<button data-act="lift" data-val="${esc(n)}" aria-pressed="${S.lift === n}">${esc(n)}</button>`).join("");
+    el("segPrefs").innerHTML = `
+      <button data-act="units" data-val="kg" aria-pressed="${S.units === "kg"}">kg</button>
+      <button data-act="units" data-val="lb" aria-pressed="${S.units === "lb"}">lb</button>
+      <button data-act="rir" aria-pressed="${S.asRir}">${S.asRir ? "RIR" : "RPE"} scale</button>
+      <button data-act="detailed" aria-pressed="${S.detailed}">${S.detailed ? "Detailed" : "Simple"} mode</button>
+      <button data-act="motion" aria-pressed="${S.motion}">Motion ${S.motion ? "on" : "off"}</button>`;
+    const t = el("toggle");
+    t.dataset.build = S.build;
+    el("bBefore").setAttribute("aria-pressed", String(S.build === "before"));
+    el("bAfter").setAttribute("aria-pressed", String(S.build === "after"));
+  }
+
+  function render() {
+    renderControls();
+    renderPhone();
+    renderLedger();
+    renderTruth();
+    S.anim = {};
+  }
+
+  /* ── wiring ────────────────────────────────────────────────── */
+  const byUid = (u) => S.sets.find((s) => s.uid === u);
+
+  document.addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-act], [data-b]");
+    if (!b) return;
+    if (b.dataset.b) {
+      if (S.build === b.dataset.b) return;
+      S.build = b.dataset.b;
+      // The disclosure state is keyed differently on each build — carry the
+      // intent across so flipping mid-demo doesn't strand an open row.
+      if (S.build === "before") { S.openEx = !!S.openSet; S.openSet = null; }
+      else { const a = S.sets[activeIndex()]; S.openSet = S.openEx && a ? a.uid : null; S.openEx = false; }
+      say("neu", S.build === "before"
+        ? "Switched to <b>BEFORE</b> — the row builds its own load × reps line, carry-over copies the effort, the disclosure is keyed by exercise."
+        : "Switched to <b>AFTER</b> — the row reads the shared formatter and carries an effort token, carry-over leaves the effort blank, the disclosure is keyed by set.");
+      render();
+      return;
+    }
+    const act = b.dataset.act;
+    if (act === "chip") toggleChip(byUid(b.dataset.uid));
+    else if (act === "pill") pickRpe(byUid(b.dataset.uid), b.dataset.val);
+    else if (act === "log") logSet();
+    else if (act === "add") addSet();
+    else if (act === "reopen") reopen(byUid(b.dataset.uid));
+    else if (act === "swap") { S.asRir = !S.asRir; say("neu", `Scale shown as <b>${effortWord()}</b> — stored as RPE either way (RIR = 10 − RPE).`); render(); }
+    else if (act === "lift") { S.lift = b.dataset.val; seed(); say("neu", `Lift set to <b>${esc(S.lift)}</b> — load mode <code class="c">${LIFTS[S.lift].mode}</code>.`); render(); }
+    else if (act === "units") { S.units = b.dataset.val; render(); }
+    else if (act === "rir") { S.asRir = !S.asRir; render(); }
+    else if (act === "detailed") { S.detailed = !S.detailed; render(); }
+    else if (act === "motion") {
+      S.motion = !S.motion;
+      say(S.motion ? "good" : "bad", S.motion
+        ? "Motion <b>on</b> — the collapse travels, on the shared <code class=\"c\">springs.slide</code> curve."
+        : "Motion <b>off</b> — this is what banking a set did all along: the hero row is replaced between two frames and everything below teleports.");
+      render();
+    }
+  });
+
+  el("btnReset").addEventListener("click", () => {
+    seed(); S.log = []; render();
+  });
+
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "Enter" && ev.key !== " ") return;
+    const t = ev.target.closest('[data-act="add"]');
+    if (t) { ev.preventDefault(); addSet(); }
+  });
+
+  seed();
+  render();
+})();
+</script>
