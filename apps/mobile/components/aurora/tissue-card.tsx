@@ -421,12 +421,15 @@ function Rows({ rows, C, t }: { rows: TissueRow[]; C: Palette; t: (k: string) =>
  * to be big enough to carry a meaning they never could.
  */
 /**
- * The vertical padding each receipt carries purely to be tappable. A figure
- * over a label is about 33dp of type; 6dp top and bottom lifts the touch box
- * to ~45dp, which is the floor a thumb needs. The row cancels it with a
- * matching negative margin, so this buys touch height and costs no layout.
+ * The vertical padding each receipt carries purely to be tappable.
+ *
+ * A 13pt figure over a 10pt label with 3dp between them is ~31dp of type at
+ * the faces' own line heights — measured at 41dp in the browser twin, which is
+ * UNDER the 44dp a thumb needs. 7dp top and bottom clears it with a dp to
+ * spare. The row cancels it with a matching negative margin, so this buys
+ * touch height and costs no layout — CoachRail's bleed device.
  */
-const RECEIPT_PAD = 6;
+const RECEIPT_PAD = 7;
 
 /** ONE FIGURE, and its own door. Chromeless — a receipt is type on the card,
  *  like the tissue rows above it, and a pressable is not a reason to draw a
