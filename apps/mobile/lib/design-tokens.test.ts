@@ -383,7 +383,10 @@ describe("geometry", () => {
     // 162 → 160, re-measured rather than moved: two sites went with other work
     // and nobody re-pinned. Which is the discipline in this file's header — a
     // ceiling above its count is a budget for more of the thing.
-    expectAtMost(hits(/borderRadius:\s*\d/g), 160, "raw borderRadius → RADIUS.*");
+    // 160 → 159: the admin console drew its chart legend swatch twice, once per
+    // panel, and the second copy was about to become a third. One `Legend` in
+    // the admin _kit now serves both, on RADIUS.pill.
+    expectAtMost(hits(/borderRadius:\s*\d/g), 159, "raw borderRadius → RADIUS.*");
   });
 });
 

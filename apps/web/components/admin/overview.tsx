@@ -15,6 +15,7 @@ import {
 import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import { Loading } from "../aurora/skeleton";
+import TheNumber from "./athlete-weeks";
 
 type Stats = {
   totalUsers: number;
@@ -48,13 +49,16 @@ export default function AdminOverview() {
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: space.lg }}>
-      <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} c={LIME} />
-      <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" c={LIME} />
-      <Stat label="Sessions logged" value={s.sessions.toLocaleString()} c={CHALK} />
+      {/* THE NUMBER leads the console. Everything below it is context: the
+          counters used to sit here as seven equal hero tiles, which is how a
+          registration count came to look like the same kind of fact as a week
+          of labeled training. It isn't one, so it no longer reads as one. */}
+      <TheNumber />
+
+      <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" c={CHALK} />
       <Stat label="Active coaches" value={s.coaches.toLocaleString()} c={VIOLET} />
       <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} c={VIOLET} />
-      <Stat label="Avg sessions / user" value={s.totalUsers ? (s.sessions / s.totalUsers).toFixed(1) : "0"} c={CHALK} />
-      <Stat label="30d activation" value={s.totalUsers ? `${Math.round((s.mau / s.totalUsers) * 100)}%` : "0%"} c={LIME} />
+      <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} c={CHALK} />
 
       <ChartFrame span={4} title="Growth" kicker="Last 12 weeks – signups vs sessions" c={LIME}>
         <ResponsiveContainer width="100%" height={240}>
