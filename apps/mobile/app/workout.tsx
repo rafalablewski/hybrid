@@ -53,6 +53,7 @@ import {
   formatCardioPr,
   cardioPace,
   blockSummary,
+  strengthSetSummary,
   lastStrengthByLift,
   supersetLabels,
   toggleSuperset,
@@ -247,11 +248,23 @@ type WExercise = {
   group?: string;
 };
 
+/**
+ * A fresh set, optionally carrying the previous one's numbers forward.
+ *
+ * Load and reps carry; EFFORT DOES NOT. Carry-over exists so the next set
+ * arrives as a plan you only have to correct — but an RPE is not a plan, it is
+ * an observation of a set that has happened, and copying it forward had the
+ * logger assert an effort for work not yet done: a brand-new set arrived
+ * pre-rated at 8 on an amber chip, indistinguishable from one the athlete had
+ * actually judged, and if they never touched it that guess was what got saved.
+ * (The BUILDER's carry-over does copy it, and should: there an RPE is a
+ * prescription — a target to hit, authored in advance.)
+ */
 const emptySet = (from?: WSet): WSet => ({
   uid: uid(),
   reps: from?.reps ?? "",
   load: from?.load ?? "",
-  rpe: from?.rpe ?? "",
+  rpe: "",
   done: false,
 });
 
@@ -352,8 +365,12 @@ export default function Workout() {
   // a ⋯ zone, and absorbed the standalone preset rail with them.
   const [specialUid, setSpecialUid] = useState<string | null>(null);
   // LIVE active-set RPE: hidden behind a chip on the up-now card, expanded per
-  // exercise (only one set is active per exercise, so keying by uid is enough).
-  const [rpeOpenUid, setRpeOpenUid] = useState<string | null>(null);
+  // SET. It was keyed by EXERCISE, on the reasoning that only one set is active
+  // per exercise — true, but the state outlived the set it was opened for:
+  // banking never cleared it, so opening the pill row, picking nothing and
+  // logging the set left the row sitting open on the NEXT set. A set's own uid
+  // is unique across the session, so the row closes with the set that owns it.
+  const [rpeOpenSet, setRpeOpenSet] = useState<string | null>(null);
   // Which exercise has its detail sheet up (per-set bar speed + live summary).
   const [sheetUid, setSheetUid] = useState<string | null>(null);
   // Finish, tapped: the dock swaps to a confirm IN PLACE rather than throwing a
@@ -1557,7 +1574,7 @@ export default function Workout() {
                                   const set = !!rpeShown;
                                   return (
                                     <Pressable
-                                      onPress={() => setRpeOpenUid((u) => (u === x.uid ? null : x.uid))}
+                                      onPress={() => setRpeOpenSet((u) => (u === s.uid ? null : s.uid))}
                                       hitSlop={6}
                                       style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: set ? withAlpha(C.amber, 0.5) : C.line, backgroundColor: set ? withAlpha(C.amber, ALPHA.fill) : "transparent" }}
                                     >
@@ -1645,7 +1662,7 @@ export default function Workout() {
                                 RPE scale, RIR-labelled when swapped); tapping a
                                 pill sets the number and closes. Tap the picked
                                 value again to clear it. */}
-                            {prefs.detailed && rpeOpenUid === x.uid && (
+                            {prefs.detailed && rpeOpenSet === s.uid && (
                               <View style={{ marginTop: 12, flexDirection: "row", alignItems: "center", gap: 6 }}>
                                 <Pressable onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
                                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
@@ -1656,7 +1673,7 @@ export default function Workout() {
                                   return (
                                     <Pressable
                                       key={val}
-                                      onPress={() => { setSetField(x.uid, i, "rpe", on ? "" : val); setRpeOpenUid(null); }}
+                                      onPress={() => { setSetField(x.uid, i, "rpe", on ? "" : val); setRpeOpenSet(null); }}
                                       accessibilityRole="button"
                                       accessibilityState={{ selected: on }}
                                       style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.chalk : C.line, backgroundColor: on ? withAlpha(C.chalk, ALPHA.fill) : C.ink2 }}
@@ -1671,22 +1688,55 @@ export default function Workout() {
                         ) : (() => {
                           // Banked / queued → quiet one-line row (tap a banked one
                           // to re-open it as the active card).
-                          const loadPart = !bw && s.load ? `${displayLoad(s.load, prefs.units)} ${unitLabel}` : "";
-                          const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";
-                          const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";
+                          //
+                          // The load × reps line is the SHARED per-set formatter —
+                          // the same core function the "last time" reference a few
+                          // lines above reads through. This row used to build its
+                          // own, and the two had already drifted: it special-cased
+                          // only pure bodyweight, so an assisted pull-up printed
+                          // "20 kg × 5" here (as if you had ADDED 20) while the
+                          // reference above it correctly wrote "−20×5".
+                          const summary = strengthSetSummary(x.name, s, { style: "row", units: prefs.units });
+                          // THE EFFORT SURVIVES THE COLLAPSE. It used not to: this
+                          // row was built from load and reps alone, so the RPE you
+                          // had just tapped on the chip above stopped being drawn
+                          // the moment the set banked — stored on the set, saved
+                          // onto the block, printed back in the session breakdown
+                          // at home, and invisible on the one screen you read while
+                          // actually training. Worse, the fresh set's chip then read
+                          // "–", so the card claimed no effort had been rated
+                          // anywhere in the exercise.
+                          //
+                          // It keeps the chip's own word and colour, so it reads as
+                          // the same value that just collapsed rather than as a new
+                          // fact, and it renders NOTHING when unset: the row only
+                          // grows a fourth column when there is something to say,
+                          // which is what makes a fourth column affordable on a
+                          // small phone at all. Sand, not the summary's amber-for-
+                          // concern — the figures keep that channel for "check this
+                          // number", and effort is not a warning.
+                          const effort = prefs.detailed ? rpeRirSwap(s.rpe, prefs.rpeAsRir) : "";
+                          const effortLabel = effort ? `${prefs.rpeAsRir ? "RIR" : "RPE"} ${effort}` : "";
                           return (
                             // Quiet ledger row — a plain hairline-separated line,
                             // not a boxed mini-card (no card-in-card).
                             <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, paddingVertical: 12, paddingHorizontal: 2, borderBottomWidth: 1, borderBottomColor: withAlpha(C.line, 0.6), opacity: focus === "done" ? 0.62 : 0.72 }}>
                               <Text style={{ width: 20, fontFamily: F.mono, fontSize: fs.caption, color: typeAccent ? txt(C, typeAccent) : C.ash }}>{setTypeBadge(s, i)}</Text>
                               {/* A collapsed row SIGNALS; the expanded one
-                                  explains. Its own figures turn amber rather
-                                  than gaining a badge — the row is already
-                                  three columns wide on a small phone, and
-                                  tapping it re-opens the set where the full
+                                  explains. A plausibility concern turns these
+                                  figures amber rather than gaining a badge of
+                                  its own — the row is narrow on a small phone,
+                                  and tapping it re-opens the set where the full
                                   sentence is waiting. */}
-                              <Pressable style={{ flex: 1 }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
-                                <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash }}>{summary}</Text>
+                              {/* The effort rides INSIDE the re-open target, not
+                                  beside it: the number you want to correct is the
+                                  most likely reason to tap this row, so it had
+                                  better be part of the button. */}
+                              <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
+                                <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash }}>{summary}</Text>
+                                {effortLabel ? (
+                                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: txt(C, C.amber) }}>{effortLabel}</Text>
+                                ) : null}
                               </Pressable>
                               <Text style={{ fontFamily: F.black, fontSize: fs.body, color: s.done ? txt(C, C.lime) : C.ash }}>{s.done ? "✓" : "○"}</Text>
                             </View>

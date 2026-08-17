@@ -3,7 +3,7 @@ import { movementFor, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
-import { fmtWeight, fmtTonnage, splitFigure, type WeightUnit } from "../units";
+import { fmtWeight, fmtTonnage, splitFigure, displayLoad, type WeightUnit } from "../units";
 import { fmtKm } from "../distance";
 import type { DeviceWorkout } from "../session-device";
 import { deviceTrueSession, deviceTrueSessions } from "../device-truth";
@@ -658,24 +658,57 @@ export function conditioningSummary(b: ConditioningBlock, opts: { rpe?: boolean 
  * the belt, and an assisted one shows what came off.
  */
 export function strengthSetsSummary(b: StrengthBlock): string {
-  const ex = gymExercise(b.name);
+  return b.sets.map((s) => strengthSetSummary(b.name, s)).join(", ");
+}
+
+/**
+ * ONE strength set, in the lift's own terms — the per-set half of
+ * `strengthSetsSummary`, lifted out because the mobile logger's collapsed
+ * ledger row had written its OWN load × reps line and the two had already
+ * drifted: the row special-cased only pure `bodyweight`, so a bodyweight-plus
+ * or assisted lift printed as a plain external load × reps in the ledger while
+ * the "last time" reference two lines above it — the same lift, off this
+ * function — correctly wrote `+20×5` / `−20×5`.
+ *
+ * TWO STYLES, because the two readers genuinely want different things and that
+ * is what justified two implementations in the first place:
+ *
+ *   "compact" (default) — `95×5`, the raw STORED kilograms, with a dash holding
+ *     the place of anything missing. The set LIST joins these with commas: it is
+ *     read as a shape ("three fives at 95"), and there a missing half must still
+ *     hold its column or the shape stops lining up.
+ *
+ *   "row" — `100 kg × 5 reps`, converted into the athlete's own unit and named,
+ *     with empty parts DROPPED and an em dash if nothing is left. This is one
+ *     set alone on a line, tappable, next to the set you are about to do — and
+ *     there a dash beside a real number reads as a typo rather than as a gap.
+ *
+ * `units` is only consulted by the "row" style; storage stays canonical kg
+ * either way (see units.ts — conversion happens at the display boundary only).
+ */
+export function strengthSetSummary(
+  name: string,
+  s: StrengthSet,
+  opts: { style?: "compact" | "row"; units?: WeightUnit } = {},
+): string {
+  const ex = gymExercise(name);
   const mode = ex?.loadMode ?? "external";
-  const suffix = ex?.measure === "time" ? " s" : ex?.measure === "distance" ? " m" : "";
-  const bare = (s: StrengthSet) => (s.reps ? `${s.reps}${suffix}` : "–");
-  return b.sets
-    .map((s) => {
-      switch (mode) {
-        case "bodyweight":
-          return bare(s);
-        case "bodyweight-plus":
-          return s.load ? `+${s.load}×${s.reps || "–"}` : bare(s);
-        case "assisted":
-          return s.load ? `−${s.load}×${s.reps || "–"}` : bare(s);
-        default:
-          return `${s.load || "–"}×${s.reps || "–"}`;
-      }
-    })
-    .join(", ");
+  const measure = ex?.measure === "time" ? "s" : ex?.measure === "distance" ? "m" : "reps";
+  // A bodyweight lift IS its reps — there is no load to put on either side of
+  // the ×. The other two carry a load that isn't the total: what went ON the
+  // belt, or what came OFF the stack.
+  const sign = mode === "bodyweight-plus" ? "+" : mode === "assisted" ? "−" : "";
+  const loaded = mode !== "bodyweight" && !!s.load;
+
+  if (opts.style === "row") {
+    const unit = opts.units === "lb" ? "lb" : "kg";
+    const load = loaded ? `${sign}${displayLoad(s.load, opts.units ?? "kg")} ${unit}` : "";
+    const reps = s.reps ? `${s.reps} ${measure}` : "";
+    return [load, reps].filter(Boolean).join(" × ") || "—";
+  }
+  const bare = s.reps ? `${s.reps}${measure === "reps" ? "" : ` ${measure}`}` : "–";
+  if (loaded) return `${sign}${s.load}×${s.reps || "–"}`;
+  return mode === "external" ? `–×${s.reps || "–"}` : bare;
 }
 
 /** One-line summary of any block. */
