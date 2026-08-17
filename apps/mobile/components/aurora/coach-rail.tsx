@@ -3,7 +3,7 @@ import { View, Text, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { coachRailItems, type DiscoverCoach } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { getCoaches } from "../../lib/social-api";
 import RailTail from "./rail-tail";
@@ -32,7 +32,7 @@ function initials(name: string) {
 function Stat({ C, value, label, first, star }: { C: Palette; value: string; label: string; first?: boolean; star?: boolean }) {
   return (
     <View style={{ flex: 1, paddingTop: 10, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line, paddingLeft: first ? 0 : 12 }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>
         {star ? <Text style={{ color: C.gold }}>★ </Text> : null}{value}
       </Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: withAlpha(C.ash, 0.702), marginTop: 4 }}>{label}</Text>

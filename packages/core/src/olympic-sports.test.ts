@@ -20,7 +20,9 @@ describe("olympic-sports catalog", () => {
     for (const name of OLYMPIC_SPORT_NAMES) {
       const s = OLYMPIC_SPORTS[name]!;
       expect(s.name).toBe(name);
-      expect(s.icon).toBeTruthy();
+      // NO `icon` field — a sport's drawing is resolved from its name; the
+      // catalog carrying one is what made it the app's biggest emoji source.
+      expect(s).not.toHaveProperty("icon");
       // Duration applies to every sport — it's the universal session parameter.
       expect(s.metrics).toContain("duration");
     }

@@ -30,7 +30,7 @@ import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
 import { ACard, APressCard, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
@@ -90,7 +90,7 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
         {h.value}
         <Text style={{ fontSize: fs.bodyLg, letterSpacing: tracking.normal, color: C.ash }}> {unitOf(h, t)}</Text>
       </Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
         {[sessionTitleText(s.title, t), ...headlineMeta(h, t)].join(" – ")}
         {prs > 0 && (
           <>

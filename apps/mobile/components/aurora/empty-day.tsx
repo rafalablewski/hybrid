@@ -3,9 +3,10 @@ import { View, Text } from "react-native";
 import { emptyDayCopy, type EmptyDayCopy } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { leading, fs, F, MAX_FONT_SCALE , tracking} from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import { withAlpha } from "./field";
+import { Glyph } from "./icons";
 
 // ── AURORA Empty day (mobile) ───────────────────────────────────────────────
 // THE one drawing for a day with nothing on it. There used to be three, all
@@ -36,7 +37,7 @@ import { withAlpha } from "./field";
  *  today gets the check ring, which is the shape the day is waiting to fill. */
 function EmptyGlyph({ copy, color }: { copy: EmptyDayCopy; color: string }) {
   if (copy.tense === "past") {
-    return <Text style={{ fontSize: 30, lineHeight: leading(30, "tight"), color }}>☾</Text>;
+    return <Glyph name="moon" size={30} color={color} />;
   }
   return <AuroraIcon name="check-circle" size={34} color={color} />;
 }
@@ -63,7 +64,7 @@ export default function AEmptyDay({
       <View style={{ alignItems: "center", gap: 7, paddingTop: 14, paddingBottom: 2, paddingHorizontal: 6 }}>
         <EmptyGlyph copy={copy} color={copy.quiet ? withAlpha(C.ash, 0.5) : withAlpha(C.ash, 0.702)} />
         <Text
-          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, color: copy.quiet ? C.ash : C.chalk, textAlign: "center" }}
         >
           {t(copy.titleKey)}

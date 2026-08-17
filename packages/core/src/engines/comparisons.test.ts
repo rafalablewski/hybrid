@@ -78,13 +78,13 @@ describe("funFactAmount / funFactText", () => {
   const t = (k: string) => (k === "funfact.vol.3" ? "You moved {amount} — over a tonne, about a small hippo." : k);
 
   it("formats the amount per metric", () => {
-    expect(funFactAmount({ metric: "volume", value: 1200, key: "funfact.vol.3", emoji: "🦛" }, "kg")).toBe("1.2 t");
-    expect(funFactAmount({ metric: "distance", value: 10, key: "funfact.dist.2", emoji: "🔥" }, "kg")).toBe("10 km");
-    expect(funFactAmount({ metric: "reps", value: 250, key: "funfact.reps.2", emoji: "🔁" }, "kg")).toBe("250");
+    expect(funFactAmount({ metric: "volume", value: 1200, key: "funfact.vol.3", mark: { kind: "glyph", name: "barbell" } }, "kg")).toBe("1.2 t");
+    expect(funFactAmount({ metric: "distance", value: 10, key: "funfact.dist.2", mark: { kind: "glyph", name: "barbell" } }, "kg")).toBe("10 km");
+    expect(funFactAmount({ metric: "reps", value: 250, key: "funfact.reps.2", mark: { kind: "glyph", name: "barbell" } }, "kg")).toBe("250");
   });
 
   it("renders the localized one-liner with {amount} filled in", () => {
-    const text = funFactText({ metric: "volume", value: 1200, key: "funfact.vol.3", emoji: "🦛" }, "kg", t);
+    const text = funFactText({ metric: "volume", value: 1200, key: "funfact.vol.3", mark: { kind: "glyph", name: "barbell" } }, "kg", t);
     expect(text).toBe("You moved 1.2 t — over a tonne, about a small hippo.");
   });
 });

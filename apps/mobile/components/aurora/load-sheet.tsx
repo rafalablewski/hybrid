@@ -8,7 +8,7 @@ import {
   ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, F, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, F, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { withAlpha, RADIUS } from "./kit";
 import Sheet from "./sheet";
 
@@ -279,10 +279,10 @@ function Figure({ C, t, explain }: { C: Palette; t: T; explain: LoadExplain }) {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
           {t(LOAD_METRIC_LABEL_KEY[explain.metric])}
         </Text>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.monoBold, fontSize: fs.caption, color: paintOf(C, explain) }}>{explain.value}</Text>
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: F.monoBold, fontSize: fs.caption, color: paintOf(C, explain) }}>{explain.value}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{t(explain.unitKey)}</Text>
       </View>
       <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash }}>{t(explain.whatKey)}</Text>

@@ -28,8 +28,7 @@ import { F, fs, leading, tracking, PressScale as Pressable , trackFigure} from "
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { runShare, toggleSavedPost, useFeedSaved } from "../lib/feed-actions";
-import { Avatar } from "./social-kit";
-import { GUTTER, RADIUS } from "./aurora/kit";
+import { GUTTER, RADIUS, Avatar } from "./aurora/kit";
 import { FeedContextMenu, FeedMenuTrigger } from "./feed-menu";
 
 /**

@@ -7,6 +7,7 @@ import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH,
 import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
 import { Loading } from "../aurora/skeleton";
+import { Glyph } from "@/components/aurora/icons";
 
 type AgentLite = {
   id: string;
@@ -310,7 +311,7 @@ function Node({ a, head }: { a: AgentLite; head?: boolean }) {
           {a.name}
         </div>
         <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>
-          {a.role} – {a.model.replace("claude-", "")}{a.runtime === "managed" ? " – 🧠" : ""}
+          {a.role} – {a.model.replace("claude-", "")}{a.runtime === "managed" ? " – managed" : ""}
         </Mono>
       </div>
     </div>
@@ -492,7 +493,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
         <span style={{ width: 9, height: 9, borderRadius: 99, background: DOT[s.status] ?? ASH, flexShrink: 0 }} />
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
-          <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – 🧠" : ""}</Mono>
+          <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – managed" : ""}</Mono>
         </div>
         <Chip c={s.authority === "executive" ? VIOLET : ASH}>{s.authority}</Chip>
       </div>
@@ -581,7 +582,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
         <span style={{ ...disp, color: CHALK, fontWeight: 700, fontSize: fs.bodyLg }}>{k.metric}</span>
         <span style={{ display: "flex", gap: space.sm, alignItems: "baseline", flexShrink: 0 }}>
           <Mono s={{ fontSize: fs.caption }} c={ASH}>target {targetLabel}</Mono>
-          <button className="pressable" onClick={toggleChart} title="Trend over time" style={{ background: "transparent", border: "none", cursor: "pointer", color: txt(open ? LIME : ASH), fontSize: fs.body, padding: 0 }}>📈</button>
+          <button className="pressable" onClick={toggleChart} title="Trend over time" style={{ background: "transparent", border: "none", cursor: "pointer", color: txt(open ? LIME : ASH), padding: 0, display: "grid", placeItems: "center" }}><Glyph name="chart" size={16} /></button>
         </span>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: space.sm, alignItems: "baseline", marginTop: 2 }}>
@@ -815,7 +816,7 @@ function MonthlyCostCard() {
             <div key={m.month} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 12 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={i === 0 ? AMBER : ASH}>{m.month}{i === 0 ? " – MTD" : ""}</Mono>
-                <a href={csv(m.month)} style={link}>⬇ CSV</a>
+                <a href={csv(m.month)} style={link}>CSV</a>
               </div>
               <div style={{ ...disp, fontWeight: 800, fontSize: fs.display, color: CHALK, margin: "4px 0" }}>{fmtUsd(m.total)}</div>
               <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>{m.runs} runs</Mono>

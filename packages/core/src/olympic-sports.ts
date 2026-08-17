@@ -96,7 +96,19 @@ export interface SportSC {
 
 export interface OlympicSport {
   name: string;
-  icon: string;
+  /**
+   * NO `icon`. Every entry used to carry one and it was an EMOJI — 🏃 for
+   * Running, 🏅 for the Marathon, 🎾 for Tennis — which is how a catalog of 65
+   * sports became the single largest source of platform pictographs in a
+   * product whose own drawn sport marks had shipped and were being used at two
+   * sites.
+   *
+   * A sport's drawing is not data it carries; it is RESOLVED from its name by
+   * `sportMark()` (theme/sport-marks.ts), which answers for every entry here
+   * and answers by KIND — a tennis racket and a squash racket are one drawing.
+   * A stored icon beside a resolver is just a second answer waiting to
+   * disagree with the first. Render with `<SportMark sport={s.name} />`.
+   */
   category: SportCategory;
   /** Which parameters this sport actually tracks (always includes "duration"). */
   metrics: SportMetric[];
@@ -159,7 +171,7 @@ const ERG: SportBenchmark[] = [{ km: 0.5 }, { km: 2 }, { km: 5 }];
 const CATALOG: OlympicSport[] = [
   // ---- Athletics ----
   {
-    name: "Running", icon: "🏃", category: "Athletics", metrics: PACED, records: ROAD,
+    name: "Running", category: "Athletics", metrics: PACED, records: ROAD,
     sc: {
       family: "Endurance",
       marker: { label: "Current 5k time", ph: "e.g. 24:30" },
@@ -174,13 +186,13 @@ const CATALOG: OlympicSport[] = [
       ],
     },
   },
-  { name: "Marathon", icon: "🏅", category: "Athletics", metrics: PACED, records: ROAD },
-  { name: "Race Walking", icon: "🚶", category: "Athletics", metrics: PACED, records: [{ km: 5 }, { km: 10 }, { km: 20 }] },
-  { name: "Track & Field", icon: "🏟️", category: "Athletics", metrics: TIME },
+  { name: "Marathon", category: "Athletics", metrics: PACED, records: ROAD },
+  { name: "Race Walking", category: "Athletics", metrics: PACED, records: [{ km: 5 }, { km: 10 }, { km: 20 }] },
+  { name: "Track & Field", category: "Athletics", metrics: TIME },
 
   // ---- Aquatics ----
   {
-    name: "Swimming", icon: "🏊", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 100, records: POOL,
+    name: "Swimming", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 100, records: POOL,
     sc: {
       family: "Endurance",
       marker: { label: "100m time", ph: "e.g. 1:25" },
@@ -194,21 +206,21 @@ const CATALOG: OlympicSport[] = [
       ],
     },
   },
-  { name: "Open Water Swimming", icon: "🌊", category: "Aquatics", metrics: PACED },
-  { name: "Diving", icon: "🤿", category: "Aquatics", metrics: TIME },
-  { name: "Artistic Swimming", icon: "🩰", category: "Aquatics", metrics: TIME },
-  { name: "Water Polo", icon: "🤽", category: "Aquatics", metrics: TIME },
-  { name: "Rowing", icon: "🚣", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500, records: ERG },
-  { name: "Canoe Sprint", icon: "🛶", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500, records: [{ km: 0.2 }, { km: 0.5 }, { km: 1 }] },
-  { name: "Canoe Slalom", icon: "🛶", category: "Aquatics", metrics: TIME },
-  { name: "Sailing", icon: "⛵", category: "Aquatics", metrics: TIME },
-  { name: "Surfing", icon: "🏄", category: "Aquatics", metrics: TIME },
+  { name: "Open Water Swimming", category: "Aquatics", metrics: PACED },
+  { name: "Diving", category: "Aquatics", metrics: TIME },
+  { name: "Artistic Swimming", category: "Aquatics", metrics: TIME },
+  { name: "Water Polo", category: "Aquatics", metrics: TIME },
+  { name: "Rowing", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500, records: ERG },
+  { name: "Canoe Sprint", category: "Aquatics", metrics: PACED, distanceUnit: "m", pacePer: 500, records: [{ km: 0.2 }, { km: 0.5 }, { km: 1 }] },
+  { name: "Canoe Slalom", category: "Aquatics", metrics: TIME },
+  { name: "Sailing", category: "Aquatics", metrics: TIME },
+  { name: "Surfing", category: "Aquatics", metrics: TIME },
 
   // ---- Cycling ----
   // FTP is watts, not a time, so the cycling marker fills no rung — the ladder
   // is distances, and the typed FTP keeps the line above it.
   {
-    name: "Cycling", icon: "🚴", category: "Cycling", metrics: PACED, records: [{ km: 10 }, { km: 40 }, { km: 100 }],
+    name: "Cycling", category: "Cycling", metrics: PACED, records: [{ km: 10 }, { km: 40 }, { km: 100 }],
     sc: {
       family: "Endurance",
       marker: { label: "FTP (watts)", ph: "e.g. 240" },
@@ -225,13 +237,13 @@ const CATALOG: OlympicSport[] = [
   // The kilo and the pursuit, in km like the rest of this sport. The flying 200 m
   // is a real track benchmark and is deliberately NOT here: this catalog entry
   // reads in km, so it would render as "0.2 km" — a benchmark nobody calls that.
-  { name: "Track Cycling", icon: "🚲", category: "Cycling", metrics: PACED, records: [{ km: 1 }, { km: 4 }] },
-  { name: "Mountain Biking", icon: "🚵", category: "Cycling", metrics: PACED },
-  { name: "BMX", icon: "🚲", category: "Cycling", metrics: TIME },
+  { name: "Track Cycling", category: "Cycling", metrics: PACED, records: [{ km: 1 }, { km: 4 }] },
+  { name: "Mountain Biking", category: "Cycling", metrics: PACED },
+  { name: "BMX", category: "Cycling", metrics: TIME },
 
   // ---- Combat ----
   {
-    name: "Boxing", icon: "🥊", category: "Combat", metrics: TIME,
+    name: "Boxing", category: "Combat", metrics: TIME,
     sc: {
       family: "Combat",
       marker: { label: "Bouts / experience", ph: "e.g. amateur, 10 bouts" },
@@ -246,7 +258,7 @@ const CATALOG: OlympicSport[] = [
     },
   },
   {
-    name: "BJJ", icon: "🥋", category: "Combat", metrics: TIME,
+    name: "BJJ", category: "Combat", metrics: TIME,
     sc: {
       family: "Combat",
       marker: { label: "Belt / years", ph: "e.g. Blue, 2 yrs" },
@@ -261,18 +273,18 @@ const CATALOG: OlympicSport[] = [
       ],
     },
   },
-  { name: "Judo", icon: "🥋", category: "Combat", metrics: TIME },
-  { name: "Karate", icon: "🥋", category: "Combat", metrics: TIME },
-  { name: "Taekwondo", icon: "🥋", category: "Combat", metrics: TIME },
-  { name: "Wrestling", icon: "🤼", category: "Combat", metrics: TIME },
-  { name: "Fencing", icon: "🤺", category: "Combat", metrics: TIME },
+  { name: "Judo", category: "Combat", metrics: TIME },
+  { name: "Karate", category: "Combat", metrics: TIME },
+  { name: "Taekwondo", category: "Combat", metrics: TIME },
+  { name: "Wrestling", category: "Combat", metrics: TIME },
+  { name: "Fencing", category: "Combat", metrics: TIME },
 
   // ---- Racket ----
-  { name: "Tennis", icon: "🎾", category: "Racket", metrics: TIME },
-  { name: "Table Tennis", icon: "🏓", category: "Racket", metrics: TIME },
-  { name: "Badminton", icon: "🏸", category: "Racket", metrics: TIME },
+  { name: "Tennis", category: "Racket", metrics: TIME },
+  { name: "Table Tennis", category: "Racket", metrics: TIME },
+  { name: "Badminton", category: "Racket", metrics: TIME },
   {
-    name: "Squash", icon: "🎾", category: "Racket", metrics: TIME,
+    name: "Squash", category: "Racket", metrics: TIME,
     sc: {
       family: "Racquet",
       marker: { label: "Playing level", ph: "e.g. club league, div 3" },
@@ -289,30 +301,30 @@ const CATALOG: OlympicSport[] = [
   },
 
   // ---- Team ----
-  { name: "Football", icon: "⚽", category: "Team", metrics: TIME },
-  { name: "Basketball", icon: "🏀", category: "Team", metrics: TIME },
-  { name: "Volleyball", icon: "🏐", category: "Team", metrics: TIME },
-  { name: "Beach Volleyball", icon: "🏖️", category: "Team", metrics: TIME },
-  { name: "Handball", icon: "🤾", category: "Team", metrics: TIME },
-  { name: "Field Hockey", icon: "🏑", category: "Team", metrics: TIME },
-  { name: "Rugby Sevens", icon: "🏉", category: "Team", metrics: TIME },
-  { name: "Baseball", icon: "⚾", category: "Team", metrics: TIME },
-  { name: "Softball", icon: "🥎", category: "Team", metrics: TIME },
+  { name: "Football", category: "Team", metrics: TIME },
+  { name: "Basketball", category: "Team", metrics: TIME },
+  { name: "Volleyball", category: "Team", metrics: TIME },
+  { name: "Beach Volleyball", category: "Team", metrics: TIME },
+  { name: "Handball", category: "Team", metrics: TIME },
+  { name: "Field Hockey", category: "Team", metrics: TIME },
+  { name: "Rugby Sevens", category: "Team", metrics: TIME },
+  { name: "Baseball", category: "Team", metrics: TIME },
+  { name: "Softball", category: "Team", metrics: TIME },
 
   // ---- Gymnastics ----
-  { name: "Artistic Gymnastics", icon: "🤸", category: "Gymnastics", metrics: TIME },
-  { name: "Rhythmic Gymnastics", icon: "🎗️", category: "Gymnastics", metrics: TIME },
-  { name: "Trampoline", icon: "🤸", category: "Gymnastics", metrics: TIME },
-  { name: "Breaking", icon: "🕺", category: "Gymnastics", metrics: TIME },
+  { name: "Artistic Gymnastics", category: "Gymnastics", metrics: TIME },
+  { name: "Rhythmic Gymnastics", category: "Gymnastics", metrics: TIME },
+  { name: "Trampoline", category: "Gymnastics", metrics: TIME },
+  { name: "Breaking", category: "Gymnastics", metrics: TIME },
 
   // ---- Target ----
-  { name: "Archery", icon: "🏹", category: "Target", metrics: TIME },
-  { name: "Shooting", icon: "🎯", category: "Target", metrics: TIME },
-  { name: "Golf", icon: "⛳", category: "Target", metrics: TIME },
+  { name: "Archery", category: "Target", metrics: TIME },
+  { name: "Shooting", category: "Target", metrics: TIME },
+  { name: "Golf", category: "Target", metrics: TIME },
 
   // ---- Outdoor ----
   {
-    name: "Climbing", icon: "🧗", category: "Outdoor", metrics: TIME,
+    name: "Climbing", category: "Outdoor", metrics: TIME,
     sc: {
       family: "Outdoor",
       marker: { label: "Hardest redpoint grade", ph: "e.g. 6c+ / V5" },
@@ -327,31 +339,31 @@ const CATALOG: OlympicSport[] = [
       ],
     },
   },
-  { name: "Skateboarding", icon: "🛹", category: "Outdoor", metrics: TIME },
-  { name: "Equestrian", icon: "🏇", category: "Outdoor", metrics: TIME },
+  { name: "Skateboarding", category: "Outdoor", metrics: TIME },
+  { name: "Equestrian", category: "Outdoor", metrics: TIME },
 
   // ---- Strength ----
-  { name: "Weightlifting", icon: "🏋️", category: "Strength", metrics: TIME },
+  { name: "Weightlifting", category: "Strength", metrics: TIME },
 
   // ---- Multisport ----
-  { name: "Triathlon", icon: "🏊‍♂️", category: "Multisport", metrics: PACED },
-  { name: "Modern Pentathlon", icon: "🤺", category: "Multisport", metrics: TIME },
+  { name: "Triathlon", category: "Multisport", metrics: PACED },
+  { name: "Modern Pentathlon", category: "Multisport", metrics: TIME },
 
   // ---- Winter ----
-  { name: "Cross-Country Skiing", icon: "⛷️", category: "Winter", metrics: PACED },
-  { name: "Biathlon", icon: "🎿", category: "Winter", metrics: PACED },
-  { name: "Speed Skating", icon: "⛸️", category: "Winter", metrics: PACED },
-  { name: "Short Track", icon: "⛸️", category: "Winter", metrics: PACED },
-  { name: "Alpine Skiing", icon: "🎿", category: "Winter", metrics: TIME },
-  { name: "Freestyle Skiing", icon: "🎿", category: "Winter", metrics: TIME },
-  { name: "Ski Jumping", icon: "🎿", category: "Winter", metrics: TIME },
-  { name: "Snowboarding", icon: "🏂", category: "Winter", metrics: TIME },
-  { name: "Figure Skating", icon: "⛸️", category: "Winter", metrics: TIME },
-  { name: "Ice Hockey", icon: "🏒", category: "Winter", metrics: TIME },
-  { name: "Curling", icon: "🥌", category: "Winter", metrics: TIME },
-  { name: "Bobsleigh", icon: "🛷", category: "Winter", metrics: TIME },
-  { name: "Luge", icon: "🛷", category: "Winter", metrics: TIME },
-  { name: "Skeleton", icon: "🛷", category: "Winter", metrics: TIME },
+  { name: "Cross-Country Skiing", category: "Winter", metrics: PACED },
+  { name: "Biathlon", category: "Winter", metrics: PACED },
+  { name: "Speed Skating", category: "Winter", metrics: PACED },
+  { name: "Short Track", category: "Winter", metrics: PACED },
+  { name: "Alpine Skiing", category: "Winter", metrics: TIME },
+  { name: "Freestyle Skiing", category: "Winter", metrics: TIME },
+  { name: "Ski Jumping", category: "Winter", metrics: TIME },
+  { name: "Snowboarding", category: "Winter", metrics: TIME },
+  { name: "Figure Skating", category: "Winter", metrics: TIME },
+  { name: "Ice Hockey", category: "Winter", metrics: TIME },
+  { name: "Curling", category: "Winter", metrics: TIME },
+  { name: "Bobsleigh", category: "Winter", metrics: TIME },
+  { name: "Luge", category: "Winter", metrics: TIME },
+  { name: "Skeleton", category: "Winter", metrics: TIME },
 ];
 
 /** The catalog keyed by sport name — O(1) lookup. */

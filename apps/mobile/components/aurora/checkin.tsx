@@ -26,6 +26,7 @@ import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 import { useConfirm } from "./confirm";
 import { withAlpha } from "./field";
+import { Mark } from "./mark";
 
 type Ratings = Record<CheckinMetricKey, number>;
 
@@ -474,7 +475,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                     <Pressable key={f.value} onPress={() => answerEffort(sess.id, f.value)} disabled={locked}
                       accessibilityRole="radio" accessibilityLabel={`${sess.title}: ${t(f.labelKey)}`} accessibilityState={{ selected: sel, disabled: locked }}
                       style={tile(sel)}>
-                      <Text style={{ fontSize: fs.headline }}>{f.emoji}</Text>
+                      <Mark mark={f.mark} size={fs.headline} color={sel ? txt(C, C[f.tone as "lime"] ?? C.chalk) as string : C.ash} />
                     </Pressable>
                   );
                 })}

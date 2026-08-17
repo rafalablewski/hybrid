@@ -172,7 +172,7 @@ export function digestText(s: DigestSummary, label: string): string {
     for (const a of s.topAgents) lines.push(`• ${a.name}: ${a.runs} runs, $${a.cost.toFixed(2)}`);
   }
   if (s.failures.length) {
-    lines.push("", `⚠ ${s.error} failed:`);
+    lines.push("", `${s.error} failed:`);
     for (const f of s.failures) lines.push(`• ${f.name}: ${f.task.slice(0, 80)}`);
   }
   if (s.total === 0) lines.push("", "No runs in this window.");

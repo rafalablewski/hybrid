@@ -64,7 +64,7 @@ function StatTile({ glyph, tint, value, unit, caption, name, onPress, palette: C
       accessibilityLabel={name}
       style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 14 }}
     >
-      <Glyph name={glyph} size={16} color={tint} strokeWidth={4.5} />
+      <Glyph name={glyph} size={16} color={tint} />
       <Text style={{ fontFamily: F.mono, fontSize: 21, color: C.chalk, marginTop: 9 }} numberOfLines={1}>
         {value}
         {unit ? <Text style={{ fontSize: fs.caption, color: C.ash }}> {unit}</Text> : null}
@@ -141,10 +141,10 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
       {/* ── DIARY — the lead tile, target vs logged over the last week ── */}
       <PressScale onPress={() => onOpen("diary")} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.menuDiary")} style={{ ...tile, padding: 15 }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
-          <Glyph name="diary" size={17} color={C.lime} strokeWidth={4.5} />
+          <Glyph name="diary" size={17} color={C.lime} />
           <Text style={{ ...nameLabel, flex: 1 }}>{t("w.recovery.nutrition.menuDiary")}</Text>
           {deltaText ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: deltaTone }}>{deltaText}</Text> : null}
-          <Glyph name="chevron" size={13} color={C.ash} strokeWidth={5} />
+          <Glyph name="chevron" size={13} color={C.ash} />
         </View>
 
         {/* Legend — the two lines are only readable if the dash means something. */}

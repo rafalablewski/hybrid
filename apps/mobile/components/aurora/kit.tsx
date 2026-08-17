@@ -1,5 +1,5 @@
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
-import { View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle, type TextInputProps } from "react-native";
+import { Image, View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle, type TextInputProps } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -9,9 +9,10 @@ import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, type DockChipRole, type AuroraIconName, type HeroRank , ALPHA} from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank , ALPHA} from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
+import { registerPerson, useSharedSurfaceTarget } from "../../lib/shared-element";
 import { GlassSurface, LIQUID_GLASS_SUPPORTED } from "./swiftui";
 import { LiquidSeg } from "./liquid-seg";
 import { RollingNumber } from "./rolling-number";
@@ -624,13 +625,49 @@ export function APressCard({
  * APill offered the `light` and glass-`soft` fills, which Button could not. Two
  * buttons that each did something the other couldn't is how you end up with
  * both. This is the union.
+ *
+ * ── AND `size`, WHICH IS WHAT RETIRED THE SHADOW KIT ───────────────────────
+ *
+ * The design audit found FOUR component vocabularies coexisting, and named the
+ * social kit's `SButton` as the sharp end: 23 call sites, ~36dp tall at its
+ * default and ~28dp `small` — both under the app's own 44-point touch floor —
+ * with no accessibilityRole, no label and no state, and invisible to the
+ * enforcement ratchets because they policed the SHARED primitives by name and
+ * this was not one.
+ *
+ * SButton existed because APill had no size class. Every one of those 23 sites
+ * is a button in a ROW — a Follow beside a handle, an Accept beside a Decline,
+ * a Post at the end of a comment field — and APill drew one geometry: 18dp of
+ * vertical padding at fs.subtitle, stretched to its parent. Told to choose
+ * between "the shared primitive, wrong size" and "the right size, hand-rolled",
+ * six screens chose the second, which is how a parallel kit gets born. So the
+ * fix is not to sweep the call sites onto a primitive that does not fit them;
+ * it is to give the primitive the size class it was missing.
+ *
+ * Its geometry deliberately MATCHES the button it replaces at the size that
+ * mattered — 8/12 against SButton's `small` 7/12 — because none of this has been
+ * seen on a phone, and a migration that also restyles 23 rows is two changes
+ * arriving as one. The 44dp floor is the only thing that moved.
+ *
+ * `compact` is CONTENT-SIZED and quieter — but `minHeight: HIT_TARGET` is
+ * declared on the same node as `regular`, so the drawing shrinks and the TARGET
+ * does not. That is the whole distinction SButton failed to make: it shrank the
+ * padding and let the target follow it down.
+ *
+ * This is also the size class the admin `PillBtn` was hand-rolled for (an admin
+ * table row cannot carry a 16dp-padded primary pill on every line) — see the
+ * `admin-kit-merge` capability.
  */
 type PillVariant = "primary" | "light" | "soft" | "outline";
+
+/** `regular` is the screen's action. `compact` is a button in a ROW. */
+export type PillSize = "regular" | "compact";
 
 export function APill({
   label,
   onPress,
   variant = "primary",
+  size = "regular",
   color,
   disabled,
   style,
@@ -641,6 +678,13 @@ export function APill({
   label: string;
   onPress: () => void;
   variant?: PillVariant;
+  /**
+   * `regular` (default) is the screen's action: full vertical padding at
+   * fs.subtitle, stretched to its parent. `compact` is a button that sits in a
+   * ROW beside other content — content-sized, lighter padding, fs.note — and
+   * it still declares the 44dp floor, so only the DRAWING gets smaller.
+   */
+  size?: PillSize;
   /** Overrides the accent. On a fill it paints the surface; on `outline` it
    *  tints the label and the hairline (a destructive action's red). */
   color?: string;
@@ -672,6 +716,7 @@ export function APill({
 }) {
   const { palette } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED;
+  const compact = size === "compact";
   // The bright primary/light fills stay on brand on every client. The neutral
   // `soft` pill becomes a native Liquid Glass surface when active (iOS): a
   // transparent RN base + GlassSurface behind the label; ink2 otherwise.
@@ -763,11 +808,11 @@ export function APill({
         {
           backgroundColor: state === "error" ? palette.red : bg,
           borderRadius: RADIUS.pill,
-          paddingVertical: 18,
+          paddingVertical: compact ? space.sm : 18,
           // Was absent, because APill was only ever stretched by its parent.
           // Button's inline callers need it, and on a full-width pill it just
           // insets a label that is centred anyway.
-          paddingHorizontal: space.xxl,
+          paddingHorizontal: compact ? space.md : space.xxl,
           alignItems: "center",
           justifyContent: "center",
           minHeight: HIT_TARGET,
@@ -776,8 +821,10 @@ export function APill({
           borderColor: outline && color ? withAlpha(color, ALPHA.rim) : palette.line,
           overflow: "hidden",
           // Fill the wrapper, whatever the wrapper turned out to be. A no-op
-          // when it is content-sized, which is the common case.
-          alignSelf: "stretch",
+          // when it is content-sized, which is the common case. A `compact`
+          // pill is a button in a row, so it takes its LABEL's width — the one
+          // thing SButton got right and the reason six screens reached for it.
+          alignSelf: compact ? "flex-start" : "stretch",
         },
         inner as StyleProp<ViewStyle>,
       ]}
@@ -790,7 +837,7 @@ export function APill({
       <Animated.Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
         numberOfLines={1}
-        style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg, opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}
+        style={{ fontFamily: F.bold, fontSize: compact ? fs.note : fs.subtitle, color: fg, opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}
       >
         {label}
       </Animated.Text>
@@ -806,8 +853,8 @@ export function APill({
           }}
         >
           {state === "saving" && <ActivityIndicator size="small" color={fg} />}
-          {state === "saved" && <AuroraIcon name="check" size={17} color={fg} />}
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: fg }}>
+          {state === "saved" && <AuroraIcon name="check" size={compact ? 14 : 17} color={fg} />}
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: compact ? fs.note : fs.subtitle, color: fg }}>
             {stateLabel}
           </Text>
         </Animated.View>
@@ -1443,7 +1490,7 @@ export function ASection({
   const metaText =
     meta == null ? null : typeof meta === "string" ? (
       <Text
-        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: palette.ash }}
       >
         {meta}
@@ -2034,6 +2081,90 @@ export function ADrawer({ open, children }: { open: boolean; children: ReactNode
  * disclosure.
  */
 
+/* ── THE PEOPLE PRIMITIVES ────────────────────────────────────────────────────
+ *
+ * Avatar, Stars, Empty, `initials` and `levelInk` were `components/social-kit.tsx`
+ * — one of the FOUR component vocabularies the design audit found coexisting in
+ * one product. They are here because they were never social-specific: an avatar
+ * is a person, a star rating is a rating, and an empty state is the app's, not a
+ * tab's. What made the file a KIT rather than a folder was its own button, and
+ * that button is retired (see `APill`'s `size`).
+ *
+ * A primitive nobody can import is a primitive that gets re-drawn the next time
+ * a screen needs it. A primitive in a SECOND kit is worse: it gets re-drawn
+ * DIFFERENTLY, and the enforcement ratchets never see it, because they police
+ * the shared primitives by name.
+ */
+
+/** The level chip's ink — ash and chalk for the lower tiers, the lime
+ *  accent-text tone for advanced, gold reserved for elite. */
+export const levelInk = (C: ReturnType<typeof useTheme>["palette"], accent: BadgeAccent): string =>
+  accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
+
+export function initials(name?: string | null, handle?: string) {
+  const s = (name || handle || "?").trim();
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+  return s.slice(0, 2).toUpperCase();
+}
+
+/**
+ * A person's face. `shared` makes this instance the DESTINATION of an avatar
+ * armed on the way in — the same image of the same person, 52px in a list and
+ * 84px on the page it opens, so the circle grows instead of being re-rendered
+ * at the far end with no thread back to what was touched.
+ */
+export function Avatar({ url, name, handle, size = 44, shared }: { url?: string | null; name?: string | null; handle?: string; size?: number; shared?: boolean }) {
+  const C = useTheme().palette;
+  const { ref } = useSharedSurfaceTarget(shared ? SHARED_ELEMENTS.personAvatar : "");
+  const srcRef = useRef<View | null>(null);
+  const face = url
+    ? <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: C.ink2 }} />
+    : (
+      <View style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
+      </View>
+    );
+  // A SOURCE registers itself under the person's handle, so a door only has to
+  // say who it is opening — see lib/shared-element `usePersonSource`. Nothing
+  // is measured here: the list will have scrolled by the time anything is
+  // armed, and a flight starting where the face used to be is worse than none.
+  useEffect(() => {
+    if (shared || !handle) return undefined;
+    return registerPerson(handle, srcRef.current, face);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shared, handle, url, name, size]);
+
+  if (shared) return <View ref={ref} collapsable={false}>{face}</View>;
+  if (!handle) return face;
+  return <View ref={srcRef} collapsable={false}>{face}</View>;
+}
+
+export function Stars({ rating, size = 13 }: { rating: number | null; size?: number }) {
+  const C = useTheme().palette;
+  const { t } = useLang();
+  if (rating == null) return <Text style={{ color: C.ash, fontSize: size }}>{t("w.social.noReviews")}</Text>;
+  const full = Math.round(rating);
+  return (
+    <Text style={{ fontSize: size }}>
+      <Text style={{ color: C.gold }}>{"★".repeat(full)}</Text>
+      <Text style={{ color: C.line }}>{"★".repeat(5 - full)}</Text>
+      <Text style={{ color: C.ash, fontFamily: F.mono }}> {rating.toFixed(1)}</Text>
+    </Text>
+  );
+}
+
+/** The app's empty state. Titles read the heading face, empty states included. */
+export function Empty({ title, sub }: { title: string; sub?: string }) {
+  const { palette: C } = useTheme();
+  return (
+    <View style={{ paddingVertical: 36, alignItems: "center" }}>
+      <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle, marginBottom: 6 }}>{title}</Text>
+      {sub ? <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body, textAlign: "center", lineHeight: leading(fs.body), maxWidth: 300 }}>{sub}</Text> : null}
+    </View>
+  );
+}
+
 /** The rail's one glyph. A 12dp VECTOR that rotates 180° — mobile used to draw
  *  this and web an 8px text triangle that SWAPPED ▼/▲, which is two different
  *  affordances for one control. Ash, never the accent. */
@@ -2139,3 +2270,5 @@ export function ActionPill({ label, onPress }: { label: string; onPress: () => v
     </Pressable>
   );
 }
+
+

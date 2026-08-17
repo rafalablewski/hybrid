@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useChartScrub, type ScrubBind } from "./chart-scrub";
 import { GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
@@ -232,7 +232,7 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t(lane.labelKey)}</Text>
         <Text
           numberOfLines={1}
-          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
         >
           {t("w.home.end.scopeAll")}
@@ -472,7 +472,7 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
       // about the window, not about the lane's all-time figure above.
       foot={read ? weekLabel(t, read.weekStart) : t("w.home.end.window8")}
       footRight={delta ? (
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, delta.faster ? C.lime : C.red) }}>
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, delta.faster ? C.lime : C.red) }}>
           {paceDeltaArrow(delta, lane.discipline)} {formatPaceDelta(delta, lane.discipline)}
         </Text>
       ) : undefined}
@@ -481,7 +481,7 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
           window. It used to print the newest trend point, which made this the
           third distinct scope in a rail of five cards. Held, it answers for the
           scrubbed week and the foot says which. */}
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: read?.best ? txt(C, C.lime) : C.chalk }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: read?.best ? txt(C, C.lime) : C.chalk }}>
         {read ? `${read.value} ${read.unit}` : formatDisciplinePace(lane.paceAllTime ?? lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
       </Text>
       <View ref={scrub.plotRef} style={{ marginTop: "auto" }}>
@@ -544,7 +544,7 @@ function LastTile({ lane }: { lane: EnduranceLane }) {
   const e = lane.last!;
   return (
     <Tile w={184} label={t("w.home.end.last")}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk, marginTop: 3 }}>{e.name}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk, marginTop: 3 }}>{e.name}</Text>
       <View style={{ gap: 3, marginTop: "auto" }}>
         <MetaRow
           l={e.distanceKm > 0 ? `${e.distanceKm} km` : "–"}

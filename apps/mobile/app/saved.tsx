@@ -3,7 +3,7 @@ import { View, Text, FlatList, RefreshControl } from "react-native";
 import { router } from "expo-router";
 import { FEED_SAVED_PAGE, feedPostPath, orderBySaved, seedPerson, userPagePath, type FeedItemView, type KudosResponse, type Relation } from "@hybrid/core";
 import { LoadSwap, F, fs, leading, tracking, useScreenBottomPad } from "../lib/ui";
-import { AuroraScreen, GUTTER } from "../components/aurora/kit";
+import { AuroraScreen, GUTTER, Empty, APill } from "../components/aurora/kit";
 import type { HeroScrollProps } from "../components/aurora/hero";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
@@ -11,7 +11,6 @@ import { getSavedFeed, toggleKudos, deletePost } from "../lib/social-api";
 import { forgetSavedPosts, syncSaved, useFeedSaved } from "../lib/feed-actions";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { useNavScrollProps } from "../lib/nav-scroll";
-import { Empty, SButton } from "../components/social-kit";
 import { useConfirm } from "../components/aurora/confirm";
 import FeedCard from "../components/feed-card";
 import { Comments } from "../components/feed-comments";
@@ -129,7 +128,7 @@ export default function SavedScreen() {
         </Text>
       ) : null}
       {saved.ids.length > shown ? (
-        <SButton label={t("feed.savedMore").replace("{n}", String(saved.ids.length - shown))} onPress={() => setShown((n) => n + FEED_SAVED_PAGE)} />
+        <APill label={t("feed.savedMore").replace("{n}", String(saved.ids.length - shown))} onPress={() => setShown((n) => n + FEED_SAVED_PAGE)} />
       ) : (
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>
           {t("feed.savedCount").replace("{n}", String(saved.ids.length)).toUpperCase()}

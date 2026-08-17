@@ -3,8 +3,10 @@ import { View, Text, Share, Animated, type TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit } from "@hybrid/core";
+import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit, type Mark as MarkValue } from "@hybrid/core";
 import { C, F, fs, Kicker, TABULAR } from "./ui";
+import { Glyph } from "../components/aurora/icons";
+import { Mark } from "../components/aurora/mark";
 import { withAlpha } from "../components/aurora/field";
 
 const MUSCLE_LABEL: Record<string, string> = {
@@ -58,9 +60,10 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
           <Kicker>{t("summary.todaysBests")}</Kicker>
           {stats.bests.slice(0, 4).map((b) => (
             <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-              <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>
-                {b.pr ? "🏆 " : ""}{b.name}
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flex: 1 }}>
+                {b.pr ? <Glyph name="trophy" size={fs.bodyLg} color={C.lime} label={t("w.train.logger.newPr")} /> : null}
+                <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{b.name}</Text>
+              </View>
               <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.weight, units)}</Text>
             </View>
           ))}
@@ -93,7 +96,7 @@ export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: str
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: width * 0.03, color: C.lime, letterSpacing: 2, marginTop: 6 }}>{t("welcome.tagline").toUpperCase()}</Text>
         <Text style={{ fontFamily: F.black, fontSize: width * 0.092, color: C.chalk, marginTop: width * 0.12, lineHeight: width * 0.1 }}>
-          {firstEver ? "First workout 🎉" : stats.title || "Workout"}
+          {firstEver ? t("share.firstWorkoutTitle") : stats.title || "Workout"}
         </Text>
       </View>
 
@@ -108,7 +111,7 @@ export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: str
             <Kicker>{t("summary.todaysBests")}</Kicker>
             {stats.bests.slice(0, 5).map((b) => (
               <View key={b.name} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
-                <Text style={{ fontFamily: F.semi, fontSize: width * 0.042, color: C.chalk }}>{b.pr ? "🏆 " : ""}{b.name}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>{b.pr ? <Glyph name="trophy" size={width * 0.042} color={C.lime} label={t("w.train.logger.newPr")} /> : null}<Text style={{ fontFamily: F.semi, fontSize: width * 0.042, color: C.chalk }}>{b.name}</Text></View>
                 <Text style={{ fontFamily: F.bold, fontSize: width * 0.042, color: b.pr ? C.lime : C.chalk }}>{fmtWeight(b.weight, units)}</Text>
               </View>
             ))}
@@ -133,7 +136,7 @@ export type SlideData =
   | { kind: "stat"; eyebrow: string; value: string; unit: string; caption?: string }
   | { kind: "prs"; eyebrow: string; headline: string; rows: { left: string; right: string; hot?: boolean }[] }
   | { kind: "muscle"; eyebrow: string; bars: { label: string; pct: number; value: string }[] }
-  | { kind: "fun"; eyebrow: string; emoji: string; text: string }
+  | { kind: "fun"; eyebrow: string; mark: MarkValue; text: string }
   // Bespoke workout-page share designs (reference/pr-wrapped-flow.html):
   | { kind: "trophy"; eyebrow: string; value: string; caption: string; sub: string }
   | { kind: "signature"; eyebrow: string; bars: number[]; value: string; caption: string };
@@ -260,7 +263,7 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
       return (
         <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
           <Text style={{ fontFamily: F.black, fontSize: width * 0.088, color: st.text, marginBottom: width * 0.08 }}>
-            {slide.firstEver ? "First workout 🎉" : s.title || "Workout"}
+            {slide.firstEver ? t("share.firstWorkoutTitle") : s.title || "Workout"}
           </Text>
           <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
             {/* The third card in this file, and it reads the same row the two
@@ -287,7 +290,7 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
           <Text style={{ fontFamily: F.black, fontSize: width * 0.07, color: st.barFill, marginBottom: width * 0.05 }}>{slide.headline}</Text>
           {slide.rows.slice(0, 6).map((r, i) => (
             <View key={i} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: width * 0.035 }}>
-              <Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: st.text }}>{r.hot ? "🏆 " : ""}{r.left}</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>{r.hot ? <Glyph name="trophy" size={width * 0.044} color={st.text} label={t("w.train.logger.newPr")} /> : null}<Text style={{ fontFamily: F.semi, fontSize: width * 0.044, color: st.text }}>{r.left}</Text></View>
               <Text style={{ fontFamily: F.bold, fontSize: width * 0.044, color: r.hot ? st.barFill : st.text }}>{r.right}</Text>
             </View>
           ))}
@@ -315,7 +318,7 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
       return (
         <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
           <View style={{ alignItems: "center" }}>
-            <Text style={{ fontSize: width * 0.2, textAlign: "center" }}>🏆</Text>
+            <View style={{ alignItems: "center" }}><Glyph name="trophy" size={width * 0.2} color={st.text} /></View>
             <Text style={{ fontFamily: F.black, fontSize: width * 0.16, color: st.text, marginTop: width * 0.04 }}>{slide.value}</Text>
             <Text style={{ fontFamily: F.bold, fontSize: width * 0.06, color: st.text, marginTop: width * 0.02 }}>{slide.caption}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: width * 0.035, color: st.barFill, letterSpacing: 2, marginTop: width * 0.03, textTransform: "uppercase" }}>{slide.sub}</Text>
@@ -338,7 +341,7 @@ export const SlideStoryCard = forwardRef<View, { slide: SlideData; t: (k: string
     }
     return (
       <StoryShell ref={ref} width={width} eyebrow={slide.eyebrow} tracked={tracked} st={st}>
-        <Text style={{ fontSize: width * 0.22, textAlign: "center" }}>{slide.emoji}</Text>
+        <View style={{ alignItems: "center" }}><Mark mark={slide.mark} size={width * 0.22} color={st.text} /></View>
         <Text style={{ fontFamily: F.bold, fontSize: width * 0.06, color: st.text, textAlign: "center", marginTop: width * 0.05, lineHeight: width * 0.075 }}>{slide.text}</Text>
       </StoryShell>
     );

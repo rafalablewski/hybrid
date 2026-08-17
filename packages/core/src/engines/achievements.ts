@@ -8,6 +8,7 @@
  */
 
 import type { LoggedSession } from "./session";
+import { glyphMark, sportMarkOf, type Mark } from "../theme/mark";
 import { bwAt, type BodyweightInput } from "../bodyweight";
 import { sessionVolume } from "./session";
 import { bestE1rmMap, lifetimePrCount } from "./records";
@@ -21,8 +22,9 @@ export interface Achievement {
   id: string;
   /** short title, e.g. "200kg Club" */
   label: string;
-  /** emoji glyph rendered identically on both clients */
-  icon: string;
+  /** The badge's drawing. Was an emoji; a `Mark` now, so the badge rail is
+   *  stroked in the app's own hand at the app's own weight (theme/mark.ts). */
+  mark: Mark;
   /** true once the milestone is banked */
   earned: boolean;
   /** human detail, e.g. "best e1RM 221 kg" */
@@ -58,7 +60,7 @@ function longestRunKm(sessions: LoggedSession[]): number {
 
 interface Cat {
   key: string;
-  icon: string;
+  mark: Mark;
   value: number;
   tiers: number[];
   /** badge title for a tier threshold */
@@ -72,10 +74,10 @@ function badgesFor(c: Cat): Achievement[] {
   let earnedTier = 0;
   for (const t of c.tiers) if (c.value >= t) earnedTier = t;
   if (earnedTier > 0)
-    out.push({ id: `${c.key}-${earnedTier}`, label: c.label(earnedTier), icon: c.icon, earned: true, detail: c.detail(c.value, earnedTier), progress: 1 });
+    out.push({ id: `${c.key}-${earnedTier}`, label: c.label(earnedTier), mark: c.mark, earned: true, detail: c.detail(c.value, earnedTier), progress: 1 });
   const next = c.tiers.find((t) => t > earnedTier);
   if (next != null)
-    out.push({ id: `${c.key}-${next}`, label: c.label(next), icon: c.icon, earned: false, detail: c.detail(c.value, next), progress: Math.min(1, c.value / next) });
+    out.push({ id: `${c.key}-${next}`, label: c.label(next), mark: c.mark, earned: false, detail: c.detail(c.value, next), progress: Math.min(1, c.value / next) });
   return out;
 }
 
@@ -93,7 +95,7 @@ export function computeAchievements(sessions: LoggedSession[], bw?: BodyweightIn
   const cats: Cat[] = [
     {
       key: "strength",
-      icon: "🏆",
+      mark: glyphMark("trophy"),
       value: maxE1rm,
       tiers: [100, 140, 180, 220],
       label: (t) => `${t}kg Club`,
@@ -101,7 +103,7 @@ export function computeAchievements(sessions: LoggedSession[], bw?: BodyweightIn
     },
     {
       key: "streak",
-      icon: "🔥",
+      mark: glyphMark("flame"),
       value: weekRun,
       tiers: [4, 8, 12, 26, 52],
       label: (t) => `${t}-week streak`,
@@ -109,7 +111,7 @@ export function computeAchievements(sessions: LoggedSession[], bw?: BodyweightIn
     },
     {
       key: "sessions",
-      icon: "📒",
+      mark: glyphMark("diary"),
       value: sessions.length,
       tiers: [25, 50, 100, 250, 500],
       label: (t) => `${t} sessions`,
@@ -117,7 +119,7 @@ export function computeAchievements(sessions: LoggedSession[], bw?: BodyweightIn
     },
     {
       key: "tonnage",
-      icon: "🏋️",
+      mark: glyphMark("barbell"),
       value: tonnage,
       tiers: [50_000, 100_000, 500_000, 1_000_000],
       label: (t) => (t >= 1_000_000 ? "Million kg" : `${Math.round(t / 1000)}t moved`),
@@ -125,7 +127,7 @@ export function computeAchievements(sessions: LoggedSession[], bw?: BodyweightIn
     },
     {
       key: "prs",
-      icon: "⚡",
+      mark: glyphMark("bolt"),
       value: prs,
       tiers: [5, 10, 25, 50],
       label: (t) => `${t} PRs`,
@@ -133,7 +135,7 @@ export function computeAchievements(sessions: LoggedSession[], bw?: BodyweightIn
     },
     {
       key: "run",
-      icon: "🏃",
+      mark: sportMarkOf("Running"),
       value: runKm,
       tiers: [5, 10, 21, 42],
       label: (t) => (t >= 42 ? "Marathon" : t >= 21 ? "Half marathon" : `${t}K run`),

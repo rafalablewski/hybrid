@@ -31,26 +31,30 @@ import EngineRoom from "./engine-room";
 
 type SectionId = "overview" | "users" | "directory" | "moderation" | "hq" | "agents" | "engine" | "announcements" | "onboarding" | "exercises" | "media" | "translations" | "flags" | "content" | "access" | "security" | "audit" | "system" | "guidance";
 
-const SECTIONS: { id: SectionId; label: string; icon: string; auroraIcon: AuroraIconName; group: string }[] = [
-  { id: "overview", label: "Overview", icon: "◆", auroraIcon: "info", group: "Platform" },
-  { id: "users", label: "Users", icon: "⦿", auroraIcon: "user", group: "Platform" },
-  { id: "directory", label: "Coaching", icon: "⬡", auroraIcon: "globe", group: "Platform" },
-  { id: "moderation", label: "Moderation", icon: "⚖", auroraIcon: "check-circle", group: "Platform" },
-  { id: "hq", label: "Agent HQ", icon: "◳", auroraIcon: "navigation", group: "AI" },
-  { id: "agents", label: "AI agents", icon: "🤖", auroraIcon: "user-square", group: "AI" },
-  { id: "engine", label: "Engine room", icon: "ƒ", auroraIcon: "grid", group: "AI" },
-  { id: "announcements", label: "Announcements", icon: "📣", auroraIcon: "bell", group: "Content" },
-  { id: "onboarding", label: "Onboarding", icon: "🧭", auroraIcon: "navigation", group: "Content" },
-  { id: "exercises", label: "Exercise library", icon: "🏋", auroraIcon: "list-check", group: "Content" },
-  { id: "media", label: "Media library", icon: "🖼", auroraIcon: "copy", group: "Content" },
-  { id: "translations", label: "Localization", icon: "🌐", auroraIcon: "share", group: "Content" },
-  { id: "flags", label: "Feature flags", icon: "⚑", auroraIcon: "bookmark", group: "Content" },
-  { id: "content", label: "Capabilities & data", icon: "⊞", auroraIcon: "download", group: "Content" },
-  { id: "access", label: "Access control", icon: "⚿", auroraIcon: "lock", group: "Governance" },
-  { id: "security", label: "Security", icon: "🛡", auroraIcon: "verified", group: "Governance" },
-  { id: "audit", label: "Audit log", icon: "❑", auroraIcon: "search", group: "Governance" },
-  { id: "system", label: "System", icon: "⚙", auroraIcon: "settings", group: "Governance" },
-  { id: "guidance", label: "Guidance", icon: "📖", auroraIcon: "calendar-event", group: "Governance" },
+/** Each section names ONE glyph. It used to carry an `icon` emoji beside the
+ *  `auroraIcon`, drawn whenever the Aurora template was off — a whole parallel
+ *  icon language kept alive by a template flag. The glyph set is the only
+ *  language now, so the fallback is gone with it. */
+const SECTIONS: { id: SectionId; label: string; auroraIcon: AuroraIconName; group: string }[] = [
+  { id: "overview", label: "Overview", auroraIcon: "info", group: "Platform" },
+  { id: "users", label: "Users", auroraIcon: "user", group: "Platform" },
+  { id: "directory", label: "Coaching", auroraIcon: "globe", group: "Platform" },
+  { id: "moderation", label: "Moderation", auroraIcon: "check-circle", group: "Platform" },
+  { id: "hq", label: "Agent HQ", auroraIcon: "navigation", group: "AI" },
+  { id: "agents", label: "AI agents", auroraIcon: "user-square", group: "AI" },
+  { id: "engine", label: "Engine room", auroraIcon: "grid", group: "AI" },
+  { id: "announcements", label: "Announcements", auroraIcon: "bell", group: "Content" },
+  { id: "onboarding", label: "Onboarding", auroraIcon: "navigation", group: "Content" },
+  { id: "exercises", label: "Exercise library", auroraIcon: "list-check", group: "Content" },
+  { id: "media", label: "Media library", auroraIcon: "copy", group: "Content" },
+  { id: "translations", label: "Localization", auroraIcon: "share", group: "Content" },
+  { id: "flags", label: "Feature flags", auroraIcon: "bookmark", group: "Content" },
+  { id: "content", label: "Capabilities & data", auroraIcon: "download", group: "Content" },
+  { id: "access", label: "Access control", auroraIcon: "lock", group: "Governance" },
+  { id: "security", label: "Security", auroraIcon: "verified", group: "Governance" },
+  { id: "audit", label: "Audit log", auroraIcon: "search", group: "Governance" },
+  { id: "system", label: "System", auroraIcon: "settings", group: "Governance" },
+  { id: "guidance", label: "Guidance", auroraIcon: "calendar-event", group: "Governance" },
 ];
 
 export default function AdminPanel() {

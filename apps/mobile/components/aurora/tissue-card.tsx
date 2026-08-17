@@ -12,7 +12,7 @@ import {
 import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import { ACard, CardFoot, ActionPill , RADIUS} from "./kit";
 import LoadSheet from "./load-sheet";
@@ -451,8 +451,8 @@ function Receipt({ C, t, explain, onOpen }: {
       accessibilityLabel={`${label} ${explain.value}, ${t(explain.readKey)}. ${t("w.injury.load.explainCta")}`}
       style={{ flex: 1, minWidth: 0, paddingVertical: RECEIPT_PAD }}
     >
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: paint }}>{explain.value}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: paint }}>{explain.value}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>
         {label}
       </Text>
     </Pressable>

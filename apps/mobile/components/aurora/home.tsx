@@ -74,7 +74,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, APressCard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
@@ -867,7 +867,7 @@ export default function AuroraHome() {
               {/* The fourth path — always present (like the other three). With no
                   saved routines the sheet shows its build-first empty state, so
                   it's a prompt, not a dead door. */}
-              <StructureCard C={C} width={structW} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.logbook.slimQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
+              <StructureCard C={C} width={structW} glyph="⌁" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.logbook.slimQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
             </ScrollView>
           </View>
         ) : firstRun ? (
@@ -884,7 +884,7 @@ export default function AuroraHome() {
             <ChooserCard C={C} glyph="▤" accent={C.lime} title={t("w.home.today.chooserFollowTitle")} sub={t("w.home.today.chooserFollowSub")} cta={t("w.home.today.chooserFollowCta")} onPress={() => router.push("/plans")} />
             <ChooserCard C={C} glyph="⌗" accent={C.blue} title={t("w.home.today.chooserBuildTitle")} sub={t("w.home.today.chooserBuildSub")} cta={t("w.home.today.chooserBuildCta")} onPress={() => router.push("/builder")} />
             <ChooserCard C={C} glyph="↯" accent={C.amber} title={t("w.home.today.chooserLogTitle")} sub={t("w.home.today.chooserLogSub")} cta={t("w.home.today.chooserLogCta")} onPress={() => router.push("/workout?source=empty")} />
-            <ChooserCard C={C} glyph="⚡" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
+            <ChooserCard C={C} glyph="⌁" accent={C.violet} title={t("w.home.today.chooserQuickTitle")} sub={t("w.home.today.chooserQuickSub")} cta={t("w.home.today.chooserQuickCta")} onPress={() => setQuickStartOpen(true)} />
           </View>
         ) : (
         <ACard>
@@ -967,7 +967,7 @@ export default function AuroraHome() {
                     plan: on a plan the four "Train your way" cards aren't shown, so
                     this is the on-plan door to a saved routine (a session off-plan). */}
                 <Pressable onPress={() => setQuickStartOpen(true)} style={{ marginTop: 10, paddingVertical: 2, alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet) }}>⚡ {t("w.home.today.quickStartLink")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.violet) }}>⌁ {t("w.home.today.quickStartLink")}</Text>
                 </Pressable>
               </>
             ) : initialLoad ? (
@@ -1375,8 +1375,8 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
        side. Everything else is now decided once, in the kit. */
     <APressCard onPress={onPress} a11yLabel={title} glow={accent} style={{ width, padding: 16 }}>
       <Text style={{ fontSize: fs.note, lineHeight: leading(fs.note, "tight"), color: txt(C, accent) }}>{glyph}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
     </APressCard>
   );

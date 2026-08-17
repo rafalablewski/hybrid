@@ -2,7 +2,7 @@ import { type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { RADIUS } from "./kit";
 import { useTheme } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, tracking } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, tracking } from "../../lib/ui";
 
 /**
  * THE MEASURE ROW — one measure, where it sits, and the figures it sits between.
@@ -60,14 +60,14 @@ export function MeasureLine({
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.sm, marginBottom: 8 }}>
       <Text
-        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         numberOfLines={1}
         style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}
       >
         {name}
       </Text>
       <Text
-        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         numberOfLines={1}
         style={{ fontFamily: F.monoBold, fontSize: fs.note, color: tone ?? C.chalk }}
       >
@@ -75,7 +75,7 @@ export function MeasureLine({
       </Text>
       {context !== null && (
         <Text
-          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           numberOfLines={1}
           style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}
         >
@@ -132,7 +132,7 @@ export function MeasureScale({ cells, tone = null }: { cells: MeasureCell[]; ton
       {cells.map((c) => {
         const body = (
           <Text
-            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             numberOfLines={1}
             style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: c.selected ? (tone ?? C.chalk) : C.ash }}
           >

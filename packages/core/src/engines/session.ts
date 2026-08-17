@@ -2,11 +2,12 @@ import type { TrainingLog, EnergySystem } from "./types";
 import { movementFor, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
-import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
+import { sportPacePerMeters, formatSportDistance, timedSportOnly } from "../olympic-sports";
 import { fmtWeight, fmtTonnage, splitFigure, type WeightUnit } from "../units";
 import { fmtKm } from "../distance";
 import type { DeviceWorkout } from "../session-device";
 import { deviceTrueSession, deviceTrueSessions } from "../device-truth";
+import { glyphMark, sportMarkOf, type Mark } from "../theme/mark";
 
 // The persisted Session.blocks shape (matches what the web logger writes and
 // what the API stores as JSON). Shared so the logger, history, dashboards, and
@@ -750,12 +751,16 @@ export function sessionClockTime(iso: string): string {
   return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
-/** The emoji glyph a logged session wears in a list row: the sport catalog's
- *  icon for a sport/cardio session (title = sport name for quick logs), the
- *  barbell for gym work. Shared so web + mobile rows can't drift. */
-export function sessionIcon(session: LoggedSession): string {
-  if (sessionShape(session) === "strength") return "🏋️";
-  return olympicSport(session.title)?.icon ?? "🏃";
+/** The MARK a logged session wears in a list row: the sport's own drawing for a
+ *  sport/cardio session (title = sport name for quick logs), the barbell for gym
+ *  work. Shared so web + mobile rows can't drift.
+ *
+ *  Was `sessionIcon`, returning 🏋️ or the catalog emoji — the row-level source
+ *  of pictographs on Today's "done today" list, the done floor and the feel
+ *  sheet. */
+export function sessionMark(session: LoggedSession): Mark {
+  if (sessionShape(session) === "strength") return glyphMark("barbell");
+  return sportMarkOf(session.title);
 }
 
 /**

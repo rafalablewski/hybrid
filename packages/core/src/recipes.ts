@@ -16,10 +16,12 @@
 
 import { colors } from "./theme/tokens";
 
+import { glyphMark, type Mark } from "./theme/mark";
+
 export type RecipeMeal = "breakfast" | "lunch" | "dinner" | "snack";
 
 /** Hero tint — recipes have no photo assets, so the hero is a warm gradient
- *  keyed to one of the brand accents plus the dish emoji. Keeps the library
+ *  keyed to one of the brand accents plus the dish mark. Keeps the library
  *  self-contained (no external images) and on-system. */
 export type RecipeTint = "amber" | "blue" | "red" | "lime";
 
@@ -58,7 +60,11 @@ export interface Recipe {
   note: string;
   /** total active time in minutes */
   timeMins: number;
-  emoji: string;
+  /** The dish's drawing. Was an emoji; a `Mark` now, drawn from the nutrition
+   *  glyphs by KIND (bowl / leaf / egg / grain / apple) rather than by dish —
+   *  sport-marks.ts's rule, applied to food: there are not eight distinctive
+   *  silhouettes between ramen and rice, and the title already says which. */
+  mark: Mark;
   tint: RecipeTint;
   /** the serving count the stored quantities + macros describe */
   baseServes: number;
@@ -77,7 +83,7 @@ export const RECIPES: Recipe[] = [
     meal: "lunch",
     note: "A fast weeknight bowl — seared chicken and soft eggs in a gingered stock, built while the noodles boil.",
     timeMins: 15,
-    emoji: "🍜",
+    mark: glyphMark("bowl"),
     tint: "amber",
     baseServes: 2,
     macros: { kcal: 540, protein: 15, carbs: 58, fat: 20 },
@@ -105,7 +111,7 @@ export const RECIPES: Recipe[] = [
     meal: "lunch",
     note: "Chicken, feta and leaves dressed at the table, for when lunch has to be quick and still carry protein.",
     timeMins: 10,
-    emoji: "🥗",
+    mark: glyphMark("leaf"),
     tint: "blue",
     baseServes: 1,
     macros: { kcal: 380, protein: 32, carbs: 20, fat: 18 },
@@ -131,7 +137,7 @@ export const RECIPES: Recipe[] = [
     meal: "breakfast",
     note: "Eggs poached straight into a spiced tomato and pepper base, cooked and served in one pan.",
     timeMins: 20,
-    emoji: "🍳",
+    mark: glyphMark("egg"),
     tint: "red",
     baseServes: 2,
     macros: { kcal: 410, protein: 22, carbs: 24, fat: 26 },
@@ -158,7 +164,7 @@ export const RECIPES: Recipe[] = [
     meal: "breakfast",
     note: "The eight-minute breakfast, on sourdough, with enough salt and acid to stop it tasting flat.",
     timeMins: 8,
-    emoji: "🥑",
+    mark: glyphMark("leaf"),
     tint: "lime",
     baseServes: 1,
     macros: { kcal: 320, protein: 12, carbs: 34, fat: 16 },
@@ -181,7 +187,7 @@ export const RECIPES: Recipe[] = [
     meal: "dinner",
     note: "Paprika thighs, yoghurt and crunch rolled into a wrap — the highest-protein thing here that still eats like fast food.",
     timeMins: 18,
-    emoji: "🌯",
+    mark: glyphMark("grain"),
     tint: "red",
     baseServes: 2,
     macros: { kcal: 560, protein: 40, carbs: 48, fat: 22 },
@@ -208,7 +214,7 @@ export const RECIPES: Recipe[] = [
     meal: "dinner",
     note: "A pot of green lentils and root vegetables that gets better on day two, so it doubles as the week's lunches.",
     timeMins: 30,
-    emoji: "🍲",
+    mark: glyphMark("bowl"),
     tint: "amber",
     baseServes: 4,
     macros: { kcal: 470, protein: 24, carbs: 62, fat: 12 },
@@ -234,7 +240,7 @@ export const RECIPES: Recipe[] = [
     meal: "breakfast",
     note: "Assembled the night before and eaten cold, with whey and berries doing the work while you sleep.",
     timeMins: 5,
-    emoji: "🥣",
+    mark: glyphMark("grain"),
     tint: "lime",
     baseServes: 1,
     macros: { kcal: 350, protein: 20, carbs: 48, fat: 9 },
@@ -259,7 +265,7 @@ export const RECIPES: Recipe[] = [
     meal: "dinner",
     note: "Roast salmon over seasoned rice with edamame and cucumber — the biggest plate in the library, and the one to eat after a hard session.",
     timeMins: 22,
-    emoji: "🍚",
+    mark: glyphMark("grain"),
     tint: "blue",
     baseServes: 2,
     macros: { kcal: 620, protein: 38, carbs: 60, fat: 24 },
@@ -343,8 +349,8 @@ export const RECIPE_TINT_COLOR: Record<RecipeTint, string> = {
  *  the EXACT scaffold the plan detail does rather than a lookalike. */
 export interface RecipeCoverView {
   accent: string;
-  /** the dish emoji — cover art, not a ghosted mark (see the `recipe` variant) */
-  glyph: string;
+  /** the dish's drawn mark — cover art (see the `recipe` variant) */
+  mark: Mark;
   chip: string;
   duration: string;
   title: string;
@@ -385,7 +391,7 @@ export function recipeCoverView(
 ): RecipeCoverView {
   return {
     accent: RECIPE_TINT_COLOR[recipe.tint],
-    glyph: recipe.emoji,
+    mark: recipe.mark,
     chip: t.meal(recipe.meal),
     duration: t.mins(recipe.timeMins).toUpperCase(),
     title: recipe.name,
@@ -426,12 +432,12 @@ export const RECIPE_COLLECTIONS: RecipeCollection[] = ["breakfast", "lunch", "di
 /** A collection's cover art + its one-line blurb. Plain text like the rest of
  *  the recipe content (names, ingredients, method); only the chrome around it
  *  (the title, the counts, the meta labels) is localized by the caller. */
-export const RECIPE_COLLECTION_META: Record<RecipeCollection, { tint: RecipeTint; glyph: string; note: string }> = {
-  breakfast: { tint: "lime", glyph: "🍳", note: "The meals that decide how the rest of the day eats — quick, protein-forward, and mostly assembled rather than cooked." },
-  lunch: { tint: "amber", glyph: "🥗", note: "Built around a working day: everything here is on the table inside twenty minutes and travels in a box." },
-  dinner: { tint: "blue", glyph: "🍲", note: "The bigger plate at the end of the day, sized to refill what a hard session emptied." },
-  snack: { tint: "red", glyph: "🍎", note: "Small, deliberate, and worth logging — the gap-fillers between the three plates." },
-  highProtein: { tint: "red", glyph: "🥚", note: "Every dish in the library that carries real protein, wherever in the day it lands." },
+export const RECIPE_COLLECTION_META: Record<RecipeCollection, { tint: RecipeTint; mark: Mark; note: string }> = {
+  breakfast: { tint: "lime", mark: glyphMark("egg"), note: "The meals that decide how the rest of the day eats — quick, protein-forward, and mostly assembled rather than cooked." },
+  lunch: { tint: "amber", mark: glyphMark("leaf"), note: "Built around a working day: everything here is on the table inside twenty minutes and travels in a box." },
+  dinner: { tint: "blue", mark: glyphMark("bowl"), note: "The bigger plate at the end of the day, sized to refill what a hard session emptied." },
+  snack: { tint: "red", mark: glyphMark("apple"), note: "Small, deliberate, and worth logging — the gap-fillers between the three plates." },
+  highProtein: { tint: "red", mark: glyphMark("egg"), note: "Every dish in the library that carries real protein, wherever in the day it lands." },
 };
 
 /** The recipes on one shelf, in library order. */
@@ -468,10 +474,11 @@ export function recipeShelves(query = "", recipes: Recipe[] = RECIPES): RecipeSh
 
 /** The LIBRARY-level cover — "Recipes" itself, the level above the
  *  collections. Structurally the Plans root's cover (plan-program.ts
- *  `libraryCoverView`) so the two roots are one object: a geometric glyph (an
- *  emoji ghosted to 9% white is a grey smudge), the level named in the chip,
- *  the count top-right, the collections on the meta line. `◉` is a plate seen
- *  from above — the same geometric family as Plans' `◈`, and not it. */
+ *  `libraryCoverView`) so the two roots are one object: a geometric emblem, the
+ *  level named in the chip, the count top-right, the collections on the meta
+ *  line. `◉` is a plate seen from above — the same geometric family as Plans'
+ *  `◈`, and not it. This one is TYPE, not a picture: the library roots wear an
+ *  abstract emblem where a recipe wears its dish mark. */
 export interface RecipeLibraryCoverView {
   glyph: string;
   chip: string;
@@ -496,13 +503,13 @@ export function recipeLibraryCoverView(
 
 /** The COLLECTION-level cover — "Breakfast" as its own screen, the way a goal
  *  gets one in Plans. It rides the `recipe` (plate) variant rather than the
- *  goal's emblem: the cover art here is a dish emoji, and full colour is the
- *  only way that reads. NO aggregate hem, for the plan library's reason —
+ *  goal's emblem: the cover art here is the collection's dish mark. NO
+ *  aggregate hem, for the plan library's reason —
  *  macros averaged across a shelf say nothing; each recipe card carries its
  *  own numbers instead (`recipeCardStats`). */
 export interface RecipeCollectionCoverView {
   accent: string;
-  glyph: string;
+  mark: Mark;
   chip: string;
   /** top-right label — "3 RECIPES". */
   count: string;
@@ -530,7 +537,7 @@ export function recipeCollectionCoverView(
   const n = recipes.length;
   return {
     accent: RECIPE_TINT_COLOR[meta.tint],
-    glyph: meta.glyph,
+    mark: meta.mark,
     chip: t.chip,
     count: `${n} ${n === 1 ? t.recipe : t.recipes}`.toUpperCase(),
     title: t.title,
@@ -543,12 +550,12 @@ export function recipeCollectionCoverView(
   };
 }
 
-/** A recipe at TILE scale — the cover it expands into, shrunk. The emoji stays
- *  full colour (it is the dish, not a watermark), the time reads top-right the
+/** A recipe at TILE scale — the cover it expands into, shrunk. The dish mark is
+ *  stroked in the tint (it is the dish, not a watermark), the time reads top-right the
  *  way a plan tile prints its plan count, and the energy sits under the name. */
 export interface RecipeTileView {
   accent: string;
-  glyph: string;
+  mark: Mark;
   title: string;
   /** top-right mono label — "15 MIN". */
   count: string;
@@ -559,7 +566,7 @@ export interface RecipeTileView {
 export function recipeTileView(recipe: Recipe, t: { mins: (n: number) => string; kcal: (n: number) => string }): RecipeTileView {
   return {
     accent: RECIPE_TINT_COLOR[recipe.tint],
-    glyph: recipe.emoji,
+    mark: recipe.mark,
     title: recipe.name,
     count: t.mins(recipe.timeMins).toUpperCase(),
     meta: t.kcal(recipe.macros.kcal),
@@ -586,13 +593,13 @@ export function recipeCardStats(
  *  The cook flow is NOT a cover screen: it doesn't scroll, and it ends in a
  *  sticky action bar, so a collapsing full-bleed cover would promise a collapse
  *  that never comes. What it gets instead is the cover's MATERIAL at plate
- *  scale — the same wash accent, the same full-colour dish art, the same chip
+ *  scale — the same wash accent, the same dish mark, the same chip
  *  and title — with the step counter in the slot the detail cover gives to
  *  time, and the method's steps as ticks along its bottom edge. One view-model
  *  so both clients count, clamp and label identically. */
 export interface RecipeCookView {
   accent: string;
-  glyph: string;
+  mark: Mark;
   chip: string;
   title: string;
   /** top-right mono label — "STEP 2 OF 5". */
@@ -614,7 +621,7 @@ export function recipeCookView(
   const index = Math.min(Math.max(0, Math.trunc(stepIndex) || 0), Math.max(0, steps - 1));
   return {
     accent: RECIPE_TINT_COLOR[recipe.tint],
-    glyph: recipe.emoji,
+    mark: recipe.mark,
     chip: t.meal(recipe.meal),
     title: recipe.name,
     count: t.stepXofY(index + 1, steps).toUpperCase(),
@@ -625,11 +632,14 @@ export function recipeCookView(
   };
 }
 
-/** A saveable meal draft (name + emoji + single-number macros) — the shape the
- *  SavedMeal library POST accepts. */
+/** A saveable meal draft (name + single-number macros) — the shape the
+ *  SavedMeal library POST accepts.
+ *
+ *  NO `emoji`. The draft used to seed the saved meal with the recipe's
+ *  pictograph, which is how app-authored emoji got into the database and back
+ *  out onto the library row. A saved meal draws the shared dish glyph. */
 export interface RecipeMealDraft {
   name: string;
-  emoji: string;
   kcal: number;
   protein: number;
   carbs: number;
@@ -638,12 +648,11 @@ export interface RecipeMealDraft {
 
 /** Turn a recipe into a personal-library meal ("Create meal" from a recipe). A
  *  saved meal logs as ONE serving, so the draft carries the recipe's PER-SERVE
- *  macros (the same numbers the detail macro strip shows) under the recipe name
- *  + dish emoji. Both clients POST this to /api/nutrition/meals. */
+ *  macros (the same numbers the detail macro strip shows)
+ *  under the recipe name. Both clients POST this to /api/nutrition/meals. */
 export function recipeToMeal(recipe: Recipe): RecipeMealDraft {
   return {
     name: recipe.name,
-    emoji: recipe.emoji,
     kcal: recipe.macros.kcal,
     protein: recipe.macros.protein,
     carbs: recipe.macros.carbs,

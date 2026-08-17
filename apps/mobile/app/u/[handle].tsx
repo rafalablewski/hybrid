@@ -36,7 +36,7 @@ import type {
   UserPageTabId,
 } from "@hybrid/core";
 import { F, Loading, LoadSwap, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, ASection, ASegment, cardStack , RADIUS} from "../../components/aurora/kit";
+import { AuroraScreen, ACard, ASection, ASegment, cardStack, RADIUS, Avatar, Empty, Stars, levelInk, APill } from "../../components/aurora/kit";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -45,10 +45,10 @@ import { HeroAccessory } from "../../components/aurora/hero";
 import {
   blockUser, enrollProgram, follow, getCompare, getUserActivity, getUserPage, getUserPeople, postReview, reportTarget, toggleKudos, unfollow,
 } from "../../lib/social-api";
-import { Avatar, Empty, SButton, Stars, levelInk } from "../../components/social-kit";
 import FeedCard from "../../components/feed-card";
 import { Comments } from "../../components/feed-comments";
 import { usePersonSource } from "../../lib/shared-element";
+import { Glyph } from "../../components/aurora/icons";
 
 /**
  * THE INDIVIDUAL USER PAGE (mobile).
@@ -230,16 +230,16 @@ export default function UserScreen() {
           should not make you look for it. Core decides which verb it is. */}
       {action ? (
         <View style={{ marginTop: 14 }}>
-          <SButton
+          <APill
             label={action.id === "unfollow" ? `${t(action.labelKey)} ✓` : t(action.labelKey)}
-            ghost={!action.primary}
-            full
+            variant={!action.primary ? "outline" : "primary"}
             disabled={busy === "f" || action.id === "requested"}
             onPress={action.id === "follow"
               ? () => run("f", async () => { await follow({ handle }); await load(); })
               : action.id === "unfollow"
                 ? () => run("f", async () => { await unfollow({ handle }); await load(); })
-                : undefined}
+                // "Requested" is a state, not an action; it renders disabled.
+                : () => {}}
           />
         </View>
       ) : null}
@@ -316,7 +316,7 @@ export default function UserScreen() {
       {/* ── THE QUIET VERBS ── never beside the ones you're meant to use. */}
       {rel !== "self" ? (
         <View style={{ flexDirection: "row", gap: 16, marginTop: 24, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14 }}>
-          <Pressable onPress={doReport}><Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.bold }}>⚐ {t("w.social.report")}</Text></Pressable>
+          <Pressable onPress={doReport} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><Glyph name="flag" size={fs.caption} color={C.ash} /><Text style={{ color: C.ash, fontSize: fs.caption, fontFamily: F.bold }}>{t("w.social.report")}</Text></Pressable>
           <Pressable onPress={doBlock}><Text style={{ color: txt(C, C.red), fontSize: fs.caption, fontFamily: F.bold }}>⊘ {t("w.social.block")}</Text></Pressable>
         </View>
       ) : null}
@@ -343,7 +343,7 @@ function Overview({ data, cmp, name, onCompare, busy }: {
     return (
       <View style={{ marginTop: 16, backgroundColor: C.ink2, borderRadius: 14, padding: 16 }}>
         <Text style={{ color: C.ash, fontSize: fs.body, lineHeight: leading(fs.body) }}>
-          🔒 {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : followsUser(rel) ? "" : t("w.social.followToSee")}
+          {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : followsUser(rel) ? "" : t("w.social.followToSee")}
         </Text>
       </View>
     );
@@ -567,14 +567,13 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
                 {p.enrollmentStatus === "active" ? `${t("w.coaches.enrolled")} ✓` : t("w.social.requested")}
               </Text>
             ) : canEnrolProgram(data, p) ? (
-              <SButton
+              <APill
                 // The idle word holds the width and the in-flight one overlays
-                // it (SButton's `busyLabel`, the small button's half of APill's
-                // commit state) — swapping the LABEL made "Start" become
-                // "Starting…" and the button grow under the finger.
+                // it (APill's commit state) — swapping the LABEL made "Start"
+                // become "Starting…" and the button grow under the finger.
                 label={t("w.coaches.start")}
-                busyLabel={enrolling === p.id ? t("w.coaches.starting") : undefined}
-                small
+                state={enrolling === p.id ? "saving" : "idle"} savingLabel={t("w.coaches.starting")}
+                size="compact"
                 disabled={!!enrolling}
                 onPress={async () => {
                   if (enrolling) return;
@@ -620,7 +619,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
       <ASection title={t("w.coaches.reviews")} meta={coach.reviews.length ? String(coach.reviews.length) : undefined} />
       {canReviewCoach(data) ? (
         <View style={{ alignSelf: "flex-start", marginBottom: 12 }}>
-          <SButton label={reviewOpen ? t("common.cancel") : t("w.coaches.writeReview")} ghost small onPress={() => setReviewOpen((o) => !o)} />
+          <APill label={reviewOpen ? t("common.cancel") : t("w.coaches.writeReview")} variant="outline" size="compact" onPress={() => setReviewOpen((o) => !o)} />
         </View>
       ) : null}
       {reviewOpen ? (
@@ -641,7 +640,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
             style={{ minHeight: 56, padding: 10, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, color: C.chalk, fontSize: fs.caption }}
           />
           <View style={{ marginTop: 8, alignSelf: "flex-start" }}>
-            <SButton label={t("w.coaches.submitReview")} small onPress={async () => {
+            <APill label={t("w.coaches.submitReview")} size="compact" onPress={async () => {
               const r = await postReview(handle, { rating, body });
               if (r.error) { void notify(t("common.error"), r.error); return; }
               setReviewOpen(false); setBody("");

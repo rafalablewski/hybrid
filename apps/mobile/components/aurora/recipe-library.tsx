@@ -12,6 +12,7 @@ import { DockRail, DockChip, RADIUS, ACard } from "./kit";
 import { withAlpha } from "./field";
 import { HeroNav } from "./hero";
 import { COVER_GUTTER } from "../plan-hero";
+import { Mark } from "./mark";
 
 /**
  * THE RECIPE LIBRARY (mobile) — the curated, read-only shelves.
@@ -101,7 +102,7 @@ export function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe;
       {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
           15% @ 46% → 0x26, then ink) — web parity: nutrition.tsx RecipeTile */}
       <LinearGradient pointerEvents="none" colors={[withAlpha(tile.accent, 0.52), withAlpha(tile.accent, 0.15), withAlpha(tile.accent, 0.0)]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
-      <Text pointerEvents="none" style={{ position: "absolute", top: -4, right: -6, fontSize: 78, lineHeight: 84 }}>{tile.glyph}</Text>
+      <View pointerEvents="none" style={{ position: "absolute", top: -4, right: -6 }}><Mark mark={tile.mark} size={78} color={withAlpha(tile.accent, ALPHA.rim)} /></View>
       <LinearGradient pointerEvents="none" colors={[withAlpha(TILE_INK, 0), withAlpha(TILE_INK, 0.66), TILE_INK]} locations={[0.34, 0.78, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       <Text style={{ alignSelf: "flex-end", fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
       <View>
@@ -123,7 +124,7 @@ export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () =
     <View style={{ height: 150, borderRadius: RADIUS.card, overflow: "hidden", backgroundColor: TILE_INK, marginTop: 2 }}>
       {/* alpha-over-ink stops matching web's color-mix wash — web parity */}
       <LinearGradient pointerEvents="none" colors={[withAlpha(cook.accent, 0.52), withAlpha(cook.accent, 0.15), withAlpha(cook.accent, 0.0)]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
-      <Text pointerEvents="none" style={{ position: "absolute", top: -16, right: -10, fontSize: 118, lineHeight: 126 }}>{cook.glyph}</Text>
+      <View pointerEvents="none" style={{ position: "absolute", top: -16, right: -10 }}><Mark mark={cook.mark} size={118} color={withAlpha(cook.accent, ALPHA.rim)} /></View>
       <LinearGradient pointerEvents="none" colors={[withAlpha(TILE_INK, 0), withAlpha(TILE_INK, 0.55), TILE_INK]} locations={[0.38, 0.8, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={{ position: "absolute", top: 10, left: 10, right: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <HeroNav onPress={onBack} fromLabel={cook.title} material="glass" />
@@ -168,7 +169,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
           )}
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 }}>
-          <Text style={{ fontSize: fs.display }}>{recipe.emoji}</Text>
+          <Mark mark={recipe.mark} size={fs.display} color={C.ash} />
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, flexShrink: 1 }}>{recipe.name}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>

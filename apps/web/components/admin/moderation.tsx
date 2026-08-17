@@ -98,7 +98,7 @@ export default function AdminModeration() {
             </div>
           </Card>
         ))}
-        {reports && reports.length === 0 && <Empty>No open reports. 🎉</Empty>}
+        {reports && reports.length === 0 && <Empty>No open reports.</Empty>}
       </div>
     </div>
   );

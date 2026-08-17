@@ -23,6 +23,7 @@
 import type { LoggedSession } from "./engines/session";
 import { doneReceipt } from "./done-receipt";
 import { bwAt, type BodyweightInput } from "./bodyweight";
+import { glyphMark, type Mark } from "./theme/mark";
 
 /** Palette accent hint; each client maps it to its own theme colour. */
 export type FeelTone = "blue" | "lime" | "amber" | "red";
@@ -31,7 +32,14 @@ export interface FeelDef {
   /** 1 (easiest) … 5 (maximal). Stored as-is. */
   value: 1 | 2 | 3 | 4 | 5;
   labelKey: string;
-  emoji: string;
+  /**
+   * The level's drawing. Was an emoji (😌 🙂 😤 🥵 💀 / ⚡ 🙂 😮‍💨 🫠 🥴), and
+   * the check-in draws it with NO LABEL beside it, so the mark carries the
+   * whole question on its own. The five product faces are one drawn ramp —
+   * brow dropping, mouth turning, in order — which an emoji ramp assembled
+   * from two different Unicode blocks was not.
+   */
+  mark: Mark;
   tone: FeelTone;
   /** The 1–10 session-RPE this level maps to (Foster's category-ratio scale). */
   rpe: number;
@@ -39,27 +47,27 @@ export interface FeelDef {
 
 /** How hard the session felt — five levels across the 1–10 sRPE scale. */
 export const FEELS: readonly FeelDef[] = [
-  { value: 1, labelKey: "session.feel.easy", emoji: "😌", tone: "blue", rpe: 2 },
-  { value: 2, labelKey: "session.feel.steady", emoji: "🙂", tone: "blue", rpe: 4 },
-  { value: 3, labelKey: "session.feel.solid", emoji: "😤", tone: "lime", rpe: 6 },
-  { value: 4, labelKey: "session.feel.hard", emoji: "🥵", tone: "amber", rpe: 8 },
-  { value: 5, labelKey: "session.feel.allOut", emoji: "💀", tone: "red", rpe: 10 },
+  { value: 1, labelKey: "session.feel.easy", mark: glyphMark("face-easy"), tone: "blue", rpe: 2 },
+  { value: 2, labelKey: "session.feel.steady", mark: glyphMark("face-steady"), tone: "blue", rpe: 4 },
+  { value: 3, labelKey: "session.feel.solid", mark: glyphMark("face-solid"), tone: "lime", rpe: 6 },
+  { value: 4, labelKey: "session.feel.hard", mark: glyphMark("face-hard"), tone: "amber", rpe: 8 },
+  { value: 5, labelKey: "session.feel.allOut", mark: glyphMark("face-spent"), tone: "red", rpe: 10 },
 ] as const;
 
 export interface FatigueDef {
   value: 1 | 2 | 3 | 4 | 5;
   labelKey: string;
-  emoji: string;
+  mark: Mark;
   tone: FeelTone;
 }
 
 /** How spent the athlete is AFTER — the recovery side of the same question. */
 export const FATIGUES: readonly FatigueDef[] = [
-  { value: 1, labelKey: "session.fatigue.fresh", emoji: "⚡", tone: "lime" },
-  { value: 2, labelKey: "session.fatigue.good", emoji: "🙂", tone: "lime" },
-  { value: 3, labelKey: "session.fatigue.worked", emoji: "😮‍💨", tone: "blue" },
-  { value: 4, labelKey: "session.fatigue.tired", emoji: "🫠", tone: "amber" },
-  { value: 5, labelKey: "session.fatigue.wrecked", emoji: "🥴", tone: "red" },
+  { value: 1, labelKey: "session.fatigue.fresh", mark: glyphMark("face-easy"), tone: "lime" },
+  { value: 2, labelKey: "session.fatigue.good", mark: glyphMark("face-steady"), tone: "lime" },
+  { value: 3, labelKey: "session.fatigue.worked", mark: glyphMark("face-solid"), tone: "blue" },
+  { value: 4, labelKey: "session.fatigue.tired", mark: glyphMark("face-hard"), tone: "amber" },
+  { value: 5, labelKey: "session.fatigue.wrecked", mark: glyphMark("face-spent"), tone: "red" },
 ] as const;
 
 export const feelDef = (v: number | null | undefined): FeelDef | null =>
