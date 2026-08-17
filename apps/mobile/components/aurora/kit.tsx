@@ -1486,7 +1486,7 @@ export function ASection({
   const metaText =
     meta == null ? null : typeof meta === "string" ? (
       <Text
-        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: palette.ash }}
       >
         {meta}

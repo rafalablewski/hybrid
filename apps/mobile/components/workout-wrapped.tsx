@@ -72,7 +72,7 @@ import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
 import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
-import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../lib/ui";
+import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt } from "../lib/theme";
 import Sheet from "./aurora/sheet";
@@ -116,7 +116,7 @@ function CountUp({ value, style }: { value: string; style: TextStyle }) {
   // TABULAR, and this is the case that proves the rule: the value is re-rendered
   // every frame for 900ms, so a proportional numeral resizes the figure under
   // itself all the way up and the count reads as a wobble rather than a climb.
-  return <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={[TABULAR, style]} numberOfLines={1} adjustsFontSizeToFit>{disp}</Text>;
+  return <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={[TABULAR, style]} numberOfLines={1} adjustsFontSizeToFit>{disp}</Text>;
 }
 
 /**

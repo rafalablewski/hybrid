@@ -15,7 +15,7 @@ import {
 
   ALPHA,} from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
-import { leading, tracking, fs, space, Mono, Kicker, LoadSwap, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, Mono, Kicker, LoadSwap, F, PressScale as Pressable, Chip, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack, ASection , RADIUS} from "../aurora/kit";
@@ -198,7 +198,7 @@ export default function AdminAgents() {
                     accent={STATUS_COLOR(palette)[a.status]} style={[cardStack, selectedId === a.id ? { borderColor: palette.amber, borderWidth: 1 } : undefined]}>
                     <View style={{ flexDirection: "row", justifyContent: "space-between", gap: space.sm }}>
                       <View style={{ flex: 1, minWidth: 0 }}>
-                        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
+                        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }} numberOfLines={1}>
                           {a.name}
                         </Text>
                         <View style={{ flexDirection: "row", gap: space.xs, marginTop: 6, flexWrap: "wrap" }}>

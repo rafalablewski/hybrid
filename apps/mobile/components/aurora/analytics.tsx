@@ -16,7 +16,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, space, F, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, F, MAX_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, AStat, ASub, ASegment, AMeter , RADIUS} from "./kit";
 import { withAlpha } from "./field";
 
@@ -127,7 +127,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
       <View>
         <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line }}>
           {head.map((h, i) => (
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{h}</Text>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{h}</Text>
           ))}
         </View>
         {rows.map((r, i) => (
@@ -135,7 +135,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
             {r.map((c, j) => (
               <View key={j} style={cell(widths[j] ?? 80)}>
                 {typeof c === "string" || typeof c === "number"
-                  ? <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: j === 0 ? F.semi : F.mono, fontSize: fs.caption, color: C.chalk }}>{c}</Text>
+                  ? <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: j === 0 ? F.semi : F.mono, fontSize: fs.caption, color: C.chalk }}>{c}</Text>
                   : c}
               </View>
             ))}

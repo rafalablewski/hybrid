@@ -463,6 +463,77 @@ describe("geometry", () => {
   });
 });
 
+describe("dynamic type", () => {
+  /**
+   * THE CLAMP IS THE EXCEPTION, AND AN EXCEPTION HAS TO SAY WHY.
+   *
+   * lib/ui.tsx states the policy in prose: "Pass
+   * `maxFontSizeMultiplier={FIXED_FONT_SCALE}` on text inside a container with a
+   * hard height; leave it off (or use MAX_FONT_SCALE) anywhere the layout can
+   * grow to fit."
+   *
+   * Nothing checked it, and the audit found the result: "Dynamic Type is claimed
+   * shipped and is policy-inverted." The mechanism is ordinary — 1.15 is the
+   * value you see in the file you are copying from, so it spread by imitation
+   * until the exception was the default. Measured at the time of this rule it
+   * was 198 of 271 declarations, not the 265 of 270 the audit cited; the count
+   * is corrected here rather than repeated, because a guard that misstates its
+   * own subject is how a ceiling drifts out of touch with reality.
+   *
+   * WHY IT MATTERS MORE THAN A TOKEN MISMATCH. Every other rule in this file is
+   * about coherence. This one is about a person: someone who sets Larger Text to
+   * 200% was getting 115% on three quarters of the app's text, because a ceiling
+   * meant for fixed-height chrome had been applied to surfaces that reflow
+   * perfectly well. The clamp is not a style — it is a refusal of the reader's
+   * own setting, and it should have to be earned.
+   *
+   * WHAT COUNTS AS EARNING IT: the component declares a hard height, or reads
+   * one of the height TOKENS below. The token arm is not a loophole, it is a
+   * correction — HeroMetadata sits in the hero's fixed rail and the height lives
+   * in core's HERO constants, so a rule that only looked for a local `height:`
+   * would have called the app's most obviously fixed chrome unjustified.
+   */
+  const HEIGHT_SIGNAL = /\b(?:height|minHeight|maxHeight)\s*:|HIT_TARGET|ROW_LEAD|HERO\.|DOCK_RAIL|SATELLITE\.|NAV_BAR_HEIGHT/;
+
+  it("HARD — a 1.15 clamp lives in a component with a hard height", () => {
+    // 55 clamps across 27 files failed this when it was written, on cards,
+    // wrapping macro rows, table rows, section heads and the shared Chip and
+    // Kicker — none of which has a hard height, all of which grow. They were
+    // moved to MAX_FONT_SCALE rather than removed outright: 1.4 is still a
+    // ceiling, so the change is bounded, and a device round that finds real
+    // clipping has one local value to put back.
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      const lines = text.split("\n");
+      // Component boundaries, at the granularity the file is written in: a
+      // top-level `function Foo` / `const Foo =`. Good enough because a nested
+      // helper shares its parent's height context anyway.
+      const starts = lines.flatMap((l, i) => (/^(export )?(function|const) [A-Z]\w*/.test(l) ? [i] : []));
+      starts.push(lines.length);
+      for (let k = 0; k < starts.length - 1; k++) {
+        const a = starts[k]!, b = starts[k + 1]!;
+        const body = lines.slice(a, b).join("\n");
+        if (!body.includes("maxFontSizeMultiplier={FIXED_FONT_SCALE}")) continue;
+        if (HEIGHT_SIGNAL.test(body)) continue;
+        const name = /^(?:export )?(?:function|const) (\w+)/.exec(lines[a]!)?.[1] ?? "?";
+        bad.push(`${path}:${a + 1} — ${name} clamps Dynamic Type but declares no height`);
+      }
+    }
+    expect(
+      bad,
+      `\nthe 1.15 clamp is for FIXED-HEIGHT chrome (lib/ui.tsx). If the surface reflows, use MAX_FONT_SCALE:\n  ${bad.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  it("HARD — neither cap is written as a bare number", () => {
+    // The rule above is only as good as the tokens being the only way to say
+    // it. A literal 1.15 at a call site is the same clamp wearing a disguise,
+    // and it would be invisible to every count in this file.
+    const raw = codeHits(/maxFontSizeMultiplier=\{\s*1(?:\.\d+)?\s*\}/g);
+    expect(raw, `\nname the cap — FIXED_FONT_SCALE or MAX_FONT_SCALE:\n  ${raw.join("\n  ")}`).toEqual([]);
+  });
+});
+
 describe("touch targets", () => {
   it("HARD — every interactive PRIMITIVE declares the 44dp floor", () => {
     // The audit measured five selectable pills across five screens at ~25–31dp,

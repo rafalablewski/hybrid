@@ -195,7 +195,7 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
       </View>
       {rows.map((r, i) => (
         <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: r.sub ? F.reg : F.bold, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C.ash : C.chalk, paddingLeft: r.sub ? 14 : 0 }}>{t(r.labelKey)}</Text>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: r.sub ? F.reg : F.bold, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C.ash : C.chalk, paddingLeft: r.sub ? 14 : 0 }}>{t(r.labelKey)}</Text>
           {r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{r.note}</Text> : null}
           <Text style={{ fontFamily: F.monoBold, fontSize: r.sub ? fs.caption : fs.body, color: r.value ? C.chalk : C.ash, minWidth: 64, textAlign: "right" }}>{r.value ?? "—"}</Text>
           {p100 ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, minWidth: 62, textAlign: "right" }}>{p100[i]!.value ?? "—"}</Text> : null}
@@ -292,7 +292,7 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
           style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: tracking.display, color: tone }}
         />
         <Text
-          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
         >
           {t(isOver ? "w.recovery.nutrition.pick.kcalOver" : "w.recovery.nutrition.pick.kcalLeft")}
@@ -300,7 +300,7 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
         {mealLabel && mealKcal > 0 ? (
           <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "baseline", gap: 6 }}>
             <Text
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
               numberOfLines={1}
               style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
             >
@@ -421,7 +421,7 @@ export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
           }
         >
           <Text
-            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             numberOfLines={1}
             style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
           >
@@ -430,7 +430,7 @@ export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
           <View style={{ marginTop: space.xxs }}>
             <RollingNumber
               value={figureText(item.figure.have, item.figure.want)}
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
               style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: item.tone }}
             />
           </View>

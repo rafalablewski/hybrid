@@ -109,7 +109,7 @@ function MacroLine({ f, big }: { f: NutritionFacts; big?: boolean }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: big ? 14 : 10, flexWrap: "wrap" }}>
       <Text
-        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         style={{ fontFamily: F.black, fontSize: big ? 28 : fs.body, color: C.chalk, fontVariant: ["tabular-nums"] }}
       >
         {f.kcal}
@@ -118,7 +118,7 @@ function MacroLine({ f, big }: { f: NutritionFacts; big?: boolean }) {
       {macros.map(([label, v, col]) => (
         <Text
           key={label}
-          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           style={{ fontFamily: F.mono, fontSize: big ? fs.caption : fs.nano, color: col, fontVariant: ["tabular-nums"] }}
         >
           {Math.round(v * 10) / 10}g {label.slice(0, 1)}
