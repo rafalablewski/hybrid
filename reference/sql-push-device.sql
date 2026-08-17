@@ -51,7 +51,9 @@
 -- 1) The table.
 -- ────────────────────────────────────────────────────────────────────────────
 create table if not exists "PushDevice" (
-  "id"             text primary key,
+  -- Prisma supplies a cuid on every insert; the default is here so a row can
+  -- also be written by hand in the SQL editor, matching the other tables.
+  "id"             text primary key default gen_random_uuid()::text,
   "userId"         text not null references "User"("id") on delete cascade,
   "token"          text not null unique,
   "platform"       text not null default 'ios',
