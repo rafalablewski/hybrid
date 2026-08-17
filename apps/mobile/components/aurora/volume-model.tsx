@@ -1,6 +1,6 @@
 import { View, Text, TextInput } from "react-native";
 import {
-  fs, tracking, blockKindKey, resolveBlock, blockRamp,
+  fs, tracking, blockKindKey, resolveBlock, blockRamp, MUSCLE_GROUP_KEY,
   type AthleteVolumeProfile, type MuscleGroup, type VolumeBlock, type VolumeLandmark,
 
   ALPHA,} from "@hybrid/core";
@@ -12,7 +12,11 @@ import { useTheme, txt } from "../../lib/theme";
 import { leading, space, F, PressScale as Pressable, MAX_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, ASection, AStepper, RADIUS, withAlpha } from "./kit";
 
-const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
+/** The seven group names, from core (volume-view.ts `MUSCLE_GROUP_KEY`). This
+ *  screen and the model editor each held a copy of the same literal, and
+ *  `posterior` is the reason that matters: its key is `musclePosteriorChain`,
+ *  so any copy written from the group names prints a raw key for one row. */
+const MUSCLE_KEY: Record<string, string> = MUSCLE_GROUP_KEY;
 const EXP_KEY = { beginner: "w.analyze.vol.expBeginner", intermediate: "w.analyze.vol.expIntermediate", advanced: "w.analyze.vol.expAdvanced" } as const;
 const NUTRITION_KEY = { deficit: "w.analyze.vol.nutDeficit", maintenance: "w.analyze.vol.nutMaintenance", surplus: "w.analyze.vol.nutSurplus" } as const;
 const FIELDS = ["mv", "mev", "mavLow", "mavHigh", "mrv"] as const;

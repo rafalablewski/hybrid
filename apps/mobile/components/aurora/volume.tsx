@@ -9,7 +9,7 @@ import {
   formatPace, paceClock,
   VOLUME_PROFILE_FIELD_KEY, fmtWeight,
   sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
-  provenanceLadder, rungMeta, factorAffectsKey,
+  provenanceLadder, rungMeta, factorAffectsKey, MUSCLE_GROUP_KEY,
   type MuscleVolumeStatus, type VolumeZone, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
   type LandmarkFactor, type LandmarkSource, type WeightUnit,
@@ -27,7 +27,11 @@ import { MeasureLine, MeasureTrack, MeasureScale, MEASURE_ROW_PAD } from "./meas
 import Sheet from "./sheet";
 import { haptic } from "../../lib/haptics";
 
-const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
+/** The seven group names, from core (volume-view.ts `MUSCLE_GROUP_KEY`). This
+ *  screen and the model editor each held a copy of the same literal, and
+ *  `posterior` is the reason that matters: its key is `musclePosteriorChain`,
+ *  so any copy written from the group names prints a raw key for one row. */
+const MUSCLE_KEY: Record<string, string> = MUSCLE_GROUP_KEY;
 const ZONE_KEY: Record<VolumeZone, string> = { under: "w.analyze.vol.zoneUnder", productive: "w.analyze.vol.zoneProductive", peak: "w.analyze.vol.zonePeak", overreaching: "w.analyze.vol.zoneOver" };
 const BAND_LABEL: Record<VolumeBandKey, string> = { mev: "MEV", mav: "MAV", mrv: "MRV" };
 const GLOSS_KEY: Record<VolumeBandKey, string> = { mev: "w.analyze.vol.glossMev", mav: "w.analyze.vol.glossMav", mrv: "w.analyze.vol.glossMrv" };

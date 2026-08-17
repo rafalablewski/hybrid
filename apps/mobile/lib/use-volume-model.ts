@@ -106,17 +106,31 @@ export function useVolumeModel(sessions: LoggedSession[]) {
     bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight ?? undefined,
   }), [prefs.volumeProfile, measured, intake, bodyweight, experience.experience]);
 
-  const resolved = useMemo(
-    () => athleteLandmarks({
+  /**
+   * EVERYTHING THAT MAKES A LANDMARK, MINUS THE LOG — as one object.
+   *
+   * `athleteLandmarks` takes the athlete (profile, overrides, the switches) and
+   * the log in one call, and every OTHER surface that wants to re-resolve them
+   * needs the athlete half unchanged: the monthly story replays the same
+   * resolver at earlier weeks (see core engines/learned.ts), and a story
+   * resolved from a hand-copied subset of these options would quietly report a
+   * different athlete than the Volume screen shows. So the half that is not the
+   * log is named once, here, and handed out.
+   */
+  const landmarkOptions = useMemo(
+    () => ({
       profile,
       overrides: prefs.landmarkOverrides,
-      sessions,
-      recovery,
       adaptive: prefs.adaptiveLandmarks,
       includeWarmups: prefs.countWarmupsInVolume,
       fractional: prefs.fractionalVolume,
     }),
-    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
+    [profile, prefs.landmarkOverrides, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume],
+  );
+
+  const resolved = useMemo(
+    () => athleteLandmarks({ ...landmarkOptions, sessions, recovery }),
+    [landmarkOptions, sessions, recovery],
   );
 
   /**
@@ -129,16 +143,8 @@ export function useVolumeModel(sessions: LoggedSession[]) {
    * profile with `overrides: {}` gives the baseline to diff against.
    */
   const baseline = useMemo(
-    () => athleteLandmarks({
-      profile,
-      overrides: {},
-      sessions,
-      recovery,
-      adaptive: prefs.adaptiveLandmarks,
-      includeWarmups: prefs.countWarmupsInVolume,
-      fractional: prefs.fractionalVolume,
-    }),
-    [profile, prefs.adaptiveLandmarks, prefs.countWarmupsInVolume, prefs.fractionalVolume, sessions, recovery],
+    () => athleteLandmarks({ ...landmarkOptions, overrides: {}, sessions, recovery }),
+    [landmarkOptions, sessions, recovery],
   );
 
   const setProfile = (patch: Partial<AthleteVolumeProfile>) => {
@@ -147,5 +153,5 @@ export function useVolumeModel(sessions: LoggedSession[]) {
     setLoggerPref("volumeProfile", next);
   };
 
-  return { prefs, recovery, measured, measuredKeys, levelEstimate, experience, profile, resolved, baseline, setProfile };
+  return { prefs, recovery, measured, measuredKeys, levelEstimate, experience, profile, landmarkOptions, resolved, baseline, setProfile };
 }

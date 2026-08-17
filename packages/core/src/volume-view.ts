@@ -202,6 +202,24 @@ export function shapeOrder(rows: MuscleVolumeStatus[]): MuscleGroup[] {
  * and the ramp geometry are derived once here rather than in each screen.
  * ──────────────────────────────────────────────────────────────────────────── */
 
+/**
+ * THE SEVEN MUSCLE GROUPS' NAMES — one map, because it was two.
+ *
+ * Each Volume screen carried its own `MUSCLE_KEY` literal, and `posterior` is
+ * why that matters: its key is `musclePosteriorChain`, so any surface that
+ * derives the key from the group name (the obvious shortcut) prints the raw key
+ * for one row out of seven. A third copy would have made the same mistake.
+ */
+export const MUSCLE_GROUP_KEY: Record<MuscleGroup, string> = {
+  quads: "w.analyze.vol.muscleQuads",
+  glutes: "w.analyze.vol.muscleGlutes",
+  posterior: "w.analyze.vol.musclePosteriorChain",
+  back: "w.analyze.vol.muscleBack",
+  chest: "w.analyze.vol.muscleChest",
+  shoulders: "w.analyze.vol.muscleShoulders",
+  triceps: "w.analyze.vol.muscleTriceps",
+};
+
 /** i18n key naming the layer the landmarks came from. */
 export function sourceLabelKey(source: LandmarkSource): string {
   return `w.analyze.vol.source${source.charAt(0).toUpperCase()}${source.slice(1)}`;

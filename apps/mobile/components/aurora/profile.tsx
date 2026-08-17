@@ -41,6 +41,7 @@ import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/so
 import { NAV_HREF } from "../../lib/nav-href";
 import { AuroraIcon } from "./icons";
 import { StreakMark } from "./streak-mark";
+import { LearnedLead } from "./learned";
 import { ArrowGlyph } from "./cta-label";
 import { withAlpha } from "./field";
 import { Mark } from "./mark";
@@ -235,6 +236,18 @@ export default function AuroraProfile() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
+      {/* WHAT WE LEARNED ABOUT YOU — the tab LEADS with the model, above the
+          cover and the identity block.
+
+          The order is the argument. Everything below this is who you are to
+          other people — a banner, an avatar, follower counts, the public
+          highlight grid — and none of it is what the app knows about YOU. The
+          ceilings it measured, the recovery rate it clocked and the readiness
+          pattern it found are the only things on this screen that no other app
+          could show you, and until now they were three levels deep behind a
+          disclosure on another tab. See components/aurora/learned.tsx. */}
+      <LearnedLead sessions={sessions} onOpen={() => router.push("/learned")} />
+
       {/* SET UP YOUR PROFILE — owner-only nudge at the very top; hides once the
           profile has a photo + bio. (This screen is always your own.) */}
       {socialP && !sComplete && (
