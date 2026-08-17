@@ -11,6 +11,7 @@ import {
 import type { ChartReading } from "./chart-scrub";
 import { activeDisciplines, DISCIPLINE_META, disciplinePaceFigure, disciplinePaceUnit } from "./endurance";
 import { roundKm } from "./distance";
+import type { Mark } from "./theme/mark";
 
 /**
  * SPORT LANES — the Endurance block that lives at the bottom of Today.
@@ -69,7 +70,7 @@ export interface LaneEffort {
 export interface EnduranceLane {
   discipline: CardioDiscipline;
   /** DISCIPLINE_META passthrough so a renderer needs one import, not two. */
-  emoji: string;
+  mark: Mark;
   labelKey: string;
   /** whole-history totals for this discipline */
   efforts: number;
@@ -206,7 +207,7 @@ export function enduranceLanes(
       .filter((p): p is { weekStart: string; secPerKm: number } => p.secPerKm != null);
     return {
       discipline: d,
-      emoji: meta.emoji,
+      mark: meta.mark,
       labelKey: meta.labelKey,
       efforts: totals.efforts,
       distanceKm: totals.distanceKm,

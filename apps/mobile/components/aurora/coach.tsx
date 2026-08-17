@@ -37,7 +37,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable , tracking} from "../../lib/ui";
-import { AuroraScreen, ACard, APill, AHeading, ASection, RADIUS, AChip } from "./kit";
+import { AuroraScreen, ACard, APill, AHeading, ASection, RADIUS, AChip, ACheckMark } from "./kit";
 import { AuroraIcon } from "./icons";
 
 // Goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
@@ -378,7 +378,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
         />
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
           <Pressable onPress={() => setIsPrivate((p) => !p)} style={{ flexDirection: "row", alignItems: "center", gap: space.xs }}>
-            <Text style={{ color: txt(C, isPrivate ? C.lime : C.ash), fontFamily: F.mono }}>{isPrivate ? "☑" : "☐"}</Text>
+            <ACheckMark on={isPrivate} size={18} />
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.teams.coach.private")}</Text>
           </Pressable>
           <APill label={t("common.add")} variant="primary" onPress={add} style={{ paddingHorizontal: 24, paddingVertical: 12 }} />

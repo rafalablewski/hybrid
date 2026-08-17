@@ -59,7 +59,7 @@ export default function AdminSecurity() {
       {d.posture.criticalOpen > 0 && (
         <Card style={{ borderLeft: `3px solid ${RED}`, marginBottom: 16 }}>
           <Mono s={{ fontSize: fs.bodyLg }} c={RED}>
-            ⚠ {d.posture.criticalOpen} critical control(s) not yet passing — address before launch.
+            {d.posture.criticalOpen} critical control(s) not yet passing — address before launch.
           </Mono>
         </Card>
       )}

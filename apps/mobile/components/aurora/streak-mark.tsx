@@ -6,7 +6,7 @@ import { NAV_HREF } from "../../lib/nav-href";
 import { useSessionsRead } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
+import { F, MAX_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import { RollingNumber } from "./rolling-number";
 
@@ -76,7 +76,7 @@ export function StreakMark({
           the header's row most of all. */}
       <View style={{ flexDirection: "row", alignItems: "center" }}>
         <RollingNumber value={String(days)} style={markType} />
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={markType}>
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={markType}>
           {t(STREAK_SUFFIX_KEY)}
         </Text>
       </View>

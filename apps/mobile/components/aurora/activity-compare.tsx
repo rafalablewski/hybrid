@@ -6,7 +6,7 @@ import {
 import { ASection, RADIUS, withAlpha } from "./kit";
 import { MeasureLine, MeasureTrack, MeasureScale, MEASURE_ROW_PAD } from "./measure-row";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, tracking } from "../../lib/ui";
+import { fs, space, F, PressScale as Pressable, tracking } from "../../lib/ui";
 
 /**
  * THE COMPARISON — the activity card's SECOND PAGE.

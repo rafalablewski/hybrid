@@ -43,6 +43,14 @@ import { withAlpha } from "../components/aurora/field";
 // clip/overflow. Pass `maxFontSizeMultiplier={FIXED_FONT_SCALE}` on text inside
 // a container with a hard height; leave it off (or use MAX_FONT_SCALE) anywhere
 // the layout can grow to fit. See capabilities.ts → `dynamic-type`.
+//
+// THE CLAMP IS THE EXCEPTION AND IT IS ENFORCED AS ONE. This policy was prose
+// for months and drifted the way prose does — 1.15 is the value you see in the
+// file you are copying from, so it spread by imitation until three quarters of
+// the app's text refused the reader's own text-size setting. Two HARD rules in
+// design-tokens.test.ts now hold it: a FIXED_FONT_SCALE clamp must live in a
+// component that declares a hard height (or reads a height token), and neither
+// cap may be written as a bare number.
 export const MAX_FONT_SCALE = 1.4; // reflow-safe surfaces — generous headroom
 export const FIXED_FONT_SCALE = 1.15; // fixed-height chrome — must not clip
 
@@ -157,11 +165,24 @@ export function useEntrance() {
  * fails the same way: silently, with no error, looking exactly like a design
  * that simply has no animation.
  *
- * This does not ask. `Animated` on the NATIVE DRIVER is the most load-bearing
- * animation path in React Native, it is independent of LayoutAnimation, Fabric
- * flags and the surface, it runs on the UI thread so a busy JS thread cannot
- * eat it, and this app already proves it works on device (HubDissolve above,
- * and the logger's own finish summary). If the row mounts, it moves.
+ * This does not ask. `Animated` is independent of LayoutAnimation, of the
+ * feature flags, and of the surface: it commits through the ordinary renderer,
+ * so there is nothing to decline. If the row mounts, it moves.
+ *
+ * ON THE JS DRIVER, AND THAT IS THE WHOLE POINT OF THIS PARAGRAPH. The obvious
+ * choice here is `useNativeDriver: true` — UI thread, immune to a JS stall — and
+ * it is the WRONG one, for a reason this codebase has already paid for on
+ * device. `useEntrance` above ran exactly that and had to be changed: under
+ * Fabric, a native-driver OPACITY animation started from JS can lose the
+ * JS-start-vs-native-mount race and strand the view at its initial value, which
+ * is opacity 0 (facebook/react-native#12453). It shipped as a blank screen on
+ * an iPhone 15 while faster devices won the race.
+ *
+ * Here the stranded value would be an INVISIBLE BANKED SET — the precise bug
+ * this row exists to fix, reintroduced in a worse form and only on some phones.
+ * A frame of jank if the JS thread is busy is a trade worth making against
+ * that; a one-shot spring on one row costs nothing measurable, and the fade is
+ * the part that must land, every time, on every device.
  *
  * So the two are used TOGETHER and neither is redundant: LayoutAnimation makes
  * the neighbours travel where it is honoured, and this makes the arriving row
@@ -182,8 +203,8 @@ export function useRowEntrance(distance = 8): { opacity: Animated.Value; transfo
   const reducedMotion = useReducedMotion();
   useEffect(() => {
     const anim = reducedMotion
-      ? Animated.timing(enter, { toValue: 1, duration: durations.reduced, easing: Easing.linear, useNativeDriver: true })
-      : Animated.spring(enter, { toValue: 1, ...springToRN(springs.slide), useNativeDriver: true });
+      ? Animated.timing(enter, { toValue: 1, duration: durations.reduced, easing: Easing.linear, useNativeDriver: false })
+      : Animated.spring(enter, { toValue: 1, ...springToRN(springs.slide), useNativeDriver: false });
     anim.start();
     return () => anim.stop();
     // Mount-only: `enter` is stable, and re-running on a Reduce Motion toggle
@@ -677,7 +698,7 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
   const { palette } = useTheme();
   return (
     <Text
-      maxFontSizeMultiplier={FIXED_FONT_SCALE}
+      maxFontSizeMultiplier={MAX_FONT_SCALE}
       style={{
         fontFamily: F.mono,
         fontSize: fs.micro,
@@ -759,7 +780,7 @@ export function Chip({
       }}
     >
       <Text
-        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         numberOfLines={1}
         style={{
           fontFamily: F.semi,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals, referenceIntakes, panelStatus, emptyNutritionDay, fuelPlate, fuelRail, mealPartEmoji, mealPartLabelFromKey, DEFAULT_MEAL_PART_KEYS, type FuelLogRow } from "./nutrition";
+import { dailyNutrition, todayNutrition, estimateMaintenance, adaptiveTargets, nutritionSummary, nutritionNudge, sumMealComponents, fuelToday, resolveMealParts, mealPartKey, MAX_CUSTOM_MEAL_PARTS, derivedFoodEntries, parseDerivedEntryId, foodLogSignals, referenceIntakes, panelStatus, emptyNutritionDay, fuelPlate, fuelRail, mealPartMark, mealPartLabelFromKey, DEFAULT_MEAL_PART_KEYS, type FuelLogRow } from "./nutrition";
 import type { Signal } from "./signals";
+import { glyphMark } from "../theme/mark";
 
 const DAY = 86_400_000;
 // LOCAL-constructed fixtures so same-day grouping holds in any timezone
@@ -491,9 +492,9 @@ describe("fuelPlate", () => {
     expect(fuelPlate(undefined, { now })).toEqual({ items: [], groups: [], count: 0, kcal: 0, protein: 0 });
   });
 
-  it("labels a part with its preset's own glyph, and a custom part readably", () => {
-    expect(mealPartEmoji("breakfast")).toBe("🍳");
-    expect(mealPartEmoji("pre-workout")).toBe("🍴");
+  it("labels a part with its preset's own mark, and a custom part readably", () => {
+    expect(mealPartMark("breakfast")).toEqual(glyphMark("sunrise"));
+    expect(mealPartMark("pre-workout")).toEqual(glyphMark("fork-knife"));
     expect(mealPartLabelFromKey("pre-workout")).toBe("Pre workout");
   });
 });
@@ -502,8 +503,8 @@ describe("fuelRail", () => {
   var at = (h: number, dayOffset = 0) => new Date(2026, 6, 29 - dayOffset, h, 0, 0).toISOString();
   const now = new Date(2026, 6, 29, 20, 0, 0).getTime();
   const PRESETS = [
-    { id: "breakfast-oats-eggs", name: "Breakfast", source: "breakfast", emoji: "🍳", kcal: 520, protein: 32, carbs: 55, fat: 18 },
-    { id: "lunch-chicken-rice", name: "Lunch", source: "lunch", emoji: "🥗", kcal: 680, protein: 52, carbs: 78, fat: 16 },
+    { id: "breakfast-oats-eggs", name: "Breakfast", source: "breakfast", mark: glyphMark("sunrise"), kcal: 520, protein: 32, carbs: 55, fat: 18 },
+    { id: "lunch-chicken-rice", name: "Lunch", source: "lunch", mark: glyphMark("sun"), kcal: 680, protein: 52, carbs: 78, fat: 16 },
   ];
   const log = (over: Partial<FuelLogRow>): FuelLogRow => ({
     id: Math.random().toString(36).slice(2), name: "Skyr & granola", source: "breakfast",
@@ -516,7 +517,7 @@ describe("fuelRail", () => {
     expect(chips.map((c) => c.kind)).toEqual(["own", "preset", "preset"]);
     expect(chips[0]!.name).toBe("Skyr & granola");
     expect(chips[0]!.kcal).toBe(320); // per serving — a tap logs one of them
-    expect(chips[0]!.emoji).toBe("🍳"); // the glyph of the part it's eaten in
+    expect(chips[0]!.mark).toEqual(glyphMark("sunrise")); // the mark of the part it's eaten in
   });
 
   it("ranks by the DAYS an item was eaten on, not by how often in one sitting", () => {

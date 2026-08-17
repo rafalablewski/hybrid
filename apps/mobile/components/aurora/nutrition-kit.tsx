@@ -1,11 +1,12 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Animated, View, Text, type StyleProp, type ViewStyle } from "react-native";
-import Svg, { Path, Circle, Rect } from "react-native-svg";
+
+import { Glyph } from "./icons";
 import { SvgXml } from "react-native-svg";
 import {
-  NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
+  nutritionPanel, per100g, scaleFacts,
   PICKER_SOURCES, pickerSourceLabelKey, figureText,
-  type GapFigure, type MicroFacts, type NutritionFacts, type NutritionGlyphName, type NutritionGap, type PickerSourceKey, type SourceMark,
+  type GapFigure, type GlyphName, type MicroFacts, type NutritionFacts, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,
   ALPHA, durations,
 } from "@hybrid/core";
@@ -81,17 +82,23 @@ export const MACRO_FILL = { protein: "blue", carbs: "amber", fat: "violet" } as 
  * re-drawn the next time a screen needs it.
  */
 
-export function Glyph({ name, size = 22, color = "#fff", strokeWidth = 6 }: { name: NutritionGlyphName; size?: number; color?: string; strokeWidth?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 72 72" fill="none">
-      {NUTRITION_GLYPHS[name].map((d, i) => (
-        <Path key={i} d={d} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-      ))}
-    </Svg>
-  );
-}
+/**
+ * THE DUPLICATE ICON SET IS GONE — see core theme/icons.ts.
+ *
+ * This file used to export its own `Glyph` (a 72-box renderer defaulting to
+ * "#fff") plus eleven `I*` icons in a 24-box at strokeWidth ~2, which is how
+ * Nutrition came to draw the app's icons at a different optical weight from
+ * every screen beside it, in a colour the palette does not contain. Seven of
+ * the eleven already existed in the shared set under another name; the other
+ * four were drawn into it. Every call site now reads `<Glyph>` from
+ * aurora/icons — the ONE renderer, at the one size→stroke rule.
+ */
+
 // Meal presets read as times of day — the one place a glyph carries meaning.
-export const presetGlyph = (id: string): NutritionGlyphName => id.startsWith("breakfast") ? "sunrise" : id.startsWith("lunch") ? "sun" : id.startsWith("dinner") ? "moon" : "cup";
+/** The day's own arc — the same four the engine's `mealPartMark` returns, and
+ *  `moon` is the KIT's crescent now (nutrition shipped a second one of its own
+ *  until the vocabularies converged). */
+export const presetGlyph = (id: string): GlyphName => id.startsWith("breakfast") ? "sunrise" : id.startsWith("lunch") ? "sun" : id.startsWith("dinner") ? "moon" : "cup";
 // kcal implied by protein/carbs/fat (4·4·9) — the live readout in the builders.
 export const macroKcal = (protein: string, carbs: string, fat: string) => Math.round((parseFloat(protein) || 0) * 4 + (parseFloat(carbs) || 0) * 4 + (parseFloat(fat) || 0) * 9);
 
@@ -99,27 +106,6 @@ export const macroKcal = (protein: string, carbs: string, fat: string) => Math.r
 // reached from a menu, plus the redesigned add-to-meal / create-food / recipes
 // flows. "add" is the meal-food picker, "create" the Create Food form, and
 // recipes → recipe → cook is the read-only recipes library.
-export type IconProps = { size?: number; color?: string; strokeWidth?: number; fill?: boolean };
-export function SvgIcon({ size = 20, color = "#fff", strokeWidth = 2, d, fill = false }: IconProps & { d: string }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"}><Path d={d} stroke={fill ? "none" : color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
-}
-export const IClose = (p: IconProps) => <SvgIcon {...p} d="M6 6l12 12M18 6L6 18" strokeWidth={p.strokeWidth ?? 2.2} />;
-export const IChevDown = (p: IconProps) => <SvgIcon {...p} d="M6 9l6 6 6-6" strokeWidth={p.strokeWidth ?? 2.4} />;
-export const IChevRight = (p: IconProps) => <SvgIcon {...p} d="M9 6l6 6-6 6" strokeWidth={p.strokeWidth ?? 2.2} />;
-export const IPlus = (p: IconProps) => <SvgIcon {...p} d="M12 6v12M6 12h12" strokeWidth={p.strokeWidth ?? 2.2} />;
-export const IBarcode = (p: IconProps) => <SvgIcon {...p} d="M3 8V5.5A2.5 2.5 0 0 1 5.5 3H8M16 3h2.5A2.5 2.5 0 0 1 21 5.5V8M21 16v2.5a2.5 2.5 0 0 1-2.5 2.5H16M8 21H5.5A2.5 2.5 0 0 1 3 18.5V16M6.5 12h11" strokeWidth={p.strokeWidth ?? 1.9} />;
-export const ITrash = (p: IconProps) => <SvgIcon {...p} d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M10 11v6M14 11v6" strokeWidth={p.strokeWidth ?? 1.9} />;
-export const IBolt = (p: IconProps) => <SvgIcon {...p} d="M13 2L4 14h7l-1 8 9-12h-7z" strokeWidth={p.strokeWidth ?? 2} />;
-export function IStar({ size = 20, color = "#fff", strokeWidth = 1.8, fill = false }: IconProps) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : "none"}><Path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 17.8 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
-}
-export function IClock({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="13" r="8" stroke={color} strokeWidth={strokeWidth} /><Path d="M12 9v4l2.5 2.5M9 2h6" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" /></Svg>;
-}
-export function IPlusBox({ size = 20, color = "#fff", strokeWidth = 2 }: IconProps) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none"><Rect x="3" y="3" width="18" height="18" rx="5" stroke={color} strokeWidth={strokeWidth} /><Path d="M12 8v8M8 12h8" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" /></Svg>;
-}
-
 // ── THE RECIPES LIBRARY — the Plans tab, on food ────────────────────────────
 //
 // Three levels, one object at three compressions, exactly as Plans does it:
@@ -207,7 +193,7 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
       </View>
       {rows.map((r, i) => (
         <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: r.sub ? F.reg : F.bold, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C.ash : C.chalk, paddingLeft: r.sub ? 14 : 0 }}>{t(r.labelKey)}</Text>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: r.sub ? F.reg : F.bold, fontSize: r.sub ? fs.caption : fs.body, color: r.sub ? C.ash : C.chalk, paddingLeft: r.sub ? 14 : 0 }}>{t(r.labelKey)}</Text>
           {r.note ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{r.note}</Text> : null}
           <Text style={{ fontFamily: F.monoBold, fontSize: r.sub ? fs.caption : fs.body, color: r.value ? C.chalk : C.ash, minWidth: 64, textAlign: "right" }}>{r.value ?? "—"}</Text>
           {p100 ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, minWidth: 62, textAlign: "right" }}>{p100[i]!.value ?? "—"}</Text> : null}
@@ -304,7 +290,7 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
           style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: tracking.display, color: tone }}
         />
         <Text
-          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
           style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
         >
           {t(isOver ? "w.recovery.nutrition.pick.kcalOver" : "w.recovery.nutrition.pick.kcalLeft")}
@@ -312,7 +298,7 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
         {mealLabel && mealKcal > 0 ? (
           <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "baseline", gap: 6 }}>
             <Text
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
               numberOfLines={1}
               style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
             >
@@ -433,7 +419,7 @@ export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
           }
         >
           <Text
-            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
             numberOfLines={1}
             style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
           >
@@ -442,7 +428,7 @@ export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
           <View style={{ marginTop: space.xxs }}>
             <RollingNumber
               value={figureText(item.figure.have, item.figure.want)}
-              maxFontSizeMultiplier={FIXED_FONT_SCALE}
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
               style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: item.tone }}
             />
           </View>
@@ -556,7 +542,7 @@ export function PickerDoor({ C, title, icon, onPress, last }: {
         </View>
       </View>
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
-      <IChevRight size={18} color={C.ash} />
+      <Glyph name="chevron" size={18} color={C.ash} />
     </Pressable>
   );
 }
@@ -582,7 +568,7 @@ export function FoldChevron({ open, color }: { open: boolean; color: string }) {
   }, [open, turn, reduced]);
   return (
     <Animated.View style={{ transform: [{ rotate: turn.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "180deg"] }) }] }}>
-      <IChevDown size={13} color={color} />
+      <Glyph name="chevron-down" size={13} color={color} />
     </Animated.View>
   );
 }
@@ -702,7 +688,7 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
     // so the menu reads as belonging to the food rather than to the screen.
     <Animated.View ref={hold.anchorRef} collapsable={false} style={[{ borderBottomWidth: 1, borderBottomColor: C.line, backgroundColor: C.ink }, hold.liftStyle]}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, paddingVertical: 12, paddingHorizontal: PICKER_EDGE }}>
-        <Pressable onPress={onAdd} {...held} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><IPlus size={20} color={txt(C, C.lime)} strokeWidth={2.2} /></Pressable>
+        <Pressable onPress={onAdd} {...held} accessibilityRole="button" accessibilityLabel={`${t("w.recovery.nutrition.addToMeal")}: ${name}`} style={{ width: ROW_LEAD, height: ROW_LEAD, borderRadius: RADIUS.pill, borderWidth: 1.6, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}><Glyph name="plus" size={20} color={txt(C, C.lime)} /></Pressable>
         <Pressable
           onPress={onOpen ?? onAdd}
           {...held}
@@ -717,8 +703,8 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: over ? txt(C, C.amber) : C.ash, marginTop: 3 }}>{meta}</Text>
         </Pressable>
-        {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><IStar size={19} color={starred ? C.gold : C.ash} fill={!!starred} /></Pressable> : null}
-        {chevron ? <IChevRight size={18} color={C.ash} /> : null}
+        {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><Glyph name="star" size={19} color={starred ? C.gold : C.ash} /></Pressable> : null}
+        {chevron ? <Glyph name="chevron" size={18} color={C.ash} /> : null}
       </View>
       {/* The packs, on the title's own vertical — they belong to the food named
           above them, not to the row's leading column. */}

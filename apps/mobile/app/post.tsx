@@ -12,12 +12,11 @@ import {
   type Relation,
 } from "@hybrid/core";
 import { F, fs, leading, LoadSwap, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen } from "../components/aurora/kit";
+import { AuroraScreen, Avatar, Empty } from "../components/aurora/kit";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
 import { getFeedPost, toggleKudos } from "../lib/social-api";
-import { Avatar, Empty } from "../components/social-kit";
 import { Comments } from "../components/feed-comments";
 import { FeedActions } from "../components/feed-card";
 import { FeedWorkout } from "../components/feed-workout";

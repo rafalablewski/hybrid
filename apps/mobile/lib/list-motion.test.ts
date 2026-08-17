@@ -203,17 +203,29 @@ describe("live logger — every set-list mutation travels", () => {
     expect(comp.slice(0, 500)).toContain("<Animated.View");
   });
 
-  it("the entrance runs on the NATIVE driver and honours Reduce Motion", () => {
-    // Native driver is the whole point: it runs on the UI thread, so it is
-    // immune to a busy JS thread AND to every LayoutAnimation gate. And the
-    // Reduce Motion branch must SUBSTITUTE a cross-dissolve, not snap — an
-    // arrival the user cannot perceive is the bug this file is about.
+  it("the entrance stays on the JS driver, and honours Reduce Motion", () => {
+    // THE NATIVE DRIVER IS THE TRAP HERE, not the goal, and this is the one
+    // assertion in the file most likely to be "fixed" by someone optimising.
+    //
+    // Under Fabric a native-driver OPACITY animation started from JS can lose
+    // the JS-start-vs-native-mount race and strand the view at its initial
+    // value — opacity 0 (facebook/react-native#12453). `useEntrance` in the
+    // same file shipped exactly that and rendered a blank screen on an
+    // iPhone 15 while faster devices won the race; its comment records the
+    // fix. Here the stranded value would be an INVISIBLE BANKED SET: the very
+    // bug this row was added to fix, reintroduced in a worse form and only on
+    // some phones.
+    //
+    // The JS driver gives up immunity to a busy JS thread — a frame of jank —
+    // and keeps the guarantee that matters: `Animated` commits through the
+    // ordinary renderer, so unlike LayoutAnimation there is nothing for native
+    // to decline, and the fade always reaches its resting value.
     const ui = readFileSync(join(__dirname, "ui.tsx"), "utf8");
     const at = ui.indexOf("export function useRowEntrance");
     expect(at, "useRowEntrance not found in lib/ui.tsx").toBeGreaterThan(-1);
-    const body = ui.slice(at, at + 1600);
-    expect(body.match(/useNativeDriver: true/g) ?? [], "both branches must use the native driver").toHaveLength(2);
-    expect(body, "must not fall back to the JS driver").not.toContain("useNativeDriver: false");
+    const body = ui.slice(at, at + 2600);
+    expect(body.match(/useNativeDriver: false/g) ?? [], "both branches must stay on the JS driver").toHaveLength(2);
+    expect(body, "the native driver can strand this at opacity 0 under Fabric — see useEntrance").not.toContain("useNativeDriver: true");
     expect(body, "Reduce Motion must keep the fade (durations.reduced), not snap").toContain("durations.reduced");
     expect(body, "the non-reduced curve is the shared slide spring, so both mechanisms agree").toContain("springs.slide");
   });

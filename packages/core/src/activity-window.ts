@@ -41,8 +41,9 @@ import { bwAt, type BodyweightInput } from "./bodyweight";
 import { deviceTrueSessions } from "./device-truth";
 import { roundKm } from "./distance";
 import { DISCIPLINE_META } from "./endurance";
-import { OLYMPIC_SPORTS, sportDistanceUnit } from "./olympic-sports";
+import { sportDistanceUnit } from "./olympic-sports";
 import { addLocalDays, localMidnightMs, localMondayMs } from "./day-key";
+import { glyphMark, sportMarkOf, type Mark } from "./theme/mark";
 
 const DAY = 86_400_000;
 
@@ -236,8 +237,9 @@ export interface ActivityGroupMeta {
    *  own label because "Squash" is not a translatable app string. */
   labelKey: string | null;
   label: string | null;
-  /** A semantic sport glyph (never a decorative marker). */
-  icon: string;
+  /** The group's drawing — a glyph, or the sport's own drawn mark. Was an
+   *  emoji (🏋️ 🔥 ⏱, and the sport catalog's own for a named sport). */
+  mark: Mark;
   /** The group's natural DISTANCE unit — metres for pool and ergo sports, so
    *  600 m of swimming never has to read as "0.6 km" inside a km total. */
   unit: "km" | "m";
@@ -245,15 +247,15 @@ export interface ActivityGroupMeta {
 
 export const STRENGTH_GROUP: ActivityGroupMeta = {
   id: "strength", kind: "strength", discipline: null,
-  labelKey: "w.home.act.gStrength", label: null, icon: "🏋️", unit: "km",
+  labelKey: "w.home.act.gStrength", label: null, mark: glyphMark("barbell"), unit: "km",
 };
 const CONDITIONING_GROUP: ActivityGroupMeta = {
   id: "conditioning", kind: "conditioning", discipline: null,
-  labelKey: "w.home.act.gConditioning", label: null, icon: "🔥", unit: "km",
+  labelKey: "w.home.act.gConditioning", label: null, mark: glyphMark("flame"), unit: "km",
 };
 const OTHER_GROUP: ActivityGroupMeta = {
   id: "other", kind: "other", discipline: null,
-  labelKey: "w.home.act.gOther", label: null, icon: "⏱", unit: "km",
+  labelKey: "w.home.act.gOther", label: null, mark: glyphMark("stopwatch"), unit: "km",
 };
 
 /** One session's contribution to one metric, inside one group. */
@@ -337,14 +339,14 @@ function cardioGroup(b: CardioBlock): ActivityGroupMeta {
       discipline: "sport",
       labelKey: null,
       label: name,
-      icon: OLYMPIC_SPORTS[name]?.icon ?? "🎯",
+      mark: sportMarkOf(name),
       unit: sportDistanceUnit(name),
     };
   }
   const meta = DISCIPLINE_META[d];
   return {
     id: `d:${d}`, kind: "endurance", discipline: d,
-    labelKey: meta.labelKey, label: null, icon: meta.emoji, unit: meta.distanceUnit,
+    labelKey: meta.labelKey, label: null, mark: meta.mark, unit: meta.distanceUnit,
   };
 }
 

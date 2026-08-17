@@ -186,7 +186,7 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
       }}
     >
       <Text
-        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
         style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}
       >
         {label}

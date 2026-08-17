@@ -39,7 +39,7 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../lib/ui";
+import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
 import { ACard, cardStack, withAlpha, ASection, DockRail, DockChip } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill, COVER_GUTTER } from "./plan-hero";
@@ -588,8 +588,8 @@ function OutlierRow({ lift, top, C, onPress }: { lift: ProgramLiftView; top: boo
   return (
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${lift.name} — details`} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
       <View style={{ flex: 1, minWidth: 0 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{lift.name}</Text>
-        {!!lift.note && <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>{lift.note}</Text>}
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }} numberOfLines={1}>{lift.name}</Text>
+        {!!lift.note && <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }} numberOfLines={1}>{lift.note}</Text>}
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>{outlierPrescription(lift)}</Text>
     </Pressable>
@@ -604,7 +604,7 @@ function AccessoryRows({ lifts, label, C, onPress }: { lifts: ProgramLiftView[];
     <View>
       {(label || hasRpe) && (
         <View style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
             {label ?? ""}
           </Text>
           {hasRpe && (

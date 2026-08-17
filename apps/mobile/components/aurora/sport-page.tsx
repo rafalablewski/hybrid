@@ -209,10 +209,11 @@ export default function AuroraSportPage() {
         // sports whose category and S&C family are the same word, so the
         // eyebrow read "Combat – Combat". Saying it twice is not a second fact.
         eyebrow: heroMetaLine([m.category, m.family === m.category ? null : m.family]),
-        // The drawn mark for this KIND of sport; the catalog emoji only when
-        // the name is not in the catalog at all (a hand-typed activity).
+        // The drawn mark for this KIND of sport. There is no longer a fallback
+        // to a catalog glyph, because the catalog no longer stores one — a
+        // hand-typed activity simply has no cover art, and the hero already
+        // handles that (it never reserved room for something that isn't there).
         artPaths: sportMarkPaths(name),
-        glyph: m.icon,
         meta: [
           m.meta.efforts > 0 ? t("w.train.sportPage.effortsMeta").replace("{n}", String(m.meta.efforts)) : null,
           m.meta.distance ? `${m.meta.distance} ${m.meta.distanceUnit}` : null,

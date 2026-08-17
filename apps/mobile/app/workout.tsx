@@ -151,10 +151,10 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE , tracking, trackFigure, useRowEntrance} from "../lib/ui";
+import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking, trackFigure, useRowEntrance} from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
-import { AuroraIcon } from "../components/aurora/icons";
+import { AuroraIcon, Glyph } from "../components/aurora/icons";
 import type { AuroraIconName } from "@hybrid/core";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER , RADIUS} from "../components/aurora/kit";
 import { GlassSelectMenu, GlassToolbarGroup, LIQUID_GLASS_RENDERED } from "../components/aurora/swiftui";
@@ -163,6 +163,7 @@ import { HeroNav } from "../components/aurora/hero";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { coverInsets } from "../lib/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Mark } from "../components/aurora/mark";
 
 // THE LOGGER'S PRIVATE RADIUS VOCABULARY IS GONE. It was a four-name ladder —
 // cta / banner / field / chip — built by a helper that took a boolean and
@@ -176,16 +177,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const uid = () => Math.random().toString(36).slice(2);
 
-// Present the rest-done notification even with the app foregrounded (sound +
-// banner), so the cue lands whether the phone is in your hand or your pocket.
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: false,
-  }),
-});
+// The foreground presentation rule (rest cue: sound + banner, but never a row
+// left in Notification Centre) moved to lib/push.ts, which the app shell
+// imports. `setNotificationHandler` is GLOBAL and last-writer-wins, so with one
+// here and one there, which rule was live depended on which screen the athlete
+// happened to open first. One handler, branching on remote-vs-local.
 
 type WKind = "strength" | "cardio" | "conditioning";
 
@@ -1504,7 +1500,10 @@ export default function Workout() {
                   this screen, on Log set. */}
               <AuroraExerciseAvatar name={x.name} size={36} glyph={20} tint={C.ash} label={x.kind} />
               {ssLabels[xi] && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>⛓ {ssLabels[xi]}</Text>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>
+                  <Glyph name="link" size={fs.micro} color={C.chalk} />
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{ssLabels[xi]}</Text>
+                </View>
               )}
               <TextInput value={x.name} onChangeText={(v) => rename(x.uid, v)} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }} />
               {prLifts.includes(x.name) && (
@@ -1528,7 +1527,10 @@ export default function Workout() {
                     hitSlop={6}
                     style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.field, borderWidth: 1, borderColor: joined ? withAlpha(C.chalk, ALPHA.rim) : C.line, backgroundColor: joined ? withAlpha(C.chalk, ALPHA.wash) : "transparent" }}
                   >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: joined ? C.chalk : C.ash }}>⛓ {joined ? t("w.train.blocks.joined") : t("workout.superset")}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                      <Glyph name="link" size={fs.micro} color={joined ? C.chalk : C.ash} />
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: joined ? C.chalk : C.ash }}>{joined ? t("w.train.blocks.joined") : t("workout.superset")}</Text>
+                    </View>
                   </Pressable>
                 );
               })()}
@@ -1624,7 +1626,7 @@ export default function Workout() {
                                 {/* WHAT KIND OF SET — one control, one question.
                                     It used to be three: a bare ＋ here that
                                     CYCLED the type (a bare plus means "grows in
-                                    place" everywhere else in the kit), a ⚡ tile
+                                    place" everywhere else in the kit), a bolt tile
                                     for warm-up / ramp / cool-down / drop, and a
                                     ⋯ zone for the rep schemes. On iOS 26 it is
                                     the system menu — the type as an inline
@@ -1811,7 +1813,7 @@ export default function Workout() {
                     border. It used to be a ringed plus inside a filled,
                     bordered, rounded box at the end of a list, which is the
                     mark for something that LEAVES, three rules at once. The
-                    split ⋯ zone and the ⚡ tile that sat beside it are gone
+                    split ⋯ zone and the bolt tile that sat beside it are gone
                     too: schemes and special sets are answers to "what kind of
                     set", which is one question and now one menu, on the set
                     row itself. */}
@@ -2531,7 +2533,7 @@ function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, e
       <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={onReopen}>
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: summaryColor }}>{summary}</Text>
         {effortLabel ? (
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: effortColor }}>{effortLabel}</Text>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: effortColor }}>{effortLabel}</Text>
         ) : null}
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: fs.body, color: done ? txt(C, C.lime) : C.ash }}>{done ? "✓" : "○"}</Text>
@@ -2688,9 +2690,9 @@ function Summary({
   ];
   // Pluralized, matching web — "1 new PR", not "1 new PRs".
   const prHeadline = prs.length > 0
-    ? `🏆 ${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}`
+    ? `${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}`
     : cardioPrs.length > 0
-      ? `🏃 ${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}`
+      ? `${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}`
       : t("summary.todaysBests");
   const slides: SlideData[] = [
     { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }, firstEver },
@@ -2702,7 +2704,7 @@ function Summary({
     { kind: "stat", eyebrow: t("summary.slide.time"), value: String(summary.minutes), unit: t("summary.minutes") },
     { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.noPrsYet"), right: "" }] },
     ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as SlideData] : []),
-    ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), emoji: funFact.emoji, text: funFactText(funFact, units, t) } as SlideData] : []),
+    ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), mark: funFact.mark, text: funFactText(funFact, units, t) } as SlideData] : []),
   ];
   const activeIdx = Math.min(active, slides.length - 1);
 
@@ -2801,7 +2803,7 @@ function Summary({
 
         {summary.pending && (
           <View style={{ backgroundColor: withAlpha(C.amber, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(C.amber, ALPHA.line), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>⟲ {t("summary.pendingSync")}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}><Glyph name="sync" size={fs.caption} color={txt(C, C.amber) as string} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.amber) }}>{t("summary.pendingSync")}</Text></View>
           </View>
         )}
 
@@ -3125,7 +3127,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
           const on = mood === m.value;
           return (
             <Pressable key={m.value} onPress={() => setMood(on ? null : m.value)} accessibilityLabel={t(m.labelKey)} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
-              <Text style={{ fontSize: fs.note }}>{m.emoji}</Text>
+              <Mark mark={m.mark} size={fs.note + 3} color={on ? txt(C, C.lime) : C.ash} />
             </Pressable>
           );
         })}
@@ -3252,7 +3254,8 @@ function BodyweightNudge({ C, t, units }: { C: Palette; t: (k: string) => string
   return (
     <View style={{ backgroundColor: withAlpha(a, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(a, ALPHA.edge), borderRadius: RADIUS.field, padding: 16, marginBottom: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, a), flex: 1 }}>⚖️ {t("w.train.logger.bwNudgeTitle")}</Text>
+        <Glyph name="scale" size={fs.body + 2} color={txt(C, a) as string} />
+        <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: txt(C, a), flex: 1 }}>{t("w.train.logger.bwNudgeTitle")}</Text>
         <Pressable onPress={() => setDismissed(true)} hitSlop={8} accessibilityLabel={t("w.train.logger.bwNudgeDismiss")}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.ash }}>✕</Text>
         </Pressable>

@@ -13,7 +13,7 @@
  * carries the SAME tag ("sport"), so keying off it here would produce a single
  * lane called "Sport" — exactly the picker-shaped flattening the endurance
  * block was built to escape. The grouping key is the block's own NAME, matched
- * against the sport catalog for its icon and category.
+ * against the sport catalog for its category (the drawing resolves from the name).
  *
  * THESE SPORTS ARE TIMED, NOT MEASURED. Tennis and squash carry `metrics: TIME`
  * in the catalog: no distance, no pace, no zones. So a sport gets ONE tile
@@ -41,8 +41,8 @@ export const OTHER_SPORT_WEEKS = 8;
 export interface OtherSportLane {
   /** The block's own name, which is also the catalog key when it has one. */
   sport: string;
-  /** Catalog icon, or a generic marker for a sport typed by hand. */
-  icon: string;
+  /** NO `icon` — the lane carries `sport`, and the drawing is resolved from the
+   *  name (`sportMark()`). The stored one was the catalog emoji. */
   /** Catalog category ("Racket", "Team", "Combat", …); null when uncatalogued. */
   category: string | null;
   /** One effort = one logged block, the same unit the endurance lanes count. */
@@ -115,7 +115,6 @@ export function otherSportLanes(sessions: LoggedSession[], now = Date.now()): Ot
       const cat = OLYMPIC_SPORTS[sport];
       return {
         sport,
-        icon: cat?.icon ?? "🎯",
         category: cat?.category ?? null,
         efforts: v.efforts,
         minutes: Math.round(v.minutes),

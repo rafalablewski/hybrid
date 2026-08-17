@@ -2,12 +2,11 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
 import { fs, F, PressScale as Pressable , tracking} from "../lib/ui";
-import { AuroraScreen, ACard, cardStack, ASearch } from "../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack, ASearch, Avatar, Empty, APill } from "../components/aurora/kit";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { seedPerson, userPagePath, type PersonCard } from "@hybrid/core";
 import { searchPeople, getSuggestions, follow, unfollow } from "../lib/social-api";
-import { Avatar, Empty, SButton } from "../components/social-kit";
 import { usePersonSource } from "../lib/shared-element";
 import { useListMotion } from "../lib/list-motion";
 
@@ -26,10 +25,13 @@ function Row({ p, onChanged, onOpen }: { p: PersonCard; onChanged: () => void; o
         </View>
       </Pressable>
       {rel !== "self" && (rel === "requested"
-        ? <SButton label={t("w.social.requested")} ghost small disabled />
+        // A pending request is a STATE, not an action — disabled, and the press
+        // is a no-op rather than absent, because APill requires a button to
+        // declare what it does (SButton let `onPress` be optional).
+        ? <APill label={t("w.social.requested")} variant="outline" size="compact" disabled onPress={() => {}} />
         : following
-          ? <SButton label={rel === "friend" || rel === "close" ? `${t("w.social.friends")} ✓` : t("w.social.following")} ghost small onPress={async () => { await unfollow({ followeeId: p.userId }); onChanged(); }} />
-          : <SButton label={rel === "follower" ? t("w.social.followBack") : t("w.social.follow")} small onPress={async () => { await follow({ followeeId: p.userId }); onChanged(); }} />)}
+          ? <APill label={rel === "friend" || rel === "close" ? `${t("w.social.friends")} ✓` : t("w.social.following")} variant="outline" size="compact" onPress={async () => { await unfollow({ followeeId: p.userId }); onChanged(); }} />
+          : <APill label={rel === "follower" ? t("w.social.followBack") : t("w.social.follow")} size="compact" onPress={async () => { await follow({ followeeId: p.userId }); onChanged(); }} />)}
     </View>
   );
 }

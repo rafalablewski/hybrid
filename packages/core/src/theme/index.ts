@@ -19,3 +19,4 @@ export * from "./tokens";
 export * from "./palette";
 export * from "./icons";
 export * from "./sport-marks";
+export * from "./mark";

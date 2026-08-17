@@ -5,9 +5,8 @@ import { F, fs, leading } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { getComments, postComment } from "../lib/social-api";
-import { Avatar, SButton } from "./social-kit";
 import { useConfirm } from "./aurora/confirm";
-import { RADIUS } from "./aurora/kit";
+import { RADIUS, Avatar, APill } from "./aurora/kit";
 
 /**
  * THE THREAD under a post (mobile).
@@ -66,7 +65,7 @@ export function Comments({
       ))}
       <View style={{ flexDirection: "row", gap: 8, marginTop: 4 }}>
         <TextInput ref={box} value={text} onChangeText={setText} placeholder={t("w.social.commentPlaceholder")} placeholderTextColor={C.ash} style={{ flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontFamily: F.reg, fontSize: fs.body }} />
-        <SButton label={t("w.social.post")} small onPress={send} />
+        <APill label={t("w.social.post")} size="compact" onPress={send} />
       </View>
     </View>
   );

@@ -6,8 +6,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { getMyProfile, putMyProfile, getProfile } from "../../lib/social-api";
 import { useAccountSettings } from "../../lib/account";
-import { SButton } from "../social-kit";
-import { ACard, cardStack, AChip , RADIUS} from "./kit";
+import { ACard, cardStack, AChip, RADIUS, APill } from "./kit";
 import { HeroNav } from "./hero";
 
 // The unified EDIT PROFILE screen (Instagram-style): a live preview + the avatar
@@ -97,13 +96,13 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
 
               {editing === "name" && (<>
                 <TextInput value={acct.name} onChangeText={acct.setName} placeholder={t("w.profile.namePlaceholder")} placeholderTextColor={C.ash} style={inp} autoFocus />
-                <SButton label={t("common.save")} busyLabel={acct.busy ? t("w.profile.saving") : undefined} onPress={() => { acct.saveName(); back(); }} />
+                <APill label={t("common.save")} state={acct.busy ? "saving" : "idle"} savingLabel={t("w.profile.saving")} onPress={() => { acct.saveName(); back(); }} />
               </>)}
 
               {editing === "email" && (<>
                 <TextInput value={acct.newEmail} onChangeText={acct.setNewEmail} placeholder={acct.email ?? "new@email.com"} placeholderTextColor={C.ash} autoCapitalize="none" keyboardType="email-address" style={inp} autoFocus />
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8, marginBottom: 2 }}>{t("w.profile.emailConfirm")}</Text>
-                <SButton label={t("w.profile.updateEmail")} onPress={() => { acct.changeEmail(); back(); }} />
+                <APill label={t("w.profile.updateEmail")} onPress={() => { acct.changeEmail(); back(); }} />
               </>)}
 
               {editing === "handle" && (<>
@@ -117,20 +116,20 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
                   </Text>
                 )}
                 {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 8 }}>{err}</Text>}
-                <SButton label={claimed ? t("common.save") : t("w.profile.claimHandle")} onPress={async () => { if (await saveSocial()) back(); }} />
+                <APill label={claimed ? t("common.save") : t("w.profile.claimHandle")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
               {editing === "displayName" && (<>
                 <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder={t("w.profile.optional")} placeholderTextColor={C.ash} autoFocus style={inp} />
                 {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 8 }}>{err}</Text>}
-                <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
+                <APill label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
               {editing === "bio" && (<>
                 <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline maxLength={280} placeholder={t("w.profile.bioPlaceholder")} placeholderTextColor={C.ash} autoFocus style={{ ...inp, minHeight: 96, textAlignVertical: "top" }} />
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: bioLen >= 280 ? C.red : C.ash, textAlign: "right", marginTop: 6 }}>{bioLen}/280</Text>
                 {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 4 }}>{err}</Text>}
-                <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
+                <APill label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
               {editing === "visibility" && (<>
@@ -138,7 +137,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
                   {(["public", "followers", "private"] as const).map((v) => <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
                 </View>
                 {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 4 }}>{err}</Text>}
-                <SButton label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
+                <APill label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
             </ACard>
           );
@@ -189,7 +188,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
                 </View>
               </View>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 }}>
-                {form.avatarUrl ? <SButton label={t("w.profile.savePhoto")} small onPress={() => saveSocial()} /> : null}
+                {form.avatarUrl ? <APill label={t("w.profile.savePhoto")} size="compact" onPress={() => saveSocial()} /> : null}
                 <Pressable disabled accessibilityRole="button" style={{ opacity: 0.55, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.profile.uploadSoon")}</Text>
                 </Pressable>
@@ -224,7 +223,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
 
             {onDone && (
               <View style={{ marginTop: 16 }}>
-                <SButton label={t("common.done")} onPress={onDone} />
+                <APill label={t("common.done")} onPress={onDone} />
               </View>
             )}
             {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10, textAlign: "center" }}>{err}</Text>}

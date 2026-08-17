@@ -453,7 +453,7 @@ export const ACCOUNTS_GUIDE: Guide = {
     },
     {
       id: "dns",
-      icon: "🌐",
+      icon: "◍",
       title: "Pointing the domain at the app (DNS)",
       summary: "How the GoDaddy domain connects to Vercel — without breaking Workspace email.",
       blocks: [

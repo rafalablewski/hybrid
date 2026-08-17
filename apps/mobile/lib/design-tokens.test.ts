@@ -12,32 +12,106 @@ import { COVER_SCREENS } from "@hybrid/core";
  * motion.test.ts holds it to its own rules. This file is that guard for the
  * visual axes.
  *
- * Two kinds of rule:
+ * Three kinds of rule:
  *
  *   HARD — the violation count is zero and must stay zero. Adding one fails.
  *
- *   RATCHET — the violation count is a known, non-zero number that we are
- *     paying down. The test asserts the count NEVER RISES. Fixing sites and
- *     lowering the ceiling is the intended workflow; the number only ever goes
- *     down, and when it reaches zero the rule graduates to HARD.
+ *   BURN-DOWN — a known, non-zero count with a DATE it must reach zero by. The
+ *     test fails if the count rises, fails if the ceiling sits above the count,
+ *     and fails once the date passes with anything left. See below.
  *
- * A ratchet is deliberately unglamorous: it does not fix anything, it just makes
- * the debt visible and stops it growing while the sweeps land.
+ *   FLOOR — a known, non-zero count that is NOT debt and must not be driven to
+ *     zero. Exactly one rule is this, and it says why at its call site.
  *
- * ── AND A CEILING IS RE-TIGHTENED WHEN IT MOVES, IN THE SAME CHANGE ────────
- * A ratchet whose ceiling sits above its actual count is not a ratchet — it is
- * a budget for more of the thing. An audit in Aug 2026 found 178 sites of that
+ * ── WHY RATCHETS GRADUATED, Aug 2026 ───────────────────────────────────────
+ *
+ * The design audit's verdict on this file was a compliment with a sting in it:
+ * "the ratchets guarantee it cannot silently worsen, which is rarer than any
+ * individual flaw" — and then, in the prescription: "Ratchets graduate from
+ * 'cannot get worse' to 'must reach zero' with dated burn-down."
+ *
+ * The sting is that a ratchet with no date is a debt with no maturity. It is
+ * strictly better than nothing and it is not a plan. Every ceiling in this file
+ * was a promise to sweep something "later", and later is not a time. Held at a
+ * ceiling forever, a ratchet stops reading as debt and starts reading as the
+ * house style — which is how 459 raw border radii became a number nobody was
+ * embarrassed by.
+ *
+ * So each one now carries `by`, a date. Before it, the rule behaves as it always
+ * did. After it, a non-zero count FAILS. The date is not a wish: it is the
+ * commitment that turns "we know about it" into "we are doing it", and moving it
+ * is a deliberate, visible edit rather than the silence of an unmet intention.
+ *
+ * ── AND SLACK IS NOW ITSELF A FAILURE ──────────────────────────────────────
+ *
+ * A ratchet whose ceiling sits above its actual count is not a ratchet — it is a
+ * budget for more of the thing. An audit in Aug 2026 found 178 sites of that
  * slack across seven rules: fontSize was at 489 with 427 sites, hex literals at
  * 136 with 82, borderRadius at 507 with 459, and the ASearch convergence had
  * quietly finished (10 → 3) with nobody lowering the number. Every one of them
  * would have swallowed dozens of new violations in silence, which is the exact
  * failure this file exists to prevent.
  *
- * The slack accumulates honestly — a sweep aimed at one rule removes sites the
- * others were counting — so the discipline is: after ANY sweep, re-measure every
- * ceiling, not just the one you meant to move. All seven are pinned to actual as
- * of that audit.
+ * That was fixed by hand, and "fixed by hand" is the same category of promise as
+ * "later". The slack accumulates HONESTLY — a sweep aimed at one rule removes
+ * sites the others were counting, so a change that touches nothing but icons can
+ * lower four ceilings — which means the discipline "re-measure every ceiling
+ * after any sweep" is exactly the discipline a person forgets. It is a test
+ * assertion now: if the count is below the ceiling, the ceiling is wrong, and
+ * the failure tells you what to pin it to. Progress that nobody records is
+ * progress the next ceiling silently spends.
  */
+
+/** Today, at day granularity. Split out so the burn-down's clock is one thing. */
+const TODAY = new Date().toISOString().slice(0, 10);
+
+/** Every burn-down's state, collected as the rules run, for the ledger below. */
+const LEDGER: { rule: string; count: number; ceiling: number; by: string }[] = [];
+
+/**
+ * A BURN-DOWN. Three assertions in one:
+ *
+ *  1. the count never RISES above the ceiling      (the original ratchet)
+ *  2. the ceiling never sits ABOVE the count       (slack is a budget)
+ *  3. after `by`, the count must be ZERO           (debt has a maturity)
+ *
+ * `by` is an ISO date. Pick it from the shape of the remaining work, not from
+ * optimism: a rule with three mechanical sites gets weeks, one that needs a
+ * person to look at 160 call sites gets a couple of quarters.
+ */
+function burnDown(found: string[], ceiling: number, by: string, rule: string) {
+  LEDGER.push({ rule, count: found.length, ceiling, by });
+  const sites = `\n  ${found.slice(0, 25).join("\n  ")}${found.length > 25 ? `\n  …and ${found.length - 25} more` : ""}`;
+
+  expect(
+    found.length,
+    `\n${rule}\nRATCHET BROKEN — ceiling ${ceiling}, found ${found.length}:${sites}`,
+  ).toBeLessThanOrEqual(ceiling);
+
+  expect(
+    found.length,
+    `\n${rule}\nSLACK — the ceiling is ${ceiling} and there are only ${found.length}. ` +
+      `Lower the ceiling to ${found.length} in this change: an unclaimed win is headroom for ${ceiling - found.length} new violations.`,
+  ).toBe(ceiling);
+
+  if (found.length > 0 && TODAY > by) {
+    expect(
+      found.length,
+      `\n${rule}\nPAST DUE — this burn-down was due to reach zero on ${by} and ${found.length} remain:${sites}\n` +
+        `Finish the sweep, or move the date deliberately and say why here.`,
+    ).toBe(0);
+  }
+}
+
+/**
+ * A FLOOR — a count that is not debt. Same anti-slack assertion, no date, and
+ * the caller must say WHY zero is the wrong target. There is exactly one, and
+ * inventing a second to dodge a date would be the whole point missed.
+ */
+function floorAt(found: string[], ceiling: number, rule: string, _why: string) {
+  expect(found.length, `\n${rule}\nceiling ${ceiling}, found ${found.length}:\n  ${found.slice(0, 25).join("\n  ")}`).toBeLessThanOrEqual(ceiling);
+  expect(found.length, `\n${rule}\nSLACK — pin the ceiling to ${found.length}.`).toBe(ceiling);
+}
 
 const ROOT = join(__dirname, "..");
 const DIRS = ["app", "components", "lib"];
@@ -101,13 +175,6 @@ function lineAt(site: string): string {
  */
 function codeHits(pattern: RegExp): string[] {
   return hits(pattern).filter((h) => !/^\s*(?:\/\/|\/?\*)/.test(lineAt(h)));
-}
-
-/** A ratchet: report the overage with the offending sites, so a failure tells
- *  you WHERE, not just that a number moved. */
-function expectAtMost(found: string[], ceiling: number, rule: string) {
-  const detail = found.length > ceiling ? `\n${rule}\nceiling ${ceiling}, found ${found.length}:\n  ${found.slice(0, 25).join("\n  ")}` : "";
-  expect(found.length, detail).toBeLessThanOrEqual(ceiling);
 }
 
 describe("type scale", () => {
@@ -174,7 +241,16 @@ describe("type scale", () => {
     //   Two FRACTIONAL sizes (11.5, 12.5) — a half-dp is a deliberate nudge, not
     //     a rung missed by half.
     //
-    //   The three glyph watermarks, deliberately, per the paragraph above.
+    //   The three glyph watermarks are GONE — 48 → 44. They were the recipe
+    //     tile's dish emoji at 78, the cook plate's at 118 and a plan cover's,
+    //     excepted here as "artwork, not type". They are drawn marks now (the
+    //     icon convergence), so they are not type at any size and the exception
+    //     retires with them. The four that went with them were emoji drawn at a
+    //     hand-picked point size in rows that now call <Glyph>.
+    //
+    //     This is the slack the anti-slack assertion exists for: a change aimed
+    //     at ICONS lowered the TYPE ceiling by four, and nothing but a failing
+    //     test was ever going to make anyone notice.
     //
     //   1 was RENAMED AND PUT BACK. home.tsx's plan-card title took fs.headline
     //     cleanly, and that tripped hub-masthead.test.ts, which bans the rung
@@ -183,7 +259,7 @@ describe("type scale", () => {
     //     but the guard is load-bearing and a rename is not worth weakening it
     //     for. It sits as a raw 22 and is counted here, which is the honest
     //     place for a site that has no rung it is allowed to name.
-    expectAtMost(hits(/fontSize:\s*\d+/g), 48, "raw fontSize → use an fs.* rung");
+    burnDown(hits(/fontSize:\s*\d+/g), 44, "2026-11-30", "raw fontSize → use an fs.* rung");
   });
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
@@ -298,7 +374,7 @@ describe("leading and tracking", () => {
     // fifth is the portion stepper's −, whose box was 26 on a size of 24: once
     // the size took a rung the pair read as a 1.0 ratio, which is nobody's
     // choice, it is two numbers that used to be different.)
-    expectAtMost(hits(/lineHeight:\s*\d/g), 43, "absolute lineHeight → leading(size, role)");
+    burnDown(hits(/lineHeight:\s*\d/g), 39, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking names its token; a big figure derives it", () => {
@@ -386,7 +462,86 @@ describe("geometry", () => {
     // 160 → 159: the admin console drew its chart legend swatch twice, once per
     // panel, and the second copy was about to become a third. One `Legend` in
     // the admin _kit now serves both, on RADIUS.pill.
-    expectAtMost(hits(/borderRadius:\s*\d/g), 159, "raw borderRadius → RADIUS.*");
+    //
+    // 159 → 147, and the leading ceiling 41 → 39, across the MERGE of the icon
+    // convergence with the subtraction pass. Two sites neither branch freed
+    // alone; the other eleven went with the agent console the subtraction pass
+    // deleted, which this branch had resurrected by touching it — a file kept
+    // alive by a one-character emoji fix on a screen main had removed.
+    // Cross-rule slack is exactly what the anti-slack assertion is for, and a
+    // merge is where it accumulates fastest.
+    burnDown(hits(/borderRadius:\s*\d/g), 147, "2027-02-28", "raw borderRadius → RADIUS.*");
+  });
+});
+
+describe("dynamic type", () => {
+  /**
+   * THE CLAMP IS THE EXCEPTION, AND AN EXCEPTION HAS TO SAY WHY.
+   *
+   * lib/ui.tsx states the policy in prose: "Pass
+   * `maxFontSizeMultiplier={FIXED_FONT_SCALE}` on text inside a container with a
+   * hard height; leave it off (or use MAX_FONT_SCALE) anywhere the layout can
+   * grow to fit."
+   *
+   * Nothing checked it, and the audit found the result: "Dynamic Type is claimed
+   * shipped and is policy-inverted." The mechanism is ordinary — 1.15 is the
+   * value you see in the file you are copying from, so it spread by imitation
+   * until the exception was the default. Measured at the time of this rule it
+   * was 198 of 271 declarations, not the 265 of 270 the audit cited; the count
+   * is corrected here rather than repeated, because a guard that misstates its
+   * own subject is how a ceiling drifts out of touch with reality.
+   *
+   * WHY IT MATTERS MORE THAN A TOKEN MISMATCH. Every other rule in this file is
+   * about coherence. This one is about a person: someone who sets Larger Text to
+   * 200% was getting 115% on three quarters of the app's text, because a ceiling
+   * meant for fixed-height chrome had been applied to surfaces that reflow
+   * perfectly well. The clamp is not a style — it is a refusal of the reader's
+   * own setting, and it should have to be earned.
+   *
+   * WHAT COUNTS AS EARNING IT: the component declares a hard height, or reads
+   * one of the height TOKENS below. The token arm is not a loophole, it is a
+   * correction — HeroMetadata sits in the hero's fixed rail and the height lives
+   * in core's HERO constants, so a rule that only looked for a local `height:`
+   * would have called the app's most obviously fixed chrome unjustified.
+   */
+  const HEIGHT_SIGNAL = /\b(?:height|minHeight|maxHeight)\s*:|HIT_TARGET|ROW_LEAD|HERO\.|DOCK_RAIL|SATELLITE\.|NAV_BAR_HEIGHT/;
+
+  it("HARD — a 1.15 clamp lives in a component with a hard height", () => {
+    // 55 clamps across 27 files failed this when it was written, on cards,
+    // wrapping macro rows, table rows, section heads and the shared Chip and
+    // Kicker — none of which has a hard height, all of which grow. They were
+    // moved to MAX_FONT_SCALE rather than removed outright: 1.4 is still a
+    // ceiling, so the change is bounded, and a device round that finds real
+    // clipping has one local value to put back.
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      const lines = text.split("\n");
+      // Component boundaries, at the granularity the file is written in: a
+      // top-level `function Foo` / `const Foo =`. Good enough because a nested
+      // helper shares its parent's height context anyway.
+      const starts = lines.flatMap((l, i) => (/^(export )?(function|const) [A-Z]\w*/.test(l) ? [i] : []));
+      starts.push(lines.length);
+      for (let k = 0; k < starts.length - 1; k++) {
+        const a = starts[k]!, b = starts[k + 1]!;
+        const body = lines.slice(a, b).join("\n");
+        if (!body.includes("maxFontSizeMultiplier={FIXED_FONT_SCALE}")) continue;
+        if (HEIGHT_SIGNAL.test(body)) continue;
+        const name = /^(?:export )?(?:function|const) (\w+)/.exec(lines[a]!)?.[1] ?? "?";
+        bad.push(`${path}:${a + 1} — ${name} clamps Dynamic Type but declares no height`);
+      }
+    }
+    expect(
+      bad,
+      `\nthe 1.15 clamp is for FIXED-HEIGHT chrome (lib/ui.tsx). If the surface reflows, use MAX_FONT_SCALE:\n  ${bad.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  it("HARD — neither cap is written as a bare number", () => {
+    // The rule above is only as good as the tokens being the only way to say
+    // it. A literal 1.15 at a call site is the same clamp wearing a disguise,
+    // and it would be invisible to every count in this file.
+    const raw = codeHits(/maxFontSizeMultiplier=\{\s*1(?:\.\d+)?\s*\}/g);
+    expect(raw, `\nname the cap — FIXED_FONT_SCALE or MAX_FONT_SCALE:\n  ${raw.join("\n  ")}`).toEqual([]);
   });
 });
 
@@ -408,6 +563,74 @@ describe("touch targets", () => {
       expect(file, `${path} not found`).toBeDefined();
       expect(file!.text, `${path} must declare HIT_TARGET`).toContain("HIT_TARGET");
     }
+  });
+
+  it("HARD — there is ONE component kit; a second one is a build failure", () => {
+    // THE FINDING: "Four component vocabularies coexist: the principal kit, a
+    // social kit whose primary button — 23 call sites — sits below the app's own
+    // 44-point touch floor, unlabeled for VoiceOver and INVISIBLE TO THE
+    // ENFORCEMENT RATCHETS BY NAME; a nutrition kit shipping a duplicate icon
+    // set defaulting to off-palette white; and an admin kit."
+    //
+    // The clause that matters is the one about the ratchets. Every guard in this
+    // file polices the shared primitives BY NAME — the chip ratchet counts
+    // hand-rolled chips against `AChip`, the 44dp rule reads the files listed
+    // above. A second kit is not merely duplication: it is a blind spot, and
+    // everything inside it is unregulated by construction. That is why SButton
+    // could sit 8dp under the touch floor at 23 call sites for months while a
+    // test named "every interactive PRIMITIVE declares the 44dp floor" passed.
+    //
+    // THE PRESCRIPTION WAS EXPLICIT — retired "by build failure, not by ratchet
+    // ceiling". A ratchet would have said "no MORE sub-44 buttons", which is a
+    // budget for the 23 that exist. This says the file cannot exist.
+    //
+    // What was actually wrong was not the callers' taste: APill had no size
+    // class, and all 23 sites are buttons in a ROW. Told to choose between the
+    // shared primitive at the wrong size and the right size hand-rolled, six
+    // screens chose the second. APill has `size="compact"` now — content-sized
+    // and quieter, with `minHeight: HIT_TARGET` on the same node as `regular`,
+    // so the drawing shrinks and the target does not.
+    const RETIRED = [
+      { path: "components/social-kit.tsx", was: "SButton + Avatar/Stars/Empty → aurora/kit.tsx" },
+    ];
+    const back = RETIRED.filter((k) => FILES.some((f) => f.path === k.path));
+    expect(back.map((k) => `${k.path} is back — ${k.was}`)).toEqual([]);
+
+    // …and its button with it. A name check, because the failure mode is a
+    // helpful re-extraction: "these six screens all need a small button, let me
+    // pull one out", which is precisely how the first one appeared.
+    const sbutton = codeHits(/\bSButton\b/g);
+    expect(sbutton, `\nSButton is retired — use <APill size="compact" />:\n  ${sbutton.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — a button primitive is drawn by APill, wherever it lives", () => {
+    // The generalisation of the rule above: a component whose NAME says button
+    // and whose body hand-rolls a Pressable with its own padding is a shadow
+    // primitive being born, whatever file it is in. The two sanctioned button
+    // primitives declare the floor; everything else routes through them.
+    //
+    // `PillBtn` is the admin kit's compact action and is the one exception,
+    // recorded rather than hidden: it already declares HIT_TARGET (the rule
+    // above checks it), and folding it onto APill's `compact` is the
+    // `admin-kit-merge` capability — 66 call sites across 13 files, a visible
+    // change to every operator screen, and it wants a device to verify.
+    // `aurora/swiftui.tsx` is the third exception and a different KIND of one:
+    // GlassNavButton and GlassMenuButton are bridges onto a NATIVE control
+    // (Liquid Glass, the system menu). They hand-roll no padding and declare no
+    // geometry — the platform owns both, which is the entire reason to use
+    // them — so there is nothing here for APill to own. A native control
+    // wearing the app's own drawn button would be the drift, not the fix.
+    const SANCTIONED = /components\/aurora\/kit\.tsx|components\/admin\/_kit\.tsx|components\/aurora\/swiftui\.tsx/;
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      if (SANCTIONED.test(path.split("\\").join("/"))) continue;
+      text.split("\n").forEach((line, i) => {
+        // `export function XButton(` / `export const XBtn = (` — a declared
+        // button component outside the sanctioned kits.
+        if (/export\s+(?:function|const)\s+[A-Z]\w*(?:Button|Btn)\b/.test(line)) bad.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(bad, `\na button primitive outside the kit — use <APill />:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("RATCHET — chip implementations converge on Chip + AChip", () => {
@@ -451,7 +674,7 @@ describe("touch targets", () => {
     const SANCTIONED = /\b(?:DockChip|APill|AChip|ActionPill|GlassPillRow)\b/;
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    expectAtMost(decls, 5, "chip-shaped component → Chip, AChip or DockChip");
+    burnDown(decls, 5, "2026-10-31", "chip-shaped component → Chip, AChip or DockChip");
   });
 });
 
@@ -485,7 +708,7 @@ describe("section headers", () => {
     const SANCTIONED = /\b(?:AppHeader|ASection|AHeading)\b/;
     const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Section|Head|SubHead)[A-Za-z]*\s*\(/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    expectAtMost(decls, 6, "section-header component → ASection");
+    burnDown(decls, 6, "2026-10-31", "section-header component → ASection");
   });
 });
 
@@ -519,7 +742,7 @@ describe("meters", () => {
     const SANCTIONED = /\bAMeter\b/;
     const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    expectAtMost(decls, 6, "labelled proportion → AMeter");
+    burnDown(decls, 6, "2026-10-31", "labelled proportion → AMeter");
   });
 });
 
@@ -537,7 +760,7 @@ describe("fields", () => {
     // means restructuring the parent, so they are counted here rather than
     // rushed.
     const searches = hits(/placeholder=\{?["']?[^"'}]*[Ss]earch/g);
-    expectAtMost(searches, 3, "search field → <ASearch>");
+    burnDown(searches, 3, "2026-09-30", "search field → <ASearch>");
   });
 });
 
@@ -583,7 +806,7 @@ describe("loading", () => {
     // and its right-hand slot otherwise holds a word that changes ("Allow" →
     // "3 fetched"), so the spinner sits exactly where the permitted four do:
     // in-flight state inside a control, in a slot that holds its own size.
-    expectAtMost(hits(/<ActivityIndicator/g), 18, "content ActivityIndicator → <Loading />");
+    burnDown(hits(/<ActivityIndicator/g), 18, "2026-10-31", "content ActivityIndicator → <Loading />");
   });
 });
 
@@ -626,7 +849,7 @@ describe("colour", () => {
     // 75 → 61: the 12 eight-digit ones went to withAlpha() with the rest of the
     // colour arithmetic — see the alpha rule below, which is the one that
     // actually covers this axis.
-    expectAtMost(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 61, "hex literal → a palette token");
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 61, "2026-12-31", "hex literal → a palette token");
   });
 });
 
@@ -652,8 +875,15 @@ describe("colour arithmetic", () => {
     // where none exists. The remaining count is those two things, and it should
     // fall only if one of them turns out to be a tint in disguise — NOT by
     // adding rungs until the number reaches zero.
-    expectAtMost(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 119,
-      "a tint → ALPHA.*; a ramp stop or scrim may keep its number");
+    //
+    // THE ONE FLOOR, and it earns the exception by having already stated the
+    // argument above: this rule's remainder is gradient stops and content-tuned
+    // scrims, neither of which is a palette choice. Every other ratchet in this
+    // file now carries a date it must reach zero by; this one carries a reason
+    // it must not. A second `floorAt` would be a date being dodged.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 119,
+      "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
+      "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
 
   it("HARD — alpha is withAlpha(), never a hex suffix", () => {
@@ -680,6 +910,76 @@ describe("colour arithmetic", () => {
     const suffix = codeHits(/`\$\{(?:[^{}]|\{[^{}]*\})+\}[0-9a-fA-F]{2}`/g);
     const eight = codeHits(/["'`]#[0-9a-fA-F]{8}["'`]/g);
     expect([...suffix, ...eight], "hex alpha suffix → withAlpha(color, 0.xx)").toEqual([]);
+  });
+});
+
+describe("icons", () => {
+  /**
+   * THE PICTOGRAPHIC RANGES — colour emoji, the things a platform draws for you.
+   *
+   * Deliberately NOT "every non-ASCII character". The app's vocabulary includes
+   * TYPOGRAPHIC marks that are monochrome, take the text colour, and are set in
+   * a font: the geometric plan/goal emblems (▲ ◈ ◉ ⬡ ◍ ✚), the ✦ premium
+   * signifier the house rules sanction by name, ✓ ✕ ★ ☆, the arrows, ⌁, ☰. Those
+   * are TYPE and stay. What is banned is the pictograph — a picture the OS
+   * substitutes its own artwork for, in colours the palette does not contain,
+   * at a weight nobody chose, differently on every device.
+   */
+  const EMOJI = /[\u{1F300}-\u{1FAFF}\u{1F000}-\u{1F2FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu;
+  // The typographic marks that fall inside those blocks and are NOT pictographs.
+  const TYPE_MARKS = new Set("✓✦★☆✕✗→←↑↓↔⇄↺↻↳↗↦⇒⬡⬢❚✎♥⚑↯❖⦿⬗⌁☰✚➔➜".split(""));
+
+  it("HARD — the app draws its own marks; no emoji anywhere on the glass", () => {
+    // THE FINDING (design audit, Aug 2026): "Three icon languages share one
+    // product: 94 custom line glyphs, hand-drawn sport marks used at exactly two
+    // sites, and Apple emoji everywhere else — medals on the leaderboard,
+    // trophies in the logger, sometimes framed inside the app's own bespoke
+    // mark tiles."
+    //
+    // The emoji were STRUCTURAL, not sprinkled. A dozen core data types declared
+    // `icon: string` / `emoji: string` holding a literal pictograph — the sport
+    // catalog's 65, the achievements, the recipes, the meal parts, the effort
+    // and fatigue and mood scales, the fun-fact tiers — and every renderer drew
+    // them with <Text>. Sweeping call sites would have left the fields and the
+    // fields would have refilled. So the FIELDS changed type to core's `Mark`
+    // (theme/mark.ts), a closed union of the two languages that survive: a
+    // glyph name, or a sport. `string` is not a member, so a pictograph can no
+    // longer be typed into one at all.
+    //
+    // HARD from the start, and it has to be: this is the rule a single hurried
+    // commit re-breaks, and one emoji beside the drawn set is more visibly
+    // wrong than twenty were when twenty was the house style.
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      text.split("\n").forEach((line, i) => {
+        if (/^\s*(?:\/\/|\/?\*)/.test(line)) return; // a comment may NAME what it replaced
+        const found = [...line.matchAll(EMOJI)].map((m) => m[0]).filter((c) => !TYPE_MARKS.has(c));
+        if (found.length) bad.push(`${path}:${i + 1}  ${found.join("")}`);
+      });
+    }
+    expect(bad, `\nemoji on the glass — draw it with <Glyph>, <SportMark> or <Mark>:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — a mark is drawn by the shared renderer, never by a <Text>", () => {
+    // The other half of the rule. Banning the CHARACTER is not enough if a
+    // screen can still put a `glyph`/`icon` string into a <Text> and size it
+    // like art — that is how the recipe tile came to watermark a dish at
+    // fontSize 78 and a plan cover at 118, the two sizes the type ratchet had
+    // to except as "artwork, not type".
+    //
+    // A `<Text>` whose ONLY child is a bare `{x.icon}` / `{x.emoji}` / `{x.glyph}`
+    // expression is that shape. The typographic emblem families are the
+    // exception and they say so by name: plan-hero's `cover.glyph`, the
+    // guidance sections, the chooser cards.
+    const EXEMPT = /cover\.glyph|GLYPHS\[|s\.icon\b/;
+    const bad = FILES.flatMap(({ path, text }) =>
+      text.split("\n").flatMap((line, i) =>
+        /<Text[^>]*>\{[a-zA-Z]+\.(icon|emoji)\}<\/Text>/.test(line) && !EXEMPT.test(line)
+          ? [`${path}:${i + 1}`]
+          : [],
+      ),
+    );
+    expect(bad, `\na mark rendered as type — use <Mark mark={…} />:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 });
 
@@ -736,7 +1036,7 @@ describe("presentation", () => {
     const found = hits(new RegExp(
       String.raw`backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*${RAD}` +
       String.raw`|borderRadius:\s*${RAD}[^\n]*backgroundColor:\s*(?:C|palette)\.lime`, "g"));
-    expectAtMost(found, 35, "hand-rolled lime pill → <APill />");
+    burnDown(found, 35, "2026-12-31", "hand-rolled lime pill → <APill />");
   });
 
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {
@@ -1102,5 +1402,46 @@ describe("screens", () => {
     const readers = FILES.filter((f) => /from "\.\/measure-row"/.test(f.text)).map((f) => f.path);
     expect(readers).toContain("components/aurora/volume.tsx");
     expect(readers).toContain("components/aurora/activity-compare.tsx");
+  });
+});
+
+/**
+ * THE BURN-DOWN LEDGER.
+ *
+ * Runs last so every rule above has reported. It asserts almost nothing — its
+ * job is to PRINT the debt with its due dates, so the state of the sweep is one
+ * command away instead of something you reconstruct by reading twelve ceilings
+ * out of twelve comment blocks.
+ *
+ * That is not decoration. The reason ratchets drifted into house style is that
+ * nobody could see them all at once: each number lived beside its own rule,
+ * each looked reasonable in isolation, and the total — 800-odd sites across ten
+ * rules — was never written down anywhere. A number nobody totals is a number
+ * nobody is embarrassed by.
+ */
+describe("the burn-down ledger", () => {
+  it("reports every dated ratchet, soonest due first", () => {
+    const rows = [...LEDGER].sort((a, b) => a.by.localeCompare(b.by) || b.count - a.count);
+    const total = rows.reduce((n, r) => n + r.count, 0);
+    const width = Math.max(...rows.map((r) => r.rule.length));
+    const lines = rows.map((r) => {
+      const due = TODAY > r.by ? "PAST DUE" : r.by;
+      return `  ${r.rule.padEnd(width)}  ${String(r.count).padStart(4)}  due ${due}`;
+    });
+    // eslint-disable-next-line no-console
+    console.log(
+      `\nDESIGN-TOKEN BURN-DOWN — ${total} sites across ${rows.length} rules\n` +
+        `${lines.join("\n")}\n` +
+        `  (plus one FLOOR: withAlpha ramp stops and scrims, which are not debt)\n`,
+    );
+
+    // The one thing it does assert: every burn-down has a date, and that date is
+    // a real one. A ratchet that reaches this file without a maturity is the
+    // thing the audit asked us to stop shipping.
+    for (const r of rows) {
+      expect(r.by, `${r.rule} has no due date`).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(Number.isNaN(Date.parse(r.by)), `${r.rule}: "${r.by}" is not a date`).toBe(false);
+    }
+    expect(rows.length, "the ledger collected nothing — did the rules run?").toBeGreaterThan(0);
   });
 });

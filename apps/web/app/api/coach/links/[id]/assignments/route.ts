@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import type { SessionBlock } from "@hybrid/core";
+import { coachAssignmentPush, type SessionBlock } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { prisma } from "@/lib/db";
+import { assignmentDayLabel, notify } from "@/lib/push";
 
 // Assignments for a coach↔client link. GET: the client's assignments (coach or
 // client). POST: the coach schedules a workout to the client on a date.
@@ -56,5 +57,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       date,
     },
   });
+
+  // Somebody ELSE just acted on this athlete's account, which is the whole
+  // argument for a push: there is no way to discover it by not opening the app.
+  // Awaited (a serverless function stops the moment it responds) but incapable
+  // of failing the assignment — see lib/push.ts notify().
+  await notify(link.clientId, "coach", (lang) =>
+    coachAssignmentPush({
+      coach: me.name ?? "",
+      session: assignment.name,
+      when: assignmentDayLabel(assignment.date, lang),
+      lang,
+    }),
+  );
+
   return NextResponse.json({ assignment }, { status: 201 });
 }

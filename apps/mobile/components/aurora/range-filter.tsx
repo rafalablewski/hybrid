@@ -12,7 +12,7 @@ import { LiquidSeg } from "./liquid-seg";
 import { GlassWheel, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, tracking, F, PressScale as Pressable, MAX_FONT_SCALE } from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 import { RADIUS } from "./kit";
 
@@ -200,7 +200,7 @@ export function RangeFilter({
           label: label(s),
           intercept: s.id === MONTH_SEGMENT_ID ? () => setPicker(true) : undefined,
           render: (on: boolean) => (
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE}
               numberOfLines={1}
               style={{
                 fontFamily: on ? F.monoBold : F.mono, fontSize: fs.micro,

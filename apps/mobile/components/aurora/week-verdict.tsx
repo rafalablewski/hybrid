@@ -21,6 +21,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, TABULAR, tracking, trackFigure } from "../../lib/ui";
+import { Mark } from "./mark";
 
 /**
  * THE ACTIVITY CARD — "This week" and everything the date filter turns it into,
@@ -1125,7 +1126,7 @@ function MetricDetail({
                     backgroundColor: active ? C.ink2 : "transparent", borderRadius: RADIUS.inner,
                   }}
                 >
-                  <Text style={{ fontSize: fs.body, width: 18, textAlign: "center" }}>{g.icon}</Text>
+                  <View style={{ width: 18, alignItems: "center" }}><Mark mark={g.mark} size={fs.body + 2} color={C.ash} /></View>
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>
                     {groupName(g)}
                   </Text>

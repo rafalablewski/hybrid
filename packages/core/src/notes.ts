@@ -5,21 +5,26 @@
 // unit-tested. (Deliberately generic — not session-specific — so any future
 // note surface can reuse it.)
 
+import { glyphMark, type Mark } from "./theme/mark";
+
 export type MoodDef = {
   value: 1 | 2 | 3 | 4;
   /** i18n key for the mood's label (used for the a11y name). */
   labelKey: string;
-  emoji: string;
+  /** The mood's drawing. Was an emoji (😖 😐 🙂 💪); it takes four rungs of the
+   *  SAME drawn face ramp the effort and fatigue scales use, so the app's three
+   *  self-report questions stop being asked in three different hands. */
+  mark: Mark;
   /** A palette accent hint the clients map to their theme colour. */
   tone: "red" | "amber" | "lime";
 };
 
 // Rough → strong. Kept short on purpose: a quick tap, not a survey.
 export const MOODS: readonly MoodDef[] = [
-  { value: 1, labelKey: "w.train.note.mood-rough",  emoji: "😖", tone: "red" },
-  { value: 2, labelKey: "w.train.note.mood-ok",     emoji: "😐", tone: "amber" },
-  { value: 3, labelKey: "w.train.note.mood-good",   emoji: "🙂", tone: "lime" },
-  { value: 4, labelKey: "w.train.note.mood-strong", emoji: "💪", tone: "lime" },
+  { value: 1, labelKey: "w.train.note.mood-rough",  mark: glyphMark("face-spent"), tone: "red" },
+  { value: 2, labelKey: "w.train.note.mood-ok",     mark: glyphMark("face-solid"), tone: "amber" },
+  { value: 3, labelKey: "w.train.note.mood-good",   mark: glyphMark("face-steady"), tone: "lime" },
+  { value: 4, labelKey: "w.train.note.mood-strong", mark: glyphMark("face-easy"), tone: "lime" },
 ] as const;
 
 export const moodDef = (value: number | null | undefined): MoodDef | null =>

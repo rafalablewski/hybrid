@@ -43,9 +43,9 @@ describe("sanitizeNote", () => {
 });
 
 describe("moodDef / tagLabelKey", () => {
-  it("resolves a mood value to its emoji + tone, null otherwise", () => {
+  it("resolves a mood value to its mark + tone, null otherwise", () => {
     expect(moodDef(1)?.tone).toBe("red");
-    expect(moodDef(4)?.emoji).toBe("💪");
+    expect(moodDef(4)?.mark).toEqual({ kind: "glyph", name: "face-easy" });
     expect(moodDef(null)).toBeNull();
     expect(moodDef(9)).toBeNull();
   });

@@ -16,7 +16,7 @@ import { useLang } from "../../lib/i18n";
 import { useSession } from "../../lib/session";
 import { usePersona } from "../../lib/persona";
 import { track } from "../../lib/track";
-import { leading, tracking, fs, F, PressScale, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, F, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { APill, AuroraScreen, ACard, AHeading, RADIUS, withAlpha } from "./kit";
@@ -186,7 +186,7 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
   const blurb = hasHistory ? rx.why : t("train.aiEmptyBlurb");
   return (
     <PressScale onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, padding: 20, marginTop: 16 }}>
-      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
         {t("home.readiness")} {rx.readiness}/100
       </Text>
       <Text style={{ fontFamily: F.black, fontSize: 25, lineHeight: 28, color: C.onAccent, marginTop: 10, letterSpacing: tracking.display }}>{title}</Text>

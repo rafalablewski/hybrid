@@ -298,7 +298,7 @@ export default function AdminAnnouncements() {
                   <Chip c={STATUS_COLOR[a.status]}>{a.status}</Chip>
                   <Chip c={LEVEL_COLOR[a.level]}>{a.level}</Chip>
                   <Chip c={ASH}>{a.audience}</Chip>
-                  {a.pinned && <Chip c={AMBER}>📌 pinned</Chip>}
+                  {a.pinned && <Chip c={AMBER}>pinned</Chip>}
                 </div>
                 <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle }}>{a.title}</div>
                 <Mono s={{ fontSize: fs.bodyLg, lineHeight: 1.5, display: "block", marginTop: 4, whiteSpace: "pre-wrap" }} c={ASH}>

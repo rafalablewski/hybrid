@@ -8,6 +8,7 @@ import { AMarkTile } from "./kit";
 import AuroraExerciseAnimation from "./exercise-animation";
 import AuroraExerciseMark from "./exercise-mark";
 import { RADIUS } from "./kit";
+import { SportMark } from "./icons";
 
 /**
  * The exercise DEMO MEDIA surface (mobile) — one component for every place a
@@ -165,7 +166,7 @@ export function AuroraExerciseAvatar({
   size = 40,
   glyph,
   tint,
-  icon,
+  sport,
   label,
 }: {
   name: string;
@@ -175,16 +176,23 @@ export function AuroraExerciseAvatar({
   glyph?: number;
   /** Mark colour; defaults to the lift's modality accent. */
   tint?: string;
-  /** A catalogue emoji, drawn in place of the implement mark when present. */
-  icon?: string | null;
+  /**
+   * A SPORT, drawn as its own mark in place of the implement mark.
+   *
+   * This prop took a catalogue EMOJI, framed inside `AMarkTile` — the app's own
+   * drawing wrapped around the platform's, which is the exact failure the
+   * design audit named. It takes the sport's NAME now and strokes the drawn
+   * sport mark, so the tile and its contents are one hand.
+   */
+  sport?: string | null;
   /** a11y label — see `AMarkTile`; give one only where the row doesn't already say it. */
   label?: string;
 }) {
   const { palette: C } = useTheme();
   return (
     <AMarkTile size={size} label={label}>
-      {icon
-        ? <Text style={{ fontSize: Math.round(size * 0.42) }}>{icon}</Text>
+      {sport
+        ? <SportMark sport={sport} size={glyph ?? Math.round(size * 0.6)} color={tint ?? modalityTint(name, C)} />
         : <Thumb name={name} size={glyph ?? Math.round(size * 0.6)} tint={tint ?? modalityTint(name, C)} />}
     </AMarkTile>
   );

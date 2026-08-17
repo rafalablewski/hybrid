@@ -9,7 +9,7 @@ import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, space, F, PressScale as Pressable, MAX_FONT_SCALE } from "../../lib/ui";
 import { AuroraScreen, ACard, ASection, AStepper, RADIUS, withAlpha } from "./kit";
 
 const MUSCLE_KEY: Record<string, string> = { quads: "w.analyze.vol.muscleQuads", glutes: "w.analyze.vol.muscleGlutes", posterior: "w.analyze.vol.musclePosteriorChain", back: "w.analyze.vol.muscleBack", chest: "w.analyze.vol.muscleChest", shoulders: "w.analyze.vol.muscleShoulders", triceps: "w.analyze.vol.muscleTriceps" };
@@ -139,7 +139,7 @@ export default function AuroraVolumeModel() {
                   keyboardType="number-pad"
                   defaultValue={profile[key] != null ? String(profile[key]) : ""}
                   accessibilityLabel={label}
-                  maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                  maxFontSizeMultiplier={MAX_FONT_SCALE}
                   onEndEditing={(e) => setProfile({ [key]: e.nativeEvent.text.trim() === "" ? undefined : Number(e.nativeEvent.text) } as Partial<AthleteVolumeProfile>)}
                   style={{ ...field, color: isMeasured ? C.ash : C.chalk, borderColor: isMeasured ? withAlpha(C.lime, ALPHA.line) : C.line }}
                 />
@@ -178,7 +178,7 @@ export default function AuroraVolumeModel() {
                       keyboardType="number-pad"
                       defaultValue={String(resolved.landmarks[m][k])}
                       accessibilityLabel={`${ml(m)} ${k}`}
-                      maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                      maxFontSizeMultiplier={MAX_FONT_SCALE}
                       onEndEditing={(e) => editField(m, k, e.nativeEvent.text)}
                       style={{ ...field, fontSize: fs.caption, paddingHorizontal: 2, color: overridden ? C.chalk : C.ash, borderColor: overridden ? withAlpha(C.lime, ALPHA.rim) : C.line }}
                     />

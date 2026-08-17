@@ -21,7 +21,6 @@ import { OLYMPIC_SPORTS, type SportMarker, type PoolExercise } from "./olympic-s
 
 /** The engine's view of a sport — projected from a catalog entry's `sc` block. */
 export interface Sport {
-  icon: string;
   family: string;
   marker: SportMarker;
   demands: string[];
@@ -87,7 +86,7 @@ export const SPORTS: Record<string, Sport> = Object.fromEntries(
     .filter((s) => s.sc)
     .map((s) => [
       s.name,
-      { icon: s.icon, family: s.sc!.family, marker: s.sc!.marker, demands: s.sc!.demands, pool: s.sc!.pool },
+      { family: s.sc!.family, marker: s.sc!.marker, demands: s.sc!.demands, pool: s.sc!.pool },
     ]),
 );
 

@@ -181,7 +181,7 @@ describe("digest", () => {
     const t = digestText(summarizeRuns(runs), "today");
     expect(t).toContain("Agent digest — today");
     expect(t).toContain("3 runs");
-    expect(t).toContain("⚠ 1 failed");
+    expect(t).toContain("1 failed");
   });
 });
 

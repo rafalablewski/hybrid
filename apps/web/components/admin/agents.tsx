@@ -294,7 +294,7 @@ export default function AdminAgents() {
         setRunStatus("");
         break;
       case "error":
-        setRun({ output: `⚠ ${ev.message}`, steps: [], usage: { input: 0, output: 0 } });
+        setRun({ output: `Failed: ${ev.message}`, steps: [], usage: { input: 0, output: 0 } });
         setRunStatus("");
         break;
       case "pending":
@@ -342,7 +342,7 @@ export default function AdminAgents() {
         }
       }
     } catch {
-      setRun({ output: "⚠ request failed", steps: [], usage: { input: 0, output: 0 } });
+      setRun({ output: "Request failed", steps: [], usage: { input: 0, output: 0 } });
       setRunStatus("");
     }
     setRunBusy(false);
