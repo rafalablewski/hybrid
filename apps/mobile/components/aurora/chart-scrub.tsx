@@ -9,9 +9,9 @@ import { withAlpha } from "./field";
 
 /**
  * THE HELD CHART (mobile) — press a chart and it states the figure under your
- * finger, the way a stock chart does. The twin of
- * apps/web/components/aurora/chart-scrub.tsx: the hit-testing is core's
- * (`scrubIndex`), so the same press reads the same week in a browser and here.
+ * finger, the way a stock chart does. The hit-testing is core's (`scrubIndex`)
+ * rather than this file's, so which week a press reads is decided once, by a
+ * tested function, and not by geometry re-derived inside a gesture handler.
  *
  * The gesture is the only per-client part. It claims the touch on CONTACT — a
  * still finger IS the gesture, so waiting for movement would mean holding a

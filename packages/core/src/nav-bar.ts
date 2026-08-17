@@ -3,7 +3,7 @@ import type { AuroraIconName } from "./theme/icons";
 /**
  * THE BOTTOM-NAV CONTRACT — shared by both clients so the bar cannot drift.
  *
- * Anatomy: a SPLIT bar. The capsule carries the four PLACES — destinations you
+ * Anatomy: a SPLIT bar. The capsule carries the three PLACES — destinations you
  * go to and come back to — and the app's one VERB rides beside it as a detached
  * circle of the same glass (AURORA_NAV_ACTIONS). Train left the capsule for
  * that circle: it is the thing this app exists to make you do, and inside the
@@ -30,7 +30,7 @@ import type { AuroraIconName } from "./theme/icons";
  */
 
 /**
- * The four capsule destinations, in order.
+ * The three capsule destinations, in order.
  *
  * NUTRITION holds the second slot, where Explore used to sit. Explore was a
  * DISCOVERY surface — a coach rail, a plan cover flow, a community preview —
@@ -41,15 +41,19 @@ import type { AuroraIconName } from "./theme/icons";
  * thing: it happens several times a day, every day, and a tracker you must dig
  * for is a tracker you stop using.
  *
- * MESSAGES holds the third slot, where More used to sit. More was a
- * SPRINGBOARD — ~40 launcher tiles grouped by cluster — and a directory is not
- * a destination: nobody's daily loop includes "open the list of screens". It
- * has moved into the side menu behind the Today header's avatar (side-menu.ts),
- * one gesture from every hub tab, costing the bar nothing. What a tab slot IS
- * for is a place with its own state that you come back to — which is exactly
- * what a conversation is.
+ * THERE IS NO THIRD PLACE, AND THAT IS THE POINT. The slot after Nutrition held
+ * MESSAGES, which held a screen that said direct messages are not built yet.
+ * The screen was honest — no sample threads, no fabricated unread count — and
+ * the honesty was never the problem: a permanent slot in the scarcest surface
+ * the app owns was. The bar has four positions and the product has four jobs
+ * (log training, log food, see state, follow a plan); spending a quarter of the
+ * bar on a room with nothing in it meant one of those jobs did not get a slot
+ * while a feature that does not exist did. Messages returns to the bar when
+ * there are conversations in it, and not before — tracked as `direct-messages`
+ * in capabilities.ts. Until then the capsule carries three places and reads as
+ * three, rather than four with one dark.
  */
-export type AuroraNavTabId = "today" | "nutrition" | "messages" | "profile";
+export type AuroraNavTabId = "today" | "nutrition" | "profile";
 
 export type AuroraNavTab = {
   id: AuroraNavTabId;
@@ -63,7 +67,6 @@ export type AuroraNavTab = {
 export const AURORA_NAV_TABS: readonly AuroraNavTab[] = [
   { id: "today", glyph: "village", labelKey: "nav.today", label: "Today" },
   { id: "nutrition", glyph: "fork-knife", labelKey: "nav.nutrition", label: "Nutrition" },
-  { id: "messages", glyph: "mail", labelKey: "nav.messages", label: "Messages" },
   { id: "profile", glyph: "user-circle", labelKey: "nav.profile", label: "Profile" },
 ] as const;
 

@@ -96,8 +96,7 @@ const wearableSource = (e: WearableExplain, t: (k: string) => string) => {
 };
 
 /**
- * AURORA Performance (mobile) — the athlete hub, at SIX surfaces. Mirrors
- * apps/web/components/aurora/performance.tsx exactly.
+ * AURORA Performance (mobile) — the athlete hub, at SIX surfaces.
  *
  * It was twenty. Volume and Trends had been absorbed whole and took roughly two
  * thirds of the scroll; eleven cards restated something a neighbour had already
@@ -575,7 +574,7 @@ function Full({ top }: { top?: ReactNode }) {
         {/* The model editor has to be reachable from HERE too: the drawer's
             provenance sheet offers "Next — Training age →", and without a
             destination that row renders its arrow and does nothing. */}
-        <AuroraVolume compact onOpenModel={() => router.push("/volume-model")} />
+        <AuroraVolume onOpenModel={() => router.push("/volume-model")} />
       </View>
 
       {/* ═════ GROUP: SEASON — the long arc. ═════ */}

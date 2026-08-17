@@ -69,9 +69,20 @@ export interface NavItem {
    */
   minPersona?: Persona;
   /**
-   * The screen this destination has been PROMOTED onto — set when its content
-   * now renders inline somewhere else (Endurance → the sport lanes at the bottom
-   * of Today). Menus drop these items so the same thing isn't offered twice.
+   * The screen this destination now lives BEHIND. Menus drop these items, so
+   * the app names one way in rather than two.
+   *
+   * Two shapes qualify, and both mean the same thing to a menu:
+   *  • INLINE — its content renders on the host screen (Endurance → the sport
+   *    lanes at the bottom of Today; Volume → the week-shape on Performance).
+   *  • BEHIND A NAMED DOOR — the host carries a row that opens it, labelled and
+   *    carrying its live figure (Trends and Velocity in Performance's "Go
+   *    deeper" card). A door the athlete can read is a way in; a second entry
+   *    in a menu, beside the screen that already leads there, is just the same
+   *    place listed twice.
+   *
+   * What does NOT qualify: a screen reachable only by remembering a glyph, or
+   * by a deep link. If nothing on the host names it, promoting it hides it.
    *
    * Deliberately NOT a delete: on web the nav id is also the screen id, so
    * removing the entry would strand the screen. The route, icon, i18n label and
@@ -116,35 +127,69 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "plans", label: "Plans", group: "train" },
   { id: "periodize", label: "Periodize", group: "train", minPersona: "athlete" },
   { id: "sport", label: "Sport", group: "train", minPersona: "athlete" },
+  // EXERCISES belongs here, with the things you do, not under Analyze. It is
+  // the movement PICKER — the catalogue you open to look a lift up, add it to
+  // a session or check its demo — and it was filed under analysis only because
+  // each row also carries that movement's own progress. Filing the catalogue as
+  // an analysis destination is what made "the analysis screens" read as ten
+  // things instead of two. Still free for ALL: looking up a movement is not
+  // paid depth.
+  { id: "exercises", label: "Exercises", group: "train" },
 
-  // Statistics is folded into HISTORY as its "trend" view — History already
-  // owned everything past this week, and a second destination charting the same
-  // sessions at a coarser grain was the same screen twice. Analytics is merged
-  // onto Today as the "This week" verdict card. Promoted, not deleted — the
-  // routes, icons, labels and gates all stay live.
-  { id: "statistics", label: "Statistics", group: "analyze", promotedTo: "history" },
+  // ── ANALYZE HOLDS EXACTLY TWO DOORS, AND THE SECOND ONE IS THE POINT ──────
+  //
+  // This group carried TEN entries. They were not ten screens' worth of
+  // different question — between them they answered two: WHERE DO I STAND
+  // RIGHT NOW, and HOW AM I CHANGING. Ten doors onto two questions is how an
+  // athlete ends up navigating a filing system instead of reading their own
+  // training, and it is the single largest piece of the surface sprawl in this
+  // app: sixty-two routes serving four jobs.
+  //
+  //   PERFORMANCE — state now. Readiness and its limiter, training age, this
+  //   week's volume against the bands, the season's place in the arc. The depth
+  //   that used to be its own menu entry is reached FROM here.
+  //   HISTORY — progress over time. Every session that happened, in four
+  //   switchable layouts, with the old Statistics screen folded in as its
+  //   TREND view.
+  //
+  // Everything else in the group is `promotedTo` one of those two (or onto
+  // Today, for the two that render inline there). Promotion is NOT deletion —
+  // see NavItem.promotedTo: the route, the icon, the label and the persona gate
+  // all stay live and every screen stays reachable. Only the menu listing goes,
+  // because a menu that names ten destinations has told the athlete there are
+  // ten places to understand.
   { id: "performance", label: "Performance", group: "analyze", minPersona: "athlete" },
-  { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete", promotedTo: "today" },
-  // Volume and Trends are DESTINATIONS again. They were promoted onto the
-  // Performance page in the merge, which appended two whole screens to its
-  // scroll — roughly two thirds of the tab's height — behind a page that opens
-  // with a single number. Performance keeps Volume's hero week-shape and a
-  // Trends door; everything behind those two doors lives here.
-  { id: "volume", label: "Volume", group: "analyze", minPersona: "athlete" },
+  { id: "history", label: "History", group: "analyze" },
+
+  // Behind HISTORY. Statistics was a second destination charting the SAME
+  // sessions History already held, one grain coarser — the same screen twice —
+  // and is now History's own "trend" view.
+  { id: "statistics", label: "Statistics", group: "analyze", promotedTo: "history" },
+
+  // Behind PERFORMANCE, each one behind a named door in its "Go deeper" card
+  // that carries the live figure saying what is behind it.
+  //
+  // THERE IS NO `volume` ID ANY MORE, and that is a deletion rather than a
+  // promotion. Volume is a CARD on Performance — the week-shape, the verdict,
+  // and the block ramp / prescriptions / muscle rails in a drawer under the
+  // columns that raised the question. The standalone screen drew the identical
+  // sections one weight heavier and had had no door pointing at it since the
+  // drawer replaced its push; it is deleted, so there is no destination left to
+  // list. Its MODEL is a real screen and stays, one door further in.
+  { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
+  { id: "velocity", label: "Velocity (VBT)", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
   // The model behind the volume bands — the landmark fields, the profile form
   // and the two model switches. They were ~50 controls hidden inside the Volume
-  // SCREEN behind an edit toggle, where a mistyped number silently rewrote
-  // every band and verdict above it. Promoted to Volume so the menus don't
-  // offer a settings surface beside the screen it configures; reached from
-  // Volume's own header and its provenance card.
-  { id: "volume-model", label: "Volume model", group: "analyze", minPersona: "athlete", promotedTo: "volume" },
-  { id: "exercises", label: "Exercises", group: "analyze" }, // free for ALL — per-exercise progress is a universal hook, not paid depth
-  { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete" },
-  { id: "velocity", label: "Velocity (VBT)", group: "analyze", minPersona: "athlete" },
-  // Promoted onto Today as the sport lanes (endurance-lanes.ts) — still routable
-  // from a lane's "See all", just no longer its own entry in More.
+  // read surface behind an edit toggle, where a mistyped number silently
+  // rewrote every band and verdict above it. Reached from the volume card's
+  // "edit the model" control and from its provenance sheet.
+  { id: "volume-model", label: "Volume model", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
+
+  // Behind TODAY, because that is where they render: Analytics as the "This
+  // week" verdict card, Endurance as the sport lanes (endurance-lanes.ts),
+  // still routable from a lane's "See all".
+  { id: "analytics", label: "Analytics", group: "analyze", minPersona: "athlete", promotedTo: "today" },
   { id: "endurance", label: "Endurance", group: "analyze", minPersona: "athlete", promotedTo: "today" },
-  { id: "history", label: "History", group: "analyze" },
 
   { id: "checkin", label: "Check-in", group: "recovery" },
   { id: "nutrition", label: "Nutrition", group: "recovery" },
@@ -152,9 +197,11 @@ export const NAV_ITEMS: NavItem[] = [
 
   // ---- Social (everyone) — follow friends, browse results, find a coach ----
   { id: "feed", label: "Feed", group: "social" },
-  // Direct messages. On the BOTTOM BAR (it took More's slot — see nav-bar.ts),
-  // and listed here too so it is findable by name like every other destination.
-  { id: "messages", label: "Messages", group: "social" },
+  // NO MESSAGES ENTRY. Direct messages are not built — no thread model, no
+  // delivery, no unread state — and the placeholder screen that said so has
+  // been deleted along with its bar slot (nav-bar.ts). A menu that lists a
+  // destination is promising one; this list carries no entry until there is
+  // something behind it. Tracked as `direct-messages` in capabilities.ts.
   { id: "discover", label: "Find friends", group: "social" },
   // The shelf behind the feed's bookmark. Also reached from a glyph on the
   // feed's own tab row (the same pattern Find friends uses) — but it is a real

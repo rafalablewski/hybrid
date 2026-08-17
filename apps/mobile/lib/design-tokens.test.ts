@@ -717,11 +717,23 @@ describe("presentation", () => {
     // the count fell 31 → 29 with nothing fixed. A rename must never be able to
     // shrink another rule's coverage; `inner` (12) and `field` (16) are the two
     // rungs inside the old 1x/2x range, so they are spelled here as well.
+    //
+    // 31 → 35, AND THE DEBT DID NOT GROW — the guard's EYES did. That is the
+    // same lesson as the paragraph above, running the other way. The live
+    // logger kept a private four-name radius vocabulary (`R.cta`, `R.banner`,
+    // `R.field`, `R.chip`) built by a helper that branched on the dead template
+    // flag; its live values were the kit's own `RADIUS.pill` and `RADIUS.field`
+    // said in local words. Four hand-rolled lime pills wrote `borderRadius:
+    // R.cta` and were therefore invisible here — not fixed, just unspellable.
+    // With the private vocabulary deleted and the call sites on RADIUS, this
+    // rule can finally see all of them. Re-pinning UP is allowed for exactly
+    // this reason and no other: the ceiling must reflect what the debt IS, and
+    // a number kept low by a blind spot is worse than an honest larger one.
     const RAD = String.raw`(?:999|RADIUS\.(?:pill|inner|field)|1[0-9]\b|2[0-9]\b)`;
     const found = hits(new RegExp(
       String.raw`backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*${RAD}` +
       String.raw`|borderRadius:\s*${RAD}[^\n]*backgroundColor:\s*(?:C|palette)\.lime`, "g"));
-    expectAtMost(found, 31, "hand-rolled lime pill → <APill />");
+    expectAtMost(found, 35, "hand-rolled lime pill → <APill />");
   });
 
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {

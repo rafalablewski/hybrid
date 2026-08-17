@@ -28,8 +28,6 @@ type Experience = AthleteVolumeProfile["experience"];
  * of extracting it is that the Volume screen and the settings route that edits
  * the model now read the identical resolution, so an edit and its effect can
  * never be computed two different ways.
- *
- * Mirrors apps/web/lib/use-volume-model.ts.
  */
 export function useVolumeModel(sessions: LoggedSession[]) {
   const prefs = useLoggerPrefs();

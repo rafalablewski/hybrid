@@ -3,7 +3,6 @@ import { brand } from "@hybrid/core";
 import { SessionProvider } from "@/lib/session";
 import { LanguageProvider } from "@/lib/i18n";
 import QueryProvider from "@/components/query-provider";
-import TemplateSync from "@/components/template-sync";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,7 +24,6 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body>
-        <TemplateSync />
         <QueryProvider>
           <LanguageProvider>
             <SessionProvider>{children}</SessionProvider>

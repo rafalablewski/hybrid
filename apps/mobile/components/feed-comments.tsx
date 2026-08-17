@@ -10,7 +10,7 @@ import { useConfirm } from "./aurora/confirm";
 import { RADIUS } from "./aurora/kit";
 
 /**
- * THE THREAD under a post (mobile) — twin of apps/web/components/feed-comments.tsx.
+ * THE THREAD under a post (mobile).
  *
  * One component, every surface that shows one: the feed row expands it, the
  * Saved shelf expands it, and the post screen carries it under the workout. A

@@ -33,8 +33,6 @@ import { FeelPrompt } from "./feel-prompt";
  * It owns no state and no question of its own: it is the shared FeelPrompt with
  * the session's name over it, so there is exactly one rating instrument in the
  * app and no chance of the two drifting.
- *
- * Web parity: apps/web/components/aurora/feel-sheet.tsx.
  */
 export default function FeelSheet({
   session,

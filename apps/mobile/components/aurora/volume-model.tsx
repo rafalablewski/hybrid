@@ -21,8 +21,7 @@ const FIELD_LABEL = ["MV", "MEV", "MAV LO", "MAV HI", "MRV"];
 type Palette = ReturnType<typeof useTheme>["palette"];
 
 /**
- * THE VOLUME MODEL — the settings route (mobile). Mirrors
- * apps/web/components/aurora/volume-model.tsx.
+ * THE VOLUME MODEL — the settings route (mobile).
  *
  * These controls used to live inside the Volume SCREEN, revealed by an "Edit
  * landmarks" toggle: five numeric fields on each of seven muscles, a profile

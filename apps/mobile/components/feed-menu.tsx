@@ -12,7 +12,7 @@ import { toast } from "./aurora/toast";
 import { follow as apiFollow, unfollow as apiUnfollow, blockUser, reportTarget } from "../lib/social-api";
 
 /**
- * THE POST OVERFLOW MENU (mobile) — twin of apps/web/components/feed-menu.tsx.
+ * THE POST OVERFLOW MENU (mobile).
  *
  * `FeedMenuTrigger` is the whole thing now: the ⋯ AND the menu behind it, so a
  * card only ever mounts one component (and mounts nothing when core says the

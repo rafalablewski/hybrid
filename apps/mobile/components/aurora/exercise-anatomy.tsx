@@ -99,12 +99,11 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
  * The exercise-page "How it's done" surface (mobile): a compact PILL under the
  * exercise name that opens a BOTTOM SHEET with the movement animation, the
  * muscles it works (with a share-of-effort %), the stabilizers and the form
- * cues. Keeping it in a sheet leaves the page as a clean stats view for the many
- * athletes who already know the lift; the animation only loops while the sheet
- * is open (active={open}). Data comes from @hybrid/core (exercise-anatomy) so
- * this stays at parity with web. Parity:
- * apps/web/components/aurora/exercise-anatomy.tsx. Returns null for a name the
- * DB doesn't know (custom lifts, cardio sports).
+ * cues. Keeping it in a sheet leaves the page as a clean stats view for the
+ * many athletes who already know the lift; the animation only loops while the
+ * sheet is open (active={open}). Data comes from @hybrid/core (exercise-
+ * anatomy) so this stays at parity with web. Returns null for a name the DB
+ * doesn't know (custom lifts, cardio sports).
  */
 export default function AuroraExerciseAnatomy({ name }: { name: string }) {
   const { palette: C } = useTheme();

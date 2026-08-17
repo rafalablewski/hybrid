@@ -12,10 +12,9 @@ import { AuroraIcon } from "../components/aurora/icons";
 import { NAV_HREF } from "../lib/nav-href";
 
 /**
- * HELP CENTER (mobile) — the third row in the side menu's footer, mirrored on
- * web by apps/web/components/aurora/help-center.tsx. The rows, their order and
- * their words are shared (@hybrid/core help.ts); only the plumbing behind each
- * action is per-client.
+ * HELP CENTER (mobile) — the third row in the side menu's footer. The rows,
+ * their order and their words come from @hybrid/core (help.ts); only the
+ * plumbing behind each action lives here.
  *
  * Every row does something that exists today: it re-arms the real first-run
  * tour, opens a mailbox that receives mail, walks into the request-access flow

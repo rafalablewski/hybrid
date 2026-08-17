@@ -18,8 +18,8 @@ import SessionAccessory from "../../components/aurora/session-accessory";
  * scroll-edge transition, Dynamic Type, Reduce Transparency and double-tap-to-
  * pop-to-root are all the system's, not ours.
  *
- * ANATOMY: the capsule carries the four PLACES from @hybrid/core
- * AURORA_NAV_TABS — Today, Nutrition, Messages, Profile — and TRAIN, the app's
+ * ANATOMY: the capsule carries the three PLACES from @hybrid/core
+ * AURORA_NAV_TABS — Today, Nutrition, Profile — and TRAIN, the app's
  * one VERB, rides beside it as the DETACHED circle. On iOS 26 that geometry is
  * only reachable through the tab-bar SEARCH role, so the Train trigger takes
  * `role="search"`: the system detaches it into the separated circle and this
@@ -76,10 +76,6 @@ const ICONS = {
   // tint carries the selection — which is what iOS does for symbols without a
   // fill pair. The Android/fallback PNG is the kit's own fork-knife glyph.
   nutrition: { sf: "fork.knife", src: require("../../assets/icons/fork-knife.png") },
-  // Messages took the slot the More springboard used to hold — see
-  // @hybrid/core nav-bar.ts. The envelope is the platform's DM mark and the
-  // kit's own `mail` glyph carries the house style off iOS.
-  messages: { sf: { default: "envelope", selected: "envelope.fill" }, src: require("../../assets/icons/mail.png") },
   profile: { sf: { default: "person.crop.circle", selected: "person.crop.circle.fill" }, src: require("../../assets/icons/user-circle.png") },
 } as const;
 
@@ -96,7 +92,6 @@ const ACTION_ICON = {
 const ROUTE: Record<string, string> = {
   today: "index",
   nutrition: "nutrition",
-  messages: "messages",
   profile: "you",
 };
 
@@ -137,7 +132,7 @@ export default function TabsLayout() {
         <SessionAccessory />
       </NativeTabs.BottomAccessory>
 
-      {/* The capsule: Today, Nutrition, Messages, Profile. */}
+      {/* The capsule: Today, Nutrition, Profile. */}
       {AURORA_NAV_TABS.map((tab) => (
         <NativeTabs.Trigger key={tab.id} name={ROUTE[tab.id]}>
           <NativeTabs.Trigger.Icon sf={ICONS[tab.id]!.sf} src={ICONS[tab.id]!.src} />

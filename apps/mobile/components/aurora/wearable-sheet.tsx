@@ -9,8 +9,7 @@ import Sheet from "./sheet";
 type Palette = ReturnType<typeof useTheme>["palette"];
 
 /**
- * THE RECOVERY-SIGNALS SHEET (mobile) — the door under the ±15 line. Mirrors
- * apps/web/components/aurora/wearable-sheet.tsx block for block.
+ * THE RECOVERY-SIGNALS SHEET (mobile) — the door under the ±15 line.
  *
  * That line said "Includes −3 from your wearable" and could not be opened. It
  * named a wearable whatever the source actually was, and asserted the present

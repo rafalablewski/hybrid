@@ -20,7 +20,7 @@ export function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: 
 /**
  * TODAY HUB switcher (mobile) — the pill row that turns Today into a hub.
  * Registry (ids, order, labels, glyphs) is shared with web via @hybrid/core
- * today-tabs.ts; mirrors web (apps/web/components/aurora/today-tabs.tsx).
+ * today-tabs.ts; mirrors web.
  *
  * ONE control, not two. It is a PRIMARY segmented control: three equal
  * full-width segments in one capsule. It sits directly under the profile
@@ -30,8 +30,7 @@ export function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: 
  * IT IS THE APP'S OWN CONTROL, on every platform: the shared LiquidSeg
  * (aurora/liquid-seg.tsx) with its GLYPHS — a NEUTRAL near-solid pill at rest
  * that inflates into a clear glass lens on touch, scrubs under a drag, and
- * flies glassy on a tap. Web (apps/web/components/aurora/today-tabs.tsx) keeps
- * its CSS twin.
+ * flies glassy on a tap. Web keeps its CSS twin.
  *
  * ON iOS 26 THIS WAS BRIEFLY THE SYSTEM'S SEGMENTED `Picker` (GlassSegment),
  * on the reasoning that a three-way switcher at the top of a screen is the

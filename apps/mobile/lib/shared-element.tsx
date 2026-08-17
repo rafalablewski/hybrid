@@ -17,13 +17,20 @@ import { FIXED_FONT_SCALE } from "./ui";
  * SHARED ELEMENTS (mobile) — the thing you tapped travels into the screen it
  * opens, instead of the destination re-rendering it from scratch.
  *
- * WHY HAND-ROLLED. The web gets this free from the View Transitions API, which
+ * WHY HAND-ROLLED. The web got this free from the View Transitions API, which
  * has no React Native equivalent. Reanimated ships shared transitions, but
  * adopting them here would put the app's navigation on a dependency whose peer
- * graph is currently inconsistent (expo-modules-core wants react-native-worklets
- * ^0.7.4||^0.8.0, reanimated 4.4 requires 0.9.x). This is a FLIP on plain
- * `Animated` instead: measure both ends, fly a clone between them, reveal the
- * real one on arrival. No new dependency, and nothing to resolve first.
+ * graph was inconsistent with the SDK's (expo-modules-core wanted
+ * react-native-worklets ^0.7.4||^0.8.0, reanimated 4.4 required 0.9.x). This is
+ * a FLIP on plain `Animated` instead: measure both ends, fly a clone between
+ * them, reveal the real one on arrival. No new dependency, nothing to resolve.
+ *
+ * The decision held everywhere and the dependency was declared anyway — the app
+ * carried react-native-reanimated (and worklets, its runtime) in package.json
+ * while importing neither, so a native framework shipped inside the .app for no
+ * caller, carrying exactly the version-drift risk this file declined. Both are
+ * removed; if a future change genuinely wants reanimated, it arrives through
+ * `npx expo install` with the whole native set, not on its own.
  *
  * HOW IT WORKS. The source measures itself on press and parks its rect + text
  * style here. The destination measures itself on mount; if a matching source is

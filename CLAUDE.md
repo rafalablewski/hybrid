@@ -76,8 +76,22 @@ public landings (root, invite). Product logic still belongs in `packages/core`
 API work still lives in `apps/web/app/api/*` — serving both remaining callers.
 Admin capabilities remain two-sided: the web `/admin` panel and the mobile
 admin console both exist, so keep those two in step when you touch admin
-features. Old design-rule prose below may still cite retired web files as
-provenance — the mobile twin is the live golden standard in every such case.
+features. That rule is about the two panels not disagreeing on a feature both
+have — it does not oblige every operator tool to ship in the consumer binary.
+A section may be **web-only**, and the AI group (Agent HQ, AI agents) now is:
+an agent-operations console has no business compiled into the app an athlete
+downloads, role gate or not. A web-only section must say so, and say why, in
+`apps/mobile/components/admin/sections.ts`.
+
+Comments must not cite files that no longer exist. Every repo-shaped path in a
+source comment has to resolve — `apps/web/__tests__/dead-references.test.ts`
+fails the build otherwise. The web client took 96 files with it and left 116
+comments pointing at them, each one also asserting a parity obligation to a
+client that is gone, which is how a retired decision gets rebuilt. Where a
+deleted web file was genuinely the provenance, say so in the past tense; the
+mobile file is the live standard in every such case. `reference/`, `audit/` and
+`capabilities.ts` are exempt: they are records of what was true when written,
+not instructions.
 
 ## RULE: the device's recording is the source of truth (always)
 When a session is matched to an Apple Watch (or other device) recording, the

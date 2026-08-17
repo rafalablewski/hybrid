@@ -18,10 +18,9 @@ import { createRtpProtocol, mutateRtpProtocol, fetchRtpProtocols, type RtpProtoc
 import { withAlpha } from "./field";
 
 /**
- * THE PROTOCOL (mobile) — declaring an injury, and living with one. The twin of
- * apps/web/components/aurora/protocol.tsx; the mannequin geometry, the touch
- * resolution and the whole stage ladder come from @hybrid/core, so the two
- * clients draw the same body and count the same days.
+ * THE PROTOCOL (mobile) — declaring an injury, and living with one. The
+ * mannequin geometry, the touch resolution and the whole stage ladder come from
+ * @hybrid/core, so what this file owns is the drawing, never the reckoning.
  *
  * The question is asked by SHOWING A BODY, not by a wrap of word-chips with one
  * pre-selected; the answer is confirmed in words under the figure; and one more

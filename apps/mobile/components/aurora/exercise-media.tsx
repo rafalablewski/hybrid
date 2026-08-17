@@ -11,7 +11,7 @@ import { RADIUS } from "./kit";
 
 /**
  * The exercise DEMO MEDIA surface (mobile) — one component for every place a
- * lift needs a picture. Twin of apps/web/components/aurora/exercise-media.tsx.
+ * lift needs a picture.
  *
  * It resolves the media from @hybrid/core (exerciseMedia) and renders whichever
  * of the drawn shapes came back (still / loop / clip / link). TODAY nothing is

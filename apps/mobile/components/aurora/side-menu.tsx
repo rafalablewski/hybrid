@@ -45,9 +45,9 @@ import { HubGlyph } from "./today-tabs";
 import { withAlpha } from "./field";
 
 /**
- * THE SIDE MENU (mobile) — the drawer behind the Today header's avatar, the
- * twin of apps/web/components/aurora/side-menu.tsx. Rows, order and targets are
- * shared through @hybrid/core side-menu.ts, so the two clients cannot drift.
+ * THE SIDE MENU (mobile) — the drawer behind the Today header's avatar, the.
+ * Rows, order and targets are shared through @hybrid/core side-menu.ts, so the
+ * two clients cannot drift.
  *
  * It slides in from the LEFT edge under a scrim, and it is where navigation by
  * name lives now that the bottom bar spends its fourth slot on Messages instead

@@ -18,8 +18,7 @@ import { withAlpha } from "./field";
 /**
  * THE PANTRY (mobile) — the athlete's own saved foods, as a screen.
  *
- * The twin of apps/web/components/aurora/pantry.tsx; that file carries the four
- * decisions in full. In short: search moved into the head's right slot (here,
+ * FOUR DECISIONS MADE THIS SCREEN: search moved into the head's right slot (
  * the HERO's `accessory` — the shell's own top-right control, which is why the
  * open/closed state is the host's and not this component's), the shelves are
  * DERIVED from where each food's energy actually is rather than guessed from a

@@ -97,20 +97,20 @@ describe("the screen-head guard — no head opts out of its rung", () => {
     // root ("AT THE TAB ROOT there is no hero, because a tab root has nothing
     // to pop and no origin to name").
     //
-    // Stated twice and enforced nowhere, it drifted twice: Messages shipped a
-    // hero at its root, and Train was moved onto one in this very branch on the
-    // argument that Performance and Feed have one — true, but they wear it as
-    // PUSHED screens. A rule that lives only in prose is a rule the next reader
-    // finds by reading the exception.
+    // Stated twice and enforced nowhere, it drifted twice: the since-deleted
+    // Messages screen shipped a hero at its root, and Train was moved onto one
+    // on the argument that Performance and Feed have one — true, but they wear
+    // it as PUSHED screens. A rule that lives only in prose is a rule the next
+    // reader finds by reading the exception.
     //
-    // The five bottom-nav destinations, by the shape each one legitimately has:
-    //  - Today, Profile, Train, Messages are tab roots END TO END — no hero at
-    //    all, so the plain assertion is the whole truth for them.
+    // The four bottom-nav destinations, by the shape each one legitimately has:
+    //  - Today, Profile and Train are tab roots END TO END — no hero at all, so
+    //    the plain assertion is the whole truth for them.
     //  - Nutrition is a tab root that also hosts PUSHED sub-views, which do take
     //    a hero. It must therefore GATE the hero on not being at the root, and
     //    that gate is what is asserted instead of its absence.
     for (const file of ["components/aurora/home.tsx", "components/aurora/profile.tsx",
-                        "components/aurora/train.tsx", "app/(tabs)/messages.tsx"]) {
+                        "components/aurora/train.tsx"]) {
       expect(code(resolve(MOBILE, file)), file).not.toMatch(/hero=\{/);
     }
     expect(code(resolve(MOBILE, "components/aurora/nutrition.tsx"))).toMatch(/hero=\{root &&/);

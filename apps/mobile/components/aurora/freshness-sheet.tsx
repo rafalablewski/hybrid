@@ -15,8 +15,7 @@ type Palette = ReturnType<typeof useTheme>["palette"];
 
 /**
  * THE FRESHNESS EXPLAINER (mobile) — the door under "Strength fresh" and
- * "Endurance fresh". Mirrors apps/web/components/aurora/freshness-sheet.tsx
- * block for block.
+ * "Endurance fresh".
  *
  * Those two columns printed a bare numeral under a mono label and offered
  * nothing behind it: no derivation, no inputs, no statement of what the figure

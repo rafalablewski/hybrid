@@ -56,10 +56,6 @@ const isExpoOwned = (name: string) => name.startsWith("expo-") || name.startsWit
  * name here is just the drift again, spelled as permission.
  */
 const DELIBERATE: Record<string, string> = {
-  "react-native-reanimated":
-    "Ahead of the SDK pin: 4.4.x is what the shared motion layer (springs, springToRN) is written against.",
-  "react-native-worklets":
-    "Ahead of the SDK pin, and must move in lockstep with reanimated 4.4.x — it is reanimated's own runtime.",
   "react-native-safe-area-context":
     "Ahead of the SDK pin: 5.8 is where `initialWindowMetrics` reports the window inset without the native tab bar folded in (lib/layout.ts sheetInsetBottom).",
   "@react-native-async-storage/async-storage":
