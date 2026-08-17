@@ -36,7 +36,7 @@ import { join } from "node:path";
  * width and height are skipped — a 56×56 box at radius 28 is an avatar, not a
  * card, and a card never fixes its own height.
  *
- * IT IS A RATCHET, NOT A LINE IN THE SAND. There are 15 of these left (25 when
+ * IT IS A DATED BURN-DOWN, NOT A LINE IN THE SAND. There are 15 of these left (25 when
  * the rule was written), on screens this branch had no business rewriting, so
  * they are listed below with their counts. That makes the list do three jobs at
  * once: the cleared surfaces are pinned at zero and can never regress; a NEW
@@ -50,6 +50,14 @@ import { join } from "node:path";
  * history-views were cleared in the pass after this shipped, and the suite
  * failed until both were struck off, which is exactly the moment a ratchet
  * would otherwise quietly stop ratcheting.
+ *
+ * AND IT HAS A MATURITY. The design audit's prescription was that ratchets
+ * "graduate from 'cannot get worse' to 'must reach zero' with dated burn-down",
+ * and this file had everything but the date: a ceiling per file, a reverse
+ * check so a win must be locked in, a capability tracking the sweep — and no
+ * moment at which any of it was actually due. `DUE` below is that moment. After
+ * it, a non-empty RATCHET fails, and moving the date is a deliberate edit
+ * somebody has to make and defend rather than an intention quietly not met.
  *
  * TO FIX ONE: `<ACard>` if it is a read surface, `<APressCard>` if it presses
  * (that gap — ACard being a View — is what kept the two chooser cards
@@ -73,6 +81,14 @@ const CARD_FILL = /backgroundColor:\s*[A-Za-z_$][\w.]*\.(?:ink2|card)\b/;
  * capabilities.ts under `design-system-unification-sweep`. They are written
  * down so the rule can ship today and still fail on the next new one.
  */
+/**
+ * The date this list must be EMPTY by. Chosen from the shape of the work, not
+ * from optimism: fifteen surfaces across fifteen files, each a small
+ * independent edit, tracked in capabilities.ts as
+ * `design-system-unification-sweep`.
+ */
+const DUE = "2026-12-31";
+
 const RATCHET: Record<string, number> = {
   // CLEARED, and left here as a note rather than as lines: percent-program (3)
   // and history-views (3) were the two densest files on this list, then the
@@ -225,6 +241,17 @@ describe("a card comes from the kit", () => {
           `${file} is down to ${n} (listed as ${allowed}) — good. Now lower it in RATCHET so the win is locked in.`,
         );
       }
+    }
+
+    // PAST DUE — the burn-down's maturity. Everything above says the list may
+    // not GROW; this says it may not simply persist.
+    const left = Object.entries(RATCHET).reduce((n, [, v]) => n + v, 0);
+    const today = new Date().toISOString().slice(0, 10);
+    if (left > 0 && today > DUE) {
+      problems.push(
+        `PAST DUE — ${left} hand-rolled card surfaces across ${Object.keys(RATCHET).length} files were due to reach zero on ${DUE}.\n` +
+          `    Finish the sweep (capabilities: design-system-unification-sweep), or move DUE deliberately and say why.`,
+      );
     }
 
     expect(problems, `\n${problems.join("\n\n")}\n`).toEqual([]);

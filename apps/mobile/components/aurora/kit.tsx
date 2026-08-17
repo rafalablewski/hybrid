@@ -2079,6 +2079,90 @@ export function ADrawer({ open, children }: { open: boolean; children: ReactNode
  * Mirrors apps/web/components/aurora/card-foot.tsx.
  */
 
+/* ── THE PEOPLE PRIMITIVES ────────────────────────────────────────────────────
+ *
+ * Avatar, Stars, Empty, `initials` and `levelInk` were `components/social-kit.tsx`
+ * — one of the FOUR component vocabularies the design audit found coexisting in
+ * one product. They are here because they were never social-specific: an avatar
+ * is a person, a star rating is a rating, and an empty state is the app's, not a
+ * tab's. What made the file a KIT rather than a folder was its own button, and
+ * that button is retired (see `APill`'s `size`).
+ *
+ * A primitive nobody can import is a primitive that gets re-drawn the next time
+ * a screen needs it. A primitive in a SECOND kit is worse: it gets re-drawn
+ * DIFFERENTLY, and the enforcement ratchets never see it, because they police
+ * the shared primitives by name.
+ */
+
+/** The level chip's ink — ash and chalk for the lower tiers, the lime
+ *  accent-text tone for advanced, gold reserved for elite. */
+export const levelInk = (C: ReturnType<typeof useTheme>["palette"], accent: BadgeAccent): string =>
+  accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
+
+export function initials(name?: string | null, handle?: string) {
+  const s = (name || handle || "?").trim();
+  const parts = s.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
+  return s.slice(0, 2).toUpperCase();
+}
+
+/**
+ * A person's face. `shared` makes this instance the DESTINATION of an avatar
+ * armed on the way in — the same image of the same person, 52px in a list and
+ * 84px on the page it opens, so the circle grows instead of being re-rendered
+ * at the far end with no thread back to what was touched.
+ */
+export function Avatar({ url, name, handle, size = 44, shared }: { url?: string | null; name?: string | null; handle?: string; size?: number; shared?: boolean }) {
+  const C = useTheme().palette;
+  const { ref } = useSharedSurfaceTarget(shared ? SHARED_ELEMENTS.personAvatar : "");
+  const srcRef = useRef<View | null>(null);
+  const face = url
+    ? <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: C.ink2 }} />
+    : (
+      <View style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
+        <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
+      </View>
+    );
+  // A SOURCE registers itself under the person's handle, so a door only has to
+  // say who it is opening — see lib/shared-element `usePersonSource`. Nothing
+  // is measured here: the list will have scrolled by the time anything is
+  // armed, and a flight starting where the face used to be is worse than none.
+  useEffect(() => {
+    if (shared || !handle) return undefined;
+    return registerPerson(handle, srcRef.current, face);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shared, handle, url, name, size]);
+
+  if (shared) return <View ref={ref} collapsable={false}>{face}</View>;
+  if (!handle) return face;
+  return <View ref={srcRef} collapsable={false}>{face}</View>;
+}
+
+export function Stars({ rating, size = 13 }: { rating: number | null; size?: number }) {
+  const C = useTheme().palette;
+  const { t } = useLang();
+  if (rating == null) return <Text style={{ color: C.ash, fontSize: size }}>{t("w.social.noReviews")}</Text>;
+  const full = Math.round(rating);
+  return (
+    <Text style={{ fontSize: size }}>
+      <Text style={{ color: C.gold }}>{"★".repeat(full)}</Text>
+      <Text style={{ color: C.line }}>{"★".repeat(5 - full)}</Text>
+      <Text style={{ color: C.ash, fontFamily: F.mono }}> {rating.toFixed(1)}</Text>
+    </Text>
+  );
+}
+
+/** The app's empty state. Titles read the heading face, empty states included. */
+export function Empty({ title, sub }: { title: string; sub?: string }) {
+  const { palette: C } = useTheme();
+  return (
+    <View style={{ paddingVertical: 36, alignItems: "center" }}>
+      <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle, marginBottom: 6 }}>{title}</Text>
+      {sub ? <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body, textAlign: "center", lineHeight: leading(fs.body), maxWidth: 300 }}>{sub}</Text> : null}
+    </View>
+  );
+}
+
 /** The rail's one glyph. A 12dp VECTOR that rotates 180° — mobile used to draw
  *  this and web an 8px text triangle that SWAPPED ▼/▲, which is two different
  *  affordances for one control. Ash, never the accent. */
@@ -2186,86 +2270,3 @@ export function ActionPill({ label, onPress }: { label: string; onPress: () => v
 }
 
 
-/* ── THE PEOPLE PRIMITIVES ────────────────────────────────────────────────────
- *
- * Avatar, Stars, Empty, `initials` and `levelInk` were `components/social-kit.tsx`
- * — one of the FOUR component vocabularies the design audit found coexisting in
- * one product. They are here because they were never social-specific: an avatar
- * is a person, a star rating is a rating, and an empty state is the app's, not a
- * tab's. What made the file a KIT rather than a folder was its own button, and
- * that button is retired (see `APill`'s `size`).
- *
- * A primitive nobody can import is a primitive that gets re-drawn the next time
- * a screen needs it. A primitive in a SECOND kit is worse: it gets re-drawn
- * DIFFERENTLY, and the enforcement ratchets never see it, because they police
- * the shared primitives by name.
- */
-
-/** The level chip's ink — ash and chalk for the lower tiers, the lime
- *  accent-text tone for advanced, gold reserved for elite. */
-export const levelInk = (C: ReturnType<typeof useTheme>["palette"], accent: BadgeAccent): string =>
-  accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
-
-export function initials(name?: string | null, handle?: string) {
-  const s = (name || handle || "?").trim();
-  const parts = s.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return (parts[0]![0]! + parts[1]![0]!).toUpperCase();
-  return s.slice(0, 2).toUpperCase();
-}
-
-/**
- * A person's face. `shared` makes this instance the DESTINATION of an avatar
- * armed on the way in — the same image of the same person, 52px in a list and
- * 84px on the page it opens, so the circle grows instead of being re-rendered
- * at the far end with no thread back to what was touched.
- */
-export function Avatar({ url, name, handle, size = 44, shared }: { url?: string | null; name?: string | null; handle?: string; size?: number; shared?: boolean }) {
-  const C = useTheme().palette;
-  const { ref } = useSharedSurfaceTarget(shared ? SHARED_ELEMENTS.personAvatar : "");
-  const srcRef = useRef<View | null>(null);
-  const face = url
-    ? <Image source={{ uri: url }} style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: C.ink2 }} />
-    : (
-      <View style={{ width: size, height: size, borderRadius: RADIUS.pill, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-        <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: size * 0.36 }}>{initials(name, handle)}</Text>
-      </View>
-    );
-  // A SOURCE registers itself under the person's handle, so a door only has to
-  // say who it is opening — see lib/shared-element `usePersonSource`. Nothing
-  // is measured here: the list will have scrolled by the time anything is
-  // armed, and a flight starting where the face used to be is worse than none.
-  useEffect(() => {
-    if (shared || !handle) return undefined;
-    return registerPerson(handle, srcRef.current, face);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shared, handle, url, name, size]);
-
-  if (shared) return <View ref={ref} collapsable={false}>{face}</View>;
-  if (!handle) return face;
-  return <View ref={srcRef} collapsable={false}>{face}</View>;
-}
-
-export function Stars({ rating, size = 13 }: { rating: number | null; size?: number }) {
-  const C = useTheme().palette;
-  const { t } = useLang();
-  if (rating == null) return <Text style={{ color: C.ash, fontSize: size }}>{t("w.social.noReviews")}</Text>;
-  const full = Math.round(rating);
-  return (
-    <Text style={{ fontSize: size }}>
-      <Text style={{ color: C.gold }}>{"★".repeat(full)}</Text>
-      <Text style={{ color: C.line }}>{"★".repeat(5 - full)}</Text>
-      <Text style={{ color: C.ash, fontFamily: F.mono }}> {rating.toFixed(1)}</Text>
-    </Text>
-  );
-}
-
-/** The app's empty state. Titles read the heading face, empty states included. */
-export function Empty({ title, sub }: { title: string; sub?: string }) {
-  const { palette: C } = useTheme();
-  return (
-    <View style={{ paddingVertical: 36, alignItems: "center" }}>
-      <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle, marginBottom: 6 }}>{title}</Text>
-      {sub ? <Text style={{ color: C.ash, fontFamily: F.reg, fontSize: fs.body, textAlign: "center", lineHeight: leading(fs.body), maxWidth: 300 }}>{sub}</Text> : null}
-    </View>
-  );
-}
