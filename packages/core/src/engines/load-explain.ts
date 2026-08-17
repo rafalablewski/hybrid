@@ -171,6 +171,19 @@ const shareOfMax = (v: number, max: number) => (max > 0 ? Math.round((v / max) *
 const int = (n: number) => Math.round(n).toLocaleString("en-US").replace(/,/g, " ");
 const dp = (n: number, places: number) => n.toFixed(places);
 
+/**
+ * THE OFFSET LABELS ARE NAMED, NOT COUNTED, AT 1.
+ *
+ * "{n} days ago" with n = 1 renders "1 days ago" — the same bug `exerciseCountKey`
+ * exists to kill on the other side of the app. The counted forms here only ever
+ * run 1–6 (days) and 1–3 (weeks), so rather than route a language through the
+ * explainer for one plural rung, the ONE case that inflects gets its own word.
+ * Every remaining n is ≥ 2, where English, Polish and German all take the same
+ * form — which is why the {n} strings can stay single-form.
+ */
+const offsetKey = (n: number, one: string, many: string, zero: string) =>
+  n === 0 ? zero : n === 1 ? one : many;
+
 /** The seven days of this week as input rows, today first. */
 function dailyInputs(load: LoadState): LoadInput[] {
   const max = Math.max(0, ...load.daily);
@@ -178,8 +191,8 @@ function dailyInputs(load: LoadState): LoadInput[] {
   return load.daily.map((v, i) => {
     const top = i === heaviest && max > 0;
     return {
-      key: i === 0 ? "w.injury.load.day.today" : "w.injury.load.day.n",
-      arg: i === 0 ? null : i,
+      key: offsetKey(i, "w.injury.load.day.yesterday", "w.injury.load.day.n", "w.injury.load.day.today"),
+      arg: i >= 2 ? i : null,
       value: v,
       sharePct: shareOfMax(v, max),
       top,
@@ -195,8 +208,8 @@ function weeklyInputs(load: LoadState): LoadInput[] {
   return load.weekly.map((w, i) => {
     const top = i === heaviest && max > 0;
     return {
-      key: w.weeksAgo === 0 ? "w.injury.load.week.this" : "w.injury.load.week.n",
-      arg: w.weeksAgo === 0 ? null : w.weeksAgo,
+      key: offsetKey(w.weeksAgo, "w.injury.load.week.last", "w.injury.load.week.n", "w.injury.load.week.this"),
+      arg: w.weeksAgo >= 2 ? w.weeksAgo : null,
       value: w.load,
       sharePct: shareOfMax(w.load, max),
       top,

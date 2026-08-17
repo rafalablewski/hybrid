@@ -141,6 +141,39 @@ describe("loadExplain", () => {
       }
     }
   });
+
+  // The bug exerciseCountKey exists to kill, on this side of the app: a counted
+  // label that runs down to 1 says "1 days ago". The one rung that inflects is
+  // NAMED instead, in every language, so no {n} label is ever handed a 1.
+  it("never counts to one — yesterday and last week are words", () => {
+    const s = state();
+    for (const lang of ["en", "pl", "de"] as const) {
+      const t = makeT(lang);
+      for (const m of LOAD_METRICS) {
+        for (const r of loadExplain(m, s).inputs) {
+          expect(r.arg, `${lang}: ${r.key}`).not.toBe(1);
+          const label = r.arg === null ? t(r.key) : t(r.key).replace("{n}", String(r.arg));
+          expect(label, `${lang}: ${r.key}`).not.toMatch(/(^|\D)1\s/);
+        }
+      }
+    }
+  });
+
+  it("names every offset rung the seven days and four weeks can produce", () => {
+    const s = state();
+    const keys = new Set([
+      ...loadExplain("acute", s).inputs.map((r) => r.key),
+      ...loadExplain("acwr", s).inputs.map((r) => r.key),
+    ]);
+    expect(keys).toContain("w.injury.load.day.today");
+    expect(keys).toContain("w.injury.load.day.yesterday");
+    expect(keys).toContain("w.injury.load.week.this");
+    expect(keys).toContain("w.injury.load.week.last");
+    for (const lang of ["en", "pl", "de"] as const) {
+      const t = makeT(lang);
+      for (const k of keys) expect(t(k), `${lang}: ${k}`).not.toBe(k);
+    }
+  });
 });
 
 describe("computeLoad exposes what the explainer narrates", () => {
