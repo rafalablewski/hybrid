@@ -40,7 +40,6 @@ import type { ChartReading } from "./chart-scrub";
 import { deviceTrueSessions } from "./device-truth";
 import { roundKm } from "./distance";
 import { durationParts, formatDuration } from "./duration";
-import { DISCIPLINE_META } from "./endurance";
 import {
   cardioSeconds,
   cardioDiscipline,

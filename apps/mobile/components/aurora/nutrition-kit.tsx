@@ -1,11 +1,10 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Animated, View, Text, type StyleProp, type ViewStyle } from "react-native";
 
-import Svg, { Path, Circle, Rect } from "react-native-svg";
 import { Glyph } from "./icons";
 import { SvgXml } from "react-native-svg";
 import {
-  NUTRITION_GLYPHS, nutritionPanel, per100g, scaleFacts,
+  nutritionPanel, per100g, scaleFacts,
   PICKER_SOURCES, pickerSourceLabelKey, figureText,
   type GapFigure, type GlyphName, type MicroFacts, type NutritionFacts, type NutritionGap, type PickerSourceKey, type SourceMark,
   type VerifiedStamp,

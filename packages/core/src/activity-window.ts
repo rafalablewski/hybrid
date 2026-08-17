@@ -41,7 +41,7 @@ import { bwAt, type BodyweightInput } from "./bodyweight";
 import { deviceTrueSessions } from "./device-truth";
 import { roundKm } from "./distance";
 import { DISCIPLINE_META } from "./endurance";
-import { OLYMPIC_SPORTS, sportDistanceUnit } from "./olympic-sports";
+import { sportDistanceUnit } from "./olympic-sports";
 import { addLocalDays, localMidnightMs, localMondayMs } from "./day-key";
 import { glyphMark, sportMarkOf, type Mark } from "./theme/mark";
 

@@ -2,7 +2,7 @@ import type { TrainingLog, EnergySystem } from "./types";
 import { movementFor, canonicalExerciseName } from "./movements";
 import { gymExercise, loadUnitCount, GYM_ALIASES } from "../exercise-db";
 import { bwAt, type BodyweightInput } from "../bodyweight";
-import { sportPacePerMeters, formatSportDistance, olympicSport, timedSportOnly } from "../olympic-sports";
+import { sportPacePerMeters, formatSportDistance, timedSportOnly } from "../olympic-sports";
 import { fmtWeight, fmtTonnage, splitFigure, type WeightUnit } from "../units";
 import { fmtKm } from "../distance";
 import type { DeviceWorkout } from "../session-device";
