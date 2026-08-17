@@ -407,6 +407,74 @@ describe("touch targets", () => {
     }
   });
 
+  it("HARD — there is ONE component kit; a second one is a build failure", () => {
+    // THE FINDING: "Four component vocabularies coexist: the principal kit, a
+    // social kit whose primary button — 23 call sites — sits below the app's own
+    // 44-point touch floor, unlabeled for VoiceOver and INVISIBLE TO THE
+    // ENFORCEMENT RATCHETS BY NAME; a nutrition kit shipping a duplicate icon
+    // set defaulting to off-palette white; and an admin kit."
+    //
+    // The clause that matters is the one about the ratchets. Every guard in this
+    // file polices the shared primitives BY NAME — the chip ratchet counts
+    // hand-rolled chips against `AChip`, the 44dp rule reads the files listed
+    // above. A second kit is not merely duplication: it is a blind spot, and
+    // everything inside it is unregulated by construction. That is why SButton
+    // could sit 8dp under the touch floor at 23 call sites for months while a
+    // test named "every interactive PRIMITIVE declares the 44dp floor" passed.
+    //
+    // THE PRESCRIPTION WAS EXPLICIT — retired "by build failure, not by ratchet
+    // ceiling". A ratchet would have said "no MORE sub-44 buttons", which is a
+    // budget for the 23 that exist. This says the file cannot exist.
+    //
+    // What was actually wrong was not the callers' taste: APill had no size
+    // class, and all 23 sites are buttons in a ROW. Told to choose between the
+    // shared primitive at the wrong size and the right size hand-rolled, six
+    // screens chose the second. APill has `size="compact"` now — content-sized
+    // and quieter, with `minHeight: HIT_TARGET` on the same node as `regular`,
+    // so the drawing shrinks and the target does not.
+    const RETIRED = [
+      { path: "components/social-kit.tsx", was: "SButton + Avatar/Stars/Empty → aurora/kit.tsx" },
+    ];
+    const back = RETIRED.filter((k) => FILES.some((f) => f.path === k.path));
+    expect(back.map((k) => `${k.path} is back — ${k.was}`)).toEqual([]);
+
+    // …and its button with it. A name check, because the failure mode is a
+    // helpful re-extraction: "these six screens all need a small button, let me
+    // pull one out", which is precisely how the first one appeared.
+    const sbutton = codeHits(/\bSButton\b/g);
+    expect(sbutton, `\nSButton is retired — use <APill size="compact" />:\n  ${sbutton.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — a button primitive is drawn by APill, wherever it lives", () => {
+    // The generalisation of the rule above: a component whose NAME says button
+    // and whose body hand-rolls a Pressable with its own padding is a shadow
+    // primitive being born, whatever file it is in. The two sanctioned button
+    // primitives declare the floor; everything else routes through them.
+    //
+    // `PillBtn` is the admin kit's compact action and is the one exception,
+    // recorded rather than hidden: it already declares HIT_TARGET (the rule
+    // above checks it), and folding it onto APill's `compact` is the
+    // `admin-kit-merge` capability — 66 call sites across 13 files, a visible
+    // change to every operator screen, and it wants a device to verify.
+    // `aurora/swiftui.tsx` is the third exception and a different KIND of one:
+    // GlassNavButton and GlassMenuButton are bridges onto a NATIVE control
+    // (Liquid Glass, the system menu). They hand-roll no padding and declare no
+    // geometry — the platform owns both, which is the entire reason to use
+    // them — so there is nothing here for APill to own. A native control
+    // wearing the app's own drawn button would be the drift, not the fix.
+    const SANCTIONED = /components\/aurora\/kit\.tsx|components\/admin\/_kit\.tsx|components\/aurora\/swiftui\.tsx/;
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      if (SANCTIONED.test(path.split("\\").join("/"))) continue;
+      text.split("\n").forEach((line, i) => {
+        // `export function XButton(` / `export const XBtn = (` — a declared
+        // button component outside the sanctioned kits.
+        if (/export\s+(?:function|const)\s+[A-Z]\w*(?:Button|Btn)\b/.test(line)) bad.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(bad, `\na button primitive outside the kit — use <APill />:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
   it("RATCHET — chip implementations converge on Chip + AChip", () => {
     // Eighteen at audit time, disagreeing on fill alpha, radius, padding, size,
     // face and border — two of them painting their label with the RAW accent

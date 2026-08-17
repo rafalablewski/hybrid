@@ -8,8 +8,7 @@ import { useLang } from "../lib/i18n";
 import type { FeedItemView, LiveAthlete, OwnProfile, Relation } from "@hybrid/core";
 import { colors, feedPostPath, seedPerson, userPagePath } from "@hybrid/core";
 import { getFeed, getMyProfile, toggleKudos, createPost, deletePost } from "../lib/social-api";
-import { Avatar, Empty, SButton } from "./social-kit";
-import { GUTTER, RADIUS } from "./aurora/kit";
+import { GUTTER, RADIUS, Avatar, Empty, APill } from "./aurora/kit";
 import { HubMasthead } from "./aurora/hub-masthead";
 import FeedCard from "./feed-card";
 import { Comments } from "./feed-comments";
@@ -246,7 +245,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
                     <Path d="M6.6 10.3 5.2 15.2l3.8-1.9 3.8 1.9-1.4-4.9" fill="none" stroke={txt(C, colors.lime)} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
                   </Svg>
                 </Pressable>
-                <SButton label={t("w.social.share")} busyLabel={posting ? t("w.social.sharing") : undefined} small onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
+                <APill label={t("w.social.share")} state={posting ? "saving" : "idle"} savingLabel={t("w.social.sharing")} size="compact" onPress={share} disabled={posting || (!text.trim() && !attachPr)} />
               </View>
             ) : null}
           </View>
@@ -289,7 +288,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
       <Animated.View style={[fade, { alignItems: "center", paddingTop: 14, paddingBottom: 8 }]}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>{t("feed.caughtUp").toUpperCase()}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 6, marginBottom: 10, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
-        <SButton label={t("feed.goTrain")} onPress={() => router.push("/log")} />
+        <APill label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>
     );
 

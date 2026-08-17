@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator, type StyleProp, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
 import { fs, Loading, LoadSwap, F, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen, ACard, cardStack, AChip, ASearch } from "../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack, AChip, ASearch, Avatar, Stars, Empty, APill } from "../components/aurora/kit";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { seedPerson, userPagePath } from "@hybrid/core";
@@ -13,7 +13,6 @@ import type {
 import {
   getCoaches, getCoachProfile, putCoachProfile, getCoachPrograms, patchProgram, getEnrollments, respondEnrollment,
 } from "../lib/social-api";
-import { Avatar, Stars, Empty, SButton } from "../components/social-kit";
 import { GlassToggle } from "../components/glass-toggle";
 import { useConfirm } from "../components/aurora/confirm";
 import { usePersonSource } from "../lib/shared-element";
@@ -67,7 +66,7 @@ function Storefront() {
               <TextInput value={form.priceNote} onChangeText={(v) => setForm({ ...form, priceNote: v })} placeholder={t("w.coaches.pricingNote")} placeholderTextColor={C.ash} style={inp} />
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}><Text style={{ color: C.chalk, fontSize: fs.body }}>{t("w.coaches.acceptingClients")}</Text><GlassToggle value={form.acceptingClients} onValueChange={(v) => setForm({ ...form, acceptingClients: v })} accessibilityLabel={t("w.coaches.acceptingClients")} /></View>
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}><Text style={{ color: C.chalk, fontSize: fs.body }}>{t("w.coaches.autoAccept")}</Text><GlassToggle value={form.autoAccept} onValueChange={(v) => setForm({ ...form, autoAccept: v })} accessibilityLabel={t("w.coaches.autoAccept")} /></View>
-              <SButton label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { notify(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
+              <APill label={saved ? `${t("w.coaches.saved")} ✓` : t("w.coaches.saveStorefront")} onPress={async () => { const r = await putCoachProfile({ ...form, specialties: form.specialties.split(",").map((s: string) => s.trim()).filter(Boolean), sports: form.sports.split(",").map((s: string) => s.trim()).filter(Boolean) }); if (r.error) { notify(t("common.error"), r.error); return; } setSaved(true); setTimeout(() => setSaved(false), 1500); load(); }} />
             </ACard>
 
             <Text style={{ color: C.chalk, fontFamily: F.bold, marginTop: 18, marginBottom: 8 }}>{t("w.coaches.programsCount")} ({programs.length})</Text>
@@ -75,7 +74,7 @@ function Storefront() {
               {programs.length === 0 ? <Empty title={t("w.coaches.noPrograms")} sub={t("w.coaches.noProgramsSub")} /> : programs.map((p) => (
                 <View key={p.id} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
                   <View><Text style={{ color: C.chalk, fontFamily: F.semi }}>{p.name}</Text><Text style={{ color: C.ash, fontSize: fs.caption }}>{p.goal ?? "—"}</Text></View>
-                  <SButton label={p.published ? `${t("w.coaches.published")} ✓` : t("w.coaches.publish")} ghost={!p.published} small onPress={async () => { await patchProgram(p.id, { published: !p.published }); load(); }} />
+                  <APill label={p.published ? `${t("w.coaches.published")} ✓` : t("w.coaches.publish")} variant={!p.published ? "outline" : "primary"} size="compact" onPress={async () => { await patchProgram(p.id, { published: !p.published }); load(); }} />
                 </View>
               ))}
             </ACard>
@@ -88,7 +87,7 @@ function Storefront() {
                     <View key={e.id} style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }}>
                       <Avatar url={e.client?.avatarUrl} name={e.client?.displayName} handle={e.client?.handle} size={36} />
                       <View style={{ flex: 1 }}><Text style={{ color: C.chalk, fontFamily: F.semi }}>{e.client?.displayName || `@${e.client?.handle}`}</Text><Text style={{ color: C.ash, fontSize: fs.caption }}>{e.programName} – {e.status}</Text></View>
-                      {e.status === "requested" && <View style={{ flexDirection: "row", gap: 6 }}><SButton label={t("w.coaches.accept")} small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "accept" }); load(); }} /><SButton label={t("w.coaches.decline")} ghost small onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "decline" }); load(); }} /></View>}
+                      {e.status === "requested" && <View style={{ flexDirection: "row", gap: 6 }}><APill label={t("w.coaches.accept")} size="compact" onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "accept" }); load(); }} /><APill label={t("w.coaches.decline")} variant="outline" size="compact" onPress={async () => { await respondEnrollment({ enrollmentId: e.id, action: "decline" }); load(); }} /></View>}
                     </View>
                   ))}
                 </ACard>

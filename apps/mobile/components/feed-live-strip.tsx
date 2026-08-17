@@ -4,8 +4,7 @@ import { colors, fs, liveElapsedText, tracking, type LiveAthlete } from "@hybrid
 import { F, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { Avatar } from "./social-kit";
-import { GUTTER, RADIUS } from "./aurora/kit";
+import { GUTTER, RADIUS, Avatar } from "./aurora/kit";
 
 /**
  * NOW TRAINING (mobile) — twin of apps/web/components/feed-live-strip.tsx.
