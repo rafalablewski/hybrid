@@ -25,6 +25,11 @@ Supabase/Postgres database.
 - `pnpm --filter @hybrid/core test` — engine/unit tests (vitest)
 - `pnpm --filter @hybrid/web typecheck` / `build`
 - `pnpm --filter @hybrid/mobile typecheck`
+- `pnpm --filter @hybrid/mobile test` — **also gates CI, and is easy to miss.**
+  It is not only component tests: it carries the DESIGN-TOKEN RATCHETS
+  (`lib/design-tokens.test.ts`) and the Expo alignment guard, so a raw
+  `fontSize`/`borderRadius`/`letterSpacing` added anywhere in `apps/mobile`
+  fails here and nowhere else. `typecheck` passing says nothing about it.
 - iOS bundle check (no simulator needed): `cd apps/mobile && npx expo export --platform ios --output-dir /tmp/x`
 
 ## Deploy
