@@ -1211,12 +1211,23 @@ function ExplainCard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId,
+          // EVERY slider, not the four the endpoint used to accept. The panel
+          // and its own explanation have to describe the same simulated state,
+          // and they did not: an operator simulating a cut, a sauna or no
+          // wearable got a narrative of the untransformed athlete captioned
+          // "this is the live state".
           whatIf: whatIfActive
             ? {
                 loadPct: whatIf.loadPct,
                 hrv: whatIf.hrv ?? undefined,
                 restingHr: whatIf.restingHr ?? undefined,
                 sleep: whatIf.sleep ?? undefined,
+                heatMinutes: whatIf.heatMinutes ?? undefined,
+                heatTempC: whatIf.heatTempC,
+                heatHoursAgo: whatIf.heatHoursAgo,
+                heatProtocol: whatIf.heatProtocol,
+                intakePct: whatIf.intakePct ?? undefined,
+                noWearable: whatIf.noWearable,
               }
             : undefined,
         }),
