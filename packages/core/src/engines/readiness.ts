@@ -75,8 +75,8 @@ export const READINESS_CEILING = 98;
 /**
  * Readiness = inverse of current training load — local tissue fatigue plus the
  * energy-system load conditioning leaves behind — nudged by wearable
- * biometrics and, when there is no wearable to read, by the heat prior,
- * clamped to 35..98.
+ * biometrics, by the heat prior when there is no wearable to read, and by how
+ * far the athlete has been eating from their own maintenance, clamped to 35..98.
  */
 export function computeReadiness(
   fatigue: Fatigue,
@@ -91,6 +91,23 @@ export function computeReadiness(
    * both claim the same night.
    */
   heatAdj = 0,
+  /**
+   * The energy-availability term (engines/fuel.ts), −FUEL_PENALTY_MAX..0.
+   *
+   * NEVER POSITIVE. A rolling deficit against this athlete's own maintenance
+   * estimate takes points; a surplus earns none, because "ate over maintenance,
+   * therefore more recovered" is a bonus for overfeeding rather than a claim
+   * with a mechanism. Which is why, unlike `heatAdj`, this one always has a
+   * cost arc on the deficit ring — see readiness-deficit.ts's `fuel` kind.
+   *
+   * It does NOT stand down for a wearable, and that asymmetry with the heat
+   * prior is deliberate: HRV measures autonomic state, this measures fuel, and
+   * they are different quantities about different timescales. The cap is what
+   * keeps a self-report from out-voting a measurement (6 against 15).
+   *
+   * Optional and additive, so every existing caller resolves unchanged.
+   */
+  fuelAdj = 0,
 ): Readiness {
   const vals = Object.values(fatigue.muscles);
   // Guard the empty-muscle-set edge: an empty average is NaN, which survives
@@ -99,9 +116,13 @@ export function computeReadiness(
   const base = 100 - avg * MUSCLE_SLOPE - enduranceFatigue(fatigue) * ENDURANCE_SLOPE;
   const bioAdj = bio ? biometricAdjustment(bio) : 0;
   const heat = Number.isFinite(heatAdj) ? heatAdj : 0;
+  // Clamped to ≤ 0 here as well as at the source, so a caller that computes the
+  // term itself cannot turn this into a credit by passing a positive number.
+  const fuel = Number.isFinite(fuelAdj) ? Math.min(0, fuelAdj) : 0;
   return {
-    score: Math.max(READINESS_FLOOR, Math.min(READINESS_CEILING, Math.round(base + bioAdj + heat))),
+    score: Math.max(READINESS_FLOOR, Math.min(READINESS_CEILING, Math.round(base + bioAdj + heat + fuel))),
     bioAdj,
     heatAdj: heat,
+    fuelAdj: fuel,
   };
 }

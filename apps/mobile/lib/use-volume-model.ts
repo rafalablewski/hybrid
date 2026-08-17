@@ -7,7 +7,7 @@ import {
   readReports, placeReads, QUICK_CHECKIN_METRIC,
   type AthleteVolumeProfile, type LoggedSession, type RecoveryReport,
 } from "@hybrid/core";
-import { useHeatSignalsQuery } from "./queries";
+import { useHeatSignalsQuery, useNutritionSignalsQuery } from "./queries";
 import { useRecoveryReports } from "./use-recovery-reports";
 import { useLoggerPrefs, setLoggerPref } from "./logger-prefs";
 import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
@@ -44,6 +44,12 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // Heat is a MEASURED profile field — there is no form for it and there is not
   // going to be one, because the athlete already told us by logging.
   const { data: heatSignals = [] } = useHeatSignalsQuery();
+  // …and the food log, for the OTHER half of the nutrition join. Energy
+  // availability now reads the diary where it can and the scale where it
+  // cannot (engines/landmark-context.ts), and protein — which has no outcome
+  // measure at all, since the scale cannot say how much of a kilogram was
+  // muscle — reads the diary or nothing.
+  const { data: nutritionSignals = [] } = useNutritionSignalsQuery();
   const [intake, setIntake] = useState<{ experience?: Experience; daysPerWeek?: number }>({});
   useEffect(() => {
     let alive = true;
@@ -64,7 +70,10 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // clearance comparison via lib/use-recovery-reports.ts.
   const recovery = useRecoveryReports(sessions);
 
-  const measured = useMemo(() => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, heatSignals }), [recovery, bodyweightPoints, loggedHeightCm, heatSignals]);
+  const measured = useMemo(
+    () => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, heatSignals, nutritionSignals }),
+    [recovery, bodyweightPoints, loggedHeightCm, heatSignals, nutritionSignals],
+  );
   const measuredKeys = useMemo(() => {
     const keys = measuredFields(prefs.volumeProfile, measured);
     // Body mass is measured too — it comes from the bodyweight log, not this form.

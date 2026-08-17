@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, exerciseNameAliasMap, setExerciseCatalog } from "@hybrid/core";
-import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchFoodLogs, fetchHeatSignals, fetchRecoverySignals } from "./api";
+import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchFoodLogs, fetchHeatSignals, fetchNutritionSignals, fetchRecoverySignals } from "./api";
 
 // Shared query hooks for the mobile app — parity with the web data-layer. Keys
 // match conceptually so the same mutation→invalidate discipline applies. These
@@ -18,6 +18,7 @@ export const qk = {
   foodLogs: ["foodLogs"] as const,
   heatSignals: ["signals", "heat"] as const,
   recoverySignals: ["signals", "recovery"] as const,
+  nutritionSignals: ["signals", "nutrition"] as const,
 };
 
 /**
@@ -145,6 +146,23 @@ export function useHeatSignalsQuery() {
   return useQuery({ queryKey: qk.heatSignals, queryFn: fetchHeatSignals });
 }
 
+/**
+ * The food log the ENGINES read — `energyIntake` / `protein` / `bodyMass`.
+ *
+ * Its own cache entry for the same reason heat has one, with the argument
+ * turned around: nutrition rows are what evict everything else from the
+ * unfiltered window, and fourteen days of intake against a twenty-eight-day
+ * maintenance fit is more history than that window holds for exactly the
+ * athlete who logs most diligently.
+ *
+ * Deliberately NOT the nutrition screens' own reads — those want food ENTRIES
+ * (names, quantities, the diary's edit handles). This wants the four kinds the
+ * readiness term and the volume ceilings are computed from, and nothing else.
+ */
+export function useNutritionSignalsQuery() {
+  return useQuery({ queryKey: qk.nutritionSignals, queryFn: fetchNutritionSignals });
+}
+
 /** The athlete's readiness check-ins, from the shared cache. */
 export function useCheckinsQuery() {
   return useQuery({ queryKey: qk.checkins, queryFn: () => queryCheckins() });
@@ -237,6 +255,14 @@ export function useRevalidate() {
     recovery: () => Promise.all([
       qc.invalidateQueries({ queryKey: qk.signals }),
       qc.invalidateQueries({ queryKey: qk.recoverySignals }),
+      // …and the stream the readiness ring's fuel term and the volume ceilings
+      // read. Named rather than left to the `["signals"]` prefix above for the
+      // same reason `recoverySignals` is named beside it: a per-kind entry that
+      // nothing in this list mentions is one rename away from going stale
+      // silently, and the failure would be an athlete logging dinner, watching
+      // the diary update, and seeing a readiness figure computed as though they
+      // hadn't eaten.
+      qc.invalidateQueries({ queryKey: qk.nutritionSignals }),
       qc.invalidateQueries({ queryKey: qk.foodLogs }),
     ]),
     /**

@@ -12,6 +12,7 @@ import { computeFatigue } from "./fatigue";
 import { computeReadiness } from "./readiness";
 import { computeHpi, enduranceFatigue, HYBRID_WEIGHTS, type Hpi, type HpiWeights } from "./hpi";
 import { readinessDeficit } from "./readiness-deficit";
+import type { FuelAdjustment } from "./fuel";
 
 /** One contributing factor to the current state, ranked by magnitude. */
 export interface StateDriver {
@@ -81,9 +82,12 @@ export function computePerformanceState(
   /** The heat prior's points (engines/heat.ts), already suppressed if a fresh
    *  wearable reading exists. Optional + additive: omitted scores as before. */
   heatAdj = 0,
+  /** The energy-availability cost (engines/fuel.ts), −FUEL_PENALTY_MAX..0.
+   *  Optional + additive: omitted scores as before. */
+  fuelAdj = 0,
 ): PerformanceState {
   const fatigue = computeFatigue(log);
-  const readiness = computeReadiness(fatigue, bio, heatAdj);
+  const readiness = computeReadiness(fatigue, bio, heatAdj, fuelAdj);
   const hpi = computeHpi(fatigue, bio, weights);
 
   const drivers: StateDriver[] = [];
@@ -230,14 +234,28 @@ export interface ReadinessFact {
  *     all for a wearable that was read and did move the number.
  *   - the heat prior's credit, which is the same case exactly: never negative,
  *     therefore never an arc, therefore invisible without a line of its own.
+ *   - HOW DEEP the energy deficit is. That one is the first case again, not the
+ *     second: the fuel term always draws an arc, and the arc says what it cost.
+ *     What the arc cannot say is that the athlete has been eating 19% under
+ *     maintenance for a fortnight, which is the figure that decides whether the
+ *     answer is "eat more" or "train less".
  *
  * Keys, not prose, so this speaks Polish and German — which the sentences it
  * replaces never did.
+ *
+ * `fuel` arrives WHOLE rather than as its points, unlike `heatAdj`, precisely
+ * because of that last line: the points are already on the ring, and the figure
+ * this needs — the shortfall against maintenance — lives on the read.
  */
-export function readinessFacts(log: TrainingLog, bio?: Biometrics, heatAdj = 0): ReadinessFact[] {
+export function readinessFacts(
+  log: TrainingLog,
+  bio?: Biometrics,
+  heatAdj = 0,
+  fuel?: FuelAdjustment,
+): ReadinessFact[] {
   if (log.length === 0) return [];
   const fatigue = computeFatigue(log);
-  const { bioAdj, heatAdj: heat } = computeReadiness(fatigue, bio, heatAdj);
+  const { bioAdj, heatAdj: heat, fuelAdj: fuelPts } = computeReadiness(fatigue, bio, heatAdj, fuel?.points ?? 0);
   const out: ReadinessFact[] = [];
 
   const top = (Object.entries(fatigue.muscles) as [MuscleGroup, number][]).reduce((a, b) => (b[1] > a[1] ? b : a));
@@ -258,11 +276,22 @@ export function readinessFacts(log: TrainingLog, bio?: Biometrics, heatAdj = 0):
   // there is no figure to report.
   if (heat > 0) out.push({ key: "w.home.readiness.factHeat", muscle: null, value: heat });
 
+  // THE FUEL LINE is here for the OTHER reason — not because the term is
+  // invisible (it always draws an arc; it can only ever cost points) but for
+  // the reason `factTissue` and `factLoad` exist: the arc says how much the
+  // deficit cost, and this says how deep the deficit is. A ledger row reading
+  // "Under-fuelled −4" without "eating 19% under maintenance" beside it is a
+  // verdict with its evidence left in another screen. Reported as whole
+  // percent, positive, because the word "under" already carries the sign.
+  if (fuelPts < 0 && fuel?.balance.balancePct != null) {
+    out.push({ key: "w.home.readiness.factFuel", muscle: null, value: Math.round(-fuel.balance.balancePct * 100) });
+  }
+
   return out;
 }
 
 /** What shape today's readiness read takes. */
-export type ReadinessVerdictKind = "empty" | "clear" | "limiter" | "engine" | "recovery";
+export type ReadinessVerdictKind = "empty" | "clear" | "limiter" | "engine" | "fuel" | "recovery";
 
 /**
  * The ONE line the readiness block wears on its face, plus what the door
@@ -305,6 +334,7 @@ export const READINESS_VERDICT_KEY: Record<ReadinessVerdictKind, string> = {
   clear: "w.home.readiness.verdictClear",
   limiter: "w.home.readiness.verdictLimiter",
   engine: "w.home.readiness.verdictEngine",
+  fuel: "w.home.readiness.verdictFuel",
   recovery: "w.home.readiness.verdictRecovery",
 };
 
@@ -335,10 +365,14 @@ export const READINESS_VERDICT_KEY: Record<ReadinessVerdictKind, string> = {
  * pass resolves exactly as before; the two surfaces that draw the ring pass the
  * same `heatAdj` they hand `readinessDeficit`, from the one reading of the day
  * their block computes. Pinned by readiness-verdict.test.ts.
+ *
+ * `fuelAdj` arrives on exactly the same contract and for exactly the same
+ * reason — one term passed to one caller is how a door starts promising a
+ * figure the ledger behind it does not sum to.
  */
-export function readinessVerdict(log: TrainingLog, bio?: Biometrics, heatAdj = 0): ReadinessVerdict {
+export function readinessVerdict(log: TrainingLog, bio?: Biometrics, heatAdj = 0, fuelAdj = 0): ReadinessVerdict {
   const fatigue = computeFatigue(log);
-  const split = readinessDeficit(log, bio, heatAdj);
+  const split = readinessDeficit(log, bio, heatAdj, fuelAdj);
   const deficit = split.deficit;
   // The count is the number of LEDGER ROWS behind the door, not the number of
   // English sentences: the door opens onto the split now, and the prose it used
@@ -364,6 +398,15 @@ export function readinessVerdict(log: TrainingLog, bio?: Biometrics, heatAdj = 0
     }
     if (cost.kind === "conditioning" && cost.points >= MEANINGFUL_COST) {
       return { ...base, kind: "engine", key: READINESS_VERDICT_KEY.engine };
+    }
+    // THE ONE LINE THE WHOLE JOIN EXISTS FOR. When under-eating is the biggest
+    // thing standing between this athlete and a full number, the card's face
+    // says so — otherwise the ring would draw a fuel arc under a sentence
+    // naming a tissue, and the athlete would go on believing they trained too
+    // hard when they in fact ate too little. Same MEANINGFUL_COST bar the other
+    // two non-tissue causes clear, so it cannot speak off a rounding point.
+    if (cost.kind === "fuel" && cost.points >= MEANINGFUL_COST) {
+      return { ...base, kind: "fuel", key: READINESS_VERDICT_KEY.fuel };
     }
     if (cost.kind === "wearable" && cost.points >= MEANINGFUL_COST) {
       return { ...base, kind: "recovery", key: READINESS_VERDICT_KEY.recovery };
@@ -425,6 +468,10 @@ export function performanceTrajectory(
    * defect the last Performance rebuild existed to fix.
    */
   heatAdj = 0,
+  /** The fuel cost, on the same today-only rule and for the same reason: the
+   *  rolling intake window is a read of NOW, and there is no stored history of
+   *  what it read a week ago to replay against a past point. */
+  fuelAdj = 0,
 ): TrajectoryPoint[] {
   const out: TrajectoryPoint[] = [];
   for (let n = days - 1; n >= 0; n--) {
@@ -434,10 +481,11 @@ export function performanceTrajectory(
     const fatigue = computeFatigue(subLog);
     const today = n === 0 ? bio : undefined;
     const todayHeat = n === 0 ? heatAdj : 0;
+    const todayFuel = n === 0 ? fuelAdj : 0;
     out.push({
       daysAgo: n,
       hpi: computeHpi(fatigue, today).score,
-      readiness: computeReadiness(fatigue, today, todayHeat).score,
+      readiness: computeReadiness(fatigue, today, todayHeat, todayFuel).score,
     });
   }
   return out;

@@ -12,6 +12,7 @@ import {
   FUNNEL,
   personalTrainingLog,
   toBiometrics,
+  fuelAdjustment,
   heatAdjustment,
   velocityProfiles,
   readinessDeficit,
@@ -66,7 +67,7 @@ import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRecoveryReports } from "../../lib/use-recovery-reports";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useRecoverySignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useNutritionSignalsQuery, useRecoverySignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
@@ -293,6 +294,10 @@ export default function AuroraHome() {
   const { data: recoverySignals = [] } = useRecoverySignalsQuery();
   const bio = useMemo(() => toBiometrics(recoverySignals as unknown as Parameters<typeof toBiometrics>[0]), [recoverySignals, today]);
   const { data: heatSignals = [] } = useHeatSignalsQuery();
+  // The food log on the ENGINES' terms, by kind for the same reason: fourteen
+  // days of intake against a 28-day maintenance fit is more history than the
+  // unfiltered window holds for exactly the athlete who logs most.
+  const { data: nutritionSignals = [] } = useNutritionSignalsQuery();
   // The same reports the volume model reads, for the heat clearance split.
   const recoveryReports = useRecoveryReports(sessions);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
@@ -356,9 +361,21 @@ export default function AuroraHome() {
   // carries a fresh reading — the wearable already measures what the sauna did,
   // so the prior stands down rather than stacking on it (engines/heat.ts).
   const heatAdj = useMemo(() => heatAdjustment(heatSignals, { bio }).points, [heatSignals, bio]);
+  // THE NUTRITION → TRAINING JOIN. Rolling logged intake against this athlete's
+  // own maintenance estimate, as a cost on today's number (engines/fuel.ts).
+  // Computed ONCE here for the same reason the heat prior is: the ring, its
+  // face, its ledger and the prescription all take the same read, so they
+  // cannot tell four stories about one fortnight of eating. It does NOT take
+  // `bio` — unlike heat it is not suppressed by a wearable, because energy
+  // availability and last night's HRV are different quantities.
+  // `today` is a DEPENDENCY, not an argument: the window is measured against
+  // Date.now() at memo time, so an app left open across midnight would keep
+  // excluding YESTERDAY as "today" without it — the same guard `bio` takes.
+  const fuel = useMemo(() => fuelAdjustment(nutritionSignals), [nutritionSignals, today]);
+  const fuelAdj = fuel.points;
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj }),
-    [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj, fuelAdj }),
+    [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj, fuelAdj],
   );
   // ── THE DAY OBJECT ────────────────────────────────────────────────────────
   // Today's readiness, split into what it kept and what each cause took. ONE
@@ -367,13 +384,16 @@ export default function AuroraHome() {
   // never be three readings of one morning. `kept` IS `rx.readiness` — the same
   // computeReadiness call — which is what lets this replace the bare dial that
   // used to sit on the plan card rather than sit beside it as a second number.
-  const deficit = useMemo(() => readinessDeficit(log, bio, heatAdj), [log, bio, heatAdj]);
+  const deficit = useMemo(() => readinessDeficit(log, bio, heatAdj, fuelAdj), [log, bio, heatAdj, fuelAdj]);
   // heatAdj is passed here TOO, and it has to be: the verdict computes its own
   // split for the door's count and its label, so a verdict read without the
   // credit promises a figure the ledger behind it does not sum to (see
   // engines/performance-state.ts).
-  const readyVerdict = useMemo(() => readinessVerdict(log, bio, heatAdj), [log, bio, heatAdj]);
-  const readyFacts = useMemo(() => readinessFacts(log, bio, heatAdj), [log, bio, heatAdj]);
+  const readyVerdict = useMemo(() => readinessVerdict(log, bio, heatAdj, fuelAdj), [log, bio, heatAdj, fuelAdj]);
+  // `readinessFacts` takes the fuel read WHOLE rather than its points: the arc
+  // already carries what the deficit cost, and the figure this line needs — how
+  // far under maintenance the athlete has been eating — lives on the read.
+  const readyFacts = useMemo(() => readinessFacts(log, bio, heatAdj, fuel), [log, bio, heatAdj, fuel]);
   const [dayOpen, setDayOpen] = useState(false);
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();
