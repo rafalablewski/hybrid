@@ -1,0 +1,512 @@
+<title>The Invisible RPE</title>
+<style>
+  :root{
+    /* PRODUCT tokens — packages/core/src/theme/tokens.ts. Fixed literals in both
+       themes, because the cards below ARE the app and the app is one world. */
+    --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
+    --chalk:#f3f4ef; --ash:#8b8f86;
+    --lime:#c6f84f; --amber:#d0cd94; --clay:#d56f3e; --teal:#3c787e;
+
+    /* PAGE chrome — theme-aware. Light is the bare :root default. */
+    --page:#f2f3ee;
+    --page-fg:#15170f;
+    --page-dim:#5c6154;
+    --page-faint:#8e9285;
+    --page-rule:#dcdfd3;
+    --page-panel:#e8eae1;
+    --page-accent:#54700f;
+    --page-warn:#8a4416;
+    --page-chip:rgba(84,112,15,.11);
+
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,"Helvetica Neue",Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Roboto Mono",monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --page:#070806; --page-fg:#eef0e9; --page-dim:#8b8f86; --page-faint:#5f6459;
+      --page-rule:#1e211d; --page-panel:#101210; --page-accent:#c6f84f;
+      --page-warn:#e08a5f; --page-chip:rgba(198,248,79,.13);
+    }
+  }
+  :root[data-theme="dark"]{
+    --page:#070806; --page-fg:#eef0e9; --page-dim:#8b8f86; --page-faint:#5f6459;
+    --page-rule:#1e211d; --page-panel:#101210; --page-accent:#c6f84f;
+    --page-warn:#e08a5f; --page-chip:rgba(198,248,79,.13);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--page); color:var(--page-fg);
+    font-family:var(--sans); -webkit-font-smoothing:antialiased;
+    padding:56px 20px 110px;
+  }
+  .wrap{max-width:1060px;margin:0 auto;display:flex;flex-direction:column;gap:66px}
+  a{color:var(--page-accent)}
+  :focus-visible{outline:2px solid var(--page-accent);outline-offset:3px;border-radius:2px}
+
+  /* ── head ───────────────────────────────────────────────── */
+  .head{display:flex;flex-direction:column;gap:18px;max-width:70ch}
+  .eyebrow{margin:0;font:600 11px/1 var(--mono);letter-spacing:.22em;
+    text-transform:uppercase;color:var(--page-accent)}
+  h1{margin:0;font-size:clamp(30px,5vw,48px);line-height:1.02;letter-spacing:-.038em;
+    font-weight:800;text-wrap:balance}
+  h1 em{font-style:normal;color:var(--page-faint)}
+  .lede{margin:0;font-size:16.5px;line-height:1.62;color:var(--page-dim)}
+  .lede strong{color:var(--page-fg);font-weight:600}
+  code{font-family:var(--mono);font-size:.88em;color:var(--page-fg);
+    background:var(--page-chip);padding:1px 5px;border-radius:3px}
+
+  /* ── section furniture ──────────────────────────────────── */
+  section{display:flex;flex-direction:column;gap:26px}
+  .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+    border-top:1px solid var(--page-rule);padding-top:15px;flex-wrap:wrap}
+  .sechead h2{margin:0;font-size:20px;font-weight:800;letter-spacing:-.022em}
+  .sechead .tag{margin:0;font:500 11px/1 var(--mono);letter-spacing:.16em;
+    text-transform:uppercase;color:var(--page-faint)}
+  .prose{margin:0;max-width:68ch;font-size:15.5px;line-height:1.66;color:var(--page-dim)}
+  .prose strong{color:var(--page-fg);font-weight:600}
+
+  /* ── the phone card (always the app's own dark world) ───── */
+  .phone{width:100%;max-width:352px;background:var(--ink);border-radius:22px;
+    padding:12px;border:1px solid var(--line)}
+  .acard{background:var(--card);border:1px solid var(--line);border-radius:28px;padding:14px}
+  .xhead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .tile{width:36px;height:36px;border-radius:3px;background:var(--ink2);
+    border:1px solid var(--line);display:grid;place-items:center;
+    font-size:17px;color:var(--ash);flex:none}
+  .xname{font:800 16px/1.2 var(--sans);color:var(--chalk);letter-spacing:-.01em}
+  .xkill{margin-left:auto;color:var(--ash);font-size:13px}
+  .lastline{font:400 11px/1.3 var(--mono);color:var(--ash);margin-bottom:9px}
+
+  /* active set block — flat, no inner card */
+  .active{padding:12px 0}
+  .setlab{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .kicker{font:400 10px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+  .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .rest{font:400 10px/1 var(--mono);color:var(--ash)}
+  .rpechip{display:inline-flex;align-items:center;gap:5px;padding:4px 8px;border-radius:999px;
+    border:1px solid rgba(208,205,148,.5);background:rgba(208,205,148,.12)}
+  .rpechip.off{border-color:var(--line);background:transparent}
+  .rpechip .lab{font:400 10px/1 var(--mono);letter-spacing:.08em;color:var(--amber)}
+  .rpechip .val{font:700 10px/1 var(--mono);color:var(--amber)}
+  .rpechip.off .lab,.rpechip.off .val{color:var(--ash)}
+  .type{display:inline-flex;align-items:center;gap:4px;font:400 11px/1 var(--mono);color:var(--ash)}
+  .figs{display:flex;align-items:baseline;justify-content:center;gap:3px}
+  .fig{font:900 46px/1.05 var(--sans);letter-spacing:-1.6px;color:var(--chalk);
+    font-variant-numeric:tabular-nums}
+  .unit{font:400 16px/1 var(--mono);color:var(--ash);margin-left:5px}
+  .times{font:400 26px/1 var(--sans);color:var(--ash);margin:0 3px}
+
+  /* the banked ledger row — the subject of this page */
+  .row{display:flex;align-items:center;gap:10px;padding:12px 2px;
+    border-bottom:1px solid rgba(36,39,36,.6);opacity:.62}
+  .row .badge{width:20px;flex:none;font:400 12px/1 var(--mono);color:var(--ash)}
+  .row .sum{flex:1;min-width:0;font:400 13px/1.25 var(--mono);color:var(--ash);
+    font-variant-numeric:tabular-nums}
+  .row .sum b{font-weight:700;color:var(--ash)}
+  .row .tok{font:400 10px/1 var(--mono);letter-spacing:.08em;color:var(--amber);flex:none}
+  .row .check{font:900 13px/1 var(--sans);color:var(--lime);flex:none}
+  .row.queued{opacity:.72}
+  .row.queued .check{color:var(--ash)}
+  .ghost{color:rgba(208,205,148,.07)}
+  .effortline{display:flex;align-items:center;gap:8px;padding:10px 2px 2px}
+  .effortline .lab{font:400 10px/1 var(--mono);letter-spacing:.14em;
+    text-transform:uppercase;color:var(--ash)}
+  .effortline .ser{font:700 12px/1 var(--mono);color:var(--amber);
+    font-variant-numeric:tabular-nums}
+  .effortline .ser span{font-weight:400;color:var(--ash)}
+  .addset{display:flex;align-items:center;gap:8px;padding-top:12px}
+  .addset .plus{font:400 16px/1 var(--mono);color:var(--chalk)}
+  .addset .word{font:700 13px/1 var(--sans);color:var(--chalk)}
+
+  /* ── the annotated pair (defect) ────────────────────────── */
+  .pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:24px;align-items:start}
+  .slot{display:flex;flex-direction:column;gap:11px}
+  .slotlab{display:flex;align-items:center;gap:9px;font:600 10.5px/1 var(--mono);
+    letter-spacing:.15em;text-transform:uppercase;color:var(--page-faint)}
+  .slotlab .n{display:grid;place-items:center;width:19px;height:19px;border-radius:999px;
+    border:1px solid var(--page-rule);font-size:9.5px;color:var(--page-dim)}
+  .slotlab.bad{color:var(--page-warn)}
+  .slotlab.bad .n{border-color:var(--page-warn);color:var(--page-warn)}
+  .slotnote{margin:0;font-size:13.5px;line-height:1.55;color:var(--page-dim);max-width:44ch}
+  .slotnote b{color:var(--page-fg);font-weight:600}
+
+  /* ── code ───────────────────────────────────────────────── */
+  .code{background:var(--page-panel);border:1px solid var(--page-rule);border-radius:10px;
+    overflow-x:auto;font:400 12.5px/1.75 var(--mono);color:var(--page-dim);
+    padding:14px 0;max-width:100%}
+  .code .ln{display:block;padding:0 16px;white-space:pre;tab-size:2}
+  .code .ln.hit{background:var(--page-chip);color:var(--page-fg);
+    box-shadow:inset 2px 0 0 var(--page-accent)}
+  .code .cm{color:var(--page-faint);font-style:italic}
+  .code .path{display:block;padding:0 16px 8px;font-size:11px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--page-faint)}
+
+  /* ── options grid ───────────────────────────────────────── */
+  .opts{display:flex;flex-direction:column;gap:44px}
+  .opt{display:grid;grid-template-columns:minmax(300px,352px) 1fr;gap:30px;align-items:start}
+  @media (max-width:820px){.opt{grid-template-columns:1fr}}
+  .optbody{display:flex;flex-direction:column;gap:16px}
+  .optname{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .optname h3{margin:0;font-size:21px;font-weight:800;letter-spacing:-.022em}
+  .optname .kind{font:600 10.5px/1 var(--mono);letter-spacing:.16em;
+    text-transform:uppercase;color:var(--page-faint)}
+  .verdict{display:inline-flex;align-items:center;gap:7px;align-self:flex-start;
+    padding:5px 11px;border-radius:999px;font:600 10.5px/1 var(--mono);
+    letter-spacing:.13em;text-transform:uppercase}
+  .verdict.ship{color:var(--page-accent);border:1px solid var(--page-accent);
+    background:var(--page-chip)}
+  .verdict.maybe{color:var(--page-dim);border:1px solid var(--page-rule)}
+  .verdict.no{color:var(--page-warn);border:1px solid var(--page-warn)}
+  ul.tl{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+  ul.tl li{display:grid;grid-template-columns:16px 1fr;gap:10px;
+    font-size:14.5px;line-height:1.55;color:var(--page-dim)}
+  ul.tl li b{color:var(--page-fg);font-weight:600}
+  ul.tl .m{font:700 12px/1.7 var(--mono);color:var(--page-accent)}
+  ul.tl .m.minus{color:var(--page-warn)}
+
+  /* ── the call ───────────────────────────────────────────── */
+  .call{border:1px solid var(--page-accent);border-radius:14px;padding:24px 26px;
+    background:var(--page-chip);display:flex;flex-direction:column;gap:14px}
+  .call h3{margin:0;font-size:19px;font-weight:800;letter-spacing:-.02em}
+  .call p{margin:0;font-size:15.5px;line-height:1.62;color:var(--page-dim);max-width:66ch}
+  .call p strong{color:var(--page-fg);font-weight:600}
+
+  /* ── side findings ──────────────────────────────────────── */
+  .finds{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:22px}
+  .find{display:flex;flex-direction:column;gap:9px;border-top:2px solid var(--page-rule);
+    padding-top:14px}
+  .find .where{font:400 10.5px/1.4 var(--mono);letter-spacing:.1em;color:var(--page-faint);
+    word-break:break-all}
+  .find h4{margin:0;font-size:15.5px;font-weight:700;letter-spacing:-.01em}
+  .find p{margin:0;font-size:14px;line-height:1.58;color:var(--page-dim)}
+  .foot{border-top:1px solid var(--page-rule);padding-top:16px;
+    font:400 11.5px/1.7 var(--mono);color:var(--page-faint)}
+</style>
+
+<div class="wrap">
+
+  <header class="head">
+    <p class="eyebrow">Live logger – defect &amp; four treatments</p>
+    <h1>The invisible RPE <em>— the number you tapped, banked and never saw again</em></h1>
+    <p class="lede">
+      You set RPE on a set, log it, move to the next one — and the effort you rated
+      is gone from the screen. <strong>It is stored, it saves, and the session
+      breakdown prints it back to you at home.</strong> It just isn't drawn on the
+      live logger's banked row, because that row is built from exactly two facts and
+      RPE is not one of them.
+    </p>
+  </header>
+
+  <!-- ═══ THE DEFECT ═══════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>What happens, in two frames</h2>
+      <p class="tag">apps/mobile/app/workout.tsx</p>
+    </div>
+    <p class="prose">
+      The active set carries RPE on an amber chip in its label row. The moment the
+      set banks, the whole block collapses to a one-line ledger row — and that row
+      renders a badge, a <code>load × reps</code> summary and a check. The chip's
+      value has nowhere to land, so it simply stops being drawn.
+    </p>
+
+    <div class="pair">
+      <div class="slot">
+        <div class="slotlab"><span class="n">1</span> Before you log — RPE 8, on the chip</div>
+        <div class="phone">
+          <div class="acard">
+            <div class="xhead">
+              <div class="tile">🏋</div>
+              <div class="xname">Back Squat</div>
+              <div class="xkill">✕</div>
+            </div>
+            <div class="lastline">Last time – 95×5, 95×5, 95×5</div>
+            <div class="active">
+              <div class="setlab">
+                <span class="kicker">Set 1 of 3 — up now</span>
+                <span class="right">
+                  <span class="rest">Rest 1:30</span>
+                  <span class="rpechip"><span class="lab">RPE</span><span class="val">8</span></span>
+                  <span class="type">WORKING ⌄</span>
+                </span>
+              </div>
+              <div class="figs">
+                <span class="fig">100</span><span class="unit">kg</span>
+                <span class="times">×</span>
+                <span class="fig">5</span><span class="unit">reps</span>
+              </div>
+            </div>
+            <div class="row queued"><span class="badge">2</span><span class="sum">100 kg × 5</span><span class="check">○</span></div>
+            <div class="row queued"><span class="badge">3</span><span class="sum">100 kg × 5</span><span class="check">○</span></div>
+            <div class="addset"><span class="plus">＋</span><span class="word">Add set</span></div>
+          </div>
+        </div>
+        <p class="slotnote">
+          Amber, labelled, pinned to the right of the kicker row. The value is
+          unambiguous and it is the second-brightest thing on the card.
+        </p>
+      </div>
+
+      <div class="slot">
+        <div class="slotlab bad"><span class="n">2</span> After you log — the 8 is nowhere</div>
+        <div class="phone">
+          <div class="acard">
+            <div class="xhead">
+              <div class="tile">🏋</div>
+              <div class="xname">Back Squat</div>
+              <div class="xkill">✕</div>
+            </div>
+            <div class="lastline">Last time – 95×5, 95×5, 95×5</div>
+            <div class="row"><span class="badge">1</span><span class="sum">100 kg × 5 <span class="ghost">RPE 8</span></span><span class="check">✓</span></div>
+            <div class="active">
+              <div class="setlab">
+                <span class="kicker">Set 2 of 3 — up now</span>
+                <span class="right">
+                  <span class="rest">Rest 1:30</span>
+                  <span class="rpechip off"><span class="lab">RPE</span><span class="val">–</span></span>
+                  <span class="type">WORKING ⌄</span>
+                </span>
+              </div>
+              <div class="figs">
+                <span class="fig">100</span><span class="unit">kg</span>
+                <span class="times">×</span>
+                <span class="fig">5</span><span class="unit">reps</span>
+              </div>
+            </div>
+            <div class="row queued"><span class="badge">3</span><span class="sum">100 kg × 5</span><span class="check">○</span></div>
+            <div class="addset"><span class="plus">＋</span><span class="word">Add set</span></div>
+          </div>
+        </div>
+        <p class="slotnote">
+          The banked row says <b>100 kg × 5 ✓</b> and nothing else. The 8 is drawn
+          here at 7% opacity to show you the hole — on device there is not even that.
+          Meanwhile the new set's chip reads <b>–</b>, so the screen now claims no
+          effort has been rated anywhere in this exercise.
+        </p>
+      </div>
+    </div>
+
+    <div class="code">
+      <span class="path">apps/mobile/app/workout.tsx — the collapsed row, line 1674</span>
+<span class="ln"><span class="cm">// Banked / queued → quiet one-line row (tap a banked one</span></span>
+<span class="ln"><span class="cm">// to re-open it as the active card).</span></span>
+<span class="ln">const loadPart = !bw &amp;&amp; s.load ? `${displayLoad(s.load, prefs.units)} ${unitLabel}` : "";</span>
+<span class="ln">const repsPart = s.reps ? `${s.reps} ${measureLabel}` : "";</span>
+<span class="ln hit">const summary = [loadPart, repsPart].filter(Boolean).join(" × ") || "—";   <span class="cm">← s.rpe is never read</span></span>
+    </div>
+
+    <p class="prose">
+      So this is <strong>not a state bug</strong>, and that is worth saying plainly
+      because it changes the fix. <code>s.rpe</code> holds the value; the save at
+      <code>workout.tsx:1022</code> writes it onto the block; and
+      <code>app/session/[id].tsx:223</code> prints <code>RPE 8</code> beside every
+      set in the breakdown. Exactly one surface in the chain doesn't render it, and
+      it happens to be the surface you are looking at while you train.
+    </p>
+  </section>
+
+  <!-- ═══ THE TREATMENTS ═══════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>Four ways to put it back</h2>
+      <p class="tag">Named, not numbered — they are alternatives, not steps</p>
+    </div>
+
+    <div class="opts">
+
+      <!-- A — THE TOKEN -->
+      <article class="opt">
+        <div class="phone">
+          <div class="acard">
+            <div class="xhead"><div class="tile">🏋</div><div class="xname">Back Squat</div><div class="xkill">✕</div></div>
+            <div class="row"><span class="badge">1</span><span class="sum">100 kg × 5</span><span class="tok">RPE 8</span><span class="check">✓</span></div>
+            <div class="row"><span class="badge">2</span><span class="sum">100 kg × 5</span><span class="tok">RPE 8</span><span class="check">✓</span></div>
+            <div class="row"><span class="badge">3</span><span class="sum">102.5 kg × 5</span><span class="tok">RPE 9</span><span class="check">✓</span></div>
+            <div class="row queued"><span class="badge">4</span><span class="sum">102.5 kg × 5</span><span class="check">○</span></div>
+            <div class="addset"><span class="plus">＋</span><span class="word">Add set</span></div>
+          </div>
+        </div>
+        <div class="optbody">
+          <div class="optname">
+            <h3>The token</h3>
+            <span class="kind">A dedicated column</span>
+          </div>
+          <span class="verdict ship">Recommended</span>
+          <ul class="tl">
+            <li><span class="m">+</span><span>The value <b>stays the colour it was when you tapped it</b> — amber, labelled, same words as the chip it collapsed from. Nothing to relearn.</span></li>
+            <li><span class="m">+</span><span>It <b>renders nothing when RPE is unset</b>, so the row only grows a fourth column when there is actually something to say. Simple mode and unrated sets are untouched.</span></li>
+            <li><span class="m">+</span><span>Keeps the two colour channels apart: the summary keeps amber/terracotta for a <b>plausibility concern</b>, the token owns amber for <b>effort</b>. Riding inside the summary string would fuse them.</span></li>
+            <li><span class="m">+</span><span>Matches the session breakdown's own <code>RPE 8</code> token, so the live row and the at-home row finally read alike.</span></li>
+            <li><span class="m minus">−</span><span>A fourth column. The row's own comment warns it is <b>already three wide on a small phone</b>; at <code>fs.nano</code> with the label it costs about 44dp, and a 5-char load plus a long unit is the tight case.</span></li>
+            <li><span class="m minus">−</span><span>Under the RIR swap the label has to swap too (<code>RIR 2</code>) — one more thing that must read from <code>rpeRirSwap</code> rather than the raw field.</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- B — THE NOTATION -->
+      <article class="opt">
+        <div class="phone">
+          <div class="acard">
+            <div class="xhead"><div class="tile">🏋</div><div class="xname">Back Squat</div><div class="xkill">✕</div></div>
+            <div class="row"><span class="badge">1</span><span class="sum">100 kg × 5 <b>@ 8</b></span><span class="check">✓</span></div>
+            <div class="row"><span class="badge">2</span><span class="sum">100 kg × 5 <b>@ 8</b></span><span class="check">✓</span></div>
+            <div class="row"><span class="badge">3</span><span class="sum">102.5 kg × 5 <b>@ 9</b></span><span class="check">✓</span></div>
+            <div class="row queued"><span class="badge">4</span><span class="sum">102.5 kg × 5</span><span class="check">○</span></div>
+            <div class="addset"><span class="plus">＋</span><span class="word">Add set</span></div>
+          </div>
+        </div>
+        <div class="optbody">
+          <div class="optname">
+            <h3>The notation</h3>
+            <span class="kind">Fold it into the summary string</span>
+          </div>
+          <span class="verdict maybe">Cheapest — one line changed</span>
+          <ul class="tl">
+            <li><span class="m">+</span><span><b>Zero layout risk.</b> One expression in one file; no new column, no new measurement, nothing to reflow on a small phone.</span></li>
+            <li><span class="m">+</span><span><code>100 × 5 @ 8</code> is <b>the sport's own notation</b> — the way an RTS-lineage lifter writes a set down. No label needed because the <code>@</code> is the label.</span></li>
+            <li><span class="m">+</span><span>Naturally extends the <b>"Last time"</b> line and <code>strengthSetsSummary</code>, so the reference above the sets could carry effort with the same helper.</span></li>
+            <li><span class="m minus">−</span><span><b>Colour collision.</b> That Text turns amber or terracotta when the set is implausible, so on an odd set the effort figure inherits the warning colour and reads as if the RPE were the problem.</span></li>
+            <li><span class="m minus">−</span><span>The RIR swap breaks the notation — <code>@ 8</code> means RPE 8 to everyone who knows the convention, so RIR mode has to fall back to <code>2 RIR</code> and the row's grammar changes with a preference.</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- C — THE SERIES -->
+      <article class="opt">
+        <div class="phone">
+          <div class="acard">
+            <div class="xhead"><div class="tile">🏋</div><div class="xname">Back Squat</div><div class="xkill">✕</div></div>
+            <div class="row"><span class="badge">1</span><span class="sum">100 kg × 5</span><span class="check">✓</span></div>
+            <div class="row"><span class="badge">2</span><span class="sum">100 kg × 5</span><span class="check">✓</span></div>
+            <div class="row"><span class="badge">3</span><span class="sum">102.5 kg × 5</span><span class="check">✓</span></div>
+            <div class="row queued"><span class="badge">4</span><span class="sum">102.5 kg × 5</span><span class="check">○</span></div>
+            <div class="effortline">
+              <span class="lab">Effort</span>
+              <span class="ser">8 <span>→</span> 8 <span>→</span> 9</span>
+            </div>
+            <div class="addset"><span class="plus">＋</span><span class="word">Add set</span></div>
+          </div>
+        </div>
+        <div class="optbody">
+          <div class="optname">
+            <h3>The series</h3>
+            <span class="kind">One effort line per exercise, not per row</span>
+          </div>
+          <span class="verdict maybe">Strong as a companion, weak alone</span>
+          <ul class="tl">
+            <li><span class="m">+</span><span>It answers the question you actually ask mid-workout: <b>is effort climbing?</b> A per-row number makes you read three rows and hold them in your head; the series is the shape.</span></li>
+            <li><span class="m">+</span><span><b>Costs the rows no width at all</b> — the row keeps its three columns and the small-phone worry disappears.</span></li>
+            <li><span class="m">+</span><span>Sits naturally where the exercise's own summary belongs, under the sets and above Add set.</span></li>
+            <li><span class="m minus">−</span><span>It <b>breaks the tap-to-fix loop</b>: the series says a 9 happened but not on which row, so correcting a mistyped effort means guessing which set to re-open.</span></li>
+            <li><span class="m minus">−</span><span>A new full-width element in a card that just spent a redesign <b>removing</b> a meta row. It has to justify itself against that, and "restores a lost value" is a weaker case than "adds a reading you couldn't get".</span></li>
+          </ul>
+        </div>
+      </article>
+
+      <!-- D — THE TINT -->
+      <article class="opt">
+        <div class="phone">
+          <div class="acard">
+            <div class="xhead"><div class="tile">🏋</div><div class="xname">Back Squat</div><div class="xkill">✕</div></div>
+            <div class="row"><span class="badge">1</span><span class="sum" style="color:var(--amber)">100 kg × 5</span><span class="check">✓</span></div>
+            <div class="row"><span class="badge">2</span><span class="sum" style="color:var(--amber)">100 kg × 5</span><span class="check">✓</span></div>
+            <div class="row"><span class="badge">3</span><span class="sum" style="color:var(--clay)">102.5 kg × 5</span><span class="check">✓</span></div>
+            <div class="row queued"><span class="badge">4</span><span class="sum">102.5 kg × 5</span><span class="check">○</span></div>
+            <div class="addset"><span class="plus">＋</span><span class="word">Add set</span></div>
+          </div>
+        </div>
+        <div class="optbody">
+          <div class="optname">
+            <h3>The tint</h3>
+            <span class="kind">Effort as colour, no number</span>
+          </div>
+          <span class="verdict no">Rejected — and worth writing down why</span>
+          <ul class="tl">
+            <li><span class="m minus">−</span><span><b>That colour is already spoken for.</b> The summary goes amber for a questionable set and terracotta for a refused one. Paint effort in the same hues on the same text and the row can no longer tell you which fact it is reporting — the frame above is the ambiguity, not a mockup of it.</span></li>
+            <li><span class="m minus">−</span><span>It <b>doesn't return the value</b>. You rated an 8; a warm row is not an 8. The complaint is that a number went missing, and a tint answers a different complaint.</span></li>
+            <li><span class="m minus">−</span><span>Colour-only encoding fails the accessibility floor the rest of the logger holds — nothing for VoiceOver to read, nothing at all for a red-green deficit.</span></li>
+            <li><span class="m">+</span><span>Its one virtue, kept for whichever option ships: <b>the amber belongs on the value, not on a badge</b> — the row shouldn't grow chrome for this.</span></li>
+          </ul>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ═══ THE CALL ═════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>The call</h2>
+      <p class="tag">If you want one decision</p>
+    </div>
+    <div class="call">
+      <h3>Ship the token. Add the series later, if the climb turns out to be what you read.</h3>
+      <p>
+        <strong>The token</strong> is the honest fix: it returns the exact value, in
+        the exact colour and wording it had on the chip, on the row that owns it — so
+        tapping a banked row to correct an effort still works, and the live logger
+        finally agrees with the breakdown screen you read at home. It renders nothing
+        when RPE is unset, so it costs the tight small-phone case nothing in the common
+        case, and it leaves the summary's amber free to keep meaning
+        <em>"check this number"</em>.
+      </p>
+      <p>
+        <strong>The series</strong> is the better idea about training and the worse
+        idea about this bug. It belongs in a later change, on its own argument, with
+        the per-row token underneath it — not as a substitute for the value that went
+        missing.
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══ NEARBY ═══════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>Three more things in the same code</h2>
+      <p class="tag">Found while tracing the field — not part of the fix above</p>
+    </div>
+    <div class="finds">
+      <div class="find">
+        <p class="where">workout.tsx:850 – emptySet(prefs.carryOver ? … )</p>
+        <h4>Carry-over copies the effort forward</h4>
+        <p>
+          <code>carryOver</code> is on by default and <code>emptySet</code> copies
+          <code>rpe</code> along with load and reps — so a fresh set arrives already
+          rated at the last set's effort, before you have done it. Load and reps are a
+          <em>plan</em> worth carrying; an effort rating is an <em>observation</em>, and
+          it should almost certainly start blank.
+        </p>
+      </div>
+      <div class="find">
+        <p class="where">workout.tsx:356 – rpeOpenUid</p>
+        <h4>The disclosure is keyed per exercise, not per set</h4>
+        <p>
+          Only the active set draws the pill row, so it works today — but banking a set
+          never clears the state. Open the RPE row, don't pick anything, log the set,
+          and the row is now sitting open on the next set. Keying it to the set's uid
+          (or clearing it on bank) makes the state mean what its name says.
+        </p>
+      </div>
+      <div class="find">
+        <p class="where">workout.tsx:1674 vs core strengthSetsSummary</p>
+        <h4>Two formatters for one set</h4>
+        <p>
+          The row's inline summary only special-cases pure <code>bodyweight</code>, so a
+          <b>bodyweight-plus</b> or <b>assisted</b> lift prints as plain load × reps here
+          while the shared <code>strengthSetsSummary</code> above it writes
+          <code>+20×5</code> / <code>−20×5</code>. Whichever option ships, the row should
+          read through the shared formatter — that is also where <code>@ 8</code> would
+          live if you preferred the notation.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <p class="foot">
+    Cards are rendered from the product's own tokens (packages/core/src/theme/tokens.ts) at
+    real sizes — fs.nano 10, fs.caption 12, fs.body 13, fs.stat 46, RADIUS.card 28,
+    RADIUS.mark 3 — so what you see above is what the change looks like on device.
+  </p>
+
+</div>
