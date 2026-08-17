@@ -1,0 +1,91 @@
+name: Push — hourly morning nudge
+
+# Fires the morning readiness nudge (/api/cron/push) once an hour.
+#
+# ── WHY THIS IS NOT A VERCEL CRON ────────────────────────────────────────────
+# It was, and it broke every deployment. Vercel validates vercel.json's cron
+# schedules against the account's plan at DEPLOY time, and the Hobby plan allows
+# a cron to fire at most once per day — so the hourly `0 * * * *` entry did not
+# fail at 07:00, it failed the whole deployment, instantly, before any build ran.
+# Vercel was green through PR #458 and red on every PR from #459 (which added
+# that entry) onward, all with the same error link.
+#
+# HOURLY IS NOT NEGOTIABLE, which is why the answer is a different scheduler
+# rather than a slower one: 07:00 is a promise about the ATHLETE's morning, and
+# there is no single server hour at which it is 07:00 anywhere. Run this daily
+# and one timezone band gets a nudge and everybody else gets nothing. (07:00 UTC
+# is 02:00 in Los Angeles, and one notification at two in the morning spends the
+# push permission for good.)
+#
+# GitHub Actions schedules are free and unlimited on a public repo, which is the
+# same reason the TestFlight pipeline lives here rather than on EAS.
+#
+# SAFE TO OVER-FIRE. The endpoint is idempotent per device per LOCAL day: it
+# only sends inside the athlete's own 07:00 window and stamps `lastNudgeAt`,
+# skipping any device whose local day already got one. So a delayed run, a
+# double run, or a manual run cannot double-send.
+#
+# IF YOU MOVE TO A VERCEL PLAN THAT ALLOWS SUB-DAILY CRONS, this file can be
+# deleted and the entry put back in apps/web/vercel.json:
+#     { "path": "/api/cron/push", "schedule": "0 * * * *" }
+#
+# ── Required repo secret (Settings → Secrets and variables → Actions) ────────
+#   CRON_SECRET   The same value set in the Vercel env. Sent as a Bearer token;
+#                 without it the endpoint answers 503 and nothing is sent.
+#
+# ── Required repo variable (same page, "Variables" tab) ─────────────────────
+#   SITE_URL      The deployment's origin, e.g. https://app.hybrid.app
+#                 (no trailing slash).
+
+on:
+  schedule:
+    # Hourly, on the hour. GitHub may delay a scheduled run under load; the
+    # endpoint's three-hour window (NUDGE_WINDOW_HOURS) absorbs that, which is
+    # exactly what that window is for.
+    - cron: "0 * * * *"
+  # So an operator can fire it by hand without waiting for the hour.
+  workflow_dispatch:
+
+concurrency:
+  group: push-nudge
+  cancel-in-progress: false
+
+jobs:
+  nudge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fire the nudge job
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          set -euo pipefail
+
+          # Fail LOUDLY rather than curling nothing and reporting success — a
+          # notification channel that has silently stopped is the failure this
+          # whole feature exists to avoid.
+          if [ -z "${SITE_URL:-}" ]; then
+            echo "::error::SITE_URL repo variable is not set — nothing to call."
+            exit 1
+          fi
+          if [ -z "${CRON_SECRET:-}" ]; then
+            echo "::error::CRON_SECRET repo secret is not set — the endpoint would answer 503."
+            exit 1
+          fi
+
+          CODE=$(curl -sS -o /tmp/nudge.json -w '%{http_code}' \
+            --max-time 90 --retry 2 --retry-delay 5 --retry-connrefused \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            "${SITE_URL%/}/api/cron/push")
+
+          echo "HTTP ${CODE}"
+          cat /tmp/nudge.json || true
+          echo
+
+          # 503 means the server has no CRON_SECRET configured. That is a real
+          # misconfiguration and must not pass as a green run.
+          if [ "$CODE" != "200" ]; then
+            echo "::error::Nudge job returned HTTP ${CODE}"
+            exit 1
+          fi

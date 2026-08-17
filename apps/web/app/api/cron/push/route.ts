@@ -12,8 +12,12 @@ export const maxDuration = 60;
 /**
  * THE MORNING READINESS NUDGE — the one notification the app owes.
  *
- * Hit HOURLY by Vercel Cron (apps/web/vercel.json), authenticated by CRON_SECRET
- * like the agent jobs beside it. Hourly, because 07:00 is a promise about the
+ * Hit HOURLY by the .github/workflows/push-nudge.yml schedule, authenticated by
+ * CRON_SECRET like the agent jobs beside it. NOT a Vercel Cron, and that is a
+ * plan limit rather than a preference: Vercel validates vercel.json's schedules
+ * at DEPLOY time against the account's plan, and an hourly entry on Hobby fails
+ * the whole deployment instantly — it took production down for three PRs before
+ * anyone connected the two. Hourly, because 07:00 is a promise about the
  * ATHLETE's morning: there is no single server hour at which it is 07:00, so the
  * job wakes up every hour and sends to whichever timezones have just reached it.
  * 07:00 UTC would be 02:00 in Los Angeles, and one notification at two in the
