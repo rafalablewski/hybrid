@@ -44,14 +44,21 @@ import {
   HEAT_TEMP_BOUNDS, HEAT_WINDOW_H, heatAdjustment, heatSource,
   type HeatAdjustment, type HeatProtocol, type HeatSignalRow,
 } from "./heat";
+import {
+  FUEL_DEADBAND_PCT, FUEL_MIN_DAYS, FUEL_MIN_DAY_KCAL, FUEL_PENALTY_MAX,
+  FUEL_SATURATION_PCT, FUEL_SURPLUS_PCT, FUEL_WINDOW_DAYS, FUEL_MAINTENANCE_DAYS,
+  fuelAdjustment, type FuelAdjustment, type FuelSignalRow,
+} from "./fuel";
 import { HEAT_RECOVERY_TIERS } from "./landmark-profile";
 import { COST_OK } from "./landmark-adapt";
+import { ENERGY_BALANCE_THRESHOLD_PCT } from "./landmark-context";
 import {
   EXPERIENCE_STIMULUS,
   EXPERIENCE_RECOVERY,
   SLEEP_RECOVERY,
   STRESS_RECOVERY,
   NUTRITION_RECOVERY,
+  PROTEIN_RECOVERY_TIERS,
   AGE_REF_YEARS,
   AGE_PENALTY_PER_YEAR,
   AGE_FLOOR,
@@ -121,7 +128,7 @@ export interface EngineFormula {
 export const ENGINE_FORMULA_GROUPS: { id: EngineFormulaGroup; label: string; source: string }[] = [
   { id: "fatigue", label: "Tissue fatigue", source: "engines/fatigue.ts" },
   { id: "endurance", label: "Endurance load", source: "engines/hpi.ts" },
-  { id: "readiness", label: "Readiness", source: "engines/readiness.ts + engines/readiness-deficit.ts + engines/heat.ts" },
+  { id: "readiness", label: "Readiness", source: "engines/readiness.ts + engines/readiness-deficit.ts + engines/heat.ts + engines/fuel.ts" },
   { id: "hpi", label: "HPI", source: "engines/hpi.ts" },
   { id: "load", label: "Session load & ACWR", source: "engines/load.ts + injury.ts" },
   { id: "injury", label: "Injury risk", source: "engines/injury.ts" },
@@ -184,7 +191,7 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     id: "readiness",
     engine: "readiness",
     name: "Readiness score",
-    expression: `readiness = clamp(100 − ${MUSCLE_SLOPE} × avgMuscleFatigue − ${ENDURANCE_SLOPE} × enduranceFatigue + bioAdj + heatAdj, ${READINESS_FLOOR}, ${READINESS_CEILING})`,
+    expression: `readiness = clamp(100 − ${MUSCLE_SLOPE} × avgMuscleFatigue − ${ENDURANCE_SLOPE} × enduranceFatigue + bioAdj + heatAdj + fuelAdj, ${READINESS_FLOOR}, ${READINESS_CEILING})`,
     constants: [
       { symbol: String(MUSCLE_SLOPE), value: String(MUSCLE_SLOPE), meaning: "tissue fatigue → readiness slope" },
       { symbol: String(ENDURANCE_SLOPE), value: String(ENDURANCE_SLOPE), meaning: "conditioning load → readiness slope (half the tissue slope)" },
@@ -375,7 +382,8 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
       { symbol: "body mass", value: `−${MASS_PENALTY_PER_KG * 100}%/kg past ${BODYWEIGHT_REF_KG} kg, floor ${MASS_FLOOR}`, meaning: "more absolute load moved per set" },
       { symbol: "sleep 1–5", value: SLEEP_RECOVERY.slice(1).join(" / "), meaning: "self-reported or measured from check-ins" },
       { symbol: "stress 1–5", value: STRESS_RECOVERY.slice(1).join(" / "), meaning: "5 = very stressed" },
-      { symbol: "energy", value: `${NUTRITION_RECOVERY.deficit} / ${NUTRITION_RECOVERY.maintenance} / ${NUTRITION_RECOVERY.surplus}`, meaning: "deficit / maintenance / surplus, read off the scale" },
+      { symbol: "energy", value: `${NUTRITION_RECOVERY.deficit} / ${NUTRITION_RECOVERY.maintenance} / ${NUTRITION_RECOVERY.surplus}`, meaning: "deficit / maintenance / surplus, read off the FOOD LOG where it can be read and off the scale where it cannot" },
+      { symbol: "protein", value: PROTEIN_RECOVERY_TIERS.map((t) => `${t.multiplier} (≥${t.minGPerKg} g/kg)`).join(" / "), meaning: "material available for repair — a separate question from whether there is energy to repair with" },
     ],
     note: "How much work you can ABSORB. The bounds matter: five mildly negative inputs must not multiply into a ceiling nobody could train under.",
   },
@@ -593,6 +601,35 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     note: "The BETTER-evidenced of heat's two channels and still the most timid number in the file: plasma volume expansion of ~3–5% over 7–10 days, raised HSP70, better thermoregulation, and a cohort dose-response that strengthens at 4+ sittings a week. Counted in SITTINGS rather than equivalent minutes because sessions-per-week is what that evidence is actually expressed in. Unlike the acute credit this does NOT stand down for a wearable — it operates on a four-week timescale, where there is no single night for the two terms to disagree about.",
   },
   {
+    id: "readiness-fuel",
+    engine: "readiness",
+    name: "Energy availability (the nutrition → training join)",
+    expression: `shortfall = (maintenance − avgIntake) / maintenance   •   severity = clamp((shortfall − ${FUEL_DEADBAND_PCT}) / (${FUEL_SATURATION_PCT} − ${FUEL_DEADBAND_PCT}), 0, 1)   •   fuelAdj = −round(${FUEL_PENALTY_MAX} × severity)`,
+    constants: [
+      { symbol: `${FUEL_WINDOW_DAYS} d`, value: "intake window", meaning: "rolling mean of COMPLETED days — today is excluded, because a day in progress is a day with dinner still ahead of it" },
+      { symbol: `${FUEL_MAINTENANCE_DAYS} d`, value: "maintenance window", meaning: "deliberately longer, so recent intake is read against a longer-run expenditure level rather than against itself" },
+      { symbol: String(FUEL_MIN_DAYS), value: "usable days needed", meaning: "below it the term is ABSENT, not small — a thin log understates systematically and would read as a crash diet" },
+      { symbol: `${FUEL_MIN_DAY_KCAL} kcal`, value: "day floor", meaning: "a day under it is a gap in the record, not a fast — logging breakfast and stopping is the single most damaging input here" },
+      { symbol: `${FUEL_DEADBAND_PCT * 100}%`, value: "deadband", meaning: "the UNDER-REPORTING allowance: self-reported intake runs 10–20% low, so a paper deficit inside it is more likely the logging than the athlete" },
+      { symbol: `${FUEL_SATURATION_PCT * 100}%`, value: "saturation", meaning: "a sustained shortfall this deep is aggressive by any published standard; past it more deficit buys no more penalty" },
+      { symbol: String(FUEL_PENALTY_MAX), value: "max cost", meaning: "against the wearable's ±15 — a self-report must not out-vote a measurement" },
+    ],
+    note: "THE COLUMN THAT WAS TYPED AND NEVER READ. The Signal ontology has carried energyIntake and protein since the nutrition engine shipped, and the adaptive-targets engine has estimated maintenance from them for just as long — and nothing downstream read either, so an athlete four days into an aggressive cut scored exactly what one eating at maintenance scored. NEVER POSITIVE: a deficit costs points, a surplus earns none, because 'ate over maintenance therefore more recovered' is a bonus for overfeeding and an athlete would learn to farm it in a week. That makes it the exact mirror of the heat prior — heat needs no cost kind on the ring because a credit takes no arc, and fuel needs one ALWAYS, because a cost that cannot be drawn is a cost the sum law catches. IT DOES NOT STAND DOWN FOR A WEARABLE, and that asymmetry with heat is deliberate: heat and HRV are two accounts of ONE NIGHT, so a measurement beats a prior; energy availability and HRV are different quantities on different timescales — an athlete three weeks into a controlled cut can wake with a textbook HRV and still be unable to absorb the volume they absorbed in a surplus. KNOWN CIRCULARITY, stated rather than hidden: the maintenance estimate is itself partly fitted to logged intake (maintenance ≈ avgIntake − Δkg·7700/days), and the two windows overlap. The overlap pulls maintenance toward recent intake, which SHRINKS the measured gap — the term understates a deficit and can never overstate one, which is the right direction of error for something that takes points off an athlete.",
+  },
+  {
+    id: "landmark-nutrition",
+    engine: "landmarks",
+    name: "Energy & protein — the recovery multiplier's nutrition inputs",
+    expression: `recovery ×= NUTRITION_RECOVERY[state] × proteinRecovery(g/kg)   •   state = intake where readable, bodyweight trend otherwise`,
+    constants: [
+      { symbol: "state", value: `${NUTRITION_RECOVERY.deficit} / ${NUTRITION_RECOVERY.maintenance} / ${NUTRITION_RECOVERY.surplus}`, meaning: "deficit / maintenance / surplus" },
+      { symbol: `−${FUEL_DEADBAND_PCT * 100}% / +${FUEL_SURPLUS_PCT * 100}%`, value: "intake bands", meaning: "ASYMMETRIC on purpose — because logging runs low, a logged surplus is more likely real than a logged deficit, so the two directions do not carry the same evidence" },
+      { symbol: "protein", value: PROTEIN_RECOVERY_TIERS.map((t) => `${t.multiplier} (≥${t.minGPerKg} g/kg)`).join(" / "), meaning: "no bonus tier — the dose-response flattens near 1.6 g/kg, so paying a multiplier for 3 g/kg would be inventing an effect" },
+      { symbol: `±${ENERGY_BALANCE_THRESHOLD_PCT}%/wk`, value: "scale fallback", meaning: "the bodyweight trend's own band, unchanged — it did not lose its argument, it lost its monopoly" },
+    ],
+    note: "THE LOG LEADS, THE SCALE BACKS IT UP. The old rule was 'the scale, always': the scale is the outcome and the food log is the estimate, so an athlete losing weight IS in a deficit whatever the diary says. That reasoning is correct and it was still the wrong rule, because the scale answers LATE and sometimes never — bodyweightTrend needs three weigh-ins spanning a fortnight, water masks the first fortnight of any cut, and an athlete who never steps on a scale gets no answer at all, while their food log has held one since day four. So intake leads where it can clear fuel.ts's gates and the trend catches everyone else — including, by construction, the athlete whose logging is fiction, because a log too thin to clear the gates IS the fallback firing. PROTEIN HAS ONLY THE ONE PATH: there is no outcome measure for it, since the scale cannot tell you how much of a kilogram was muscle. It is a factor of its OWN rather than a nudge to energy availability, because they are different questions — energy decides whether there is fuel to repair with, protein decides whether there is material to repair from, and an athlete eating at maintenance on 0.9 g/kg is short of the second and fine on the first.",
+  },
+  {
     id: "readiness-spent",
     engine: "feelTiming",
     name: "Readiness on the spentness scale",
@@ -775,6 +812,24 @@ export interface WhatIf {
   /** Which modality the simulated sitting was. Defaults to dry sauna. */
   heatProtocol?: HeatProtocol;
   /**
+   * Answer the stack as if this athlete had been eating this percentage of
+   * their maintenance estimate (100 = at maintenance, 80 = 20% under).
+   *
+   * A PERCENTAGE rather than synthesised signals, unlike `whatIfHeat`, and the
+   * difference is forced by what the two terms are made of: a sauna is two
+   * numbers at one instant, so faking one is honest, while a fortnight of
+   * eating is a hundred rows against a maintenance estimate that is itself
+   * fitted to them — fabricating that would be simulating the ESTIMATOR, not
+   * the athlete. The question an operator actually has is "what would this
+   * athlete score at 20% under", and this asks exactly that: it overrides the
+   * ramp's input and leaves every other figure on the read intact and honest.
+   *
+   * Undefined leaves the athlete's real food log alone. It has no effect on an
+   * athlete whose log cannot support a reading at all — a what-if must not
+   * manufacture a term the real stack would refuse to compute.
+   */
+  intakePct?: number;
+  /**
    * Answer the stack as if this athlete had NO wearable at all.
    *
    * Not the same question as "what if their HRV were low", which is all the
@@ -842,6 +897,34 @@ export function whatIfHeat(signals: HeatSignalRow[], w: WhatIf, now: number): He
   ];
 }
 
+/**
+ * Re-score the fuel term as if the athlete had eaten `w.intakePct`% of their
+ * maintenance estimate.
+ *
+ * Recomputes the ramp from the stated shortfall rather than re-running
+ * `fuelAdjustment` on fabricated rows — see `WhatIf.intakePct` for why that is
+ * the honest simulation here. Everything on the returned `balance` that the
+ * override does not touch (days logged, maintenance, its basis, protein) is the
+ * athlete's REAL read, so the panel cannot end up quoting invented evidence for
+ * a simulated number. Insufficient reads pass through untouched: a what-if must
+ * not manufacture a term the real stack refuses to compute.
+ */
+export function whatIfFuel(fuel: FuelAdjustment, w: WhatIf): FuelAdjustment {
+  if (w.intakePct == null || !fuel.balance.sufficient || fuel.balance.maintenance == null) return fuel;
+  const maintenance = fuel.balance.maintenance;
+  const avgIntake = Math.round((Math.max(0, w.intakePct) / 100) * maintenance);
+  const balanceKcal = avgIntake - maintenance;
+  const balancePct = Math.round((balanceKcal / maintenance) * 10000) / 10000;
+  const shortfall = -balancePct;
+  const span = FUEL_SATURATION_PCT - FUEL_DEADBAND_PCT;
+  const severity = span > 0 ? Math.max(0, Math.min(1, (shortfall - FUEL_DEADBAND_PCT) / span)) : 0;
+  return {
+    points: -Math.round(FUEL_PENALTY_MAX * severity),
+    severity,
+    balance: { ...fuel.balance, avgIntake, balanceKcal, balancePct },
+  };
+}
+
 /** The full materialized computation for one athlete — what the console renders. */
 export interface EngineTrace {
   state: PerformanceState;
@@ -861,6 +944,14 @@ export interface EngineTrace {
    * console is the only place that distinction can be checked.
    */
   heat: HeatAdjustment;
+  /**
+   * The energy-availability read, WHOLE — the rolling intake, the maintenance
+   * it was measured against, the protein average, and whether the log could
+   * support any of it. Present even when it contributed nothing, because
+   * "computed and found insufficient" and "never computed" are different facts
+   * about an athlete and the console is the only place that can be checked.
+   */
+  fuel: FuelAdjustment;
 }
 
 /**
@@ -875,20 +966,29 @@ export function computeEngineTrace(
     /** The athlete's `sauna` / `saunaTemp` rows. Omitted = no heat term, which
      *  scores exactly what this athlete scored before heat existed. */
     heatSignals?: HeatSignalRow[];
+    /** The athlete's `energyIntake` / `protein` / `bodyMass` rows. Omitted = no
+     *  fuel term, which scores exactly what this athlete scored before the
+     *  nutrition join existed. */
+    nutritionSignals?: FuelSignalRow[];
+    /** A fuel read computed by the caller — pass this to apply a what-if
+     *  (`whatIfFuel`) rather than re-deriving it from signals here. */
+    fuel?: FuelAdjustment;
     now?: number;
   },
 ): EngineTrace {
   const weights = opts?.weights ?? HYBRID_WEIGHTS;
   const heat = heatAdjustment(opts?.heatSignals ?? [], { now: opts?.now, bio });
-  const state = computePerformanceState(log, bio, weights, heat.points);
+  const fuel = opts?.fuel ?? fuelAdjustment(opts?.nutritionSignals ?? [], { now: opts?.now });
+  const state = computePerformanceState(log, bio, weights, heat.points, fuel.points);
   return {
     state,
     injury: computeInjuryRisk(log, bio, opts?.coeffs ?? PRIOR_COEFFS, {
       spikeOnset: opts?.spikeOnset,
     }),
-    trajectory: performanceTrajectory(log, opts?.days ?? 14, bio, heat.points),
+    trajectory: performanceTrajectory(log, opts?.days ?? 14, bio, heat.points, fuel.points),
     enduranceFatigue: enduranceFatigue(state.fatigue),
-    deficit: readinessDeficit(log, bio, heat.points),
+    deficit: readinessDeficit(log, bio, heat.points, fuel.points),
     heat,
+    fuel,
   };
 }

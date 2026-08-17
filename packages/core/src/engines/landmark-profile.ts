@@ -73,8 +73,24 @@ export interface AthleteVolumeProfile {
   sleep?: number;
   /** Life stress, 1–5 (5 = very stressed). Matches the check-in scale. */
   stress?: number;
-  /** Energy availability — a deficit is the biggest single recovery tax. */
+  /**
+   * Energy availability — a deficit is the biggest single recovery tax.
+   *
+   * DERIVED from the food log where there is one (`energyStateFromIntake`),
+   * from the bodyweight trend where there is not, and typed only when the
+   * athlete overrules both. See landmark-context.ts for that precedence.
+   */
   nutrition?: "deficit" | "maintenance" | "surplus";
+  /**
+   * Mean daily protein in grams per kg of body mass.
+   *
+   * The other half of the nutrition join, and a SEPARATE factor from energy
+   * availability rather than a refinement of it: an athlete can eat at
+   * maintenance and still under-eat protein, and it is protein that limits the
+   * repair the MRV ceiling is a ceiling on. Always measured (engines/fuel.ts),
+   * never asked — the log already holds the answer.
+   */
+  proteinGPerKg?: number;
   /** Training sessions per week — frequency spreads the same weekly sets. */
   daysPerWeek?: number;
   /**
@@ -88,7 +104,7 @@ export interface AthleteVolumeProfile {
 
 /** One multiplier and why it applies — the audit trail behind the numbers. */
 export interface LandmarkFactor {
-  key: "experience" | "age" | "bodyweight" | "sleep" | "stress" | "nutrition" | "frequency" | "clearance" | "heat";
+  key: "experience" | "age" | "bodyweight" | "sleep" | "stress" | "nutrition" | "protein" | "frequency" | "clearance" | "heat";
   /** Which end of the band it moves. */
   affects: "stimulus" | "recovery" | "both";
   /** The multiplier applied, e.g. 0.88. */
@@ -125,6 +141,40 @@ export const SLEEP_RECOVERY = [1, 0.78, 0.86, 0.94, 1, 1.05];
 /** Stress 1–5 (5 = worst) → recovery multiplier (index 0 unused). */
 export const STRESS_RECOVERY = [1, 1.04, 1, 0.95, 0.88, 0.8];
 export const NUTRITION_RECOVERY = { deficit: 0.85, maintenance: 1, surplus: 1.05 } as const;
+
+/**
+ * Daily protein (g per kg of body mass) → recovery multiplier.
+ *
+ * A DIFFERENT QUESTION FROM ENERGY AVAILABILITY, which is why it is a factor of
+ * its own rather than a nudge to that one: energy decides whether there is fuel
+ * to repair with, protein decides whether there is material to repair FROM, and
+ * an athlete eating at maintenance on 0.9 g/kg is short of the second while
+ * perfectly fine on the first. Both compound, and RECOVERY_BOUNDS clamps the
+ * product, so the two cannot multiply into anything absurd.
+ *
+ * THERE IS NO BONUS TIER, and that is the honest part. The dose-response for
+ * protein and training adaptation flattens around 1.6 g/kg — the meta-analytic
+ * breakpoint most often quoted, and the number the app's own targets are built
+ * on (nutrition.ts sets protein from bodyweight at 1.8–2.2 g/kg, i.e. clear of
+ * it with room to spare). Above the plateau more protein does not buy more
+ * recovered sets, so paying a multiplier for 3 g/kg would be inventing an
+ * effect. The tiers only ever describe a SHORTFALL, and the deepest of them is
+ * 6% — smaller than sleep's worst (22%) because the evidence for protein's
+ * effect on weekly set tolerance specifically is thinner than the evidence for
+ * sleep's, not because the effect is thought to be small.
+ */
+export const PROTEIN_RECOVERY_TIERS: readonly { minGPerKg: number; multiplier: number }[] = [
+  { minGPerKg: 1.6, multiplier: 1 },
+  { minGPerKg: 1.2, multiplier: 0.98 },
+  { minGPerKg: 0, multiplier: 0.94 },
+];
+
+/** The multiplier a given mean daily protein intake earns. Non-finite or
+ *  non-positive returns the identity: an absent figure is not a shortfall. */
+export function proteinRecovery(gPerKg: number): number {
+  if (!Number.isFinite(gPerKg) || gPerKg <= 0) return 1;
+  return PROTEIN_RECOVERY_TIERS.find((t) => gPerKg >= t.minGPerKg)?.multiplier ?? 1;
+}
 
 /**
  * Sauna sittings per week → recovery multiplier.
@@ -260,6 +310,15 @@ export function personalizeLandmarks(
     if (m !== 1) factors.push({ key: "nutrition", affects: "recovery", multiplier: m, value: profile.nutrition });
   }
 
+  const protein = num(profile.proteinGPerKg);
+  if (protein !== undefined && protein > 0) {
+    const m = proteinRecovery(protein);
+    recovery *= m;
+    if (m !== 1) {
+      factors.push({ key: "protein", affects: "recovery", multiplier: m, value: `${Math.round(protein * 10) / 10} g/kg` });
+    }
+  }
+
   const days = num(profile.daysPerWeek);
   if (days !== undefined && days > 0) {
     const m = frequencyRecovery(Math.round(days));
@@ -291,8 +350,19 @@ export function personalizeLandmarks(
   // practice, and would have quietly dropped every existing athlete from 1.0 to
   // 0.9 the day this shipped. It moves the multiplier; it does not judge how
   // well we know them.
+  //
+  // PROTEIN IS OUT FOR THE SAME REASON, and the parallel is exact. Every
+  // athlete eats protein; only an athlete who logs their food has TOLD us how
+  // much, and food logging is a practice rather than a fact about the body.
+  // Counting it would put a permanent ceiling on everyone who doesn't log, for
+  // declining a practice — the precise failure the heat review caught. Note the
+  // energy-availability field above IS counted, and that is not an
+  // inconsistency: `nutrition` is answerable from the bodyweight trend alone
+  // (landmark-context.ts), so an athlete who never opens the food tracker can
+  // still supply it. Protein has no such fallback — there is no way to know it
+  // except to be told.
   const supplied = [exp, age, bw, sleep, stress, profile.nutrition, days].filter((v) => v !== undefined && v !== null).length;
-  const personalized = supplied > 0 || heat !== undefined;
+  const personalized = supplied > 0 || heat !== undefined || protein !== undefined;
   // Experience is worth more than any other single input, so a profile with
   // only experience already clears half-confidence.
   const weight = (exp ? 3 : 0) + supplied - (exp ? 1 : 0);

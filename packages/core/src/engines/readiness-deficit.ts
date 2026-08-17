@@ -24,11 +24,12 @@ import { ALL_MUSCLES } from "./movements";
  *
  *     score = clamp(35..98, round(100 − avg(muscle fatigue) × MUSCLE_SLOPE
  *                                     − enduranceFatigue × ENDURANCE_SLOPE
- *                                     + wearable))
+ *                                     + wearable + heat + fuel))
  *
- * Three real causes — the seven tissues averaged, the energy-system load
- * conditioning leaves behind, and the wearable's ±15 nudge — plus the two
- * clamps. The conditioning term is here because THIS MODULE FOUND IT MISSING:
+ * Four real causes — the seven tissues averaged, the energy-system load
+ * conditioning leaves behind, the wearable's ±15 nudge, and the energy
+ * availability the food log measures — plus the two clamps. The conditioning
+ * term is here because THIS MODULE FOUND IT MISSING:
  * the sum law refuses to draw a cause the score doesn't have, so when the ring
  * tried to give conditioning an arc the arithmetic said its cost was zero. It
  * was: readiness counted muscle fatigue and the wearable and nothing else, so
@@ -43,6 +44,13 @@ import { ALL_MUSCLES } from "./movements";
  * here is therefore "this tissue's share of TODAY's deficit", not a gross
  * figure — which is the only reading under which the parts can sum to the
  * whole. The wearable's own sentence still says +3 in the drawer.
+ *
+ * THE FUEL TERM IS THE EXACT MIRROR OF THAT, which is why it DOES get a kind:
+ * `fuelAdjustment` is never positive by construction (engines/fuel.ts), so it
+ * can never be invisible the way a credit is, and a term that only ever takes
+ * points must be drawable or the sum law catches it. An athlete who under-ate
+ * for a fortnight now sees where those points went instead of watching them
+ * disappear into "tissue".
  */
 
 /** What a single deficit cost is. */
@@ -51,6 +59,8 @@ export type ReadinessCostKind =
   | "tissue"
   /** energy-system load from conditioning */
   | "conditioning"
+  /** rolling logged intake under this athlete's own maintenance estimate */
+  | "fuel"
   /** the wearable, when it took points off */
   | "wearable"
   /** the scale's own ceiling — readiness never reads above 98 */
@@ -85,6 +95,14 @@ export interface ReadinessDeficit {
    * would otherwise be invisible on the card.
    */
   heatAdj: number;
+  /**
+   * The energy-availability term, −FUEL_PENALTY_MAX..0. UNLIKE `heatAdj` this
+   * one always has a matching `fuel` cost when it is non-zero, because it can
+   * only ever take points — a term that is never positive is never invisible.
+   * It is carried here anyway so a surface can quote the signed figure beside
+   * the arc without recomputing the read.
+   */
+  fuelAdj: number;
   /** Which engine clamp the score hit, if either. */
   clamped: "floor" | "ceiling" | null;
 }
@@ -92,6 +110,7 @@ export interface ReadinessDeficit {
 export const READINESS_COST_KEY: Record<ReadinessCostKind, string> = {
   tissue: "w.home.readiness.costTissue",
   conditioning: "w.home.readiness.costConditioning",
+  fuel: "w.home.readiness.costFuel",
   wearable: "w.home.readiness.costWearable",
   ceiling: "w.home.readiness.costCeiling",
 };
@@ -125,9 +144,9 @@ export function apportion(weights: number[], total: number): number[] {
  * points are apportioned, so the integers are computed once against the number
  * of arcs actually drawn and can't drift when two small tissues become one.
  */
-export function readinessDeficit(log: TrainingLog, bio?: Biometrics, heatAdj = 0): ReadinessDeficit {
+export function readinessDeficit(log: TrainingLog, bio?: Biometrics, heatAdj = 0, fuelAdj = 0): ReadinessDeficit {
   const fatigue = computeFatigue(log);
-  const { score, bioAdj, heatAdj: heat } = computeReadiness(fatigue, bio, heatAdj);
+  const { score, bioAdj, heatAdj: heat, fuelAdj: fuel } = computeReadiness(fatigue, bio, heatAdj, fuelAdj);
   const kept = score;
   const deficit = 100 - kept;
 
@@ -135,12 +154,15 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics, heatAdj = 0
   const rawMuscle = MUSCLE_SLOPE * (ALL_MUSCLES.reduce((a, m) => a + fatigue.muscles[m], 0) / ALL_MUSCLES.length);
   const rawConditioning = ENDURANCE_SLOPE * enduranceFatigue(fatigue);
   const rawWearable = bioAdj < 0 ? -bioAdj : 0;
+  // Never positive by construction, so this is the whole term rather than the
+  // negative half of a signed one.
+  const rawFuel = fuel < 0 ? -fuel : 0;
 
-  const unclamped = Math.round(100 - rawMuscle - rawConditioning + bioAdj + heat);
+  const unclamped = Math.round(100 - rawMuscle - rawConditioning + bioAdj + heat + fuel);
   const clamped: ReadinessDeficit["clamped"] =
     unclamped < READINESS_FLOOR ? "floor" : unclamped > READINESS_CEILING ? "ceiling" : null;
 
-  if (deficit <= 0) return { kept, deficit: 0, costs: [], bioAdj, heatAdj: heat, clamped };
+  if (deficit <= 0) return { kept, deficit: 0, costs: [], bioAdj, heatAdj: heat, fuelAdj: fuel, clamped };
 
   // ── THE CAUSES. There are two, and the structure is FIXED ──
   //
@@ -162,6 +184,10 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics, heatAdj = 0
   const raw: Raw[] = [];
   if (rawMuscle > 0) raw.push({ kind: "tissue", muscle: heaviest, weight: rawMuscle, role: "danger" });
   if (rawConditioning > 0) raw.push({ kind: "conditioning", muscle: null, weight: rawConditioning, role: "info" });
+  // Fuel sits between what the athlete DID (tissue, conditioning) and what was
+  // READ about them (the wearable), which is also where it belongs on the ring:
+  // it is the first cause here that comes from a different column of the app.
+  if (rawFuel > 0) raw.push({ kind: "fuel", muscle: null, weight: rawFuel, role: "caution" });
   if (rawWearable > 0) raw.push({ kind: "wearable", muscle: null, weight: rawWearable, role: "caution" });
 
   // Nothing measurable took the points — the only thing that can be true here
@@ -173,6 +199,7 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics, heatAdj = 0
       costs: [{ kind: "ceiling", key: READINESS_COST_KEY.ceiling, muscle: null, points: deficit, role: "neutral" }],
       bioAdj,
       heatAdj: heat,
+      fuelAdj: fuel,
       clamped: clamped ?? "ceiling",
     };
   }
@@ -189,7 +216,7 @@ export function readinessDeficit(log: TrainingLog, bio?: Biometrics, heatAdj = 0
     }))
     .filter((c) => c.points > 0);
 
-  return { kept, deficit, costs, bioAdj, heatAdj: heat, clamped };
+  return { kept, deficit, costs, bioAdj, heatAdj: heat, fuelAdj: fuel, clamped };
 }
 
 /* ── THE RING ─────────────────────────────────────────────────────────────── */
@@ -249,8 +276,9 @@ export interface RingSegment {
  *
  * Three rules the spec fixes, all enforced here so neither client can drift:
  *
- *   FIXED ORDER    kept, then tissues, then the wearable, then the ceiling —
- *                  never sorted by value. If the order moved with the numbers
+ *   FIXED ORDER    kept, then tissue, then conditioning, then fuel, then the
+ *                  wearable, then the ceiling — never sorted by value. If the
+ *                  order moved with the numbers
  *                  the card would stop being learnable, which is the entire
  *                  reason we moved off prose.
  *   MINIMUM ARC    every cost gets at least one tick, taken from the largest

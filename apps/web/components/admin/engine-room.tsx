@@ -40,6 +40,18 @@ import {
   CLEARANCE_SLOW,
   MIN_RECOVERY_PAIRS,
   whatIfHeat,
+  whatIfFuel,
+  fuelAdjustment,
+  sampleNutritionSignals,
+  FUEL_DEADBAND_PCT,
+  FUEL_MIN_DAYS,
+  FUEL_MIN_DAY_KCAL,
+  FUEL_PENALTY_MAX,
+  FUEL_WINDOW_DAYS,
+  FUEL_MAINTENANCE_DAYS,
+  proteinRecovery,
+  type FuelAdjustment,
+  type Signal,
   HEAT_CREDIT_MAX,
   HEAT_PROTOCOLS,
   HEAT_PROTOCOL_LIST,
@@ -111,6 +123,10 @@ type Feed = {
   /** The athlete's `sauna` / `saunaTemp` rows, queried on their own so an
    *  unrelated stream can't evict them (see lib/athlete-state.ts). */
   heatSignals?: HeatSignalRow[];
+  /** Their `energyIntake` / `protein` / `bodyMass` rows, likewise on their own —
+   *  and here the crowding argument runs the other way: nutrition is the stream
+   *  that evicts everything else (see lib/athlete-state.ts). */
+  nutritionSignals?: Signal[];
   /** Their check-in history, every read each day carries — the input side of a
    *  recovery pair. */
   recovery?: RecoveryReport[];
@@ -147,19 +163,23 @@ type WhatIfState = {
   /** A simulated sitting: minutes, °C, and how long ago. Null = leave the
    *  athlete's real heat log alone (0 minutes is how you ask for "none"). */
   heatMinutes: number | null; heatTempC: number; heatHoursAgo: number; heatProtocol: HeatProtocol;
+  /** Eat this percentage of the maintenance estimate. Null = leave the
+   *  athlete's real food log alone (100 is how you ask for "at maintenance"). */
+  intakePct: number | null;
   /** Run the stack as if this athlete had no wearable at all. */
   noWearable: boolean;
 };
 const WHATIF_OFF: WhatIfState = {
   loadPct: 100, hrv: null, restingHr: null, sleep: null,
-  heatMinutes: null, heatTempC: HEAT_REF_C, heatHoursAgo: 10, heatProtocol: "sauna", noWearable: false,
+  heatMinutes: null, heatTempC: HEAT_REF_C, heatHoursAgo: 10, heatProtocol: "sauna",
+  intakePct: null, noWearable: false,
 };
 
 type Scenario = { id: string; name: string; whatIf: WhatIfState };
 
 /** Ready-made scenarios so comparison starts with one click. Biometric
  *  overrides are RELATIVE (pct of baseline) so they fit any athlete. */
-const SCENARIO_PRESETS: { name: string; loadPct: number; hrvPct?: number; sleepH?: number; heatMinutes?: number; heatTempC?: number; noWearable?: boolean }[] = [
+const SCENARIO_PRESETS: { name: string; loadPct: number; hrvPct?: number; sleepH?: number; heatMinutes?: number; heatTempC?: number; intakePct?: number; noWearable?: boolean }[] = [
   { name: "Crashed recovery", loadPct: 100, hrvPct: 65, sleepH: 5 },
   { name: "Eased week (50%)", loadPct: 50 },
   { name: "Overreached (150%)", loadPct: 150 },
@@ -167,6 +187,9 @@ const SCENARIO_PRESETS: { name: string; loadPct: number; hrvPct?: number; sleepH
   // stands down for a measurement — so the preset that demonstrates it has to
   // be one, or the panel reads +0 and the slider looks broken.
   { name: "No wearable, sauna last night", loadPct: 100, heatMinutes: 25, heatTempC: 90, noWearable: true },
+  // THE DEMO THE WHOLE JOIN EXISTS FOR: identical training, identical wearable,
+  // a readiness number that knows the athlete has been eating 25% under.
+  { name: "Aggressive cut (75% of maintenance)", loadPct: 100, intakePct: 75 },
 ];
 
 // Feeling accent → the app's semantic tokens (same mapping READINESS_FACE uses).
@@ -241,17 +264,25 @@ export default function EngineRoom() {
 
   const whatIfActive =
     whatIf.loadPct !== 100 || whatIf.hrv != null || whatIf.restingHr != null || whatIf.sleep != null ||
-    whatIf.heatMinutes != null || whatIf.noWearable;
+    whatIf.heatMinutes != null || whatIf.intakePct != null || whatIf.noWearable;
 
   // Frozen once per athlete: `heatAdjustment` decays against the clock, and a
   // console whose arithmetic drifts between two renders cannot be checked
   // against the athlete's card.
   const now = useMemo(() => Date.now(), [feed]);
   const heatSignals: HeatSignalRow[] = useMemo(() => feed?.heatSignals ?? sampleHeatSignals(now), [feed, now]);
+  const nutritionSignals: Signal[] = useMemo(
+    () => feed?.nutritionSignals ?? (sampleNutritionSignals(now) as Signal[]),
+    [feed, now],
+  );
+  // The REAL fuel read, computed once. The what-if overrides the ramp's input
+  // rather than the signals (see whatIfFuel), so every figure on the panel that
+  // the operator did not move stays the athlete's own.
+  const fuel = useMemo(() => fuelAdjustment(nutritionSignals, { now }), [nutritionSignals, now]);
 
   const base = useMemo(
-    () => computeEngineTrace(log, bio, { weights, coeffs, spikeOnset, heatSignals, now }),
-    [log, bio, weights, coeffs, spikeOnset, heatSignals, now],
+    () => computeEngineTrace(log, bio, { weights, coeffs, spikeOnset, heatSignals, fuel, now }),
+    [log, bio, weights, coeffs, spikeOnset, heatSignals, fuel, now],
   );
   // The transformed inputs are shared by the headline trace, the derivations,
   // and the feeling lab, so everything on screen describes the SAME state.
@@ -275,12 +306,16 @@ export default function EngineRoom() {
     () => (whatIfActive ? whatIfHeat(heatSignals, { heatMinutes: whatIf.heatMinutes ?? undefined, heatTempC: whatIf.heatTempC, heatHoursAgo: whatIf.heatHoursAgo, heatProtocol: whatIf.heatProtocol }, now) : heatSignals),
     [whatIfActive, heatSignals, whatIf.heatMinutes, whatIf.heatTempC, whatIf.heatHoursAgo, whatIf.heatProtocol, now],
   );
+  const simFuel = useMemo(
+    () => (whatIfActive ? whatIfFuel(fuel, { intakePct: whatIf.intakePct ?? undefined }) : fuel),
+    [whatIfActive, fuel, whatIf.intakePct],
+  );
   const sim = useMemo(
     () =>
       whatIfActive
-        ? computeEngineTrace(simLog, simBio, { weights, coeffs, spikeOnset, heatSignals: simHeatSignals, now })
+        ? computeEngineTrace(simLog, simBio, { weights, coeffs, spikeOnset, heatSignals: simHeatSignals, fuel: simFuel, now })
         : base,
-    [whatIfActive, simLog, simBio, weights, coeffs, spikeOnset, simHeatSignals, now, base],
+    [whatIfActive, simLog, simBio, weights, coeffs, spikeOnset, simHeatSignals, simFuel, now, base],
   );
 
   // Step-by-step derivations of the state on screen (simulated when a what-if
@@ -289,7 +324,7 @@ export default function EngineRoom() {
     () => heatAdjustment(simHeatSignals, { now, bio: simBio }),
     [simHeatSignals, now, simBio],
   );
-  const readinessDeriv = useMemo(() => deriveReadiness(simLog, simBio, simHeat), [simLog, simBio, simHeat]);
+  const readinessDeriv = useMemo(() => deriveReadiness(simLog, simBio, simHeat, simFuel), [simLog, simBio, simHeat, simFuel]);
 
   // DOES HEAT HELP *THIS* ATHLETE — measured, not assumed. Deliberately computed
   // from the REAL inputs rather than the simulated ones: a what-if scales
@@ -313,7 +348,8 @@ export default function EngineRoom() {
       scenarios.map((s) => {
         const active =
           s.whatIf.loadPct !== 100 || s.whatIf.hrv != null || s.whatIf.restingHr != null ||
-          s.whatIf.sleep != null || s.whatIf.heatMinutes != null || s.whatIf.noWearable;
+          s.whatIf.sleep != null || s.whatIf.heatMinutes != null ||
+          s.whatIf.intakePct != null || s.whatIf.noWearable;
         const t = active
           ? computeEngineTrace(
               whatIfLog(log, s.whatIf.loadPct),
@@ -331,12 +367,13 @@ export default function EngineRoom() {
                   heatHoursAgo: s.whatIf.heatHoursAgo,
                   heatProtocol: s.whatIf.heatProtocol,
                 }, now),
+                fuel: whatIfFuel(fuel, { intakePct: s.whatIf.intakePct ?? undefined }),
               },
             )
           : base;
         return { ...s, trace: t };
       }),
-    [scenarios, log, bio, weights, coeffs, spikeOnset, base],
+    [scenarios, log, bio, weights, coeffs, spikeOnset, heatSignals, fuel, now, base],
   );
 
   const addScenario = (name: string, w: WhatIfState) => {
@@ -351,6 +388,7 @@ export default function EngineRoom() {
       restingHr: null,
       sleep: p.sleepH ?? null,
       ...(p.heatMinutes != null ? { heatMinutes: p.heatMinutes, heatTempC: p.heatTempC ?? HEAT_REF_C } : {}),
+      ...(p.intakePct != null ? { intakePct: p.intakePct } : {}),
       noWearable: !!p.noWearable,
     });
   };
@@ -520,6 +558,13 @@ export default function EngineRoom() {
            that distinction can be checked. */}
       <HeatPanel heat={t.heat} whatIfActive={whatIfActive} />
 
+      {/* ---- THE NUTRITION → TRAINING JOIN ----
+           Rendered whenever a fuel read was ATTEMPTED, including when it came
+           back insufficient — "this athlete logs nothing" and "this athlete
+           eats at maintenance" are opposite findings that would otherwise be
+           indistinguishable, both rendering as a term worth zero. */}
+      <FuelPanel fuel={t.fuel} whatIfActive={whatIfActive} />
+
       {/* ---- HEAT, MEASURED RATHER THAN ASSUMED ---- */}
       {clearance && <ClearancePanel clearance={clearance} />}
 
@@ -612,6 +657,28 @@ export default function EngineRoom() {
             max={HEAT_WINDOW_H}
             step={1}
             onChange={(v) => setWhatIf({ ...whatIf, heatHoursAgo: v })}
+          />
+          {/* EATING, as a percentage of this athlete's OWN maintenance estimate
+              rather than as synthesised food rows. A sauna is two numbers at
+              one instant, so faking one is honest; a fortnight of eating is a
+              hundred rows against a maintenance figure that is itself fitted to
+              them, and fabricating that would simulate the estimator instead of
+              the athlete. This asks the question an operator actually has. */}
+          <Slider
+            label="Eating — % of maintenance"
+            disabled={!fuel.balance.sufficient}
+            value={whatIf.intakePct ?? 100}
+            display={
+              !fuel.balance.sufficient
+                ? "log too thin to simulate"
+                : whatIf.intakePct == null
+                  ? "as logged"
+                  : `${whatIf.intakePct}% (${Math.round(((fuel.balance.maintenance ?? 0) * whatIf.intakePct) / 100)} kcal)`
+            }
+            min={50}
+            max={130}
+            step={5}
+            onChange={(v) => setWhatIf({ ...whatIf, intakePct: v })}
           />
           {/* NOT a slider, because it is not a magnitude. The three overrides
               above can only retune a reading; they cannot ask the question most
@@ -1320,11 +1387,11 @@ function HeatPanel({ heat, whatIfActive }: { heat: HeatAdjustment; whatIfActive:
           </div>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: `4px ${space.lg}px`, marginTop: 12 }}>
-            <HeatFig label="equivalent min" value={heat.equivMin.toFixed(1)} />
-            <HeatFig label="dose" value={heat.dose.toFixed(2)} />
-            <HeatFig label="hours since" value={(heat.hoursSince ?? 0).toFixed(1)} />
-            <HeatFig label="decay" value={heat.decay.toFixed(2)} />
-            <HeatFig label="dose × decay" value={(heat.dose * heat.decay).toFixed(2)} />
+            <Fig label="equivalent min" value={heat.equivMin.toFixed(1)} />
+            <Fig label="dose" value={heat.dose.toFixed(2)} />
+            <Fig label="hours since" value={(heat.hoursSince ?? 0).toFixed(1)} />
+            <Fig label="decay" value={heat.decay.toFixed(2)} />
+            <Fig label="dose × decay" value={(heat.dose * heat.decay).toFixed(2)} />
           </div>
 
           {heat.assumed && (
@@ -1389,9 +1456,9 @@ function ClearancePanel({ clearance }: { clearance: HeatClearance }) {
             </Mono>
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: `4px ${space.lg}px`, marginTop: 12 }}>
-            <HeatFig label="after heat" value={withHeat.index.toFixed(3)} />
-            <HeatFig label="without" value={withoutHeat.index.toFixed(3)} />
-            <HeatFig label="confidence" value={confidence.toFixed(2)} />
+            <Fig label="after heat" value={withHeat.index.toFixed(3)} />
+            <Fig label="without" value={withoutHeat.index.toFixed(3)} />
+            <Fig label="confidence" value={confidence.toFixed(2)} />
           </div>
         </>
       )}
@@ -1399,7 +1466,105 @@ function ClearancePanel({ clearance }: { clearance: HeatClearance }) {
   );
 }
 
-function HeatFig({ label, value }: { label: string; value: string }) {
+/**
+ * THE NUTRITION → TRAINING JOIN, as arithmetic an operator can argue with.
+ *
+ * This panel exists for the same reason the heat one does and answers a
+ * sharper version of the question. The fuel term reads zero in two completely
+ * different situations — the athlete eats at maintenance, or the athlete logs
+ * nothing we can use — and every athlete-facing surface renders those
+ * identically, because both are simply an arc that isn't drawn. Here they must
+ * not be: one is a finding about their eating and the other is a finding about
+ * their LOGGING, and an operator answering "why is this athlete's readiness
+ * high" needs to know which.
+ *
+ * So a read that came back insufficient prints its reason and the gates it
+ * missed, rather than being skipped as "nothing to show".
+ */
+function FuelPanel({ fuel, whatIfActive }: { fuel: FuelAdjustment; whatIfActive: boolean }) {
+  const b = fuel.balance;
+  const pct = b.balancePct == null ? null : Math.round(b.balancePct * 100);
+  const accent = !b.sufficient ? ASH : fuel.points < 0 ? AMBER : LIME;
+  const proteinMult = b.proteinGPerKg != null ? proteinRecovery(b.proteinGPerKg) : null;
+  const REASON: Record<string, string> = {
+    noLog: `nothing logged in the last ${b.windowDays} days`,
+    tooFewDays: `only ${b.days} usable day${b.days === 1 ? "" : "s"} — needs ${FUEL_MIN_DAYS}`,
+    noMaintenance: "no maintenance estimate yet (needs a weigh-in or a bodyweight)",
+  };
+  return (
+    <Card style={{ borderLeft: `3px solid ${b.sufficient ? accent : LINE}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.sm, flexWrap: "wrap" }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={accent}>
+          Energy availability &ndash; the column that was typed and never read
+        </Mono>
+        <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>
+          {whatIfActive ? "simulated \u2013 " : ""}
+          {b.days} of {b.windowDays} days logged
+        </Mono>
+      </div>
+
+      {!b.sufficient ? (
+        <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 6, lineHeight: 1.5 }}>
+          Term ABSENT, not zero &mdash; {REASON[b.reason ?? "noLog"] ?? b.reason}. A day counts only once it
+          clears {FUEL_MIN_DAY_KCAL} kcal (below that it is a gap in the record, not a fast), and today is
+          excluded because a day in progress is a day with dinner still ahead of it. This is
+          distinguishable from &ldquo;eats at maintenance&rdquo; ONLY here: on the athlete&rsquo;s own card both are an
+          arc that isn&rsquo;t drawn.
+        </Mono>
+      ) : (
+        <>
+          <div style={{ display: "flex", alignItems: "baseline", gap: space.md, marginTop: 10, flexWrap: "wrap" }}>
+            <span style={{ ...disp, fontSize: 34, lineHeight: 1, color: txt(accent) }}>
+              {fuel.points === 0 ? "\u00b10" : `\u2212${Math.abs(fuel.points)}`}
+            </span>
+            <Mono s={{ fontSize: fs.caption, lineHeight: 1.5 }}>
+              {fuel.points === 0
+                ? `inside the ${Math.round(FUEL_DEADBAND_PCT * 100)}% deadband \u2014 logged intake runs 10\u201320% low in any population, so a paper deficit this size is more likely the logging than the athlete.`
+                : `eating ${Math.abs(pct ?? 0)}% under maintenance \u2014 capped at ${FUEL_PENALTY_MAX} against the wearable\u2019s \u00b115, and NOT suppressed by a wearable: HRV measures autonomic state, this measures fuel.`}
+            </Mono>
+          </div>
+
+          <div style={{ display: "flex", flexWrap: "wrap", gap: `4px ${space.lg}px`, marginTop: 12 }}>
+            <Fig label={`mean intake, ${b.windowDays} d`} value={`${b.avgIntake} kcal`} />
+            <Fig label={`maintenance, ${FUEL_MAINTENANCE_DAYS} d`} value={`${b.maintenance} kcal`} />
+            <Fig label="balance" value={`${(b.balanceKcal ?? 0) > 0 ? "+" : "\u2212"}${Math.abs(b.balanceKcal ?? 0)} kcal`} />
+            <Fig label="of maintenance" value={`${(pct ?? 0) > 0 ? "+" : "\u2212"}${Math.abs(pct ?? 0)}%`} />
+            <Fig label="severity" value={fuel.severity.toFixed(2)} />
+          </div>
+
+          <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 10, lineHeight: 1.5 }} c={ASH}>
+            Maintenance basis: {b.maintenanceBasis}. KNOWN CIRCULARITY, stated rather than hidden &mdash; that
+            estimate is itself partly fitted to logged intake, and the two windows overlap, which pulls it
+            TOWARD recent eating and shrinks the measured gap. The term therefore understates a deficit and
+            can never overstate one, which is the right direction of error for something that takes points
+            off an athlete.
+          </Mono>
+        </>
+      )}
+
+      {b.proteinGPerKg != null && (
+        <div style={{ borderTop: `1px solid ${LINE}`, marginTop: 12, paddingTop: 10 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: `4px ${space.lg}px` }}>
+            <Fig label="protein" value={`${b.proteinGPerKg.toFixed(2)} g/kg`} />
+            <Fig label="over" value={`${b.proteinDays} day${b.proteinDays === 1 ? "" : "s"}`} />
+            <Fig label="body mass" value={b.bodyMassKg ? `${b.bodyMassKg.toFixed(1)} kg` : "\u2014"} />
+            <Fig label="MRV multiplier" value={proteinMult != null ? proteinMult.toFixed(2) : "\u2014"} />
+          </div>
+          <Mono s={{ fontSize: fs.nano, display: "block", marginTop: 8, lineHeight: 1.5 }} c={ASH}>
+            Protein moves the VOLUME CEILING, not today&rsquo;s readiness &mdash; it decides the material available
+            for repair, which is a ceiling question rather than a today question.
+            {b.proteinSufficient ? "" : ` Below the ${FUEL_MIN_DAYS}-day floor, so it is shown here and not applied.`}
+          </Mono>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/** One small labelled figure. Named for its shape rather than its subject: it
+ *  started life inside the heat panel and is now what the clearance split and
+ *  the fuel read print their arithmetic with too. */
+function Fig({ label, value }: { label: string; value: string }) {
   return (
     <span style={{ display: "inline-flex", alignItems: "baseline", gap: 7 }}>
       <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".1em" }} c={ASH}>{label}</Mono>
@@ -1465,6 +1630,7 @@ function DeficitBar({ deficit, whatIfActive }: { deficit: ReadinessDeficit; what
 const COST_LABEL: Record<ReadinessCost["kind"], string> = {
   tissue: "tissue",
   conditioning: "conditioning",
+  fuel: "fuel",
   wearable: "wearable",
   ceiling: "scale ceiling",
 };

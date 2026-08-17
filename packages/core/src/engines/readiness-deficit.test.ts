@@ -248,6 +248,7 @@ describe("the ring's paint — every run distinguishable, in every band", () => 
       { kind: "wearable", key: READINESS_COST_KEY.wearable, muscle: null, points: 2, role: "caution" },
     ],
     bioAdj: -2,
+    fuelAdj: 0,
     heatAdj: 0,
     clamped: null,
   });

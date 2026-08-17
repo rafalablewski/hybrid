@@ -480,10 +480,13 @@ const NUTRITION_KEY = { deficit: "w.analyze.vol.nutDeficit", maintenance: "w.ana
 const EXP_KEY = { beginner: "w.analyze.vol.expBeginner", intermediate: "w.analyze.vol.expIntermediate", advanced: "w.analyze.vol.expAdvanced" } as const;
 /** Which profile field each personalization factor reads, so a measured field
  *  can be marked wherever its factor is shown. Partial on purpose: `clearance`
- *  is measured from the log and has no field to type into. */
+ *  is measured from the log and has no field to type into, and `protein` is
+ *  listed even though it has no form either — its field exists, is only ever
+ *  filled from the food log, and is therefore ALWAYS measured. */
 const FACTOR_FIELD: Partial<Record<LandmarkFactor["key"], keyof AthleteVolumeProfile>> = {
   experience: "experience", age: "ageYears", bodyweight: "bodyweightKg",
-  sleep: "sleep", stress: "stress", nutrition: "nutrition", frequency: "daysPerWeek",
+  sleep: "sleep", stress: "stress", nutrition: "nutrition", protein: "proteinGPerKg",
+  frequency: "daysPerWeek",
 };
 
 /** Height of one rung of the provenance ladder. Fixed, so the four spine

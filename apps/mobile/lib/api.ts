@@ -1150,6 +1150,35 @@ export async function fetchRecoverySignals(): Promise<CoreSignal[]> {
   }
 }
 
+/**
+ * The FOOD LOG on the engines' terms — `energyIntake` / `protein` / `bodyMass`.
+ *
+ * By kind, and here the argument is sharper than it is for heat or the recovery
+ * stream: nutrition rows are what CROWD the unfiltered window. One logged food
+ * writes up to eight of them, so on a diligent logger the newest 500 rows of
+ * any kind cover barely a fortnight — and engines/fuel.ts needs fourteen days
+ * of completed intake measured against a maintenance estimate fitted over
+ * twenty-eight. The stream that would evict everyone else's data is the one
+ * stream that cannot afford to be evicted by its own volume.
+ *
+ * `bodyMass` rides along because maintenance and the protein-per-kg figure both
+ * need it, and asking for it twice would be two windows that can disagree.
+ *
+ * Filtered, the route's 500-row take covers roughly two months of four-meal
+ * days, which clears the 28-day maintenance window with room to spare.
+ */
+export async function fetchNutritionSignals(): Promise<CoreSignal[]> {
+  try {
+    const data = await fetchJson<{ signals?: { id?: string; userId: string; kind: string; value: number; unit: string; source: string; ts: string }[] }>(
+      `/api/signals?kind=energyIntake,protein,bodyMass`,
+    );
+    return (data.signals ?? []).map((s) => ({ athleteId: s.userId, kind: s.kind, value: s.value, unit: s.unit, source: s.source, ts: s.ts, id: s.id }));
+  } catch {
+    /* soft — a missing food history must never fail the screen it sits on */
+    return [];
+  }
+}
+
 export async function createSignal(kind: string, value: number, unit?: string, source = "manual"): Promise<boolean> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/signals`, {

@@ -64,3 +64,42 @@ export function sampleHeatSignals(now: number = Date.now()): { kind: string; val
     { kind: "saunaTemp", value: 90, source: "manual", ts },
   ];
 }
+
+/**
+ * A sample food log — a fortnight of a real cut, on top of a fortnight of
+ * maintenance eating before it, so the Engine Room's fuel panel has something
+ * to show before an operator picks a real athlete.
+ *
+ * THE SHAPE IS THE POINT, and it is what makes this a fair demonstration rather
+ * than a flattering one. `estimateMaintenance` fits maintenance partly to
+ * logged intake, so a flat log at any level reads as maintenance BY
+ * CONSTRUCTION — a sample of fourteen identical days would show a fuel term of
+ * exactly zero and look broken. What the term actually detects is a CHANGE: two
+ * weeks at 2,900 followed by two weeks at 2,100 against a falling scale, which
+ * is what a cut looks like in a diary and is the case where the bodyweight
+ * trend alone is still mostly water.
+ *
+ * A FUNCTION, not a constant, for the same reason `sampleHeatSignals` is: the
+ * window is measured against the clock, and frozen ISO strings would slide out
+ * of it within days of being written.
+ */
+export function sampleNutritionSignals(now: number = Date.now()): { kind: string; value: number; unit: string; source: string; ts: string }[] {
+  const DAY = 86_400_000;
+  const out: { kind: string; value: number; unit: string; source: string; ts: string }[] = [];
+  // Logged mid-evening so every row lands squarely inside its own local day
+  // rather than on a boundary the athlete's timezone could push either way.
+  const at = (daysAgo: number) => new Date(now - daysAgo * DAY - 5 * 3_600_000).toISOString();
+  for (let d = 1; d <= 28; d++) {
+    const cutting = d <= 14;
+    const kcal = cutting ? 2100 : 2900;
+    const protein = cutting ? 104 : 138;
+    out.push({ kind: "energyIntake", value: kcal, unit: "kcal", source: "manual", ts: at(d) });
+    out.push({ kind: "protein", value: protein, unit: "g", source: "manual", ts: at(d) });
+  }
+  // Weekly weigh-ins across the whole window: 79.4 kg down to 78.1 kg, almost
+  // all of it in the fortnight the intake dropped.
+  for (const [daysAgo, kg] of [[28, 79.4], [21, 79.3], [14, 79.2], [7, 78.6], [1, 78.1]] as const) {
+    out.push({ kind: "bodyMass", value: kg, unit: "kg", source: "manual", ts: at(daysAgo) });
+  }
+  return out;
+}
