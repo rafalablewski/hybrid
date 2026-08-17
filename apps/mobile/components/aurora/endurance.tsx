@@ -10,8 +10,7 @@ import { AuroraScreen } from "./kit";
 import AuroraEnduranceLanes from "./endurance-lanes";
 
 /**
- * AURORA Endurance — the COMPARISON. The mobile twin of
- * apps/web/components/aurora/endurance.tsx.
+ * AURORA Endurance — the COMPARISON.
  *
  * This screen used to be per-discipline analytics behind a chip picker. Every
  * one of those numbers now lives on the sport's OWN page (sport-page.tsx), read

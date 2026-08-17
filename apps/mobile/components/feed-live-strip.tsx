@@ -8,7 +8,7 @@ import { Avatar } from "./social-kit";
 import { GUTTER, RADIUS } from "./aurora/kit";
 
 /**
- * NOW TRAINING (mobile) — twin of apps/web/components/feed-live-strip.tsx.
+ * NOW TRAINING (mobile).
  *
  * Presence, not authored ephemera: an unfinished session IS the signal, so
  * nobody has to film themselves between sets for this rail to have something

@@ -14,7 +14,6 @@ import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fo
 import { springs, springDurationMs, MODAL_SCREENS, COVER_SCREENS } from "@hybrid/core";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
-import { TemplateProvider } from "../lib/template";
 import { ThemeProvider, useTheme } from "../lib/theme";
 import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
@@ -208,24 +207,22 @@ export default function RootLayout() {
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         <QueryProvider>
           <ThemeProvider>
-            <TemplateProvider>
-              <SessionProvider>
-                <LanguageProvider>
-                  <SheetRecedeProvider>
-                    {/* Above Shell so the flying clone renders over every
-                        screen — it must not be clipped by the navigator. */}
-                    <SharedElementProvider>
-                      {/* Inside SheetRecedeProvider so a confirm recedes the
-                          screen behind it like every other sheet, and inside
-                          LanguageProvider so its buttons localize. */}
-                      <ConfirmProvider>
-                        <Shell />
-                      </ConfirmProvider>
-                    </SharedElementProvider>
-                  </SheetRecedeProvider>
-                </LanguageProvider>
-              </SessionProvider>
-            </TemplateProvider>
+            <SessionProvider>
+              <LanguageProvider>
+                <SheetRecedeProvider>
+                  {/* Above Shell so the flying clone renders over every
+                      screen — it must not be clipped by the navigator. */}
+                  <SharedElementProvider>
+                    {/* Inside SheetRecedeProvider so a confirm recedes the
+                        screen behind it like every other sheet, and inside
+                        LanguageProvider so its buttons localize. */}
+                    <ConfirmProvider>
+                      <Shell />
+                    </ConfirmProvider>
+                  </SharedElementProvider>
+                </SheetRecedeProvider>
+              </LanguageProvider>
+            </SessionProvider>
           </ThemeProvider>
         </QueryProvider>
       </SafeAreaProvider>

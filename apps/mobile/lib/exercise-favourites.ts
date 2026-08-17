@@ -6,11 +6,11 @@ import {
   toggleExerciseFavourite as toggle,
 } from "@hybrid/core";
 
-// The movements pinned to the Exercises rail, per device (AsyncStorage). Shares
-// the key, the cap and the normalizer with the web twin
-// (apps/web/lib/exercise-favourites.ts) via @hybrid/core, so a pin means the
-// same thing on both clients. Cross-device sync rides prefs-cross-device-sync
-// with the rest of the per-device preferences.
+// The movements pinned to the Exercises rail, per device (AsyncStorage).
+// Shares the key, the cap and the normalizer with the web twin via
+// @hybrid/core, so a pin means the same thing on both clients. Cross-device
+// sync rides prefs-cross-device-sync with the rest of the per-device
+// preferences.
 
 let favourites: string[] = [];
 const listeners = new Set<() => void>();

@@ -10,9 +10,12 @@ import type { Href } from "expo-router";
  * read by the side menu (components/aurora/side-menu.tsx) and by the web ↔
  * mobile parity guard (apps/web/__tests__/parity.test.ts).
  *
- * An id ABSENT from this map has no mobile surface; the side menu marks those
- * and opens the web app instead, so access granted to a user is never silently
- * invisible. Adding a screen means adding it here.
+ * Every canonical nav id must appear here, and apps/web/__tests__/parity.test.ts
+ * fails the build if one does not. There is no longer a fallback: this used to
+ * say an absent id "opens the web app instead", which stopped being true when
+ * the web client was retired in Aug 2026 — an absent id now opens nothing.
+ * Adding a screen means adding it here; removing one means removing its nav id
+ * too, not leaving the id pointing at a route that no longer exists.
  */
 export const NAV_HREF: Record<string, Href> = {
   today: "/(tabs)",
@@ -28,10 +31,10 @@ export const NAV_HREF: Record<string, Href> = {
   sport: "/sport",
   analytics: "/analytics",
   statistics: "/statistics",
-  volume: "/volume",
-  // The one hyphenated nav id. Its route has existed since Volume gained its
-  // own model screen; the springboard entry was missed because the parity
-  // guard's scan couldn't see a hyphen (see apps/web/__tests__/parity.test.ts).
+  // No `volume` route: Volume is a card on Performance, not a screen. The one
+  // hyphenated nav id below is its MODEL, which is a real screen — the
+  // springboard entry for it was once missed because the parity guard's scan
+  // couldn't see a hyphen (see apps/web/__tests__/parity.test.ts).
   "volume-model": "/volume-model",
   exercises: "/exercises",
   trends: "/trends",

@@ -29,7 +29,6 @@ import { useNavScrollProps } from "./nav-scroll";
 // letterSpacing a fresh guess (18 of them). Use leading(fs.body) rather than a
 // number — an absolute line box is also why Dynamic Type could not work.
 export { fs, space, lh, leading, tracking, trackFigure };
-import { useTemplate } from "./template";
 import { auroraScrollClearance } from "./layout";
 import { useReducedMotion } from "./use-reduced-motion";
 import { RADIUS } from "../components/aurora/kit";
@@ -415,13 +414,14 @@ export function PressScale({
 }
 
 /** The scroll bottom-inset a Screen reserves so content clears the floating
- *  Aurora pill nav (classic keeps the tight 48). Exported so a screen that
- *  supplies its OWN scroller (a FlatList via `Screen scroll={false}`) can apply
- *  the same clearance to its contentContainerStyle. */
+ *  Aurora pill nav. Exported so a screen that supplies its OWN scroller (a
+ *  FlatList via `Screen scroll={false}`) can apply the same clearance to its
+ *  contentContainerStyle. It used to branch on the template flag and fall back
+ *  to a tight 48 — an arm that could not be reached, since there has only ever
+ *  been one template. */
 export function useScreenBottomPad(): number {
-  const aurora = useTemplate().template === "aurora";
   const insets = useSafeAreaInsets();
-  return aurora ? auroraScrollClearance(insets.bottom) : 48;
+  return auroraScrollClearance(insets.bottom);
 }
 
 /*

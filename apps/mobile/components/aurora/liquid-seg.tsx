@@ -9,8 +9,7 @@ import { haptic } from "../../lib/haptics";
 
 /**
  * LIQUID SEGMENTED CONTROL — the iOS 26 two-state selection, shared by the
- * Today hub switcher and the This-week date filter (twin of
- * apps/web/components/aurora/liquid-seg.tsx).
+ * Today hub switcher and the This-week date filter.
  *
  * The system control's behaviour, reconstructed for RN screens:
  *  - AT REST the selection is a quiet, near-solid NEUTRAL pill inside the

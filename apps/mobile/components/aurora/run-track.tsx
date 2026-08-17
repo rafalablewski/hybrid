@@ -7,11 +7,12 @@ import { useLang } from "../../lib/i18n";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
 
-/** AURORA Run tracking — live-run surface with a PLACEHOLDER route map (live
- *  GPS needs expo-location + a map lib in the native build); the stopwatch +
- *  manual distance → pace are real and save a cardio session via the API. */
+/** AURORA Run tracking — the stopwatch, a typed distance and the pace those two
+ *  produce, saved as a cardio session through the API. Every figure on this
+ *  screen is one the athlete or the clock produced; there is no route drawing,
+ *  because there is no route being recorded (see the note where the map card
+ *  used to be). */
 export default function AuroraRunTrack() {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -68,18 +69,14 @@ export default function AuroraRunTrack() {
     <AuroraScreen hero={{ rank: "title", title: t("w.train.runTrack.title") }}>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 8, marginBottom: 16, lineHeight: leading(fs.bodyLg) }}>{t("w.train.runTrack.intro")}</Text>
 
-      {/* Map placeholder */}
-      <ACard style={{ marginBottom: 12, padding: 0, overflow: "hidden" }}>
-        <View style={{ height: 200, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
-          <View style={{ position: "absolute", top: 24, left: 28, width: 12, height: 12, borderRadius: 6, backgroundColor: C.lime }} />
-          <View style={{ position: "absolute", bottom: 28, right: 30, width: 12, height: 12, borderRadius: 6, backgroundColor: C.amber }} />
-          <AuroraIcon name="location" size={30} color={C.ash} />
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{t("w.train.runTrack.liveRouteMap")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, textAlign: "center", paddingHorizontal: 28, lineHeight: leading(fs.micro) }}>
-            {t("w.train.runTrack.mapNote")}
-          </Text>
-        </View>
-      </ACard>
+      {/* NO MAP. There used to be one here: a 200dp card drawing two coloured
+          dots on a flat fill under the words "Live route map". Nothing was
+          tracked — the dots were at fixed offsets, the same two every run, for
+          every athlete. In a product whose whole claim is "measured, not
+          claimed", it was the one surface that lied, and it lied in the most
+          expensive place: the first thing you saw on the screen. GPS lands with
+          the route it actually recorded (SessionStream carries the trace) or it
+          does not land at all. */}
 
       {/* Live stats */}
       <ACard style={{ marginBottom: 12 }}>

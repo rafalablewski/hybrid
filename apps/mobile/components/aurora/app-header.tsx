@@ -18,7 +18,7 @@ import { withAlpha } from "./field";
  * The lockup row every BOTTOM-NAV TAB ROOT wears, and the only way one may be
  * drawn: avatar, the HYBRID wordmark with the day-streak under it, the bell.
  * Every number lives in packages/core/src/app-header.ts and is shared verbatim
- * with the web twin (apps/web/components/aurora/app-header.tsx).
+ * with the web twin.
  *
  * IT SOURCES ITS OWN DATA. The name and the unread count come from the shared
  * caches (lib/session, lib/use-notifications) and the streak comes from the

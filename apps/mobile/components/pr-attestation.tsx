@@ -7,14 +7,13 @@ import { leading, tracking, fs, space, F, PressScale as Pressable } from "../lib
 import { RADIUS } from "./aurora/kit";
 
 // Verified Strength Record — the attestation panel on a session's PR list.
-// Mirrors apps/web/components/pr-attestation.tsx: tier badge per PR
-// (Claimed / Sensed / Witnessed) + the ask-a-witness flow. Grading and copy
-// come from core/attestation.ts so the tiers can never drift between clients.
+// A tier badge per PR (Claimed / Sensed / Witnessed) + the ask-a-witness flow.
+// Grading and copy come from core/attestation.ts, so what a tier MEANS is
+// decided in one tested place and this file only says it.
 
 /** The witness's side: pending co-sign requests addressed to ME. Rendered at
  *  the top of the social feed — answering one is a social act, and every
- *  request is also an invite loop (you can only witness on HYBRID). Mirrors
- *  the web CosignInbox in apps/web/components/pr-attestation.tsx. */
+ *  request is also an invite loop (you can only witness on HYBRID). */
 export function CosignInbox({ units }: { units: WeightUnit }) {
   const { palette: C } = useTheme();
   const [inbox, setInbox] = useState<import("../lib/api").AttestInboxItem[] | null>(null);

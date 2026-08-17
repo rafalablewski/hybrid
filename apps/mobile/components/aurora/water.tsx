@@ -16,7 +16,7 @@ import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 
 /**
- * WATER (mobile) — the twin of apps/web/components/aurora/water.tsx.
+ * WATER (mobile).
  *
  * See that file's note for the reasoning: every figure comes from @hybrid/core's
  * hydration engine (so the two clients cannot disagree about the target, the

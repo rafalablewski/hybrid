@@ -1,15 +1,23 @@
 /**
- * HYBRID motion tokens — the single source of truth for screen transitions on
- * BOTH clients (the parity rule: web and mobile must run the same motion, not
- * two eyeballed approximations of each other).
+ * HYBRID motion tokens — the single source of truth for screen transitions.
+ *
+ * This began as a PARITY file: web and mobile had to run the same motion rather
+ * than two eyeballed approximations of each other. The web client is retired
+ * and the reason survived it, because the failure it prevents was never really
+ * about two clients — it is about motion authored per screen. The numbers that
+ * used to be hand-copied between two trees were also hand-copied between
+ * screens in one, and the guard in motion.test.ts polices both.
  *
  * WHY SPRINGS, NOT DURATION + BEZIER
  * A cubic-bezier carries no velocity state, so an animation driven by one
  * cannot be interrupted or retargeted mid-flight — you can only restart it from
  * a standstill. Every gesture-tracked transition (the interruptible back swipe,
  * a sheet you catch halfway) therefore *requires* a spring. The app already
- * proves this: the shipped nav lens (apps/mobile/components/aurora/global-nav.tsx)
- * is a real SwiftUI spring, and it is the best motion in the product.
+ * proves this: the system tab bar's own selection lens is a real SwiftUI
+ * spring, and it is the best motion in the product. (This used to cite a
+ * hand-built `global-nav.tsx` as the example. That component was deleted when
+ * the bar became the real UITabBarController — see the note on `springs.press`
+ * below, which is the token that outlived it.)
  *
  * Springs here are expressed in SwiftUI's own vocabulary — `response` (the
  * period of one oscillation, i.e. how quickly it moves) and `dampingFraction`
@@ -529,9 +537,18 @@ export function springToCss(s: Spring, samples = 36): string {
 }
 
 /**
- * React Native's Animated.spring / Reanimated withSpring physics config.
- * Derived from the SAME response/damping, so native and web can't drift.
+ * React Native's `Animated.spring` physics config, derived from the SAME
+ * response/damping the web reads, so native and web can't drift.
  * (mass = 1: k = (2π/response)², c = 4π·dampingFraction/response.)
+ *
+ * `Animated`, and only `Animated`. This used to say "Animated.spring /
+ * Reanimated withSpring", and reanimated was in the mobile app's dependencies
+ * — where it was imported by nothing at all. Every animation in the app runs on
+ * RN's own `Animated`, by explicit choice recorded at both of the places that
+ * would otherwise have used reanimated (lib/shared-element.tsx, the profile
+ * highlight grid). A native dependency nobody imports still ships a framework
+ * inside the .app and still has to move in lockstep with the SDK at every
+ * upgrade, so it was a launch-crash surface bought for nothing. It is gone.
  */
 export function springToRN(s: Spring): { mass: number; stiffness: number; damping: number } {
   const w = (2 * Math.PI) / s.response;
@@ -635,10 +652,11 @@ export type SharedElementName = (typeof SHARED_ELEMENTS)[keyof typeof SHARED_ELE
  *
  * Kept here rather than in nav.ts because it is the *motion* ordering (what sits
  * left of what on screen), not the nav taxonomy. It still has to FOLLOW the
- * bar: this list once kept ranking the retired More tab and did not rank
- * Messages after it took More's slot, so Today ⇄ Messages — two roots sitting
- * beside each other in the capsule — animated as a drill-down on web while the
- * native bar swapped them as siblings.
+ * bar, and it has twice failed to: it kept ranking the retired More tab, and
+ * it did not rank Messages when Messages took that slot. Either way two roots
+ * sitting beside each other animate as a drill-down while the native bar swaps
+ * them as siblings. This list is now checked against AURORA_NAV_TABS by
+ * motion.test.ts so the bar cannot change without it.
  */
 export const NAV_ROOT_ORDER = ["today", "nutrition", "messages", "profile", "train"] as const;
 

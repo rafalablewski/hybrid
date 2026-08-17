@@ -136,7 +136,7 @@ describe("navForPersona", () => {
     // is paid). PLUS the Social surface (everyone): the friends feed, find
     // friends, the friends leaderboard and the coach marketplace. (The public
     // profile lives inside the account Profile screen, not its own nav item.)
-    // Messages (the bar's fourth slot, ex-More) and the Help center (the side
+    // Messages (the bar's third slot, ex-More) and the Help center (the side
     // menu's footer) are universal too — neither is depth anyone pays for.
     expect(navForPersona("casual").map((i) => i.id).sort()).toEqual(
       ["builder", "calendar", "checkin", "coaches", "discover", "exercises", "feed", "help", "history", "leaderboard", "log", "messages", "notifications", "nutrition", "plans", "profile", "progress", "runtrack", "saved", "settings", "statistics", "timer", "today"],
@@ -288,5 +288,38 @@ describe("promoted destinations", () => {
       if (item.promotedTo) continue;
       expect(listed).toContain(item.id);
     }
+  });
+
+  it("HARD — Analyze offers exactly two doors: state now, and progress over time", () => {
+    // The group carried TEN entries answering two questions between them, which
+    // is how sixty-two routes came to serve four jobs. Performance is where you
+    // stand; History is how you are changing. Everything else in the group is
+    // reached from one of those two (or from Today), never listed beside them.
+    //
+    // This is a HARD assertion rather than a ratchet on purpose: a ratchet lets
+    // the number sit still, and the failure mode here is not one bad screen, it
+    // is the eleventh analysis surface arriving because ten looked normal. A
+    // new analysis screen must either live behind one of these two or take one
+    // of their places — and either way, someone edits this line and says why.
+    const analyze = NAV_ITEMS.filter((i) => i.group === "analyze" && !i.promotedTo).map((i) => i.id);
+    expect(analyze).toEqual(["performance", "history"]);
+    // And the depth is behind them, not deleted — every promoted analysis
+    // screen still routes, and still means something to the persona gate.
+    for (const id of ["trends", "velocity", "statistics", "volume-model"]) {
+      const item = NAV_ITEMS.find((i) => i.id === id);
+      expect(item?.promotedTo, id).toBeTruthy();
+      expect(navVisibleTo("admin", id), id).toBe(true);
+    }
+  });
+
+  it("files the movement catalogue with training, not with analysis", () => {
+    // Exercises is the PICKER — the thing you open to look a lift up or add it
+    // to a session. It sat under Analyze because each row also shows that
+    // movement's progress, and that one filing decision is a fifth of what made
+    // the analysis group read as ten places. It stays free for everyone.
+    const item = NAV_ITEMS.find((i) => i.id === "exercises");
+    expect(item?.group).toBe("train");
+    expect(item?.promotedTo).toBeUndefined();
+    expect(navVisibleTo("casual", "exercises")).toBe(true);
   });
 });

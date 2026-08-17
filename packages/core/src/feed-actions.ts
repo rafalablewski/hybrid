@@ -238,12 +238,12 @@ export const FEED_SHARE_ORIGIN = "https://hybrid.app";
 /**
  * The link a shared post carries — and it lands ON THE POST, not near it.
  *
- * A post has its own address on both clients now (the individual post screen),
- * so this is the same address the app itself navigates to: the app shell
- * addresses screens through the query string (`?s=<screen>`, see
- * apps/web/lib/deep-link.ts) and `post` names which one. The recipient opens
- * the workout, its records and its thread — not the top of a ranked stream that
- * may not even contain the thing they were sent.
+ * A post has its own screen, so a share carries that screen's address rather
+ * than the app's front door: `?s=post&post=<key>` — the query-string form the
+ * retired web shell answered on, kept because links already shared are still
+ * out there and the deep-link reader has to keep understanding them. The
+ * recipient opens the workout, its records and its thread — not the top of a
+ * ranked stream that may not even contain the thing they were sent.
  */
 export function feedShareUrl(ref: FeedSubjectRef): string {
   return `${FEED_SHARE_ORIGIN}/app?s=post&post=${encodeURIComponent(feedSubjectKey(ref))}`;

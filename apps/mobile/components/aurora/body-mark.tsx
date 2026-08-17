@@ -7,8 +7,6 @@ import { roomBodyMark, MUSCLE_SHORT, type Muscle } from "@hybrid/core";
  * figure (front or back) and how brightly each muscle glows; see core's
  * roomBodyMark. Returns null when the room holds no lift the database knows (a
  * sports room), so the caller keeps its own glyph.
- *
- * Twin of apps/web/components/aurora/body-mark.tsx.
  */
 export default function AuroraBodyMark({
   names,

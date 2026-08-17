@@ -23,7 +23,6 @@ import { fetchNotifState, pushNotifOps } from "./api";
  * All of the interesting behaviour — optimistic apply, the offline queue,
  * rebasing onto server truth without reverting a swipe still in flight — lives
  * in @hybrid/core's createNotifSync, so this file is only the four ports.
- * Mirrors apps/web/lib/notif-read.ts.
  */
 const KEY = "hybrid.notifRead";
 

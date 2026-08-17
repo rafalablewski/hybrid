@@ -10,7 +10,7 @@ import { ALPHA } from "@hybrid/core";
  * Consumed by the exercises rail, the endurance lanes and the other-sports
  * tiles so the three rails draw history identically; the numbers come
  * normalized from @hybrid/core (historyStripBars / volumeBars /
- * sportWeekBars). TWIN: apps/web/components/aurora/history-strip.tsx.
+ * sportWeekBars).
  */
 export default function HistoryStrip({ bars, color, height = 24, held = -1 }: {
   /** 0..1 bar heights, oldest → newest (core-normalized). */

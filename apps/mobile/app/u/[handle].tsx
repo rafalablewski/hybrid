@@ -51,7 +51,7 @@ import { Comments } from "../../components/feed-comments";
 import { usePersonSource } from "../../lib/shared-element";
 
 /**
- * THE INDIVIDUAL USER PAGE (mobile) — twin of apps/web/components/user-page.tsx.
+ * THE INDIVIDUAL USER PAGE (mobile).
  *
  * One page per person, at `/u/<handle>` (core `userPagePath`). It replaced two
  * sheets that disagreed about the same human — the profile modal (who they are)

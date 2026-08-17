@@ -44,8 +44,8 @@ import { GlassNavButton, LIQUID_GLASS_RENDERED } from "./swiftui";
  * Every screen head in the app is one of these, at one of three ranks. The
  * contract (geometry, the collapse track, the layer interpolations, the type
  * ramp, the metadata language, the backdrop rules) lives in
- * `packages/core/src/hero.ts` and is shared verbatim with the web twin
- * (apps/web/components/aurora/hero.tsx), so the two clients cannot drift.
+ * `packages/core/src/hero.ts` and is shared verbatim with the web twin, so the
+ * two clients cannot drift.
  *
  * Read the spec first: reference/hero-system.md.
  *

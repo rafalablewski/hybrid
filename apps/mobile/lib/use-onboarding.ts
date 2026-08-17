@@ -13,10 +13,9 @@ import { setClientPersona } from "./persona";
 
 export type AnswerValue = string | number | string[];
 
-/** Shared onboarding state for both mobile templates (classic + aurora). Mirrors
- *  apps/web/lib/use-onboarding.ts: fetch the admin-editable question set, seed
- *  defaults, track answers, derive the recommendation. Falls back to the
- *  @hybrid/core built-in defaults when the API is unreachable. */
+/** Onboarding state: fetch the admin-editable question set, seed defaults,
+ *  track answers, derive the recommendation. Falls back to the @hybrid/core
+ *  built-in defaults when the API is unreachable. */
 export function useOnboarding() {
   const [questions, setQuestions] = useState<OnboardingQuestion[]>(() =>
     onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS),

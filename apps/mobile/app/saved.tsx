@@ -18,8 +18,7 @@ import { Comments } from "../components/feed-comments";
 import { usePersonSource } from "../lib/shared-element";
 
 /**
- * SAVED — the shelf behind the feed's bookmark (mobile). Twin of
- * apps/web/components/social-saved.tsx.
+ * SAVED — the shelf behind the feed's bookmark (mobile).
  *
  * Saving shipped before this screen did, which made the bookmark a button that
  * swallowed things: you could mark a session's scheme and there was no surface
