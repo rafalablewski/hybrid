@@ -265,8 +265,20 @@ export function learnedMonth(opts: LearnedMonthOptions = {}): LearnedMonth {
   // MOVEMENT LEADS. "Your quads ceiling rose two sets" is the sentence that
   // makes an athlete open the app next month; "your quads ceiling is 17" is a
   // fact they already read on the Volume screen.
+  //
+  // EVIDENCE COUNTS ARE NOT COMPARABLE ACROSS CHAPTERS, and the first cut of
+  // this ranking compared them anyway: qualifying WEEKS against matched PAIRS
+  // against DAYS, on the raw integer. Twenty-eight days of readiness therefore
+  // outranked seven weeks of ceiling evidence every time — not because it was
+  // the better-evidenced claim but because a month has more days in it than a
+  // block has weeks. The tie-break is the SIZE of the move as a fraction of the
+  // figure it moved, which is the one quantity that means the same thing whether
+  // it is sets, a ratio against the curve or readiness points.
   const moved = learned.filter((f) => f.delta != null && f.delta !== 0);
-  const rank = (a: LearnedFinding, b: LearnedFinding) => b.confidence - a.confidence || b.evidence - a.evidence;
+  const magnitude = (f: LearnedFinding): number =>
+    f.delta == null ? 0 : Math.abs(f.delta) / Math.max(1, Math.abs(f.value ?? 1));
+  const rank = (a: LearnedFinding, b: LearnedFinding) =>
+    b.confidence - a.confidence || magnitude(b) - magnitude(a) || a.id.localeCompare(b.id);
   const headline = [...moved].sort(rank)[0] ?? [...learned].sort(rank)[0] ?? null;
 
   return {

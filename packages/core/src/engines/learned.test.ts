@@ -85,6 +85,54 @@ const absorbed = block({
   morningSpent: () => 2,
 });
 
+/**
+ * A FOUR-DAY UPPER/LOWER BLOCK — several muscles, moving in different
+ * directions, which is the only shape that can test how the lead is CHOSEN.
+ * The single-lift block above can only ever move one thing.
+ *
+ * Lower ramps and is absorbed; the pull day stalls from week 10 (the top set
+ * slides, the mornings turn heavy); the push day is held flat on purpose, so
+ * chest and shoulders stay honestly untested.
+ */
+function program(weeks = 14): { sessions: LoggedSession[]; recovery: RecoveryReport[] } {
+  const sessions: LoggedSession[] = [];
+  const recovery: RecoveryReport[] = [];
+  const start = NOW - weeks * WEEK;
+  const day = (
+    w: number, offset: number, id: string, title: string,
+    lifts: { name: string; sets: number; load: number }[],
+    gymSpent: number, morningSpent: number,
+  ) => {
+    const end = start + w * WEEK + offset * DAY + 18.5 * H;
+    if (end > NOW) return;
+    sessions.push({
+      id, title,
+      startedAt: iso(end - 80 * 60_000),
+      completedAt: iso(end),
+      fatigue: gymSpent,
+      feelLoggedAt: iso(end + 8 * 60_000),
+      blocks: lifts.map((l) => ({
+        kind: "strength" as const,
+        name: l.name,
+        sets: Array.from({ length: l.sets }, () => ({ reps: "5", load: String(l.load) })),
+      })),
+    } as LoggedSession);
+    const at = end + 13 * H;
+    if (at > NOW) return;
+    recovery.push({ date: iso(at), soreness: checkinFromSoreness(morningSpent), energy: 6 - morningSpent, loggedAt: iso(at) });
+  };
+
+  for (let w = 0; w < weeks; w++) {
+    const squat = Math.min(4 + Math.floor(w * 0.7), 10);
+    day(w, 0, `w${w}a`, "Lower", [{ name: "Back Squat", sets: squat, load: 125 + w * 2.5 }], 3, 2);
+    day(w, 1, `w${w}b`, "Upper push", [{ name: "Bench Press", sets: 4, load: 92 + w }], 3, 2);
+    day(w, 3, `w${w}c`, "Lower", [{ name: "Deadlift", sets: Math.min(3 + Math.floor(w * 0.5), 8), load: 165 + w * 2.5 }], 3, 2);
+    const stalled = w >= 10;
+    day(w, 4, `w${w}d`, "Upper pull", [{ name: "Barbell Row", sets: Math.min(4 + Math.floor(w * 0.6), 9), load: stalled ? 96 - (w - 10) * 3 : 78 + w * 1.8 }], stalled ? 4 : 3, stalled ? 5 : 2);
+  }
+  return { sessions, recovery };
+}
+
 const find = (m: LearnedMonth, id: string): LearnedFinding => {
   const f = m.findings.find((x) => x.id === id);
   if (!f) throw new Error(`no finding ${id} — got ${m.findings.map((x) => x.id).join(", ")}`);
@@ -134,6 +182,28 @@ describe("a real block, learned", () => {
     expect(m.headline!.state).toBe("learned");
     expect(m.headline!.delta).not.toBeNull();
     expect(m.headline!.delta).not.toBe(0);
+  });
+
+  it("leads on the size of the move, not on whichever count is biggest", () => {
+    const four = program();
+    const p = learnedMonth({ sessions: four.sessions, recovery: four.recovery, landmarks: { profile: PROFILE }, now: NOW });
+    // The evidence counts are in different units — qualifying WEEKS, matched
+    // PAIRS, DAYS — so a tie-break on the raw integer hands the lead to
+    // readiness every time, because a month has more days in it than a block has
+    // weeks. The property that must hold: among the top-confidence claims that
+    // moved, the lead is the one whose move is largest AS A FRACTION of its own
+    // figure, which is the one quantity that means the same thing in every unit.
+    const moved = p.findings.filter((f) => f.state === "learned" && f.delta != null && f.delta !== 0);
+    expect(moved.length).toBeGreaterThan(1);
+    const mag = (f: LearnedFinding) => Math.abs(f.delta!) / Math.max(1, Math.abs(f.value ?? 1));
+    const best = Math.max(...moved.map((x) => x.confidence));
+    const top = moved.filter((f) => f.confidence === best);
+    expect(mag(p.headline!)).toBeCloseTo(Math.max(...top.map(mag)), 6);
+    // The claim with the biggest raw evidence count is a DIFFERENT claim — which
+    // is the whole point: readiness counts days, and there are always more of
+    // those than there are qualifying weeks.
+    const biggestCount = [...top].sort((a, b) => b.evidence - a.evidence)[0]!;
+    expect(biggestCount.id).not.toBe(p.headline!.id);
   });
 
   it("reports the SAME ceiling the app is showing today", () => {

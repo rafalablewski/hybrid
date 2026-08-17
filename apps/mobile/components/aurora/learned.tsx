@@ -313,12 +313,14 @@ export function LearnedLead({ sessions, onOpen }: { sessions: LoggedSession[]; o
   const meta = month.learned
     ? t("w.learned.leadMeta").replace("{n}", String(month.learned)).replace("{m}", String(month.waiting))
     : t("w.learned.leadEmpty");
+  // The claim, spoken: subject, then the figure in its own unit, then the move.
+  const spoken = f ? [t(f.titleKey), figure, t(f.unitKey), delta && delta !== "—" ? delta : null].filter(Boolean).join(" ") : null;
 
   return (
     <APressCard
       solid
       onPress={onOpen}
-      a11yLabel={`${t("w.learned.leadKicker")} – ${meta}`}
+      a11yLabel={[t("w.learned.leadKicker"), spoken, meta].filter(Boolean).join(" – ")}
       style={{ marginBottom: space.lg }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
@@ -326,15 +328,26 @@ export function LearnedLead({ sessions, onOpen }: { sessions: LoggedSession[]; o
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
             {t("w.learned.leadKicker")}
           </Text>
+          {/* THE CLAIM'S OWN SHAPE, KEPT: subject on one line, figure on the
+              next. A first cut joined them — `${title} ${figure}` — which reads
+              fine on a ceiling ("Quads 20") and is gibberish on the two claims
+              whose subject is a question: "What took the most off you 83". The
+              figure also lost its unit that way, so 83 could have been sets. */}
           {f ? (
-            <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.xs, flexWrap: "wrap" }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, ...TABULAR }}>
-                {`${t(f.titleKey)} ${figure ?? ""}`.trim()}
+            <>
+              <Text numberOfLines={2} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: space.xxs }}>
+                {t(f.titleKey)}
               </Text>
-              {delta && delta !== "—" ? (
-                <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: deltaInk, ...TABULAR }}>{delta}</Text>
-              ) : null}
-            </View>
+              <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 2, flexWrap: "wrap" }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, ...TABULAR }}>
+                  {figure}
+                </Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(f.unitKey)}</Text>
+                {delta && delta !== "—" ? (
+                  <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: deltaInk, ...TABULAR }}>{delta}</Text>
+                ) : null}
+              </View>
+            </>
           ) : null}
           <Text style={{ marginTop: space.xxs, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>
             {meta}
