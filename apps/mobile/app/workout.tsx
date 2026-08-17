@@ -1754,9 +1754,21 @@ export default function Workout() {
                           // fact, and it renders NOTHING when unset: the row only
                           // grows a fourth column when there is something to say,
                           // which is what makes a fourth column affordable on a
-                          // small phone at all. Sand, not the summary's amber-for-
-                          // concern — the figures keep that channel for "check this
-                          // number", and effort is not a warning.
+                          // small phone at all.
+                          //
+                          // AND THE EFFORT YIELDS THE COLOUR. This comment used to
+                          // claim the token was "sand, not the summary's amber" —
+                          // which is false, they are the same constant (C.amber IS
+                          // sand), and a caution set therefore painted BOTH columns
+                          // the same colour with nothing to say which fact was being
+                          // reported. That is the objection that ruled out putting
+                          // the effort inside the summary string; a weaker version of
+                          // it applies to the column beside it. So: normally the
+                          // token carries the chip's amber, because matching the chip
+                          // is the entire argument for the token. On a FLAGGED set
+                          // the amber belongs to the figures — "check this number" —
+                          // and the effort drops to ash: still there, still legible,
+                          // no longer competing for a meaning it does not own.
                           const effort = prefs.detailed ? rpeRirSwap(s.rpe, prefs.rpeAsRir) : "";
                           const effortLabel = effort ? `${prefs.rpeAsRir ? "RIR" : "RPE"} ${effort}` : "";
                           return (
@@ -1777,7 +1789,7 @@ export default function Workout() {
                               <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={s.done ? () => toggleDone(x.uid, i, false) : undefined}>
                                 <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: odd ? txt(C, concern.verdict === "refuse" ? C.red : C.amber) : C.ash }}>{summary}</Text>
                                 {effortLabel ? (
-                                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: txt(C, C.amber) }}>{effortLabel}</Text>
+                                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: odd ? C.ash : txt(C, C.amber) }}>{effortLabel}</Text>
                                 ) : null}
                               </Pressable>
                               <Text style={{ fontFamily: F.black, fontSize: fs.body, color: s.done ? txt(C, C.lime) : C.ash }}>{s.done ? "✓" : "○"}</Text>

@@ -498,6 +498,70 @@
     </div>
   </section>
 
+  <!-- ══ MOTION ════════════════════════════════════════════════ -->
+  <section>
+    <div class="sechead">
+      <h2>The motion that was never there</h2>
+      <p class="tag">Flip <em>Motion off</em> above to feel what shipped</p>
+    </div>
+    <p class="prose">
+      Reported separately, and the larger finding: <strong>"I think I never saw them in
+      my app."</strong> Correct. Four things were checked before anything was changed,
+      because a no-op in motion code is invisible and guessing at it wastes a device
+      build. The plumbing turned out to be <strong>sound</strong> — against the installed
+      RN 0.85.3 the JS gate <code>isLayoutAnimationEnabled</code> and the C++
+      <code>enableLayoutAnimationsOnIOS</code> both default true, so the first suspicion
+      (that <code>newArchEnabled</code> makes <code>LayoutAnimation</code> a no-op under
+      Fabric) was <em>wrong</em> for this version. <code>useReducedMotion</code> defaults
+      false. The tokens are real. The defect was simply that
+      <code>animateListChange</code> was never called for eleven of the layout changes
+      the logger makes.
+    </p>
+    <p class="prose">
+      It sat under a comment reading <em>"EVERY MUTATION OF THE LIST TRAVELS"</em>,
+      which is how it survived: the sentence meant the <em>exercise</em> list, said "the
+      list", and read like a guarantee. The fix is a door —
+      <code>commitSets</code> arms the animation, then commits — so the seven set
+      mutations cannot forget. The four block changes are not set mutations, so they arm
+      it themselves, and the three ways to dismiss the rest banner were collapsed into
+      one <code>stopRest</code> so they cannot disagree.
+    </p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th>What you tap</th><th>What jumped before</th><th>Routed through</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="lift">Log set ✓</td><td>A hero block four rows tall replaced by a one-line row, and the next set's hero opening below it — the most-repeated interaction in the app</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">＋ Add set</td><td>Nothing — this was the one path that already animated</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">A preset scheme (3×3 … 10×10)</td><td>The whole un-banked queue replaced; up to ten rows at once for GVT</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">Drop set</td><td>A row appearing fully formed at the end of the list</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">Warm-up set</td><td>Same</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">Cool-down set</td><td>Same</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">Auto warm-up ramp</td><td>Three rows PREPENDED — every set below shunted down at once</td><td class="out">commitSets</td></tr>
+          <tr><td class="lift">The RPE chip</td><td>The pill row popping in and shoving the sets below it down</td><td class="out">itself</td></tr>
+          <tr><td class="lift">The set-type control</td><td>The same disclosure, one card over — fixing one and not its twin was the inconsistency the door was built to end</td><td class="out">itself</td></tr>
+          <tr><td class="lift">✕ on the coach tip</td><td>A whole card leaving the top of the scroller; everything below jumped up by its height</td><td class="out">itself</td></tr>
+          <tr><td class="lift">■ Stop rest</td><td>A two-row banner unmounting, reachable three ways</td><td class="out">stopRest</td></tr>
+          <tr><td class="lift">⛓ Superset</td><td>A badge entering the card header and reflowing the lift's name beside it</td><td class="out">itself</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="prose">
+      <strong>Four things still do not animate, deliberately.</strong> Renaming a lift
+      writes per keystroke. <code>setSetField</code> and the load stepper change a value
+      inside a row that stays put — animating those would spring the card on every digit.
+      The drag <em>commit</em> stays still because the displaced rows are already standing
+      in their new slots, and a layout animation would drag them back across a distance
+      they had just crossed. And the hydration paths replace the whole board on load,
+      where there is no prior position to travel from. Each is named in
+      <code>apps/mobile/lib/list-motion.test.ts</code> with its reason — an allowlist
+      rather than a count, because the exemptions are judgements, and naming them forces
+      whoever adds the next one to decide which kind theirs is. That is the decision that
+      got skipped eleven times.
+    </p>
+  </section>
+
   <!-- ══ TRUTH TABLE ═══════════════════════════════════════════ -->
   <section>
     <div class="sechead">
@@ -658,6 +722,7 @@
   const uid = () => `s${++seq}`;
   const S = {
     build: "after",
+    motion: true,   // the layout animation the app was missing entirely
     lift: "Back Squat",
     units: "kg",
     asRir: false,
@@ -776,6 +841,10 @@
   }
 
   function renderPhone() {
+    // ONE gate for every animation class. With motion off, the commit still
+    // happens — rows just arrive fully formed and everything below teleports,
+    // which is exactly what banking a set did before this session.
+    const A = S.motion ? S.anim : {};
     const L = LIFTS[S.lift];
     const ai = activeIndex();
     const total = S.sets.length;
@@ -794,12 +863,12 @@
       if (i === ai) {
         const shown = S.detailed ? rpeRirSwap(set.rpe, S.asRir) : "";
         const open = isOpen(set);
-        h += `<div class="active ${S.anim.rise ? "animRise" : ""}">
+        h += `<div class="active ${A.rise ? "animRise" : ""}">
           <div class="setlab">
             <span class="kicker">Set ${i + 1} of ${total} — up now</span>
             <span class="right">
               <span class="rest">Rest 1:30</span>
-              ${S.detailed ? `<button class="chip ${S.anim.chip === set.uid ? "animChip" : ""}" data-set="${shown ? 1 : 0}"
+              ${S.detailed ? `<button class="chip ${A.chip === set.uid ? "animChip" : ""}" data-set="${shown ? 1 : 0}"
                  data-act="chip" data-uid="${set.uid}"
                  aria-label="Set the effort for set ${i + 1}">
                 <span class="lab">${effortWord()}</span><span class="val">${shown || "–"}</span>
@@ -813,7 +882,7 @@
             ${bw ? "" : `<span class="times">×</span><span class="fig">${esc(set.reps || "0")}</span><span class="unit">${measureLabel}</span>`}
           </div>`;
         if (S.detailed && open) {
-          h += `<div class="pills ${S.anim.pills ? "animPills" : ""} ${S.anim.stale ? "animStale" : ""}">
+          h += `<div class="pills ${A.pills ? "animPills" : ""} ${A.stale ? "animStale" : ""}">
             <button class="swap" data-act="swap">${effortWord()} ⇄</button>`;
           RPE_SCALE.slice().reverse().forEach((step) => {
             const val = String(step.rpe);
@@ -827,14 +896,14 @@
       } else {
         const shownTok = S.detailed ? rpeRirSwap(set.rpe, S.asRir) : "";
         const tok = S.build === "after" && shownTok ? `${effortWord()} ${shownTok}` : "";
-        const evap = S.anim.evap === set.uid ? `${effortWord()} ${rpeRirSwap(set.rpe, S.asRir)}` : "";
-        h += `<div class="row ${set.done ? "done" : "queued"} ${S.anim.bank === set.uid ? "animBank" : ""}">
+        const evap = A.evap === set.uid ? `${effortWord()} ${rpeRirSwap(set.rpe, S.asRir)}` : "";
+        h += `<div class="row ${set.done ? "done" : "queued"} ${A.bank === set.uid ? "animBank" : ""}">
           <span class="badge">${i + 1}</span>
           <button class="hit" data-act="reopen" data-uid="${set.uid}"
             ${set.done ? "" : "disabled style=\"cursor:default\""}
             aria-label="Set ${i + 1}, ${esc(rowSummary(set))}${tok ? ", " + tok : ""}${set.done ? ". Tap to re-open" : ""}">
             <span class="sum">${esc(rowSummary(set))}</span>
-            ${tok ? `<span class="tok ${S.anim.tok === set.uid ? "animTok" : ""}">${tok}</span>` : ""}
+            ${tok ? `<span class="tok ${A.tok === set.uid ? "animTok" : ""}">${tok}</span>` : ""}
           </button>
           <span class="check">${set.done ? "✓" : "○"}</span>
           ${evap ? `<span class="evap">${evap}</span>` : ""}
@@ -893,7 +962,8 @@
       <button data-act="units" data-val="kg" aria-pressed="${S.units === "kg"}">kg</button>
       <button data-act="units" data-val="lb" aria-pressed="${S.units === "lb"}">lb</button>
       <button data-act="rir" aria-pressed="${S.asRir}">${S.asRir ? "RIR" : "RPE"} scale</button>
-      <button data-act="detailed" aria-pressed="${S.detailed}">${S.detailed ? "Detailed" : "Simple"} mode</button>`;
+      <button data-act="detailed" aria-pressed="${S.detailed}">${S.detailed ? "Detailed" : "Simple"} mode</button>
+      <button data-act="motion" aria-pressed="${S.motion}">Motion ${S.motion ? "on" : "off"}</button>`;
     const t = el("toggle");
     t.dataset.build = S.build;
     el("bBefore").setAttribute("aria-pressed", String(S.build === "before"));
@@ -938,6 +1008,13 @@
     else if (act === "units") { S.units = b.dataset.val; render(); }
     else if (act === "rir") { S.asRir = !S.asRir; render(); }
     else if (act === "detailed") { S.detailed = !S.detailed; render(); }
+    else if (act === "motion") {
+      S.motion = !S.motion;
+      say(S.motion ? "good" : "bad", S.motion
+        ? "Motion <b>on</b> — the collapse travels, on the shared <code class=\"c\">springs.slide</code> curve."
+        : "Motion <b>off</b> — this is what banking a set did all along: the hero row is replaced between two frames and everything below teleports.");
+      render();
+    }
   });
 
   el("btnReset").addEventListener("click", () => {
