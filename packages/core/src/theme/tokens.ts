@@ -6,11 +6,47 @@
 
 export const colors = {
   ink: "#0c0d0c", // near-black background
-  ink2: "#141614", // raised surface
+  //
+  // ── THE RAISED SURFACE IS A PANTONE NOW, AND IT DRAGGED THE HAIRLINE ──────
+  //
+  //   ink2 → PANTONE 19-3911 TCX  Black Beauty  #212126  (as specified)
+  //   line → #2f2f36 — DERIVED from it, and the derivation is below.
+  //
+  // WHY THE CARD MOVED AT ALL. `ink2` was #141614, which sat ΔE 2.49 and 1.07:1
+  // from `ink`. That is not a raised surface, it is the same near-black twice —
+  // the identical defect that got `card` (#151715) deleted for sitting ΔE 0.3
+  // from ink2, one rung further down the same ramp. Black Beauty takes the pair
+  // to ΔE 7.15 / 1.22:1, so a card is finally an object ON the page rather than
+  // a border drawn around part of it.
+  //
+  // `ink` DELIBERATELY DID NOT FOLLOW. Black Beauty is a cool blue-violet — Lab
+  // (12.9, +1.3, −3.4) — and re-seating the page ground on that hue would have
+  // changed nothing anyone can see: `ink` is L* 3.5, where chroma is invisible.
+  // It would, however, have moved `onAccent`, `SCRIM`, every ON_FEEDBACK ink and
+  // both crash fallbacks, all of which happen to share that value for unrelated
+  // reasons. Hue only reads on the surfaces light enough to carry it, and those
+  // are ink2 and `line`.
+  //
+  // ── WHY `line` HAD TO MOVE WITH IT, and this is the load-bearing part ─────
+  //
+  // The old hairline #242724 is L* 15.2. Black Beauty is L* 12.9. That is
+  // **1.06:1** — a card border invisible against its own card, which would have
+  // rebuilt the deleted-`card` mistake at the BORDER instead of the fill. So
+  // `line` is Black Beauty's own hue walked up in L* until it restores the
+  // border-against-card contrast the app already had: 1.204 before, 1.206 now.
+  // It reads 1.47:1 against `ink`, so a hairline on the page is if anything
+  // clearer than it was.
+  //
+  // THE GENERAL RULE, now that this has bitten once: a hairline is only a
+  // hairline if you can see it, and NOTHING in the suite checked that until
+  // this change — which is exactly why the collision was invisible until it was
+  // measured. palette.test.ts now holds `line` against both surfaces.
+  //
   // `line` MUST match THEMES.dark in palette.ts and the :root defaults in
   // apps/web/app/globals.css — it was stale (#2a2d2a) for a while, which made
   // every chart hairline draw in a different grey than every border.
-  line: "#242724", // hairline borders
+  ink2: "#212126", // PANTONE Black Beauty — raised surface
+  line: "#2f2f36", // hairline borders — derived from Black Beauty (see above)
   //
   // THERE IS NO `card`. It held #151715 and sat ΔE 0.3 / contrast 1.01 from
   // `ink2` — the same colour under two names (audit/12 §5.1) — and the kit never
@@ -22,10 +58,14 @@ export const colors = {
   // needs a value somebody designed and a contrast to `ink2` a person can see.
   // ── THE PANTONE FOUR ─────────────────────────────────────────────────────
   //
-  // The brand palette is now four named PANTONE colours, and FOUR IS THE WHOLE
-  // SET — there is no fifth accent and no separate rating gold. State meaning
-  // routes through semantic.ts ROLE_COLOR; Wild Lime stays the ONE action
-  // accent. The surfaces above are untouched.
+  // The brand palette is four named PANTONE ACCENTS, and FOUR IS THE WHOLE SET
+  // — there is no fifth accent and no separate rating gold. State meaning routes
+  // through semantic.ts ROLE_COLOR; Wild Lime stays the ONE action accent.
+  //
+  // The NEUTRALS are separately specified and are NOT part of that count — the
+  // raised surface (Black Beauty, above) and the reading colour (Stalactite,
+  // below). A neutral carries no state and no role, so it competes with nothing;
+  // "four" is a statement about how many things on screen can mean something.
   //
   //   lime  → PANTONE 13-0540 TCX  Wild Lime      #c3d363  (as specified)
   //   red   → PANTONE 15-1242 TCX  Muskmelon      #ec935e  (as specified)
@@ -64,7 +104,7 @@ export const colors = {
   // channel (palette.test.ts checks every pair now, not a chosen three), and it
   // has to name the job no existing accent does. Both halves, or it is decoration.
   //
-  // ── AND ONE PANTONE NEUTRAL: STALACTITE ──────────────────────────────────
+  // ── THE READING COLOUR: STALACTITE ───────────────────────────────────────
   //
   //   chalk → PANTONE 11-4101 TCX  Stalactite  #f7f6f3  (as specified)
   //
@@ -74,12 +114,13 @@ export const colors = {
   // accent set is still four; what changed is that the app's off-white stopped
   // being a value somebody picked by eye and became a specified one.
   //
-  // It is the ONLY Pantone in this file that needed no adaptation at all.
+  // It is the ONLY Pantone in this file that needed no adaptation at all, and
+  // that is a fact about which END of the scale it sits on rather than luck.
   // Lyons Blue had to be lifted and Lava Falls (feedback.ts) had to be split,
   // both because a TCX chip is specified against white and this ground is
   // near-black. A near-white has the opposite problem, which is to say none:
   // every ratio it is asked for went UP when it moved — 17.61 → 18.02 on `ink`,
-  // 16.45 → 16.83 on `ink2`, 6.89 → 7.04 as the ink on Lava Falls.
+  // 16.45 → 16.83 on the old ink2, 6.89 → 7.04 as the ink on Lava Falls.
   //
   // WHAT IT CHANGED, in the one place it is visible. The outgoing #f3f4ef sat
   // at Lab (96.0, −1.2, +2.3) — a cool, faintly green off-white, which is what

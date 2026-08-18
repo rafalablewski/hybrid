@@ -40,7 +40,7 @@ import { RADIUS } from "./aurora/kit";
 // getDerivedStateFromError / componentDidCatch).
 
 const INK = "#0c0d0c";
-const INK2 = "#141614";
+const INK2 = "#212126";
 // `line` and `chalk`, copied — and they had both gone STALE, which is what an
 // exemption with no guard does. LINE was #2a2d2a, the exact value tokens.ts
 // names as the one that "made every chart hairline draw in a different grey
@@ -52,7 +52,7 @@ const INK2 = "#141614";
 // They stay literal (this file must not import the theme; see the header), and
 // error-boundary-palette.test.ts now fails if either drifts from the palette
 // again. Hardcoding is the point; hardcoding the WRONG value was the bug.
-const LINE = "#242724";
+const LINE = "#2f2f36";
 const CHALK = "#f7f6f3";
 const ASH = "#8b8f86";
 const LIME = "#c3d363";

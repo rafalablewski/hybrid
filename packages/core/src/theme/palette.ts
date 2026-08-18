@@ -46,27 +46,45 @@ export type ThemeName = "dark";
 
 /**
  * One disciplined theme (see reference/today-cockpit-design-concepts):
- * - `dark` = AURORA — a true neutral charcoal ramp; chartreuse is the single
- *            accent fill, red is kept strictly for risk.
+ * - `dark` = AURORA — a near-black ground under a COOL raised ramp; chartreuse
+ *            is the single accent fill, red is kept strictly for risk.
+ *
+ * IT IS NO LONGER "a true neutral charcoal ramp", which is what this line said
+ * for as long as the surfaces were eyeballed, and the sentence is corrected
+ * rather than left to contradict the tokens under it. `ink2` is PANTONE Black
+ * Beauty and `line` is derived from it, both at Lab b ≈ −3.4/−4.5: a deliberate
+ * cool cast on the two surfaces that are light enough to show one. `ink` stays
+ * neutral because at L* 3.5 nothing shows.
+ *
  * Both `accent`/`onAccent` (the action fill + its ink) and `accentText` clear
- * AA on the theme's surfaces (guarded by palette.test.ts).
+ * AA on the theme's surfaces (guarded by palette.test.ts), and so does `line`
+ * against both of them — that last guard is new, and it exists because the
+ * Black Beauty move put the old hairline at 1.06:1 against its own card with
+ * nothing in the suite able to notice.
  */
 export const THEMES: Record<ThemeName, ThemePalette> = {
   dark: {
     ink: "#0c0d0c",
-    ink2: "#141614",
-    line: "#242724",
+    ink2: "#212126",
+    line: "#2f2f36",
     chalk: "#f7f6f3",
     ash: "#8b8f86",
     // Wild Lime is the action fill, with near-black ink on top (11.89:1).
     accent: "#c3d363",
     onAccent: "#0c0d0c",
     // ACCENT-TEXT. Three of the four Pantone colours are already legible as type
-    // on the card and are their own text colour — Wild Lime 11.00, Fleur De Lis
-    // 8.05, Muskmelon 7.64, all clear of AA. Only BLUE needs a second value: the
-    // fill (#2f7893) is the darkest thing the palette asks anyone to read, so
-    // text takes the same Lyons Blue hue lifted further, to 7.81 — parity with
-    // the tone the outgoing teal used (7.78).
+    // on the card and are their own text colour — on Black Beauty, Wild Lime
+    // 9.78, Fleur De Lis 7.16, Muskmelon 6.79, all clear of AA. Only BLUE needs
+    // a second value: the fill (#2f7893) is the darkest thing the palette asks
+    // anyone to read, so text takes the same Lyons Blue hue lifted further, to
+    // 6.95 on the card.
+    //
+    // ALL FOUR LOST ABOUT 12% WHEN THE CARD DID, and that is the accepted cost
+    // of a surface you can actually see: a lighter card means less contrast for
+    // everything drawn on it. The floor that matters is `ash` at 4.86 — the most
+    // used secondary text in the app, and the tightest thing on this surface.
+    // Anything that lightens `ink2` further has to start by re-checking that
+    // number, not this comment.
     accentText: { lime: "#c3d363", blue: "#6bb4d4", amber: "#daa51d", red: "#ec935e" },
   },
 };

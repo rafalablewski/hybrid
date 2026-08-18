@@ -24,7 +24,15 @@ export type PremiumAccentPreset = BrandAccent;
 /** The default when no admin override is set — sand. */
 export const PREMIUM_ACCENT_DEFAULT: PremiumAccentPreset = "amber";
 
-/** Fixed inks for text sitting ON a solid accent fill (theme-independent). */
+/** Fixed inks for text sitting ON a solid accent fill (theme-independent).
+ *
+ *  #141614 IS NOT `ink2` ANY MORE, and the coincidence is worth a line so the
+ *  next palette sweep does not "fix" it. This is a FOREGROUND — the near-black
+ *  that sits on a light sand fill — and it was chosen for its contrast on that
+ *  fill (AAA), not because it was the card. The card is PANTONE Black Beauty
+ *  now; this value stays where it is because its job never involved the card.
+ *  Deliberately theme-independent too: sand is a light fill whichever way the
+ *  surfaces go, so this cannot read the flipping `ink`/`onAccent`. */
 const INK_DARK = "#141614";
 const INK_LIGHT = "#faf6ef";
 

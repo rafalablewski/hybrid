@@ -102,14 +102,24 @@ export const FEEDBACK: Record<FeedbackKind, FeedbackTone> = {
    * convention — and `text` is Lava Falls' own Lab hue angle (29°) lifted in L*
    * until it clears AA on the card.
    *
-   * WHY #dd5f5b AND NOT SOMETHING BRIGHTER. The lift is squeezed from both ends:
-   * below ~4.5:1 it fails as type, and above ~5.5 it closes on Muskmelon, the
-   * brand's danger accent, which sits at Lab hue 56°. #dd5f5b holds 5.03:1 with
-   * ΔE 19.2 from Muskmelon. Lifting to match the outgoing coral's 5.42 exactly
-   * was possible (#e56460) and left only ΔE 18.3 — 0.3 above the floor. Contrast
-   * that is already comfortably AA is not worth spending distinctness on.
+   * WHY #e06462, AND WHY IT MOVED ONCE ALREADY. The lift is squeezed from both
+   * ends: below 4.5:1 it fails as type, and the brighter it goes the closer it
+   * gets to Muskmelon — the brand's danger accent, at Lab hue 56° — which has to
+   * stay ΔE 18 clear so a failed save and a falling figure never read as the
+   * same statement. That is a corridor, not a target, and it is narrow.
+   *
+   * It was #dd5f5b (5.03:1, ΔE 19.2) while the card was #141614. Moving the card
+   * to PANTONE Black Beauty put it at **4.47:1** — under AA, by 0.03 — and the
+   * guard below caught it, which is the entire reason that guard is written
+   * against `t.ink2` rather than against a number somebody typed. #e06462 is the
+   * smallest lift that clears: 4.71:1 on the card, 5.72 on ink, ΔE 18.98 from
+   * Muskmelon. Still Lava Falls' own hue, still inside the corridor at both ends.
+   *
+   * THE LESSON, since this is the second time this value has been re-derived: an
+   * error TONE is a function of the surface it is read on. Change `ink2` and
+   * this number is not "probably fine", it is a thing to re-measure.
    */
-  error: { fill: "#9a2b2e", ink: colors.chalk, text: "#dd5f5b" },
+  error: { fill: "#9a2b2e", ink: colors.chalk, text: "#e06462" },
 
   /** Lyons Blue's text tone, which is light enough to be its own fill too. */
   info: { fill: THEMES.dark.accentText.blue, ink: THEMES.dark.onAccent, text: THEMES.dark.accentText.blue },

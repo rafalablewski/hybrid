@@ -47,10 +47,18 @@ function renderHtml(subject: string, bodyText: string): string {
     .split(/\n{2,}/)
     .map((p) => `<p style="margin:0 0 16px;line-height:1.6;">${esc(p).replace(/\n/g, "<br/>")}</p>`)
     .join("");
+  // A SEVENTH HAND-COPIED PALETTE, and it had already drifted twice. This
+  // template must stay literal — an email client has no stylesheet of ours and
+  // no CSS variables — but literal is not licence to be wrong, which is the same
+  // rule apps/web/__tests__/fallback-palette.test.ts states for the crash pages.
+  // Found here and corrected with the Black Beauty move: the card was #141614
+  // (the retired ink2), the border #2a2c2a (a third stale grey, sibling of the
+  // #2a2d2a tokens.ts names by name), and the body text #e9e9e9 / #ffffff rather
+  // than chalk. Ink, accent and the wordmark were already right.
   return `<!doctype html><html><body style="margin:0;background:#0c0d0c;padding:24px;">
-    <div style="max-width:560px;margin:0 auto;background:#141614;border:1px solid #2a2c2a;border-radius:16px;padding:32px;font-family:Arial,Helvetica,sans-serif;color:#e9e9e9;">
+    <div style="max-width:560px;margin:0 auto;background:#212126;border:1px solid #2f2f36;border-radius:16px;padding:32px;font-family:Arial,Helvetica,sans-serif;color:#f7f6f3;">
       <div style="font-weight:800;font-size:20px;letter-spacing:-0.02em;margin-bottom:20px;">HYBRID<span style="color:#c3d363;">.</span></div>
-      <h1 style="font-size:20px;margin:0 0 16px;color:#ffffff;">${esc(subject)}</h1>
+      <h1 style="font-size:20px;margin:0 0 16px;color:#f7f6f3;">${esc(subject)}</h1>
       ${paragraphs}
     </div>
   </body></html>`;

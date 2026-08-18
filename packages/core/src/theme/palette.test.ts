@@ -89,6 +89,46 @@ describe("theme palettes meet WCAG AA", () => {
       });
     }
 
+    // A HAIRLINE IS ONLY A HAIRLINE IF YOU CAN SEE IT — and until the PANTONE
+    // Black Beauty move, NOTHING in this suite said so.
+    //
+    // `line` draws the border of every card, the divider in every list, the
+    // unlit ticks of the readiness ring and the track under every meter. It is
+    // the most-drawn colour in the app after the two surfaces, and it was the
+    // only one whose entire job is a RELATIONSHIP to something else — which is
+    // exactly the kind of value a per-token test cannot catch drifting.
+    //
+    // What happened: `ink2` moved from #141614 (L* 7.0) to Black Beauty (L*
+    // 12.9), and the old #242724 hairline (L* 15.2) landed **1.06:1** against
+    // the card it was supposed to outline. Every card border in the product
+    // would have quietly dissolved, and every existing test would have passed —
+    // the same failure mode as `card` sitting ΔE 0.3 from `ink2`, rebuilt at the
+    // border instead of the fill.
+    //
+    // WHY 1.15 AND NOT 3:1. This is deliberately NOT the 1.4.11 mark threshold
+    // the accent fills above are held to. A hairline is not a mark carrying
+    // meaning; it is the quietest possible statement that two regions are
+    // different, and at 3:1 it stops being a hairline and becomes a stroke — the
+    // heavy chrome this design language spent years removing. 1.15 is set just
+    // under the 1.21 the palette actually ships, so it fails a collision and
+    // passes a deliberate softening.
+    const HAIRLINE_MIN = 1.15;
+    for (const [sn, sc] of surfaces) {
+      it(`${name}: line is visible against ${sn} (≥ ${HAIRLINE_MIN}:1)`, () => {
+        expect(contrastRatio(t.line, sc)).toBeGreaterThanOrEqual(HAIRLINE_MIN);
+      });
+    }
+
+    // AND THE CARD HAS TO BE A SURFACE, not the ground under another name. This
+    // is the `card` #151715 lesson (ΔE 0.3 from ink2, deleted) stated as a rule
+    // instead of a comment: two SURFACES that measure the same are one surface
+    // with two names, and the app pays for the second one in every hand-rolled
+    // copy that picks the wrong one. #141614 was itself only ΔE 2.49 / 1.07:1
+    // from `ink` — it passed nothing, because nothing asked.
+    it(`${name}: the card is distinguishable from the page`, () => {
+      expect(contrastRatio(t.ink2, t.ink)).toBeGreaterThanOrEqual(HAIRLINE_MIN);
+    });
+
     // THE PALETTE IS FOUR ACCENTS. Not five, and not four-plus-a-gold. Both extra
     // keys existed and both were near-duplicates of a colour already in the set
     // (steel blue ΔE 14.0 from lifted Lyons Blue; rating gold ΔE 8.6 from Fleur

@@ -67,7 +67,7 @@ describe("wcagRating", () => {
     // dark ink on sand — very high contrast
     expect(wcagRating("#141614", "#d0cd94").normal).toBe("AAA");
     // a low-contrast pair fails normal but may pass large
-    const mid = wcagRating("#8b8f86", "#141614"); // ash on ink2 ~ 4.2:1
+    const mid = wcagRating("#8b8f86", "#141614"); // ash on the fixed premium ink ~ 4.2:1
     expect(["AA", "fail"]).toContain(mid.normal);
   });
 });

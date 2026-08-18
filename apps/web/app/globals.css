@@ -9,8 +9,8 @@
    Exposed to Tailwind v4 via @theme so utilities like bg-ink / text-lime work. */
 @theme {
   --color-ink: #0c0d0c;
-  --color-ink2: #141614;
-  --color-line: #242724;
+  --color-ink2: #212126;
+  --color-line: #2f2f36;
   /* THE PANTONE FOUR (mirror packages/core/src/theme/tokens.ts, which records
      what each one is and why blue is not its raw Pantone value):
        lime  Wild Lime 13-0540 · red Muskmelon 15-1242
@@ -165,7 +165,7 @@ html {
   --feedback-success: #00ab84;
   --feedback-warning: #daa51d;
   --feedback-error: #9a2b2e;
-  --feedback-error-text: #dd5f5b;
+  --feedback-error-text: #e06462;
   --feedback-error-ink: #f7f6f3;
   --feedback-info: #6bb4d4;
 
