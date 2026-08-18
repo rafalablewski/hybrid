@@ -661,3 +661,161 @@ export function recipeToMeal(recipe: Recipe): RecipeMealDraft {
     fat: recipe.macros.fat,
   };
 }
+
+// ── SHARING A RECIPE ────────────────────────────────────────────────────────
+
+/**
+ * The https address of a recipe. Deliberately the WEB form and not `hybrid://`:
+ * a link is only worth sending if it opens for someone who has not installed
+ * the app. The universal-link entitlement is what will make it open IN the app
+ * (there is no apple-app-site-association in the repo yet, and no web client
+ * behind hybrid.app since Aug 2026), so today it is provenance rather than a
+ * door — which is exactly why the shared MESSAGE carries the recipe itself and
+ * not just this line. Same shape as the verified-food page's link, so the two
+ * cannot drift into two URL vocabularies.
+ */
+export const RECIPE_SHARE_BASE = "https://hybrid.app/app?s=nutrition";
+
+/** A link to one library recipe. `?recipe=` is already read by the mobile
+ *  Nutrition route, so this lands ON the dish the day links resolve. */
+export const recipeShareLink = (id: string): string => `${RECIPE_SHARE_BASE}&recipe=${encodeURIComponent(id)}`;
+
+/** A link to the library itself, for sharing the shelf rather than a dish. */
+export const recipeLibraryShareLink = (): string => `${RECIPE_SHARE_BASE}&recipes=1`;
+
+/**
+ * WHAT GETS SHARED, as data — the one shape the message is rendered from.
+ *
+ * Both kinds of recipe project onto it (`recipeShareView` here for the curated
+ * library, `userRecipeShareView` in user-recipes.ts for a dish the athlete
+ * authored), so a shared recipe reads the same whoever wrote it, in one
+ * translated renderer rather than two string builders drifting apart.
+ *
+ * Every line arrives ALREADY FORMATTED and already translated. This module
+ * knows how to scale a quantity; it does not know how the athlete's language
+ * writes "serves 4".
+ */
+export interface RecipeShareView {
+  title: string;
+  /** Meal, time, servings — whatever the source can honestly state. */
+  meta: string[];
+  /** The per-serving macro line, or "" where the numbers are not stated. */
+  macroLine: string;
+  /** "INGREDIENTS (2 SERVINGS)" and its lines, already scaled. */
+  ingredientsHead: string;
+  ingredients: string[];
+  /** The method, if the recipe has one. A user recipe has none. */
+  methodHead: string;
+  steps: string[];
+  /** The provenance foot: a wordmark line and the link. */
+  credit: string;
+  link?: string;
+}
+
+/**
+ * The shared message. Plain text, because a share sheet's least common
+ * denominator is a message body and a recipe is worth reading in one — the
+ * recipient of a bare link today has no app and no web page to open it with.
+ *
+ * NO middot separators (house rule): the meta line joins on a spaced en dash.
+ */
+export function recipeShareText(v: RecipeShareView): string {
+  const block = (head: string, lines: string[]) => (lines.length === 0 ? "" : `\n\n${head}\n${lines.join("\n")}`);
+  const numbered = v.steps.map((s, i) => `${i + 1}. ${s}`);
+  return (
+    v.title +
+    (v.meta.length > 0 ? `\n${v.meta.join(" – ")}` : "") +
+    (v.macroLine ? `\n${v.macroLine}` : "") +
+    block(v.ingredientsHead, v.ingredients) +
+    block(v.methodHead, numbered) +
+    `\n\n${v.credit}` +
+    (v.link ? `\n${v.link}` : "")
+  );
+}
+
+/** The labels the share view needs, injected so this stays translated without
+ *  importing the dictionary. */
+export interface RecipeShareLabels {
+  meal: (meal: RecipeMeal) => string;
+  mins: (n: number) => string;
+  serves: (n: number) => string;
+  /** "410 kcal, 22 g protein, 24 g carbs, 26 g fat per serving" */
+  macros: (m: RecipeMacros) => string;
+  /** "INGREDIENTS (2 SERVINGS)" */
+  ingredientsHead: (serves: number) => string;
+  methodHead: string;
+  optional: string;
+  credit: string;
+}
+
+/** A curated library recipe, projected for sharing at the serving count the
+ *  athlete is looking at — set the stepper to 4 and the message says 8 eggs. */
+export function recipeShareView(recipe: Recipe, serves: number, t: RecipeShareLabels): RecipeShareView {
+  // A serves count that is not a real, positive number falls back to the
+  // recipe's OWN yield rather than to 1: the message must describe a dish
+  // somebody can cook, and "1 serving of a recipe written for 2" is a silent
+  // halving of every quantity in it.
+  const rounded = Math.round(serves);
+  const n = Number.isFinite(rounded) && rounded > 0 ? rounded : recipe.baseServes;
+  return {
+    title: recipe.name,
+    meta: [t.meal(recipe.meal), t.mins(recipe.timeMins), t.serves(n)],
+    macroLine: t.macros(recipe.macros),
+    ingredientsHead: t.ingredientsHead(n),
+    ingredients: recipe.ingredients.map(
+      (ing) => `${formatIngredient(ing, recipe.baseServes, n)} ${ing.name}${ing.optional ? ` (${t.optional})` : ""}`,
+    ),
+    methodHead: t.methodHead,
+    steps: recipe.steps.map((s) => s.text),
+    credit: t.credit,
+    link: recipeShareLink(recipe.id),
+  };
+}
+
+// ── KEEPING A LIBRARY RECIPE ────────────────────────────────────────────────
+
+/**
+ * SAVED LIBRARY RECIPES — the athlete's own shelf of the curated ones.
+ *
+ * This is a set of ids and nothing else, held on the device (the mobile store
+ * mirrors the saved-posts idiom: AsyncStorage is what the UI reads, so a star
+ * fills on the press frame and the shelf opens offline).
+ *
+ * IT IS DELIBERATELY NOT A COPY INTO `UserRecipe`, and the reason is a fact
+ * about the model rather than a preference. A user recipe's macros are DERIVED
+ * from each ingredient's own snapshot (user-recipes.ts), and `NutritionFacts`
+ * states kcal/protein/carbs/fat as REQUIRED numbers. A curated recipe carries
+ * per-SERVE macros an editor typed and no per-ingredient figures at all, so a
+ * copy could only fill those lines with zeros — a recipe reading "0 kcal" out
+ * of seven real ingredients, which is precisely the confident-wrong-number
+ * failure the derived-macros rule exists to prevent. Matching each line to a
+ * food that does state its numbers is the importer-shaped problem; it is
+ * recorded as `recipe-copy-to-mine` in capabilities.ts rather than faked here.
+ */
+export const RECIPE_SAVED_STORAGE_KEY = "hybrid.nutrition.savedRecipes.v1";
+
+/** Read a persisted blob into a clean id list: strings only, deduped, and
+ *  PRUNED to recipes that still exist — an id from an older build must leave a
+ *  shorter shelf, never a blank row. Order is the athlete's save order. */
+export function normalizeSavedRecipes(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const known = new Set(RECIPES.map((r) => r.id));
+  const out: string[] = [];
+  for (const v of raw) {
+    if (typeof v !== "string" || !known.has(v) || out.includes(v)) continue;
+    out.push(v);
+  }
+  return out;
+}
+
+/** Save or unsave, newest FIRST — the shelf reads as "what I just kept". */
+export function toggleSavedRecipe(ids: string[], id: string): string[] {
+  return ids.includes(id) ? ids.filter((x) => x !== id) : [id, ...ids];
+}
+
+/** The saved ids as recipes, in save order, skipping any that no longer exist. */
+export function savedRecipes(ids: string[]): Recipe[] {
+  return normalizeSavedRecipes(ids)
+    .map((id) => recipeById(id))
+    .filter((r): r is Recipe => r != null);
+}

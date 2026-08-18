@@ -8,7 +8,7 @@ import {
 import { fs, space, leading, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { DockRail, DockChip, RADIUS, ACard } from "./kit";
+import { DockRail, DockChip, RADIUS, ACard, ASection } from "./kit";
 import { withAlpha } from "./field";
 import { HeroNav } from "./hero";
 import { COVER_GUTTER } from "../plan-hero";
@@ -80,6 +80,36 @@ export function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
         contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_GUTTER }}
       >
         {shelf.recipes.map((r) => <RecipeTile key={r.id} recipe={r} onOpen={() => openRecipe(r)} />)}
+      </ScrollView>
+    </View>
+  );
+}
+
+/** THE SAVED SHELF — the library dishes the athlete kept, above the curated
+ *  collections and below their own recipes, in that order: what you wrote,
+ *  what you kept, then what we wrote.
+ *
+ *  It is the same full-bleed shelf of the same tiles as a collection — the head
+ *  is the shared ASection rather than a second head anatomy, and it carries NO
+ *  arrow, because there is no "all saved" screen to go to: the shelf already
+ *  holds every one. */
+export function SavedRecipeShelf({ recipes, openRecipe }: { recipes: Recipe[]; openRecipe: (r: Recipe) => void }) {
+  const { palette: C } = useTheme();
+  const { t } = useLang();
+  if (recipes.length === 0) return null;
+  return (
+    <View style={{ marginTop: 20 }}>
+      <ASection title={t("w.recovery.nutrition.savedRecipesHead")} meta={String(recipes.length)} style={{ marginHorizontal: 2 }} />
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginHorizontal: 2, marginBottom: 10 }}>
+        {t("w.recovery.nutrition.savedRecipesSub")}
+      </Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ marginHorizontal: -COVER_GUTTER }}
+        contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_GUTTER }}
+      >
+        {recipes.map((r) => <RecipeTile key={r.id} recipe={r} onOpen={() => openRecipe(r)} />)}
       </ScrollView>
     </View>
   );

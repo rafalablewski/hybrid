@@ -41,7 +41,7 @@
  */
 
 import { scaleFacts, sumFacts, type MicroKey, type NutritionFacts } from "./food-facts";
-import type { Recipe } from "./recipes";
+import { recipeShareText, type Recipe, type RecipeShareView } from "./recipes";
 
 /** One line of a recipe: a food, and how much of it went in. */
 export interface UserRecipeIngredient {
@@ -303,4 +303,50 @@ export function formatIngredientQty(ing: Pick<UserRecipeIngredient, "qty" | "ser
 /** A blank recipe, for the "new recipe" form. */
 export function emptyUserRecipe(): Omit<UserRecipe, "id"> {
   return { name: "", note: null, emoji: null, servings: 1, timeMins: null, ingredients: [] };
+}
+
+// ── SHARING YOUR OWN RECIPE ─────────────────────────────────────────────────
+
+/** The labels `userRecipeShareView` needs. A user recipe has no METHOD — the
+ *  model holds ingredients and quantities, not prose — so the renderer's method
+ *  block simply stays empty rather than printing an empty heading. */
+export interface UserRecipeShareLabels {
+  mins: (n: number) => string;
+  serves: (n: number) => string;
+  /** The per-serving macro line, from the DERIVED totals. */
+  macros: (f: NutritionFacts) => string;
+  ingredientsHead: (serves: number) => string;
+  credit: string;
+}
+
+/**
+ * A dish the athlete authored, projected onto the shared share view.
+ *
+ * NO LINK, and that is the honest part: a private recipe has no public address,
+ * so the message carries the recipe and stops. The macro line comes from
+ * `recipeTotals` — the same derived per-serving figures the editor shows, never
+ * a number typed for the occasion.
+ */
+export function userRecipeShareView(r: UserRecipe, t: UserRecipeShareLabels): RecipeShareView {
+  const { perServing, servings } = recipeTotals(r);
+  const meta = [t.serves(servings)];
+  if (r.timeMins != null && r.timeMins > 0) meta.unshift(t.mins(r.timeMins));
+  return {
+    title: r.name,
+    meta,
+    macroLine: t.macros(perServing),
+    ingredientsHead: t.ingredientsHead(servings),
+    ingredients: r.ingredients
+      .slice()
+      .sort((a, b) => a.position - b.position)
+      .map((ing) => `${formatIngredientQty(ing)} ${ing.name}`),
+    methodHead: "",
+    steps: [],
+    credit: t.credit,
+  };
+}
+
+/** The shared message for a user recipe — the same renderer the library uses. */
+export function userRecipeShareText(r: UserRecipe, t: UserRecipeShareLabels): string {
+  return recipeShareText(userRecipeShareView(r, t));
 }

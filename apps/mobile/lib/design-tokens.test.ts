@@ -856,7 +856,11 @@ describe("colour", () => {
     // 60 → 59: nutrition's `#3a3d34` placeholder ink (1.64:1 — a hint nobody
     // could read) became C.ash when the two placeholder kinds were named apart.
     // 59 → 58: the sheet's scrim `"#000"` became the SCRIM token.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 58, "2026-12-31", "hex literal → a palette token");
+    // 58 → 56: the hero rail's on-art white became ON_ART when the TRAILING
+    // control (HeroAction, the recipe share button) had to draw the same circle
+    // as the leading one — six literals across the two ends of one rail, which
+    // is the drift this rule exists to catch, collapsed to a single name.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 56, "2026-12-31", "hex literal → a palette token");
   });
 });
 

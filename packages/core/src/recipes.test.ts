@@ -15,6 +15,13 @@ import {
   recipeCookView,
   RECIPE_COLLECTIONS,
   RECIPE_COLLECTION_META,
+  recipeShareLink,
+  recipeLibraryShareLink,
+  recipeShareView,
+  recipeShareText,
+  normalizeSavedRecipes,
+  toggleSavedRecipe,
+  savedRecipes,
   type Recipe,
   type RecipeMeal,
 } from "./recipes";
@@ -236,5 +243,121 @@ describe("recipeCookView — the plate the cook screen wears", () => {
       expect(recipeCookView(r, 0, CK).steps).toBe(r.steps.length);
       expect(recipeCookView(r, 0, CK).last).toBe(r.steps.length === 1);
     }
+  });
+});
+
+// ── SHARING ─────────────────────────────────────────────────────────────────
+
+const SHARE = {
+  meal: (m: RecipeMeal) => m[0]!.toUpperCase() + m.slice(1),
+  mins: (n: number) => `${n} min`,
+  serves: (n: number) => `serves ${n}`,
+  macros: (m: { kcal: number; protein: number; carbs: number; fat: number }) =>
+    `${m.kcal} kcal, ${m.protein} g protein, ${m.carbs} g carbs, ${m.fat} g fat per serving`,
+  ingredientsHead: (n: number) => `INGREDIENTS (${n} SERVINGS)`,
+  methodHead: "METHOD",
+  optional: "optional",
+  credit: "From HYBRID",
+};
+
+describe("recipe sharing", () => {
+  const shakshuka = recipeById("shakshuka")!;
+
+  it("addresses a recipe with the same URL vocabulary as a verified food", () => {
+    expect(recipeShareLink("shakshuka")).toBe("https://hybrid.app/app?s=nutrition&recipe=shakshuka");
+    expect(recipeLibraryShareLink()).toBe("https://hybrid.app/app?s=nutrition&recipes=1");
+  });
+
+  it("escapes an id rather than pasting it into the query raw", () => {
+    expect(recipeShareLink("a b&c")).toBe("https://hybrid.app/app?s=nutrition&recipe=a%20b%26c");
+  });
+
+  it("shares the recipe at the serving count on screen, not the stored one", () => {
+    const two = recipeShareView(shakshuka, 2, SHARE);
+    const four = recipeShareView(shakshuka, 4, SHARE);
+    expect(two.ingredients[0]).toBe("4 Large eggs");
+    expect(four.ingredients[0]).toBe("8 Large eggs");
+    expect(four.ingredients[1]).toBe("800 g Chopped tomatoes");
+    expect(four.ingredientsHead).toBe("INGREDIENTS (4 SERVINGS)");
+    // Per-SERVE macros are constant as the yield changes — that is what
+    // per-serve means, and a share that scaled them would be wrong.
+    expect(two.macroLine).toBe(four.macroLine);
+  });
+
+  it("falls back to the recipe's own yield when the serves count is nonsense", () => {
+    for (const bad of [0, -2, Number.NaN]) {
+      expect(recipeShareView(shakshuka, bad, SHARE).ingredients[0]).toBe("4 Large eggs");
+    }
+  });
+
+  it("marks an optional ingredient as optional rather than dropping it", () => {
+    const v = recipeShareView(shakshuka, 2, SHARE);
+    expect(v.ingredients.at(-1)).toBe("40 g Feta (optional)");
+  });
+
+  it("renders a message a person can cook from, with the link as the last line", () => {
+    const text = recipeShareText(recipeShareView(shakshuka, 2, SHARE));
+    const lines = text.split("\n");
+    expect(lines[0]).toBe("Shakshuka");
+    expect(lines[1]).toBe("Breakfast – 20 min – serves 2");
+    expect(text).toContain("INGREDIENTS (2 SERVINGS)");
+    expect(text).toContain("METHOD");
+    // The method is numbered, because a method is genuinely a sequence.
+    expect(text).toContain("1. Soften the diced onion");
+    expect(text).toContain(`4. ${shakshuka.steps[3]!.text}`);
+    expect(lines.at(-2)).toBe("From HYBRID");
+    expect(lines.at(-1)).toBe(recipeShareLink("shakshuka"));
+  });
+
+  it("never joins the meta line with a middot (the house separator rule)", () => {
+    for (const r of RECIPES) {
+      const text = recipeShareText(recipeShareView(r, r.baseServes, SHARE));
+      expect(text.includes("·"), r.id).toBe(false);
+      expect(text.includes("•"), r.id).toBe(false);
+    }
+  });
+
+  it("omits a block the recipe has nothing for, rather than printing its heading", () => {
+    const text = recipeShareText({
+      title: "Leftovers",
+      meta: [],
+      macroLine: "",
+      ingredientsHead: "INGREDIENTS",
+      ingredients: ["1 bowl Rice"],
+      methodHead: "METHOD",
+      steps: [],
+      credit: "From HYBRID",
+    });
+    expect(text).toContain("INGREDIENTS");
+    expect(text).not.toContain("METHOD");
+    expect(text.endsWith("From HYBRID")).toBe(true);
+  });
+});
+
+describe("saved library recipes", () => {
+  it("keeps only ids that still exist, deduped and in order", () => {
+    expect(normalizeSavedRecipes(["shakshuka", "shakshuka", "gone", 7, null, "ramen"])).toEqual([
+      "shakshuka",
+      "ramen",
+    ]);
+  });
+
+  it("degrades a corrupt blob to an empty shelf rather than throwing", () => {
+    for (const junk of [null, undefined, "shakshuka", 3, {}]) {
+      expect(normalizeSavedRecipes(junk)).toEqual([]);
+    }
+  });
+
+  it("saves newest first and unsaves in place", () => {
+    const one = toggleSavedRecipe([], "ramen");
+    expect(one).toEqual(["ramen"]);
+    const two = toggleSavedRecipe(one, "shakshuka");
+    expect(two).toEqual(["shakshuka", "ramen"]);
+    expect(toggleSavedRecipe(two, "shakshuka")).toEqual(["ramen"]);
+  });
+
+  it("resolves the shelf to real recipes, in save order", () => {
+    const shelf = savedRecipes(["ramen", "gone", "shakshuka"]);
+    expect(shelf.map((r) => r.id)).toEqual(["ramen", "shakshuka"]);
   });
 });

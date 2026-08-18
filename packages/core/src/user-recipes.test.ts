@@ -11,6 +11,8 @@ import {
   refreshIngredients,
   scaleRecipeTo,
   staleIngredients,
+  userRecipeShareText,
+  userRecipeShareView,
   type UserRecipe,
   type UserRecipeIngredient,
 } from "./user-recipes";
@@ -274,5 +276,50 @@ describe("emptyUserRecipe", () => {
     const r = emptyUserRecipe();
     expect(r.servings).toBe(1);
     expect(r.ingredients).toEqual([]);
+  });
+});
+
+describe("sharing your own recipe", () => {
+  const T = {
+    mins: (n: number) => `${n} min`,
+    serves: (n: number) => `serves ${n}`,
+    macros: (f: NutritionFacts) => `${f.kcal} kcal, ${f.protein} g protein per serving`,
+    ingredientsHead: (n: number) => `INGREDIENTS (${n} SERVINGS)`,
+    credit: "From HYBRID",
+  };
+
+  it("states the DERIVED per-serving numbers, never a typed figure", () => {
+    const r = pasta();
+    const v = userRecipeShareView(r, T);
+    const { perServing } = recipeTotals(r);
+    expect(v.macroLine).toBe(`${perServing.kcal} kcal, ${perServing.protein} g protein per serving`);
+    expect(v.title).toBe("Chicken pasta");
+    expect(v.ingredientsHead).toBe("INGREDIENTS (2 SERVINGS)");
+  });
+
+  it("writes each line the way the editor does, in the athlete's own order", () => {
+    const r = pasta();
+    r.ingredients[0]!.position = 2;
+    r.ingredients[1]!.position = 1;
+    r.ingredients[2]!.position = 0;
+    const v = userRecipeShareView(r, T);
+    expect(v.ingredients).toEqual(["1.5 × 100 g Tomato sauce", "100 g Pasta", "2.5 × 100 g Chicken breast"]);
+  });
+
+  it("carries NO link — a private recipe has no public address", () => {
+    const text = userRecipeShareText(pasta(), T);
+    expect(userRecipeShareView(pasta(), T).link).toBeUndefined();
+    expect(text).not.toContain("http");
+    expect(text.endsWith("From HYBRID")).toBe(true);
+  });
+
+  it("prints no METHOD heading, because the model holds no method", () => {
+    expect(userRecipeShareText(pasta(), T)).not.toContain("METHOD");
+  });
+
+  it("states the time only when the athlete recorded one", () => {
+    expect(userRecipeShareView(pasta(), T).meta).toEqual(["serves 2"]);
+    expect(userRecipeShareView({ ...pasta(), timeMins: 25 }, T).meta).toEqual(["25 min", "serves 2"]);
+    expect(userRecipeShareView({ ...pasta(), timeMins: 0 }, T).meta).toEqual(["serves 2"]);
   });
 });
