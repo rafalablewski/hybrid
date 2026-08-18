@@ -21,7 +21,7 @@
      their call sites — do not prune them. */
   --color-lime: #c3d363;
   --color-chalk: #f7f6f3;
-  --color-ash: #8b8f86;
+  --color-ash: #8a9691;
   --color-blue: #2f7893;
   --color-amber: #daa51d;
   --color-red: #ec935e;
@@ -165,7 +165,7 @@ html {
   --feedback-success: #00ab84;
   --feedback-warning: #daa51d;
   --feedback-error: #9a2b2e;
-  --feedback-error-text: #e06462;
+  --feedback-error-text: #f0565c;
   --feedback-error-ink: #f7f6f3;
   --feedback-info: #6bb4d4;
 

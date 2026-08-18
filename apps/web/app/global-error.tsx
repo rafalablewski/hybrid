@@ -37,7 +37,7 @@ export default function GlobalError({
         <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-.02em" }}>
           Something went wrong
         </h1>
-        <p style={{ color: "#8b8f86", maxWidth: 420, margin: 0, lineHeight: 1.5 }}>
+        <p style={{ color: "#8a9691", maxWidth: 420, margin: 0, lineHeight: 1.5 }}>
           The app failed to start. Please retry.
           {error.digest ? ` (ref: ${error.digest})` : ""}
         </p>
@@ -54,7 +54,7 @@ export default function GlobalError({
             borderRadius: 16,
             border: "1px solid #2f2f36",
             background: "#212126",
-            color: "#8b8f86",
+            color: "#8a9691",
             fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
             fontSize: 11,
             lineHeight: 1.55,

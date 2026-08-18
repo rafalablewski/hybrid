@@ -295,11 +295,33 @@ describe("feedback colours", () => {
     expect(hueOf(FEEDBACK.error.fill)).toBeLessThan(45);
   });
 
-  // The lift must not drift off the colour it is a lift OF. Lava Falls is the
-  // only kind where fill and text differ, and the whole claim is that the text
-  // is the SAME HUE, raised — not a different red that happens to be legible.
-  it("the error text tone holds Lava Falls' own hue angle", () => {
+  // The lift must not drift off the colour it is a lift OF. `error` is the only
+  // kind where fill and text differ, and the claim is that the text is a HUE,
+  // raised — not a different red that happens to be legible.
+  //
+  // IT IS A TWO-PANTONE CHANNEL NOW. The text is derived from POINSETTIA
+  // 17-1654 TCX (#cb3441), not from Lava Falls, because a chip that is the best
+  // deep error SURFACE in the set is not obliged to also be the best signal red
+  // as type — and asking it to be produced two rounds of re-derivation.
+  //
+  // SO THIS TEST SURVIVED THE SPLIT UNCHANGED, and that is the point worth
+  // recording rather than the assertion itself: Poinsettia sits at Lab hue 26.1°
+  // and Lava Falls at 28.9°, 2.7° apart, so the lifted text still holds the
+  // FILL's hue inside the same 6° it always had to. The second Pantone did not
+  // fork the family; it moved along it. A future error source that failed this
+  // would be a genuinely different red and would need its own argument.
+  it("the error text tone holds the error fill's hue angle", () => {
     expect(Math.abs(hueOf(FEEDBACK.error.text) - hueOf(FEEDBACK.error.fill))).toBeLessThan(6);
+  });
+
+  // AND IT HOLDS THE SOURCE IT WAS ACTUALLY DERIVED FROM, tightly. The lift is a
+  // lightness move on Poinsettia and nothing else, so the hue should barely
+  // register a change at all — 1° is a generous allowance for a value that
+  // measures 0.02° off. Without this the test above would pass for any red in a
+  // 6° window, including one nobody derived.
+  it("the error text tone is Poinsettia, lifted — hue held to 1°", () => {
+    const POINSETTIA = "#cb3441"; // PANTONE 17-1654 TCX
+    expect(Math.abs(hueOf(FEEDBACK.error.text) - hueOf(POINSETTIA))).toBeLessThan(1);
   });
 });
 

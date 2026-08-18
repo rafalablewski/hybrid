@@ -29,14 +29,14 @@
  *
  * ── WHAT IS ACTUALLY NEW HERE ──────────────────────────────────────────────
  *
- * Two hexes, not four. `warning` and `info` are existing brand values, because
+ * `warning` and `info` are existing brand values, because
  * they already ARE the conventional hue and inventing a second yellow to sit
  * beside Fleur De Lis would be exactly the near-duplicate this palette keeps
  * deleting (audit/12 §5.2, on the retired rating gold).
  *
  * ── THE RED IS THE TIGHT ONE, AND IT IS WHY A KIND HAS THREE VALUES ────────
  *
- * `error` is PANTONE Lava Falls, a deep brick red that measures 2.37:1 as type
+ * `error` is PANTONE Lava Falls, a deep brick red that measures 2.11:1 as type
  * on this ground — so it is the FILL, and the text tone is its own hue lifted.
  * The per-kind breakdown is on the entry itself; what belongs up here is the
  * shape that fell out of it: every kind carries `fill` / `ink` / `text`, and
@@ -44,10 +44,11 @@
  * dark enough to need CHALK on it while the other three need near-black.
  *
  * A colour picked for a chip printed on white will keep doing this. The palette
- * has now bent twice for it — Lyons Blue for the same reason, Lava Falls harder
- * — and both times the answer was the same: keep the specified value where it
+ * has now bent for it twice — Lyons Blue for the same reason, Lava Falls harder
+ * — and the answer was the same both times: keep the specified value where it
  * can be seen, derive a relative of it where it cannot, and write the number
- * down. The tests hold every one of those pairings.
+ * down. Where even that is not enough, take a SECOND Pantone for the second
+ * job, which is what the error channel now does. The tests hold every pairing.
  */
 import { colors } from "./tokens";
 import { THEMES } from "./palette";
@@ -75,22 +76,24 @@ export interface FeedbackTone {
 
 export const FEEDBACK: Record<FeedbackKind, FeedbackTone> = {
   /**
-   * PANTONE Green C #00ab84 — Lab hue 168°, L* 62. 6.14:1 as type on the card,
+   * PANTONE Green C #00ab84 — Lab hue 168°, L* 62. 5.46:1 as type on the card,
    * and near-black on it at 6.64. The one genuinely new hue in the system: the
    * brand had no green, because Wild Lime is a yellow-green (112°).
-   * Its nearest neighbour anywhere in the palette is `ash` at ΔE 21.9.
+   * Its nearest neighbour anywhere in the palette is `ash` at ΔE 20.2 — that
+   * distance shortened when `ash` became PANTONE Slate Gray, which is cooler
+   * and therefore closer to a green. Still clear of the ΔE 18 floor.
    */
   success: { fill: "#00ab84", ink: THEMES.dark.onAccent, text: "#00ab84" },
 
   /** Fleur De Lis, unchanged. Lab hue 83° is already the conventional yellow, so
-   *  the warning channel needed a NAME, not a new value. 8.05 as type. */
+   *  the warning channel needed a NAME, not a new value. 7.16 as type. */
   warning: { fill: colors.amber, ink: THEMES.dark.onAccent, text: colors.amber },
 
   /**
    * PANTONE 18-1552 TCX LAVA FALLS #9a2b2e — and this one is split, for the same
    * reason Lyons Blue is.
    *
-   * It measures **2.37:1** as type on the card: a deep brick red, correct on the
+   * It measures **2.11:1** as type on the card: a deep brick red, correct on the
    * white chip it is specified against and unreadable here. That matters more
    * than it did for Lyons Blue, because an error is mostly TYPE — twenty form
    * validation lines, a toast, a field that has gone wrong — and those are the
@@ -99,27 +102,46 @@ export const FEEDBACK: Record<FeedbackKind, FeedbackTone> = {
    * But it is excellent as a SURFACE: chalk on it is 7.04:1. So Lava Falls is
    * the `fill` verbatim, with `ink: chalk` — note this is the only kind whose ink
    * is NOT near-black, which is precisely why `ink` is a field rather than a
-   * convention — and `text` is Lava Falls' own Lab hue angle (29°) lifted in L*
-   * until it clears AA on the card.
+   * convention — and `text` is a SECOND Pantone, lifted, for the reasons below.
    *
-   * WHY #e06462, AND WHY IT MOVED ONCE ALREADY. The lift is squeezed from both
-   * ends: below 4.5:1 it fails as type, and the brighter it goes the closer it
-   * gets to Muskmelon — the brand's danger accent, at Lab hue 56° — which has to
-   * stay ΔE 18 clear so a failed save and a falling figure never read as the
-   * same statement. That is a corridor, not a target, and it is narrow.
+   * ── THE TEXT TONE IS A SECOND PANTONE NOW: POINSETTIA ────────────────────
    *
-   * It was #dd5f5b (5.03:1, ΔE 19.2) while the card was #141614. Moving the card
-   * to PANTONE Black Beauty put it at **4.47:1** — under AA, by 0.03 — and the
-   * guard below caught it, which is the entire reason that guard is written
-   * against `t.ink2` rather than against a number somebody typed. #e06462 is the
-   * smallest lift that clears: 4.71:1 on the card, 5.72 on ink, ΔE 18.98 from
-   * Muskmelon. Still Lava Falls' own hue, still inside the corridor at both ends.
+   *   text → derived from PANTONE 17-1654 TCX POINSETTIA #cb3441
    *
-   * THE LESSON, since this is the second time this value has been re-derived: an
-   * error TONE is a function of the surface it is read on. Change `ink2` and
-   * this number is not "probably fine", it is a thing to re-measure.
+   * The error channel is DELIBERATELY two Pantones, and that is a statement
+   * about the two jobs rather than a fork. A fill is found by its edge and its
+   * label; text is found by being legible. Lava Falls is the best deep error
+   * SURFACE in the set and cannot be read as type at any size (2.11:1 on the
+   * card); Poinsettia is a true signal red that lifts cleanly. Asking one chip
+   * to do both is what produced two rounds of re-derivation before this.
+   *
+   * AND THE TWO ARE THE SAME FAMILY, which is the finding that makes the split
+   * safe rather than a second red bolted on: Poinsettia sits at Lab hue 26.1°
+   * and Lava Falls at 28.9° — **2.7° apart**. So the lifted text still satisfies
+   * the original guard, that the error tone holds Lava Falls' hue within 6°,
+   * without that being the thing it was derived from. A banner and the sentence
+   * under it are visibly the same red.
+   *
+   * THE CORRIDOR, unchanged and still narrow: below 4.5:1 it fails as type, and
+   * the brighter it goes the closer it gets to Muskmelon — the brand's danger
+   * accent at Lab hue 56° — which has to stay ΔE 18 clear so a failed save and a
+   * falling figure never read as the same statement.
+   *
+   * #f0565c holds **4.73:1 on the card, 5.74 on ink, ΔE 20.90 from Muskmelon**,
+   * and it holds Poinsettia's own hue to 0.02°. That ΔE is the part worth
+   * noticing: the two values this replaced managed 19.2 and 18.98, both about a
+   * point off the floor. Moving the SOURCE rather than lifting the same chip
+   * harder is what bought the headroom.
+   *
+   * THIRD DERIVATION, AND THE REASON THERE WERE THREE. #dd5f5b (5.03:1) held
+   * while the card was #141614; PANTONE Black Beauty put it at 4.47 — under AA
+   * by 0.03 — and the guard below caught it, which is exactly why that guard is
+   * written against `t.ink2` and not against a typed number. #e06462 fixed the
+   * contrast and left ΔE 18.98, one point of headroom. Poinsettia fixes the
+   * distance too. An error TONE is a function of the surface it is read on AND
+   * of the accent it must not collide with; change either and re-measure.
    */
-  error: { fill: "#9a2b2e", ink: colors.chalk, text: "#e06462" },
+  error: { fill: "#9a2b2e", ink: colors.chalk, text: "#f0565c" },
 
   /** Lyons Blue's text tone, which is light enough to be its own fill too. */
   info: { fill: THEMES.dark.accentText.blue, ink: THEMES.dark.onAccent, text: THEMES.dark.accentText.blue },

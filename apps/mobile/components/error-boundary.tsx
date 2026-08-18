@@ -54,7 +54,7 @@ const INK2 = "#212126";
 // again. Hardcoding is the point; hardcoding the WRONG value was the bug.
 const LINE = "#2f2f36";
 const CHALK = "#f7f6f3";
-const ASH = "#8b8f86";
+const ASH = "#8a9691";
 const LIME = "#c3d363";
 const MONO = Platform.OS === "ios" ? "Menlo" : "monospace";
 

@@ -32,8 +32,8 @@ const kicker: React.CSSProperties = {
   textTransform: "uppercase",
   color: "#c3d363",
 };
-const quiet: React.CSSProperties = { color: "#8b8f86", fontSize: 14, lineHeight: 1.65 };
-const a: React.CSSProperties = { color: "#8b8f86", textDecoration: "underline", textUnderlineOffset: 3 };
+const quiet: React.CSSProperties = { color: "#8a9691", fontSize: 14, lineHeight: 1.65 };
+const a: React.CSSProperties = { color: "#8a9691", textDecoration: "underline", textUnderlineOffset: 3 };
 
 export default function LandingPage() {
   return (

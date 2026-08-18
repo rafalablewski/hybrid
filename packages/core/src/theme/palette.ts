@@ -14,14 +14,16 @@
  * borders and chart strokes; `accentText` here is the variant used when an
  * accent is rendered as TEXT.
  *
- * THE PANTONE FOUR: Wild Lime / Muskmelon / Lyons Blue / Fleur De Lis, plus the
- * one Pantone NEUTRAL, Stalactite, which `chalk` carries — see tokens.ts, which
- * records what each one is, why Lyons Blue is rendered lifted on this ground,
- * why Stalactite needed no adaptation at all, and why there is still no fifth
- * accent and no separate gold. Only
- * BLUE needs a distinct text variant here; the other three clear AA as type
- * verbatim (guarded by palette.test.ts, which now checks every pair rather than
- * a chosen three).
+ * THE PANTONE FOUR — Wild Lime / Muskmelon / Lyons Blue / Fleur De Lis — plus
+ * three Pantone NEUTRALS: Stalactite (`chalk`), Slate Gray (`ash`) and Black
+ * Beauty (`ink2`, with `line` derived from it). See tokens.ts, which records
+ * what each one is, why Lyons Blue is rendered lifted on this ground, why
+ * Stalactite needed no adaptation at all, what Slate Gray cost in perceptual
+ * distance, and why there is still no fifth ACCENT and no separate gold.
+ *
+ * Only BLUE needs a distinct text variant here; the other three clear AA as
+ * type verbatim (guarded by palette.test.ts, which checks every pair rather
+ * than a chosen three).
  */
 export interface ThemePalette {
   /** page background */
@@ -68,7 +70,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     ink2: "#212126",
     line: "#2f2f36",
     chalk: "#f7f6f3",
-    ash: "#8b8f86",
+    ash: "#8a9691",
     // Wild Lime is the action fill, with near-black ink on top (11.89:1).
     accent: "#c3d363",
     onAccent: "#0c0d0c",
@@ -81,10 +83,15 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     //
     // ALL FOUR LOST ABOUT 12% WHEN THE CARD DID, and that is the accepted cost
     // of a surface you can actually see: a lighter card means less contrast for
-    // everything drawn on it. The floor that matters is `ash` at 4.86 — the most
-    // used secondary text in the app, and the tightest thing on this surface.
-    // Anything that lightens `ink2` further has to start by re-checking that
-    // number, not this comment.
+    // everything drawn on it. The floor that matters is `ash` — the most used
+    // secondary text in the app — and it recovered when `ash` became PANTONE
+    // Slate Gray: 4.86 → **5.23** on the card. Anything that lightens `ink2`
+    // further has to start by re-checking that number, not this comment.
+    //
+    // THE BINDING CONSTRAINT MOVED FROM CONTRAST TO DISTANCE. Slate Gray is a
+    // cooler grey, so `ash` against this blue is now ΔE 18.31 — the closest pair
+    // in the palette, three tenths over the floor. Contrast has room; hue does
+    // not. A future move of either value starts there.
     accentText: { lime: "#c3d363", blue: "#6bb4d4", amber: "#daa51d", red: "#ec935e" },
   },
 };

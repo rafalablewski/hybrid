@@ -34,13 +34,13 @@ export default function Error({
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: 13, letterSpacing: ".18em", textTransform: "uppercase", color: "#8b8f86" }}>
+      <div style={{ fontSize: 13, letterSpacing: ".18em", textTransform: "uppercase", color: "#8a9691" }}>
         Something went wrong
       </div>
       <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-.02em" }}>
         We hit an unexpected error
       </h1>
-      <p style={{ color: "#8b8f86", maxWidth: 420, margin: 0, lineHeight: 1.5 }}>
+      <p style={{ color: "#8a9691", maxWidth: 420, margin: 0, lineHeight: 1.5 }}>
         The page failed to load. You can retry — if it keeps happening, please let us know.
         {error.digest ? ` (ref: ${error.digest})` : ""}
       </p>
@@ -59,7 +59,7 @@ export default function Error({
           borderRadius: 16,
           border: "1px solid #2f2f36",
           background: "#212126",
-          color: "#8b8f86",
+          color: "#8a9691",
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
           fontSize: 11,
           lineHeight: 1.55,

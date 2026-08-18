@@ -18,13 +18,13 @@ export default function NotFound() {
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: 13, letterSpacing: ".18em", textTransform: "uppercase", color: "#8b8f86" }}>
+      <div style={{ fontSize: 13, letterSpacing: ".18em", textTransform: "uppercase", color: "#8a9691" }}>
         404
       </div>
       <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-.02em" }}>
         Page not found
       </h1>
-      <p style={{ color: "#8b8f86", maxWidth: 380, margin: 0, lineHeight: 1.5 }}>
+      <p style={{ color: "#8a9691", maxWidth: 380, margin: 0, lineHeight: 1.5 }}>
         The page you’re looking for doesn’t exist or has moved.
       </p>
       <Link

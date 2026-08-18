@@ -20,7 +20,7 @@ const wrap: React.CSSProperties = {
 };
 const h1: React.CSSProperties = { fontSize: 30, fontWeight: 800, margin: "0 0 6px" };
 const h2: React.CSSProperties = { fontSize: 20, fontWeight: 700, margin: "34px 0 10px" };
-const muted: React.CSSProperties = { color: "#8b8f86", fontSize: 14 };
+const muted: React.CSSProperties = { color: "#8a9691", fontSize: 14 };
 const li: React.CSSProperties = { margin: "6px 0" };
 
 export default function PrivacyPage() {
@@ -139,7 +139,7 @@ export default function PrivacyPage() {
       </p>
 
       <p style={{ ...muted, marginTop: 40 }}>
-        <Link href="/terms" style={{ color: "#8b8f86" }}>Terms of Service</Link>
+        <Link href="/terms" style={{ color: "#8a9691" }}>Terms of Service</Link>
       </p>
     </main>
   );

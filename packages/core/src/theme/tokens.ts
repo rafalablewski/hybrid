@@ -131,7 +131,32 @@ export const colors = {
   // which is exactly the size of change a text colour is allowed to make.
   lime: "#c3d363", // Wild Lime — the primary accent (action / "go" / Train)
   chalk: "#f7f6f3", // PANTONE 11-4101 TCX Stalactite — primary text (see below)
-  ash: "#8b8f86", // muted text
+  //
+  // ── THE MUTED READING COLOUR: SLATE GRAY ─────────────────────────────────
+  //
+  //   ash → PANTONE 16-5804 TCX  Slate Gray  #8a9691  (as specified)
+  //
+  // The third specified NEUTRAL, and like the other two it is not an accent: it
+  // is secondary type — captions, meta rows, every mono kicker in the app — and
+  // it carries no state.
+  //
+  // IT WENT UP, WHICH IS THE POINT. The eyeballed #8b8f86 was the palette's
+  // tightest reading at 4.86:1 on Black Beauty, and palette.ts named it as the
+  // number anything lightening the card again would have to re-check first.
+  // Slate Gray reads 6.35 on `ink` and **5.23 on the card**, so that floor
+  // moved up by 0.37 and the tightest contrast in the system is no longer a
+  // colour nobody chose.
+  //
+  // WHAT IT COSTS, and it is a real cost worth writing down rather than
+  // discovering: Slate Gray is COOLER — Lab (61.0, −5.3, +1.1) against the old
+  // (58.8, −3.2, +4.3), a hue swing from 127° to 168° — which moves it toward
+  // the blue side of the palette. `ash` vs `accentText.blue` was ΔE 22.6 and is
+  // now **18.31**: still over the DISTINCT_ROLE_DE floor of 18, but by three
+  // tenths, and it is now the CLOSEST PAIR IN THE WHOLE PALETTE — tighter than
+  // amber/red at 19.2. The guard in palette.test.ts runs `ash` against every
+  // accent, so this is held rather than hoped; but any future move of either
+  // `ash` or the blue text tone starts from 0.31 of headroom, not from nothing.
+  ash: "#8a9691", // PANTONE Slate Gray — muted text (see above)
   blue: "#2f7893", // Lyons Blue on dark — conditioning / info accent (Feel)
   amber: "#daa51d", // Fleur De Lis — sport / caution / premium / ratings (Plan)
   red: "#ec935e", // Muskmelon — alert / injury / streak (Connect)
