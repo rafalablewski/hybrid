@@ -289,6 +289,21 @@ export function birthYearBounds(now: number = Date.now()): { min: number; max: n
   return { min: y - 100, max: y - 10 };
 }
 
+/**
+ * THE TWELVE MONTHS, as i18n keys.
+ *
+ * In core because BOTH surfaces that ask for a birth date render them — the
+ * setup wizard and the questionnaire itself — and a list copied into two
+ * screens is the shape three separate bugs took on this branch already. Keys
+ * rather than locale month names on purpose: the row reads in the app's
+ * language, which is a different setting from the device's.
+ */
+export const MONTH_KEYS: readonly string[] = [
+  "w.quiz.mon.1", "w.quiz.mon.2", "w.quiz.mon.3", "w.quiz.mon.4",
+  "w.quiz.mon.5", "w.quiz.mon.6", "w.quiz.mon.7", "w.quiz.mon.8",
+  "w.quiz.mon.9", "w.quiz.mon.10", "w.quiz.mon.11", "w.quiz.mon.12",
+];
+
 /** Every question, flat, in section order. */
 export const QUESTIONS: Question[] = QUESTIONNAIRE.flatMap((s) => s.questions);
 
@@ -354,20 +369,31 @@ export function questionnaireFromAnswers(
   }, { now: opts.now });
 }
 
-/** Parse the birth question's `"YYYY-MM"` answer. Anything else is no answer —
- *  a half-parsed date would put a year nobody gave into the recovery factor. */
-export function parseBirth(v: unknown): { year: number; month: number } | undefined {
+/**
+ * Parse the birth question's answer — `"YYYY-MM"`, or `"YYYY"` while only the
+ * year has been given. Anything else is no answer: a half-parsed date would put
+ * a year nobody gave into the recovery factor.
+ *
+ * THE YEAR-ONLY FORM IS NOT A LOOSE END, it is the partial answer the model
+ * already supports. `birthMonth` is optional precisely so a year alone keeps
+ * the honest ±1 reading (`effectiveAgeYears`) rather than having a month
+ * invented for it — and a wizard that stored January for an untouched month
+ * would be inventing one, in the one place the athlete cannot see it happen.
+ */
+export function parseBirth(v: unknown): { year: number; month?: number } | undefined {
   if (typeof v !== "string") return undefined;
-  const m = /^(\d{4})-(\d{1,2})$/.exec(v.trim());
+  const m = /^(\d{4})(?:-(\d{1,2}))?$/.exec(v.trim());
   if (!m) return undefined;
   const year = Number(m[1]);
+  if (m[2] === undefined) return { year };
   const month = Number(m[2]);
   return month >= 1 && month <= 12 ? { year, month } : undefined;
 }
 
-/** Format a year and month back into the answer the birth question stores. */
-export function formatBirth(year: number, month: number): string {
-  return `${year}-${String(month).padStart(2, "0")}`;
+/** Format a birth date back into the answer the question stores. The month is
+ *  omitted when there isn't one — see `parseBirth`. */
+export function formatBirth(year: number, month?: number): string {
+  return month == null ? String(year) : `${year}-${String(month).padStart(2, "0")}`;
 }
 
 /** The body mass setup collected, for the caller to log as a dated weigh-in.

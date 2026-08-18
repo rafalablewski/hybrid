@@ -80,7 +80,7 @@ export const ONBOARDING_QUESTION_KINDS = [
   "single",  // one choice from `choices` (answer: string)
   "multi",   // any number of `choices` (answer: string[])
   "number",  // a stepper or scrub between min/max (answer: number)
-  "birth",   // a year and a month (answer: "YYYY-MM")
+  "birth",   // a year and a month (answer: "YYYY-MM", or "YYYY" year-only)
   "text",    // free text (answer: string)
 ] as const;
 
@@ -201,7 +201,8 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   // drift. Deriving the year from an age was the first fix and it was still a
   // derivation — accurate to ±1 depending on whether the birthday had passed,
   // which is the same size as the factor's own yearly step. The answer is
-  // "YYYY-MM"; `questionnaireFromAnswers` parses it.
+  // "YYYY-MM" — or "YYYY" while only the year has been given, since the month
+  // is optional in the model; `questionnaireFromAnswers` parses both.
   {
     id: "birth", key: "birth", kind: "birth", engineKey: "birthYear", system: true, enabled: true, order: 4,
     title: "When were you born?", subtitle: "Recovery declines gently past thirty, and we'd rather not guess.",

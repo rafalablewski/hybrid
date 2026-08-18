@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent } from "@testing-library/react";
 import { Text, View } from "react-native";
-import { ACard, APill, AuroraScreen } from "../components/aurora/kit";
+import { MONTH_KEYS } from "@hybrid/core";
+import { ACard, APill, AuroraScreen, ABirthField, ANumberField, SCRUB_UNSET, SEGMENT_MAX } from "../components/aurora/kit";
 import { renderScreen } from "./render";
 
 /**
@@ -112,5 +114,77 @@ describe("APill", () => {
     // The idle label stays mounted — it is what holds the width.
     expect(container.textContent).toContain("Send to Slack");
     expect(outermost(container).style.flexGrow || outermost(container).style.flex).toBeTruthy();
+  });
+});
+
+/**
+ * THE TWO INTAKE CONTROLS — asserted HERE, once, because there is now one of
+ * each.
+ *
+ * The questionnaire's Body section and the setup wizard's fifth step ask the
+ * same two things (a quantity, a date of birth) and used to draw them from two
+ * near-identical local copies. Every bug this branch fixed had that shape: a
+ * duplicated engine-key list, a duplicated question-kind list, a duplicated
+ * month list. Copies agree right up until one of them is edited. The screens
+ * import these now, so the invariants below hold for both, and a gate per
+ * screen would just be the duplication again one level up.
+ */
+const months = MONTH_KEYS.map((_, i) => `M${i + 1}`);
+
+describe("ABirthField", () => {
+  it("offers twelve months and no year until one is given", () => {
+    const { container } = renderScreen(<ABirthField months={months} a11y="Born" onChange={() => {}} />);
+    expect(container.querySelectorAll('[role="radio"]').length).toBe(12);
+    // The field is present and live, and reads as empty rather than showing a
+    // year nobody gave. (The seed is twenty years below the ceiling, so any
+    // four-digit year on screen here would be fabricated.)
+    expect(container.querySelector('[role="slider"]')).not.toBeNull();
+    expect(container.textContent ?? "").not.toMatch(/\b(19|20)\d\d\b/);
+    expect(container.textContent ?? "").toContain(SCRUB_UNSET);
+  });
+
+  it("refuses a month while there is no year — a month alone is not half an answer", () => {
+    const onChange = vi.fn();
+    const { container } = renderScreen(<ABirthField months={months} a11y="Born" onChange={onChange} />);
+    fireEvent.click(container.querySelectorAll('[role="radio"]')[5]!);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("carries the year through when the month is picked — one answer, two parts", () => {
+    const onChange = vi.fn();
+    const { container } = renderScreen(<ABirthField year={1990} months={months} a11y="Born" onChange={onChange} />);
+    fireEvent.click(container.querySelectorAll('[role="radio"]')[5]!);
+    expect(onChange).toHaveBeenCalledWith({ year: 1990, month: 6 });
+  });
+});
+
+describe("ANumberField", () => {
+  it("segments a range small enough to show whole", () => {
+    const { container } = renderScreen(
+      <ANumberField value={3} seed={3} min={1} max={SEGMENT_MAX} a11y="Days" onChange={() => {}} />,
+    );
+    expect(container.querySelector('[role="slider"]')).toBeNull();
+  });
+
+  /**
+   * …and scrubs an unanswered one whatever its size. A segmented control has
+   * no empty state — it always lights one option, which on an unanswered
+   * question reports a figure the athlete never gave, and the model goes on to
+   * explain their own recovery ceiling with it.
+   */
+  it("scrubs when there is no answer yet, however small the range", () => {
+    const { container } = renderScreen(
+      <ANumberField value={undefined} seed={3} min={1} max={SEGMENT_MAX} a11y="Days" onChange={() => {}} />,
+    );
+    expect(container.querySelector('[role="slider"]')).not.toBeNull();
+    expect(container.textContent ?? "").toContain(SCRUB_UNSET);
+  });
+
+  it("shows an answer with its unit, and shows the unit as prose beside it", () => {
+    const { container } = renderScreen(
+      <ANumberField value={82.5} seed={80} min={25} max={300} step={0.5} suffix="kg" a11y="Body mass" onChange={() => {}} />,
+    );
+    expect(container.textContent).toContain("82.5");
+    expect(container.textContent).toContain("kg");
   });
 });

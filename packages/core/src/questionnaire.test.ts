@@ -9,6 +9,7 @@ import {
   questionnaireFromAnswers,
   bodyMassFromAnswers,
   birthYearBounds,
+  MONTH_KEYS,
   parseBirth,
   formatBirth,
   type Question,
@@ -309,12 +310,37 @@ describe("what setup already asked", () => {
     expect(sanitizeVolumeProfile({ birthYear: 1996, birthMonth: 13 }).birthMonth).toBeUndefined();
   });
 
+  /** Both surfaces that ask for a date render these, so they live in core —
+   *  a list copied into two screens is the shape three bugs took on this
+   *  branch already. */
+  it("names twelve months, once", () => {
+    expect(MONTH_KEYS).toHaveLength(12);
+    expect(new Set(MONTH_KEYS).size).toBe(12);
+    MONTH_KEYS.forEach((k, i) => expect(k).toBe(`w.quiz.mon.${i + 1}`));
+  });
+
   it("refuses a half-parsed date rather than inventing a year", () => {
-    for (const bad of ["1996", "96-04", "1996-13", "", "banana", 1996, null]) {
+    for (const bad of ["96-04", "1996-13", "1996-", "", "banana", 1996, null]) {
       expect(parseBirth(bad), String(bad)).toBeUndefined();
     }
     expect(parseBirth("1996-4")).toEqual({ year: 1996, month: 4 });
     expect(formatBirth(1996, 4)).toBe("1996-04");
+  });
+
+  /**
+   * A YEAR WITH NO MONTH IS A REAL ANSWER — the partial the model is built to
+   * take. `birthMonth` is optional so a year alone keeps the honest ±1 reading
+   * rather than having a month invented; the wizard used to store January for
+   * an untouched month, which is that invention happening where the athlete
+   * cannot see it, and out of step with the questionnaire's own birth row.
+   */
+  it("keeps a year that has no month, on both sides of the round trip", () => {
+    expect(formatBirth(1996)).toBe("1996");
+    expect(parseBirth("1996")).toEqual({ year: 1996 });
+    expect(parseBirth(formatBirth(1996))?.month).toBeUndefined();
+    const p = questionnaireFromAnswers(qs, { birth: "1996" });
+    expect(p.birthYear).toBe(1996);
+    expect(p.birthMonth).toBeUndefined();
   });
 
   it("skips the body mass rather than inventing one", () => {

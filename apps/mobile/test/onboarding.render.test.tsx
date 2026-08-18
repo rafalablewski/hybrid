@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent } from "@testing-library/react";
+import { fireEvent, waitFor } from "@testing-library/react";
 import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES } from "@hybrid/core";
 import { renderScreen as render } from "./render";
 import Onboarding from "../components/aurora/onboarding";
@@ -30,6 +30,19 @@ vi.mock(import("../lib/api"), async (importOriginal) => ({
   fetchOnboardingQuestions: () => Promise.resolve(null),
   fetchTranslationOverrides: () => Promise.resolve({}),
   submitOnboarding: () => Promise.resolve(true),
+}));
+
+/** The two stores the intake writes on the way out — spied rather than stubbed
+ *  away, because WHAT it writes is the subject of the last test here. */
+const written = vi.fn();
+const weighed = vi.fn();
+vi.mock(import("../lib/questionnaire"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  setQuestionnaire: (p: unknown) => written(p),
+}));
+vi.mock(import("../lib/weigh-in"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  logWeighInNow: (kg: number) => { weighed(kg); return Promise.resolve(); },
 }));
 
 /** The second persona card — the one that starts UNSELECTED (the answer map is
@@ -129,5 +142,55 @@ describe("a date the athlete has not answered", () => {
     // rather than ±1 — and a `number` question of this range used to draw one
     // segment per step, which for the age it replaced would have been ninety.
     expect(container.querySelectorAll('[role="radio"]').length).toBe(12);
+  });
+});
+
+/**
+ * A SEED IS NOT AN ANSWER — and the wizard must not hand one to the model.
+ *
+ * The answer map is seeded from every question's `defaultValue` before the
+ * athlete touches anything: the recommender needs a complete set, and a choice
+ * step has to open with its default shown as picked. The body questions ship
+ * without defaults so that seeding cannot fabricate a body mass — but that was
+ * only half the guarantee while `experience` and `days` still carried a value
+ * nobody chose onto the PROFILE, where they move the volume landmarks and then
+ * read back on the questionnaire as answered.
+ *
+ * So the seeds stop at the profile. What was given is written; what was merely
+ * shown is not — which is the same rule the questionnaire screen already keeps,
+ * and the point of asking that these two agree.
+ */
+describe("what setup writes down", () => {
+  /** The commit pill — last in the tree, after the scroller, so it is the last
+   *  button on screen whatever the step is called. */
+  const cta = (container: HTMLElement) => {
+    const all = container.querySelectorAll('[role="button"]');
+    return all[all.length - 1] as HTMLElement;
+  };
+
+  it("writes the answer it was given and not the default it showed", async () => {
+    written.mockClear();
+    weighed.mockClear();
+    const { container } = render(<Onboarding />);
+    fireEvent.click(cta(container)); // persona → goal (its "casual" default stands)
+    fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
+    fireEvent.click(cta(container)); // → experience
+    // The three experience choices are short, so the wizard draws them as a
+    // segmented control rather than option rows — a tab, not a button.
+    const seg = Array.from(container.querySelectorAll('[role="tab"]')).find((e) => e.textContent === "Intermediate");
+    fireEvent.click(seg as HTMLElement); // …and this one is CHOSEN
+    // Past sex, born, weight, days, equipment without touching any of them.
+    for (let i = 0; i < 6; i++) fireEvent.click(cta(container));
+    fireEvent.click(cta(container)); // the plan step's commit
+
+    await waitFor(() => expect(written).toHaveBeenCalled());
+    const profile = written.mock.calls.at(-1)![0] as Record<string, unknown>;
+    expect(profile.experience).toBe("intermediate");
+    // `days` carries defaultValue 3 and `sex`/`birth`/`bodyweight` carry none —
+    // every one of them was stepped past, so none of them may be on the profile.
+    expect(profile.daysPerWeek, "a frequency nobody chose").toBeUndefined();
+    expect(profile.sex).toBeUndefined();
+    expect(profile.birthYear).toBeUndefined();
+    expect(weighed, "a body mass nobody gave").not.toHaveBeenCalled();
   });
 });

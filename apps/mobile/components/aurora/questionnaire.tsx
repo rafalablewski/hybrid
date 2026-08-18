@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, type DimensionValue } from "react-native";
 import {
-  QUESTIONNAIRE, questionnaireProgress, isAsked, birthYearBounds,
+  QUESTIONNAIRE, questionnaireProgress, isAsked, MONTH_KEYS,
   factorLabelKey, factorAffectsKey, factorPercent,
   blockKindKey, resolveBlock, blockRamp, MUSCLE_GROUP_KEY,
   type Question, type QuestionnaireSection, type SectionProgress,
@@ -17,7 +17,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET, TABULAR } from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
-import { AuroraScreen, ACard, ADrawer, APressCard, ASection, AScrubField, AStepper, ACheckMark, RADIUS, withAlpha } from "./kit";
+import { AuroraScreen, ACard, ADrawer, APressCard, ASection, ANumberField, ABirthField, AStepper, ACheckMark, RADIUS, withAlpha } from "./kit";
 import { ArrowGlyph } from "./cta-label";
 
 /** The seven group names, from core — see volume-view.ts. A copy written from
@@ -360,7 +360,7 @@ function QuestionBlock({ C, t, q, value, measured, profile, onAnswer }: {
       {q.measuredOnly ? (
         <Reading C={C} t={t} q={q} value={value} />
       ) : q.kind === "birth" ? (
-        <BirthAnswer C={C} t={t} profile={profile} onAnswer={onAnswer} />
+        <BirthAnswer t={t} profile={profile} onAnswer={onAnswer} />
       ) : q.kind === "choice" ? (
         <Choices C={C} t={t} q={q} value={value as string | undefined} onPick={set} />
       ) : q.kind === "scale" ? (
@@ -495,36 +495,29 @@ function Scale({ C, t, q, value, onPick, tone }: {
 function NumberAnswer({ C, t, q, value, onPick, tone }: {
   C: Palette; t: (k: string) => string; q: Question; value: number | undefined; onPick: (v: number | undefined) => void; tone: string;
 }) {
-  const unit = q.unitKey ? t(q.unitKey) : undefined;
-  const dp = String(q.step ?? 1).split(".")[1]?.length ?? 0;
-  const empty = value == null;
   return (
     <View style={{ opacity: tone === C.chalk ? 1 : 0.92 }}>
-      <AScrubField
+      <ANumberField
+        value={value}
         // Where the control STARTS when it is first touched — never displayed
         // until then. See the `unset` prop in the kit.
-        value={empty ? (q.seed ?? q.min ?? 0) : value}
-        unset={empty}
-        onChange={onPick}
+        seed={q.seed ?? q.min ?? 0}
         min={q.min!}
         max={q.max!}
         step={q.step ?? 1}
-        format={(v) => v.toFixed(dp)}
-        suffix={unit}
+        suffix={q.unitKey ? t(q.unitKey) : undefined}
         a11y={t(q.labelKey)}
+        onChange={onPick}
       />
     </View>
   );
 }
 
 /**
- * WHEN WERE YOU BORN — a year and a month, asked rather than derived.
- *
- * One block and two controls, deliberately: it is ONE question, and splitting
- * it into two wizard steps would charge a step for the precision. The year
- * scrubs like every other quantity on this screen; the month is twelve marks,
- * because twelve is small enough to show and a picker would hide the answer
- * behind a modal.
+ * WHEN WERE YOU BORN — the kit's control, the same one the setup wizard's
+ * fifth step draws. It used to be a second copy of that control living here;
+ * they agreed only for as long as both were edited together, which is the
+ * shape every bug this branch fixed already had.
  *
  * The month is what makes the age EXACT. Asking an age and computing the year
  * was the first fix and it was still a derivation — `currentYear − age` holds
@@ -535,78 +528,21 @@ function NumberAnswer({ C, t, q, value, onPick, tone }: {
  * The year answers alone: a profile with a year and no month keeps the honest
  * ±1 reading (`effectiveAgeYears`), which is what a partial answer supports.
  */
-function BirthAnswer({ C, t, profile, onAnswer }: {
-  C: Palette;
+function BirthAnswer({ t, profile, onAnswer }: {
   t: (k: string) => string;
   profile: AthleteVolumeProfile;
   onAnswer: (patch: Partial<AthleteVolumeProfile>) => void;
 }) {
-  const { min, max } = birthYearBounds();
-  const year = profile.birthYear;
-  const month = profile.birthMonth;
   return (
-    <View>
-      <AScrubField
-        value={year ?? BIRTH_YEAR_SEED(max)}
-        unset={year == null}
-        onChange={(v) => onAnswer({ birthYear: Math.round(v) })}
-        min={min}
-        max={max}
-        step={1}
-        format={(v) => String(Math.round(v))}
-        a11y={t("w.quiz.field.birthYear")}
-      />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.md, opacity: year == null ? 0.4 : 1 }}>
-        {MONTH_KEYS.map((key, i) => {
-          const m = i + 1;
-          const on = month === m;
-          return (
-            <Pressable
-              key={key}
-              onPress={() => {
-                if (year == null) return; // a month with no year is not an answer
-                haptic.selection();
-                onAnswer({ birthMonth: on ? undefined : m });
-              }}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on, disabled: year == null }}
-              accessibilityLabel={t(key)}
-              style={{
-                // FOUR PER ROW, so twelve months read as quarters rather than
-                // as a ragged 5/5/2 the eye has to re-parse. `flexBasis` under
-                // the row's gap does it without measuring the screen.
-                flexBasis: "22%", flexGrow: 1,
-                minHeight: HIT_TARGET, alignItems: "center", justifyContent: "center",
-                paddingHorizontal: space.xs, borderRadius: RADIUS.pill, borderWidth: 1,
-                borderColor: on ? C.lime : C.line,
-                backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
-              }}
-            >
-              <Text
-                maxFontSizeMultiplier={MAX_FONT_SCALE}
-                style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}
-              >
-                {t(key)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
+    <ABirthField
+      year={profile.birthYear}
+      month={profile.birthMonth}
+      months={MONTH_KEYS.map(t)}
+      a11y={t("w.quiz.field.birthYear")}
+      onChange={({ year, month }) => onAnswer({ birthYear: year, birthMonth: month })}
+    />
   );
 }
-
-/** Where the year control opens when first touched — a plausible adult, never
- *  shown until the athlete reaches for it. */
-const BIRTH_YEAR_SEED = (maxYear: number): number => maxYear - 20;
-
-/** The twelve months, short. i18n keys so the row reads in the app's language
- *  rather than the device's locale, which is a different setting. */
-const MONTH_KEYS = [
-  "w.quiz.mon.1", "w.quiz.mon.2", "w.quiz.mon.3", "w.quiz.mon.4",
-  "w.quiz.mon.5", "w.quiz.mon.6", "w.quiz.mon.7", "w.quiz.mon.8",
-  "w.quiz.mon.9", "w.quiz.mon.10", "w.quiz.mon.11", "w.quiz.mon.12",
-] as const;
 
 /** A figure the app measured and the athlete cannot type over — shown, with
  *  where it came from, because it moved their ceiling and this is the page that

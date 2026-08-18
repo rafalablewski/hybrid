@@ -3,7 +3,7 @@ import { AccessibilityInfo, Animated, Easing, View, Text, ScrollView } from "rea
 import { useRouter } from "expo-router";
 import {
   ONBOARDING_GOAL_GROUPS,
-  birthYearBounds, parseBirth, formatBirth,
+  parseBirth, formatBirth, MONTH_KEYS,
   durations,
   springToRN,
   springs,
@@ -21,7 +21,7 @@ import {
   HIT_SLOP, HIT_TARGET, LoadSwap, Skeleton, useEntrance,
 } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ACard, ACheckMark, APill, ASegment, AScrubField, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
+import { ACard, ACheckMark, APill, ASegment, ANumberField, ABirthField, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 
 /**
@@ -69,7 +69,7 @@ export default function AuroraOnboarding() {
   const { palette } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const { questions, answers, setAnswer, plan, loading } = useOnboarding();
+  const { questions, answers, touched, setAnswer, plan, loading } = useOnboarding();
   const persona = useClientPersonaChoice();
   const [idx, setIdx] = useState(0);
   /** Which way the wizard last travelled — the only thing `StepSwap` needs to
@@ -102,7 +102,7 @@ export default function AuroraOnboarding() {
 
   const finish = async () => {
     setCommit("saving");
-    const ok = await finishOnboarding(questions, answers, plan);
+    const ok = await finishOnboarding(questions, answers, plan, touched);
     if (!ok) {
       // The pill shakes and knocks Error (APill owns both). Staying put is the
       // point: the answers are still on screen and the press can be repeated —
@@ -477,39 +477,19 @@ function NumberStep({ q, answers, setAnswer }: {
   answers: Record<string, AnswerValue | null | undefined>;
   setAnswer: (key: string, value: AnswerValue) => void;
 }) {
-  const C = useTheme().palette;
-  const { t } = useLang();
   const min = q.min ?? 1, max = q.max ?? 7, step = q.step ?? 1;
   const raw = answers[q.key] ?? q.defaultValue;
   const value = raw === undefined || raw === null || raw === "" ? null : Number(raw);
-
-  // The segmented control stays for a range a thumb can take in at a glance.
-  const steps = Math.floor((max - min) / step) + 1;
-  if (steps <= SEGMENT_MAX) {
-    const opts: number[] = [];
-    for (let v = min; v <= max; v += step) opts.push(v);
-    return (
-      <ASegment
-        options={opts.map((d) => ({ id: String(d), label: `${d}×` }))}
-        value={String(value ?? q.defaultValue ?? min)}
-        onPick={(v) => setAnswer(q.key, Number(v))}
-      />
-    );
-  }
-
-  const dp = String(step).split(".")[1]?.length ?? 0;
   return (
-    <AScrubField
-      // Empty until touched, and live from the first frame: the seed is where
-      // the control starts, not something the athlete has to ask for.
-      value={value ?? seedFor(q, min, max)}
-      unset={value == null}
-      onChange={(v) => setAnswer(q.key, v)}
+    <ANumberField
+      value={value}
+      seed={seedFor(q, min, max)}
       min={min}
       max={max}
       step={step}
-      format={(v) => v.toFixed(dp)}
       a11y={q.title}
+      onChange={(v) => setAnswer(q.key, v)}
+      segmentFormat={(d) => `${d}×`}
     />
   );
 }
@@ -532,71 +512,21 @@ function BirthStep({ q, answers, setAnswer }: {
   answers: Record<string, AnswerValue | null | undefined>;
   setAnswer: (key: string, value: AnswerValue) => void;
 }) {
-  const C = useTheme().palette;
   const { t } = useLang();
-  const { min, max } = birthYearBounds();
   const cur = parseBirth(answers[q.key]);
-  const year = cur?.year;
-  const month = cur?.month;
-  const write = (y: number | undefined, m: number | undefined) => {
-    if (y === undefined) return;
-    setAnswer(q.key, formatBirth(y, m ?? 1));
-  };
-
   return (
-    <View>
-      <AScrubField
-        // Empty until touched, and live from the first frame — a year the
-        // athlete has not given must not be displayed as though they had.
-        value={year ?? max - 20}
-        unset={year == null}
-        onChange={(v) => write(Math.round(v), month)}
-        min={min}
-        max={max}
-        step={1}
-        format={(v) => String(Math.round(v))}
-        a11y={q.title}
-      />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.md, opacity: year == null ? 0.4 : 1 }}>
-        {MONTH_KEYS.map((key, i) => {
-          const m = i + 1;
-          const on = month === m && year != null;
-          return (
-            <Pressable
-              key={key}
-              onPress={() => { if (year == null) return; haptic.selection(); write(year, m); }}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: on, disabled: year == null }}
-              accessibilityLabel={t(key)}
-              style={{
-                // Four per row — twelve months as quarters, not a ragged 5/5/2.
-                flexBasis: "22%", flexGrow: 1,
-                minHeight: HIT_TARGET, alignItems: "center", justifyContent: "center",
-                paddingHorizontal: space.xs, borderRadius: RADIUS.pill, borderWidth: 1,
-                borderColor: on ? C.lime : C.line,
-                backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
-              }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{t(key)}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
+    <ABirthField
+      year={cur?.year}
+      month={cur?.month}
+      months={MONTH_KEYS.map(t)}
+      a11y={q.title}
+      // A month with no year is not an answer, so the control never emits one;
+      // the stored form is a single string (core `formatBirth`), and it holds
+      // the year alone until a month is picked rather than defaulting to one.
+      onChange={({ year, month }) => setAnswer(q.key, formatBirth(year, month))}
+    />
   );
 }
-
-/** The twelve months, short — i18n keys, so the row reads in the app's language
- *  rather than the device's locale, which is a different setting. */
-const MONTH_KEYS = [
-  "w.quiz.mon.1", "w.quiz.mon.2", "w.quiz.mon.3", "w.quiz.mon.4",
-  "w.quiz.mon.5", "w.quiz.mon.6", "w.quiz.mon.7", "w.quiz.mon.8",
-  "w.quiz.mon.9", "w.quiz.mon.10", "w.quiz.mon.11", "w.quiz.mon.12",
-] as const;
-
-/** Above this many steps a segmented control stops being a row of options and
- *  becomes a ribbon nobody can hit. */
-const SEGMENT_MAX = 8;
 
 /** Where the control opens — never shown until the athlete asks for it. The
  *  questionnaire's own seeds, by engine key, so the two screens open the same
