@@ -191,7 +191,7 @@ export default function PercentProgram({
       <MeasuredOutcome planId={plan.id} />
 
       {state === "error" && (
-        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 4 }}>
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 4 }}>
           {t("plans.enrollError")}
         </Text>
       )}

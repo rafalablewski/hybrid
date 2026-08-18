@@ -186,7 +186,7 @@ export default function AdminMedia() {
                       {a.status !== "archived" ? (
                         <PillBtn label="Archive" outline color={palette.amber} disabled={busy} onPress={() => patch(a.id, { status: "archived" })} />
                       ) : null}
-                      <PillBtn label="Delete" outline color={FEEDBACK.error} disabled={busy} onPress={() => remove(a)} />
+                      <PillBtn label="Delete" outline color={FEEDBACK.error.text} disabled={busy} onPress={() => remove(a)} />
                     </View>
                   </>
                 )}

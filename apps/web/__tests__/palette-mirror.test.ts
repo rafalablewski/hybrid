@@ -69,10 +69,15 @@ const MIRROR: Record<string, string> = {
   "--amber-text": t.accentText.amber,
   "--red-text": t.accentText.red,
   "--on-accent": t.onAccent,
-  "--feedback-success": FEEDBACK.success,
-  "--feedback-warning": FEEDBACK.warning,
-  "--feedback-error": FEEDBACK.error,
-  "--feedback-info": FEEDBACK.info,
+  // A feedback kind is three values now (fill / ink / text), and all three have
+  // to cross into CSS or the stylesheet quietly loses the split — which for
+  // `error` means an unreadable 2.37:1 banner label.
+  "--feedback-success": FEEDBACK.success.fill,
+  "--feedback-warning": FEEDBACK.warning.fill,
+  "--feedback-error": FEEDBACK.error.fill,
+  "--feedback-error-text": FEEDBACK.error.text,
+  "--feedback-error-ink": FEEDBACK.error.ink,
+  "--feedback-info": FEEDBACK.info.fill,
 };
 
 describe("globals.css mirrors the core palette", () => {

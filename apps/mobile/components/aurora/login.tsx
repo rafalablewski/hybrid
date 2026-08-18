@@ -144,7 +144,7 @@ export default function AuroraLogin() {
             style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: 8, textAlign: "center", color: palette.chalk, borderWidth: 1, borderColor: palette.line, borderRadius: RADIUS.field, paddingVertical: 16, backgroundColor: palette.ink2 }}
           />
           {!!error && (
-            <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: FEEDBACK.error, marginTop: 10 }}>{error}</Text>
+            <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: FEEDBACK.error.text, marginTop: 10 }}>{error}</Text>
           )}
           <APill label={t("w.account.login.verify")} state={busy ? "saving" : "idle"} variant="light" onPress={verifyMfa} disabled={!isValidTotpCode(mfaCode)} style={{ marginTop: 16 }} />
           <Pressable onPress={() => { setMfaStep(null); setMfaCode(""); setError(""); }} style={{ marginTop: 16, alignItems: "center" }}>
@@ -174,7 +174,7 @@ export default function AuroraLogin() {
           <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(palette, palette.lime), marginBottom: 10 }}>{notice}</Text>
         )}
         {!!error && (
-          <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: FEEDBACK.error, marginBottom: 10 }}>{error}</Text>
+          <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.reg, fontSize: fs.body, color: FEEDBACK.error.text, marginBottom: 10 }}>{error}</Text>
         )}
 
         <APill

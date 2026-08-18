@@ -330,7 +330,7 @@ export default function AdminExercises() {
                   {x.status !== "archived" ? (
                     <PillBtn label="Archive" outline color={palette.amber} disabled={busy} onPress={() => patch(x.id, { status: "archived" })} />
                   ) : null}
-                  <PillBtn label="Delete" outline color={FEEDBACK.error} disabled={busy} onPress={() => remove(x)} />
+                  <PillBtn label="Delete" outline color={FEEDBACK.error.text} disabled={busy} onPress={() => remove(x)} />
                 </View>
               </ACard>
             ))}

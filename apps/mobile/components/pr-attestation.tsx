@@ -150,7 +150,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
               </View>
             )}
             {asking === lift && errorMsg && (
-              <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 6 }}>{errorMsg}</Text>
+              <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 6 }}>{errorMsg}</Text>
             )}
           </View>
         );

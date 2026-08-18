@@ -164,7 +164,9 @@ html {
      the near-duplicate this palette keeps deleting. */
   --feedback-success: #00ab84;
   --feedback-warning: #daa51d;
-  --feedback-error: #ef5b5b;
+  --feedback-error: #9a2b2e;
+  --feedback-error-text: #dd5f5b;
+  --feedback-error-ink: #f3f4ef;
   --feedback-info: #6bb4d4;
 
   --lime-text: #c3d363;

@@ -34,43 +34,83 @@
  * beside Fleur De Lis would be exactly the near-duplicate this palette keeps
  * deleting (audit/12 §5.2, on the retired rating gold).
  *
- * ── THE RED IS THE TIGHT ONE, AND THE NUMBER EXPLAINS THE CHOICE ───────────
+ * ── THE RED IS THE TIGHT ONE, AND IT IS WHY A KIND HAS THREE VALUES ────────
  *
- * A red has to be light enough to clear AA on a near-black card AND stay ΔE 18
- * from Muskmelon, which is a bright orange sitting close to it on the wheel.
- * That squeezes hard: #d94a4a is a better red and reaches only 4.32:1 here, and
- * everything darker fails faster. #ef5b5b (Lab hue 28°) is the value that holds
- * both ends — 5.42:1 on the card, ΔE 19.5 from Muskmelon. The headroom over the
- * floor is thin ON PURPOSE and it is the reason this file has a test: if either
- * value ever moves, the pair is the first thing that breaks.
+ * `error` is PANTONE Lava Falls, a deep brick red that measures 2.37:1 as type
+ * on this ground — so it is the FILL, and the text tone is its own hue lifted.
+ * The per-kind breakdown is on the entry itself; what belongs up here is the
+ * shape that fell out of it: every kind carries `fill` / `ink` / `text`, and
+ * `ink` is a field rather than a convention because Lava Falls is the one fill
+ * dark enough to need CHALK on it while the other three need near-black.
+ *
+ * A colour picked for a chip printed on white will keep doing this. The palette
+ * has now bent twice for it — Lyons Blue for the same reason, Lava Falls harder
+ * — and both times the answer was the same: keep the specified value where it
+ * can be seen, derive a relative of it where it cannot, and write the number
+ * down. The tests hold every one of those pairings.
  */
 import { colors } from "./tokens";
 import { THEMES } from "./palette";
 
 export type FeedbackKind = "success" | "warning" | "error" | "info";
 
-export const FEEDBACK: Record<FeedbackKind, string> = {
-  /** PANTONE Green C — Lab hue 168°, L* 62, 6.14:1 on the card. The one genuinely
-   *  new hue in the system: the brand had no green at all, because Wild Lime is a
-   *  yellow-green (112°). Clears ΔE 18 against every accent by a wide margin (its
-   *  nearest neighbour is `ash` at 21.9), and carries near-black ink at 6.64:1.
-   *
-   *  NOTE FOR ANY FUTURE FILL: chalk on this is 2.65:1 and fails. A filled success
-   *  surface takes ON_FEEDBACK, never a light label — which is what the guard in
-   *  palette.test.ts asserts, and why it is stated here rather than discovered. */
-  success: "#00ab84",
-  /** Fleur De Lis, unchanged. Lab hue 83° is already the conventional yellow, so
-   *  the warning channel needed no new value — only the name. */
-  warning: colors.amber,
-  /** Lab hue 28° — 5.42:1 on the card, ΔE 19.5 from Muskmelon. See the header. */
-  error: "#ef5b5b",
-  /** Lyons Blue's text tone, unchanged. */
-  info: THEMES.dark.accentText.blue,
-};
-
 /**
- * The ink for text sitting ON a solid feedback fill (a filled error pill, a
- * success chip). Both fills are light enough that near-black wins on every one
- * — guarded in palette.test.ts rather than assumed.
+ * ONE OUTCOME, THREE VALUES — because a colour that has to work as a filled
+ * banner AND as a line of red text cannot be one number on this ground.
+ *
+ * The accents solved the same problem years ago and the shape is copied from
+ * them: `colors.blue` is the fill, `accentText.blue` is the tone it takes as
+ * type. A feedback kind needs one more, `ink`, because two of these fills are
+ * light and one is dark — so what sits ON them is not the same colour, and
+ * leaving that to each call site is how you get white-on-yellow.
  */
-export const ON_FEEDBACK = THEMES.dark.onAccent;
+export interface FeedbackTone {
+  /** the filled surface — a banner, a destructive button, a swipe action */
+  fill: string;
+  /** the ink that sits ON `fill` (guarded ≥ AA against it) */
+  ink: string;
+  /** the same meaning drawn as TYPE on the card (guarded ≥ AA against it) */
+  text: string;
+}
+
+export const FEEDBACK: Record<FeedbackKind, FeedbackTone> = {
+  /**
+   * PANTONE Green C #00ab84 — Lab hue 168°, L* 62. 6.14:1 as type on the card,
+   * and near-black on it at 6.64. The one genuinely new hue in the system: the
+   * brand had no green, because Wild Lime is a yellow-green (112°).
+   * Its nearest neighbour anywhere in the palette is `ash` at ΔE 21.9.
+   */
+  success: { fill: "#00ab84", ink: THEMES.dark.onAccent, text: "#00ab84" },
+
+  /** Fleur De Lis, unchanged. Lab hue 83° is already the conventional yellow, so
+   *  the warning channel needed a NAME, not a new value. 8.05 as type. */
+  warning: { fill: colors.amber, ink: THEMES.dark.onAccent, text: colors.amber },
+
+  /**
+   * PANTONE 18-1552 TCX LAVA FALLS #9a2b2e — and this one is split, for the same
+   * reason Lyons Blue is.
+   *
+   * It measures **2.37:1** as type on the card: a deep brick red, correct on the
+   * white chip it is specified against and unreadable here. That matters more
+   * than it did for Lyons Blue, because an error is mostly TYPE — twenty form
+   * validation lines, a toast, a field that has gone wrong — and those are the
+   * one thing in the product that must not be hard to read.
+   *
+   * But it is excellent as a SURFACE: chalk on it is 6.89:1. So Lava Falls is
+   * the `fill` verbatim, with `ink: chalk` — note this is the only kind whose ink
+   * is NOT near-black, which is precisely why `ink` is a field rather than a
+   * convention — and `text` is Lava Falls' own Lab hue angle (29°) lifted in L*
+   * until it clears AA on the card.
+   *
+   * WHY #dd5f5b AND NOT SOMETHING BRIGHTER. The lift is squeezed from both ends:
+   * below ~4.5:1 it fails as type, and above ~5.5 it closes on Muskmelon, the
+   * brand's danger accent, which sits at Lab hue 56°. #dd5f5b holds 5.03:1 with
+   * ΔE 19.2 from Muskmelon. Lifting to match the outgoing coral's 5.42 exactly
+   * was possible (#e56460) and left only ΔE 18.3 — 0.3 above the floor. Contrast
+   * that is already comfortably AA is not worth spending distinctness on.
+   */
+  error: { fill: "#9a2b2e", ink: colors.chalk, text: "#dd5f5b" },
+
+  /** Lyons Blue's text tone, which is light enough to be its own fill too. */
+  info: { fill: THEMES.dark.accentText.blue, ink: THEMES.dark.onAccent, text: THEMES.dark.accentText.blue },
+};

@@ -20,7 +20,7 @@ import { ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const statusColor = (s: string, C: Palette) =>
-  s === "active" ? FEEDBACK.success : s === "setup-pending" ? FEEDBACK.warning : s === "rejected" || s === "error" ? FEEDBACK.error : C.ash;
+  s === "active" ? FEEDBACK.success.text : s === "setup-pending" ? FEEDBACK.warning.text : s === "rejected" || s === "error" ? FEEDBACK.error.text : C.ash;
 
 /** AURORA Connection detail — ONE provider's own page (parity with the web
  *  focus page): status, connect/sync actions, and the latest Signal rows this
@@ -266,9 +266,9 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
           ) : null}
         </>
       ) : note === "error" ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 8 }}>{t("w.account.connections.hk-error")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 8 }}>{t("w.account.connections.hk-error")}</Text>
       ) : note === "sync-failed" ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 8 }}>{t("w.account.connections.hk-sync-failed")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 8 }}>{t("w.account.connections.hk-sync-failed")}</Text>
       ) : null}
     </View>
   );

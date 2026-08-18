@@ -30,7 +30,7 @@ import { RADIUS } from "./kit";
  */
 
 /** An outcome chip, or a FAILURE chip. The kind exists so a failure can't pass
- *  as an outcome: "error" reads in the failure voice (FEEDBACK.error), stays up
+ *  as an outcome: "error" reads in the failure voice (FEEDBACK.error.text), stays up
  *  longer,
  *  and knocks (haptic.error — the audit's §15: a silent failure on a phone is
  *  a failure the user doesn't notice). The haptic fires in the HOST, once, so
@@ -107,7 +107,7 @@ export function ToastHost() {
         ) : (
           <BlurView intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
         )}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: kind === "error" ? FEEDBACK.error : FEEDBACK.success }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: kind === "error" ? FEEDBACK.error.text : FEEDBACK.success.text }}>
           {msg}
         </Text>
       </Animated.View>

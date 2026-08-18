@@ -168,7 +168,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               <APill
                 label={pending?.confirmLabel ?? label("common.confirm", "Confirm")}
                 variant={pending?.destructive ? "outline" : "primary"}
-                color={pending?.destructive ? FEEDBACK.error : undefined}
+                color={pending?.destructive ? FEEDBACK.error.text : undefined}
                 onPress={() => settle(true)}
               />
             </>

@@ -49,7 +49,7 @@ const PALETTE = new Set(
   [
     ...Object.values(colors),
     ...Object.values(THEMES.dark).flatMap((v): string[] => (typeof v === "string" ? [v] : Object.values(v))),
-    ...Object.values(FEEDBACK),
+    ...Object.values(FEEDBACK).flatMap((t) => [t.fill, t.ink, t.text]),
   ].map((c) => c.toLowerCase()),
 );
 

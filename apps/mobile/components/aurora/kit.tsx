@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank , ALPHA, FEEDBACK, ON_FEEDBACK, STATE_OPACITY } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { registerPerson, useSharedSurfaceTarget } from "../../lib/shared-element";
@@ -738,12 +738,12 @@ export function APill({
     : variant === "soft"
       ? palette.chalk
       : palette.onAccent;
-  // A FAILED commit is drawn as a filled FEEDBACK.error pill whatever the variant
+  // A FAILED commit is drawn as a filled FEEDBACK.error.text pill whatever the variant
   // was — the outcome layer, not the brand accent: a save that failed is not a
   // reading on the training ramp (see theme/feedback.ts).
   // Painting red under an outline pill's own foreground would have left ash on
   // red — the failure state is the one place the label must not get quieter.
-  const fg = state === "error" ? ON_FEEDBACK : state === "saved" ? FEEDBACK.success : restFg;
+  const fg = state === "error" ? FEEDBACK.error.ink : state === "saved" ? FEEDBACK.success.text : restFg;
 
   // ── the commit state ──────────────────────────────────────────────────
   const reduced = useReducedMotion();
@@ -808,7 +808,7 @@ export function APill({
       accessibilityState={{ disabled: !!disabled || busy, busy }}
       style={[
         {
-          backgroundColor: state === "error" ? FEEDBACK.error : bg,
+          backgroundColor: state === "error" ? FEEDBACK.error.fill : bg,
           borderRadius: RADIUS.pill,
           paddingVertical: compact ? space.sm : 18,
           // Was absent, because APill was only ever stretched by its parent.

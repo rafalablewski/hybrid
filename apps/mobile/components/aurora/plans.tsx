@@ -415,7 +415,7 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
         <Field label={t("w.train.plans.progression")} value={d.progression} />
         <MeasuredOutcome planId={plan.id} />
 
-        {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: FEEDBACK.error, marginTop: 8 }}>{t("plans.enrollError")}</Text>}
+        {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: FEEDBACK.error.text, marginTop: 8 }}>{t("plans.enrollError")}</Text>}
         {leaveSection}
       </View>
     </PlanCoverScreen>

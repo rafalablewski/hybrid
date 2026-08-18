@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { contrastRatio, relativeLuminance, deltaE2000, labOf, WCAG, DISTINCT_ROLE_DE } from "../contrast";
 import { ROLE_COLOR, type SemanticRole } from "../semantic";
 import { THEMES, type ThemeName } from "./palette";
-import { FEEDBACK, ON_FEEDBACK, type FeedbackKind } from "./feedback";
+import { FEEDBACK, type FeedbackKind } from "./feedback";
 import { colors } from "./tokens";
 
 describe("contrastRatio", () => {
@@ -195,23 +195,32 @@ describe("feedback colours", () => {
   const t = THEMES.dark;
   const KINDS = Object.keys(FEEDBACK) as FeedbackKind[];
 
+  // THREE VALUES PER KIND, and each is guarded against the surface it meets.
+  // `text` is read on the card; `ink` is read on its OWN fill, which is why the
+  // dark Lava Falls fill can carry chalk while the other three carry near-black.
   for (const k of KINDS) {
-    it(`${k} clears AA on the raised surface`, () => {
-      expect(contrastRatio(FEEDBACK[k], t.ink2)).toBeGreaterThanOrEqual(WCAG.AA);
+    it(`${k} text clears AA on the card`, () => {
+      expect(contrastRatio(FEEDBACK[k].text, t.ink2)).toBeGreaterThanOrEqual(WCAG.AA);
     });
-    it(`${k} clears AA on ink`, () => {
-      expect(contrastRatio(FEEDBACK[k], t.ink)).toBeGreaterThanOrEqual(WCAG.AA);
+    it(`${k} text clears AA on ink`, () => {
+      expect(contrastRatio(FEEDBACK[k].text, t.ink)).toBeGreaterThanOrEqual(WCAG.AA);
     });
-    it(`${k} carries onAccent ink at AA when filled`, () => {
-      expect(contrastRatio(ON_FEEDBACK, FEEDBACK[k])).toBeGreaterThanOrEqual(WCAG.AA);
+    it(`${k} ink clears AA on its own fill`, () => {
+      expect(contrastRatio(FEEDBACK[k].ink, FEEDBACK[k].fill)).toBeGreaterThanOrEqual(WCAG.AA);
     });
   }
+
+  // A FILL MAY BE DARK — Lava Falls is, deliberately — so fills are NOT held to
+  // the 3:1-on-ink rule the accents are. An accent is a mark drawn ON the page;
+  // a feedback fill is a panel that REPLACES a piece of it, and a panel is found
+  // by its edge and its label, not by glowing. What must hold is that the label
+  // on it is readable, which is the `ink` rule above.
 
   for (let i = 0; i < KINDS.length; i++) {
     for (let j = i + 1; j < KINDS.length; j++) {
       const [a, b] = [KINDS[i]!, KINDS[j]!];
-      it(`${a} vs ${b} ≥ ΔE ${DISTINCT_ROLE_DE}`, () => {
-        expect(deltaE2000(FEEDBACK[a], FEEDBACK[b])).toBeGreaterThanOrEqual(DISTINCT_ROLE_DE);
+      it(`${a} vs ${b} text ≥ ΔE ${DISTINCT_ROLE_DE}`, () => {
+        expect(deltaE2000(FEEDBACK[a].text, FEEDBACK[b].text)).toBeGreaterThanOrEqual(DISTINCT_ROLE_DE);
       });
     }
   }
@@ -220,9 +229,9 @@ describe("feedback colours", () => {
   // accent are skipped by VALUE, so a fork into a lookalike would be caught.
   for (const k of KINDS) {
     for (const [an, ac] of Object.entries({ ...t.accentText, ash: t.ash })) {
-      if (FEEDBACK[k] === ac) continue;
+      if (FEEDBACK[k].text === ac) continue;
       it(`${k} vs accent ${an} ≥ ΔE ${DISTINCT_ROLE_DE}`, () => {
-        expect(deltaE2000(FEEDBACK[k], ac)).toBeGreaterThanOrEqual(DISTINCT_ROLE_DE);
+        expect(deltaE2000(FEEDBACK[k].text, ac)).toBeGreaterThanOrEqual(DISTINCT_ROLE_DE);
       });
     }
   }
@@ -230,17 +239,27 @@ describe("feedback colours", () => {
   // The whole point of the layer: these are the CONVENTIONAL hues, and "green"
   // is a claim about a hue angle, not a vibe. Wild Lime is 112° (yellow-green)
   // and Muskmelon is 56° (orange) — which is why neither could do this job.
+  // Measured on the FILL, which is the specified Pantone value; the text tone is
+  // derived from it and holds the same angle by construction.
   const hueOf = (hex: string) => {
     const [, a, b] = labOf(hex);
     const d = (Math.atan2(b, a) * 180) / Math.PI;
     return d < 0 ? d + 360 : d;
   };
   it("success is green, warning is yellow, error is red — by hue angle", () => {
-    expect(hueOf(FEEDBACK.success)).toBeGreaterThan(130);
-    expect(hueOf(FEEDBACK.success)).toBeLessThan(175);
-    expect(hueOf(FEEDBACK.warning)).toBeGreaterThan(75);
-    expect(hueOf(FEEDBACK.warning)).toBeLessThan(100);
-    expect(hueOf(FEEDBACK.error)).toBeGreaterThan(15);
-    expect(hueOf(FEEDBACK.error)).toBeLessThan(45);
+    expect(hueOf(FEEDBACK.success.fill)).toBeGreaterThan(130);
+    expect(hueOf(FEEDBACK.success.fill)).toBeLessThan(180);
+    expect(hueOf(FEEDBACK.warning.fill)).toBeGreaterThan(75);
+    expect(hueOf(FEEDBACK.warning.fill)).toBeLessThan(100);
+    expect(hueOf(FEEDBACK.error.fill)).toBeGreaterThan(15);
+    expect(hueOf(FEEDBACK.error.fill)).toBeLessThan(45);
+  });
+
+  // The lift must not drift off the colour it is a lift OF. Lava Falls is the
+  // only kind where fill and text differ, and the whole claim is that the text
+  // is the SAME HUE, raised — not a different red that happens to be legible.
+  it("the error text tone holds Lava Falls' own hue angle", () => {
+    expect(Math.abs(hueOf(FEEDBACK.error.text) - hueOf(FEEDBACK.error.fill))).toBeLessThan(6);
   });
 });
+

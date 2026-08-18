@@ -163,7 +163,7 @@ export default function AuroraHistory() {
     const actions: SwipeAction[] = showArchived
       ? [
           { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => void manage.archive(s.id, false) },
-          { key: "delete", label: t("common.delete"), color: FEEDBACK.error, onPress: () => manage.confirmDelete(s) },
+          { key: "delete", label: t("common.delete"), color: FEEDBACK.error.fill, onPress: () => manage.confirmDelete(s) },
         ]
       : [];
     return (

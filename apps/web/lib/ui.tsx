@@ -124,8 +124,8 @@ export const OK = "var(--feedback-success)",
   WARN = "var(--feedback-warning)",
   ERR = "var(--feedback-error)",
   INFO = "var(--feedback-info)",
-  OK_HEX = FEEDBACK.success,
-  ERR_HEX = FEEDBACK.error;
+  OK_HEX = FEEDBACK.success.text,
+  ERR_HEX = FEEDBACK.error.text;
 
 export const LIME_T = "var(--lime-text)",
   BLUE_T = "var(--blue-text)",

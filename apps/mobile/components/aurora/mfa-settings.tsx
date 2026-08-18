@@ -130,7 +130,7 @@ export default function MfaSettings() {
               <View key={f.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{f.friendly_name || "Authenticator"}</Text>
                 <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? STATE_OPACITY.busy : 1 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error }}>Remove</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text }}>Remove</Text>
                 </Pressable>
               </View>
             ))}
@@ -178,7 +178,7 @@ export default function MfaSettings() {
             )}
 
             {msg && (
-              <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: msg.ok ? FEEDBACK.success : FEEDBACK.error, marginTop: 12 }}>
+              <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: msg.ok ? FEEDBACK.success.text : FEEDBACK.error.text, marginTop: 12 }}>
                 {msg.text}
               </Text>
             )}

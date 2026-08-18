@@ -147,7 +147,7 @@ export default function AuroraUpgrade() {
       </View>
 
       {!!error && (
-        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
       )}
 
       {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}

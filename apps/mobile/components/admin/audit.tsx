@@ -77,7 +77,7 @@ export default function AdminAudit() {
         <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
       </View>
 
-      {err ? <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={FEEDBACK.error} style={{ fontSize: fs.caption, marginBottom: 12 }}>{err}</Mono></View> : null}
+      {err ? <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={FEEDBACK.error.text} style={{ fontSize: fs.caption, marginBottom: 12 }}>{err}</Mono></View> : null}
 
       {/* The placeholder was a SIBLING of the list rather than a branch of it,
           so the log appeared beside a spinner that then vanished. One swap

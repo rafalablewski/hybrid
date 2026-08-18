@@ -2090,7 +2090,7 @@ export default function Workout() {
           );
         })()}
 
-        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={FEEDBACK.error} style={{ marginTop: 16, textAlign: "center" }}>{error}</Mono></View>}
+        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={FEEDBACK.error.text} style={{ marginTop: 16, textAlign: "center" }}>{error}</Mono></View>}
 
       </ScrollView>
 
