@@ -115,8 +115,7 @@ import {
   HERO,
   SATELLITE,
   type ReadinessFeeling,
-  ALPHA,
-} from "@hybrid/core";
+  ALPHA, FEEDBACK } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
 
 // Today's one-tap readiness feeling from the check-in list → scales the AI
@@ -2091,7 +2090,7 @@ export default function Workout() {
           );
         })()}
 
-        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={C.red} style={{ marginTop: 16, textAlign: "center" }}>{error}</Mono></View>}
+        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={FEEDBACK.error} style={{ marginTop: 16, textAlign: "center" }}>{error}</Mono></View>}
 
       </ScrollView>
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Animated, View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors, ALPHA} from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors, ALPHA, FEEDBACK } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
@@ -415,7 +415,7 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
         <Field label={t("w.train.plans.progression")} value={d.progression} />
         <MeasuredOutcome planId={plan.id} />
 
-        {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.red), marginTop: 8 }}>{t("plans.enrollError")}</Text>}
+        {enrolled === "error" && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.body, color: FEEDBACK.error, marginTop: 8 }}>{t("plans.enrollError")}</Text>}
         {leaveSection}
       </View>
     </PlanCoverScreen>

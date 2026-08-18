@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, space, INK, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, space, INK, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip, txt, OK, ERR } from "@/lib/ui";
 
 type RunStep = { agent: string; role: string; task: string; output: string };
 type RunRow = {
@@ -89,7 +89,7 @@ export default function AdminAgentRuns() {
             <details>
               <summary style={{ ...mono, fontSize: fs.body, color: CHALK, cursor: "pointer", listStyle: "none", padding: "12px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: space.xs, flexWrap: "wrap" }}>
-                  <Chip c={r.status === "ok" ? LIME : RED}>{r.status}</Chip>
+                  <Chip c={r.status === "ok" ? OK : ERR}>{r.status}</Chip>
                   <span style={{ ...disp, fontWeight: 800, fontSize: fs.note, color: CHALK }}>{r.agentName}</span>
                   <Chip c={ASH}>{r.agentRole}</Chip>
                   <Chip c={ASH}>{r.runtime}</Chip>

@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { contrastRatio, relativeLuminance, deltaE2000, WCAG, DISTINCT_ROLE_DE } from "../contrast";
+import { contrastRatio, relativeLuminance, deltaE2000, labOf, WCAG, DISTINCT_ROLE_DE } from "../contrast";
 import { ROLE_COLOR, type SemanticRole } from "../semantic";
 import { THEMES, type ThemeName } from "./palette";
+import { FEEDBACK, ON_FEEDBACK, type FeedbackKind } from "./feedback";
 import { colors } from "./tokens";
 
 describe("contrastRatio", () => {
@@ -154,5 +155,73 @@ describe("deltaE2000", () => {
 
   it("rejects malformed hex the same way the contrast helpers do", () => {
     expect(() => deltaE2000("nope", "#fff")).toThrow();
+  });
+});
+
+/**
+ * THE FEEDBACK LAYER — green succeeded, yellow warned, red failed.
+ *
+ * These are held to the SAME two bars as the accents, for the same reasons: a
+ * message has to be readable on the card, and two outcomes that mean different
+ * things have to be tellable apart. What is extra here is the third bar — a
+ * feedback colour also has to be distinguishable from the ACCENTS, because a
+ * failure chip and a training figure share plenty of screens.
+ *
+ * `warning` IS Fleur De Lis and `info` IS the Lyons Blue text tone. That is
+ * deliberate reuse rather than duplication, so those two pairs are skipped by
+ * value rather than by name — if a future edit accidentally forks them into two
+ * near-identical yellows, the pair stops being skipped and this fails.
+ */
+describe("feedback colours", () => {
+  const t = THEMES.dark;
+  const KINDS = Object.keys(FEEDBACK) as FeedbackKind[];
+
+  for (const k of KINDS) {
+    it(`${k} clears AA on the card`, () => {
+      expect(contrastRatio(FEEDBACK[k], t.card)).toBeGreaterThanOrEqual(WCAG.AA);
+    });
+    it(`${k} clears AA on ink`, () => {
+      expect(contrastRatio(FEEDBACK[k], t.ink)).toBeGreaterThanOrEqual(WCAG.AA);
+    });
+    it(`${k} carries onAccent ink at AA when filled`, () => {
+      expect(contrastRatio(ON_FEEDBACK, FEEDBACK[k])).toBeGreaterThanOrEqual(WCAG.AA);
+    });
+  }
+
+  for (let i = 0; i < KINDS.length; i++) {
+    for (let j = i + 1; j < KINDS.length; j++) {
+      const [a, b] = [KINDS[i]!, KINDS[j]!];
+      it(`${a} vs ${b} ≥ ΔE ${DISTINCT_ROLE_DE}`, () => {
+        expect(deltaE2000(FEEDBACK[a], FEEDBACK[b])).toBeGreaterThanOrEqual(DISTINCT_ROLE_DE);
+      });
+    }
+  }
+
+  // …and against every accent they can share a screen with. The two that ARE an
+  // accent are skipped by VALUE, so a fork into a lookalike would be caught.
+  for (const k of KINDS) {
+    for (const [an, ac] of Object.entries({ ...t.accentText, ash: t.ash })) {
+      if (FEEDBACK[k] === ac) continue;
+      it(`${k} vs accent ${an} ≥ ΔE ${DISTINCT_ROLE_DE}`, () => {
+        expect(deltaE2000(FEEDBACK[k], ac)).toBeGreaterThanOrEqual(DISTINCT_ROLE_DE);
+      });
+    }
+  }
+
+  // The whole point of the layer: these are the CONVENTIONAL hues, and "green"
+  // is a claim about a hue angle, not a vibe. Wild Lime is 112° (yellow-green)
+  // and Muskmelon is 56° (orange) — which is why neither could do this job.
+  const hueOf = (hex: string) => {
+    const [, a, b] = labOf(hex);
+    const d = (Math.atan2(b, a) * 180) / Math.PI;
+    return d < 0 ? d + 360 : d;
+  };
+  it("success is green, warning is yellow, error is red — by hue angle", () => {
+    expect(hueOf(FEEDBACK.success)).toBeGreaterThan(130);
+    expect(hueOf(FEEDBACK.success)).toBeLessThan(175);
+    expect(hueOf(FEEDBACK.warning)).toBeGreaterThan(75);
+    expect(hueOf(FEEDBACK.warning)).toBeLessThan(100);
+    expect(hueOf(FEEDBACK.error)).toBeGreaterThan(15);
+    expect(hueOf(FEEDBACK.error)).toBeLessThan(45);
   });
 });

@@ -14,7 +14,7 @@ import {
   type AgentStatus,
   type Kpi,
 } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt, OK, ERR } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
@@ -718,7 +718,7 @@ export default function AdminAgents() {
                   {runs.map((r) => (
                     <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
                       <summary style={{ ...mono, fontSize: fs.body, color: CHALK, cursor: "pointer", listStyle: "none" }}>
-                        <Chip c={r.status === "ok" ? LIME : "#e06666"}>{r.status}</Chip>
+                        <Chip c={r.status === "ok" ? OK : ERR}>{r.status}</Chip>
                         <Chip c={ASH}>{r.runtime}</Chip>
                         <span style={{ color: txt(ASH) }}>{new Date(r.createdAt).toLocaleString()}</span>
                         <div style={{ marginTop: 4, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.task}</div>

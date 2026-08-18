@@ -40,7 +40,7 @@ import {
   type E1rmPoint,
   type PacePoint,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, FEEDBACK } from "@hybrid/core";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -254,7 +254,7 @@ export default function SessionDetail() {
       </View>
       <View style={{ flexDirection: "row", gap: space.ms, marginTop: space.ms }}>
         <APill label={t("w.analyze.hist.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
-        <APill label={t("common.delete")} variant="outline" color={C.red} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
+        <APill label={t("common.delete")} variant="outline" color={FEEDBACK.error} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
       </View>
 
       <SessionEditSheet

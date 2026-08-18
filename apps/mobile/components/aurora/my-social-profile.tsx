@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { View, Text, TextInput, Image, AccessibilityInfo } from "react-native";
-import { normalizeHandle, isValidHandle, AVATAR_PRESETS } from "@hybrid/core";
+import { normalizeHandle, isValidHandle, AVATAR_PRESETS, FEEDBACK } from "@hybrid/core";
 import { leading, tracking, LoadSwap, F, fs, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -115,20 +115,20 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
                     {!fmtValid ? `✕ ${t("w.profile.handleRule")}` : avail === "taken" ? `✕ ${t("w.profile.handleTaken").replace("{h}", hNorm)}` : avail === "checking" ? t("w.profile.checking") : `✓ ${isMine ? t("w.profile.yourHandle") : t("w.profile.handleAvailable").replace("{h}", hNorm)}`}
                   </Text>
                 )}
-                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 8 }}>{err}</Text>}
+                {err && <Text accessibilityRole="alert" style={{ color: FEEDBACK.error, fontSize: fs.body, marginTop: 8 }}>{err}</Text>}
                 <APill label={claimed ? t("common.save") : t("w.profile.claimHandle")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
               {editing === "displayName" && (<>
                 <TextInput value={form.displayName} onChangeText={(v) => setForm({ ...form, displayName: v })} placeholder={t("w.profile.optional")} placeholderTextColor={C.ash} autoFocus style={inp} />
-                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 8 }}>{err}</Text>}
+                {err && <Text accessibilityRole="alert" style={{ color: FEEDBACK.error, fontSize: fs.body, marginTop: 8 }}>{err}</Text>}
                 <APill label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
               {editing === "bio" && (<>
                 <TextInput value={form.bio} onChangeText={(v) => setForm({ ...form, bio: v })} multiline maxLength={280} placeholder={t("w.profile.bioPlaceholder")} placeholderTextColor={C.ash} autoFocus style={{ ...inp, minHeight: 96, textAlignVertical: "top" }} />
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: bioLen >= 280 ? C.red : C.ash, textAlign: "right", marginTop: 6 }}>{bioLen}/280</Text>
-                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 4 }}>{err}</Text>}
+                {err && <Text accessibilityRole="alert" style={{ color: FEEDBACK.error, fontSize: fs.body, marginTop: 4 }}>{err}</Text>}
                 <APill label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
 
@@ -136,7 +136,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
                 <View style={{ flexDirection: "row", gap: 8, marginBottom: 8 }}>
                   {(["public", "followers", "private"] as const).map((v) => <AChip key={v} label={visLabel(v)} selected={form.visibility === v} onPress={() => setForm({ ...form, visibility: v })} />)}
                 </View>
-                {err && <Text accessibilityRole="alert" style={{ color: txt(C, C.red), fontSize: fs.body, marginTop: 4 }}>{err}</Text>}
+                {err && <Text accessibilityRole="alert" style={{ color: FEEDBACK.error, fontSize: fs.body, marginTop: 4 }}>{err}</Text>}
                 <APill label={t("common.save")} onPress={async () => { if (await saveSocial()) back(); }} />
               </>)}
             </ACard>
@@ -226,7 +226,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
                 <APill label={t("common.done")} onPress={onDone} />
               </View>
             )}
-            {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10, textAlign: "center" }}>{err}</Text>}
+            {err && <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 10, textAlign: "center" }}>{err}</Text>}
             {!!acct.profileMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.profileMsg.startsWith("✓") ? lime : C.ash, marginTop: 10, textAlign: "center" }}>{acct.profileMsg}</Text>}
           </>
         );

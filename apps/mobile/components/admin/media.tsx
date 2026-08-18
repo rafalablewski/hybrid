@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Image, Share } from "react-native";
-import { sketchBrief, sketchCoverage } from "@hybrid/core";
+import { sketchBrief, sketchCoverage, FEEDBACK } from "@hybrid/core";
 import { fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Banner, ErrorNote, Input, PillBtn } from "./_kit";
@@ -186,7 +186,7 @@ export default function AdminMedia() {
                       {a.status !== "archived" ? (
                         <PillBtn label="Archive" outline color={palette.amber} disabled={busy} onPress={() => patch(a.id, { status: "archived" })} />
                       ) : null}
-                      <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(a)} />
+                      <PillBtn label="Delete" outline color={FEEDBACK.error} disabled={busy} onPress={() => remove(a)} />
                     </View>
                   </>
                 )}

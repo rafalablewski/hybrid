@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
-import { FUNNEL, FULL_BENEFITS , ALPHA} from "@hybrid/core";
+import { FUNNEL, FULL_BENEFITS , ALPHA, FEEDBACK } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull, restorePurchases, fetchFullPrice } from "../../lib/iap";
@@ -147,7 +147,7 @@ export default function AuroraUpgrade() {
       </View>
 
       {!!error && (
-        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
       )}
 
       {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}

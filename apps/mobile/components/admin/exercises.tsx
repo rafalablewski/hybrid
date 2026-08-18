@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { View, Text } from "react-native";
-import { ALL_MUSCLES, searchMissSummary, topSearchMisses } from "@hybrid/core";
+import { ALL_MUSCLES, searchMissSummary, topSearchMisses, FEEDBACK } from "@hybrid/core";
 import { leading, fs, space, Mono, Chip, LoadSwap, F } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Intro, Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
@@ -330,7 +330,7 @@ export default function AdminExercises() {
                   {x.status !== "archived" ? (
                     <PillBtn label="Archive" outline color={palette.amber} disabled={busy} onPress={() => patch(x.id, { status: "archived" })} />
                   ) : null}
-                  <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(x)} />
+                  <PillBtn label="Delete" outline color={FEEDBACK.error} disabled={busy} onPress={() => remove(x)} />
                 </View>
               </ACard>
             ))}

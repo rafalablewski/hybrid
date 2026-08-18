@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
-import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit } from "@hybrid/core";
+import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit, FEEDBACK } from "@hybrid/core";
 import { fetchAttestations, requestAttestation } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../lib/ui";
@@ -150,7 +150,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
               </View>
             )}
             {asking === lift && errorMsg && (
-              <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 6 }}>{errorMsg}</Text>
+              <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 6 }}>{errorMsg}</Text>
             )}
           </View>
         );

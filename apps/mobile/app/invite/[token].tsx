@@ -7,6 +7,7 @@ import { useSession } from "../../lib/session";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, Loading, LoadSwap } from "../../lib/ui";
 import { claimCoachInvite } from "../../lib/api";
+import { FEEDBACK } from "@hybrid/core";
 
 // Claim landing for a coach invite (QR / link / deep-link). Claims immediately
 // when signed in (claim = consent → ACTIVE link), otherwise stashes the token and
@@ -69,7 +70,7 @@ export default function InviteClaim() {
             </>
           ) : state === "error" ? (
             <>
-              <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: txt(C, C.amber), textAlign: "center", marginTop: 12 }}>{msg}</Text>
+              <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: FEEDBACK.warning, textAlign: "center", marginTop: 12 }}>{msg}</Text>
               <Pressable onPress={() => void claim()} style={{ marginTop: 16 }}>
                 <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>Try again</Text>
               </Pressable>

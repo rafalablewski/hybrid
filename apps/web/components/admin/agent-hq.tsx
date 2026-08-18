@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ago, until } from "@hybrid/core";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
-import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Stat, Select, txt, OK, WARN, ERR, INFO, ERR_HEX } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
 import { Loading } from "../aurora/skeleton";
@@ -199,7 +199,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
                   contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: fs.body }}
                 />
                 <Bar dataKey="ok" stackId="a" fill={LIME_HEX} radius={[0, 0, 0, 0]} />
-                <Bar dataKey="error" stackId="a" fill={RED} radius={[3, 3, 0, 0]} />
+                <Bar dataKey="error" stackId="a" fill={ERR_HEX} radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -216,7 +216,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
             <div style={{ display: "flex", flexDirection: "column" }}>
               {recent.map((r) => (
                 <div key={r.id} style={{ display: "flex", gap: space.ms, alignItems: "baseline", padding: "9px 0", borderBottom: `1px solid ${LINE}` }}>
-                  <span style={{ width: 7, height: 7, borderRadius: 99, background: r.status === "ok" ? LIME : RED, flexShrink: 0, marginTop: 5 }} />
+                  <span style={{ width: 7, height: 7, borderRadius: 99, background: r.status === "ok" ? OK : ERR, flexShrink: 0, marginTop: 5 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>
                       {r.agentName} <span style={{ color: txt(ASH), fontWeight: 400 }}>– {r.agentRole}</span>
@@ -425,7 +425,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
         </div>
         {active.length === 0 && <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 8 }} c={AMBER}>No active agents — activate one in “AI agents” first.</Mono>}
         {result && (
-          <div role="alert" style={{ ...mono, marginTop: 12, fontSize: fs.bodyLg, lineHeight: 1.6, color: txt(result.error ? AMBER : CHALK), background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 14, whiteSpace: "pre-wrap" }}>
+          <div role="alert" style={{ ...mono, marginTop: 12, fontSize: fs.bodyLg, lineHeight: 1.6, color: result.error ? ERR : txt(CHALK), background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 14, whiteSpace: "pre-wrap" }}>
             {result.output}
           </div>
         )}
@@ -457,7 +457,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
           ) : (
             data.recent.slice(0, 8).map((r) => (
               <div key={r.id} style={{ display: "flex", gap: space.sm, alignItems: "baseline", padding: "9px 0", borderBottom: `1px solid ${LINE}` }}>
-                <span style={{ width: 7, height: 7, borderRadius: 99, background: r.status === "ok" ? LIME : RED, flexShrink: 0, marginTop: 5 }} />
+                <span style={{ width: 7, height: 7, borderRadius: 99, background: r.status === "ok" ? OK : ERR, flexShrink: 0, marginTop: 5 }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>{r.agentName}</div>
                   <Mono s={{ fontSize: fs.caption, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{r.task}</Mono>
@@ -866,7 +866,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
   const brokenSchedules = data?.attention.brokenSchedules ?? [];
   const list = notifs ?? [];
   const unread = list.filter((n) => !n.read).length;
-  const sevColor = (s: string) => (s === "error" ? RED : s === "info" ? BLUE : AMBER);
+  const sevColor = (s: string) => (s === "error" ? ERR : s === "info" ? INFO : WARN);
 
   if (notifs !== null && list.length === 0 && brokenSchedules.length === 0)
     return (

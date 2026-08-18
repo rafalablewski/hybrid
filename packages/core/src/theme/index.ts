@@ -5,7 +5,8 @@
  * here, so the rest of the codebase only ever imports from `@hybrid/core`:
  *
  *   tokens.ts     — raw brand tokens: colours + font families (scale: ../scale.ts).
- *   palette.ts    — light/dark surface + text palettes (ThemePalette, THEMES).
+ *   palette.ts    — the dark surface + text palette (ThemePalette, THEMES).
+ *   feedback.ts   — success / warning / error / info, the OUTCOME colours.
  *   templates.ts  — the skin registry + active-skin switch (Classic ⇄ Aurora).
  *   icons.ts      — the Aurora icon set (AuroraIconName + SVG path data).
  *
@@ -17,6 +18,7 @@
  */
 export * from "./tokens";
 export * from "./palette";
+export * from "./feedback";
 export * from "./icons";
 export * from "./sport-marks";
 export * from "./mark";

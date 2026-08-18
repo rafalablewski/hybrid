@@ -11,8 +11,7 @@ import {
   type NutritionFacts,
   type RecipeSource,
   type UserRecipe,
-  type UserRecipeIngredient,
-} from "@hybrid/core";
+  type UserRecipeIngredient, FEEDBACK, ON_FEEDBACK } from "@hybrid/core";
 import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -538,8 +537,8 @@ export function UserRecipeEditor({
           <PressScale onPress={() => setConfirmDelete(false)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.cancel")} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text>
           </PressScale>
-          <PressScale onPress={() => { setConfirmDelete(false); onDelete?.(); }} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.recipeDelete")} style={{ flex: 1, backgroundColor: C.red, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: "#fff" }}>{t("w.recovery.nutrition.recipeDelete")}</Text>
+          <PressScale onPress={() => { setConfirmDelete(false); onDelete?.(); }} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.recipeDelete")} style={{ flex: 1, backgroundColor: FEEDBACK.error, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: ON_FEEDBACK }}>{t("w.recovery.nutrition.recipeDelete")}</Text>
           </PressScale>
         </View>
       </Sheet>

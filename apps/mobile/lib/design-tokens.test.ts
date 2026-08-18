@@ -849,7 +849,11 @@ describe("colour", () => {
     // 75 → 61: the 12 eight-digit ones went to withAlpha() with the rest of the
     // colour arithmetic — see the alpha rule below, which is the one that
     // actually covers this axis.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 61, "2026-12-31", "hex literal → a palette token");
+    // 61 → 60 on the feedback layer: the recipe-delete button's `"#fff"` label was
+    // the last raw white sitting on an accent fill, and it became ON_FEEDBACK when
+    // that button moved onto the outcome colours. It is the shape this rule wants —
+    // a literal that turned out to have a name once the surface it sat on had one.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 60, "2026-12-31", "hex literal → a palette token");
   });
 });
 

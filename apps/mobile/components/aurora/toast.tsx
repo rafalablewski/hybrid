@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { durations , ALPHA} from "@hybrid/core";
+import { durations , ALPHA, FEEDBACK } from "@hybrid/core";
 import { haptic } from "../../lib/haptics";
 import { AURORA_NAV_BAR_HEIGHT } from "../../lib/layout";
 import { useTheme } from "../../lib/theme";
@@ -30,7 +30,8 @@ import { RADIUS } from "./kit";
  */
 
 /** An outcome chip, or a FAILURE chip. The kind exists so a failure can't pass
- *  as an outcome: "error" reads in the failure voice (red), stays up longer,
+ *  as an outcome: "error" reads in the failure voice (FEEDBACK.error), stays up
+ *  longer,
  *  and knocks (haptic.error — the audit's §15: a silent failure on a phone is
  *  a failure the user doesn't notice). The haptic fires in the HOST, once, so
  *  no call site can forget it — the same one-gate reasoning as lib/haptics. */
@@ -106,7 +107,7 @@ export function ToastHost() {
         ) : (
           <BlurView intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
         )}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: kind === "error" ? C.red : C.chalk }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: kind === "error" ? FEEDBACK.error : FEEDBACK.success }}>
           {msg}
         </Text>
       </Animated.View>

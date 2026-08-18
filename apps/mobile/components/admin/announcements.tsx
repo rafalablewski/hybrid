@@ -6,6 +6,7 @@ import { Intro, Banner, ErrorNote, Input, PillBtn, FilterGroup } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { useConfirm } from "../aurora/confirm";
+import { FEEDBACK } from "@hybrid/core";
 
 // Mobile parity for apps/web/components/admin/announcements.tsx. Talks to the
 // same /api/admin/announcements (+/[id]) backend: full CRUD over the broadcast
@@ -269,7 +270,7 @@ export default function AdminAnnouncements() {
                     <PillBtn label="Archive" outline color={palette.amber} disabled={busy} onPress={() => patch(a.id, { status: "archived" })} />
                   ) : null}
                   <PillBtn label={a.pinned ? "Unpin" : "Pin"} outline color={palette.ash} disabled={busy} onPress={() => patch(a.id, { pinned: !a.pinned })} />
-                  <PillBtn label="Delete" outline color={palette.red} disabled={busy} onPress={() => remove(a)} />
+                  <PillBtn label="Delete" outline color={FEEDBACK.error} disabled={busy} onPress={() => remove(a)} />
                 </View>
               </ACard>
             ))}

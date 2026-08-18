@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, ActivityIndicator } from "react-native";
-import { isValidTotpCode , ALPHA} from "@hybrid/core";
+import { isValidTotpCode , ALPHA, FEEDBACK } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
@@ -130,7 +130,7 @@ export default function MfaSettings() {
               <View key={f.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{f.friendly_name || "Authenticator"}</Text>
                 <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? 0.5 : 1 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red) }}>Remove</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error }}>Remove</Text>
                 </Pressable>
               </View>
             ))}
@@ -178,7 +178,7 @@ export default function MfaSettings() {
             )}
 
             {msg && (
-              <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, msg.ok ? C.lime : C.red), marginTop: 12 }}>
+              <Text accessibilityLiveRegion="polite" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: msg.ok ? FEEDBACK.success : FEEDBACK.error, marginTop: 12 }}>
                 {msg.text}
               </Text>
             )}

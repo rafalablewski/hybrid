@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
-import { colors, ROLE_COLOR, statSubTone, type AccentKey, type SemanticRole, fs, space, TABULAR_NUMS } from "@hybrid/core";
+import { colors, FEEDBACK, ROLE_COLOR, statSubTone, type AccentKey, type SemanticRole, fs, space, TABULAR_NUMS } from "@hybrid/core";
 import RollingNumber from "@/components/aurora/rolling-number";
 
 // Re-export the shared scale so screens import sizing from one place:
@@ -102,6 +102,20 @@ export const ON_ACCENT = "var(--on-accent)";
 // resolve var()); these are the AA-guarded accent-TEXT tones. Use *_T directly
 // for inline accent text, or rely on Mono/Chip which map a bright accent → its
 // text colour automatically.
+/**
+ * FEEDBACK — success / warning / error / info, the OUTCOME colours. Separate
+ * from the accents on purpose: the brand four are a DATA ramp (readiness, load,
+ * RPE), and an outcome is not a reading on a ramp. See @hybrid/core
+ * theme/feedback.ts. `OK_HEX`/`ERR_HEX` are the raw values for recharts, which
+ * cannot resolve a CSS var.
+ */
+export const OK = "var(--feedback-success)",
+  WARN = "var(--feedback-warning)",
+  ERR = "var(--feedback-error)",
+  INFO = "var(--feedback-info)",
+  OK_HEX = FEEDBACK.success,
+  ERR_HEX = FEEDBACK.error;
+
 export const LIME_T = "var(--lime-text)",
   BLUE_T = "var(--blue-text)",
   AMBER_T = "var(--amber-text)",

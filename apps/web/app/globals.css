@@ -201,6 +201,16 @@ html {
      for backgrounds/borders/chart strokes. Only BLUE needs a different value as
      type; Wild Lime, Fleur De Lis and Muskmelon clear AA on the card verbatim
      (mirror packages/core/src/theme/palette.ts THEMES.dark.accentText). */
+  /* FEEDBACK — what the app says back to you (mirror packages/core/src/theme/
+     feedback.ts, which records why this is a layer apart from the accents).
+     `--feedback-warning` and `--feedback-info` are brand values on purpose:
+     Fleur De Lis already IS the conventional yellow, and a second one would be
+     the near-duplicate this palette keeps deleting. */
+  --feedback-success: #4dbc8a;
+  --feedback-warning: #daa51d;
+  --feedback-error: #ef5b5b;
+  --feedback-info: #6bb4d4;
+
   --lime-text: #c3d363;
   --blue-text: #6bb4d4;
   --amber-text: #daa51d;

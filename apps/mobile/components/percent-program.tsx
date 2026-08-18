@@ -30,8 +30,7 @@ import {
   type InkTier,
   type LoadColor,
   type LiftKind,
-  ALPHA,
-} from "@hybrid/core";
+  ALPHA, FEEDBACK } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import MeasuredOutcome from "./measured-outcome";
 import { useRevalidate } from "../lib/queries";
@@ -192,7 +191,7 @@ export default function PercentProgram({
       <MeasuredOutcome planId={plan.id} />
 
       {state === "error" && (
-        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 4 }}>
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error, marginTop: 4 }}>
           {t("plans.enrollError")}
         </Text>
       )}
