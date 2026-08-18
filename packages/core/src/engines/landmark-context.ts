@@ -72,6 +72,13 @@ export interface MeasuredProfile {
    *  inferred from anything — it is the athlete's own measurement, read from
    *  where they already entered it so they never type it twice. */
   heightCm?: number;
+  /** Body fat percentage, from the same log. Not inferred either, and never
+   *  asked on the questionnaire — it makes the body-mass factor read LEAN mass
+   *  where it is known, and changes nothing where it is not. */
+  bodyFatPct?: number;
+  /** The newest weigh-in. The one measured field that OUTRANKS a typed value —
+   *  see the note in `withMeasured`. */
+  bodyweightKg?: number;
   /**
    * Sauna sittings per week over four weeks, from the logged heat signals.
    *
@@ -185,6 +192,9 @@ export function measuredProfile(
     checkins?: RecoveryReport[];
     bodyweight?: BodyweightPoint[];
     heightCm?: number | null;
+    /** The newest body-fat reading from the same body log (`latestBodyFatPct`).
+     *  Like height it is the athlete's own entry, read from where they put it. */
+    bodyFatPct?: number | null;
     /** The athlete's `sauna` / `saunaTemp` rows. Heat is the purest measured
      *  field on the profile: there is no form for it anywhere and there never
      *  will be — the athlete has already told us by logging. */
@@ -236,6 +246,31 @@ export function measuredProfile(
     out.heightCm = Math.round(opts.heightCm);
     out.measured.push("heightCm");
   }
+  // THE CURRENT BODY MASS — the newest weigh-in in the log. Emitted as a
+  // measured field so `withMeasured` can prefer it over a typed one; see the
+  // inversion documented there.
+  const points = opts.bodyweight ?? [];
+  if (points.length) {
+    let newest: { ts: number; kg: number } | null = null;
+    for (const pt of points) {
+      const ts = Date.parse(pt.date);
+      if (!Number.isFinite(ts) || !(pt.weightKg > 0)) continue;
+      if (!newest || ts > newest.ts) newest = { ts, kg: pt.weightKg };
+    }
+    if (newest) {
+      out.bodyweightKg = Math.round(newest.kg * 10) / 10;
+      out.measured.push("bodyweightKg");
+    }
+  }
+
+  // Composition, on the same terms as height: the athlete's own entry in their
+  // own body log, read rather than re-asked. Same window the frame maths
+  // trusts, so a row it would refuse is never shown back as a measured value.
+  const bf = opts.bodyFatPct;
+  if (typeof bf === "number" && Number.isFinite(bf) && bf >= 3 && bf <= 60) {
+    out.bodyFatPct = Math.round(bf * 10) / 10;
+    out.measured.push("bodyFatPct");
+  }
   // Only when there is something to measure. An athlete with no sauna rows has
   // not told us they never go — they have told us nothing — and a fabricated 0
   // would present an absence as a finding.
@@ -262,6 +297,27 @@ export function withMeasured(stored: AthleteVolumeProfile, measured: MeasuredPro
     // list it, so it can never arrive here as something the athlete typed.
     proteinGPerKg: measured.proteinGPerKg,
     heightCm: stored.heightCm ?? measured.heightCm,
+    // Measured only, like protein: it is a field of the body log, and
+    // `sanitizeVolumeProfile` deliberately does not list it, so a stale copy
+    // can never outlive the reading it came from.
+    bodyFatPct: measured.bodyFatPct,
+    // ── BODY MASS INVERTS THE RULE ABOVE, AND ONLY BODY MASS ────────────────
+    //
+    // Every other field here is a STANDING CLAIM: a training age, a sex, a
+    // typical night's sleep. Those the athlete owns, so what they typed wins
+    // and the measurement is only a default underneath it.
+    //
+    // Body mass is not a claim, it is a READING WITH A DATE, and the athlete
+    // takes a new one every time they step on a scale. Left under the normal
+    // rule, a figure typed once at setup outranked forty subsequent weigh-ins
+    // for the rest of the account's life — the volume model, the recovery
+    // multiplier and every strength standard still quoting the number from the
+    // day they installed the app, eight kilos ago.
+    //
+    // So the MEASUREMENT wins whenever there is one, and the typed value is the
+    // fallback for an athlete who has never weighed in. Setup writes a first
+    // weigh-in precisely so that fallback is rarely the live path.
+    bodyweightKg: measured.bodyweightKg ?? stored.bodyweightKg,
   };
 }
 

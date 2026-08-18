@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent } from "@testing-library/react";
-import { ONBOARDING_PERSONA_CHOICES } from "@hybrid/core";
+import { fireEvent, waitFor } from "@testing-library/react";
+import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES } from "@hybrid/core";
 import { renderScreen as render } from "./render";
 import Onboarding from "../components/aurora/onboarding";
+import { SCRUB_UNSET } from "../components/aurora/kit";
 
 /**
  * THE WIZARD'S OPTION ROW MUST NOT RESHAPE WHEN IT IS PICKED.
@@ -31,9 +32,26 @@ vi.mock(import("../lib/api"), async (importOriginal) => ({
   submitOnboarding: () => Promise.resolve(true),
 }));
 
+/** The two stores the intake writes on the way out — spied rather than stubbed
+ *  away, because WHAT it writes is the subject of the last test here. */
+const written = vi.fn();
+const weighed = vi.fn();
+vi.mock(import("../lib/questionnaire"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  setQuestionnaire: (p: unknown) => written(p),
+}));
+vi.mock(import("../lib/weigh-in"), async (importOriginal) => ({
+  ...(await importOriginal()),
+  logWeighInNow: (kg: number) => { weighed(kg); return Promise.resolve(); },
+}));
+
 /** The second persona card — the one that starts UNSELECTED (the answer map is
  *  seeded with the question's `casual` default). */
 const UNPICKED = ONBOARDING_PERSONA_CHOICES[1]!.label;
+
+/** The birth question, as the app ships it — asked fifth, and a DATE rather
+ *  than an age, so it cannot go stale the day after it is answered. */
+const AGE_Q = DEFAULT_ONBOARDING_QUESTIONS.find((q) => q.engineKey === "birthYear")!;
 
 /** The row as the user sees it: everything inside the pressable it lives in. */
 function row(container: HTMLElement, label: string): HTMLElement {
@@ -65,5 +83,114 @@ describe("the onboarding wizard's option row", () => {
     // the same invariant press-scale.render asserts one primitive down: what a
     // component declares survives to the DOM.
     expect(surface(picked).style.borderTopColor).not.toBe(restColour);
+  });
+});
+
+/**
+ * THE BIRTH STEP SHOWS NO DATE IT WAS NEVER GIVEN — AND COSTS NO TAP.
+ *
+ * Two invariants that pull in opposite directions until you separate the value
+ * from the control, which is what this asserts.
+ *
+ * NO FABRICATED FIGURE. The intake asks for age and body mass, and neither
+ * ships a `defaultValue` — deliberately, because the client seeds every answer
+ * from its default, so a default would mean an athlete who stepped past the
+ * screen had "80 kg" written down as their own body mass. The model then goes
+ * on to explain their recovery ceiling with it. The guard is on the RENDER
+ * because that is where it would be given away: a screen showing "80" over a
+ * Next button has told the athlete they answered, whatever the map holds.
+ *
+ * AND NO TOLL. The first cut satisfied the above with an "Answer" button — one
+ * tap to reveal a field that could have been there all along, on a screen whose
+ * whole purpose is to be answered. The field is present and live now, and only
+ * empty; the seed is where it starts when touched, not something to ask for.
+ */
+describe("a date the athlete has not answered", () => {
+  const next = (container: HTMLElement) => {
+    const btn = Array.from(container.querySelectorAll('[role="button"]')).find(
+      (b) => (b as HTMLElement).getAttribute("aria-label")?.toLowerCase().includes("next"),
+    ) as HTMLElement | undefined;
+    if (!btn) throw new Error("no Next control");
+    fireEvent.click(btn);
+  };
+
+  it("offers a year and twelve months, with no figure until touched", () => {
+    const { container } = render(<Onboarding />);
+    // persona → goal → experience → sex → BORN. Only the goal is `required`, so
+    // it is the one step Next will not leave until something is picked; the
+    // rest carry defaults or are deliberately skippable.
+    next(container);
+    fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
+    next(container); // → experience
+    next(container); // → sex
+    next(container); // → born
+    const body = container.textContent ?? "";
+    // Non-vacuity: the assertions below are trivially true on any screen that
+    // is not this one, so prove we arrived. The title is core's own — the mock
+    // returns null questions, so the wizard runs the shipped set.
+    expect(body).toContain(AGE_Q.title);
+    // No year may be on screen: the question is unanswered and has to look it.
+    // (The seed is twenty years below the ceiling, so any four-digit year here
+    // would be one the athlete never gave.)
+    expect(body, "a year nobody gave is on screen").not.toMatch(/\b(19|20)\d\d\b/);
+    // …but the control IS on screen, ready, with nothing standing in front of
+    // it. AScrubField declares `adjustable`, which react-native-web renders as
+    // a slider. The field is empty, not absent, and the dash is what says so.
+    expect(container.querySelector('[role="slider"]'), "the field is gated").not.toBeNull();
+    expect(body, "the empty field must read as empty").toContain(SCRUB_UNSET);
+    // TWELVE MONTHS, and exactly twelve. The month is what makes the age exact
+    // rather than ±1 — and a `number` question of this range used to draw one
+    // segment per step, which for the age it replaced would have been ninety.
+    expect(container.querySelectorAll('[role="radio"]').length).toBe(12);
+  });
+});
+
+/**
+ * A SEED IS NOT AN ANSWER — and the wizard must not hand one to the model.
+ *
+ * The answer map is seeded from every question's `defaultValue` before the
+ * athlete touches anything: the recommender needs a complete set, and a choice
+ * step has to open with its default shown as picked. The body questions ship
+ * without defaults so that seeding cannot fabricate a body mass — but that was
+ * only half the guarantee while `experience` and `days` still carried a value
+ * nobody chose onto the PROFILE, where they move the volume landmarks and then
+ * read back on the questionnaire as answered.
+ *
+ * So the seeds stop at the profile. What was given is written; what was merely
+ * shown is not — which is the same rule the questionnaire screen already keeps,
+ * and the point of asking that these two agree.
+ */
+describe("what setup writes down", () => {
+  /** The commit pill — last in the tree, after the scroller, so it is the last
+   *  button on screen whatever the step is called. */
+  const cta = (container: HTMLElement) => {
+    const all = container.querySelectorAll('[role="button"]');
+    return all[all.length - 1] as HTMLElement;
+  };
+
+  it("writes the answer it was given and not the default it showed", async () => {
+    written.mockClear();
+    weighed.mockClear();
+    const { container } = render(<Onboarding />);
+    fireEvent.click(cta(container)); // persona → goal (its "casual" default stands)
+    fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
+    fireEvent.click(cta(container)); // → experience
+    // The three experience choices are short, so the wizard draws them as a
+    // segmented control rather than option rows — a tab, not a button.
+    const seg = Array.from(container.querySelectorAll('[role="tab"]')).find((e) => e.textContent === "Intermediate");
+    fireEvent.click(seg as HTMLElement); // …and this one is CHOSEN
+    // Past sex, born, weight, days, equipment without touching any of them.
+    for (let i = 0; i < 6; i++) fireEvent.click(cta(container));
+    fireEvent.click(cta(container)); // the plan step's commit
+
+    await waitFor(() => expect(written).toHaveBeenCalled());
+    const profile = written.mock.calls.at(-1)![0] as Record<string, unknown>;
+    expect(profile.experience).toBe("intermediate");
+    // `days` carries defaultValue 3 and `sex`/`birth`/`bodyweight` carry none —
+    // every one of them was stepped past, so none of them may be on the profile.
+    expect(profile.daysPerWeek, "a frequency nobody chose").toBeUndefined();
+    expect(profile.sex).toBeUndefined();
+    expect(profile.birthYear).toBeUndefined();
+    expect(weighed, "a body mass nobody gave").not.toHaveBeenCalled();
   });
 });

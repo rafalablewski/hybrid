@@ -178,12 +178,15 @@ export const NAV_ITEMS: NavItem[] = [
   // list. Its MODEL is a real screen and stays, one door further in.
   { id: "trends", label: "Trends", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
   { id: "velocity", label: "Velocity (VBT)", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
-  // The model behind the volume bands — the landmark fields, the profile form
-  // and the two model switches. They were ~50 controls hidden inside the Volume
-  // read surface behind an edit toggle, where a mistyped number silently
-  // rewrote every band and verdict above it. Reached from the volume card's
-  // "edit the model" control and from its provenance sheet.
-  { id: "volume-model", label: "Volume model", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
+  // THE QUESTIONNAIRE — what the athlete has told the app about themselves, and
+  // the machine that reads it. It was filed here as "Volume model", which named
+  // the machine and buried the questions: ~50 controls of which a dozen were
+  // about a person, the rest landmark internals, all at one weight. The
+  // questions are the product — they are what makes freshness, readiness and
+  // every prescription this athlete's rather than a textbook's — so the entry
+  // is named for them and the landmark table sits behind a disclosure inside.
+  // Reached from the volume card's "about you" control and its provenance sheet.
+  { id: "questionnaire", label: "Questionnaire", group: "analyze", minPersona: "athlete", promotedTo: "performance" },
 
   // Behind TODAY, because that is where they render: Analytics as the "This
   // week" verdict card, Endurance as the sport lanes (endurance-lanes.ts),

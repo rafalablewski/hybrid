@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, Easing, View, Text, ScrollView } from "rea
 import { useRouter } from "expo-router";
 import {
   ONBOARDING_GOAL_GROUPS,
+  parseBirth, formatBirth, MONTH_KEYS,
   durations,
   springToRN,
   springs,
@@ -17,10 +18,10 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import {
   leading, fs, space, tracking, F, PressScale as Pressable,
-  HIT_SLOP, LoadSwap, Skeleton, useEntrance,
+  HIT_SLOP, HIT_TARGET, LoadSwap, Skeleton, useEntrance,
 } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ACard, ACheckMark, APill, ASegment, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
+import { ACard, ACheckMark, APill, ASegment, ANumberField, ABirthField, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
 import { AuroraIcon } from "./icons";
 
 /**
@@ -68,7 +69,7 @@ export default function AuroraOnboarding() {
   const { palette } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const { questions, answers, setAnswer, plan, loading } = useOnboarding();
+  const { questions, answers, touched, setAnswer, plan, loading } = useOnboarding();
   const persona = useClientPersonaChoice();
   const [idx, setIdx] = useState(0);
   /** Which way the wizard last travelled — the only thing `StepSwap` needs to
@@ -101,7 +102,7 @@ export default function AuroraOnboarding() {
 
   const finish = async () => {
     setCommit("saving");
-    const ok = await finishOnboarding(questions, answers, plan);
+    const ok = await finishOnboarding(questions, answers, plan, touched);
     if (!ok) {
       // The pill shakes and knocks Error (APill owns both). Staying put is the
       // point: the answers are still on screen and the press can be repeated —
@@ -385,13 +386,8 @@ function QuestionBody({
     );
   }
 
-  if (q.kind === "number") {
-    const min = q.min ?? 1, max = q.max ?? 7, step = q.step ?? 1;
-    const value = Number(answers[q.key] ?? q.defaultValue ?? min);
-    const opts: number[] = [];
-    for (let v = min; v <= max; v += step) opts.push(v);
-    return <ASegment options={opts.map((d) => ({ id: String(d), label: `${d}×` }))} value={String(value)} onPick={(v) => setAnswer(q.key, Number(v))} />;
-  }
+  if (q.kind === "number") return <NumberStep q={q} answers={answers} setAnswer={setAnswer} />;
+  if (q.kind === "birth") return <BirthStep q={q} answers={answers} setAnswer={setAnswer} />;
 
   if (q.kind === "text") {
     // Keep the wizard keyboard-free; free-text questions are collected on web.
@@ -453,6 +449,95 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
  * 120ms fade on one row; the cost is nothing and the alternative is stacking
  * two copies of every label to cross-fade them.
  */
+/**
+ * A NUMBER, ANSWERED THE WAY ITS RANGE DESERVES.
+ *
+ * Every `number` question used to render as an `ASegment` with one option per
+ * step. That is right for "how many days a week" — seven options, all visible,
+ * pick one. It is unusable for anything wider, and the intake now asks two:
+ * age would have drawn NINETY segments and body mass five hundred and fifty
+ * ONE, in a horizontal control on a 390dp screen. (An admin could already
+ * author such a question from the panel, so the trap predates these two.)
+ *
+ * So: a narrow range keeps the segments, and anything wider takes the kit's
+ * scrub field — drag the figure to travel, ＋/− to land exactly, which is the
+ * same control the questionnaire screen uses for the same values.
+ *
+ * AN UNANSWERED QUESTION SHOWS NO FIGURE, and costs no tap to start. The body
+ * questions ship without a `defaultValue` precisely so a skipped one stays
+ * unanswered, and rendering the seed as though it were an answer would hand
+ * that guarantee straight back — the athlete would step past a screen reading
+ * "80 kg" and have said it. But that constraint is on the VALUE: the field
+ * itself is present and live, empty, and the first drag or press answers it.
+ * An "Answer" button here would charge a tap on a screen that exists to be
+ * answered, which is the one place a toll is least defensible.
+ */
+function NumberStep({ q, answers, setAnswer }: {
+  q: OnboardingQuestion;
+  answers: Record<string, AnswerValue | null | undefined>;
+  setAnswer: (key: string, value: AnswerValue) => void;
+}) {
+  const min = q.min ?? 1, max = q.max ?? 7, step = q.step ?? 1;
+  const raw = answers[q.key] ?? q.defaultValue;
+  const value = raw === undefined || raw === null || raw === "" ? null : Number(raw);
+  return (
+    <ANumberField
+      value={value}
+      seed={seedFor(q, min, max)}
+      min={min}
+      max={max}
+      step={step}
+      a11y={q.title}
+      onChange={(v) => setAnswer(q.key, v)}
+      segmentFormat={(d) => `${d}×`}
+    />
+  );
+}
+
+/**
+ * WHEN WERE YOU BORN — one step, a year and a month.
+ *
+ * The intake asked for an AGE until Aug 2026, and an age stops being true the
+ * day after it is given: five years on, the recovery factor is 6% out on a
+ * number nobody would think to re-check. Deriving the year from the age was the
+ * first fix and it was still a derivation — right only once the birthday had
+ * passed, so ±1 year, which is the same size as the factor's own yearly step.
+ *
+ * Asking for the date costs no extra STEP (it is one question, not two) and
+ * makes the answer exact and checkable. The month is optional in the model: a
+ * year alone keeps the honest ±1 reading rather than having a month invented.
+ */
+function BirthStep({ q, answers, setAnswer }: {
+  q: OnboardingQuestion;
+  answers: Record<string, AnswerValue | null | undefined>;
+  setAnswer: (key: string, value: AnswerValue) => void;
+}) {
+  const { t } = useLang();
+  const cur = parseBirth(answers[q.key]);
+  return (
+    <ABirthField
+      year={cur?.year}
+      month={cur?.month}
+      months={MONTH_KEYS.map(t)}
+      a11y={q.title}
+      // A month with no year is not an answer, so the control never emits one;
+      // the stored form is a single string (core `formatBirth`), and it holds
+      // the year alone until a month is picked rather than defaulting to one.
+      onChange={({ year, month }) => setAnswer(q.key, formatBirth(year, month))}
+    />
+  );
+}
+
+/** Where the control opens — never shown until the athlete asks for it. The
+ *  questionnaire's own seeds, by engine key, so the two screens open the same
+ *  question at the same figure; otherwise the midpoint of the range. */
+function seedFor(q: OnboardingQuestion, min: number, max: number): number {
+  const byKey: Record<string, number> = { bodyweightKg: 80, daysPerWeek: 4 };
+  const seed = q.engineKey ? byKey[q.engineKey] : undefined;
+  const v = seed ?? Math.round((min + max) / 2);
+  return Math.min(max, Math.max(min, v));
+}
+
 function Choice({ active, title, sub, onPress }: { active: boolean; title: string; sub: string; onPress: () => void }) {
   const { palette } = useTheme();
   const on = useRef(new Animated.Value(active ? 1 : 0)).current;

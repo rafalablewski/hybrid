@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank, birthYearBounds, ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { registerPerson, useSharedSurfaceTarget } from "../../lib/shared-element";
@@ -1778,6 +1778,154 @@ const SCRUB_TRAVEL = 14;
  * VoiceOver, which is the one thing a hand-drawn ± normally loses against the
  * platform's own stepper.
  */
+/**
+ * WHAT AN EMPTY FIGURE READS AS — an EN dash, and exported so the guard that
+ * asserts a field looks empty cannot drift from the glyph that makes it so.
+ *
+ * Deliberately not an em dash: at `fs.hero` in Archivo's 900 weight an em dash
+ * draws a bar as wide as the type is tall, which reads as a horizontal RULE
+ * across the field rather than as a field waiting to be filled.
+ */
+export const SCRUB_UNSET = "–";
+
+/**
+ * Above this many steps a segmented control stops being a row of options and
+ * becomes a ribbon nobody can hit. Seven days of the week fit; ninety ages do
+ * not — a `number` question of that range once drew one segment per step.
+ */
+export const SEGMENT_MAX = 8;
+
+/**
+ * A QUANTITY — segmented when the whole range fits, scrubbed when it does not.
+ *
+ * ONE control, because the questionnaire and the setup wizard ask the same
+ * numbers and were rendering them from two near-identical copies. That is the
+ * shape three separate bugs took on this branch (a duplicated engine-key list,
+ * a duplicated question-kind list, a duplicated month list): copies agree right
+ * up until one of them is edited.
+ *
+ * An unanswered value shows no figure — `AScrubField`'s empty state — and a
+ * SMALL range with no answer scrubs rather than segmenting, because a segmented
+ * control cannot express "unanswered": it always lights one option, which would
+ * report an answer nobody gave.
+ */
+export function ANumberField({
+  value, seed, min, max, step = 1, suffix, a11y, onChange, segmentFormat,
+}: {
+  /** The answer, or null/undefined when there is not one yet. */
+  value: number | null | undefined;
+  /** Where the control OPENS when first touched. Never displayed until then. */
+  seed: number;
+  min: number;
+  max: number;
+  step?: number;
+  /** Unit beside the figure — prose, so it never rolls. */
+  suffix?: string;
+  a11y: string;
+  onChange: (v: number) => void;
+  /** How a segment reads when the range is small enough to show them all. */
+  segmentFormat?: (v: number) => string;
+}) {
+  const steps = Math.floor((max - min) / step) + 1;
+  if (steps <= SEGMENT_MAX && value != null) {
+    const opts: number[] = [];
+    for (let v = min; v <= max; v += step) opts.push(v);
+    return (
+      <ASegment
+        options={opts.map((d) => ({ id: String(d), label: (segmentFormat ?? String)(d) }))}
+        value={String(value)}
+        onPick={(v) => onChange(Number(v))}
+      />
+    );
+  }
+  const dp = String(step).split(".")[1]?.length ?? 0;
+  return (
+    <AScrubField
+      value={value ?? seed}
+      unset={value == null}
+      onChange={onChange}
+      min={min}
+      max={max}
+      step={step}
+      format={(v) => v.toFixed(dp)}
+      suffix={suffix}
+      a11y={a11y}
+    />
+  );
+}
+
+/**
+ * WHEN WERE YOU BORN — a year and twelve months, one block.
+ *
+ * ONE control for the same reason as `ANumberField`: the questionnaire's Body
+ * section and the setup wizard's fifth step ask exactly this, and two copies of
+ * it agreed only for as long as somebody remembered to edit both.
+ *
+ * It is ONE question, so it gets one block and no extra wizard step. The year
+ * scrubs like every other quantity; the months are twelve marks FOUR TO A ROW,
+ * so they read as quarters rather than as a ragged 5/5/2 the eye has to
+ * re-parse. They stay inert until a year exists — a month with no year is not a
+ * partial answer, it is no answer, and offering it as one would let a half
+ * answer count as whole.
+ */
+export function ABirthField({ year, month, months, onChange, a11y }: {
+  year?: number;
+  month?: number;
+  /** The twelve labels, already translated — the kit holds no i18n of its own. */
+  months: readonly string[];
+  /** Both parts together, because they are one answer. */
+  onChange: (next: { year: number; month?: number }) => void;
+  a11y: string;
+}) {
+  const { palette: C } = useTheme();
+  const { min, max } = birthYearBounds();
+  return (
+    <View>
+      <AScrubField
+        value={year ?? max - BIRTH_SEED_AGE}
+        unset={year == null}
+        onChange={(v) => onChange({ year: Math.round(v), month })}
+        min={min}
+        max={max}
+        step={1}
+        format={(v) => String(Math.round(v))}
+        a11y={a11y}
+      />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.md, opacity: year == null ? 0.4 : 1 }}>
+        {months.map((label, i) => {
+          const m = i + 1;
+          const on = month === m && year != null;
+          return (
+            <Pressable
+              key={label + m}
+              onPress={() => { if (year == null) return; haptic.selection(); onChange({ year, month: m }); }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on, disabled: year == null }}
+              accessibilityLabel={label}
+              style={{
+                flexBasis: "22%", flexGrow: 1,
+                minHeight: HIT_TARGET, alignItems: "center", justifyContent: "center",
+                paddingHorizontal: space.xs, borderRadius: RADIUS.pill, borderWidth: 1,
+                borderColor: on ? C.lime : C.line,
+                backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
+              }}
+            >
+              <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+/** How far below the oldest allowed year the control opens — a plausible adult,
+ *  shown only once the athlete reaches for it. */
+const BIRTH_SEED_AGE = 20;
+
+
 export function AScrubField({
   value,
   onChange,
@@ -1787,6 +1935,8 @@ export function AScrubField({
   format,
   suffix,
   a11y,
+  unset,
+  unsetLabel = SCRUB_UNSET,
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -1800,9 +1950,31 @@ export function AScrubField({
   /** The accessible name. The row prints only the value, so without this the
    *  control reads out as a bare number. */
   a11y: string;
+  /**
+   * NOTHING HAS BEEN ANSWERED YET — the figure reads as a dash and `value` is
+   * only where the control STARTS when it is first touched.
+   *
+   * The two requirements here look like they fight and do not. A number the
+   * athlete has not given must not be DISPLAYED as though they gave it: a
+   * seeded 80 kg shown as their body mass is a fabricated measurement, and the
+   * model goes on to explain their own recovery ceiling with it. But gating the
+   * whole control behind an "Answer" button — which is what this replaced —
+   * charges a tap for that correctness, and the constraint was never on the
+   * control, only on the value.
+   *
+   * So the field is here from the first frame, live, and empty. Drag it and it
+   * travels from `value`; press ＋ or − and it lands ON `value`, because the
+   * first press means "start here" rather than "one step up from a number I
+   * cannot see". Either way the answer is given by the same gesture that would
+   * have adjusted it, and no tap is spent asking permission to begin.
+   */
+  unset?: boolean;
+  /** What the empty figure reads as. `SCRUB_UNSET` unless a caller has a
+   *  better word for its own absence. */
+  unsetLabel?: string;
 }) {
   const { palette: C } = useTheme();
-  const show = (format ?? String)(value);
+  const show = unset ? unsetLabel : (format ?? String)(value);
 
   // Read through refs so the responder is built ONCE: rebuilding it per value
   // would drop the gesture mid-drag.
@@ -1813,15 +1985,27 @@ export function AScrubField({
   const cb = useRef(onChange);
   cb.current = onChange;
   const from = useRef(value);
+  // Whether the field is still empty, read through a ref for the same reason:
+  // the responder closes over it and must see the CURRENT state, not the one
+  // that existed when the gesture handler was built.
+  const emptyRef = useRef(!!unset);
+  emptyRef.current = !!unset;
 
   const commit = (next: number) => {
     const { min: lo, max: hi, step: by } = cfg.current;
     const dp = String(by).split(".")[1]?.length ?? 0;
     const v = Math.min(hi, Math.max(lo, Number(next.toFixed(dp))));
-    if (v === vRef.current) return;
+    // An empty field always commits, even when the value it lands on equals the
+    // seed it started from: there IS no current value to be equal to, and the
+    // early return below would otherwise swallow the athlete's first press.
+    if (v === vRef.current && !emptyRef.current) return;
     haptic.selection();
     cb.current(v);
   };
+
+  /** A press of ＋ or − lands ON the seed while the field is empty — the first
+   *  press means "start here", not "one step up from a number I cannot see". */
+  const nudge = (dir: 1 | -1) => commit(emptyRef.current ? vRef.current : vRef.current + dir * cfg.current.step);
 
   const pan = useRef(
     PanResponder.create({
@@ -1845,14 +2029,14 @@ export function AScrubField({
         accessible
         accessibilityRole="adjustable"
         accessibilityLabel={a11y}
-        accessibilityValue={{ text: `${show}${suffix ? ` ${suffix}` : ""}` }}
+        accessibilityValue={{ text: unset ? unsetLabel : `${show}${suffix ? ` ${suffix}` : ""}` }}
         accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
-        onAccessibilityAction={(e) => commit(value + (e.nativeEvent.actionName === "increment" ? step : -step))}
+        onAccessibilityAction={(e) => nudge(e.nativeEvent.actionName === "increment" ? 1 : -1)}
         style={{ flex: 1, flexDirection: "row", alignItems: "baseline", gap: space.xs, paddingVertical: space.sm }}
       >
         <RollingNumber
           value={show}
-          style={{ fontFamily: F.black, fontSize: fs.hero, color: C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking.display }}
+          style={{ fontFamily: F.black, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking.display }}
         />
         {suffix ? (
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>
@@ -1862,20 +2046,20 @@ export function AScrubField({
       </View>
       <View style={{ flexDirection: "row" }}>
         <Pressable
-          onPress={() => commit(value - step)}
-          disabled={value <= min}
+          onPress={() => nudge(-1)}
+          disabled={!unset && value <= min}
           accessibilityRole="button"
           accessibilityLabel={`${a11y} −`}
-          style={[btn, value <= min && { opacity: 0.35 }]}
+          style={[btn, !unset && value <= min && { opacity: 0.35 }]}
         >
           <Text style={glyph}>−</Text>
         </Pressable>
         <Pressable
-          onPress={() => commit(value + step)}
-          disabled={value >= max}
+          onPress={() => nudge(1)}
+          disabled={!unset && value >= max}
           accessibilityRole="button"
           accessibilityLabel={`${a11y} ＋`}
-          style={[btn, value >= max && { opacity: 0.35 }]}
+          style={[btn, !unset && value >= max && { opacity: 0.35 }]}
         >
           <Text style={glyph}>+</Text>
         </Pressable>

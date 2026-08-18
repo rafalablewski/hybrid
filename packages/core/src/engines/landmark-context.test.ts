@@ -100,13 +100,32 @@ describe("measured defaults under the athlete's own answers", () => {
     const m = measuredProfile({ checkins: checkins(10, 2), bodyweight: weighIns(6, 80, -0.4), now: NOW });
     expect(m.sleep).toBe(2);
     expect(m.nutrition).toBe("deficit");
-    expect(m.measured).toEqual(["sleep", "nutrition"]);
+    expect(m.measured).toEqual(["sleep", "nutrition", "bodyweightKg"]);
   });
 
   it("never derives stress — the check-in never asked", () => {
     const m = measuredProfile({ checkins: checkins(10, 3, { mood: 1, energy: 1 }), now: NOW });
     expect(m.measured).not.toContain("stress");
     expect((m as unknown as Record<string, unknown>).stress).toBeUndefined();
+  });
+
+  /**
+   * BODY MASS IS THE ONE FIELD WHERE THE MEASUREMENT OUTRANKS THE ANSWER, and
+   * it has to be, because it is the only one that is a reading with a date
+   * rather than a standing claim. A figure typed once at setup used to outrank
+   * every subsequent weigh-in for the life of the account.
+   */
+  it("the scale outranks a typed body mass, and only there", () => {
+    const measured = measuredProfile({ bodyweight: weighIns(6, 80, -0.4), now: NOW });
+    const merged = withMeasured({ bodyweightKg: 95, sleep: 5 }, measured);
+    expect(merged.bodyweightKg).toBe(measured.bodyweightKg); // the newest weigh-in
+    expect(merged.bodyweightKg).not.toBe(95);
+    expect(merged.sleep).toBe(5);                            // still the athlete's
+  });
+
+  it("keeps a typed body mass for an athlete who has never weighed in", () => {
+    const measured = measuredProfile({ checkins: checkins(10, 2), now: NOW });
+    expect(withMeasured({ bodyweightKg: 95 }, measured).bodyweightKg).toBe(95);
   });
 
   it("what the athlete typed always wins over the measurement", () => {
@@ -119,15 +138,15 @@ describe("measured defaults under the athlete's own answers", () => {
 
   it("reports which fields ended up measured, so the UI can mark them", () => {
     const measured = measuredProfile({ checkins: checkins(10, 2), bodyweight: weighIns(6, 80, -0.4), now: NOW });
-    expect([...measuredFields({}, measured)]).toEqual(["sleep", "nutrition"]);
-    expect([...measuredFields({ sleep: 5 }, measured)]).toEqual(["nutrition"]);
-    expect([...measuredFields({ sleep: 5, nutrition: "surplus" }, measured)]).toEqual([]);
+    expect([...measuredFields({}, measured)]).toEqual(["sleep", "nutrition", "bodyweightKg"]);
+    expect([...measuredFields({ sleep: 5 }, measured)]).toEqual(["nutrition", "bodyweightKg"]);
+    expect([...measuredFields({ sleep: 5, nutrition: "surplus" }, measured)]).toEqual(["bodyweightKg"]);
   });
 
   it("with nothing measured, the stored profile passes through untouched", () => {
     const measured = measuredProfile({ now: NOW });
     expect(measured.measured).toEqual([]);
-    expect(withMeasured({ experience: "beginner" }, measured)).toEqual({ experience: "beginner", sleep: undefined, nutrition: undefined, heightCm: undefined });
+    expect(withMeasured({ experience: "beginner" }, measured)).toEqual({ experience: "beginner", sleep: undefined, nutrition: undefined, heightCm: undefined, bodyFatPct: undefined, bodyweightKg: undefined });
   });
 
   it("takes height from the body log rather than asking for it twice", () => {

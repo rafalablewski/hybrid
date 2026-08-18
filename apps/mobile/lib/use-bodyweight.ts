@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { bodyweightLookup, latestHeightCm, type BodyMetric, type BodyweightLookup, type BodyweightPoint } from "@hybrid/core";
+import { bodyweightLookup, latestHeightCm, latestBodyFatPct, type BodyMetric, type BodyweightLookup, type BodyweightPoint } from "@hybrid/core";
 import { sapi } from "./social-api";
 
 // The athlete's bodyweight over time — the /api/body log (Profile → Private →
@@ -8,12 +8,13 @@ import { sapi } from "./social-api";
 // effectiveSetLoadKg: 10 pull-ups at 70 kg BW = 700 kg of work). Empty for
 // guests / no entries — every consumer degrades to entered-load math.
 //
-// The same log carries the athlete's HEIGHT (a standing fact, not a series), so
-// this reads both off ONE fetch rather than making every consumer of "how tall
-// are you" issue a second request for a body log the screen already holds.
+// The same log carries the athlete's HEIGHT and their newest BODY FAT reading
+// (standing facts, not series), so this reads all three off ONE fetch rather
+// than making every consumer of "how tall are you" or "how lean are you" issue
+// a second request for a body log the screen already holds.
 
-type BodyLog = { points: BodyweightPoint[]; heightCm: number | null };
-const EMPTY: BodyLog = { points: [], heightCm: null };
+type BodyLog = { points: BodyweightPoint[]; heightCm: number | null; bodyFatPct: number | null };
+const EMPTY: BodyLog = { points: [], heightCm: null, bodyFatPct: null };
 
 // One fetch per app session, shared across every hook instance.
 let logPromise: Promise<BodyLog> | null = null;
@@ -29,6 +30,7 @@ const fetchLog = (): Promise<BodyLog> => {
           .filter((m): m is BodyMetric & { measuredAt: string; weightKg: number } => typeof m.weightKg === "number" && m.weightKg > 0 && !!m.measuredAt)
           .map((m) => ({ date: m.measuredAt, weightKg: m.weightKg })),
         heightCm: latestHeightCm(metrics),
+        bodyFatPct: latestBodyFatPct(metrics),
       };
     })
     .catch(() => {
@@ -78,6 +80,13 @@ export function useBodyweightPoints(): BodyweightPoint[] {
  *  reaches the volume model without a reload. */
 export function useAthleteHeight(): number | null {
   return useBodyLog().heightCm;
+}
+
+/** The athlete's newest body-fat reading, or null. Same cache and refresh
+ *  signal as the weight — it sharpens the volume model's body-mass factor by
+ *  reading LEAN mass, and changes nothing when the log has none. */
+export function useBodyFatPct(): number | null {
+  return useBodyLog().bodyFatPct;
 }
 
 /** Dated bodyweight lookup — lookup(session.startedAt) → kg at that date;

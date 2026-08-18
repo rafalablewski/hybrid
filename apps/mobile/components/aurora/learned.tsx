@@ -128,7 +128,7 @@ export default function AuroraLearned() {
         glyph="◫"
         title={t("w.analyze.model.open")}
         sub={t("w.learned.knownWhy")}
-        onPress={() => router.push("/volume-model")}
+        onPress={() => router.push("/questionnaire")}
       />
     </AuroraScreen>
   );

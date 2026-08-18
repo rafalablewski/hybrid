@@ -13,6 +13,8 @@ import { flushGuestSessions } from "./guest";
 import { claimCoachInvite } from "./api";
 import { resetPersona } from "./persona";
 import { resetPlanMaxes } from "./plan-maxes";
+import { resetQuestionnaire } from "./questionnaire";
+import { resetWeighIn } from "./weigh-in";
 import { resetFlags } from "./flags";
 import { disablePush } from "./push";
 
@@ -26,6 +28,8 @@ const KEEP_ON_LOGOUT = new Set(["hybrid.lang", "hybrid.tourSeen", "hybrid.announ
 async function clearClientState() {
   resetPersona();
   resetPlanMaxes();
+  resetQuestionnaire();
+  resetWeighIn();
   resetFlags();
   try {
     const keys = await AsyncStorage.getAllKeys();
@@ -88,7 +92,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
       // First real sign-in: carry any guest workouts up to the account, and
-      // RE-FETCH the per-user one-shot stores (flags / persona / plan-maxes).
+      // RE-FETCH the per-user one-shot stores (flags / persona / plan-maxes /
+      // questionnaire).
       // These are typically first fetched BEFORE login (the nav mounts at app
       // start), so without a reset here the signed-in user keeps the logged-out
       // (or previous user's) flags, coach access and maxes until a process
@@ -99,6 +104,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         resetFlags();
         resetPersona();
         resetPlanMaxes();
+        resetQuestionnaire();
       }
     });
     // Back to foreground (likely back online): retry the offline sync.

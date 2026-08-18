@@ -81,6 +81,30 @@ export function latestHeightCm(metrics: BodyMetric[]): number | null {
   return best?.cm ?? null;
 }
 
+/**
+ * The newest body-fat reading in the log, or null.
+ *
+ * Read like `latestHeightCm` and for the same reason: it is the athlete's own
+ * entry, and every consumer that wants "what is their composition" should get
+ * it from the one place they enter it rather than asking again. It sharpens the
+ * volume model's body-mass factor — fat mass does not need repairing, so a lean
+ * athlete and a soft one at the same scale weight do not have the same amount
+ * of tissue to recover (engines/athlete-profile.ts `frameAdjustedMassKg`).
+ */
+export function latestBodyFatPct(metrics: BodyMetric[]): number | null {
+  let best: { ts: number; pct: number } | null = null;
+  for (const m of metrics) {
+    const pct = m.bodyFatPct;
+    // The same window the frame maths trusts — below 3% is not survivable and
+    // above 60% is a typo, and either would invert the term it feeds.
+    if (typeof pct !== "number" || !Number.isFinite(pct) || pct < 3 || pct > 60) continue;
+    const ts = Date.parse(m.measuredAt);
+    if (!Number.isFinite(ts)) continue;
+    if (!best || ts > best.ts) best = { ts, pct };
+  }
+  return best?.pct ?? null;
+}
+
 export type TrendDirection = "up" | "down" | "flat";
 
 export type MetricTrend = {

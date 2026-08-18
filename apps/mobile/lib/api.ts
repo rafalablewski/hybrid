@@ -1,5 +1,5 @@
 import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, SportSegmentBest } from "@hybrid/core";
-import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, type HeatProtocol } from "@hybrid/core";
+import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, sanitizeVolumeProfile, type HeatProtocol, type AthleteVolumeProfile } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 
@@ -1614,6 +1614,35 @@ export async function savePlanMaxes(maxes: Record<string, number>): Promise<bool
       method: "PUT",
       headers: { "Content-Type": "application/json", ...(await authHeaders()) },
       body: JSON.stringify({ maxes }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// THE QUESTIONNAIRE on the account — everything the athlete has told the app
+// about themselves, so the volume/readiness model is the same person's on every
+// device and the server can read `sex` (see apps/web/app/api/questionnaire).
+// Both soft-degrade to a no-op (empty / false) when signed out or the column
+// isn't migrated (reference/sql-questionnaire.sql).
+export async function fetchQuestionnaire(): Promise<AthleteVolumeProfile> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/questionnaire`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    const data = (await res.json()) as { questionnaire?: unknown };
+    return sanitizeVolumeProfile(data.questionnaire);
+  } catch {
+    return {};
+  }
+}
+
+export async function saveQuestionnaire(questionnaire: AthleteVolumeProfile): Promise<boolean> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/questionnaire`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ questionnaire }),
     });
     return res.ok;
   } catch {

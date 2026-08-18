@@ -57,6 +57,12 @@ const { sessions, checkins } = history(NOW);
 vi.mock("../lib/api", () => ({
   fetchFlagState: async () => ({ flags: {}, values: {} }),
   fetchTranslationOverrides: async () => ({}),
+  // The volume model hydrates the questionnaire from the account on first use
+  // (lib/questionnaire.ts). Empty here: this fixture's athlete is defined by the
+  // log and the on-device profile, and a server answer arriving mid-assert would
+  // be a second source for the same numbers.
+  fetchQuestionnaire: async () => ({}),
+  saveQuestionnaire: async () => true,
 }));
 
 vi.mock("../lib/queries", () => ({
@@ -75,7 +81,12 @@ vi.mock("../lib/use-bodyweight", () => ({
   useBodyweight: () => 82,
   useBodyweightPoints: () => [],
   useAthleteHeight: () => 180,
+  // No composition logged: the body-mass factor reads raw mass against the
+  // frame exactly as it did before body fat could sharpen it, which keeps this
+  // fixture's figures the ones the assertions below were written against.
+  useBodyFatPct: () => null,
   useBodyweightLookup: () => () => 82,
+  refreshBodyweight: () => {},
 }));
 
 const { default: AuroraLearned, LearnedLead } = await import("../components/aurora/learned");

@@ -31,11 +31,10 @@ export const NAV_HREF: Record<string, Href> = {
   sport: "/sport",
   analytics: "/analytics",
   statistics: "/statistics",
-  // No `volume` route: Volume is a card on Performance, not a screen. The one
-  // hyphenated nav id below is its MODEL, which is a real screen — the
-  // springboard entry for it was once missed because the parity guard's scan
-  // couldn't see a hyphen (see apps/web/__tests__/parity.test.ts).
-  "volume-model": "/volume-model",
+  // No `volume` route: Volume is a card on Performance, not a screen. What the
+  // athlete told us ABOUT THEMSELVES is a real screen, and the one the volume
+  // bands are built from.
+  questionnaire: "/questionnaire",
   exercises: "/exercises",
   trends: "/trends",
   velocity: "/velocity",

@@ -74,16 +74,52 @@ export const ONBOARDING_GOAL_GROUPS: OnboardingGoalGroup[] = GOAL_GROUPS.map((gr
 // always works even before the admin touches anything.
 
 /** How a question is rendered + how its answer is shaped. */
-export type OnboardingQuestionKind =
-  | "persona" // special: the casual/athlete cards (also sets the persona choice)
-  | "goal"    // special: the grouped goal-tree picker (answer is a GOAL_TREE id)
-  | "single"  // one choice from `choices` (answer: string)
-  | "multi"   // any number of `choices` (answer: string[])
-  | "number"  // a stepper between min/max (answer: number)
-  | "text";   // free text (answer: string)
+export const ONBOARDING_QUESTION_KINDS = [
+  "persona", // special: the casual/athlete cards (also sets the persona choice)
+  "goal",    // special: the grouped goal-tree picker (answer is a GOAL_TREE id)
+  "single",  // one choice from `choices` (answer: string)
+  "multi",   // any number of `choices` (answer: string[])
+  "number",  // a stepper or scrub between min/max (answer: number)
+  "birth",   // a year and a month (answer: "YYYY-MM", or "YYYY" year-only)
+  "text",    // free text (answer: string)
+] as const;
 
-/** The engine fields a question's answer can feed. Undefined → informational. */
-export type OnboardingEngineKey = "persona" | "goal" | "experience" | "daysPerWeek" | "equipment";
+/**
+ * ONE LIST, and the type is derived from it — for the same reason
+ * `ONBOARDING_ENGINE_KEYS` is. This was a union here and a hand-copied array
+ * inside `normalizeOnboardingQuestion`, and that function is a validator that
+ * does not reject an unrecognised kind: it returns NULL, dropping the whole
+ * question. A kind added to the union and forgotten in the array would have
+ * deleted its own question from every client's wizard, silently.
+ */
+export type OnboardingQuestionKind = (typeof ONBOARDING_QUESTION_KINDS)[number];
+
+/**
+ * The engine fields a question's answer can feed. Undefined → informational.
+ *
+ * THE LAST THREE ARE QUESTIONNAIRE FIELDS, and they are here because setup is
+ * the only moment an athlete expects to be asked about themselves. Sex, age and
+ * body mass carry 38% of the volume/readiness estimate between them; asked at
+ * first run they cost three taps, and asked later they are three rows on a
+ * screen most people never open. `questionnaireFromAnswers` (questionnaire.ts)
+ * is what projects them onto the profile — one mapping, both clients.
+ */
+export const ONBOARDING_ENGINE_KEYS = [
+  "persona", "goal", "experience", "daysPerWeek", "equipment",
+  "sex", "birthYear", "bodyweightKg",
+] as const;
+
+/**
+ * ONE LIST, and the type is derived from it.
+ *
+ * It was a union here and a hand-copied array inside
+ * `normalizeOnboardingQuestion`, which is a validator: a key the array did not
+ * name was not rejected, it was silently set to `undefined`. So the three body
+ * questions type-checked, shipped, went through the normalizer every client
+ * calls, and arrived with no engine key — answered by the athlete and connected
+ * to nothing. Derived, the two cannot disagree.
+ */
+export type OnboardingEngineKey = (typeof ONBOARDING_ENGINE_KEYS)[number];
 
 export interface OnboardingChoice {
   value: string;
@@ -143,13 +179,46 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       { value: "advanced", label: "Advanced" },
     ],
   },
+  // ── THE THREE BODY QUESTIONS ────────────────────────────────────────────
+  // NONE OF THEM CARRIES A `defaultValue`, and that is the whole design. The
+  // client seeds every answer from its default before the athlete touches
+  // anything (see useOnboarding), so a default here would mean an athlete who
+  // skipped the question had "80 kg" written down as their own body mass — a
+  // fabricated measurement that the model then explains their recovery ceiling
+  // with. Unanswered has to stay unanswered. The controls open at a plausible
+  // figure; nothing is stored until it is moved.
   {
-    id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 3,
+    id: "sex", key: "sex", kind: "single", engineKey: "sex", system: true, enabled: true, order: 3,
+    title: "Male or female?",
+    subtitle: "Every strength and pace standard is published for men. Without this we hold you to the men's bar.",
+    choices: [
+      { value: "F", label: "Female" },
+      { value: "M", label: "Male" },
+    ],
+  },
+  // ASKED AS A DATE, NOT AN AGE. An age is a number that stops being true the
+  // day after it is given, and the recovery factor moves 1.2% for every year of
+  // drift. Deriving the year from an age was the first fix and it was still a
+  // derivation — accurate to ±1 depending on whether the birthday had passed,
+  // which is the same size as the factor's own yearly step. The answer is
+  // "YYYY-MM" — or "YYYY" while only the year has been given, since the month
+  // is optional in the model; `questionnaireFromAnswers` parses both.
+  {
+    id: "birth", key: "birth", kind: "birth", engineKey: "birthYear", system: true, enabled: true, order: 4,
+    title: "When were you born?", subtitle: "Recovery declines gently past thirty, and we'd rather not guess.",
+  },
+  {
+    id: "bodyweight", key: "bodyweight", kind: "number", engineKey: "bodyweightKg", system: true, enabled: true, order: 5,
+    title: "What do you weigh?", subtitle: "It sets how much you have to recover from per set — and your working loads.",
+    min: 25, max: 300, step: 0.5,
+  },
+  {
+    id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 6,
     title: "How many days a week?", subtitle: "A plan you'll actually finish beats an ideal one.",
     min: 1, max: 7, step: 1, defaultValue: 3,
   },
   {
-    id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 4,
+    id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 7,
     title: "What equipment do you have?", subtitle: "We'll only prescribe what you can do.",
     defaultValue: "full",
     choices: [
@@ -169,13 +238,13 @@ export function normalizeOnboardingQuestion(raw: unknown): OnboardingQuestion | 
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   const kind = String(r.kind ?? "") as OnboardingQuestionKind;
-  const kinds: OnboardingQuestionKind[] = ["persona", "goal", "single", "multi", "number", "text"];
-  if (!kinds.includes(kind)) return null;
+  if (!ONBOARDING_QUESTION_KINDS.includes(kind)) return null;
   const key = String(r.key ?? "").trim();
   const title = String(r.title ?? "").trim();
   if (!key || !title) return null;
-  const engineKeys: OnboardingEngineKey[] = ["persona", "goal", "experience", "daysPerWeek", "equipment"];
-  const engineKey = engineKeys.includes(r.engineKey as OnboardingEngineKey) ? (r.engineKey as OnboardingEngineKey) : undefined;
+  const engineKey = ONBOARDING_ENGINE_KEYS.includes(r.engineKey as OnboardingEngineKey)
+    ? (r.engineKey as OnboardingEngineKey)
+    : undefined;
   const choices = Array.isArray(r.choices)
     ? (r.choices as unknown[])
         .map((c) => (c && typeof c === "object" ? (c as Record<string, unknown>) : null))

@@ -1,0 +1,13 @@
+-- The athlete questionnaire, on the account.
+--
+-- Everything the athlete has told the app about themselves — the answers the
+-- volume/readiness model is built from. Shape and validation are
+-- `sanitizeVolumeProfile` in packages/core; read/written via /api/questionnaire.
+--
+-- Until Aug 2026 these answers lived only in each device's own storage, so one
+-- athlete carried two different volume models and the server could not read
+-- `sex` — which left every public badge scored against the published (male) bar
+-- while her own card scored her correctly.
+--
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "questionnaire" JSONB NOT NULL DEFAULT '{}';

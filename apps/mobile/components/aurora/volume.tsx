@@ -8,7 +8,7 @@ import {
   volumeProfileCompleteness, estimateFitnessLevel, resolveExperience, LEVEL_KEY, LEVEL_BASIS_KEY,
   formatPace, paceClock,
   VOLUME_PROFILE_FIELD_KEY, fmtWeight,
-  sourceWhyKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
+  sourceWhyKey, sourceLabelKey, factorLabelKey, factorPercent, targetVerdict, TARGET_VERDICT_KEY,
   provenanceLadder, rungMeta, factorAffectsKey, MUSCLE_GROUP_KEY,
   type MuscleVolumeStatus, type VolumeZone, type MuscleGroup, type VolumeBandKey,
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
@@ -215,7 +215,12 @@ export default function AuroraVolume({ onOpenModel }: {
       )}
 
       {/* ── WHOSE NUMBERS THESE ARE — a door, not a seventh card ────────────── */}
-      <SourceDoor onOpen={() => { haptic.selection(); openSource(); }} />
+      <SourceDoor
+        source={resolved.source}
+        done={volumeProfileCompleteness(profile, measuredKeys)}
+        onOpen={() => { haptic.selection(); openSource(); }}
+        onAnswer={onOpenModel ? () => { haptic.selection(); onOpenModel(); } : undefined}
+      />
     </>
   );
 
@@ -349,22 +354,60 @@ function ByMuscle({ rows, ml, zoneColor, targetFor, history, open, setOpen, zone
   );
 }
 
-/** The way into the provenance sheet. A row, not a card: "where did these come
- *  from" is a question the reading raises, not another part of the reading. */
-function SourceDoor({ onOpen }: { onOpen: () => void }) {
+/**
+ * WHOSE NUMBERS THESE ARE — one row, two destinations, chosen by the state of
+ * the numbers themselves.
+ *
+ * ── THE GUESS IS ITS OWN DOOR ──────────────────────────────────────────────
+ *
+ * This row always asked "Whose numbers are these?" and always opened the
+ * provenance sheet — the right answer for an athlete whose profile is filled
+ * in, and the wrong one for everybody else. The sheet explains a four-rung
+ * ladder and then, at the bottom, offers a control to go and fix the thing;
+ * three taps to reach a form, and only for someone curious enough to open a
+ * sheet in the first place.
+ *
+ * So when the numbers are still mostly a textbook's, the row SAYS SO and goes
+ * straight to the questionnaire. The degraded reading is the door to un-
+ * degrading it: no list entry, no menu row, nothing to be taught. The athlete
+ * notices the app is guessing about them and touches the guess.
+ *
+ * Once the profile is answered the row goes back to being the way into the
+ * working, because by then "where did these come from" is a real question with
+ * an interesting answer rather than a euphemism for "we don't know you".
+ */
+function SourceDoor({ source, done, onOpen, onAnswer }: {
+  source: LandmarkSource;
+  done: ReturnType<typeof volumeProfileCompleteness>;
+  onOpen: () => void;
+  /** The questionnaire. Absent on a surface with nowhere to send them, in which
+   *  case the row stays the provenance door it always was. */
+  onAnswer?: () => void;
+}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  // A gap worth interrupting for: the numbers are not yet the athlete's OWN.
+  // `manual` is excluded deliberately — someone who typed their landmarks has
+  // overruled the estimate and does not need to be sold the form.
+  const guessing = !!onAnswer && !done.complete && source !== "manual";
+  const title = guessing ? t(sourceLabelKey(source)) : t("w.analyze.vol.whose");
+  const sub = guessing
+    ? t("w.quiz.doorGap")
+        .replace("{n}", String(Math.round(done.score * 100)))
+        .replace("{q}", done.next ? t(VOLUME_PROFILE_FIELD_KEY[done.next.key]) : "")
+    : t("w.analyze.vol.showWork");
+
   return (
     <Panel >
       <Pressable
-        onPress={onOpen}
+        onPress={guessing ? onAnswer! : onOpen}
         accessibilityRole="button"
-        accessibilityLabel={`${t("w.analyze.vol.whose")} – ${t("w.analyze.vol.showWork")}`}
+        accessibilityLabel={`${title} – ${sub}`}
         style={{ flexDirection: "row", alignItems: "center", gap: space.ms }}
       >
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.whose")}</Text>
-          <Text style={{ marginTop: 4, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("w.analyze.vol.showWork")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
+          <Text style={{ marginTop: 4, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{sub}</Text>
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
       </Pressable>

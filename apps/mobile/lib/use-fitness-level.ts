@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import {
-  estimateFitnessLevel, nextThreshold, badgeFor, displayLevel,
+  estimateFitnessLevel, nextThreshold, badgeFor, displayLevel, effectiveAgeYears,
   type FitnessLevelEstimate, type LevelReach, type LevelBadge, type FitnessLevel,
   type LoggedSession,
 } from "@hybrid/core";
@@ -32,15 +32,18 @@ export function useFitnessLevel(sessions: LoggedSession[]): FitnessLevelRead {
 
   const estimate = useMemo(
     () => estimateFitnessLevel(sessions, {
-      bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight,
-      ageYears: prefs.volumeProfile.ageYears ?? null,
+      // The scale outranks a typed figure here for the same reason it does in
+      // the volume model: the standards are scored against the athlete's CURRENT
+      // mass, and a number typed at setup is not it.
+      bodyweightKg: bodyweight ?? prefs.volumeProfile.bodyweightKg,
+      ageYears: effectiveAgeYears(prefs.volumeProfile) ?? null,
       // Every threshold in the app is published for a male athlete and shifted
       // from there, so an unanswered sex holds a woman to the men's bar. The
       // engine still defaults to "M" — but it is a default now, not a silent
       // assumption nobody could correct.
       sex: prefs.volumeProfile.sex,
     }),
-    [sessions, prefs.volumeProfile.bodyweightKg, prefs.volumeProfile.ageYears, prefs.volumeProfile.sex, bodyweight],
+    [sessions, prefs.volumeProfile, bodyweight],
   );
 
   return useMemo(

@@ -1,19 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useMemo } from "react";
 import {
   athleteLandmarks,
   measuredProfile, withMeasured, measuredFields,
-  resolveExperience,
+  resolveExperience, effectiveAgeYears,
   readReports, placeReads, QUICK_CHECKIN_METRIC,
   type AthleteVolumeProfile, type LoggedSession, type RecoveryReport,
 } from "@hybrid/core";
 import { useHeatSignalsQuery, useNutritionSignalsQuery } from "./queries";
 import { useRecoveryReports } from "./use-recovery-reports";
-import { useLoggerPrefs, setLoggerPref } from "./logger-prefs";
-import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
+import { useLoggerPrefs } from "./logger-prefs";
+import { setQuestionnaire, useQuestionnaireSync } from "./questionnaire";
+import { useAthleteHeight, useBodyFatPct, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
 import { useFitnessLevel } from "./use-fitness-level";
-
-type Experience = AthleteVolumeProfile["experience"];
 
 /**
  * THE VOLUME MODEL, RESOLVED ONCE.
@@ -31,6 +29,10 @@ type Experience = AthleteVolumeProfile["experience"];
  */
 export function useVolumeModel(sessions: LoggedSession[]) {
   const prefs = useLoggerPrefs();
+  // Pull the account's answers once — whichever surface resolves the model
+  // first. Everything below reads `prefs.volumeProfile`, so the hydrate lands
+  // as an ordinary preference change and every reader re-resolves together.
+  useQuestionnaireSync();
 
   // What we already know about the athlete elsewhere in the app fills the gaps
   // the volume profile leaves — nobody should have to type their bodyweight
@@ -41,6 +43,9 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // Height comes from the body log the athlete already filled in (Profile →
   // Body & progress) rather than being asked for a second time here.
   const loggedHeightCm = useAthleteHeight();
+  // …and their composition, from the same log. It makes the body-mass factor
+  // read LEAN mass (engines/athlete-profile.ts) and does nothing without one.
+  const loggedBodyFatPct = useBodyFatPct();
   // Heat is a MEASURED profile field — there is no form for it and there is not
   // going to be one, because the athlete already told us by logging.
   const { data: heatSignals = [] } = useHeatSignalsQuery();
@@ -50,34 +55,30 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // measure at all, since the scale cannot say how much of a kilogram was
   // muscle — reads the diary or nothing.
   const { data: nutritionSignals = [] } = useNutritionSignalsQuery();
-  const [intake, setIntake] = useState<{ experience?: Experience; daysPerWeek?: number }>({});
-  useEffect(() => {
-    let alive = true;
-    Promise.all([AsyncStorage.getItem("hybrid.experience"), AsyncStorage.getItem("hybrid.daysPerWeek")])
-      .then(([exp, rawDays]) => {
-        if (!alive) return;
-        const days = Number(rawDays);
-        setIntake({
-          experience: exp === "beginner" || exp === "intermediate" || exp === "advanced" ? exp : undefined,
-          daysPerWeek: Number.isFinite(days) && days > 0 ? days : undefined,
-        });
-      })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
+  // THE INTAKE FALLBACK IS GONE, because it never worked. It read training age
+  // and weekly frequency from `hybrid.experience` / `hybrid.daysPerWeek` —
+  // device keys NOTHING on either client has ever written (`git log -S` finds
+  // no writer in the whole history), so the fallback resolved to `{}` for every
+  // athlete who ever used the app while appearing to carry setup's answers
+  // forward. Setup writes those answers straight onto the questionnaire now
+  // (lib/use-onboarding.ts), which is `prefs.volumeProfile` — read below like
+  // any other answer, with no second path to disagree with it.
 
   // The check-in history on the engine's own terms — shared with the heat
   // clearance comparison via lib/use-recovery-reports.ts.
   const recovery = useRecoveryReports(sessions);
 
   const measured = useMemo(
-    () => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, heatSignals, nutritionSignals }),
-    [recovery, bodyweightPoints, loggedHeightCm, heatSignals, nutritionSignals],
+    () => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, bodyFatPct: loggedBodyFatPct, heatSignals, nutritionSignals }),
+    [recovery, bodyweightPoints, loggedHeightCm, loggedBodyFatPct, heatSignals, nutritionSignals],
   );
   const measuredKeys = useMemo(() => {
     const keys = measuredFields(prefs.volumeProfile, measured);
-    // Body mass is measured too — it comes from the bodyweight log, not this form.
-    if (prefs.volumeProfile.bodyweightKg === undefined && bodyweight != null) keys.add("bodyweightKg");
+    // BODY MASS IS ALWAYS MEASURED WHEN THE LOG HAS ONE, even if the profile
+    // also carries a typed figure — because the log wins now (see the inversion
+    // in core `withMeasured`). `measuredFields` cannot know that: it applies the
+    // general rule, which is that a typed value beats a measured one.
+    if (bodyweight != null) keys.add("bodyweightKg");
     return keys;
   }, [prefs.volumeProfile, measured, bodyweight]);
 
@@ -93,7 +94,7 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // half of it: MEV/MRV are lifting landmarks, and a fast 10 km cannot say how
   // many sets of squats an athlete recovers from.
   const { estimate: levelEstimate } = useFitnessLevel(sessions);
-  const statedExperience = prefs.volumeProfile.experience ?? intake.experience;
+  const statedExperience = prefs.volumeProfile.experience;
   const experience = useMemo(
     () => resolveExperience(statedExperience, levelEstimate),
     [statedExperience, levelEstimate],
@@ -102,9 +103,17 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   const profile = useMemo<AthleteVolumeProfile>(() => ({
     ...withMeasured(prefs.volumeProfile, measured),
     experience: experience.experience,
-    daysPerWeek: prefs.volumeProfile.daysPerWeek ?? intake.daysPerWeek,
-    bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight ?? undefined,
-  }), [prefs.volumeProfile, measured, intake, bodyweight, experience.experience]);
+    // AGE IS DERIVED FROM THE BIRTH YEAR, so it has a birthday. A stored age is
+    // the same number five years later while the recovery factor moves 1.2% for
+    // every one of them; the engine derives this itself, and so does this
+    // profile, so the figure the screen prints and the figure the model uses
+    // cannot be a year apart.
+    ageYears: effectiveAgeYears(prefs.volumeProfile),
+    // The newest weigh-in, always. `withMeasured` already prefers the log over
+    // a typed figure; this only covers the case where the points list produced
+    // a current weight the measured layer did not (an empty dated series).
+    bodyweightKg: bodyweight ?? withMeasured(prefs.volumeProfile, measured).bodyweightKg,
+  }), [prefs.volumeProfile, measured, bodyweight, experience.experience]);
 
   /**
    * EVERYTHING THAT MAKES A LANDMARK, MINUS THE LOG — as one object.
@@ -147,10 +156,27 @@ export function useVolumeModel(sessions: LoggedSession[]) {
     [landmarkOptions, sessions, recovery],
   );
 
+  /**
+   * Save an answer — on this device and on the ACCOUNT.
+   *
+   * It used to be a bare `setLoggerPref`, which is to say the questionnaire was
+   * device-local: the same athlete got two different volume models on two
+   * phones, and the server — which scores the public level badge — could not
+   * read a word of it. lib/questionnaire.ts writes both, and carries the rule
+   * for what happens when two devices disagree.
+   */
   const setProfile = (patch: Partial<AthleteVolumeProfile>) => {
-    const next = { ...prefs.volumeProfile, ...patch };
+    const next: AthleteVolumeProfile = { ...prefs.volumeProfile, ...patch };
+    // THE BIRTH DATE IS WRITTEN DIRECTLY by the question that asks for it, so
+    // there is no age to convert any more — asking for an age and computing the
+    // year was a derivation with a ±1 error, which is the same size as the
+    // factor's own yearly step. What is left is the LEGACY drop: a profile
+    // written before the date was asked carries a stale `ageYears`, and the
+    // moment a real date arrives that number has to go rather than linger for
+    // some future reader to prefer.
+    if (next.birthYear !== undefined) delete next.ageYears;
     for (const k of Object.keys(next) as (keyof AthleteVolumeProfile)[]) if (next[k] === undefined) delete next[k];
-    setLoggerPref("volumeProfile", next);
+    setQuestionnaire(next);
   };
 
   return { prefs, recovery, measured, measuredKeys, levelEstimate, experience, profile, landmarkOptions, resolved, baseline, setProfile };

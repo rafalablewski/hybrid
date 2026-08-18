@@ -48,8 +48,37 @@ export interface AthleteVolumeProfile {
   experience?: Experience;
   /** Years of consistent resistance training, if known — refines `experience`. */
   trainingYears?: number;
-  /** Chronological age in years. */
+  /**
+   * Chronological age in years.
+   *
+   * LEGACY, AND STILL READ. `birthYear` is what gets stored now, because an age
+   * is a number that goes stale: typed once at setup it is the same number five
+   * years later, while the recovery factor moves 1.2% for every one of those
+   * years — a full multiplier step of silent drift. Profiles written before
+   * Aug 2026 carry this field and nothing else, so it stays: `effectiveAgeYears`
+   * prefers the birth year and falls back to here.
+   */
   ageYears?: number;
+  /**
+   * THE YEAR AND MONTH THE ATHLETE WAS BORN — asked directly, not derived.
+   *
+   * The age question stores this instead of an age, because an age stops being
+   * true the day after it is given while the recovery factor moves 1.2% for
+   * every year of drift.
+   *
+   * The first cut of this fix asked for an age and computed the year from it,
+   * which was better and still a derivation: `currentYear − age` is right only
+   * if the birthday has already passed, so it carried a ±1-year error — the
+   * same size as the factor's own yearly step, which is to say the correction
+   * could be as large as the thing it was correcting. Asking for the date is
+   * one control, exact, and something the athlete can check.
+   *
+   * `birthMonth` is 1–12 and optional: a profile written before it was asked
+   * has the year alone, and `effectiveAgeYears` falls back to the ±1 reading
+   * for those rather than pretending to a precision it does not have.
+   */
+  birthYear?: number;
+  birthMonth?: number;
   /**
    * Biological sex, for the STANDARDS the fitness-level estimate is scored
    * against — never for the landmarks themselves.
@@ -69,6 +98,17 @@ export interface AthleteVolumeProfile {
    *  fairer, by reading mass against the frame carrying it rather than as raw
    *  kilos. See engines/athlete-profile.ts. */
   heightCm?: number;
+  /**
+   * Body fat percentage, from the body log — the other half of reading mass
+   * fairly, and like height not a factor of its own.
+   *
+   * ALWAYS MEASURED, NEVER ASKED HERE. It is a field of the athlete's own body
+   * log (Profile → Body & progress), read from where they already enter it, so
+   * it is merged in at resolve time rather than stored on the profile — the
+   * same treatment `heat` and `proteinGPerKg` get, and for the same reason: a
+   * copy on the profile could outlive the measurement it came from.
+   */
+  bodyFatPct?: number;
   /** Typical sleep, 1–5 (5 = consistently great). Matches the check-in scale. */
   sleep?: number;
   /** Life stress, 1–5 (5 = very stressed). Matches the check-in scale. */
@@ -230,6 +270,31 @@ function frequencyRecovery(days: number): number {
   return 1.1;
 }
 
+/**
+ * THE ATHLETE'S AGE, AS OF NOW.
+ *
+ * The birth year wins where it exists, because it is the answer that stays
+ * true; a stored `ageYears` is a legacy profile's only record and is used when
+ * there is nothing better. Exported because the engine is not the only reader —
+ * the fitness-level standards shift by age too, and two call sites deriving it
+ * two ways is exactly how a figure starts disagreeing with itself.
+ */
+export function effectiveAgeYears(p: AthleteVolumeProfile, now: number = Date.now()): number | undefined {
+  const by = p.birthYear;
+  if (typeof by === "number" && Number.isFinite(by)) {
+    const d = new Date(now);
+    let age = d.getUTCFullYear() - Math.round(by);
+    // The month is what makes this exact rather than ±1. Without one the year
+    // difference is the honest reading — it is what the athlete's own answer
+    // supports, and inventing a month to sharpen it would be the same class of
+    // error as inventing any other measurement.
+    const bm = p.birthMonth;
+    if (typeof bm === "number" && Number.isFinite(bm) && d.getUTCMonth() + 1 < Math.round(bm)) age -= 1;
+    if (age >= 0 && age <= 120) return age;
+  }
+  return typeof p.ageYears === "number" && Number.isFinite(p.ageYears) ? p.ageYears : undefined;
+}
+
 /** `experience` refined by `trainingYears` when both are known — <1 year reads
  *  as beginner however the athlete self-describes, 5+ years as advanced. */
 function effectiveExperience(p: AthleteVolumeProfile): Experience | undefined {
@@ -253,6 +318,9 @@ const num = (v: unknown): number | undefined =>
 export function personalizeLandmarks(
   profile: AthleteVolumeProfile = {},
   base: Record<MuscleGroup, VolumeLandmark> = VOLUME_LANDMARKS,
+  /** `now` only, and only so the age derivation is testable — a factor that
+   *  depends on today's date must not be untestable because of it. */
+  opts?: { now?: number },
 ): PersonalizedLandmarks {
   const factors: LandmarkFactor[] = [];
   let stimulus = 1;
@@ -265,7 +333,7 @@ export function personalizeLandmarks(
     factors.push({ key: "experience", affects: "both", multiplier: EXPERIENCE_RECOVERY[exp], value: exp });
   }
 
-  const age = num(profile.ageYears);
+  const age = num(effectiveAgeYears(profile, opts?.now));
   if (age !== undefined && age > 0) {
     // Recovery declines gently past ~30: −1.2%/yr, floored so no age erases the
     // athlete's ceiling. Nothing below 30 gets a bonus — youth is the baseline.
@@ -278,7 +346,9 @@ export function personalizeLandmarks(
   // Read mass against frame where height is known — a 95 kg athlete at 195 cm
   // is not carrying what a 95 kg athlete at 170 cm is. Without height this
   // returns the raw mass and the rule is exactly as it was.
-  const bw = rawBw === undefined ? undefined : frameAdjustedMassKg(rawBw, num(profile.heightCm) ?? null);
+  const bw = rawBw === undefined
+    ? undefined
+    : frameAdjustedMassKg(rawBw, num(profile.heightCm) ?? null, num(profile.bodyFatPct) ?? null);
   if (bw !== undefined && bw > 0) {
     // More body mass = more absolute load moved per set and more tissue to
     // repair, so the SET ceiling comes down even as the loads go up. A lighter
@@ -362,6 +432,8 @@ export function personalizeLandmarks(
   // still supply it. Protein has no such fallback — there is no way to know it
   // except to be told.
   const supplied = [exp, age, bw, sleep, stress, profile.nutrition, days].filter((v) => v !== undefined && v !== null).length;
+  // NOTE `age` above is already the DERIVED age, so a profile carrying only a
+  // birth year counts its age as answered — which it is.
   const personalized = supplied > 0 || heat !== undefined || protein !== undefined;
   // Experience is worth more than any other single input, so a profile with
   // only experience already clears half-confidence.
@@ -412,12 +484,29 @@ export function scaleLandmarks(
   return out;
 }
 
-/** Validate an untrusted profile (it round-trips through client storage). */
-export function sanitizeVolumeProfile(raw: unknown): AthleteVolumeProfile {
+/**
+ * Validate an untrusted profile (it round-trips through client storage, and now
+ * through the account — see apps/web/app/api/questionnaire/route.ts).
+ *
+ * THIS FUNCTION IS THE SAVE. Every questionnaire answer passes through it on the
+ * way to storage, so a key it does not name is not "unvalidated" — it is
+ * DISCARDED, silently, on the next write. `sex` was such a key from the day the
+ * field was added: the form offered the toggle, the athlete tapped it, the
+ * engine read `profile.sex` on the other side and always got undefined. Every
+ * female athlete was therefore scored against the published (male) strength and
+ * pace bar — the exact failure the field was added to fix — and the toggle
+ * never even lit, because the UI reads back what was stored.
+ *
+ * So: when a field is added to `AthleteVolumeProfile`, it is added HERE in the
+ * same change. `questionnaire.test.ts` asserts the round trip for every question
+ * the questionnaire asks, which is what turns that sentence into a guard.
+ */
+export function sanitizeVolumeProfile(raw: unknown, opts?: { now?: number }): AthleteVolumeProfile {
   const out: AthleteVolumeProfile = {};
   if (!raw || typeof raw !== "object") return out;
   const r = raw as Record<string, unknown>;
   if (r.experience === "beginner" || r.experience === "intermediate" || r.experience === "advanced") out.experience = r.experience;
+  if (r.sex === "M" || r.sex === "F") out.sex = r.sex;
   const range = (v: unknown, lo: number, hi: number): number | undefined => {
     const n = num(v);
     return n !== undefined && n >= lo && n <= hi ? n : undefined;
@@ -426,6 +515,15 @@ export function sanitizeVolumeProfile(raw: unknown): AthleteVolumeProfile {
   if (years !== undefined) out.trainingYears = years;
   const age = range(r.ageYears, 10, 100);
   if (age !== undefined) out.ageYears = Math.round(age);
+  // A birth year that would make the athlete younger than 10 or older than 100
+  // is refused on the same bounds the age field uses, expressed as years.
+  const thisYear = new Date(opts?.now ?? Date.now()).getUTCFullYear();
+  const by = range(r.birthYear, thisYear - 100, thisYear - 10);
+  if (by !== undefined) out.birthYear = Math.round(by);
+  // A month without a year is meaningless, and storing it would make a partial
+  // answer look like an answer on every surface that counts them.
+  const bm = range(r.birthMonth, 1, 12);
+  if (bm !== undefined && out.birthYear !== undefined) out.birthMonth = Math.round(bm);
   const bw = range(r.bodyweightKg, 25, 300);
   if (bw !== undefined) out.bodyweightKg = Math.round(bw * 10) / 10;
   const ht = range(r.heightCm, 120, 230);

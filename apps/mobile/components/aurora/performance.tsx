@@ -501,7 +501,7 @@ function Full({ top }: { top?: ReactNode }) {
         {/* The model editor has to be reachable from HERE too: the drawer's
             provenance sheet offers "Next — Training age →", and without a
             destination that row renders its arrow and does nothing. */}
-        <AuroraVolume onOpenModel={() => router.push("/volume-model")} />
+        <AuroraVolume onOpenModel={() => router.push("/questionnaire")} />
       </View>
 
       {/* ═════ GROUP: SEASON — the long arc. ═════ */}
