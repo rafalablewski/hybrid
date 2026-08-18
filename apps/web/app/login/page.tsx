@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { stepUpRequired, isValidTotpCode } from "@hybrid/core";
+import { stepUpRequired, isValidTotpCode, STATE_OPACITY } from "@hybrid/core";
 import { useSession } from "@/lib/session";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, RED, ON_ACCENT, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
@@ -175,7 +175,7 @@ export default function LoginPage() {
             <button className="pressable"
               disabled={busy || !isValidTotpCode(mfaCode)}
               onClick={verifyMfa}
-              style={{ ...disp, fontWeight: 800, fontSize: fs.note, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? 0.6 : 1, border: "none", background: LIME, color: ON_ACCENT }}
+              style={{ ...disp, fontWeight: 800, fontSize: fs.note, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? STATE_OPACITY.busy : 1, border: "none", background: LIME, color: ON_ACCENT }}
             >
               {busy ? "…" : "Verify →"}
             </button>
@@ -201,7 +201,7 @@ export default function LoginPage() {
               borderRadius: 13,
               marginBottom: 11,
               cursor: busy ? "default" : "pointer",
-              opacity: busy ? 0.6 : 1,
+              opacity: busy ? STATE_OPACITY.busy : 1,
               border: "none",
               background: p.bg,
               color: p.fg,
@@ -258,7 +258,7 @@ export default function LoginPage() {
             padding: 14,
             borderRadius: 13,
             cursor: busy ? "default" : "pointer",
-            opacity: busy ? 0.6 : 1,
+            opacity: busy ? STATE_OPACITY.busy : 1,
             border: "none",
             background: LIME,
             color: ON_ACCENT,

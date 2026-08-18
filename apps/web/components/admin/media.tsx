@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { sketchBrief, sketchCoverage } from "@hybrid/core";
+import { sketchBrief, sketchCoverage, STATE_OPACITY } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, txt, ERR } from "@/lib/ui";
 
 const BUCKET = "media";
 
@@ -172,7 +172,7 @@ export default function AdminMedia() {
               if (fileRef.current) fileRef.current.value = "";
             }}
           />
-          <button className="pressable" disabled={busy || !supabase} onClick={() => fileRef.current?.click()} style={{ ...primaryBtn, opacity: busy || !supabase ? 0.6 : 1 }}>
+          <button className="pressable" disabled={busy || !supabase} onClick={() => fileRef.current?.click()} style={{ ...primaryBtn, opacity: busy || !supabase ? STATE_OPACITY.busy : 1 }}>
             {busy ? "Uploading…" : "↑ Upload media"}
           </button>
         </div>
@@ -235,7 +235,7 @@ export default function AdminMedia() {
                       <button className="pressable" disabled={busy} onClick={() => patch(a.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
                     )}
                     {a.status !== "archived" && <button className="pressable" disabled={busy} onClick={() => patch(a.id, { status: "archived" })} style={miniBtn}>Archive</button>}
-                    <button className="pressable" disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
+                    <button className="pressable" disabled={busy} onClick={() => remove(a)} style={{ ...miniBtn, color: ERR, borderColor: `${RED}55` }}>Delete</button>
                   </div>
                 </>
               )}

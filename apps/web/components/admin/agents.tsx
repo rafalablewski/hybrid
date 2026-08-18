@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
+import { ALPHA,
   buildSystemPrompt,
   MODELS,
   EFFORTS,
@@ -12,9 +12,8 @@ import {
   AGENT_STATUSES,
   type AgentDefinition,
   type AgentStatus,
-  type Kpi,
-} from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+  type Kpi, STATE_OPACITY } from "@hybrid/core";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt, OK, ERR, tint } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
@@ -409,7 +408,7 @@ export default function AdminAgents() {
                   </div>
                   <div style={{ marginTop: 4 }}>
                     <Chip c={STATUS_COLOR[a.status]}>{a.status}</Chip>
-                    <Chip c={a.authority === "executive" ? VIOLET : ASH}>{a.role}</Chip>
+                    <Chip c={a.authority === "executive" ? BLUE : ASH}>{a.role}</Chip>
                   </div>
                   <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
                     {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
@@ -531,7 +530,7 @@ export default function AdminAgents() {
                     <button className="pressable"
                       key={t.value}
                       onClick={() => set("tools", on ? draft.tools.filter((x) => x !== t.value) : [...draft.tools, t.value])}
-                      style={{ ...chipBtn, background: on ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : INK2, color: txt(on ? LIME : ASH), borderColor: on ? LIME : LINE }}
+                      style={{ ...chipBtn, background: on ? tint(LIME, ALPHA.fill) : INK2, color: txt(on ? LIME : ASH), borderColor: on ? LIME : LINE }}
                     >
                       {on ? "✓ " : "+ "}{t.label}
                     </button>
@@ -591,7 +590,7 @@ export default function AdminAgents() {
                     <button className="pressable"
                       disabled={runBusy || dirty || !task.trim()}
                       onClick={runTask}
-                      style={{ ...primaryBtn, opacity: runBusy || dirty || !task.trim() ? 0.5 : 1 }}
+                      style={{ ...primaryBtn, opacity: runBusy || dirty || !task.trim() ? STATE_OPACITY.disabled : 1 }}
                     >
                       {runBusy ? "Running…" : "Run agent"}
                     </button>
@@ -610,8 +609,8 @@ export default function AdminAgents() {
                   {(run || liveText || liveSteps.length > 0) && (
                     <div style={{ marginTop: 12 }}>
                       {liveSteps.map((s, i) => (
-                        <div key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeft: `2px solid ${VIOLET}` }}>
-                          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={VIOLET}>
+                        <div key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeft: `2px solid ${BLUE}` }}>
+                          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={BLUE}>
                             ↳ delegated to {s.role} — {s.agent}
                           </Mono>
                           <Mono s={{ fontSize: fs.caption, display: "block", margin: "2px 0 4px" }} c={ASH}>
@@ -693,7 +692,7 @@ export default function AdminAgents() {
               <Section title="Timeline" hint="config edits – runs – approvals">
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {timeline.map((t) => {
-                    const c = t.kind === "run" ? LIME : t.kind === "approval" ? AMBER : VIOLET;
+                    const c = t.kind === "run" ? LIME : t.kind === "approval" ? AMBER : RED;
                     return (
                       <div key={t.id} style={{ display: "flex", gap: space.ms, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                         <span style={{ width: 7, height: 7, borderRadius: 99, background: c, flexShrink: 0, marginTop: 5 }} />
@@ -718,15 +717,15 @@ export default function AdminAgents() {
                   {runs.map((r) => (
                     <details key={r.id} style={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
                       <summary style={{ ...mono, fontSize: fs.body, color: CHALK, cursor: "pointer", listStyle: "none" }}>
-                        <Chip c={r.status === "ok" ? LIME : "#e06666"}>{r.status}</Chip>
+                        <Chip c={r.status === "ok" ? OK : ERR}>{r.status}</Chip>
                         <Chip c={ASH}>{r.runtime}</Chip>
                         <span style={{ color: txt(ASH) }}>{new Date(r.createdAt).toLocaleString()}</span>
                         <div style={{ marginTop: 4, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{r.task}</div>
                       </summary>
                       <div style={{ marginTop: 8 }}>
                         {r.steps.map((s, i) => (
-                          <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${VIOLET}` }}>
-                            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", display: "block" }} c={VIOLET}>↳ {s.role}</Mono>
+                          <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${BLUE}` }}>
+                            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", display: "block" }} c={BLUE}>↳ {s.role}</Mono>
                             <div style={{ ...mono, fontSize: fs.caption, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
                           </div>
                         ))}
@@ -903,7 +902,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LIME}`,
-  background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`,
+  background: tint(LIME, ALPHA.fill),
   color: txt(LIME),
 };
 const dangerBtn: React.CSSProperties = {
@@ -959,7 +958,7 @@ function toggle(on: boolean): React.CSSProperties {
     height: 24,
     borderRadius: 999,
     border: `1px solid ${on ? LIME : LINE}`,
-    background: on ? `color-mix(in srgb, var(--color-lime) 20%, transparent)` : INK2,
+    background: on ? tint(LIME, ALPHA.solid) : INK2,
     cursor: "pointer",
     padding: 2,
     display: "flex",

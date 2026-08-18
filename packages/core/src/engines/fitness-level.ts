@@ -9,6 +9,7 @@ import {
 import { developmentFraction, type Sex } from "../benchmarks";
 import type { Experience } from "../onboarding";
 import { deviceTrueSessions } from "../device-truth";
+import type { AccentKey } from "../semantic";
 
 /**
  * WHAT LEVEL IS THIS ATHLETE, ACTUALLY.
@@ -589,14 +590,15 @@ export function nextThreshold(estimate: FitnessLevelEstimate | null | undefined)
 export const BADGE_MIN_EVIDENCE = 2;
 
 /** The accent channel a badge paints with — the palette's existing ramp. */
-export type BadgeAccent = "ash" | "chalk" | "lime" | "gold";
+/** A badge climbs ash → chalk → the two warm accents. Derived, not re-declared. */
+export type BadgeAccent = Extract<AccentKey, "ash" | "lime" | "amber"> | "chalk";
 
 const BADGE_ACCENT: Record<FitnessLevel, BadgeAccent> = {
   untrained: "ash",
   novice: "ash",
   intermediate: "chalk",
   advanced: "lime",
-  elite: "gold",
+  elite: "amber",
 };
 
 export interface LevelBadge {

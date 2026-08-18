@@ -13,7 +13,6 @@ import {
   ASH,
   AMBER,
   BLUE,
-  VIOLET,
   RED,
   disp,
   mono,
@@ -102,8 +101,7 @@ import {
   type HpiWeights,
   type TrainingLog,
   type ReadinessDeficit,
-  type ReadinessCost,
-} from "@hybrid/core";
+  type ReadinessCost, STATE_OPACITY } from "@hybrid/core";
 
 // ---------------------------------------------------------------------------
 // Engine Room — the transparency console over the intelligence stack.
@@ -149,7 +147,7 @@ const DRIVER_COLOR: Record<string, string> = {
   spike: RED,
   load: AMBER,
   detrain: BLUE,
-  recovery: VIOLET,
+  recovery: BLUE,
 };
 const DRIVER_LABEL: Record<string, string> = {
   spike: "Workload spike",
@@ -577,11 +575,11 @@ export default function EngineRoom() {
       {/* ---- what-if simulator ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
             What-if simulator
           </Mono>
           <div style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
-            {whatIfActive && <Chip c={VIOLET}>simulating</Chip>}
+            {whatIfActive && <Chip c={BLUE}>simulating</Chip>}
             {whatIfActive && <Button label="Reset to actual" variant="outline" onClick={() => setWhatIf(WHATIF_OFF)} />}
           </div>
         </div>
@@ -737,7 +735,7 @@ export default function EngineRoom() {
                   borderRadius: 999,
                   padding: "5px 10px",
                   cursor: "pointer",
-                  opacity: scenarios.some((s) => s.name === p.name) ? 0.4 : 1,
+                  opacity: scenarios.some((s) => s.name === p.name) ? STATE_OPACITY.disabled : 1,
                 }}
               >
                 + {p.name}
@@ -856,10 +854,10 @@ export default function EngineRoom() {
       {/* ---- personal model ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
             Personal model – this athlete&apos;s ACWR spike onset
           </Mono>
-          {personal?.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
+          {personal?.personalized ? <Chip c={BLUE}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
         </div>
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
           The population model starts ramping spike risk at ACWR {SPIKE_ONSET_PRIOR}. The personal
@@ -873,14 +871,14 @@ export default function EngineRoom() {
           {[
             { v: SPIKE_ONSET_PRIOR, label: `prior ${SPIKE_ONSET_PRIOR}`, c: ASH, dashed: true },
             ...(spikeOnset !== SPIKE_ONSET_PRIOR
-              ? [{ v: spikeOnset, label: `personal ${spikeOnset}`, c: VIOLET, dashed: false }]
+              ? [{ v: spikeOnset, label: `personal ${spikeOnset}`, c: BLUE, dashed: false }]
               : []),
           ].map((m) => {
             const pct = ((m.v - SPIKE_ONSET_MIN) / (SPIKE_ONSET_MAX - SPIKE_ONSET_MIN)) * 100;
             return (
               <div key={m.label} style={{ position: "absolute", left: `${pct}%`, top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
                 <Mono s={{ fontSize: fs.nano, display: "block", whiteSpace: "nowrap" }} c={m.c}>{m.label}</Mono>
-                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? 0.7 : 1 }} />
+                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? STATE_OPACITY.disabled : 1 }} />
               </div>
             );
           })}
@@ -906,7 +904,7 @@ export default function EngineRoom() {
       {/* ---- effort model ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
             Effort model – what this athlete says the work costs them
           </Mono>
           <div style={{ display: "flex", gap: space.sm, alignItems: "baseline" }}>
@@ -916,7 +914,7 @@ export default function EngineRoom() {
                 operator dragged a slider. Said out loud so a static card next to
                 moving ones doesn't read as a bug. */}
             {whatIfActive && <Chip c={ASH}>not simulated</Chip>}
-            {effort?.model.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
+            {effort?.model.personalized ? <Chip c={BLUE}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
           </div>
         </div>
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
@@ -933,14 +931,14 @@ export default function EngineRoom() {
           {[
             { v: 0, label: "prior 0", c: ASH, dashed: true },
             ...(effort && effort.model.bias !== 0
-              ? [{ v: effort.model.bias, label: `personal ${effort.model.bias > 0 ? "+" : ""}${effort.model.bias}`, c: VIOLET, dashed: false }]
+              ? [{ v: effort.model.bias, label: `personal ${effort.model.bias > 0 ? "+" : ""}${effort.model.bias}`, c: BLUE, dashed: false }]
               : []),
           ].map((m) => {
             const pct = ((m.v + EFFORT_BIAS_MAX) / (2 * EFFORT_BIAS_MAX)) * 100;
             return (
               <div key={m.label} style={{ position: "absolute", left: `${pct}%`, top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
                 <Mono s={{ fontSize: fs.nano, display: "block", whiteSpace: "nowrap" }} c={m.c}>{m.label}</Mono>
-                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? 0.7 : 1 }} />
+                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? STATE_OPACITY.disabled : 1 }} />
               </div>
             );
           })}
@@ -1860,7 +1858,7 @@ function Slider({
   disabled?: boolean;
 }) {
   return (
-    <label style={{ display: "block", opacity: disabled ? 0.45 : 1 }}>
+    <label style={{ display: "block", opacity: disabled ? STATE_OPACITY.disabled : 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: space.sm, marginBottom: 6 }}>
         <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>{label}</Mono>
         <Mono s={{ fontSize: fs.micro }} c={CHALK}>{display}</Mono>
@@ -1905,7 +1903,7 @@ const CHART_W = 560;
 const CHART_H = 180;
 const PAD = { l: 34, r: 64, t: 12, b: 22 };
 // raw hexes for SVG presentation attrs (CSS vars are unreliable there — see lib/ui)
-const SVG_CHALK = "#f3f4ef";
+const SVG_CHALK = "#f7f6f3";
 const SVG_INK = "#0c0d0c";
 
 function TrajectoryChart({ trace }: { trace: EngineTrace }) {

@@ -5,14 +5,13 @@ import Svg, { Path, Circle, Line as SvgLine } from "react-native-svg";
 import {
   weeklyVolumeTrend, exerciseTable, EXERCISE_TABLE_FOLD, fmtWeight, fmtTonnage, fmtRowChange, splitFigure, kgToUnit, sparkline,
   volumeTrendReading, stepTrendWindow, TREND_WEEKS_DEFAULT,
-  type ExercisePeriod, type TrendDir, type ExerciseTableRow,
-} from "@hybrid/core";
+  type ExercisePeriod, type TrendDir, type ExerciseTableRow, deltaRole } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, deltaPaint } from "../../lib/theme";
 import { leading, fs, space, tracking, F, PressScale as Pressable } from "../../lib/ui";
 import { useChartScrub } from "./chart-scrub";
 import { AuroraScreen, ACard, AHeading, ASub, ASegment } from "./kit";
@@ -83,7 +82,8 @@ export default function AuroraTrends({ top, unified = false }: {
   // One meaning per colour: chartreuse marks the CURRENT week and the live
   // selection, teal is the second measure, and a change is signed text tinted by
   // whether it was an improvement — never a bare arrow.
-  const TREND: Record<TrendDir, string> = { up: C.lime, down: C.amber, flat: C.ash };
+  // One mapping for "this number moved" — core deltaRole, not a local opinion.
+  const TREND: Record<TrendDir, string> = { up: deltaPaint(C, "up"), down: deltaPaint(C, "down"), flat: deltaPaint(C, "flat") };
   const setSeries = weeks.map((w) => w.sets);
   const tonneSeries = weeks.map((w) => (units === "kg" ? w.tonnage : kgToUnit(w.tonnage, "lb")) / 1000);
   const last = weeks[weeks.length - 1];

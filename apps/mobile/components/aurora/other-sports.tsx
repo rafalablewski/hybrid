@@ -185,7 +185,7 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
           is the app's non-endurance channel — teal already means cardio on the
           lanes directly above this block. */}
       <View {...scrub.bind} style={{ marginTop: "auto" }}>
-        <HistoryStrip bars={bars} color={C.violet} held={scrub.index} />
+        <HistoryStrip bars={bars} color={C.amber} held={scrub.index} />
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 6 }}>

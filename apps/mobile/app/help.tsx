@@ -55,7 +55,7 @@ export default function HelpCenter() {
     <AuroraScreen hero={{ rank: "title", title: t("help.title"), eyebrow: t("nav.group.account") }}>
       <Text style={{ marginTop: 12, fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("help.intro")}</Text>
 
-      <View style={{ marginTop: 18, backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden" }}>
+      <View style={{ marginTop: 18, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, overflow: "hidden" }}>
         {HELP_ROWS.map((row, i) => (
           <Pressable
             key={row.id}

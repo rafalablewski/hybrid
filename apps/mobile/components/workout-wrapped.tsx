@@ -56,8 +56,7 @@ import {
   type WeightUnit,
   type BodyweightLookup,
   ALPHA,
-  THEMES,
-} from "@hybrid/core";
+  THEMES, STATE_OPACITY } from "@hybrid/core";
 import { fetchConnections, patchSessionDevice } from "../lib/api";
 import { healthKitAvailability } from "../lib/healthkit";
 import { useHeatSignalsQuery, useRevalidate } from "../lib/queries";
@@ -74,14 +73,14 @@ import { useLang } from "../lib/i18n";
 import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
 import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
-import { useTheme, txt } from "../lib/theme";
+import { useTheme, txt, deltaPaint } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 import { withAlpha } from "./aurora/field";
 
 // `gold` is a THEME value, and this const is module scope — so it names the
 // one theme the app has rather than copying its hex. (The light theme was
 // deleted whole in Aug 2026; see the light-theme-removed capability.)
-const GOLD = THEMES.dark.gold;
+const GOLD = THEMES.dark.accentText.amber; // Fleur De Lis — the retired `gold` token sat ΔE 8.6 from it
 
 // Deterministic confetti fan for the reveal (module-level → stable positions).
 const CONFETTI = Array.from({ length: 16 }, (_, i) => {
@@ -424,7 +423,7 @@ export function WorkoutWrapped({
           <Panel center glows={<><View pointerEvents="none" style={{ position: "absolute", top: "34%", left: "50%", marginLeft: -230, marginTop: -230, width: 460, height: 460 }}><Animated.View style={{ flex: 1, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}><LinearGradient colors={[withAlpha(GOLD, 0.15), "transparent", withAlpha(C.lime, 0.11), "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 230 }} /></Animated.View></View></>}>
             <View style={{ alignItems: "center" }}>
               {CONFETTI.map((c, i) => (
-                <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", top: -20, width: 7, height: 7, borderRadius: 2, backgroundColor: [C.lime, GOLD, C.blue, C.violet][c.ci], opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) }, { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) }] }} />
+                <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", top: -20, width: 7, height: 7, borderRadius: 2, backgroundColor: [C.lime, GOLD, C.blue, C.red][c.ci], opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) }, { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) }] }} />
               ))}
               <Animated.View style={{ transform: [{ scale }] }}><AuroraIcon name="trophy" size={84} color={GOLD} /></Animated.View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.caps, color: GOLD, textTransform: "uppercase", marginTop: 24 }}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Text>
@@ -435,7 +434,7 @@ export function WorkoutWrapped({
         )}
 
         {/* ── HERO ── */}
-        <Panel glows={<><Glow size={panelH * 0.5} color={withAlpha(C.violet, ALPHA.fill)} top={-40} right={-80} /><Glow size={panelH * 0.5} color={withAlpha(C.lime, ALPHA.wash)} bottom={panelH * 0.2} left={-90} /></>}>
+        <Panel glows={<><Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.fill)} top={-40} right={-80} /><Glow size={panelH * 0.5} color={withAlpha(C.lime, ALPHA.wash)} bottom={panelH * 0.2} left={-90} /></>}>
           {eyebrow(t("session.wrapped.title"))}
           {/* SHARED ELEMENT (destination). The title the tapped row was showing
               flies here and scales up instead of the page re-rendering it.
@@ -538,13 +537,13 @@ export function WorkoutWrapped({
 
         {/* ── PREMIUM ── */}
         {wrapped.facts.length > 0 && (
-          <Panel center glows={<Glow size={panelH * 0.5} color={withAlpha(C.violet, ALPHA.wash)} top={0} left={-100} />}>
+          <Panel center glows={<Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.wash)} top={0} left={-100} />}>
             {eyebrow(t("session.wrapped.premium"))}
             <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, marginTop: 8, marginBottom: 20 }}>{t("session.wrapped.premiumLead")}</Text>
             {wrapped.facts.map((f) => (
               <View key={f.labelKey + f.value} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: fs.display, color: f.tone === "up" || f.labelKey === "session.wrapped.est1rm" ? txt(C, C.lime) : C.violet }}>{f.value}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.display, color: f.labelKey === "session.wrapped.est1rm" ? txt(C, C.lime) : deltaPaint(C, !f.tone || f.tone === "neutral" ? "flat" : f.tone) }}>{f.value}</Text>
               </View>
             ))}
             {!full && (
@@ -595,7 +594,7 @@ export function WorkoutWrapped({
               <Pressable onPress={() => setMatchOpen(true)}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{t("session.device.rematch")}</Text>
               </Pressable>
-              <Pressable onPress={() => void unlinkDevice()} disabled={unlinking} style={{ opacity: unlinking ? 0.5 : 1 }}>
+              <Pressable onPress={() => void unlinkDevice()} disabled={unlinking} style={{ opacity: unlinking ? STATE_OPACITY.busy : 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("session.device.unlink")}</Text>
               </Pressable>
             </View>
@@ -604,7 +603,7 @@ export function WorkoutWrapped({
 
         {/* ── CONNECT A DEVICE ── */}
         {showDeviceAd && (
-          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.violet, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
+          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.blue, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: leading(28, "tight"), marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
             <View style={{ marginTop: 24, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>

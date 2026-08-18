@@ -12,7 +12,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
-import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, VIOLET, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, AMBER, mono, tip, Stat, ChartFrame, Card, Mono } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import { Loading } from "../aurora/skeleton";
 import TheNumber from "./athlete-weeks";
@@ -45,7 +45,7 @@ export default function AdminOverview() {
   if (err) return <Card style={{ textAlign: "center", padding: 60 }}><Mono>Failed to load platform analytics.</Mono></Card>;
   if (!s) return <Card><Loading /></Card>;
 
-  const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: VIOLET, CLIENT: LIME };
+  const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: BLUE, CLIENT: LIME };
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: space.lg }}>
@@ -56,8 +56,8 @@ export default function AdminOverview() {
       <TheNumber />
 
       <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" c={CHALK} />
-      <Stat label="Active coaches" value={s.coaches.toLocaleString()} c={VIOLET} />
-      <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} c={VIOLET} />
+      <Stat label="Active coaches" value={s.coaches.toLocaleString()} c={BLUE} />
+      <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} c={BLUE} />
       <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} c={CHALK} />
 
       <ChartFrame span={4} title="Growth" kicker="Last 12 weeks – signups vs sessions" c={LIME}>

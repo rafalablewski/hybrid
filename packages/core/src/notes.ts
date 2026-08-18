@@ -6,6 +6,7 @@
 // note surface can reuse it.)
 
 import { glyphMark, type Mark } from "./theme/mark";
+import type { BrandAccent } from "./semantic";
 
 export type MoodDef = {
   value: 1 | 2 | 3 | 4;
@@ -16,7 +17,8 @@ export type MoodDef = {
    *  self-report questions stop being asked in three different hands. */
   mark: Mark;
   /** A palette accent hint the clients map to their theme colour. */
-  tone: "red" | "amber" | "lime";
+  /** A mood is never blue — narrow, but still DERIVED, so it cannot drift. */
+  tone: Extract<BrandAccent, "lime" | "amber" | "red">;
 };
 
 // Rough → strong. Kept short on purpose: a quick tap, not a survey.

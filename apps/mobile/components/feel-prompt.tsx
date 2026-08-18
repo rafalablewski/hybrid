@@ -143,7 +143,7 @@ export function FeelPrompt({
     <View
       style={
         compact
-          ? { backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 16 }
+          ? { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 16 }
           : undefined
       }
     >

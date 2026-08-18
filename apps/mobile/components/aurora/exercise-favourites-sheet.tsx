@@ -6,8 +6,7 @@ import {
   exerciseFavouritesFull,
   isExerciseFavourite,
   type ExerciseBrowseEntry,
-  type LoggedSession,
-} from "@hybrid/core";
+  type LoggedSession, STATE_OPACITY } from "@hybrid/core";
 import Sheet from "./sheet";
 import { ASearch , RADIUS} from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
@@ -78,7 +77,7 @@ export default function ExerciseFavouritesSheet({
         accessibilityRole="button"
         accessibilityState={{ selected: on, disabled: locked }}
         accessibilityLabel={`${on ? t("w.home.exw.unpin") : t("w.home.exw.pin")} – ${e.name}`}
-        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line, opacity: locked ? 0.45 : 1 }}
+        style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line, opacity: locked ? STATE_OPACITY.disabled : 1 }}
       >
         {/* The SQUARE exercise avatar (shared — exercise-media), the same one the
             Exercises browser draws: this sheet lists the same browse entries, so

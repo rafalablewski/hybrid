@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PREMIUM_ACCENT_FLAG, PREMIUM_ACCENT_PRESETS, PREMIUM_ACCENT_DEFAULT, normalizePremiumAccent, resolvePremiumAccent, wcagRating, isHexColor, type WcagGrade } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { ALPHA, colors, PREMIUM_ACCENT_FLAG, PREMIUM_ACCENT_PRESETS, PREMIUM_ACCENT_DEFAULT, normalizePremiumAccent, resolvePremiumAccent, wcagRating, isHexColor, type WcagGrade  } from "@hybrid/core";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip, Select, txt, tint } from "@/lib/ui";
 
 type Flag = {
   key: string;
@@ -161,7 +161,7 @@ function toggle(on: boolean): React.CSSProperties {
     height: 26,
     borderRadius: 999,
     border: `1px solid ${on ? LIME : LINE}`,
-    background: on ? `color-mix(in srgb, var(--color-lime) 20%, transparent)` : INK2,
+    background: on ? tint(LIME, ALPHA.solid) : INK2,
     cursor: "pointer",
     padding: 2,
     display: "flex",
@@ -189,7 +189,9 @@ const resetBtn: React.CSSProperties = {
 
 // The dark card surface the accent-as-text sits on (palette.dark.card) — the
 // reference background for the "text on card" contrast check.
-const CARD_DARK = "#151715";
+// The surface the readout measures against. Was a literal #151715 — a third
+// copy of a token that has since been retired for being ΔE 0.3 from ink2.
+const CARD_DARK = colors.ink2;
 const gradeColor = (g: WcagGrade) => (g === "AAA" ? LIME : g === "AA" ? AMBER : RED);
 
 /** Admin picker for the premium-CTA accent: palette swatches + a custom hex,

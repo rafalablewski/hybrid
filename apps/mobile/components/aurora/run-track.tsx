@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, TextInput } from "react-native";
 import { useRouter } from "expo-router";
-import { fmtKm, pacePerKm, mmss } from "@hybrid/core";
+import { fmtKm, pacePerKm, mmss, STATE_OPACITY } from "@hybrid/core";
 import { createSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
@@ -89,7 +89,7 @@ export default function AuroraRunTrack() {
           <Pressable onPress={toggle} style={{ flex: 1, backgroundColor: running ? C.amber : C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center" }}>
             <Text style={{ fontFamily: F.black, fontSize: fs.note, color: running ? "#12170f" : C.onAccent }}>{running ? t("w.train.runTrack.pause") : elapsed > 0 ? t("w.train.runTrack.resume") : t("w.train.runTrack.startRun")}</Text>
           </Pressable>
-          <Pressable onPress={reset} disabled={elapsed === 0} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 16, paddingHorizontal: 20, alignItems: "center", opacity: elapsed === 0 ? 0.5 : 1 }}>
+          <Pressable onPress={reset} disabled={elapsed === 0} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 16, paddingHorizontal: 20, alignItems: "center", opacity: elapsed === 0 ? STATE_OPACITY.disabled : 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.runTrack.reset")}</Text>
           </Pressable>
         </View>

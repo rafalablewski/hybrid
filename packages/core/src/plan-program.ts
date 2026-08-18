@@ -1,3 +1,4 @@
+import type { AccentKey } from "./semantic";
 /**
  * @hybrid/core — discipline-shaped training plans.
  *
@@ -230,7 +231,8 @@ export function formatLift(lift: PlanLift, maxes?: Record<string, number>): stri
 
 /** Brand colour token keyed to lift intensity, shared so every client colours
  *  loads / RPE identically (web hex/CSS-var, mobile palette). */
-export type LoadColor = "blue" | "lime" | "amber" | "red" | "ash";
+/** The accent keys, neutral included — see semantic.ts AccentKey. */
+export type LoadColor = AccentKey;
 
 /** Map a working % to its intensity colour. Bodyweight (`null`) → ash. Thresholds
  *  live here (not per-client) so the colour wave can't drift. */
@@ -261,16 +263,28 @@ export function workoutColor(label: string): LoadColor {
   return "blue";
 }
 
-/** The accent colour for a day's session marker — so the SAME session reads in
- *  the same hue on every surface (the Plans program table + the Today week-rail
- *  can't drift). AM/MID/PM get fixed hues; an untimed session cycles by ordinal
- *  so a "Training 1 / 2 / 3" day still reads as three distinct blocks. */
-export function sessionColor(label: string | null | undefined, index: number): LoadColor {
-  if (label === "AM") return "lime";
-  if (label === "MID") return "amber";
-  if (label === "PM") return "blue";
-  return (["lime", "amber", "blue"] as const)[index % 3]!;
-}
+/*
+ * RETIRED — `sessionColor`. It gave AM/MID/PM fixed hues and cycled untimed
+ * sessions by ordinal, so a "Training 1 / 2 / 3" day read as three colours.
+ *
+ * That is COLOUR ENCODING IDENTITY, which theme/tokens.ts says the palette no
+ * longer does — and here it was the third redundant signal for one fact: the
+ * marker row already prints the session's NAME, and already carries a hairline
+ * rule beneath it. Nothing was learnable from the hue that the word did not say.
+ *
+ * Its stated reason had also expired. The header argued it kept "the Plans
+ * program table + the Today week-rail" from drifting across surfaces — but the
+ * web client was retired in Aug 2026, and by the time this was looked at there
+ * was exactly one consumer left (percent-program.tsx). A function that exists to
+ * keep two things in step, with one of them gone, is a function keeping itself
+ * in step.
+ *
+ * The marker now draws in `chalk` — it is the block's name, so it reads as a
+ * heading — with its volume staying in `ash` beside it. Hierarchy by weight,
+ * which is what the rest of the app does.
+ *
+ * TO REVISIT: a real argument would have to name something the LABEL cannot say.
+ */
 
 /** Map a conditioning effort tier to its intensity colour — the circuit's wave,
  *  on the SAME blue→lime→amber→red scale the % loads ride, with recover → ash.
@@ -292,9 +306,20 @@ export function conditioningColor(effort: ConditioningEffort): LoadColor {
  *  so a sets×reps plan rides the same coloured intensity wave the % and RPE plans
  *  do. Thresholds live here so the wave can't drift across clients. */
 export function repZoneColor(reps: number): LoadColor {
-  if (reps <= 6) return "amber"; // strength
+  // READS BACKWARDS AGAINST loadColor ON PURPOSE, and this has already been
+  // misread once (audit/12 §5.8 called it an inversion; it is not). The two
+  // functions take arguments that run in OPPOSITE directions — %1RM rises with
+  // load, reps FALL as load rises — so the listings have to be mirror images for
+  // the meaning to line up, and they are:
+  //
+  //   heavy    loadColor amber/red   repZoneColor amber
+  //   moderate loadColor lime        repZoneColor lime
+  //   light    loadColor blue        repZoneColor blue
+  //
+  // One wave, read from either end. Do not "align" this by reordering it.
+  if (reps <= 6) return "amber"; // strength — few reps, heavy load
   if (reps <= 12) return "lime"; // hypertrophy
-  return "blue"; // endurance
+  return "blue"; // endurance — many reps, light load
 }
 
 /** The rep number a scheme prescribes (e.g. 20 from "3 × 20"; reps should be single

@@ -14,7 +14,7 @@ import {
   FEELS,
   type CheckinSessionRef,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } from "../../lib/api";
 import { askPushOnce } from "../../lib/push";
 import { useRevalidate } from "../../lib/queries";
@@ -280,7 +280,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
     borderWidth: 1,
     borderColor: sel ? (locked ? C.ash : C.lime) : C.line,
     backgroundColor: sel ? (locked ? withAlpha(C.ash, ALPHA.solid) : withAlpha(C.lime, ALPHA.fill)) : C.ink,
-    opacity: locked && !sel ? 0.35 : 1,
+    opacity: locked && !sel ? STATE_OPACITY.disabled : 1,
   });
 
   const backBtn = (
@@ -417,7 +417,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
             accessibilityRole="checkbox"
             accessibilityLabel={t("w.recovery.checkins.shareCoach")}
             accessibilityState={{ checked: !!(sharedWithCoach && paid), disabled: !paid || locked }}
-            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 16, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? withAlpha(C.lime, ALPHA.fill) : "transparent", opacity: !paid ? 0.6 : locked ? 0.55 : 1 }}
+            style={{ flexDirection: "row", alignItems: "center", gap: space.md, marginTop: 16, padding: 16, borderRadius: RADIUS.field, borderWidth: 1, borderColor: sharedWithCoach && paid ? C.lime : C.line, backgroundColor: sharedWithCoach && paid ? withAlpha(C.lime, ALPHA.fill) : "transparent", opacity: !paid ? 0.6 : locked ? STATE_OPACITY.disabled : 1 }}
           >
             {sharedWithCoach && paid ? <AuroraIcon name="check" size={22} color={txt(C, C.lime)} /> : <AuroraIcon name="lock" size={20} color={C.ash} />}
             <View style={{ flex: 1 }}>

@@ -28,7 +28,7 @@ export default function AdminAnon() {
   const { confirm } = useConfirm();
   const { palette } = useTheme();
   const platformColor = (p: string | null) =>
-    p === "ios" ? palette.blue : p === "web" ? palette.lime : p === "android" ? palette.violet : palette.ash;
+    p === "ios" ? palette.blue : p === "web" ? palette.lime : p === "android" ? palette.red : palette.ash;
 
   const [sessions, setSessions] = useState<AnonSession[] | null>(null);
   const [busy, setBusy] = useState<string | null>(null);

@@ -9,7 +9,7 @@ import {
   type LoggedSession,
   type RankedDeviceWorkout,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import {
   healthKitAvailability,
   queryDeviceWorkouts,
@@ -199,7 +199,7 @@ export function DeviceMatchSheet({
                       padding: best ? 18 : 13,
                       marginBottom: best ? 14 : 10,
                       backgroundColor: best ? withAlpha(C.lime, ALPHA.wash) : C.ink2,
-                      opacity: busyUuid && busyUuid !== r.workout.uuid ? 0.5 : 1,
+                      opacity: busyUuid && busyUuid !== r.workout.uuid ? STATE_OPACITY.disabled : 1,
                     }}
                   >
                     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, INK2, LINE, LIME, ASH, BLUE, VIOLET, RED, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, INK2, LINE, LIME, ASH, BLUE, RED, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { STATE_OPACITY } from "@hybrid/core";
 
 // Anonymous (guest, pre-account) workouts — sessions logged on a device before
 // the user ever signed in. Admin-only housekeeping: review and prune them.
@@ -16,7 +17,7 @@ type AnonSession = {
   createdAt: string;
 };
 
-const platformColor = (p: string | null) => (p === "ios" ? BLUE : p === "web" ? LIME : p === "android" ? VIOLET : ASH);
+const platformColor = (p: string | null) => (p === "ios" ? BLUE : p === "web" ? LIME : p === "android" ? RED : ASH);
 const fmt = (d: string) => new Date(d).toISOString().slice(0, 19).replace("T", " ");
 const trunc = (s: string) => (s.length > 12 ? `${s.slice(0, 8)}…${s.slice(-4)}` : s);
 
@@ -105,7 +106,7 @@ export default function AdminAnonSessions() {
                   <button className="pressable"
                     onClick={() => remove(s.id, s.title)}
                     disabled={busy === s.id}
-                    style={{ ...mono, fontSize: fs.body, color: txt(RED), background: `${RED}14`, border: `1px solid ${RED}55`, borderRadius: "var(--r-field)", padding: "8px 12px", cursor: busy === s.id ? "default" : "pointer", opacity: busy === s.id ? 0.5 : 1 }}
+                    style={{ ...mono, fontSize: fs.body, color: txt(RED), background: `${RED}14`, border: `1px solid ${RED}55`, borderRadius: "var(--r-field)", padding: "8px 12px", cursor: busy === s.id ? "default" : "pointer", opacity: busy === s.id ? STATE_OPACITY.busy : 1 }}
                   >
                     Delete
                   </button>

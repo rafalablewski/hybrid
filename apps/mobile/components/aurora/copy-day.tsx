@@ -5,8 +5,7 @@ import {
   copySources,
   type CopyableEntry,
   type CopyPlan,
-  type CopySource,
-} from "@hybrid/core";
+  type CopySource, STATE_OPACITY } from "@hybrid/core";
 import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -151,7 +150,7 @@ export default function CopyDaySheet({
                 accessibilityRole="button"
                 accessibilityState={{ disabled: !!busy }}
                 accessibilityLabel={t("w.recovery.nutrition.copyConfirm").replace("{n}", String(plan.entries.length)).replace("{kcal}", String(plan.kcal))}
-                style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: space.md, opacity: busy ? 0.6 : 1 }}
+                style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, alignItems: "center", marginTop: space.md, opacity: busy ? STATE_OPACITY.busy : 1 }}
               >
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.onAccent }}>
                   {t("w.recovery.nutrition.copyConfirm").replace("{n}", String(plan.entries.length)).replace("{kcal}", String(plan.kcal))}

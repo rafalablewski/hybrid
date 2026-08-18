@@ -115,8 +115,7 @@ import {
   HERO,
   SATELLITE,
   type ReadinessFeeling,
-  ALPHA,
-} from "@hybrid/core";
+  ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
 
 // Today's one-tap readiness feeling from the check-in list → scales the AI
@@ -2091,7 +2090,7 @@ export default function Workout() {
           );
         })()}
 
-        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={C.red} style={{ marginTop: 16, textAlign: "center" }}>{error}</Mono></View>}
+        {!!error && <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={FEEDBACK.error.text} style={{ marginTop: 16, textAlign: "center" }}>{error}</Mono></View>}
 
       </ScrollView>
 
@@ -2136,7 +2135,7 @@ export default function Workout() {
                   onPress={() => { setConfirmFinish(false); void finish(); }}
                   disabled={saving}
                   accessibilityRole="button"
-                  style={{ height: 44, paddingHorizontal: 20, justifyContent: "center", borderRadius: RADIUS.pill, backgroundColor: C.lime, opacity: saving ? 0.6 : 1 }}
+                  style={{ height: 44, paddingHorizontal: 20, justifyContent: "center", borderRadius: RADIUS.pill, backgroundColor: C.lime, opacity: saving ? STATE_OPACITY.busy : 1 }}
                 >
                   {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>{t("workout.finish")}</Text>}
                 </Pressable>
@@ -2825,15 +2824,15 @@ function Summary({
             >
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
             </Pressable>
-            <View style={{ backgroundColor: withAlpha(C.violet, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(C.violet, ALPHA.line), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✓ {t("summary.guestSaved")}</Text>
+            <View style={{ backgroundColor: withAlpha(C.blue, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(C.blue, ALPHA.line), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>✓ {t("summary.guestSaved")}</Text>
             </View>
             <Pressable
               onPress={() => router.replace("/login?mode=signup")}
-              style={{ backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
+              style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
             >
-              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("summary.guestSave")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, opacity: 0.8, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("summary.guestSave")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.onAccent, opacity: 0.72, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
             </Pressable>
             <Pressable onPress={() => router.replace("/welcome")} style={{ paddingVertical: 16, alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("summary.notNow")}</Text>
@@ -3026,7 +3025,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
       <Pressable
         onPress={save}
         disabled={state === "saving"}
-        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
+        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 10, opacity: state === "saving" ? STATE_OPACITY.busy : 1 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
       </Pressable>
@@ -3143,7 +3142,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
           );
         })}
       </View>
-      <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center", opacity: saving ? 0.6 : 1 }}>
+      <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center", opacity: saving ? STATE_OPACITY.busy : 1 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>
       </Pressable>
     </View>
@@ -3274,7 +3273,7 @@ function BodyweightNudge({ C, t, units }: { C: Palette; t: (k: string) => string
           />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{units}</Text>
         </View>
-        <Pressable onPress={save} disabled={state === "saving"} style={{ backgroundColor: a, borderRadius: RADIUS.pill, paddingVertical: 10, paddingHorizontal: 16, opacity: state === "saving" ? 0.6 : 1 }}>
+        <Pressable onPress={save} disabled={state === "saving"} style={{ backgroundColor: a, borderRadius: RADIUS.pill, paddingVertical: 10, paddingHorizontal: 16, opacity: state === "saving" ? STATE_OPACITY.busy : 1 }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.caption, color: C.onAccent }}>
             {state === "saving" ? t("live.bwNudgeSaving") : state === "saved" ? t("w.train.logger.bwNudgeSaved") : t("w.train.logger.bwNudgeSave")}
           </Text>

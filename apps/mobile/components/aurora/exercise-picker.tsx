@@ -42,7 +42,7 @@ const RESULT_CAP = 30;
 /** Recent lifts offered on the empty state — a SHORTLIST, not a second catalog. */
 const RECENT_CAP = 6;
 
-const kindColor = (k: BlockKind, C: Palette) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet);
+const kindColor = (k: BlockKind, C: Palette) => (k === "strength" ? C.lime : k === "cardio" ? C.blue : C.amber);
 
 /** The lift's SHAPE, read from the exercise DB — the row's right-side mono hint,
  *  so an athlete knows what the set grid will ask for before adding. Plain

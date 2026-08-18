@@ -7,7 +7,6 @@ import {
   inputEcho,
   rpeColor,
   workoutColor,
-  sessionColor,
   isProseLift,
   liftKind,
   dayContentSummary,
@@ -30,14 +29,13 @@ import {
   type InkTier,
   type LoadColor,
   type LiftKind,
-  ALPHA,
-} from "@hybrid/core";
+  ALPHA, FEEDBACK } from "@hybrid/core";
 import { enrollPlan } from "../lib/api";
 import MeasuredOutcome from "./measured-outcome";
 import { useRevalidate } from "../lib/queries";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
-import { useTheme, txt } from "../lib/theme";
+import { useTheme, txt, accentColor } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
 import { ACard, cardStack, withAlpha, ASection, DockRail, DockChip } from "./aurora/kit";
@@ -45,7 +43,8 @@ import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill, COVER_GUTTER } from "./plan-hero";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
+// Was a fifth copy of one lookup — see lib/theme accentColor.
+const loadHex = accentColor;
 // Quiet intra-card hairline — derived from the theme's line colour, not a
 // fixed 5% white.
 const hair = (C: Palette) => withAlpha(C.line, 0.6);
@@ -192,7 +191,7 @@ export default function PercentProgram({
       <MeasuredOutcome planId={plan.id} />
 
       {state === "error" && (
-        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 4 }}>
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 4 }}>
           {t("plans.enrollError")}
         </Text>
       )}
@@ -424,10 +423,13 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
 // The merged rule line (idea 01): ONE quiet row carries what used to be two
 // tinted band strips — the session marker (its semantic colour kept) with the
 // session volume on the right. No background wash.
-function SessionRule({ marker, color, volume, top, C }: { marker: string; color: string; volume: string | null; top: boolean; C: Palette }) {
+// The marker is the block's NAME, so it reads as a heading in chalk. It used to
+// cycle through three hues (core sessionColor, now retired): colour encoding
+// identity, beside a label that already said which session it was.
+function SessionRule({ marker, volume, top, C }: { marker: string; volume: string | null; top: boolean; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, color) }}>{marker}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.chalk }}>{marker}</Text>
       {!!volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{volume}</Text>}
     </View>
   );
@@ -445,7 +447,7 @@ function SessionBlock({ s, si, count, day, C, onLift }: { s: ProgramSessionView;
   const press = (l: ProgramLiftView) => onLift(l, marker);
   return (
     <View>
-      {!!marker && <SessionRule marker={marker} color={loadHex(C, sessionColor(s.label, si))} volume={s.volume} top={si > 0} C={C} />}
+      {!!marker && <SessionRule marker={marker} volume={s.volume} top={si > 0} C={C} />}
       {groups.map((g, gi) => {
         const label = mixed ? groupLabel(g.kind, g.lifts.length, hasPercent) : null;
         const top = (gi > 0 || si > 0) && !marker;

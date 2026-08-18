@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { RADIUS } from "./kit";
 import { useTheme } from "../../lib/theme";
 import { fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, tracking } from "../../lib/ui";
+import { STATE_OPACITY } from "@hybrid/core";
 
 /**
  * THE MEASURE ROW — one measure, where it sits, and the figures it sits between.
@@ -148,7 +149,7 @@ export function MeasureScale({ cells, tone = null }: { cells: MeasureCell[]; ton
             accessibilityRole="button"
             accessibilityState={{ selected: !!c.selected }}
             accessibilityLabel={c.a11yLabel}
-            style={{ flex: 1, opacity: c.dim ? 0.4 : 1 }}
+            style={{ flex: 1, opacity: c.dim ? STATE_OPACITY.disabled : 1 }}
           >
             {body}
           </Pressable>

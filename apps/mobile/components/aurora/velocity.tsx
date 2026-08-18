@@ -17,7 +17,7 @@ import { withAlpha } from "./field";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const zoneColor = (id: string, C: Palette) =>
-  id === "absolute-strength" ? C.red : id === "strength-speed" ? C.amber : id === "speed-strength" ? C.lime : id === "accelerative" ? C.blue : C.violet;
+  id === "absolute-strength" ? C.red : id === "strength-speed" ? C.amber : id === "speed-strength" ? C.lime : id === "accelerative" ? C.blue : C.accentText.blue;
 
 /** AURORA Velocity (VBT) — load-velocity profile, velocity-estimated 1RM, AI
  *  load recommender + zones, reusing the exact velocity engine. */
@@ -167,7 +167,7 @@ function Plot({ points, profile }: { points: LVPoint[]; profile: LoadVelocityPro
   }
   return (
     <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: H, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, backgroundColor: C.ink, overflow: "hidden" }}>
-      {w > 0 && line.map((p, i) => <View key={`l${i}`} style={{ position: "absolute", left: X(p.load) - 1.5, top: Y(p.velocity) - 1.5, width: 3, height: 3, borderRadius: 2, backgroundColor: C.violet }} />)}
+      {w > 0 && line.map((p, i) => <View key={`l${i}`} style={{ position: "absolute", left: X(p.load) - 1.5, top: Y(p.velocity) - 1.5, width: 3, height: 3, borderRadius: 2, backgroundColor: C.blue }} />)}
       {w > 0 && points.map((p, i) => <View key={`p${i}`} style={{ position: "absolute", left: X(p.load) - 4, top: Y(p.velocity) - 4, width: 8, height: 8, borderRadius: 4, backgroundColor: C.lime }} />)}
     </View>
   );

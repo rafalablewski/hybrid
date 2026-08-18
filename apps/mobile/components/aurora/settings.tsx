@@ -1,7 +1,7 @@
 import { useState, useCallback, type ReactNode } from "react";
 import { View, Text, TextInput, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId , ALPHA} from "@hybrid/core";
+import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId , ALPHA, FEEDBACK, type AccentKey } from "@hybrid/core";
 import { resetAccount, deleteAccount } from "../../lib/api";
 import { iapAvailable, manageSubscriptions } from "../../lib/iap";
 import { clearGuestSessions } from "../../lib/guest";
@@ -12,7 +12,7 @@ import { useAccountSettings } from "../../lib/account";
 import { pushSupported, usePushSwitch } from "../../lib/push";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, accentColor } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS, ASearch } from "./kit";
@@ -45,7 +45,7 @@ export const SETTINGS_ROUTES: Partial<Record<SettingsCategoryId, string>> = {
   coaching: "/coach-apply",
 };
 
-const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "red" | "ash"> = {
+const TONE: Record<SettingsCategoryId, AccentKey> = {
   account: "ash", preferences: "ash", logger: "ash", notifications: "ash",
   privacy: "ash", coaching: "ash", security: "ash", subscription: "ash",
   data: "ash", danger: "red",
@@ -132,7 +132,7 @@ export default function AuroraSettings({ landOn }: {
   };
 
   const tone = (c: string) => ({ tile: withAlpha(c, ALPHA.solid), fg: txt(C, c) });
-  const toneColor: Record<string, string> = { lime: C.lime, blue: C.blue, violet: C.violet, amber: C.amber, red: C.red, ash: C.ash };
+  // Was a local copy of one lookup — see lib/theme accentColor.
 
   // The expandable body for each category, generated lazily so only the OPEN
   // category's JSX is built (not all of them on every keystroke). Rows not
@@ -333,12 +333,12 @@ export default function AuroraSettings({ landOn }: {
             autoCapitalize="characters" autoCorrect={false}
             style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
           />
-          {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
+          {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{error}</Text>}
           <PressScale onPress={reset} disabled={!armed || busy} style={{ backgroundColor: armed && !busy ? C.red : withAlpha(C.red, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("w.account.settings.erase-everything")}</Text>}
           </PressScale>
         </Section>
-        <Section label={t("settings.deleteTitle")} tone={C.red}>
+        <Section label={t("settings.deleteTitle")} tone={FEEDBACK.error.text}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("settings.deleteBody")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeDelete")}</Text>
           <TextInput
@@ -346,7 +346,7 @@ export default function AuroraSettings({ landOn }: {
             autoCapitalize="characters" autoCorrect={false}
             style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
           />
-          {!!delError && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{delError}</Text>}
+          {!!delError && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{delError}</Text>}
           <PressScale onPress={del} disabled={!armedDelete || deleting} accessibilityRole="button" accessibilityLabel={t("settings.deleteAccount")} style={{ backgroundColor: armedDelete && !deleting ? C.red : withAlpha(C.red, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}>
             {deleting ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{t("settings.deleteAccount")}</Text>}
           </PressScale>
@@ -389,7 +389,7 @@ export default function AuroraSettings({ landOn }: {
   // tinted icon chip, the title, a one-line value/subtitle and a chevron. A
   // hairline separates rows within the card (first row draws none).
   const renderRow = (c: SettingsCategory, first: boolean) => {
-    const accent = toneColor[TONE[c.id]];
+    const accent = accentColor(C, TONE[c.id]);
     const { tile, fg } = tone(accent);
     const line = summary(c.id) || c.subtitle;
     const titleColor = c.danger ? (txt(C, C.red) as string) : C.chalk;

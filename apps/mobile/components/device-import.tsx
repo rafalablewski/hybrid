@@ -13,13 +13,14 @@ import {
   type DeviceImportItem,
   type LoggedSession,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import {
   healthKitAvailability,
   queryRecentDeviceWorkouts,
   requestDeviceReadAuth,
   requestStreamReadAuth,
   streamReadGranted,
+  streamReadState,
   streamsProven,
   uploadLandedStreams,
 } from "../lib/healthkit";
@@ -150,7 +151,11 @@ export function DeviceImportSheet({
       setPhase("unavailable");
       return;
     }
-    setTrace({ granted: await streamReadGranted(), proven: await streamsProven() });
+    // The STATE, not the grant — see `streamReadState`. Asking the store about
+    // the route + cycling types here was a native call against the series types
+    // on the import tap itself, which is the one thing this flow will not spend
+    // before an athlete has asked for a recording by name.
+    setTrace(await streamReadState());
     setPhase("loading");
     // The permission ask doubles as "connect" — iOS only sheets types it hasn't
     // asked about, so a returning athlete goes straight to the read. It asks for
@@ -398,7 +403,7 @@ export function DeviceImportSheet({
                       padding: 16,
                       marginBottom: 10,
                       backgroundColor: off ? C.ink2 : withAlpha(C.lime, ALPHA.wash),
-                      opacity: done ? 0.55 : 1,
+                      opacity: done ? STATE_OPACITY.disabled : 1,
                     }}
                   >
                     <View style={{ flex: 1 }}>

@@ -680,6 +680,12 @@ export function LoadSwap({
 /** The ONE card shadow — the mobile twin of web's --shadow-card: a soft black
  *  lift. */
 export function cardShadow(): ViewStyle {
+  // NOT THE SAME NUMBERS AS WEB'S `--shadow-card`, and deliberately so — audit/12
+  // §10 L6 listed the two as a drift to reconcile, and they are not one. CSS has
+  // a SPREAD term the RN shadow model has no equivalent for: the web value's
+  // `-12px` pulls the shadow in hard, which is why it needs 0.55 opacity to read
+  // at all. Matching the two opacities would make the two platforms look LESS
+  // alike, not more. Tuned per renderer, to the same intent.
   return { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 14, shadowOffset: { width: 0, height: 8 }, elevation: 3 };
 }
 

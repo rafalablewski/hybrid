@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { OnboardingQuestion, OnboardingChoice } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt, tint } from "@/lib/ui";
+import { ALPHA } from "@hybrid/core";
 
 type Draft = {
   key: string;
@@ -132,13 +133,13 @@ export default function AdminOnboarding() {
             {editing === q.key ? (
               <QuestionEditor draft={toDraft(q)} busy={busy} onCancel={() => setEditing(null)} onSave={(d) => save(draftToBody(d))} />
             ) : (
-              <Card style={{ borderLeft: `3px solid ${q.enabled ? (q.system ? VIOLET : LIME) : ASH}` }}>
+              <Card style={{ borderLeft: `3px solid ${q.enabled ? (q.system ? BLUE : LIME) : ASH}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "flex-start", flexWrap: "wrap" }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ marginBottom: 4 }}>
                       <Chip c={q.enabled ? LIME : ASH}>{q.enabled ? "on" : "off"}</Chip>
                       <Chip c={ASH}>{q.kind}</Chip>
-                      {q.system ? <Chip c={VIOLET}>built-in</Chip> : <Chip c={AMBER}>custom</Chip>}
+                      {q.system ? <Chip c={BLUE}>built-in</Chip> : <Chip c={AMBER}>custom</Chip>}
                       {q.engineKey && <Chip c={ASH}>→ {q.engineKey}</Chip>}
                       {q.required && <Chip c={ASH}>required</Chip>}
                     </div>
@@ -275,7 +276,7 @@ const smallBtn: React.CSSProperties = { ...disp, fontSize: fs.caption, fontWeigh
 const iconBtn: React.CSSProperties = { ...disp, fontSize: fs.body, width: 28, height: 22, borderRadius: 7, border: `1px solid ${LINE}`, background: INK2, color: txt(ASH), cursor: "pointer", lineHeight: 1, padding: 0 };
 
 function toggle(on: boolean): React.CSSProperties {
-  return { width: 46, height: 26, borderRadius: 999, border: `1px solid ${on ? LIME : LINE}`, background: on ? `color-mix(in srgb, var(--color-lime) 20%, transparent)` : INK2, cursor: "pointer", padding: 2, display: "flex", justifyContent: on ? "flex-end" : "flex-start", alignItems: "center", transition: "all .12s" };
+  return { width: 46, height: 26, borderRadius: 999, border: `1px solid ${on ? LIME : LINE}`, background: on ? tint(LIME, ALPHA.solid) : INK2, cursor: "pointer", padding: 2, display: "flex", justifyContent: on ? "flex-end" : "flex-start", alignItems: "center", transition: "all .12s" };
 }
 function knob(on: boolean): React.CSSProperties {
   return { width: 20, height: 20, borderRadius: 999, background: on ? LIME : ASH, display: "block" };

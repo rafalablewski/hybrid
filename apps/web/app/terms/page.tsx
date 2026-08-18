@@ -11,7 +11,7 @@ const wrap: React.CSSProperties = {
   maxWidth: 760,
   margin: "0 auto",
   padding: "48px 22px 96px",
-  color: "#f3f4ef",
+  color: "#f7f6f3",
   background: "#0c0d0c",
   minHeight: "100vh",
   fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
@@ -20,14 +20,14 @@ const wrap: React.CSSProperties = {
 };
 const h1: React.CSSProperties = { fontSize: 30, fontWeight: 800, margin: "0 0 6px" };
 const h2: React.CSSProperties = { fontSize: 20, fontWeight: 700, margin: "34px 0 10px" };
-const muted: React.CSSProperties = { color: "#8b8f86", fontSize: 14 };
+const muted: React.CSSProperties = { color: "#8a9691", fontSize: 14 };
 const li: React.CSSProperties = { margin: "6px 0" };
 
 export default function TermsPage() {
   return (
     <main style={wrap}>
       <p style={muted}>
-        <Link href="/" style={{ color: "#c6f84f" }}>
+        <Link href="/" style={{ color: "#c3d363" }}>
           ← {LEGAL.appName}
         </Link>
       </p>
@@ -91,7 +91,7 @@ export default function TermsPage() {
       <p>
         You retain ownership of the data and content you add. You grant us the limited rights needed to host
         and process it to operate the Service for you. We handle your data as described in our{" "}
-        <Link href="/privacy" style={{ color: "#c6f84f" }}>Privacy Policy</Link>.
+        <Link href="/privacy" style={{ color: "#c3d363" }}>Privacy Policy</Link>.
       </p>
 
       <h2 style={h2}>Termination</h2>
@@ -117,11 +117,11 @@ export default function TermsPage() {
 
       <h2 style={h2}>Contact</h2>
       <p>
-        Questions: <a href={`mailto:${LEGAL.contactEmail}`} style={{ color: "#c6f84f" }}>{LEGAL.contactEmail}</a>.
+        Questions: <a href={`mailto:${LEGAL.contactEmail}`} style={{ color: "#c3d363" }}>{LEGAL.contactEmail}</a>.
       </p>
 
       <p style={{ ...muted, marginTop: 40 }}>
-        <Link href="/privacy" style={{ color: "#8b8f86" }}>Privacy Policy</Link>
+        <Link href="/privacy" style={{ color: "#8a9691" }}>Privacy Policy</Link>
       </p>
     </main>
   );

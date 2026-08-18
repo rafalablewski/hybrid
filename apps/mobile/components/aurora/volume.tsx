@@ -14,7 +14,7 @@ import {
   type AthleteVolumeProfile, type VolumeBlock, type RampColumn, type BlockMuscleTarget,
   type LandmarkFactor, type LandmarkSource, type WeightUnit,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { setLoggerPref } from "../../lib/logger-prefs";
@@ -421,7 +421,7 @@ function ShapeColumn({ s, color, dim }: { s: MuscleVolumeStatus; color: string; 
   const g = railGeometry(s);
   const H = 66;
   return (
-    <View style={{ width: "100%", height: H, borderRadius: 7, backgroundColor: C.ink, overflow: "hidden", opacity: dim ? 0.35 : 1 }}>
+    <View style={{ width: "100%", height: H, borderRadius: 7, backgroundColor: C.ink, overflow: "hidden", opacity: dim ? STATE_OPACITY.disabled : 1 }}>
       {/* the productive band, lit through the whole column width */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: pct(g.bandStart), height: pct(g.bandEnd - g.bandStart), backgroundColor: withAlpha(C.lime, ALPHA.fill) }} />
       {/* the territory past the ceiling */}

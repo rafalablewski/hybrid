@@ -7,7 +7,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { ACard, RADIUS } from "./kit";
 import { withAlpha } from "./field";
-import { ALPHA } from "@hybrid/core";
+import { ALPHA, FEEDBACK } from "@hybrid/core";
 
 /** The active enrolled season, as the leave flow needs it (from fetchMacrocycle). */
 export type EnrolledSeason = { macroId: string; planId: string | null; goal: string; startedAt: string | null };
@@ -83,7 +83,7 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
               />
             </View>
           )}
-          {error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{t("w.train.plans.leaveError")}</Text>}
+          {error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{t("w.train.plans.leaveError")}</Text>}
           <Pressable onPress={leave} disabled={!armed || busy} accessibilityRole="button" style={{ backgroundColor: armed && !busy ? C.red : withAlpha(C.red, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 16 }}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}</Text>}
           </Pressable>

@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank, birthYearBounds, ALPHA } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank, birthYearBounds, ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { registerPerson, useSharedSurfaceTarget } from "../../lib/shared-element";
@@ -738,10 +738,12 @@ export function APill({
     : variant === "soft"
       ? palette.chalk
       : palette.onAccent;
-  // A FAILED commit is drawn as a filled red pill whatever the variant was.
+  // A FAILED commit is drawn as a filled FEEDBACK.error.text pill whatever the variant
+  // was — the outcome layer, not the brand accent: a save that failed is not a
+  // reading on the training ramp (see theme/feedback.ts).
   // Painting red under an outline pill's own foreground would have left ash on
   // red — the failure state is the one place the label must not get quieter.
-  const fg = state === "error" ? palette.onAccent : restFg;
+  const fg = state === "error" ? FEEDBACK.error.ink : state === "saved" ? FEEDBACK.success.text : restFg;
 
   // ── the commit state ──────────────────────────────────────────────────
   const reduced = useReducedMotion();
@@ -806,7 +808,7 @@ export function APill({
       accessibilityState={{ disabled: !!disabled || busy, busy }}
       style={[
         {
-          backgroundColor: state === "error" ? palette.red : bg,
+          backgroundColor: state === "error" ? FEEDBACK.error.fill : bg,
           borderRadius: RADIUS.pill,
           paddingVertical: compact ? space.sm : 18,
           // Was absent, because APill was only ever stretched by its parent.
@@ -816,7 +818,7 @@ export function APill({
           alignItems: "center",
           justifyContent: "center",
           minHeight: HIT_TARGET,
-          opacity: disabled ? 0.5 : 1,
+          opacity: disabled ? STATE_OPACITY.disabled : 1,
           borderWidth: variant === "soft" || outline ? 1 : 0,
           borderColor: outline && color ? withAlpha(color, ALPHA.rim) : palette.line,
           overflow: "hidden",
@@ -2283,7 +2285,7 @@ export function ADrawer({ open, children }: { open: boolean; children: ReactNode
 /** The level chip's ink — ash and chalk for the lower tiers, the lime
  *  accent-text tone for advanced, gold reserved for elite. */
 export const levelInk = (C: ReturnType<typeof useTheme>["palette"], accent: BadgeAccent): string =>
-  accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
+  accent === "amber" ? C.amber : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
 
 export function initials(name?: string | null, handle?: string) {
   const s = (name || handle || "?").trim();
@@ -2331,7 +2333,7 @@ export function Stars({ rating, size = 13 }: { rating: number | null; size?: num
   const full = Math.round(rating);
   return (
     <Text style={{ fontSize: size }}>
-      <Text style={{ color: C.gold }}>{"★".repeat(full)}</Text>
+      <Text style={{ color: C.amber }}>{"★".repeat(full)}</Text>
       <Text style={{ color: C.line }}>{"★".repeat(5 - full)}</Text>
       <Text style={{ color: C.ash, fontFamily: F.mono }}> {rating.toFixed(1)}</Text>
     </Text>

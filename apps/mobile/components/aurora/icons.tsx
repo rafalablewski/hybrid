@@ -172,8 +172,13 @@ export function AuroraIcon({
 }: {
   name: AuroraIconName;
   size?: number;
-  color?: ColorValue;
+  /** REQUIRED, like `Glyph`'s. This used to default to "#000" — 1.08:1 on ink,
+   *  i.e. invisible — in a file whose own header (see above) argues at length
+   *  that a default colour is precisely the bug that shipped white-on-near-black
+   *  icons. It was latent, because all 105 call sites happened to pass one; a
+   *  default nobody hits is still a default the next caller can hit. */
+  color: ColorValue;
   style?: StyleProp<ViewStyle>;
 }) {
-  return <Stroked paths={AURORA_ICON_PATHS[name]} size={size} color={color ?? "#000"} style={style} />;
+  return <Stroked paths={AURORA_ICON_PATHS[name]} size={size} color={color} style={style} />;
 }

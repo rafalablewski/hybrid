@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt, scrim } from "@/lib/ui";
 import { useDialog } from "../../lib/use-dialog";
 import AdminAnonSessions from "./anon-sessions";
 import { Loading } from "../aurora/skeleton";
 import { Glyph } from "@/components/aurora/icons";
+import { STATE_OPACITY } from "@hybrid/core";
 
 type Row = {
   id: string;
@@ -42,7 +43,7 @@ type Detail = {
   lastActiveAt: string | null;
 };
 
-const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: VIOLET, CLIENT: LIME };
+const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: BLUE, CLIENT: LIME };
 const planColor = (e: string) => (e === "paid" ? LIME : ASH);
 const planLabel = (e: string) => (e === "paid" ? "Premium" : "Free");
 const fmt = (d: string | null) => (d ? new Date(d).toISOString().slice(0, 10) : "—");
@@ -349,8 +350,8 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const labelCss = { fontSize: fs.caption, display: "block", marginBottom: 5 } as const;
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 50, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "6vh 16px" }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: 460, maxWidth: "94vw", background: CARD, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 26, ...disp, maxHeight: "88vh", overflowY: "auto" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: scrim(), zIndex: 50, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "6vh 16px" }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: 460, maxWidth: "94vw", background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 26, ...disp, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
           <div>
             <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>New account</Mono>
@@ -426,12 +427,12 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
         textTransform: "uppercase",
         letterSpacing: ".08em",
         color: disabled ? ASH : CHALK,
-        background: CARD,
+        background: INK2,
         border: `1px solid ${LINE}`,
         borderRadius: "var(--r-field)",
         padding: "10px 14px",
         cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.5 : 1,
+        opacity: disabled ? STATE_OPACITY.disabled : 1,
       }}
     >
       {children}
@@ -496,7 +497,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 50, display: "flex", justifyContent: "flex-end" }}
+      style={{ position: "fixed", inset: 0, background: scrim(), zIndex: 50, display: "flex", justifyContent: "flex-end" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -504,7 +505,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
           width: 460,
           maxWidth: "92vw",
           height: "100%",
-          background: CARD,
+          background: INK2,
           borderLeft: `1px solid ${LINE}`,
           padding: 26,
           overflowY: "auto",
@@ -549,7 +550,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 {d.orgs.map((o) => (
                   <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
                     <Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.name}</Mono>
-                    <Mono s={{ fontSize: fs.body }} c={VIOLET}>{o.role}</Mono>
+                    <Mono s={{ fontSize: fs.body }} c={BLUE}>{o.role}</Mono>
                   </div>
                 ))}
               </div>
@@ -736,7 +737,7 @@ function DeleteAccountDialog({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      style={{ position: "fixed", inset: 0, background: "#000b", zIndex: 60, display: "flex", justifyContent: "center", alignItems: "center", padding: "6vh 16px", backdropFilter: "blur(2px)" }}
+      style={{ position: "fixed", inset: 0, background: scrim(), zIndex: 60, display: "flex", justifyContent: "center", alignItems: "center", padding: "6vh 16px", backdropFilter: "blur(2px)" }}
     >
       <div
         ref={dialogRef}
@@ -750,7 +751,7 @@ function DeleteAccountDialog({
         style={{
           width: 440,
           maxWidth: "94vw",
-          background: CARD,
+          background: INK2,
           border: `1px solid ${RED}55`,
           borderRadius: "var(--r-card)",
           padding: 26,
@@ -829,7 +830,7 @@ function DeleteAccountDialog({
               borderRadius: "var(--r-card)",
               padding: "11px 0",
               cursor: deleting ? "default" : "pointer",
-              opacity: deleting ? 0.5 : 1,
+              opacity: deleting ? STATE_OPACITY.busy : 1,
             }}
           >
             Cancel

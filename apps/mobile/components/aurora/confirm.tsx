@@ -5,6 +5,7 @@ import { APill, RADIUS } from "./kit";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { fs, space, leading, F, MAX_FONT_SCALE } from "../../lib/ui";
+import { FEEDBACK } from "@hybrid/core";
 
 /**
  * THE CONFIRM SHEET — the app's own answer where it used to hand the moment to
@@ -167,7 +168,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               <APill
                 label={pending?.confirmLabel ?? label("common.confirm", "Confirm")}
                 variant={pending?.destructive ? "outline" : "primary"}
-                color={pending?.destructive ? palette.red : undefined}
+                color={pending?.destructive ? FEEDBACK.error.text : undefined}
                 onPress={() => settle(true)}
               />
             </>

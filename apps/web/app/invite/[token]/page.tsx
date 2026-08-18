@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space } from "@hybrid/core";
+import { colors, fs, space } from "@hybrid/core";
 
 import { useParams } from "next/navigation";
 
@@ -11,12 +11,18 @@ import { useParams } from "next/navigation";
 // the email the coach used auto-links the pair (see /api/me); the app's Coach
 // screen can also claim a pending invite directly.
 
-const INK = "#0c0d0c";
-const LIME = "#c6f84f";
-const FG = "#f3f5ef";
-const DIM = "#a7ad9e";
-const LINE = "#2a2e28";
-const CARD = "#141614";
+// Reads the tokens rather than copying them. This page used to carry six
+// literals of its own — a chalk one step off (#f3f5ef), an ash nine ΔE away
+// (#a7ad9e), a third hairline grey (#2a2e28) and `ink2` under the name INK2 —
+// which is audit/12 §2.6, and is what __tests__/fallback-palette.test.ts now
+// catches. It is a public landing, not a crash boundary: nothing here has any
+// reason to survive the stylesheet failing, so nothing here needs its own copy.
+const INK = colors.ink;
+const LIME = colors.lime;
+const FG = colors.chalk;
+const DIM = colors.ash;
+const LINE = colors.line;
+const INK2 = colors.ink2;
 
 type Info = { valid?: boolean; coachName?: string; status?: string; expired?: boolean; unavailable?: boolean };
 
@@ -34,7 +40,7 @@ export default function InviteLandingPage() {
 
   return (
     <main style={{ minHeight: "100dvh", background: INK, color: FG, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif", padding: 24 }}>
-      <div style={{ width: "100%", maxWidth: 460, border: `1px solid ${LINE}`, background: CARD, borderRadius: 20, padding: 32 }}>
+      <div style={{ width: "100%", maxWidth: 460, border: `1px solid ${LINE}`, background: INK2, borderRadius: 20, padding: 32 }}>
         <div style={{ display: "flex", alignItems: "center", gap: space.ms, marginBottom: 22 }}>
           <span style={{ width: 11, height: 11, borderRadius: "50%", background: LIME, boxShadow: `0 0 14px ${LIME}` }} />
           <b style={{ fontSize: fs.title, letterSpacing: "-.02em" }}>HYBRID</b>

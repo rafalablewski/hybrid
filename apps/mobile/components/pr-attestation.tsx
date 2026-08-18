@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
-import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit } from "@hybrid/core";
+import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { fetchAttestations, requestAttestation } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../lib/ui";
@@ -39,7 +39,7 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
     // block, and the hub head above it emits the gap DOWN (HUB_MASTHEAD.gap.below).
     // A top margin here would sit the whole feed 16 lower than web's, since RN
     // does not collapse margins and CSS does.
-    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.lime, borderRadius: 20, padding: 16, marginBottom: 16 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.lime, borderRadius: 20, padding: 16, marginBottom: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>Co-sign requests</Text>
       {inbox.map((i) => (
         <View key={i.id} style={{ marginTop: 10 }}>
@@ -106,7 +106,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
   };
 
   return (
-    <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 16 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>Verified record</Text>
       {lifts.map(({ lift, topLoad }) => {
         const forLift = (atts ?? []).filter((a) => a.lift === lift);
@@ -120,7 +120,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
               <Text style={{ flex: 1, minWidth: 120, fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>
                 {lift} <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmtWeight(topLoad, units)}</Text>
               </Text>
-              <View style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: tier === 2 ? C.lime : C.line, paddingHorizontal: 10, paddingVertical: 2, opacity: pending ? 0.75 : 1 }}>
+              <View style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: tier === 2 ? C.lime : C.line, paddingHorizontal: 10, paddingVertical: 2, opacity: pending ? STATE_OPACITY.busy : 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: tier === 2 ? txt(C, C.lime) : tier === 1 ? C.chalk : C.ash }}>
                   {pending ? `${badge.label} — witness asked` : badge.label}
                   {tier === 2 && signer?.witnessHandle ? ` by @${signer.witnessHandle}` : ""}
@@ -150,7 +150,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
               </View>
             )}
             {asking === lift && errorMsg && (
-              <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 6 }}>{errorMsg}</Text>
+              <Text accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 6 }}>{errorMsg}</Text>
             )}
           </View>
         );

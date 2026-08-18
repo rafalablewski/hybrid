@@ -69,9 +69,9 @@ export const ROW_LEAD = HIT_TARGET;
 export const BLOCK = space.xl;
 
 /** The three macros, told apart by COLOUR — the same three the hub's hero uses
- *  (teal / sand / violet). They are FILLS (a meter track), so they take the raw
+ *  (Lyons Blue / Fleur De Lis / Muskmelon). They are FILLS (a meter track), so they take the raw
  *  palette accent; `txt()` is for the same accent set as type. */
-export const MACRO_FILL = { protein: "blue", carbs: "amber", fat: "violet" } as const;
+export const MACRO_FILL = { protein: "blue", carbs: "amber", fat: "red" } as const;
 
 /**
  * THE NUTRITION KIT (mobile) — the vocabulary every Nutrition screen draws in.
@@ -226,7 +226,7 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
  * This block and the hub's ring show the SAME day's figures one screen apart,
  * and they were drawn by two people who never met: the hub set its figure in
  * Archivo Black and chalk, this one in mono-bold and CHARTREUSE; the hub gave
- * each macro its own accent (teal / sand / violet), this one painted all three
+ * each macro its own accent (Lyons Blue / Fleur De Lis / Muskmelon), this one painted all three
  * chartreuse; the hub's over-state went red, this one's sand. Agreeing on the
  * arithmetic and disagreeing on every visual is worse than disagreeing on both,
  * because it reads as two different quantities. So:
@@ -703,7 +703,7 @@ export function FoodRow({ C, name, subname, meta, over, onAdd, onOpen, chevron, 
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: over ? txt(C, C.amber) : C.ash, marginTop: 3 }}>{meta}</Text>
         </Pressable>
-        {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><Glyph name="star" size={19} color={starred ? C.gold : C.ash} /></Pressable> : null}
+        {onStar ? <Pressable onPress={onStar} accessibilityLabel={t("w.recovery.nutrition.tab.favorites")} hitSlop={8} style={{ padding: 4 }}><Glyph name="star" size={19} color={starred ? C.amber : C.ash} /></Pressable> : null}
         {chevron ? <Glyph name="chevron" size={18} color={C.ash} /> : null}
       </View>
       {/* The packs, on the title's own vertical — they belong to the food named

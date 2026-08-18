@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { GUIDES, type Guide, type GuideBlock } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { ALPHA, GUIDES, type Guide, type GuideBlock  } from "@hybrid/core";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, txt, tint } from "@/lib/ui";
 
 // Operator help surface (Governance → Guidance). Renders the plain-language
 // runbooks that live in @hybrid/core (guidance.ts) so the copy stays the single
@@ -66,7 +66,7 @@ export default function AdminGuidance() {
                 border: "none",
                 cursor: "pointer",
                 textAlign: "left",
-                background: active === s.id ? `color-mix(in srgb, var(--color-lime) 11%, transparent)` : "transparent",
+                background: active === s.id ? tint(LIME, ALPHA.fill) : "transparent",
                 color: txt(active === s.id ? LIME : ASH),
                 ...disp,
                 fontSize: fs.bodyLg,
@@ -181,7 +181,7 @@ function Block({ b }: { b: GuideBlock }) {
               width: 22,
               height: 22,
               borderRadius: "var(--r-field)",
-              background: `color-mix(in srgb, var(--color-lime) 12%, transparent)`,
+              background: tint(LIME, ALPHA.fill),
               border: `1px solid color-mix(in srgb, var(--color-lime) 33%, transparent)`,
               color: txt(LIME),
               ...mono,

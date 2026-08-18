@@ -35,10 +35,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  * THE MARKER IS A PATH, NOT A WORD, and that is what the first version got
  * wrong. One flat key meant two spans in flight at once (a sync in one screen
  * while an import runs in another) had the first to finish clear the other's
- * marker — a crash could go unnamed. The spans are a STACK now: entering pushes,
- * leaving pops, and what is written is the whole path ("streams>stream-route").
- * A crash is attributed to the DEEPEST segment, which is the call that was
- * actually running, and the path is kept so the report says how it got there.
+ * marker — a crash could go unnamed. The spans are a STACK now: entering pushes a
+ * frame, leaving removes ITS OWN, and what is written is the whole path
+ * ("streams>stream-route"). A crash is attributed to the DEEPEST segment, which is
+ * the call that was actually running, and the path is kept so the report says how
+ * it got there. (Leaving used to `pop()`, which reproduced the original bug in a
+ * subtler form — see the note on `stack`. healthkit-watchdog.test.ts runs it.)
+ *
+ * AND THE WATCHDOG ITSELF IS TESTED, because it is the only witness. A marker
+ * naming the wrong span is worse than no marker: it sends the next build to
+ * harden a call that already returned while the one that died looks innocent.
+ * Nothing in here touches a native module — a stack, a JSON blob and one
+ * AsyncStorage key — so unlike the calls it watches, it can be RUN.
  */
 
 /** The native spans worth naming. One AsyncStorage write per span, so the
@@ -49,6 +57,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export type HealthStep =
   /** requestAuthorization for the workout/daily types — the permission sheet. */
   | "auth"
+  /**
+   * getRequestStatusForAuthorization — the GATE every read is behind.
+   *
+   * It was the one native call in the bridge with no name, and it is the FIRST
+   * one the import tap makes. So the span the athlete's crash happened in could
+   * not be recorded, and the previous build's whole diagnosis — a marker on disk
+   * naming the call — was blind to exactly the call that runs first.
+   */
+  | "auth-status"
   /** queryWorkoutSamples + the per-recording read behind it. */
   | "workouts"
   /** The daily biometrics relay (quantity + category samples). */
@@ -80,8 +97,26 @@ type Faults = Partial<Record<HealthStep, number>>;
 
 let faults: Faults = {};
 let settling: Promise<void> | null = null;
-/** The spans in flight, outermost first. Written to disk as one path. */
-const stack: HealthStep[] = [];
+/**
+ * The spans in flight, outermost first. Written to disk as one path.
+ *
+ * FRAMES, NOT NAMES, and each span removes ITS OWN — because `pop()` was wrong
+ * the moment two spans could be in flight at once, which is the exact case this
+ * stack was introduced for. Two independent chains (the import sheet loading
+ * while the auto-import's foreground pull is still running) interleave: A pushes,
+ * B pushes, A finishes and `pop()` deletes B's frame. The path then names a call
+ * that already returned, and the one still running has no marker at all — a
+ * watchdog reporting the wrong span is worse than one reporting none, because the
+ * next build goes and hardens the innocent call.
+ *
+ * The concatenated path is still best-effort under concurrency: it can only say
+ * what was in flight, not which chain each frame belongs to. What it can no
+ * longer do is lose a frame that is still running.
+ */
+const stack: { step: HealthStep }[] = [];
+
+/** What is in flight, outermost first, as the one string that goes to disk. */
+const inflightPath = (): string => stack.map((f) => f.step).join(">");
 
 /**
  * Promote a marker left over from a previous process into a fault, ONCE per
@@ -135,16 +170,20 @@ export async function nativeSpan<T>(
 ): Promise<T> {
   await settleOnce();
   if (opts.optional && (faults[step] ?? 0) > 0) return fallback;
-  stack.push(step);
+  const frame = { step };
+  stack.push(frame);
   // Awaited, not fired: a marker that lands after the crash it was meant to
   // describe is no marker at all.
-  await AsyncStorage.setItem(INFLIGHT_KEY, stack.join(">")).catch(() => {});
+  await AsyncStorage.setItem(INFLIGHT_KEY, inflightPath()).catch(() => {});
   try {
     return await run();
   } finally {
-    stack.pop();
+    // By IDENTITY — see the note on `stack`. `pop()` here removed whatever frame
+    // happened to be last, which under two concurrent chains is somebody else's.
+    const at = stack.indexOf(frame);
+    if (at >= 0) stack.splice(at, 1);
     await (stack.length
-      ? AsyncStorage.setItem(INFLIGHT_KEY, stack.join(">"))
+      ? AsyncStorage.setItem(INFLIGHT_KEY, inflightPath())
       : AsyncStorage.removeItem(INFLIGHT_KEY)
     ).catch(() => {});
   }

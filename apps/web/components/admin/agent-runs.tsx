@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, space, INK, LINE, LIME, CHALK, ASH, AMBER, RED, VIOLET, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, space, INK, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip, txt, OK, ERR, tint } from "@/lib/ui";
+import { ALPHA } from "@hybrid/core";
 
 type RunStep = { agent: string; role: string; task: string; output: string };
 type RunRow = {
@@ -62,7 +63,7 @@ export default function AdminAgentRuns() {
               borderRadius: 999,
               cursor: "pointer",
               border: `1px solid ${filter === f ? LIME : LINE}`,
-              background: filter === f ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : "transparent",
+              background: filter === f ? tint(LIME, ALPHA.fill) : "transparent",
               color: txt(filter === f ? LIME : ASH),
             }}
           >
@@ -89,11 +90,11 @@ export default function AdminAgentRuns() {
             <details>
               <summary style={{ ...mono, fontSize: fs.body, color: CHALK, cursor: "pointer", listStyle: "none", padding: "12px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: space.xs, flexWrap: "wrap" }}>
-                  <Chip c={r.status === "ok" ? LIME : RED}>{r.status}</Chip>
+                  <Chip c={r.status === "ok" ? OK : ERR}>{r.status}</Chip>
                   <span style={{ ...disp, fontWeight: 800, fontSize: fs.note, color: CHALK }}>{r.agentName}</span>
                   <Chip c={ASH}>{r.agentRole}</Chip>
                   <Chip c={ASH}>{r.runtime}</Chip>
-                  {r.steps.length > 0 && <Chip c={VIOLET}>{r.steps.length} delegated</Chip>}
+                  {r.steps.length > 0 && <Chip c={BLUE}>{r.steps.length} delegated</Chip>}
                   <span style={{ color: txt(ASH), marginLeft: "auto" }}>{new Date(r.createdAt).toLocaleString()}</span>
                 </div>
                 <div style={{ marginTop: 6, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
@@ -106,8 +107,8 @@ export default function AdminAgentRuns() {
                 </Mono>
                 <div style={{ ...mono, fontSize: fs.body, color: CHALK, whiteSpace: "pre-wrap", marginBottom: 10 }}>{r.task}</div>
                 {r.steps.map((s, i) => (
-                  <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${VIOLET}` }}>
-                    <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", display: "block" }} c={VIOLET}>↳ {s.role} — {s.agent}</Mono>
+                  <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${BLUE}` }}>
+                    <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", display: "block" }} c={BLUE}>↳ {s.role} — {s.agent}</Mono>
                     <div style={{ ...mono, fontSize: fs.caption, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
                   </div>
                 ))}

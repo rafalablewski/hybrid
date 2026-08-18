@@ -65,7 +65,7 @@ export default function IntervalTimer() {
   };
   const editable = elapsed === 0 && !running;
 
-  const kindColor = kind === "work" ? C.lime : kind === "rest" ? C.blue : kind === "prep" ? C.amber : C.violet;
+  const kindColor = kind === "work" ? C.lime : kind === "rest" ? C.blue : kind === "prep" ? C.amber : C.red;
   const kindLabel = kind === "work" ? t("w.train.timer.work") : kind === "rest" ? t("w.train.timer.rest") : kind === "prep" ? t("w.train.timer.getReady") : t("w.train.timer.done");
 
   // Screen-reader announcer — speak the phase + round at each work/rest

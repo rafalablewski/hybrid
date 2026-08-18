@@ -8,7 +8,7 @@ import {
   type Persona,
   type PersonaAccess,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, LoadSwap, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -27,9 +27,9 @@ import { withAlpha } from "../aurora/field";
 // Same endpoints + shapes as web; mutations are optimistic with resync/rollback.
 
 // ---- static RBAC reference model (mirrors web access.tsx) ----
-const ROLE_MODEL: [string, "lime" | "violet" | "amber", string][] = [
+const ROLE_MODEL: [string, "lime" | "blue" | "amber", string][] = [
   ["Client", "lime", "Owns their own data. Sees only themselves. Private coach notes stay hidden."],
-  ["Coach", "violet", "Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client."],
+  ["Coach", "blue", "Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client."],
   ["Admin", "amber", "Platform aggregates & content. No silent access to private training data; support access is audited."],
 ];
 
@@ -144,8 +144,8 @@ export default function AdminAccess() {
                 </Intro>
 
                 {/* Coach applications */}
-                <ACard accent={palette.violet} style={cardStack}>
-                  <Kicker color={palette.violet}>Pending coach applications – {apps.length}</Kicker>
+                <ACard accent={palette.blue} style={cardStack}>
+                  <Kicker color={palette.blue}>Pending coach applications – {apps.length}</Kicker>
                   <View style={{ marginTop: 10 }}>
                     {apps.length === 0 ? (
                       <Mono style={{ fontSize: fs.body }}>No pending applications.</Mono>
@@ -191,7 +191,7 @@ export default function AdminAccess() {
                     <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: palette.line, paddingBottom: 6 }}>
                       <Mono color={palette.ash} style={{ flex: 2, fontSize: fs.micro }}>CAP</Mono>
                       <Mono color={palette.lime} style={{ flex: 1, fontSize: fs.micro, textAlign: "center" }}>CLIENT</Mono>
-                      <Mono color={palette.violet} style={{ flex: 1, fontSize: fs.micro, textAlign: "center" }}>COACH</Mono>
+                      <Mono color={palette.blue} style={{ flex: 1, fontSize: fs.micro, textAlign: "center" }}>COACH</Mono>
                       <Mono color={palette.amber} style={{ flex: 1, fontSize: fs.micro, textAlign: "center" }}>ADMIN</Mono>
                     </View>
                     {ROLE_PERMISSIONS.map((p) => (
@@ -227,7 +227,7 @@ export default function AdminAccess() {
 
                 {groups.map(({ group, items }) => (
                   <ACard key={group} style={cardStack}>
-                    <Kicker color={palette.violet}>{GROUP_LABEL[group]}</Kicker>
+                    <Kicker color={palette.blue}>{GROUP_LABEL[group]}</Kicker>
                     <View style={{ marginTop: 10 }}>
                       {items.map((item) => {
                         const def: Persona = item.minPersona ?? "casual";
@@ -260,7 +260,7 @@ export default function AdminAccess() {
                                       borderRadius: RADIUS.pill,
                                       paddingVertical: 5,
                                       paddingHorizontal: 11,
-                                      opacity: busy ? 0.6 : 1,
+                                      opacity: busy ? STATE_OPACITY.busy : 1,
                                     }}
                                   >
                                     <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: on ? txt(palette, palette.lime) : palette.ash }}>

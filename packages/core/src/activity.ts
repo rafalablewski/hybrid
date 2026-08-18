@@ -6,8 +6,10 @@
  */
 import type { AuroraIconName } from "./theme/icons";
 import type { LoggedSession } from "./engines/session";
+import type { BrandAccent } from "./semantic";
 
-export type ActivityAccent = "lime" | "blue" | "violet" | "amber";
+/** The four accents — see semantic.ts BrandAccent. */
+export type ActivityAccent = BrandAccent;
 
 export interface ActivityItem {
   id: string;
@@ -71,7 +73,7 @@ export function buildActivityFeed(input: ActivityInput): ActivityItem[] {
       detail: a.name,
       at,
       icon: "calendar",
-      accent: "violet",
+      accent: "red",
     });
   }
 
