@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import {
   athleteLandmarks,
   measuredProfile, withMeasured, measuredFields,
-  resolveExperience, effectiveAgeYears, birthYearFromAge,
+  resolveExperience, effectiveAgeYears,
   readReports, placeReads, QUICK_CHECKIN_METRIC,
   type AthleteVolumeProfile, type LoggedSession, type RecoveryReport,
 } from "@hybrid/core";
@@ -167,17 +167,14 @@ export function useVolumeModel(sessions: LoggedSession[]) {
    */
   const setProfile = (patch: Partial<AthleteVolumeProfile>) => {
     const next: AthleteVolumeProfile = { ...prefs.volumeProfile, ...patch };
-    // AN AGE IS STORED AS THE YEAR IT IMPLIES. The athlete is asked their age,
-    // because that is the question a person answers without thinking; the year
-    // is what survives, because an age does not age. Converted at the single
-    // write path so no caller has to remember — and the stale `ageYears` from a
-    // pre-Aug-2026 profile is dropped as it is replaced, rather than left
-    // behind to be preferred by some future reader.
-    if ("ageYears" in patch) {
-      const age = patch.ageYears;
-      delete next.ageYears;
-      next.birthYear = age === undefined ? undefined : birthYearFromAge(age);
-    }
+    // THE BIRTH DATE IS WRITTEN DIRECTLY by the question that asks for it, so
+    // there is no age to convert any more — asking for an age and computing the
+    // year was a derivation with a ±1 error, which is the same size as the
+    // factor's own yearly step. What is left is the LEGACY drop: a profile
+    // written before the date was asked carries a stale `ageYears`, and the
+    // moment a real date arrives that number has to go rather than linger for
+    // some future reader to prefer.
+    if (next.birthYear !== undefined) delete next.ageYears;
     for (const k of Object.keys(next) as (keyof AthleteVolumeProfile)[]) if (next[k] === undefined) delete next[k];
     setQuestionnaire(next);
   };

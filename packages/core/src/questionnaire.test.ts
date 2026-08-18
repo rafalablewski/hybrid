@@ -8,6 +8,9 @@ import {
   questionnaireProgress,
   questionnaireFromAnswers,
   bodyMassFromAnswers,
+  birthYearBounds,
+  parseBirth,
+  formatBirth,
   type Question,
   type QuestionKey,
 } from "./questionnaire";
@@ -18,12 +21,12 @@ import { personalizeLandmarks, sanitizeVolumeProfile, effectiveAgeYears, type At
 /** A legal answer to any question, for the round-trip and factor checks. */
 function sample(x: Question): unknown {
   if (x.kind === "choice") return x.choices![0]!.value;
+  // The birth question stores a year and a month, not the age it is labelled
+  // with — so the round-trip below tests the fields that are actually saved.
+  if (x.kind === "birth") return BIRTH;
   // A value comfortably inside the bounds, and DIFFERENT from the model's
   // neutral point where one exists — a factor that only fires off the default
   // would pass a test written against the default and do nothing in the app.
-  // The age question stores a BIRTH YEAR; the sanitizer round-trip below tests
-  // that field, so the sample has to be one the sanitizer will keep.
-  if (x.key === "ageYears") return 45;
   if (x.key === "bodyweightKg") return 110;
   if (x.key === "heightCm") return 178;
   if (x.key === "sleep") return 2;
@@ -35,7 +38,17 @@ function sample(x: Question): unknown {
   return x.min ?? 1;
 }
 
-const profileOf = (x: Question): AthleteVolumeProfile => ({ [x.key]: sample(x) } as AthleteVolumeProfile);
+/** A birth date well past the age reference, so it produces a real factor. */
+const BIRTH = { birthYear: 1981, birthMonth: 4 };
+
+/**
+ * The question as it lands ON THE PROFILE. Almost always one field named by the
+ * question's key — but the birth question is labelled `ageYears` (the weight
+ * table and the label belong to the age it answers) and STORES a year and a
+ * month, so the test has to write what the sanitizer will keep.
+ */
+const profileOf = (x: Question): AthleteVolumeProfile =>
+  (x.kind === "birth" ? { ...BIRTH } : { [x.key]: sample(x) }) as AthleteVolumeProfile;
 
 describe("the questionnaire is only questions the engines read", () => {
   /**
@@ -98,6 +111,13 @@ describe("the questionnaire is only questions the engines read", () => {
 
   it("declares bounds for every number and scale, and choices for every choice", () => {
     for (const x of QUESTIONS) {
+      if (x.kind === "birth") {
+        // A date carries no min/max of its own: the bounds move with the clock,
+        // so they are computed (`birthYearBounds`) rather than frozen here.
+        const { min, max } = birthYearBounds(Date.UTC(2026, 7, 18));
+        expect(max - min, "a hundred years of birth dates").toBe(90);
+        continue;
+      }
       if (x.kind === "choice") {
         expect(x.choices?.length, x.key).toBeGreaterThan(1);
       } else {
@@ -132,8 +152,14 @@ describe("every asked answer survives being saved", () => {
    */
   it("round-trips each asked question through the sanitizer", () => {
     for (const x of QUESTIONS.filter(isAsked)) {
-      const saved = sanitizeVolumeProfile(profileOf(x));
-      expect(saved[x.key as keyof AthleteVolumeProfile], `${x.key} was dropped on save`).toBe(sample(x));
+      const written = profileOf(x);
+      const saved = sanitizeVolumeProfile(written);
+      // Every field the question writes has to survive — for the birth question
+      // that is two of them, which is precisely the shape a `sex`-style drop
+      // would hide in.
+      for (const [key, value] of Object.entries(written)) {
+        expect(saved[key as keyof AthleteVolumeProfile], `${x.key}.${key} was dropped on save`).toBe(value);
+      }
     }
   });
 
@@ -156,6 +182,7 @@ describe("every asked answer survives being saved", () => {
   it("refuses values outside the bounds it advertises", () => {
     for (const x of QUESTIONS.filter(isAsked)) {
       if (x.kind === "choice") continue;
+      if (x.kind === "birth") continue; // bounds move with the clock; covered above
       const over = sanitizeVolumeProfile({ [x.key]: x.max! + 1 });
       const under = sanitizeVolumeProfile({ [x.key]: x.min! - 1 });
       expect(over[x.key as keyof AthleteVolumeProfile], `${x.key} accepted ${x.max! + 1}`).toBeUndefined();
@@ -170,7 +197,7 @@ describe("progress", () => {
     expect(questionnaireProgress({}).complete).toBe(false);
 
     const full: Record<string, unknown> = {};
-    for (const x of QUESTIONS.filter(isScored)) full[x.key] = sample(x);
+    for (const x of QUESTIONS.filter(isScored)) Object.assign(full, profileOf(x));
     const done = questionnaireProgress(full);
     expect(done.score).toBe(1);
     expect(done.complete).toBe(true);
@@ -233,11 +260,11 @@ describe("what setup already asked", () => {
   it("carries the intake's answers onto the profile", () => {
     const p = questionnaireFromAnswers(qs, {
       persona: "athlete", goal: "hybrid", experience: "advanced",
-      sex: "F", age: 34, bodyweight: 61.5, days: 5, equipment: "full",
+      sex: "F", birth: "1992-04", bodyweight: 61.5, days: 5, equipment: "full",
     }, { now: NOW });
-    // Age is stored as the YEAR, and body mass is not here at all — it is a
+    // The date is stored as given, and body mass is not here at all — it is a
     // dated measurement and goes to the body log.
-    expect(p).toEqual({ experience: "advanced", sex: "F", birthYear: 1992, daysPerWeek: 5 });
+    expect(p).toEqual({ experience: "advanced", sex: "F", birthYear: 1992, birthMonth: 4, daysPerWeek: 5 });
     expect(effectiveAgeYears(p, NOW)).toBe(34);
     expect(bodyMassFromAnswers(qs, { bodyweight: 61.5 })).toBe(61.5);
   });
@@ -245,7 +272,7 @@ describe("what setup already asked", () => {
   /** A stored age is the same number five years later, while the recovery
    *  factor moves 1.2% for every one of them. The year is what stays true. */
   it("ages with the athlete instead of freezing at setup", () => {
-    const p = questionnaireFromAnswers(qs, { age: 30 }, { now: NOW });
+    const p = questionnaireFromAnswers(qs, { birth: "1996-04" }, { now: NOW });
     expect(effectiveAgeYears(p, NOW)).toBe(30);
     expect(effectiveAgeYears(p, Date.UTC(2031, 7, 18))).toBe(35);
     // …and the factor follows it, which is the whole point.
@@ -258,6 +285,36 @@ describe("what setup already asked", () => {
     expect(effectiveAgeYears({ ageYears: 41 }, NOW)).toBe(41);
     // …and prefers the year when a profile carries both.
     expect(effectiveAgeYears({ ageYears: 41, birthYear: 1990 }, NOW)).toBe(36);
+  });
+
+  /**
+   * THE MONTH IS WHAT MAKES THIS EXACT. Deriving a year from an age was right
+   * only once the birthday had passed, so it carried a ±1-year error — the same
+   * size as the factor's own yearly step, which is to say the correction could
+   * be as large as the thing it corrected.
+   */
+  it("does not count a birthday that has not happened yet", () => {
+    // In August 2026: born April 1996 is 30, born December 1996 is still 29.
+    expect(effectiveAgeYears({ birthYear: 1996, birthMonth: 4 }, NOW)).toBe(30);
+    expect(effectiveAgeYears({ birthYear: 1996, birthMonth: 12 }, NOW)).toBe(29);
+    // …and the birthday month itself counts as passed.
+    expect(effectiveAgeYears({ birthYear: 1996, birthMonth: 8 }, NOW)).toBe(30);
+  });
+
+  /** A profile written before the month was asked keeps the honest ±1 reading
+   *  rather than having a month invented to sharpen it. */
+  it("falls back to the year alone when no month was given", () => {
+    expect(effectiveAgeYears({ birthYear: 1996 }, NOW)).toBe(30);
+    expect(sanitizeVolumeProfile({ birthMonth: 4 }).birthMonth).toBeUndefined();
+    expect(sanitizeVolumeProfile({ birthYear: 1996, birthMonth: 13 }).birthMonth).toBeUndefined();
+  });
+
+  it("refuses a half-parsed date rather than inventing a year", () => {
+    for (const bad of ["1996", "96-04", "1996-13", "", "banana", 1996, null]) {
+      expect(parseBirth(bad), String(bad)).toBeUndefined();
+    }
+    expect(parseBirth("1996-4")).toEqual({ year: 1996, month: 4 });
+    expect(formatBirth(1996, 4)).toBe("1996-04");
   });
 
   it("skips the body mass rather than inventing one", () => {
@@ -279,7 +336,7 @@ describe("what setup already asked", () => {
   });
 
   it("takes an athlete most of the way before their first session", () => {
-    const answers = { experience: "intermediate", sex: "M", age: 28, bodyweight: 79, days: 4 };
+    const answers = { experience: "intermediate", sex: "M", birth: "1998-04", bodyweight: 79, days: 4 };
     const p = questionnaireFromAnswers(qs, answers, { now: NOW });
     // Body mass reaches the profile the way it does in the app: setup logs a
     // weigh-in, and the measured layer merges the newest one back in.
@@ -290,8 +347,8 @@ describe("what setup already asked", () => {
 
   /** The age question counts as answered from the birth year alone — the form
    *  and the Profile card must not disagree about whether it is done. */
-  it("counts a birth year as an answered age", () => {
-    const p = questionnaireFromAnswers(qs, { age: 28 }, { now: NOW });
+  it("counts a birth date as an answered age", () => {
+    const p = questionnaireFromAnswers(qs, { birth: "1998-04" }, { now: NOW });
     expect(p.ageYears).toBeUndefined();
     expect(questionnaireProgress(p, [], { now: NOW }).score).toBe(0.13);
   });
@@ -315,7 +372,7 @@ describe("what setup already asked", () => {
 
   it("asks every question whose engine key is a questionnaire field", () => {
     const asked = new Set(qs.map((q) => q.engineKey).filter(Boolean));
-    for (const k of ["experience", "sex", "ageYears", "bodyweightKg", "daysPerWeek"]) {
+    for (const k of ["experience", "sex", "birthYear", "bodyweightKg", "daysPerWeek"]) {
       expect(asked, k).toContain(k);
     }
   });

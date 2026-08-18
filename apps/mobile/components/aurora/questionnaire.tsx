@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, type DimensionValue } from "react-native";
 import {
-  QUESTIONNAIRE, questionnaireProgress, isAsked,
+  QUESTIONNAIRE, questionnaireProgress, isAsked, birthYearBounds,
   factorLabelKey, factorAffectsKey, factorPercent,
   blockKindKey, resolveBlock, blockRamp, MUSCLE_GROUP_KEY,
   type Question, type QuestionnaireSection, type SectionProgress,
@@ -282,6 +282,7 @@ function SectionCard({ C, t, section, state, profile, measuredKeys, open, onTogg
               q={x}
               value={profile[x.key as keyof AthleteVolumeProfile]}
               measured={measuredKeys.has(x.key as keyof AthleteVolumeProfile)}
+              profile={profile}
               onAnswer={onAnswer}
             />
           ))}
@@ -295,12 +296,15 @@ function SectionCard({ C, t, section, state, profile, measuredKeys, open, onTogg
  * ONE QUESTION.
  * ──────────────────────────────────────────────────────────────────────────── */
 
-function QuestionBlock({ C, t, q, value, measured, onAnswer }: {
+function QuestionBlock({ C, t, q, value, measured, profile, onAnswer }: {
   C: Palette;
   t: (k: string) => string;
   q: Question;
   value: unknown;
   measured: boolean;
+  /** The birth control writes two fields and reads them back, so it needs the
+   *  profile rather than the single resolved value the row is labelled with. */
+  profile: AthleteVolumeProfile;
   onAnswer: (patch: Partial<AthleteVolumeProfile>) => void;
 }) {
   const answered = value !== undefined && value !== null && value !== "";
@@ -327,7 +331,13 @@ function QuestionBlock({ C, t, q, value, measured, onAnswer }: {
         )}
         {answered && !measured && !q.measuredOnly && (
           <Pressable
-            onPress={() => { haptic.selection(); set(undefined); }}
+            onPress={() => {
+              haptic.selection();
+              // A date is two fields; clearing one and leaving the other would
+              // make a half-answer look answered on every surface that counts.
+              if (q.kind === "birth") onAnswer({ birthYear: undefined, birthMonth: undefined });
+              else set(undefined);
+            }}
             hitSlop={HIT_SLOP}
             accessibilityRole="button"
             accessibilityLabel={`${t("w.quiz.clear")} ${t(q.labelKey)}`}
@@ -341,6 +351,8 @@ function QuestionBlock({ C, t, q, value, measured, onAnswer }: {
 
       {q.measuredOnly ? (
         <Reading C={C} t={t} q={q} value={value} />
+      ) : q.kind === "birth" ? (
+        <BirthAnswer C={C} t={t} profile={profile} onAnswer={onAnswer} />
       ) : q.kind === "choice" ? (
         <Choices C={C} t={t} q={q} value={value as string | undefined} onPick={set} />
       ) : q.kind === "scale" ? (
@@ -496,6 +508,93 @@ function NumberAnswer({ C, t, q, value, onPick, tone }: {
     </View>
   );
 }
+
+/**
+ * WHEN WERE YOU BORN — a year and a month, asked rather than derived.
+ *
+ * One block and two controls, deliberately: it is ONE question, and splitting
+ * it into two wizard steps would charge a step for the precision. The year
+ * scrubs like every other quantity on this screen; the month is twelve marks,
+ * because twelve is small enough to show and a picker would hide the answer
+ * behind a modal.
+ *
+ * The month is what makes the age EXACT. Asking an age and computing the year
+ * was the first fix and it was still a derivation — `currentYear − age` holds
+ * only once the birthday has passed, an error the same size as the recovery
+ * factor's own yearly step. Someone born in December is a year younger than
+ * that arithmetic thinks for eleven months of every year.
+ *
+ * The year answers alone: a profile with a year and no month keeps the honest
+ * ±1 reading (`effectiveAgeYears`), which is what a partial answer supports.
+ */
+function BirthAnswer({ C, t, profile, onAnswer }: {
+  C: Palette;
+  t: (k: string) => string;
+  profile: AthleteVolumeProfile;
+  onAnswer: (patch: Partial<AthleteVolumeProfile>) => void;
+}) {
+  const { min, max } = birthYearBounds();
+  const year = profile.birthYear;
+  const month = profile.birthMonth;
+  return (
+    <View>
+      <AScrubField
+        value={year ?? BIRTH_YEAR_SEED(max)}
+        unset={year == null}
+        onChange={(v) => onAnswer({ birthYear: Math.round(v) })}
+        min={min}
+        max={max}
+        step={1}
+        format={(v) => String(Math.round(v))}
+        a11y={t("w.quiz.field.birthYear")}
+      />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.sm, opacity: year == null ? 0.4 : 1 }}>
+        {MONTH_KEYS.map((key, i) => {
+          const m = i + 1;
+          const on = month === m;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => {
+                if (year == null) return; // a month with no year is not an answer
+                haptic.selection();
+                onAnswer({ birthMonth: on ? undefined : m });
+              }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on, disabled: year == null }}
+              accessibilityLabel={t(key)}
+              style={{
+                minWidth: 52, minHeight: 44, alignItems: "center", justifyContent: "center",
+                paddingHorizontal: space.sm, borderRadius: RADIUS.pill, borderWidth: 1,
+                borderColor: on ? C.lime : C.line,
+                backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
+              }}
+            >
+              <Text
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+                style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}
+              >
+                {t(key)}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+/** Where the year control opens when first touched — a plausible adult, never
+ *  shown until the athlete reaches for it. */
+const BIRTH_YEAR_SEED = (maxYear: number): number => maxYear - 20;
+
+/** The twelve months, short. i18n keys so the row reads in the app's language
+ *  rather than the device's locale, which is a different setting. */
+const MONTH_KEYS = [
+  "w.quiz.mon.1", "w.quiz.mon.2", "w.quiz.mon.3", "w.quiz.mon.4",
+  "w.quiz.mon.5", "w.quiz.mon.6", "w.quiz.mon.7", "w.quiz.mon.8",
+  "w.quiz.mon.9", "w.quiz.mon.10", "w.quiz.mon.11", "w.quiz.mon.12",
+] as const;
 
 /** A figure the app measured and the athlete cannot type over — shown, with
  *  where it came from, because it moved their ceiling and this is the page that

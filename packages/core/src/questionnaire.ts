@@ -1,7 +1,7 @@
 import type { Sex } from "./benchmarks";
 import type { OnboardingAnswerMap, OnboardingEngineKey, OnboardingQuestion } from "./onboarding";
 import {
-  sanitizeVolumeProfile, effectiveAgeYears, birthYearFromAge,
+  sanitizeVolumeProfile, effectiveAgeYears,
   type AthleteVolumeProfile, type LandmarkFactor,
 } from "./engines/landmark-profile";
 import {
@@ -59,7 +59,9 @@ export type QuestionKind =
   /** 1–5, with both ends named — rendered as five marks, not a slider. */
   | "scale"
   /** A quantity with a unit — rendered as a scrubbable figure. */
-  | "number";
+  | "number"
+  /** A year and a month — the one date the questionnaire asks for. */
+  | "birth";
 
 export interface QuestionChoice<T extends string = string> {
   value: T;
@@ -198,7 +200,14 @@ export const QUESTIONNAIRE: QuestionnaireSection[] = [
     blurbKey: "w.quiz.body.blurb",
     questions: [
       q("sex", { kind: "choice", choices: SEX_CHOICES, feeds: "standards" }),
-      q("ageYears", { kind: "number", min: 10, max: 100, step: 1, seed: 30, unitKey: "w.quiz.unit.years", feeds: "age" }),
+      // ASKED AS A DATE. An age is a number that stops being true the day after
+      // it is given; deriving the year from one was better and still ±1,
+      // because `currentYear − age` is only right once the birthday has passed
+      // — an error the same size as the factor's own yearly step. The bounds
+      // are computed from the clock (`birthYearBounds`) rather than frozen into
+      // this table at import time, which in a long-lived process would pin them
+      // to the year the module was first loaded.
+      q("ageYears", { kind: "birth", feeds: "age", labelKey: "w.quiz.field.birth", whyKey: "w.quiz.why.birth" }),
       q("heightCm", { kind: "number", min: 120, max: 230, step: 1, seed: 175, unitKey: "w.quiz.unit.cm", feeds: "bodyweight", refines: "bodyweightKg" }),
       // ── THE ONE QUESTION THAT IS A MEASUREMENT ────────────────────────
       // Body mass is not a standing claim about the athlete, it is a reading
@@ -270,6 +279,16 @@ export const QUESTIONNAIRE: QuestionnaireSection[] = [
   },
 ];
 
+/**
+ * The years a birth date may fall in, against the same 10–100 age bounds every
+ * other surface uses. Computed on demand: a constant evaluated at import time
+ * would freeze the range to whenever the module was first loaded.
+ */
+export function birthYearBounds(now: number = Date.now()): { min: number; max: number } {
+  const y = new Date(now).getUTCFullYear();
+  return { min: y - 100, max: y - 10 };
+}
+
 /** Every question, flat, in section order. */
 export const QUESTIONS: Question[] = QUESTIONNAIRE.flatMap((s) => s.questions);
 
@@ -318,20 +337,37 @@ export function questionnaireFromAnswers(
     const x = typeof v === "number" ? v : Number(v);
     return Number.isFinite(x) ? x : undefined;
   };
-  const age = n(read("ageYears"));
+  // The birth question's answer is a "YYYY-MM" string — one answer-map slot for
+  // a two-part value, so the admin-editable question schema needs no new value
+  // type to carry it.
+  const birth = parseBirth(read("birthYear"));
   return sanitizeVolumeProfile({
     experience: read("experience"),
     sex: read("sex"),
-    // Stored as the year, derived back as an age — see `birthYearFromAge`. A
-    // stored age is the same number five years later, and the recovery factor
-    // moves every one of those years.
-    birthYear: age === undefined ? undefined : birthYearFromAge(age, opts.now),
+    birthYear: birth?.year,
+    birthMonth: birth?.month,
     daysPerWeek: n(read("daysPerWeek")),
     // BODY MASS IS DELIBERATELY ABSENT. It is a reading with a date, not a
     // standing answer, so setup writes it to the BODY LOG — the same store the
     // scale, the nutrition maintenance fit and every bodyweight-aware tonnage
     // already read. `bodyMassFromAnswers` below is what the caller posts.
   }, { now: opts.now });
+}
+
+/** Parse the birth question's `"YYYY-MM"` answer. Anything else is no answer —
+ *  a half-parsed date would put a year nobody gave into the recovery factor. */
+export function parseBirth(v: unknown): { year: number; month: number } | undefined {
+  if (typeof v !== "string") return undefined;
+  const m = /^(\d{4})-(\d{1,2})$/.exec(v.trim());
+  if (!m) return undefined;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  return month >= 1 && month <= 12 ? { year, month } : undefined;
+}
+
+/** Format a year and month back into the answer the birth question stores. */
+export function formatBirth(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, "0")}`;
 }
 
 /** The body mass setup collected, for the caller to log as a dated weigh-in.

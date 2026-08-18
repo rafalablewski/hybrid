@@ -3,6 +3,7 @@ import { AccessibilityInfo, Animated, Easing, View, Text, ScrollView } from "rea
 import { useRouter } from "expo-router";
 import {
   ONBOARDING_GOAL_GROUPS,
+  birthYearBounds, parseBirth, formatBirth,
   durations,
   springToRN,
   springs,
@@ -386,6 +387,7 @@ function QuestionBody({
   }
 
   if (q.kind === "number") return <NumberStep q={q} answers={answers} setAnswer={setAnswer} />;
+  if (q.kind === "birth") return <BirthStep q={q} answers={answers} setAnswer={setAnswer} />;
 
   if (q.kind === "text") {
     // Keep the wizard keyboard-free; free-text questions are collected on web.
@@ -512,6 +514,84 @@ function NumberStep({ q, answers, setAnswer }: {
   );
 }
 
+/**
+ * WHEN WERE YOU BORN — one step, a year and a month.
+ *
+ * The intake asked for an AGE until Aug 2026, and an age stops being true the
+ * day after it is given: five years on, the recovery factor is 6% out on a
+ * number nobody would think to re-check. Deriving the year from the age was the
+ * first fix and it was still a derivation — right only once the birthday had
+ * passed, so ±1 year, which is the same size as the factor's own yearly step.
+ *
+ * Asking for the date costs no extra STEP (it is one question, not two) and
+ * makes the answer exact and checkable. The month is optional in the model: a
+ * year alone keeps the honest ±1 reading rather than having a month invented.
+ */
+function BirthStep({ q, answers, setAnswer }: {
+  q: OnboardingQuestion;
+  answers: Record<string, AnswerValue | null | undefined>;
+  setAnswer: (key: string, value: AnswerValue) => void;
+}) {
+  const C = useTheme().palette;
+  const { t } = useLang();
+  const { min, max } = birthYearBounds();
+  const cur = parseBirth(answers[q.key]);
+  const year = cur?.year;
+  const month = cur?.month;
+  const write = (y: number | undefined, m: number | undefined) => {
+    if (y === undefined) return;
+    setAnswer(q.key, formatBirth(y, m ?? 1));
+  };
+
+  return (
+    <View>
+      <AScrubField
+        // Empty until touched, and live from the first frame — a year the
+        // athlete has not given must not be displayed as though they had.
+        value={year ?? max - 20}
+        unset={year == null}
+        onChange={(v) => write(Math.round(v), month)}
+        min={min}
+        max={max}
+        step={1}
+        format={(v) => String(Math.round(v))}
+        a11y={q.title}
+      />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.md, opacity: year == null ? 0.4 : 1 }}>
+        {MONTH_KEYS.map((key, i) => {
+          const m = i + 1;
+          const on = month === m && year != null;
+          return (
+            <Pressable
+              key={key}
+              onPress={() => { if (year == null) return; haptic.selection(); write(year, m); }}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: on, disabled: year == null }}
+              accessibilityLabel={t(key)}
+              style={{
+                minWidth: 54, minHeight: 44, alignItems: "center", justifyContent: "center",
+                paddingHorizontal: space.sm, borderRadius: RADIUS.pill, borderWidth: 1,
+                borderColor: on ? C.lime : C.line,
+                backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
+              }}
+            >
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: on ? txt(C, C.lime) : C.ash }}>{t(key)}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+/** The twelve months, short — i18n keys, so the row reads in the app's language
+ *  rather than the device's locale, which is a different setting. */
+const MONTH_KEYS = [
+  "w.quiz.mon.1", "w.quiz.mon.2", "w.quiz.mon.3", "w.quiz.mon.4",
+  "w.quiz.mon.5", "w.quiz.mon.6", "w.quiz.mon.7", "w.quiz.mon.8",
+  "w.quiz.mon.9", "w.quiz.mon.10", "w.quiz.mon.11", "w.quiz.mon.12",
+] as const;
+
 /** Above this many steps a segmented control stops being a row of options and
  *  becomes a ribbon nobody can hit. */
 const SEGMENT_MAX = 8;
@@ -520,7 +600,7 @@ const SEGMENT_MAX = 8;
  *  questionnaire's own seeds, by engine key, so the two screens open the same
  *  question at the same figure; otherwise the midpoint of the range. */
 function seedFor(q: OnboardingQuestion, min: number, max: number): number {
-  const byKey: Record<string, number> = { ageYears: 30, bodyweightKg: 80, daysPerWeek: 4 };
+  const byKey: Record<string, number> = { bodyweightKg: 80, daysPerWeek: 4 };
   const seed = q.engineKey ? byKey[q.engineKey] : undefined;
   const v = seed ?? Math.round((min + max) / 2);
   return Math.min(max, Math.max(min, v));

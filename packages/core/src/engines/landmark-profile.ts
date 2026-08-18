@@ -60,16 +60,25 @@ export interface AthleteVolumeProfile {
    */
   ageYears?: number;
   /**
-   * The year the athlete was born — what the age question actually stores.
+   * THE YEAR AND MONTH THE ATHLETE WAS BORN — asked directly, not derived.
    *
-   * They are still ASKED their age, because that is the question a person can
-   * answer without thinking; the year is derived from it once, at the moment
-   * they answer, and the age is derived back on every read. Accurate to ±1 year
-   * depending on whether the birthday has passed, which is well inside a factor
-   * that moves 1.2% per year — and infinitely better than a number that is
-   * wrong by however long the athlete has used the app.
+   * The age question stores this instead of an age, because an age stops being
+   * true the day after it is given while the recovery factor moves 1.2% for
+   * every year of drift.
+   *
+   * The first cut of this fix asked for an age and computed the year from it,
+   * which was better and still a derivation: `currentYear − age` is right only
+   * if the birthday has already passed, so it carried a ±1-year error — the
+   * same size as the factor's own yearly step, which is to say the correction
+   * could be as large as the thing it was correcting. Asking for the date is
+   * one control, exact, and something the athlete can check.
+   *
+   * `birthMonth` is 1–12 and optional: a profile written before it was asked
+   * has the year alone, and `effectiveAgeYears` falls back to the ±1 reading
+   * for those rather than pretending to a precision it does not have.
    */
   birthYear?: number;
+  birthMonth?: number;
   /**
    * Biological sex, for the STANDARDS the fitness-level estimate is scored
    * against — never for the landmarks themselves.
@@ -273,15 +282,17 @@ function frequencyRecovery(days: number): number {
 export function effectiveAgeYears(p: AthleteVolumeProfile, now: number = Date.now()): number | undefined {
   const by = p.birthYear;
   if (typeof by === "number" && Number.isFinite(by)) {
-    const age = new Date(now).getUTCFullYear() - Math.round(by);
+    const d = new Date(now);
+    let age = d.getUTCFullYear() - Math.round(by);
+    // The month is what makes this exact rather than ±1. Without one the year
+    // difference is the honest reading — it is what the athlete's own answer
+    // supports, and inventing a month to sharpen it would be the same class of
+    // error as inventing any other measurement.
+    const bm = p.birthMonth;
+    if (typeof bm === "number" && Number.isFinite(bm) && d.getUTCMonth() + 1 < Math.round(bm)) age -= 1;
     if (age >= 0 && age <= 120) return age;
   }
   return typeof p.ageYears === "number" && Number.isFinite(p.ageYears) ? p.ageYears : undefined;
-}
-
-/** The birth year an age implies, for storing what the athlete just told us. */
-export function birthYearFromAge(ageYears: number, now: number = Date.now()): number {
-  return new Date(now).getUTCFullYear() - Math.round(ageYears);
 }
 
 /** `experience` refined by `trainingYears` when both are known — <1 year reads
@@ -509,6 +520,10 @@ export function sanitizeVolumeProfile(raw: unknown, opts?: { now?: number }): At
   const thisYear = new Date(opts?.now ?? Date.now()).getUTCFullYear();
   const by = range(r.birthYear, thisYear - 100, thisYear - 10);
   if (by !== undefined) out.birthYear = Math.round(by);
+  // A month without a year is meaningless, and storing it would make a partial
+  // answer look like an answer on every surface that counts them.
+  const bm = range(r.birthMonth, 1, 12);
+  if (bm !== undefined && out.birthYear !== undefined) out.birthMonth = Math.round(bm);
   const bw = range(r.bodyweightKg, 25, 300);
   if (bw !== undefined) out.bodyweightKg = Math.round(bw * 10) / 10;
   const ht = range(r.heightCm, 120, 230);

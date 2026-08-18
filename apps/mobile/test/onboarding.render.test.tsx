@@ -35,8 +35,9 @@ vi.mock(import("../lib/api"), async (importOriginal) => ({
  *  seeded with the question's `casual` default). */
 const UNPICKED = ONBOARDING_PERSONA_CHOICES[1]!.label;
 
-/** The age question, as the app ships it — asked fifth, unanswerable by default. */
-const AGE_Q = DEFAULT_ONBOARDING_QUESTIONS.find((q) => q.engineKey === "ageYears")!;
+/** The birth question, as the app ships it — asked fifth, and a DATE rather
+ *  than an age, so it cannot go stale the day after it is answered. */
+const AGE_Q = DEFAULT_ONBOARDING_QUESTIONS.find((q) => q.engineKey === "birthYear")!;
 
 /** The row as the user sees it: everything inside the pressable it lives in. */
 function row(container: HTMLElement, label: string): HTMLElement {
@@ -72,7 +73,7 @@ describe("the onboarding wizard's option row", () => {
 });
 
 /**
- * A NUMBER QUESTION SHOWS NO FIGURE IT WAS NEVER GIVEN — AND COSTS NO TAP.
+ * THE BIRTH STEP SHOWS NO DATE IT WAS NEVER GIVEN — AND COSTS NO TAP.
  *
  * Two invariants that pull in opposite directions until you separate the value
  * from the control, which is what this asserts.
@@ -90,7 +91,7 @@ describe("the onboarding wizard's option row", () => {
  * whole purpose is to be answered. The field is present and live now, and only
  * empty; the seed is where it starts when touched, not something to ask for.
  */
-describe("a number the athlete has not answered", () => {
+describe("a date the athlete has not answered", () => {
   const next = (container: HTMLElement) => {
     const btn = Array.from(container.querySelectorAll('[role="button"]')).find(
       (b) => (b as HTMLElement).getAttribute("aria-label")?.toLowerCase().includes("next"),
@@ -99,32 +100,33 @@ describe("a number the athlete has not answered", () => {
     fireEvent.click(btn);
   };
 
-  it("offers a control to start one instead of a seeded figure", () => {
+  it("offers a year and twelve months, with no figure until touched", () => {
     const { container } = render(<Onboarding />);
-    // persona → goal → experience → sex → AGE. Only the goal is `required`, so
+    // persona → goal → experience → sex → BORN. Only the goal is `required`, so
     // it is the one step Next will not leave until something is picked; the
     // rest carry defaults or are deliberately skippable.
     next(container);
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
     next(container); // → experience
     next(container); // → sex
-    next(container); // → age
+    next(container); // → born
     const body = container.textContent ?? "";
     // Non-vacuity: the assertions below are trivially true on any screen that
     // is not this one, so prove we arrived. The title is core's own — the mock
     // returns null questions, so the wizard runs the shipped set.
     expect(body).toContain(AGE_Q.title);
-    // The seed is 30 and the range starts at 10. Neither may be on screen: the
-    // question is unanswered and has to look it.
-    expect(body).not.toMatch(/\b30\b/);
+    // No year may be on screen: the question is unanswered and has to look it.
+    // (The seed is twenty years below the ceiling, so any four-digit year here
+    // would be one the athlete never gave.)
+    expect(body, "a year nobody gave is on screen").not.toMatch(/\b(19|20)\d\d\b/);
     // …but the control IS on screen, ready, with nothing standing in front of
     // it. AScrubField declares `adjustable`, which react-native-web renders as
-    // a slider. Nothing stands between the athlete and it — the field is empty,
-    // not absent, and the dash is what says so.
+    // a slider. The field is empty, not absent, and the dash is what says so.
     expect(container.querySelector('[role="slider"]'), "the field is gated").not.toBeNull();
     expect(body, "the empty field must read as empty").toContain("—");
-    // Ninety segments is the other failure this control replaced — a `number`
-    // question used to draw one option per step.
-    expect(container.querySelectorAll('[role="radio"]').length).toBeLessThan(10);
+    // TWELVE MONTHS, and exactly twelve. The month is what makes the age exact
+    // rather than ±1 — and a `number` question of this range used to draw one
+    // segment per step, which for the age it replaced would have been ninety.
+    expect(container.querySelectorAll('[role="radio"]').length).toBe(12);
   });
 });

@@ -74,13 +74,25 @@ export const ONBOARDING_GOAL_GROUPS: OnboardingGoalGroup[] = GOAL_GROUPS.map((gr
 // always works even before the admin touches anything.
 
 /** How a question is rendered + how its answer is shaped. */
-export type OnboardingQuestionKind =
-  | "persona" // special: the casual/athlete cards (also sets the persona choice)
-  | "goal"    // special: the grouped goal-tree picker (answer is a GOAL_TREE id)
-  | "single"  // one choice from `choices` (answer: string)
-  | "multi"   // any number of `choices` (answer: string[])
-  | "number"  // a stepper between min/max (answer: number)
-  | "text";   // free text (answer: string)
+export const ONBOARDING_QUESTION_KINDS = [
+  "persona", // special: the casual/athlete cards (also sets the persona choice)
+  "goal",    // special: the grouped goal-tree picker (answer is a GOAL_TREE id)
+  "single",  // one choice from `choices` (answer: string)
+  "multi",   // any number of `choices` (answer: string[])
+  "number",  // a stepper or scrub between min/max (answer: number)
+  "birth",   // a year and a month (answer: "YYYY-MM")
+  "text",    // free text (answer: string)
+] as const;
+
+/**
+ * ONE LIST, and the type is derived from it — for the same reason
+ * `ONBOARDING_ENGINE_KEYS` is. This was a union here and a hand-copied array
+ * inside `normalizeOnboardingQuestion`, and that function is a validator that
+ * does not reject an unrecognised kind: it returns NULL, dropping the whole
+ * question. A kind added to the union and forgotten in the array would have
+ * deleted its own question from every client's wizard, silently.
+ */
+export type OnboardingQuestionKind = (typeof ONBOARDING_QUESTION_KINDS)[number];
 
 /**
  * The engine fields a question's answer can feed. Undefined → informational.
@@ -94,7 +106,7 @@ export type OnboardingQuestionKind =
  */
 export const ONBOARDING_ENGINE_KEYS = [
   "persona", "goal", "experience", "daysPerWeek", "equipment",
-  "sex", "ageYears", "bodyweightKg",
+  "sex", "birthYear", "bodyweightKg",
 ] as const;
 
 /**
@@ -184,10 +196,15 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
       { value: "M", label: "Male" },
     ],
   },
+  // ASKED AS A DATE, NOT AN AGE. An age is a number that stops being true the
+  // day after it is given, and the recovery factor moves 1.2% for every year of
+  // drift. Deriving the year from an age was the first fix and it was still a
+  // derivation — accurate to ±1 depending on whether the birthday had passed,
+  // which is the same size as the factor's own yearly step. The answer is
+  // "YYYY-MM"; `questionnaireFromAnswers` parses it.
   {
-    id: "age", key: "age", kind: "number", engineKey: "ageYears", system: true, enabled: true, order: 4,
-    title: "How old are you?", subtitle: "Recovery declines gently past thirty, and we'd rather not guess.",
-    min: 10, max: 100, step: 1,
+    id: "birth", key: "birth", kind: "birth", engineKey: "birthYear", system: true, enabled: true, order: 4,
+    title: "When were you born?", subtitle: "Recovery declines gently past thirty, and we'd rather not guess.",
   },
   {
     id: "bodyweight", key: "bodyweight", kind: "number", engineKey: "bodyweightKg", system: true, enabled: true, order: 5,
@@ -220,8 +237,7 @@ export function normalizeOnboardingQuestion(raw: unknown): OnboardingQuestion | 
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
   const kind = String(r.kind ?? "") as OnboardingQuestionKind;
-  const kinds: OnboardingQuestionKind[] = ["persona", "goal", "single", "multi", "number", "text"];
-  if (!kinds.includes(kind)) return null;
+  if (!ONBOARDING_QUESTION_KINDS.includes(kind)) return null;
   const key = String(r.key ?? "").trim();
   const title = String(r.title ?? "").trim();
   if (!key || !title) return null;
