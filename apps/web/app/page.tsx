@@ -20,7 +20,7 @@ const wrap: React.CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   padding: "48px 22px",
-  color: "#f3f4ef",
+  color: "#f7f6f3",
   background: "#0c0d0c",
   fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
   textAlign: "center",

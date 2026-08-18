@@ -1903,7 +1903,7 @@ const CHART_W = 560;
 const CHART_H = 180;
 const PAD = { l: 34, r: 64, t: 12, b: 22 };
 // raw hexes for SVG presentation attrs (CSS vars are unreliable there — see lib/ui)
-const SVG_CHALK = "#f3f4ef";
+const SVG_CHALK = "#f7f6f3";
 const SVG_INK = "#0c0d0c";
 
 function TrajectoryChart({ trace }: { trace: EngineTrace }) {

@@ -825,7 +825,7 @@ describe("colour", () => {
     // drift, unlike the type and geometry ones. What the rest actually are:
     //
     //   43 are #fff / #000 / #ffffff. Pure white and pure black are NOT in the
-    //     palette — `chalk` is #f3f4ef, a cool off-white — so they are gradient
+    //     palette — `chalk` is PANTONE Stalactite #f7f6f3 — so they are gradient
     //     stops, scrims and ink on cover art, not colours that lost their name.
     //     (8 of them ARE text, and might want chalk; that is a look, not a
     //     rename, so it is left.)

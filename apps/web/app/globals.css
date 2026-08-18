@@ -20,7 +20,7 @@
      roleVar()/accentText() through string interpolation, so grep will not find
      their call sites — do not prune them. */
   --color-lime: #c3d363;
-  --color-chalk: #f3f4ef;
+  --color-chalk: #f7f6f3;
   --color-ash: #8b8f86;
   --color-blue: #2f7893;
   --color-amber: #daa51d;
@@ -166,7 +166,7 @@ html {
   --feedback-warning: #daa51d;
   --feedback-error: #9a2b2e;
   --feedback-error-text: #dd5f5b;
-  --feedback-error-ink: #f3f4ef;
+  --feedback-error-ink: #f7f6f3;
   --feedback-info: #6bb4d4;
 
   --lime-text: #c3d363;

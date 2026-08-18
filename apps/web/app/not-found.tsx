@@ -13,7 +13,7 @@ export default function NotFound() {
         gap: 16,
         padding: 24,
         background: "#0c0d0c",
-        color: "#f3f4ef",
+        color: "#f7f6f3",
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
         textAlign: "center",
       }}

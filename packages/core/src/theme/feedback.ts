@@ -96,7 +96,7 @@ export const FEEDBACK: Record<FeedbackKind, FeedbackTone> = {
    * validation lines, a toast, a field that has gone wrong — and those are the
    * one thing in the product that must not be hard to read.
    *
-   * But it is excellent as a SURFACE: chalk on it is 6.89:1. So Lava Falls is
+   * But it is excellent as a SURFACE: chalk on it is 7.04:1. So Lava Falls is
    * the `fill` verbatim, with `ink: chalk` — note this is the only kind whose ink
    * is NOT near-black, which is precisely why `ink` is a field rather than a
    * convention — and `text` is Lava Falls' own Lab hue angle (29°) lifted in L*

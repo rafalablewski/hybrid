@@ -14,9 +14,11 @@
  * borders and chart strokes; `accentText` here is the variant used when an
  * accent is rendered as TEXT.
  *
- * THE PANTONE FOUR: Wild Lime / Muskmelon / Lyons Blue / Fleur De Lis — see
- * tokens.ts, which records what each one is, why Lyons Blue is rendered lifted
- * on this ground, and why there is no fifth accent and no separate gold. Only
+ * THE PANTONE FOUR: Wild Lime / Muskmelon / Lyons Blue / Fleur De Lis, plus the
+ * one Pantone NEUTRAL, Stalactite, which `chalk` carries — see tokens.ts, which
+ * records what each one is, why Lyons Blue is rendered lifted on this ground,
+ * why Stalactite needed no adaptation at all, and why there is still no fifth
+ * accent and no separate gold. Only
  * BLUE needs a distinct text variant here; the other three clear AA as type
  * verbatim (guarded by palette.test.ts, which now checks every pair rather than
  * a chosen three).
@@ -54,7 +56,7 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
     ink: "#0c0d0c",
     ink2: "#141614",
     line: "#242724",
-    chalk: "#f3f4ef",
+    chalk: "#f7f6f3",
     ash: "#8b8f86",
     // Wild Lime is the action fill, with near-black ink on top (11.89:1).
     accent: "#c3d363",

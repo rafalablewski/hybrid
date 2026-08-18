@@ -53,7 +53,7 @@ const INK2 = "#141614";
 // error-boundary-palette.test.ts now fails if either drifts from the palette
 // again. Hardcoding is the point; hardcoding the WRONG value was the bug.
 const LINE = "#242724";
-const CHALK = "#f3f4ef";
+const CHALK = "#f7f6f3";
 const ASH = "#8b8f86";
 const LIME = "#c3d363";
 const MONO = Platform.OS === "ios" ? "Menlo" : "monospace";

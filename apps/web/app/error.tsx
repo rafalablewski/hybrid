@@ -29,7 +29,7 @@ export default function Error({
         gap: 18,
         padding: 24,
         background: "#0c0d0c",
-        color: "#f3f4ef",
+        color: "#f7f6f3",
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
         textAlign: "center",
       }}
@@ -93,7 +93,7 @@ export default function Error({
             border: "1px solid #242724",
             cursor: "pointer",
             fontWeight: 600,
-            color: "#f3f4ef",
+            color: "#f7f6f3",
             textDecoration: "none",
           }}
         >

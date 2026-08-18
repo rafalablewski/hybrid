@@ -63,8 +63,33 @@ export const colors = {
   // TO ADD A FIFTH: it has to clear ΔE 18 against all four in the accent-TEXT
   // channel (palette.test.ts checks every pair now, not a chosen three), and it
   // has to name the job no existing accent does. Both halves, or it is decoration.
+  //
+  // ── AND ONE PANTONE NEUTRAL: STALACTITE ──────────────────────────────────
+  //
+  //   chalk → PANTONE 11-4101 TCX  Stalactite  #f7f6f3  (as specified)
+  //
+  // THIS IS NOT A FIFTH ACCENT and does not reopen the paragraph above. `chalk`
+  // is the reading surface — primary type, the wordmark, the ink on the one
+  // dark feedback fill — and it carries no state, no role and no meaning. The
+  // accent set is still four; what changed is that the app's off-white stopped
+  // being a value somebody picked by eye and became a specified one.
+  //
+  // It is the ONLY Pantone in this file that needed no adaptation at all.
+  // Lyons Blue had to be lifted and Lava Falls (feedback.ts) had to be split,
+  // both because a TCX chip is specified against white and this ground is
+  // near-black. A near-white has the opposite problem, which is to say none:
+  // every ratio it is asked for went UP when it moved — 17.61 → 18.02 on `ink`,
+  // 16.45 → 16.83 on `ink2`, 6.89 → 7.04 as the ink on Lava Falls.
+  //
+  // WHAT IT CHANGED, in the one place it is visible. The outgoing #f3f4ef sat
+  // at Lab (96.0, −1.2, +2.3) — a cool, faintly green off-white, which is what
+  // put a green cast on every white surface in a palette whose accent is
+  // already a yellow-green. Stalactite is (96.9, −0.2, +1.5): a hair lighter
+  // and very nearly neutral, so the chartreuse now reads as the only green on
+  // screen. ΔE between the two is 1.66 — visible side by side, invisible alone,
+  // which is exactly the size of change a text colour is allowed to make.
   lime: "#c3d363", // Wild Lime — the primary accent (action / "go" / Train)
-  chalk: "#f3f4ef", // primary text
+  chalk: "#f7f6f3", // PANTONE 11-4101 TCX Stalactite — primary text (see below)
   ash: "#8b8f86", // muted text
   blue: "#2f7893", // Lyons Blue on dark — conditioning / info accent (Feel)
   amber: "#daa51d", // Fleur De Lis — sport / caution / premium / ratings (Plan)
