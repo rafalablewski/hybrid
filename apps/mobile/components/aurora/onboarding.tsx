@@ -18,11 +18,10 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import {
   leading, fs, space, tracking, F, PressScale as Pressable,
-  HIT_SLOP, HIT_TARGET, LoadSwap, Skeleton, useEntrance,
+  HIT_SLOP, LoadSwap, Skeleton, useEntrance,
 } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ACard, AChoice, APill, ASegment, ANumberField, ABirthField, AHeading, ASub, AuroraField, RADIUS } from "./kit";
-import { AuroraIcon } from "./icons";
 
 /**
  * AURORA onboarding — the stepped wizard, driven by the admin-editable question
@@ -125,7 +124,11 @@ export default function AuroraOnboarding() {
   };
 
   const next = () => { if (idx < total - 1) go(idx + 1, 1); else void finish(); };
-  const back = () => (idx > 0 ? go(idx - 1, -1) : leave());
+  /** Only ever a STEP. It used to fall through to `leave()` at step 0, which
+   *  made Back and skip two vocabularies pointing at one destination on the
+   *  very first screen a new athlete sees — so the control is simply absent
+   *  there now, which is what the check-in wizard has always done. */
+  const back = () => { if (idx > 0) go(idx - 1, -1); };
 
   const answered = (qq: OnboardingQuestion): boolean => {
     if (qq.kind === "persona") return !!(answers[qq.key] ?? persona);
@@ -196,11 +199,24 @@ export default function AuroraOnboarding() {
             its height from the pill, so there is one height and nothing to
             drift. `paddingTop` is the scroller's CLEARANCE: the list clips hard
             at the row's edge, and without it the cut-off card touched the
-            buttons. */}
+            buttons.
+
+            BACK IS A WORD AND NOT AN ARROW, and it is the same APill the
+            primary is. Three wizards had three back affordances — an arrow in a
+            64dp box here, the word in a padded pill in check-in, a 36dp square
+            in nutrition's setup — and the arrow was the one that could not
+            stay: the hero system already owns ← for SCREEN-level back, so an
+            arrow in the content area made one glyph mean "step" on one row and
+            "screen" on the row above it. That is the argument `card-foot`
+            already made about lime meaning "leaves" on one card and "unfolds"
+            on the next, and it lands the same way here. It also stops being a
+            hand-rolled outline pill, which is a site off the new ratchet.
+
+            IT IS ABSENT ON THE FIRST STEP rather than disabled. There is
+            nothing behind step 0 but the wizard's own exit, and that exit is
+            already on screen as "skip". */}
         <View style={{ flexDirection: "row", gap: space.md, alignItems: "stretch", paddingTop: space.md }}>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={back} style={{ width: 64, minHeight: HIT_TARGET, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="back" size={20} color={palette.chalk} />
-          </Pressable>
+          {idx > 0 && <APill label={t("common.back")} variant="outline" onPress={back} />}
           <APill
             label={onPlanStep ? (plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
             onPress={next}

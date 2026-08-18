@@ -6,7 +6,7 @@ import {
   type WeightPoint,
   ALPHA,
 } from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, leading, tracking, F, PressScale as Pressable, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
@@ -209,7 +209,14 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
   return (
     <View style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        {step > 0 ? <Pressable onPress={() => setStep((s) => s - 1)} accessibilityLabel={t("w.recovery.nutrition.back")} style={{ width: 36, height: 36, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={16} color={C.chalk} /></Pressable> : null}
+        {/* This back stays an ARROW and stays compact, and the difference from the
+            wizards' CTA-row Back is the ROW it lives on: it sits in the step's
+            HEADER beside "Step 2 of 3", which is the hero system's own position
+            and vocabulary for a back — not among the actions at the foot of the
+            screen, where a bare glyph would be the odd one out beside a labelled
+            primary. It is drawn at 36 for that header, so it declares the touch
+            floor with `hitSlop` rather than growing the drawing. */}
+        {step > 0 ? <Pressable onPress={() => setStep((s) => s - 1)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.back")} hitSlop={HIT_SLOP} style={{ width: 36, height: 36, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={16} color={C.chalk} /></Pressable> : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepOf").replace("{n}", String(step + 1))}</Text>
       </View>
       <View style={{ height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink, overflow: "hidden", marginTop: 12 }}><View style={{ width: `${((step + 1) / 3) * 100}%`, height: 4, backgroundColor: C.lime }} /></View>
