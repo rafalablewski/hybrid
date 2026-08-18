@@ -1093,6 +1093,58 @@ describe("presentation", () => {
     burnDown(found, 36, "2026-12-31", "hand-rolled lime pill → <APill />");
   });
 
+  it("RATCHET — bespoke OUTLINE pills give way to APill variant=\"outline\"", () => {
+    // THE RULE ABOVE COULD ONLY SEE HALF THE BUTTONS, and this is that other
+    // half. It matches a lime FILL paired with a pill radius, so a bordered
+    // pill with no fill — the app's secondary CTA, the Skip, the Back, the
+    // "Continue on Free" — never touched it. The convergence number was
+    // therefore never a statement about the button vocabulary; it was a
+    // statement about the filled part of it, and the unfilled part was free to
+    // grow. Same argument as that rule's own re-pin: a number kept low by a
+    // blind spot is worse than an honest larger one.
+    //
+    // WHAT COUNTS AS ONE, and the shape has to be narrow or it degenerates into
+    // "every bordered thing". A pill radius plus a 1px border is also a CHIP, a
+    // BADGE and a meter track, and none of those want APill. The discriminator
+    // is the vertical measure: a CTA pads 12–24 (APill's own is 18), a chip pads
+    // 4–8, a track pads nothing. So: pill radius + 1px border + CTA-sized
+    // paddingVertical, minus anything the filled rule already owns.
+    //
+    // PLUS ONE SHAPE THAT DECLARES NO HEIGHT AT ALL, which is the site that
+    // motivated the whole rule. check-in's Back had paddingHorizontal and
+    // nothing else — no paddingVertical, no height, no minHeight. It LOOKS
+    // right on screen because the APill beside it stretches the row, and it is
+    // invisible to a padding-based pattern for exactly the same reason it is
+    // broken: there is no height to find. Rendered on its own it collapses
+    // under the 44dp touch floor. A pill whose height is a side effect of its
+    // neighbour is a pill that has not been designed, so it is counted here.
+    const PILL_RAD = String.raw`(?:999|RADIUS\.pill)`;
+    const SHAPE = new RegExp(
+      String.raw`borderRadius:\s*${PILL_RAD}[^\n]*borderWidth:\s*1[,\s}]` +
+      String.raw`|borderWidth:\s*1[,\s}][^\n]*borderRadius:\s*${PILL_RAD}`,
+    );
+    const CTA_PAD = /paddingVertical:\s*(1[2-9]|2[0-9])\b|paddingVertical:\s*space\.(lg|xl|xxl)/;
+    const NO_HEIGHT = (l: string) =>
+      /paddingHorizontal:\s*(1[6-9]|2[0-9])\b/.test(l) && !/paddingVertical|height:|minHeight/.test(l);
+    const outlines: string[] = [];
+    for (const { path, text } of FILES) {
+      if (path.endsWith("aurora/kit.tsx")) continue;   // APill itself
+      text.split("\n").forEach((line, i) => {
+        if (!SHAPE.test(line)) return;
+        if (/backgroundColor:\s*(?:C|palette)\.lime/.test(line)) return;  // the filled rule owns it
+        if (CTA_PAD.test(line) || NO_HEIGHT(line)) outlines.push(`${path}:${i + 1}`);
+      });
+    }
+    // FIRST MEASUREMENT 25, and 25 → 23 in the same change: check-in's Back and
+    // Skip are `APill variant="outline"` now, which is where the rule's own
+    // example came from. The date is a year out because the remaining 23 are
+    // spread across nutrition, workout and the pantry, and several carry an
+    // ICON beside the label — APill takes one `label` and no glyph slot, so
+    // those want a component change before a call-site change, not a blind
+    // sweep. See capabilities `outline-pill-convergence`.
+    burnDown(outlines, 23, "2027-08-31", "hand-rolled outline pill → <APill variant=\"outline\" />");
+  });
+
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {
     // This shipped broken. The action pair landed on the logbook rail's EMPTY
     // days while the done floor kept its own dashed +-tile, so an empty today

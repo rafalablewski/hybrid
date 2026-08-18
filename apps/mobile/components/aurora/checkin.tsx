@@ -283,11 +283,15 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
     opacity: locked && !sel ? STATE_OPACITY.disabled : 1,
   });
 
+  /* THE STEP-BACK. It was a hand-rolled outline pill, and it declared no height
+     at all — paddingHorizontal and nothing else. On screen it looked right only
+     because the APill beside it stretched the row; rendered on its own it
+     collapsed under the 44dp touch floor. `APill variant="outline"` is the same
+     drawing with the floor, the press feedback and the accessibility contract
+     attached, and it can no longer disagree with the pill it sits next to about
+     how tall a button is. */
   const backBtn = (
-    <Pressable onPress={() => setStep((s) => s - 1)} accessibilityRole="button" accessibilityLabel={t("w.recovery.checkins.prev")}
-      style={{ paddingHorizontal: 20, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.ash }}>{t("w.recovery.checkins.prev")}</Text>
-    </Pressable>
+    <APill label={t("w.recovery.checkins.prev")} variant="outline" onPress={() => setStep((s) => s - 1)} />
   );
 
   const wizardBody = (
@@ -577,19 +581,12 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
 }
 
 /** The advance button when the question is UNANSWERED — a quiet outline rather
- *  than the lime pill, so skipping never looks like committing. Mirrors the
- *  web wizard's ghost-styled Skip. */
+ *  than the lime pill, so skipping never looks like committing. It was a
+ *  hand-drawn copy of that outline (the note here used to cite the web wizard's
+ *  ghost Skip as its source; that client is retired, and this row is the live
+ *  standard). It is `APill variant="outline"` now, so the skip and the commit
+ *  beside it are one button drawn twice rather than two buttons. */
 function SkipBtn({ label, onPress }: { label: string; onPress: () => void }) {
-  const { palette: C } = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      style={{ flex: 1, paddingVertical: 16, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}
-    >
-      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.ash }}>{label}</Text>
-    </Pressable>
-  );
+  return <APill label={label} variant="outline" onPress={onPress} style={{ flex: 1 }} />;
 }
 
