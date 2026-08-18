@@ -162,7 +162,7 @@ html {
      `--feedback-warning` and `--feedback-info` are brand values on purpose:
      Fleur De Lis already IS the conventional yellow, and a second one would be
      the near-duplicate this palette keeps deleting. */
-  --feedback-success: #4dbc8a;
+  --feedback-success: #00ab84;
   --feedback-warning: #daa51d;
   --feedback-error: #ef5b5b;
   --feedback-info: #6bb4d4;

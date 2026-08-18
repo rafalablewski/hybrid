@@ -50,9 +50,15 @@ import { THEMES } from "./palette";
 export type FeedbackKind = "success" | "warning" | "error" | "info";
 
 export const FEEDBACK: Record<FeedbackKind, string> = {
-  /** Lab hue 160° — 7.62:1 on the card. The one genuinely new colour: the brand
-   *  had no green at all, because Wild Lime is a yellow-green (112°). */
-  success: "#4dbc8a",
+  /** PANTONE Green C — Lab hue 168°, L* 62, 6.14:1 on the card. The one genuinely
+   *  new hue in the system: the brand had no green at all, because Wild Lime is a
+   *  yellow-green (112°). Clears ΔE 18 against every accent by a wide margin (its
+   *  nearest neighbour is `ash` at 21.9), and carries near-black ink at 6.64:1.
+   *
+   *  NOTE FOR ANY FUTURE FILL: chalk on this is 2.65:1 and fails. A filled success
+   *  surface takes ON_FEEDBACK, never a light label — which is what the guard in
+   *  palette.test.ts asserts, and why it is stated here rather than discovered. */
+  success: "#00ab84",
   /** Fleur De Lis, unchanged. Lab hue 83° is already the conventional yellow, so
    *  the warning channel needed no new value — only the name. */
   warning: colors.amber,
