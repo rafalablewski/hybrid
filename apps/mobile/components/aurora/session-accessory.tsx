@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { View, Text } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
@@ -20,6 +20,16 @@ import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
  * copies separate drafts and separate clocks, so they would disagree the moment
  * the bar minimized. The draft and the tick therefore live outside the
  * component and both copies subscribe to them.
+ *
+ * WHY THE STORE IS ALSO READ BY THE LAYOUT (`useSessionDraft`): rendering null
+ * in here is NOT enough to make the accessory go away. UIKit builds the
+ * accessory — its own glass capsule, its own height above the bar — from the
+ * mere PRESENCE of the `<NativeTabs.BottomAccessory>` slot, so an empty child
+ * left an empty bar hovering over the pills with nothing in it. The slot itself
+ * has to be unmounted, which only the layout can do, so the layout subscribes
+ * to the same draft and mounts the slot only when there is a minimized workout
+ * to show. That also makes the layout the owner of the route-change re-read:
+ * the accessory is gone exactly when a new draft would need to be noticed.
  */
 
 type Snapshot = { draft: Draft | null; now: number };
@@ -55,26 +65,32 @@ export async function refreshSessionAccessory(): Promise<void> {
   if (!same(d, snapshot.draft)) setSnapshot({ draft: d });
 }
 
+/**
+ * The live draft, for the tab layout: it mounts the accessory slot only while
+ * this is non-null. Stays mounted across tab switches and pushes, so it also
+ * carries the re-read on every route change.
+ */
+export function useSessionDraft(): Draft | null {
+  const pathname = usePathname();
+  const { draft } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  useEffect(() => { void refreshSessionAccessory(); }, [pathname]);
+  return draft;
+}
+
 export default function SessionAccessory() {
   const { palette: C } = useTheme();
   const router = useRouter();
-  const pathname = usePathname();
   const placement = NativeTabs.BottomAccessory.usePlacement();
   const { draft, now } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  const [ticking, setTicking] = useState(false);
 
-  // Re-read whenever the route changes — this component lives in the tab
-  // layout, so it stays mounted across tab switches and pushes.
-  useEffect(() => { void refreshSessionAccessory(); }, [pathname]);
-
-  // One shared clock for both copies, running only while a draft exists.
+  // One shared clock for both copies, running only while a draft exists. The
+  // route-change re-read lives in useSessionDraft above — this component is
+  // unmounted whenever there is no draft, so it cannot do that job itself.
   useEffect(() => {
-    setTicking(draft != null);
     if (!draft) return;
     const id = setInterval(() => setSnapshot({ now: Date.now() }), 1000);
     return () => clearInterval(id);
   }, [draft]);
-  void ticking;
 
   if (!draft) return null;
 
