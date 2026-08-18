@@ -3,6 +3,7 @@ import { fireEvent } from "@testing-library/react";
 import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES } from "@hybrid/core";
 import { renderScreen as render } from "./render";
 import Onboarding from "../components/aurora/onboarding";
+import { SCRUB_UNSET } from "../components/aurora/kit";
 
 /**
  * THE WIZARD'S OPTION ROW MUST NOT RESHAPE WHEN IT IS PICKED.
@@ -123,7 +124,7 @@ describe("a date the athlete has not answered", () => {
     // it. AScrubField declares `adjustable`, which react-native-web renders as
     // a slider. The field is empty, not absent, and the dash is what says so.
     expect(container.querySelector('[role="slider"]'), "the field is gated").not.toBeNull();
-    expect(body, "the empty field must read as empty").toContain("—");
+    expect(body, "the empty field must read as empty").toContain(SCRUB_UNSET);
     // TWELVE MONTHS, and exactly twelve. The month is what makes the age exact
     // rather than ±1 — and a `number` question of this range used to draw one
     // segment per step, which for the age it replaced would have been ninety.

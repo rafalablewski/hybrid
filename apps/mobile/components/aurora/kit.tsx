@@ -1776,6 +1776,16 @@ const SCRUB_TRAVEL = 14;
  * VoiceOver, which is the one thing a hand-drawn ± normally loses against the
  * platform's own stepper.
  */
+/**
+ * WHAT AN EMPTY FIGURE READS AS — an EN dash, and exported so the guard that
+ * asserts a field looks empty cannot drift from the glyph that makes it so.
+ *
+ * Deliberately not an em dash: at `fs.hero` in Archivo's 900 weight an em dash
+ * draws a bar as wide as the type is tall, which reads as a horizontal RULE
+ * across the field rather than as a field waiting to be filled.
+ */
+export const SCRUB_UNSET = "–";
+
 export function AScrubField({
   value,
   onChange,
@@ -1786,7 +1796,7 @@ export function AScrubField({
   suffix,
   a11y,
   unset,
-  unsetLabel = "—",
+  unsetLabel = SCRUB_UNSET,
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -1819,7 +1829,8 @@ export function AScrubField({
    * have adjusted it, and no tap is spent asking permission to begin.
    */
   unset?: boolean;
-  /** What the empty figure reads as. A dash by default. */
+  /** What the empty figure reads as. `SCRUB_UNSET` unless a caller has a
+   *  better word for its own absence. */
   unsetLabel?: string;
 }) {
   const { palette: C } = useTheme();

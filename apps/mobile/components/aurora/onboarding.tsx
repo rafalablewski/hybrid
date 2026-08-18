@@ -18,7 +18,7 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import {
   leading, fs, space, tracking, F, PressScale as Pressable,
-  HIT_SLOP, LoadSwap, Skeleton, useEntrance,
+  HIT_SLOP, HIT_TARGET, LoadSwap, Skeleton, useEntrance,
 } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ACard, ACheckMark, APill, ASegment, AScrubField, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
@@ -571,7 +571,7 @@ function BirthStep({ q, answers, setAnswer }: {
               style={{
                 // Four per row — twelve months as quarters, not a ragged 5/5/2.
                 flexBasis: "22%", flexGrow: 1,
-                minHeight: 44, alignItems: "center", justifyContent: "center",
+                minHeight: HIT_TARGET, alignItems: "center", justifyContent: "center",
                 paddingHorizontal: space.xs, borderRadius: RADIUS.pill, borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
                 backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",

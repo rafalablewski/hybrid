@@ -15,7 +15,7 @@ import { setQuestionnaire } from "../../lib/questionnaire";
 import { logWeighIn } from "../../lib/weigh-in";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP, TABULAR } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET, TABULAR } from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
 import { AuroraScreen, ACard, ADrawer, APressCard, ASection, AScrubField, AStepper, ACheckMark, RADIUS, withAlpha } from "./kit";
 import { ArrowGlyph } from "./cta-label";
@@ -27,6 +27,14 @@ const MUSCLE_KEY: Record<string, string> = MUSCLE_GROUP_KEY;
 const FIELDS = ["mv", "mev", "mavLow", "mavHigh", "mrv"] as const;
 const FIELD_LABEL = ["MV", "MEV", "MAV LO", "MAV HI", "MRV"];
 const pct = (v: number): DimensionValue => `${Math.round(v * 100)}%` as DimensionValue;
+
+/** The progress track's thickness — the same hairline rule the Volume screen's
+ *  completeness meter draws, so the two read as one measure of one thing. */
+const METER_H = 3;
+/** One mark of a 1–5 scale. Thicker than the meter because it is a CONTROL
+ *  rather than a reading: it has to look pressable at a glance and clear the
+ *  touch floor with its own row (the 44dp target is on the pressable). */
+const SCALE_MARK_H = 6;
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 
@@ -214,7 +222,7 @@ function Standing({ C, t, score, answered, total, next }: {
         {t(next ? "w.quiz.knownWhy" : "w.quiz.knownComplete")}
       </Text>
 
-      <View style={{ height: 3, borderRadius: RADIUS.pill, backgroundColor: C.ink, marginTop: space.lg, overflow: "hidden" }}>
+      <View style={{ height: METER_H, borderRadius: RADIUS.pill, backgroundColor: C.ink, marginTop: space.lg, overflow: "hidden" }}>
         <View style={{ width: pct(score), height: "100%", backgroundColor: C.lime }} />
       </View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, marginTop: space.sm }}>
@@ -365,7 +373,7 @@ function QuestionBlock({ C, t, q, value, measured, profile, onAnswer }: {
           each carrying a permanent sentence is a wall; the same twelve with the
           sentence retiring on answer is a form that gets shorter as you work. */}
       {!answered && (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginTop: space.ms }}>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginTop: space.md }}>
           {t(q.whyKey)}
         </Text>
       )}
@@ -390,7 +398,7 @@ function Choices({ C, t, q, value, onPick }: {
             accessibilityRole="radio"
             accessibilityState={{ selected: on }}
             style={{
-              minHeight: 44, justifyContent: "center", paddingHorizontal: space.lg,
+              minHeight: HIT_TARGET, justifyContent: "center", paddingHorizontal: space.lg,
               borderRadius: RADIUS.pill, borderWidth: 1,
               borderColor: on ? C.lime : C.line,
               backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
@@ -436,11 +444,11 @@ function Scale({ C, t, q, value, onPick, tone }: {
               accessibilityRole="radio"
               accessibilityState={{ selected: exact }}
               accessibilityLabel={`${t(q.labelKey)} ${m}`}
-              style={{ flex: 1, minHeight: 44, justifyContent: "center" }}
+              style={{ flex: 1, minHeight: HIT_TARGET, justifyContent: "center" }}
             >
               <View
                 style={{
-                  height: 6, borderRadius: RADIUS.pill,
+                  height: SCALE_MARK_H, borderRadius: RADIUS.pill,
                   backgroundColor: on ? tone : C.ink,
                   borderWidth: exact ? 1 : 0, borderColor: exact ? C.lime : "transparent",
                 }}
@@ -548,7 +556,7 @@ function BirthAnswer({ C, t, profile, onAnswer }: {
         format={(v) => String(Math.round(v))}
         a11y={t("w.quiz.field.birthYear")}
       />
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.sm, opacity: year == null ? 0.4 : 1 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: space.md, opacity: year == null ? 0.4 : 1 }}>
         {MONTH_KEYS.map((key, i) => {
           const m = i + 1;
           const on = month === m;
@@ -568,7 +576,7 @@ function BirthAnswer({ C, t, profile, onAnswer }: {
                 // as a ragged 5/5/2 the eye has to re-parse. `flexBasis` under
                 // the row's gap does it without measuring the screen.
                 flexBasis: "22%", flexGrow: 1,
-                minHeight: 44, alignItems: "center", justifyContent: "center",
+                minHeight: HIT_TARGET, alignItems: "center", justifyContent: "center",
                 paddingHorizontal: space.xs, borderRadius: RADIUS.pill, borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
                 backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
@@ -732,7 +740,7 @@ function TheModel({ C, t, prefs, resolved, baseline }: {
                 onPress={() => { haptic.selection(); setMuscle(on ? null : m); }}
                 accessibilityRole="button"
                 accessibilityState={{ expanded: on }}
-                style={{ flexDirection: "row", alignItems: "center", gap: space.md, minHeight: 44 }}
+                style={{ flexDirection: "row", alignItems: "center", gap: space.md, minHeight: HIT_TARGET }}
               >
                 <Text style={{ flex: 1, fontFamily: on ? F.bold : F.reg, fontSize: fs.body, color: edited ? txt(C, C.lime) : C.chalk }}>
                   {ml(m)}
@@ -769,7 +777,7 @@ function TheModel({ C, t, prefs, resolved, baseline }: {
                     <Pressable
                       onPress={() => { haptic.selection(); clearMuscle(m); }}
                       accessibilityRole="button"
-                      style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center" }}
+                      style={{ alignSelf: "flex-start", minHeight: HIT_TARGET, justifyContent: "center" }}
                     >
                       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.resetDefaults")}</Text>
                     </Pressable>
@@ -838,7 +846,7 @@ function TheModel({ C, t, prefs, resolved, baseline }: {
       <Pressable
         onPress={() => { haptic.selection(); setQuestionnaire({}); setLoggerPref("landmarkOverrides", {}); }}
         accessibilityRole="button"
-        style={{ alignSelf: "flex-start", minHeight: 44, justifyContent: "center", marginTop: space.xl }}
+        style={{ alignSelf: "flex-start", minHeight: HIT_TARGET, justifyContent: "center", marginTop: space.xl }}
       >
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.quiz.reset")}</Text>
       </Pressable>
@@ -870,7 +878,7 @@ function Pill({ C, on, label, onPress, role = "radio" }: {
       accessibilityRole={role}
       accessibilityState={role === "switch" ? { checked: on } : { selected: on }}
       style={{
-        minHeight: 44, justifyContent: "center", paddingHorizontal: space.md,
+        minHeight: HIT_TARGET, justifyContent: "center", paddingHorizontal: space.md,
         borderRadius: RADIUS.pill, borderWidth: 1,
         borderColor: on ? C.lime : C.line,
         backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
