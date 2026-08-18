@@ -70,19 +70,46 @@ export const colors = {
   //   lime  → PANTONE 13-0540 TCX  Wild Lime      #c3d363  (as specified)
   //   red   → PANTONE 15-1242 TCX  Muskmelon      #ec935e  (as specified)
   //   amber → PANTONE 20-0047 TPM  Fleur De Lis   #daa51d  (as specified)
-  //   blue  → PANTONE 19-4340 TCX  Lyons Blue     #015871  → RENDERED #2f7893
+  //   blue  → PANTONE 19-4340 TCX  Lyons Blue     #015871  → RENDERED #2f7893,
+  //                                               which is itself PANTONE 633 C
   //
-  // WHY BLUE IS NOT ITS PANTONE VALUE, and this is the one place the set had to
-  // bend. Lyons Blue #015871 measures 2.44:1 against `ink` — below even WCAG's
-  // 3:1 floor for non-text marks. It is a TCX chip, specified to be read on
-  // white; on a near-black ground a chart stroke, bar, dot or border drawn in it
-  // is close to invisible. So `blue` carries the value Lyons Blue RESOLVES TO on
-  // this ground: its exact CIE-Lab hue angle, lifted in L* until it reaches
-  // 3.63:1 on the card — the same contrast the outgoing teal held (3.59), so
-  // every chart and bar already tuned around that number is unchanged.
+  // WHY BLUE IS NOT ITS SOURCE PANTONE'S VALUE, and this is the one place the
+  // set had to bend. Lyons Blue #015871 measures 2.44:1 against `ink` — below
+  // even WCAG's 3:1 floor for non-text marks. It is a TCX chip, specified to be
+  // read on white; on a near-black ground a chart stroke, bar, dot or border
+  // drawn in it is close to invisible. So `blue` carries the value Lyons Blue
+  // RESOLVES TO on this ground: its exact CIE-Lab hue angle, lifted in L* until
+  // it reaches 3.63:1 on the card — the same contrast the outgoing teal held
+  // (3.59), so every chart and bar already tuned around that number is unchanged.
   // #015871 itself remains correct as a FILLED SURFACE (chalk on it is 7.21:1);
   // it is not a token because nothing draws one yet, and a token with no
   // consumer is how the palette grew a `card` nobody paints.
+  //
+  // ── AND THE LIFT LANDED ON A PANTONE OF ITS OWN: 633 C ────────────────────
+  //
+  // #2f7893 is PANTONE 633 C. That was not the goal and it is not why the value
+  // was chosen — it was derived, by the rule at the top of this file, and only
+  // afterwards identified. Which makes it the best evidence the method has:
+  //
+  //   Lyons Blue #015871   L* 34.35   Lab hue 238.24°
+  //   this token #2f7893   L* 47.16   Lab hue 237.39°
+  //
+  // The lift moved L* by 12.81 and the hue by **0.86°**. "Preserve the identity,
+  // adjust the lightness" walked along a near-constant hue line from one named
+  // Pantone and stopped on another. A derivation that lands on a specified
+  // colour is a derivation that was pointed the right way.
+  //
+  // THE EVIDENCE CLASS IS DIFFERENT FROM THE OTHERS, and that is worth stating
+  // rather than flattening. Black Beauty, Stalactite, Slate Gray, Wild Lime,
+  // Muskmelon and Fleur De Lis are TCX chips, which publish an sRGB value — the
+  // hex IS the specification. 633 C is a COATED SPOT colour, which has no single
+  // canonical sRGB: the conversion depends on rendering intent and source, so
+  // this identification is a REVERSE lookup from the hex rather than a value
+  // taken from a chip. It is recorded because it is true of this value and
+  // useful to know; it is not the reason the value is what it is.
+  //
+  // The token therefore keeps its DERIVED provenance. Nothing here changes the
+  // hex, the guards, or a single rendered pixel.
   //
   // WHY THERE IS NO `violet`. It held a steel/slate blue (#8296c4) and, before
   // that, a lavender — and it never had one job: coach, non-premium, comment,
