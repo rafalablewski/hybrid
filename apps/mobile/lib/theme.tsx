@@ -1,16 +1,16 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { THEMES, colors, ROLE_COLOR, type SemanticRole, type ThemeName, type ThemePalette } from "@hybrid/core";
+import { THEMES, colors, ROLE_COLOR, deltaRole, type AccentKey, type SemanticRole, type StatSubTone, type ThemeName, type ThemePalette } from "@hybrid/core";
 
 /**
- * Mobile theme — AURORA (dark), the app's one theme. The bright brand accents
- * (lime/blue/…) are the fills, while `accentText` carries the AA-guarded tones
- * for accents rendered as TEXT. Palette values come from @hybrid/core THEMES so
- * web + mobile share one source.
+ * Mobile theme — AURORA (dark), the app's one theme. The four brand accents
+ * (Wild Lime / Lyons Blue / Fleur De Lis / Muskmelon) are the fills, while
+ * `accentText` carries the AA-guarded tone for the one accent that needs a
+ * different value as TEXT. Palette values come from @hybrid/core THEMES so web
+ * + mobile share one source.
  */
 export interface Palette extends ThemePalette {
   lime: string;
   blue: string;
-  violet: string;
   amber: string;
   red: string;
   /** fixed near-black for text/icons ON a bright accent fill */
@@ -18,9 +18,8 @@ export interface Palette extends ThemePalette {
 }
 
 const fillsFor = (t: ThemePalette) => ({
-  lime: t.accent, // primary action fill (chartreuse)
+  lime: t.accent, // primary action fill (Wild Lime)
   blue: colors.blue,
-  violet: colors.violet,
   amber: colors.amber,
   red: colors.red,
   onAccent: t.onAccent,
@@ -43,8 +42,6 @@ export function txt(palette: Palette, c: string): string {
     case palette.blue:
     case colors.blue:
       return palette.accentText.blue;
-    case colors.violet:
-      return palette.accentText.violet;
     case colors.amber:
       return palette.accentText.amber;
     case colors.red:
@@ -60,6 +57,29 @@ export function txt(palette: Palette, c: string): string {
  *  The one client mapping every state colour goes through, so meaning lives in
  *  core and can't drift per-screen. Wrap with txt() when used as TEXT. */
 export const roleColor = (palette: Palette, role: SemanticRole): string => palette[ROLE_COLOR[role]];
+
+
+/** A DELTA'S COLOUR — direction → role → the accent-TEXT tone, in one call.
+ *  Four surfaces used to each decide what a fall looks like (audit/12 §5.4);
+ *  this is the only place that answers it now. `dir` is already
+ *  valence-normalised upstream — see core deltaRole. */
+export const deltaPaint = (palette: Palette, dir: StatSubTone): string =>
+  txt(palette, roleColor(palette, deltaRole(dir)));
+
+
+/**
+ * AN ACCENT KEY → ITS FILL. The one lookup, for the many core types that name an
+ * accent BY KEY rather than through a semantic role (a recipe tint, a feed item,
+ * a load band, a badge).
+ *
+ * There used to be four of these — `loadHex` in percent-program, `toneColor` in
+ * settings, `RECIPE_TINT_COLOR` in core and this file's `roleColor` — because
+ * eleven core types each declared their own accent union and nothing said they
+ * were the same set (audit/12 §5.7). They are aliases of `AccentKey` now, so one
+ * lookup serves all of them. `chalk` is accepted because a fitness-level badge
+ * climbs through it on its way to the warm end.
+ */
+export const accentColor = (palette: Palette, key: AccentKey | "chalk"): string => palette[key];
 
 interface ThemeCtx {
   scheme: ThemeName;

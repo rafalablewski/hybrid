@@ -9,19 +9,22 @@
    Exposed to Tailwind v4 via @theme so utilities like bg-ink / text-lime work. */
 @theme {
   --color-ink: #0c0d0c;
-  --color-ink2: #141614;
-  --color-card: #151715;
-  --color-line: #242724;
-  /* AURORA SPECTRUM accents (mirror packages/core/src/theme/tokens.ts):
-     chartreuse / teal / sand / terracotta over the unchanged dark surfaces. */
-  --color-lime: #c6f84f;
-  --color-chalk: #f3f4ef;
-  --color-ash: #8b8f86;
-  --color-blue: #3c787e;
-  --color-violet: #8296c4; /* steel/slate blue — coach & non-premium accent (was #c9a9f0 lavender; premium cue moved to amber) */
-  --color-amber: #d0cd94;
-  --color-red: #d56f3e;
-  --color-gold: #e6c34e; /* rating gold (coach ★) — bright on the dark card */
+  --color-ink2: #212126;
+  --color-line: #2f2f36;
+  /* THE PANTONE FOUR (mirror packages/core/src/theme/tokens.ts, which records
+     what each one is and why blue is not its raw Pantone value):
+       lime  Wild Lime 13-0540 · red Muskmelon 15-1242
+       amber Fleur De Lis 20-0047 · blue Lyons Blue 19-4340, lifted for this ground.
+     There is no --color-violet and no --color-gold: both were near-duplicates of
+     a colour already in the set. --color-red and --color-amber are reached by
+     roleVar()/accentText() through string interpolation, so grep will not find
+     their call sites — do not prune them. */
+  --color-lime: #c3d363;
+  --color-chalk: #f7f6f3;
+  --color-ash: #8a9691;
+  --color-blue: #2f7893;
+  --color-amber: #daa51d;
+  --color-red: #ec935e;
 
   --font-display: "Archivo", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, monospace;
@@ -32,10 +35,11 @@
 /* Screen-header BACK button surface — AURORA is a transparent outlined square.
    Parity with the mobile ABack primitive. */
 :root {
-  --back-surface: transparent;
-  --back-shadow: none;
   /* The one card shadow — the deep black bloom. Every aurora card reads this
-     var instead of a hardcoded rgba. */
+     var instead of a hardcoded rgba. The opacity is HIGHER than the mobile
+     twin's 0.18 because of the -12px spread, which CSS has and the RN shadow
+     model does not: the two are tuned per renderer to the same intent, and
+     matching the numbers would make them look less alike (see lib/ui cardShadow). */
   --shadow-card: 0 6px 22px -12px rgba(0, 0, 0, 0.55);
 }
 
@@ -90,11 +94,6 @@ html {
 /* Set-editor ghosts (workout-blocks): a SUGGESTED value ("100", "8") must never
    read as entered data — dimmer + italic, unlike the AA instructional
    placeholders above. Real entered values render upright at full chalk. */
-.ghost-ph::placeholder {
-  color: color-mix(in srgb, var(--color-ash) 55%, transparent);
-  font-style: italic;
-}
-
 /* Visible keyboard-focus ring. ~40 inputs/buttons set `outline:none` inline, so
    this needs `!important` to win over the inline style — :focus-visible keeps it
    keyboard-only (mouse/touch clicks don't get the ring). */
@@ -108,49 +107,11 @@ html {
    action reads as alive and tappable instead of a static slab. The halo is the
    live --color-lime token. Mobile parity lives in apps/mobile/lib/ui.tsx →
    startGlow(). */
-.start-glow {
-  transition: box-shadow 0.25s ease, transform 0.18s ease;
-}
-.start-glow:hover,
-.start-glow:focus-visible {
-  box-shadow: 0 0 34px -4px color-mix(in srgb, var(--color-lime) 55%, transparent);
-  transform: translateY(-1px);
-}
-.start-glow:active {
-  transform: translateY(0);
-  box-shadow: 0 0 22px -6px color-mix(in srgb, var(--color-lime) 45%, transparent);
-}
 @media (prefers-reduced-motion: reduce) {
-  .start-glow {
-    transition: none;
-  }
-  .start-glow:hover,
-  .start-glow:focus-visible {
-    transform: none;
-  }
 }
 
 /* Skip-to-content link: off-screen until focused, then it pins to the top-left
    so the first Tab press reveals "Skip to content" jumping past the sidebar. */
-.skip-link {
-  position: fixed;
-  top: -100px;
-  left: 12px;
-  z-index: 200;
-  padding: 10px 16px;
-  border-radius: 8px;
-  background: var(--color-lime);
-  color: var(--color-ink);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-  transition: top 0.15s ease;
-}
-.skip-link:focus {
-  top: 12px;
-}
-
 /* ════════════════════════════════════════════════════════════════════
    LIQUID GLASS — reusable material layer (mirrors
    reference/liquid-glass/system.html, contrast-audited to WCAG AA+).
@@ -190,34 +151,40 @@ html {
   --drop: rgba(0, 0, 0, 0.6);
   --lg-bright: 1.06;
   --grain-blend: overlay;
-  --grain-opacity: 0.05;
-  --accent-text: var(--color-lime); /* lime is readable on dark surfaces */
+  --grain-opacity: 0.05; /* lime is readable on dark surfaces */
   --on-accent: #0c0d0c; /* dark text on the bright lime fill (Aurora) */
-  /* foreground accent text — bright on dark; the bright accents themselves
-     (LIME/BLUE/… in lib/ui) stay for backgrounds/borders/chart strokes.
-     SPECTRUM: teal/terracotta lifted to clear AA on the card (mirror
-     packages/core/src/theme/palette.ts THEMES.dark.accentText). */
-  --lime-text: #c6f84f;
-  --blue-text: #6cb6bd;
-  --violet-text: #8ba0cc;
-  --amber-text: #d0cd94;
-  --red-text: #e58a5c;
+  /* foreground accent text — the accents themselves (LIME/BLUE/… in lib/ui) stay
+     for backgrounds/borders/chart strokes. Only BLUE needs a different value as
+     type; Wild Lime, Fleur De Lis and Muskmelon clear AA on the card verbatim
+     (mirror packages/core/src/theme/palette.ts THEMES.dark.accentText). */
+  /* FEEDBACK — what the app says back to you (mirror packages/core/src/theme/
+     feedback.ts, which records why this is a layer apart from the accents).
+     `--feedback-warning` and `--feedback-info` are brand values on purpose:
+     Fleur De Lis already IS the conventional yellow, and a second one would be
+     the near-duplicate this palette keeps deleting. */
+  --feedback-success: #00ab84;
+  --feedback-warning: #daa51d;
+  --feedback-error: #9a2b2e;
+  --feedback-error-text: #f0565c;
+  --feedback-error-ink: #f7f6f3;
+  --feedback-info: #6bb4d4;
+
+  --lime-text: #c3d363;
+  --blue-text: #6bb4d4;
+  --amber-text: #daa51d;
+  --red-text: #ec935e;
   /* PREMIUM ACCENT — the colour every "buy Full" CTA wears; DEFAULT = sand/amber.
      Admin can override at runtime (theme.premiumAccent flag) — PremiumAccentStyle
      restamps these on <html> from the resolved value. Premium surfaces reference
      these, never --amber-* directly, so one setting recolours them all. */
-  --premium-accent: var(--color-amber);
-  --premium-accent-text: var(--amber-text);
-  --premium-accent-ink: #141614;
   /* The accent-glow RGB for the Liquid-Glass rim/orb/active-tile shadows, as a
      bare `r, g, b` triple so it drops into rgba() — chartreuse, following the
      accent. */
-  --glass-glow-rgb: 198, 248, 79;
+  --glass-glow-rgb: 195, 211, 99;
 
   /* Plan/goal cover → page transition (components/aurora/plans.tsx CoverHero).
      1 = the cover's ink bleeds down into the page and dissolves, so its wash
      cross-fades with the page's instead of meeting it at a visible cut. */
-  --cover-bleed: 1;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -307,64 +274,13 @@ html {
    from iOS 7-18, opaque enough that nothing behind it survived, so the edge had
    nothing left to bend. Numbers live in AURORA_NAV_MATERIAL (@hybrid/core) and
    are shared with the mobile fallback bar so the clients cannot drift. */
-.aurora-navglass { --nav-lip: rgba(0, 0, 0, 0.42); }
-
-.aurora-navglass {
-  position: relative;
-  background: rgba(var(--glass-rgb), 0.06);
-  -webkit-backdrop-filter: blur(14px) saturate(1.8) brightness(1.08);
-  backdrop-filter: blur(14px) saturate(1.8) brightness(1.08);
-  box-shadow:
-    0 14px 34px -8px rgba(0, 0, 0, 0.5),
-    0 3px 8px -2px rgba(0, 0, 0, 0.32),
-    inset 0 1px 1px rgba(255, 255, 255, 0.13),
-    inset 0 -1px 0 var(--nav-lip);
-}
-
-.aurora-navglass::before,
-.aurora-navglass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-}
 /* the specular arc */
-.aurora-navglass::before {
-  padding: 1.2px;
-  background: conic-gradient(
-    from 210deg,
-    var(--rim-hi) 0deg,
-    rgba(var(--glass-rgb), 0.16) 46deg,
-    transparent 130deg,
-    transparent 250deg,
-    rgba(var(--glass-rgb), 0.16) 316deg,
-    var(--rim-hi) 360deg
-  );
-}
 /* the refraction band */
-.aurora-navglass::after {
-  padding: 9px;
-  -webkit-backdrop-filter: blur(1px) saturate(2.5) brightness(1.16);
-  backdrop-filter: blur(1px) saturate(2.5) brightness(1.16);
-  transform: scale(1.055);
-}
 /* Reduced transparency and no-backdrop-filter both fall back to a solid bar:
    nav must never render as an invisible surface. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .aurora-navglass { background: rgba(var(--glass-base), 0.94); }
-  .aurora-navglass::after { display: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .aurora-navglass {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    background: rgba(var(--glass-base), 0.97) !important;
-  }
-  .aurora-navglass::after { display: none !important; }
 }
 
 /* Admin data tables → stacked cards on phones (≤640px). Each row becomes a
@@ -1056,7 +972,7 @@ html[data-sheet-open] body { background: #000; }
 }
 .lg-field .lg-a { background: var(--color-lime);   top: -8vmax;  left: -6vmax;  animation: lgDrift1 19s ease-in-out infinite; }
 .lg-field .lg-b { background: var(--color-blue);   top: 8vmax;   right: -10vmax; animation: lgDrift2 23s ease-in-out infinite; }
-.lg-field .lg-c { background: var(--color-violet); bottom: -14vmax; left: 34%;   animation: lgDrift3 27s ease-in-out infinite; }
+.lg-field .lg-c { background: var(--color-red); bottom: -14vmax; left: 34%;   animation: lgDrift3 27s ease-in-out infinite; }
 
 @keyframes lgDrift1 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(7vmax,5vmax,0) scale(1.15); } }
 @keyframes lgDrift2 { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(-6vmax,6vmax,0) scale(1.1); } }

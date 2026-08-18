@@ -42,9 +42,9 @@ export function AuroraField() {
         end={{ x: 0.9, y: 0.9 }}
         style={fill}
       />
-      {/* violet — bleeds from the bottom-left. */}
+      {/* Muskmelon — the warm counterweight, bleeding from the bottom-left. */}
       <LinearGradient
-        colors={[withAlpha(palette.violet, 0.16), "transparent"]}
+        colors={[withAlpha(palette.red, 0.16), "transparent"]}
         start={{ x: 0, y: 1 }}
         end={{ x: 0.9, y: 0.15 }}
         style={fill}

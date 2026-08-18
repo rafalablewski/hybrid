@@ -43,7 +43,7 @@ export default function AdminOverview() {
         if (!s) return null;
         const roleColor: Record<string, string> = {
           ADMIN: palette.amber,
-          COACH: palette.violet,
+          COACH: palette.blue,
           CLIENT: palette.lime,
         };
 
@@ -57,10 +57,10 @@ export default function AdminOverview() {
 
             <Row2>
               <Stat label="Active (30d)" value={s.mau.toLocaleString()} sub="trained in 30d" />
-              <Stat label="Active coaches" value={s.coaches.toLocaleString()} color={palette.violet} />
+              <Stat label="Active coaches" value={s.coaches.toLocaleString()} color={palette.blue} />
             </Row2>
             <Row2>
-              <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} color={palette.violet} />
+              <Stat label="Active coach links" value={s.activeLinks.toLocaleString()} color={palette.blue} />
               <Stat label="Total users" value={s.totalUsers.toLocaleString()} sub={`+${s.newUsers30} / 30d`} />
             </Row2>
 

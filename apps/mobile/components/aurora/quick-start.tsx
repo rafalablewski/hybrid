@@ -134,7 +134,7 @@ const GLYPHS = ["◧", "⬡", "◇", "▦", "◆", "⬢"];
 function decor(id: string, C: P): { glyph: string; accent: string } {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  const accents = [C.blue, C.lime, C.amber, C.violet];
+  const accents = [C.blue, C.lime, C.amber, C.red];
   return { glyph: GLYPHS[h % GLYPHS.length]!, accent: accents[h % accents.length]! };
 }
 

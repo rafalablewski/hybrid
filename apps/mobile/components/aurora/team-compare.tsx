@@ -5,16 +5,17 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE, Loading, LoadSwap } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS, AChip } from "./kit";
+import type { AccentKey } from "@hybrid/core";
 
 /** The five comparable metrics — the SAME set and order the web screen offers
  * , so a coach reads the same columns on either client. */
 const METRICS = [
   { key: "e1rm", label: "w.teams.compare.metricE1rm", unit: "kg", color: "lime" },
-  { key: "estVel1rm", label: "w.teams.compare.metricVel1rm", unit: "kg", color: "violet" },
+  { key: "estVel1rm", label: "w.teams.compare.metricVel1rm", unit: "kg", color: "red" },
   { key: "bestVel", label: "w.teams.compare.metricBarSpeed", unit: "m/s", color: "blue" },
   { key: "volume", label: "w.teams.compare.metricVolume", unit: "kg", color: "amber" },
   { key: "reps", label: "w.teams.compare.metricReps", unit: "", color: "ash" },
-] as const;
+] as const satisfies readonly { key: string; label: string; unit: string; color: AccentKey }[];
 
 type MetricKey = (typeof METRICS)[number]["key"];
 

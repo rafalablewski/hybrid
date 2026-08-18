@@ -5,6 +5,7 @@ import { leading, fs, space, Mono, Chip, LoadSwap, F, PressScale as Pressable } 
 import { useTheme } from "../../lib/theme";
 import { Input, PillBtn, Banner } from "./_kit";
 import { ACard, cardStack } from "../aurora/kit";
+import { FEEDBACK } from "@hybrid/core";
 
 // Mobile Audit log — parity with apps/web/components/admin/audit.tsx, fed by
 // GET /api/admin/audit?page&pageSize&action. Action text filter (debounced like
@@ -76,7 +77,7 @@ export default function AdminAudit() {
         <Mono color={palette.ash} style={{ fontSize: fs.caption }}>{data ? `${data.total.toLocaleString()} events` : "…"}</Mono>
       </View>
 
-      {err ? <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={palette.red} style={{ fontSize: fs.caption, marginBottom: 12 }}>{err}</Mono></View> : null}
+      {err ? <View accessibilityLiveRegion="assertive" accessibilityRole="alert"><Mono color={FEEDBACK.error.text} style={{ fontSize: fs.caption, marginBottom: 12 }}>{err}</Mono></View> : null}
 
       {/* The placeholder was a SIBLING of the list rather than a branch of it,
           so the log appeared beside a spinner that then vanished. One swap

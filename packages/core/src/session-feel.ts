@@ -24,9 +24,11 @@ import type { LoggedSession } from "./engines/session";
 import { doneReceipt } from "./done-receipt";
 import { bwAt, type BodyweightInput } from "./bodyweight";
 import { glyphMark, type Mark } from "./theme/mark";
+import type { BrandAccent } from "./semantic";
 
 /** Palette accent hint; each client maps it to its own theme colour. */
-export type FeelTone = "blue" | "lime" | "amber" | "red";
+/** The four accents — see semantic.ts BrandAccent. */
+export type FeelTone = BrandAccent;
 
 export interface FeelDef {
   /** 1 (easiest) … 5 (maximal). Stored as-is. */

@@ -20,8 +20,7 @@ import {
   Card,
   Chip,
   Select,
-  txt,
-} from "@/lib/ui";
+  txt, ERR } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Exercise = {
@@ -394,7 +393,7 @@ export default function AdminExercises() {
                     <button className="pressable" disabled={busy} onClick={() => patch(x.id, { status: "draft" })} style={miniBtn}>Unpublish</button>
                   )}
                   {x.status !== "archived" && <button className="pressable" disabled={busy} onClick={() => patch(x.id, { status: "archived" })} style={miniBtn}>Archive</button>}
-                  <button className="pressable" disabled={busy} onClick={() => remove(x)} style={{ ...miniBtn, color: txt(RED), borderColor: `${RED}55` }}>Delete</button>
+                  <button className="pressable" disabled={busy} onClick={() => remove(x)} style={{ ...miniBtn, color: ERR, borderColor: `${RED}55` }}>Delete</button>
                 </>
               )}
             </div>

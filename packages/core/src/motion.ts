@@ -139,6 +139,13 @@ export const motion = {
   scrimWithRecede: 0.28,
   /** Scrim opacity when the parent does NOT recede (the legacy look). */
   scrimFlat: 0.6,
+  /** Scrim opacity for an overlay that must OBSCURE rather than separate — the
+   *  guided-tour coach mark, where the point is that the screen behind stops
+   *  competing for attention entirely. Heavier than `scrimFlat` on purpose, and
+   *  a token rather than a number typed at the one call site: the scrim COLOUR
+   *  became `SCRIM` for exactly this reason (audit/12 §5.11) and its opacity had
+   *  no more business being ad-hoc than its hue did. */
+  scrimObscure: 0.82,
   /** Entrance offset for a PRESENTED detour, as a fraction of screen height.
    *  (It was the drill-down's offset until the drill-down became horizontal —
    *  the rise belongs to the thing that rises over a receding parent.) */

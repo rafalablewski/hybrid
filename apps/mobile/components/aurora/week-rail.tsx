@@ -14,8 +14,7 @@ import {
   type ScheduledDay,
   type PlanDaySession,
   type WeightUnit,
-  ALPHA,
-} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
@@ -274,7 +273,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
       accessibilityRole="button"
       accessibilityState={{ selected }}
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`}
-      style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5, opacity: day.isRest ? 0.45 : 1 }}
+      style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5, opacity: day.isRest ? STATE_OPACITY.disabled : 1 }}
     >
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
@@ -292,7 +291,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: chipNumColor(day, C), textDecorationLine: day.status === "skipped" ? "line-through" : "none" }}>{day.dayOfMonth}</Text>
         )}
       </View>
-      <View style={{ height: 12, alignItems: "center", justifyContent: "center", opacity: day.status === "done" ? 0.7 : 1 }}>
+      <View style={{ height: 12, alignItems: "center", justifyContent: "center", opacity: day.status === "done" ? STATE_OPACITY.disabled : 1 }}>
         {glyph}
       </View>
     </Pressable>

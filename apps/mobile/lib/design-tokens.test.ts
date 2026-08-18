@@ -825,7 +825,7 @@ describe("colour", () => {
     // drift, unlike the type and geometry ones. What the rest actually are:
     //
     //   43 are #fff / #000 / #ffffff. Pure white and pure black are NOT in the
-    //     palette — `chalk` is #f3f4ef, a cool off-white — so they are gradient
+    //     palette — `chalk` is PANTONE Stalactite #f7f6f3 — so they are gradient
     //     stops, scrims and ink on cover art, not colours that lost their name.
     //     (8 of them ARE text, and might want chalk; that is a look, not a
     //     rename, so it is left.)
@@ -849,7 +849,14 @@ describe("colour", () => {
     // 75 → 61: the 12 eight-digit ones went to withAlpha() with the rest of the
     // colour arithmetic — see the alpha rule below, which is the one that
     // actually covers this axis.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 61, "2026-12-31", "hex literal → a palette token");
+    // 61 → 60 on the feedback layer: the recipe-delete button's `"#fff"` label was
+    // the last raw white sitting on an accent fill, and it became ON_FEEDBACK when
+    // that button moved onto the outcome colours. It is the shape this rule wants —
+    // a literal that turned out to have a name once the surface it sat on had one.
+    // 60 → 59: nutrition's `#3a3d34` placeholder ink (1.64:1 — a hint nobody
+    // could read) became C.ash when the two placeholder kinds were named apart.
+    // 59 → 58: the sheet's scrim `"#000"` became the SCRIM token.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 58, "2026-12-31", "hex literal → a palette token");
   });
 });
 
@@ -881,9 +888,43 @@ describe("colour arithmetic", () => {
     // scrims, neither of which is a palette choice. Every other ratchet in this
     // file now carries a date it must reach zero by; this one carries a reason
     // it must not. A second `floorAt` would be a date being dodged.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 119,
+    // 119 → 107. Thirteen of these were the SET-EDITOR GHOST — withAlpha(C.ash,
+    // 0.533) and one 0.6, the suggested-value placeholder — and they are gone from
+    // this count for the right reason: they now read GHOST_PLACEHOLDER_ALPHA, so
+    // they are no longer a raw number at all. That is exactly the shape this rule
+    // wants, and the reason it can keep falling without the remainder moving: what
+    // is left really is ramp stops and scrims.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 107,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
+  });
+
+  it("HARD — blue is never a fill that carries ink", () => {
+    // THE OTHER HALF OF A CORE GUARD. palette.test.ts asserts that onAccent
+    // clears AA on the lime, amber and red fills, and deliberately does NOT
+    // assert it for `blue` — near-black on Lyons Blue is 3.92, which is AA-large
+    // and not AA. That exemption is only honest while nothing actually paints
+    // text on a blue fill, and core cannot see call sites. This can.
+    //
+    // Blue is the info/conditioning accent, and it SHOULD draw bars, strokes,
+    // dots, tinted washes and borders — all fine at 3.92 under WCAG 1.4.11's
+    // 3:1 for non-text marks. Three sites do exactly that today: a 6dp season
+    // bar, a 5dp calendar dot, a 3dp velocity plot point. None of them can hold
+    // a label, so none of them is what this rule is about.
+    //
+    // What it is about is the CONTAINER shape — a blue fill at a pill, field,
+    // card or inner radius is a button, a chip or a panel, and those hold text.
+    // Matching the radius rather than the fill is what separates "a mark drawn
+    // in blue" from "a surface someone will put a label on". If a blue button is
+    // ever genuinely wanted, the fix is to lift the token until onAccent clears
+    // AA on it — not to delete this rule.
+    const HOLDS_TEXT = String.raw`RADIUS\.(?:pill|field|card|inner)`;
+    expect(
+      codeHits(new RegExp(
+        String.raw`backgroundColor:\s*(?:C|palette)\.blue\b[^\n]*borderRadius:\s*${HOLDS_TEXT}` +
+        String.raw`|borderRadius:\s*${HOLDS_TEXT}[^\n]*backgroundColor:\s*(?:C|palette)\.blue\b`, "g")),
+      "a blue button would carry onAccent at 3.92 — lift the token, or use a tint with txt(C, C.blue) on it",
+    ).toEqual([]);
   });
 
   it("HARD — alpha is withAlpha(), never a hex suffix", () => {
@@ -1036,7 +1077,16 @@ describe("presentation", () => {
     const found = hits(new RegExp(
       String.raw`backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*${RAD}` +
       String.raw`|borderRadius:\s*${RAD}[^\n]*backgroundColor:\s*(?:C|palette)\.lime`, "g"));
-    burnDown(found, 35, "2026-12-31", "hand-rolled lime pill → <APill />");
+    // 35 → 36 on the PANTONE retint, and it is the same blind-spot argument the
+    // paragraph above makes rather than a second exception. The guest-save CTA
+    // (app/workout.tsx) has always been a hand-rolled filled pill; it was drawn
+    // in the retired `violet`, and this rule only matches `C.lime`, so it was
+    // never counted. Nothing was hand-rolled that was not hand-rolled before —
+    // the colour it was hiding behind stopped existing. It is not converted here
+    // because APill takes ONE `label` and that CTA carries a title plus a
+    // sub-line; giving it the component means restructuring the copy, which is a
+    // different change from a retint.
+    burnDown(found, 36, "2026-12-31", "hand-rolled lime pill → <APill />");
   });
 
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {

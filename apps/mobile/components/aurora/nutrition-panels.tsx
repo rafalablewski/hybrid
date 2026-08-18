@@ -99,12 +99,12 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
   const pa = usePremiumAccent();
   const { t } = useLang();
   const goalLabel = t(goal === "lose" ? "w.recovery.nutrition.goalLose" : goal === "gain" ? "w.recovery.nutrition.goalGain" : "w.recovery.nutrition.goalMaintain");
-  // Generic stats stay neutral (ash); the macro-average tile keeps its violet.
+  // Generic stats stay neutral (ash); the macro-average tile keeps its Muskmelon.
   const tiles: [string, string, string, string][] = [
     [t("w.recovery.nutrition.avgIntake"), summary.avgKcal != null ? String(summary.avgKcal) : "—", t("w.recovery.nutrition.perDay"), C.ash],
     [t("w.recovery.nutrition.adherence"), summary.adherencePct != null ? String(summary.adherencePct) : "—", t("w.recovery.nutrition.ofDays"), C.ash],
     [t("w.recovery.nutrition.proteinHit"), `${summary.proteinHitDays}/${summary.loggedDays}`, t("w.recovery.nutrition.daysUnit"), C.ash],
-    [t("w.recovery.nutrition.protein"), summary.avgProtein != null ? `${summary.avgProtein}g` : "—", t("w.recovery.nutrition.perDay").replace("kcal", "avg"), txt(C, C.violet)],
+    [t("w.recovery.nutrition.protein"), summary.avgProtein != null ? `${summary.avgProtein}g` : "—", t("w.recovery.nutrition.perDay").replace("kcal", "avg"), txt(C, C.red)],
   ];
   return (
     <ACard solid style={{ marginTop: 16 }}>
@@ -156,7 +156,7 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
           {summary.macroSplit ? (
             <View style={{ marginTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.macroBalance")}</Text>
-              {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.violet]] as const).map(([label, pct, col]) => (
+              {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.red]] as const).map(([label, pct, col]) => (
                 <AMeter key={label} label={t(label)} value={`${pct}%`} pct={pct} color={col} />
               ))}
             </View>

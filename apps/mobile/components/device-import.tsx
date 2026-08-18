@@ -13,7 +13,7 @@ import {
   type DeviceImportItem,
   type LoggedSession,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import {
   healthKitAvailability,
   queryRecentDeviceWorkouts,
@@ -403,7 +403,7 @@ export function DeviceImportSheet({
                       padding: 16,
                       marginBottom: 10,
                       backgroundColor: off ? C.ink2 : withAlpha(C.lime, ALPHA.wash),
-                      opacity: done ? 0.55 : 1,
+                      opacity: done ? STATE_OPACITY.disabled : 1,
                     }}
                   >
                     <View style={{ flex: 1 }}>

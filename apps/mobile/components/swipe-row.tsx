@@ -1,6 +1,6 @@
 import { useRef, type ReactNode } from "react";
 import { Animated, PanResponder, Pressable, Text, View } from "react-native";
-import { springs, springToRN, swipe, rubberBand, projectSwipe, durations } from "@hybrid/core";
+import { springs, springToRN, swipe, rubberBand, projectSwipe, durations, FEEDBACK } from "@hybrid/core";
 import { fs, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { haptic } from "../lib/haptics";
@@ -200,8 +200,8 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
       onLayout={(e) => { widthRef.current = e.nativeEvent.layout.width; }}
     >
       {leading && action(leading.color ?? C.red, leading.label, commitLeading, "left")}
-      {action(C.red, label, commitDelete, "right")}
-      <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: background ?? C.card }} {...pan.panHandlers}>
+      {action(FEEDBACK.error.fill, label, commitDelete, "right")}
+      <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: background ?? C.ink2 }} {...pan.panHandlers}>
         {children}
       </Animated.View>
     </View>

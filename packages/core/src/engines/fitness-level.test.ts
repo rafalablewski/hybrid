@@ -387,11 +387,12 @@ describe("the specialist athletes", () => {
     expect(badgeFor(null)).toBeNull();
   });
 
-  it("gives every level a badge accent, and reserves gold for the top", () => {
+  it("gives every level a badge accent, and reserves the warm accent for the top", () => {
     for (const l of FITNESS_LEVELS) expect(LEVEL_KEY[l].startsWith("w.analyze.vol.")).toBe(true);
     const elite = badgeFor(estimateFitnessLevel([lift("Deadlift", 150, 6), lift("Back Squat", 140, 5)], { bodyweightKg: 60, now: NOW }))!;
     expect(elite.level).toBe("elite");
-    expect(elite.accent).toBe("gold");
+    // Was "gold" — a token that sat ΔE 8.6 from Fleur De Lis and is retired.
+    expect(elite.accent).toBe("amber");
   });
 
   it("displayLevel refuses to call an unmeasured athlete untrained", () => {

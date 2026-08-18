@@ -2,25 +2,37 @@
  * PREMIUM ACCENT — the one colour every "buy Full" CTA wears (Go Full cards, the
  * upgrade sheet, locked-feature badges, the upsell strips). It is ADMIN-SETTABLE
  * at runtime via the `theme.premiumAccent` feature flag (no redeploy): the value
- * is either a brand-palette KEY (amber/violet/lime/blue/red) or a custom `#hex`.
+ * is either a brand-palette KEY (amber/lime/blue/red) or a custom `#hex`.
  * Default is `amber` (sand). Both clients resolve through here so web + mobile
  * can't drift, and the admin panel shows a live WCAG readout for custom hexes.
  */
 import { colors } from "./theme/tokens";
 import { THEMES, type ThemeName } from "./theme/palette";
 import { contrastRatio, WCAG } from "./contrast";
+import type { BrandAccent } from "./semantic";
 
 /** The feature-flag key that carries the admin-chosen premium accent value. */
 export const PREMIUM_ACCENT_FLAG = "theme.premiumAccent";
 
-/** Palette keys offered as premium-accent presets (ash is not an accent). */
-export const PREMIUM_ACCENT_PRESETS = ["amber", "violet", "lime", "blue", "red"] as const;
-export type PremiumAccentPreset = (typeof PREMIUM_ACCENT_PRESETS)[number];
+/** Palette keys offered as premium-accent presets — the four accents, which is
+ *  the whole set (ash is a neutral, not something to sell an upgrade in). The
+ *  ARRAY is real: the admin picker enumerates it at runtime. The TYPE is derived
+ *  from semantic.ts, so this cannot quietly fall out of step with the palette. */
+export const PREMIUM_ACCENT_PRESETS = ["amber", "lime", "blue", "red"] as const satisfies readonly BrandAccent[];
+export type PremiumAccentPreset = BrandAccent;
 
 /** The default when no admin override is set — sand. */
 export const PREMIUM_ACCENT_DEFAULT: PremiumAccentPreset = "amber";
 
-/** Fixed inks for text sitting ON a solid accent fill (theme-independent). */
+/** Fixed inks for text sitting ON a solid accent fill (theme-independent).
+ *
+ *  #141614 IS NOT `ink2` ANY MORE, and the coincidence is worth a line so the
+ *  next palette sweep does not "fix" it. This is a FOREGROUND — the near-black
+ *  that sits on a light sand fill — and it was chosen for its contrast on that
+ *  fill (AAA), not because it was the card. The card is PANTONE Black Beauty
+ *  now; this value stays where it is because its job never involved the card.
+ *  Deliberately theme-independent too: sand is a light fill whichever way the
+ *  surfaces go, so this cannot read the flipping `ink`/`onAccent`. */
 const INK_DARK = "#141614";
 const INK_LIGHT = "#faf6ef";
 

@@ -469,8 +469,8 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
       <Svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", aspectRatio: W / H }}>
         <SvgLine x1={L} x2={W - R} y1={Y(0)} y2={Y(0)} stroke={C.line} strokeWidth={1} />
         <Polyline points={compare.weeklyPrev.map((v, i) => `${X(i)},${Y(v)}`).join(" ")} fill="none" stroke={C.ash} strokeWidth={2} strokeLinejoin="round" />
-        <Polyline points={compare.weeklyCur.map((v, i) => `${X(i)},${Y(v)}`).join(" ")} fill="none" stroke={C.violet} strokeWidth={2.5} strokeLinejoin="round" />
-        {compare.weeklyCur.map((v, i) => <Circle key={i} cx={X(i)} cy={Y(v)} r={3} fill={C.violet} stroke={C.ink} strokeWidth={1} />)}
+        <Polyline points={compare.weeklyCur.map((v, i) => `${X(i)},${Y(v)}`).join(" ")} fill="none" stroke={C.lime} strokeWidth={2.5} strokeLinejoin="round" />
+        {compare.weeklyCur.map((v, i) => <Circle key={i} cx={X(i)} cy={Y(v)} r={3} fill={C.lime} stroke={C.ink} strokeWidth={1} />)}
       </Svg>
       <CornerLabels C={C} l={t("w.analyze.ex.comparePrev")} r={t("w.analyze.ex.compareCur")} />
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 16 }}>

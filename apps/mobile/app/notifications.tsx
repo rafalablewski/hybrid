@@ -108,7 +108,7 @@ export default function Notifications() {
     }
   };
 
-  const accentColor = (a: NotifItem["accent"]) => (a === "lime" ? C.lime : a === "blue" ? C.blue : a === "violet" ? C.violet : C.amber);
+  const accentColor = (a: NotifItem["accent"]) => (a === "lime" ? C.lime : a === "blue" ? C.blue : a === "red" ? C.red : C.amber);
 
   // New versus Seen. The rule is shared with web (@hybrid/core) because it is a
   // rule and not a filter — see splitNotifications for why `read` alone can't

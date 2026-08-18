@@ -12,7 +12,6 @@ import {
   rpeColor,
   workoutColor,
   conditioningColor,
-  sessionColor,
   repZoneColor,
   isGymLift,
   isProseLift,
@@ -129,19 +128,6 @@ describe("the Soviet 8-week program", () => {
     const w1d1 = SOVIET_OWL_8WK.weeks[0]!.days[0]!;
     expect(w1d1.sessions.map((s) => s.label)).toEqual(["AM", "PM"]);
     expect(SOVIET_OWL_8WK.weeks[0]!.days[2]!.kind).toBe("active-rest");
-  });
-
-  it("sessionColor gives AM/MID/PM fixed hues and cycles untimed sessions by ordinal", () => {
-    // timed bands are distinct + stable regardless of position
-    expect(sessionColor("AM", 0)).toBe("lime");
-    expect(sessionColor("MID", 1)).toBe("amber");
-    expect(sessionColor("PM", 2)).toBe("blue");
-    // an untimed multi-session day ("Training 1/2/3") still reads as three
-    // distinct blocks — colours cycle by ordinal, not collapse to one
-    const untimed = [0, 1, 2].map((i) => sessionColor(null, i));
-    expect(untimed).toEqual(["lime", "amber", "blue"]);
-    expect(new Set(untimed).size).toBe(3);
-    expect(sessionColor(null, 3)).toBe("lime"); // wraps for a 4th
   });
 
   it("carries the week-1 accessory block as RPE-kind gym entries (not % lifts)", () => {

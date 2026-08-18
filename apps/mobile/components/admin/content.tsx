@@ -141,8 +141,8 @@ function DataNet() {
         if (!d) return null;
         return (
           <View>
-            <ACard accent={palette.violet} style={cardStack}>
-              <Kicker color={palette.violet}>Data network – benchmarking intelligence</Kicker>
+            <ACard accent={palette.blue} style={cardStack}>
+              <Kicker color={palette.blue}>Data network – benchmarking intelligence</Kicker>
               <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 6 }}>
                 The flywheel: every consented athlete sharpens the cohort norms and (with labeled outcomes) the injury
                 calibration. De-identified — only cohorts with ≥ {K_ANON} athletes are released.
@@ -155,7 +155,7 @@ function DataNet() {
             </View>
             <View style={{ flexDirection: "row", gap: space.md }}>
               <View style={{ flex: 1 }}><Stat label="Cohorts" value={d.stats.cohorts} /></View>
-              <View style={{ flex: 1 }}><Stat label={`Releasable (≥${K_ANON})`} value={d.stats.releasableCohorts} color={palette.violet} /></View>
+              <View style={{ flex: 1 }}><Stat label={`Releasable (≥${K_ANON})`} value={d.stats.releasableCohorts} color={palette.blue} /></View>
             </View>
 
             <ACard accent={d.calibration.n > 0 ? palette.lime : palette.ash} style={cardStack}>

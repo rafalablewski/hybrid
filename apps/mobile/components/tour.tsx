@@ -3,7 +3,8 @@ import { View, Text, Modal } from "react-native";
 import { leading, tracking, fs, F, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
-import { RADIUS } from "./aurora/kit";
+import { RADIUS, withAlpha } from "./aurora/kit";
+import { SCRIM, motion } from "@hybrid/core";
 
 // ============================================================
 //  Guided first-run tour (mobile) — the "how to use HYBRID"
@@ -33,7 +34,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDone}>
-      <View style={{ flex: 1, backgroundColor: "rgba(8,9,11,.82)", justifyContent: "flex-end", padding: 16 }}>
+      <View style={{ flex: 1, backgroundColor: withAlpha(SCRIM, motion.scrimObscure), justifyContent: "flex-end", padding: 16 }}>
         <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, marginBottom: 24 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>
             {`Step ${i + 1} / ${steps.length}`}

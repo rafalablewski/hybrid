@@ -124,7 +124,7 @@ describe("DEVICE_MARK_INK", () => {
   });
 
   it("never offers an accent colour", () => {
-    const accents: string[] = [colors.lime, colors.blue, colors.violet, colors.amber, colors.red];
+    const accents: string[] = [colors.lime, colors.blue, colors.amber, colors.red];
     for (const ink of Object.values(DEVICE_MARK_INK)) {
       expect(accents).not.toContain(ink);
     }

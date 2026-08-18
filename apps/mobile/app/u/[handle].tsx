@@ -627,7 +627,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
           <View style={{ flexDirection: "row", gap: 4, marginBottom: 8 }}>
             {[1, 2, 3, 4, 5].map((n) => (
               <Pressable key={n} onPress={() => setRating(n)} accessibilityLabel={String(n)}>
-                <Text style={{ fontSize: fs.display, color: n <= rating ? C.gold : C.line }}>★</Text>
+                <Text style={{ fontSize: fs.display, color: n <= rating ? C.amber : C.line }}>★</Text>
               </Pressable>
             ))}
           </View>
@@ -657,7 +657,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
               <Avatar url={rv.author?.avatarUrl} name={rv.author?.displayName} handle={rv.author?.handle} size={26} />
               <Text style={{ color: C.chalk, fontFamily: F.bold, fontSize: fs.caption }}>{rv.author?.displayName || `@${rv.author?.handle}`}</Text>
-              <Text style={{ color: C.gold, fontSize: fs.caption }}>{"★".repeat(rv.rating)}</Text>
+              <Text style={{ color: C.amber, fontSize: fs.caption }}>{"★".repeat(rv.rating)}</Text>
             </View>
           </Pressable>
           {rv.body ? <Text style={{ color: C.ash, fontSize: fs.caption, marginTop: 6, lineHeight: leading(fs.caption) }}>{rv.body}</Text> : null}

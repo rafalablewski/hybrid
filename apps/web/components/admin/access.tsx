@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { groupedNav, sanitizePersonaAccess, AURORA_NAV_ICONS, type NavGroup, type Persona, type PersonaAccess } from "@hybrid/core";
-import { fs, space, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, AMBER, BLUE, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { AuroraIcon } from "../aurora/icons";
 
 // The role-based data-access model (RBAC) — distinct from the per-feature persona
@@ -12,7 +12,7 @@ import { AuroraIcon } from "../aurora/icons";
 // plan-inclusion table went with the 2026-08 strategy cuts.
 const ROLE_MODEL = [
   ["Client", LIME, "Owns their own data. Sees only themselves. Private coach notes stay hidden."],
-  ["Coach", VIOLET, "Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client."],
+  ["Coach", BLUE, "Sees only athletes who accepted them (mutual consent). Can leave private notes. Also a client."],
   ["Admin", AMBER, "Platform aggregates & content. No silent access to private training data; support access is audited."],
 ] as const;
 
@@ -62,7 +62,7 @@ function RoleModel() {
           <thead>
             <tr>
               {["Capability", "Client", "Coach", "Admin"].map((h, i) => (
-                <th key={h} style={{ ...mono, fontSize: fs.caption, color: txt(i === 0 ? ASH : i === 1 ? LIME : i === 2 ? VIOLET : AMBER), textTransform: "uppercase", textAlign: i === 0 ? "left" : "center", padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>
+                <th key={h} style={{ ...mono, fontSize: fs.caption, color: txt(i === 0 ? ASH : i === 1 ? LIME : i === 2 ? BLUE : AMBER), textTransform: "uppercase", textAlign: i === 0 ? "left" : "center", padding: "10px 6px", borderBottom: `1px solid ${LINE}` }}>
                   {h}
                 </th>
               ))}
@@ -182,7 +182,7 @@ export default function AdminAccess() {
       <div style={{ display: "grid", gap: space.lg }}>
         {groups.map(({ group, items }) => (
           <Card key={group}>
-            <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={VIOLET}>
+            <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 12 }} c={BLUE}>
               {GROUP_LABEL[group]}
             </Mono>
             <div style={{ display: "grid", gap: space.sm }}>

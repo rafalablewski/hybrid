@@ -357,7 +357,7 @@ const FEEL_ICON: Record<FeelPrompt["kind"], AuroraIconName> = {
 
 const FEEL_ACCENT: Record<FeelPrompt["kind"], ActivityAccent> = {
   immediate: "amber",
-  recovery: "violet",
+  recovery: "blue",
 };
 
 const hoursSince = (from: number, now: number): number => Math.max(0, Math.round((now - from) / 3_600_000));

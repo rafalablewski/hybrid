@@ -29,18 +29,18 @@ export default function Error({
         gap: 18,
         padding: 24,
         background: "#0c0d0c",
-        color: "#f3f4ef",
+        color: "#f7f6f3",
         fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: 13, letterSpacing: ".18em", textTransform: "uppercase", color: "#8b8f86" }}>
+      <div style={{ fontSize: 13, letterSpacing: ".18em", textTransform: "uppercase", color: "#8a9691" }}>
         Something went wrong
       </div>
       <h1 style={{ fontSize: 26, fontWeight: 800, margin: 0, letterSpacing: "-.02em" }}>
         We hit an unexpected error
       </h1>
-      <p style={{ color: "#8b8f86", maxWidth: 420, margin: 0, lineHeight: 1.5 }}>
+      <p style={{ color: "#8a9691", maxWidth: 420, margin: 0, lineHeight: 1.5 }}>
         The page failed to load. You can retry — if it keeps happening, please let us know.
         {error.digest ? ` (ref: ${error.digest})` : ""}
       </p>
@@ -57,9 +57,9 @@ export default function Error({
           padding: 14,
           textAlign: "left",
           borderRadius: 16,
-          border: "1px solid #2a2d2a",
-          background: "#141614",
-          color: "#8b8f86",
+          border: "1px solid #2f2f36",
+          background: "#212126",
+          color: "#8a9691",
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
           fontSize: 11,
           lineHeight: 1.55,
@@ -79,7 +79,7 @@ export default function Error({
             border: "none",
             cursor: "pointer",
             fontWeight: 700,
-            background: "#c6f84f",
+            background: "#c3d363",
             color: "#0c0d0c",
           }}
         >
@@ -90,10 +90,10 @@ export default function Error({
           style={{
             padding: "11px 20px",
             borderRadius: 12,
-            border: "1px solid #2a2d2a",
+            border: "1px solid #2f2f36",
             cursor: "pointer",
             fontWeight: 600,
-            color: "#f3f4ef",
+            color: "#f7f6f3",
             textDecoration: "none",
           }}
         >

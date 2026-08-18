@@ -8,7 +8,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { Loading, leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, RADIUS } from "./kit";
 import { withAlpha } from "./field";
-import { ALPHA } from "@hybrid/core";
+import { ALPHA, FEEDBACK } from "@hybrid/core";
 
 /** AURORA Become a coach — same verification-gated application flow (fetch,
  *  status card, form, submit) as the classic, in the rounded look. */
@@ -104,7 +104,7 @@ export default function AuroraCoachApply() {
                 textAlignVertical="top"
                 style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16, marginTop: 12, minHeight: 120 }}
               />
-              {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 10 }}>{error}</Text>}
+              {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{error}</Text>}
               <Pressable
                 onPress={submit}
                 disabled={!canSubmit}

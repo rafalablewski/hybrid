@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA} from "@hybrid/core";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -163,7 +163,7 @@ export default function AuroraHistory() {
     const actions: SwipeAction[] = showArchived
       ? [
           { key: "restore", label: t("common.restore"), color: C.lime, onPress: () => void manage.archive(s.id, false) },
-          { key: "delete", label: t("common.delete"), color: C.red, onPress: () => manage.confirmDelete(s) },
+          { key: "delete", label: t("common.delete"), color: FEEDBACK.error.fill, onPress: () => manage.confirmDelete(s) },
         ]
       : [];
     return (
@@ -373,7 +373,7 @@ function SwipeCard({ C, busy, actions, onPress, children }: {
               key={a.key}
               onPress={() => { animate(false); a.onPress(); }}
               disabled={busy}
-              style={{ width: TILE, alignItems: "center", justifyContent: "center", gap: 4, backgroundColor: withAlpha(a.color, ALPHA.solid), opacity: busy ? 0.5 : 1 }}
+              style={{ width: TILE, alignItems: "center", justifyContent: "center", gap: 4, backgroundColor: withAlpha(a.color, ALPHA.solid), opacity: busy ? STATE_OPACITY.busy : 1 }}
             >
               <Text style={{ fontFamily: F.semi, fontSize: fs.caption, color: txt(C, a.color) }}>{a.label}</Text>
             </Pressable>

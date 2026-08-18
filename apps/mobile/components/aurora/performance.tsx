@@ -517,7 +517,7 @@ function Full({ top }: { top?: ReactNode }) {
         {macro ? (
           <>
             <View style={{ height: 6, borderRadius: RADIUS.pill, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, overflow: "hidden", marginTop: 2, marginBottom: 9 }}>
-              <View style={{ width: `${seasonPct}%`, height: 6, backgroundColor: C.violet }} />
+              <View style={{ width: `${seasonPct}%`, height: 6, backgroundColor: C.blue }} />
             </View>
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>
               {t("w.home.cockpit.seasonWeekOf").replace("{n}", String(currentWeek)).replace("{total}", String(macro.totalWeeks))}

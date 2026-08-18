@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator, Linking } from "react-native";
 import { useRouter } from "expo-router";
-import { FUNNEL, FULL_BENEFITS , ALPHA} from "@hybrid/core";
+import { FUNNEL, FULL_BENEFITS , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { track } from "../../lib/track";
 import { startCheckout } from "../../lib/api";
 import { iapAvailable, purchaseFull, restorePurchases, fetchFullPrice } from "../../lib/iap";
@@ -147,11 +147,11 @@ export default function AuroraUpgrade() {
       </View>
 
       {!!error && (
-        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
+        <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 16, lineHeight: leading(fs.caption), textAlign: "center" }}>{error}</Text>
       )}
 
       {/* CTA — fill + ink come from the admin-set premium accent (usePremiumAccent); ink is auto-picked for contrast on the fill */}
-      <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: RADIUS.field, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? 0.6 : 1 }}>
+      <Pressable onPress={subscribe} disabled={busy} style={{ backgroundColor: pa.fill, borderRadius: RADIUS.field, paddingVertical: 16, alignItems: "center", marginTop: 16, opacity: busy ? STATE_OPACITY.busy : 1 }}>
         {busy ? <ActivityIndicator color={pa.ink} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: pa.ink }}>{t("w.account.upgrade.start-trial")}</Text>}
       </Pressable>
       {/* Restore Purchases — required by Apple for auto-renewable subscriptions */}

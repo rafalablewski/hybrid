@@ -30,7 +30,7 @@ import { withAlpha } from "./field";
  */
 
 /** Each shelf's colour is the macro colour that shelf is named after — the same
- *  blue/amber/violet the rings and tiles already spend on P/C/F. A shelf that is
+ *  blue/amber/red the rings and tiles already spend on P/C/F. A shelf that is
  *  neither takes the chrome tones: "mixed" and "light" are not nutrients, and
  *  colouring them would invent a fifth macro. */
 export function roleColor(C: ReturnType<typeof useTheme>["palette"]): Record<FoodRole, string> {
@@ -38,7 +38,7 @@ export function roleColor(C: ReturnType<typeof useTheme>["palette"]): Record<Foo
   // pantry with four light foods drew a GAP in its own mix bar and read as a
   // rendering fault. Mixed and light share the hue at two weights because they
   // are the same claim — not a macro — at two volumes.
-  return { protein: C.blue, carb: C.amber, fat: C.violet, mixed: C.ash, light: C.ash };
+  return { protein: C.blue, carb: C.amber, fat: C.red, mixed: C.ash, light: C.ash };
 }
 
 /** The mix bar's segment weight. Only the two non-nutrient shelves are quieted. */

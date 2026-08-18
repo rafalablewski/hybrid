@@ -3,10 +3,9 @@ import { View, Text } from "react-native";
 import {
   TODAY_RANGE_STORE_KEY, durationUnits, enduranceDirection, enduranceLead, enduranceWindow,
   formatDuration, sliceName,
-  type BodyweightInput, type LoggedSession, type VerdictDirection,
-} from "@hybrid/core";
+  type BodyweightInput, type LoggedSession, type VerdictDirection, deltaRole } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, deltaPaint } from "../../lib/theme";
 import { leading, tracking, fs, F, cardShadow, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useActivityRange, useRangeLabels } from "./range-filter";
 import { RADIUS } from "./kit";
@@ -94,8 +93,7 @@ export default function AuroraEnduranceSummary({
    *  chartreuse up), never the brand accent: a quiet fortnight must not read as
    *  a highlight. Flat is ash, like the line it sits in: a move too small for
    *  the verdict card to claim is too small to colour here either. */
-  const dirColor = (d: VerdictDirection) =>
-    d === "down" ? txt(C, C.red) : d === "up" ? txt(C, C.lime) : C.ash;
+  const dirColor = (d: VerdictDirection) => deltaPaint(C, d);
   const tone = dirColor(enduranceDirection(w, "minutes"));
 
   const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const };
