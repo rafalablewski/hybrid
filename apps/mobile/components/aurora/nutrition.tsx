@@ -90,7 +90,7 @@ import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, F
 import { useListMotion } from "../../lib/list-motion";
 import { usePublishNavSurface } from "../../lib/nav-surface";
 import { haptic } from "../../lib/haptics";
-import { AuroraScreen, ACard, APressCard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
+import { AuroraScreen, ACard, AChoice, APressCard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroNav } from "./hero";
 import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
@@ -4098,19 +4098,23 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       />
 
       <Sheet visible={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
-        <View style={{ gap: 10 }}>
-          {GOALS.map((g) => {
-            const on = goal === g.id;
-            return (
-              <Pressable key={g.id} onPress={() => { chooseGoal(g.id); setGoalPicker(false); }} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t(g.labelKey)}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{goalSub(g.id)}</Text>
-                </View>
-                <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={C.onAccent} /> : null}</View>
-              </Pressable>
-            );
-          })}
+        {/* THE SAME QUESTION THE NUTRITION WIZARD ASKS, so it is now the same
+            control: the kit's `AChoice`. This sheet drew its own copy of the
+            option row — the title a face heavier, the blurb in mono, and a
+            private 22dp radio that popped in a single frame — so "lose fat"
+            looked like two different choices depending on whether you were
+            setting up or changing your mind later. */}
+        <View style={{ gap: space.ms }}>
+          {GOALS.map((g) => (
+            <AChoice
+              key={g.id}
+              sheet
+              active={goal === g.id}
+              title={t(g.labelKey)}
+              sub={goalSub(g.id)}
+              onPress={() => { haptic.selection(); chooseGoal(g.id); setGoalPicker(false); }}
+            />
+          ))}
         </View>
       </Sheet>
 

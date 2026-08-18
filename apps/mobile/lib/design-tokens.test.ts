@@ -470,7 +470,11 @@ describe("geometry", () => {
     // alive by a one-character emoji fix on a screen main had removed.
     // Cross-rule slack is exactly what the anti-slack assertion is for, and a
     // merge is where it accumulates fastest.
-    burnDown(hits(/borderRadius:\s*\d/g), 147, "2027-02-28", "raw borderRadius → RADIUS.*");
+    //
+    // 147 → 146: the nutrition goal sheet's hand-drawn 22dp radio (a `borderRadius:
+    // 11` circle that popped in one frame) went with the option-row convergence —
+    // it is the kit's `AChoice` now, on `ACheckMark`.
+    burnDown(hits(/borderRadius:\s*\d/g), 146, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 

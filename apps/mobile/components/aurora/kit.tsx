@@ -2119,6 +2119,88 @@ export function ACheckMark({ on, size = 20, accent }: { on: boolean; size?: numb
   );
 }
 
+/**
+ * THE WIZARD OPTION ROW — one option in a pick-one/pick-many list, and the
+ * app's standard for one. Title, a line of blurb, a mark at the trailing edge;
+ * RADIUS.field at padding `lg`, a 1px border that swaps line → lime when
+ * picked, and a lime wash at ALPHA.wash behind it.
+ *
+ * IT LIVES HERE BECAUSE TWO WIZARDS DREW IT. The onboarding wizard owned this
+ * anatomy and nutrition's guided setup copied it — and a copy is a drift with a
+ * delay on it: the copy carried the title a rung small (fs.bodyLg), set the
+ * blurb in MONO at fs.nano, and never tinted the picked label, so the two
+ * screens that describe themselves as the same control did not look like it.
+ * The copy's own comment named onboarding as the standard, which is the tell:
+ * when a component has to be cited in prose to stay in step, it wants to be a
+ * component.
+ *
+ * Two things about the MOMENT OF PICKING are the reason the row is animated:
+ *
+ *  • THE ROW MUST NOT RESHAPE. The tick used to be rendered only while active,
+ *    so selecting an option inserted a 22dp glyph at the head of the row and
+ *    shoved the label sideways — under the finger that had just landed on it.
+ *    The mark is always laid out, at the TRAILING edge (where iOS puts a table
+ *    row's check), so the label's left edge never moves.
+ *  • IT CROSS-FADES. The border, the wash and the label change on `ACheckMark`'s
+ *    own 120ms curve, so the mark filling and the row tinting land together
+ *    rather than a third of a beat apart.
+ *
+ * All three interpolate COLOUR, which RN can only do on the JS driver, so the
+ * whole row runs there — one value, one style node (a JS-driven value and a
+ * native-driven one in the same node is the combination RN refuses). It is a
+ * 120ms fade on one row; the cost is nothing and the alternative is stacking
+ * two copies of every label to cross-fade them.
+ *
+ * THE HAPTIC IS THE CALLER'S: a radio pick is Selection, a multi-select toggle
+ * is Impact Light (lib/haptics), and only the caller knows which it is.
+ */
+export function AChoice({ active, title, sub, onPress, sheet }: {
+  active: boolean;
+  title: string;
+  /** The line under the title. Optional — a bare label row is a valid option. */
+  sub?: string;
+  onPress: () => void;
+  /** The row is rendered INSIDE A SHEET, whose panel is already ink2 — so the
+   *  resting fill drops a step to ink rather than painting the row the exact
+   *  colour of the surface it sits on. A boolean and not a colour: the ground
+   *  is one of two things, and a free colour prop is how a shared row goes back
+   *  to being five different rows. */
+  sheet?: boolean;
+}) {
+  const { palette } = useTheme();
+  const rest = sheet ? palette.ink : palette.ink2;
+  const on = useRef(new Animated.Value(active ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(on, {
+      toValue: active ? 1 : 0,
+      duration: 120,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+  }, [active, on]);
+  const tint = (from: string, to: string) => on.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}>
+      <Animated.View
+        style={{
+          flexDirection: "row", alignItems: "center", gap: space.md,
+          borderWidth: 1,
+          borderColor: tint(palette.line, palette.lime),
+          backgroundColor: tint(rest, withAlpha(palette.lime, ALPHA.wash)),
+          borderRadius: RADIUS.field,
+          padding: space.lg,
+        }}
+      >
+        <View style={{ flex: 1 }}>
+          <Animated.Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: tint(palette.chalk, txt(palette, palette.lime)) }}>{title}</Animated.Text>
+          {!!sub && <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: space.xxs, lineHeight: leading(fs.caption) }}>{sub}</Text>}
+        </View>
+        <ACheckMark on={active} size={22} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
 export function ASub({ children, style }: { children: ReactNode; style?: TextStyle }) {
   const { palette } = useTheme();
   return (

@@ -10,8 +10,9 @@ import { fs, space, leading, tracking, F, PressScale as Pressable } from "../../
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard, ACheckMark, ASection, AMeter, RADIUS } from "./kit";
+import { APill, ACard, AChoice, ASection, AMeter, RADIUS } from "./kit";
 import { AuroraIcon, Glyph } from "./icons";
+import { haptic } from "../../lib/haptics";
 import { withAlpha } from "./field";
 
 /**
@@ -196,26 +197,12 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
     { id: "maintain", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
     { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
   ];
-  /* The wizard OPTION ROW — the app's standard for this lives in the onboarding
-     wizard (aurora/onboarding.tsx `Choice`, and the web twin): RADIUS.field at
-     padding 16, a 1px border that swaps line → lime when picked, and a lime wash
-     at 8% behind it. This row drew its selected state by widening its own border
-     to 2 and taking a pixel off the padding to compensate — so picking an option
-     nudged its label; web meanwhile faked the same second border with a shadow
-     ring, on a row it had built at the CARD radius. One control, two shapes and
-     two techniques. Now both read the standard.
-     THE MARK came later, from the same standard: the picked state was drawn
-     here as a private 22dp circle that filled in one frame, so the two wizards
-     ticked an option with two different glyphs. It is the kit's `ACheckMark`
-     on both — the box scales up from the centre and the tick draws over the
-     last third of that fill, which is the difference between a row being
-     MARKED and two pictures being swapped. */
-  const choice = (on: boolean, label: string, sub: string, onPress: () => void) => (
-    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: on ? withAlpha(C.lime, ALPHA.wash) : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16, marginBottom: 10 }}>
-      <View style={{ flex: 1 }}><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{sub}</Text></View>
-      <ACheckMark on={on} size={22} />
-    </Pressable>
-  );
+  /* The wizard OPTION ROW is the kit's `AChoice` — the same component the
+     onboarding wizard uses, not a copy of it. This row used to be a copy that
+     cited onboarding by name in a comment, and it had drifted exactly as far as
+     a copy drifts: the title a rung small, the blurb in MONO at fs.nano, the
+     picked label never tinting. A control that needs prose to stay in step
+     wants to be a component. */
   const primary = (label: string, onPress: () => void) => (
     <APill label={label} onPress={onPress} style={{ marginTop: 6 }} />
   );
@@ -231,7 +218,9 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
         <View style={{ marginTop: 24 }}>
           <ASection title={t("w.recovery.nutrition.pickGoal")} style={{ marginTop: 0, marginBottom: 0 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickGoalSub")}</Text>
-          {GOAL_OPTS.map((o) => choice(goal === o.id, o.label, o.sub, () => setGoal(o.id)))}
+          <View style={{ gap: space.ms }}>
+            {GOAL_OPTS.map((o) => <AChoice key={o.id} active={goal === o.id} title={o.label} sub={o.sub} onPress={() => { haptic.selection(); setGoal(o.id); }} />)}
+          </View>
           {primary(t("w.recovery.nutrition.continue"), () => setStep(1))}
         </View>
       ) : null}
@@ -240,7 +229,9 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
         <View style={{ marginTop: 24 }}>
           <ASection title={t("w.recovery.nutrition.pickActivity")} style={{ marginTop: 0, marginBottom: 0 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickActivitySub")}</Text>
-          {MACT.map((a) => choice(activity === a.id, t(a.labelKey), t(a.subKey), () => setActivity(a.id)))}
+          <View style={{ gap: space.ms }}>
+            {MACT.map((a) => <AChoice key={a.id} active={activity === a.id} title={t(a.labelKey)} sub={t(a.subKey)} onPress={() => { haptic.selection(); setActivity(a.id); }} />)}
+          </View>
           <ACard solid style={{ marginTop: 4 }}>
             {currentWeightKg != null ? (
               /* Profile already has a weight — reuse it, don't ask again. */

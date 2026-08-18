@@ -9,11 +9,11 @@ import {
   springs,
   states,
   type OnboardingQuestion,
-  ALPHA,} from "@hybrid/core";
+} from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import {
@@ -21,7 +21,7 @@ import {
   HIT_SLOP, HIT_TARGET, LoadSwap, Skeleton, useEntrance,
 } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ACard, ACheckMark, APill, ASegment, ANumberField, ABirthField, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
+import { ACard, AChoice, APill, ASegment, ANumberField, ABirthField, AHeading, ASub, AuroraField, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 
 /**
@@ -64,6 +64,13 @@ import { AuroraIcon } from "./icons";
  * funnel step beside welcome/login (`slide_from_right`, no back-swipe) rather
  * than joining `COVER_SCREENS` — it is also the app's FIRST screen on a cold
  * start, where it is entered by `replace` and has nothing to cover.
+ *
+ * THE RHYTHM PASS (Aug 2026) came off a screenshot of the goal step, and it is
+ * spacing rather than motion. The goal step is the ONE question with groups in
+ * it and it was the one question whose rows sat on a different rhythm (see the
+ * comment at the group map); the CTA row's two controls were sized by two
+ * different rules; and `Choice` — this file's own option row, which two other
+ * surfaces had copied — moved into the kit as `AChoice` so there is one of it.
  */
 export default function AuroraOnboarding() {
   const { palette } = useTheme();
@@ -144,7 +151,13 @@ export default function AuroraOnboarding() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>{t("w.account.onboarding.skip")}</Text>
         </Pressable>
 
-        <ScrollView ref={scroller} style={{ marginTop: space.lg }} contentContainerStyle={{ paddingBottom: space.xxl }} showsVerticalScrollIndicator={false}>
+        {/* `flex: 1` is what makes the CTA row below actually PINNED, which this
+            file's header has claimed since the motion pass. Without it the
+            scroller sized to its CONTENT, so a short step (a number, a birth
+            date) let the buttons float up under the answer while a long one —
+            the goal list — pushed them to the floor: the primary action of the
+            wizard moved between questions. */}
+        <ScrollView ref={scroller} style={{ flex: 1, marginTop: space.lg }} contentContainerStyle={{ paddingBottom: space.xxl }} showsVerticalScrollIndicator={false}>
           <LoadSwap loading={waiting} placeholder={<StepSkeleton />}>
             {() => (
               <StepSwap step={idx} dir={dir}>
@@ -170,8 +183,16 @@ export default function AuroraOnboarding() {
           </LoadSwap>
         </ScrollView>
 
-        <View style={{ flexDirection: "row", gap: space.md, alignItems: "center" }}>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={back} style={{ width: 64, height: 56, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
+        {/* THE TWO BUTTONS ARE ONE ROW, so they are one height. Back was drawn
+            at a hard 56 while APill measures itself from its label (18dp of
+            padding around fs.subtitle, ~58) — five pixels of disagreement on the
+            only row of the screen where two controls sit side by side. The row
+            stretches now and Back takes its height from the pill, so the two
+            can never drift apart again. `paddingTop` is the scroller's
+            CLEARANCE: the list clips hard at the row's edge, and without it the
+            cut-off card touched the buttons. */}
+        <View style={{ flexDirection: "row", gap: space.md, alignItems: "stretch", paddingTop: space.md }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={back} style={{ width: 64, minHeight: HIT_TARGET, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="back" size={20} color={palette.chalk} />
           </Pressable>
           <APill
@@ -364,7 +385,7 @@ function QuestionBody({
     return (
       <>
         {(q.choices ?? []).map((o) => (
-          <Choice key={o.value} active={selected === o.value} title={o.label} sub={o.blurb ?? ""} onPress={() => { haptic.selection(); setAnswer(q.key, o.value); if (o.value === "casual" || o.value === "athlete") setClientPersona(o.value); }} />
+          <AChoice key={o.value} active={selected === o.value} title={o.label} sub={o.blurb ?? ""} onPress={() => { haptic.selection(); setAnswer(q.key, o.value); if (o.value === "casual" || o.value === "athlete") setClientPersona(o.value); }} />
         ))}
       </>
     );
@@ -374,11 +395,21 @@ function QuestionBody({
     const selected = answers[q.key] as string | undefined;
     return (
       <>
-        {ONBOARDING_GOAL_GROUPS.map((group) => (
-          <View key={group.category} style={{ marginTop: space.xxs }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: space.md, marginBottom: space.xs }}>{group.category}</Text>
+        {/* THE GOAL STEP IS THE ONE QUESTION WITH GROUPS IN IT, and it used to be
+            the one question whose rows sat on a different rhythm. Every other
+            kind hands its rows straight to `Step`, which stacks them on
+            `space.ms`; this one wrapped each category in a View with NO gap, so
+            inside a category the bordered rows sat flush and their hairlines
+            doubled into a 2px rule — while the only air on the screen was
+            between categories. The rows now take the wizard's own gap and the
+            SEPARATION is what says "new group": ms inside a group, ms + md above
+            a category's name, so a name always sits nearer its own options than
+            to the group above it. */}
+        {ONBOARDING_GOAL_GROUPS.map((group, gi) => (
+          <View key={group.category} style={{ gap: space.ms, marginTop: gi === 0 ? 0 : space.md }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{group.category}</Text>
             {group.goals.map((g) => (
-              <Choice key={g.id} active={selected === g.id} title={g.label} sub={g.blurb} onPress={() => { haptic.selection(); setAnswer(q.key, g.id); }} />
+              <AChoice key={g.id} active={selected === g.id} title={g.label} sub={g.blurb} onPress={() => { haptic.selection(); setAnswer(q.key, g.id); }} />
             ))}
           </View>
         ))}
@@ -406,7 +437,7 @@ function QuestionBody({
           // A multi row is a SWITCH being flipped, not a value being scrubbed
           // past — Impact Light, per the haptic map in lib/haptics.
           const toggle = () => { haptic.light(); const arr = new Set(selectedSet); if (arr.has(o.value)) arr.delete(o.value); else arr.add(o.value); setAnswer(q.key, [...arr]); };
-          return <Choice key={o.value} active={on} title={o.label} sub={o.blurb ?? ""} onPress={toggle} />;
+          return <AChoice key={o.value} active={on} title={o.label} sub={o.blurb ?? ""} onPress={toggle} />;
         })}
       </>
     );
@@ -424,31 +455,6 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
   );
 }
 
-/**
- * THE WIZARD OPTION ROW — and the app's standard for one (nutrition's onboarding
- * cites this component by name for its geometry: RADIUS.field at padding 16, a
- * 1px border that swaps line → lime when picked, and a lime wash at 8% behind).
- *
- * Two things were wrong with the standard itself, and both were about what
- * happens at the MOMENT OF PICKING:
- *
- *  • THE ROW RESHAPED. The tick was rendered only while active, so selecting an
- *    option inserted a 22dp glyph at the head of the row and shoved the label
- *    sideways — under the finger that had just landed on it. The mark is always
- *    laid out now, at the TRAILING edge (where iOS puts a table row's check, and
- *    where this row's own twin in nutrition-panels already put it), so the
- *    label's left edge never moves.
- *  • NOTHING ANIMATED. The border, the wash and the label all changed in one
- *    frame. They cross-fade now, on the kit `ACheckMark`'s own 120ms curve so
- *    the mark filling and the row tinting land together rather than a third of
- *    a beat apart.
- *
- * All three interpolate COLOUR, which RN can only do on the JS driver, so the
- * whole row runs there — one value, one style node (a JS-driven value and a
- * native-driven one in the same node is the combination RN refuses). It is a
- * 120ms fade on one row; the cost is nothing and the alternative is stacking
- * two copies of every label to cross-fade them.
- */
 /**
  * A NUMBER, ANSWERED THE WAY ITS RANGE DESERVES.
  *
@@ -536,38 +542,4 @@ function seedFor(q: OnboardingQuestion, min: number, max: number): number {
   const seed = q.engineKey ? byKey[q.engineKey] : undefined;
   const v = seed ?? Math.round((min + max) / 2);
   return Math.min(max, Math.max(min, v));
-}
-
-function Choice({ active, title, sub, onPress }: { active: boolean; title: string; sub: string; onPress: () => void }) {
-  const { palette } = useTheme();
-  const on = useRef(new Animated.Value(active ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.timing(on, {
-      toValue: active ? 1 : 0,
-      duration: 120,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: false,
-    }).start();
-  }, [active, on]);
-  const tint = (from: string, to: string) => on.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}>
-      <Animated.View
-        style={{
-          flexDirection: "row", alignItems: "center", gap: space.md,
-          borderWidth: 1,
-          borderColor: tint(palette.line, palette.lime),
-          backgroundColor: tint(palette.ink2, withAlpha(palette.lime, ALPHA.wash)),
-          borderRadius: RADIUS.field,
-          padding: space.lg,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Animated.Text style={{ fontFamily: F.bold, fontSize: fs.note, color: tint(palette.chalk, txt(palette, palette.lime)) }}>{title}</Animated.Text>
-          {!!sub && <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: 3, lineHeight: leading(fs.caption) }}>{sub}</Text>}
-        </View>
-        <ACheckMark on={active} size={22} />
-      </Animated.View>
-    </Pressable>
-  );
 }
