@@ -57,7 +57,7 @@ export default function Error({
           padding: 14,
           textAlign: "left",
           borderRadius: 16,
-          border: "1px solid #2a2d2a",
+          border: "1px solid #242724",
           background: "#141614",
           color: "#8b8f86",
           fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
@@ -90,7 +90,7 @@ export default function Error({
           style={{
             padding: "11px 20px",
             borderRadius: 12,
-            border: "1px solid #2a2d2a",
+            border: "1px solid #242724",
             cursor: "pointer",
             fontWeight: 600,
             color: "#f3f4ef",

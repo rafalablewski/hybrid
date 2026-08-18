@@ -890,6 +890,34 @@ describe("colour arithmetic", () => {
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
 
+  it("HARD — blue is never a fill that carries ink", () => {
+    // THE OTHER HALF OF A CORE GUARD. palette.test.ts asserts that onAccent
+    // clears AA on the lime, amber and red fills, and deliberately does NOT
+    // assert it for `blue` — near-black on Lyons Blue is 3.92, which is AA-large
+    // and not AA. That exemption is only honest while nothing actually paints
+    // text on a blue fill, and core cannot see call sites. This can.
+    //
+    // Blue is the info/conditioning accent, and it SHOULD draw bars, strokes,
+    // dots, tinted washes and borders — all fine at 3.92 under WCAG 1.4.11's
+    // 3:1 for non-text marks. Three sites do exactly that today: a 6dp season
+    // bar, a 5dp calendar dot, a 3dp velocity plot point. None of them can hold
+    // a label, so none of them is what this rule is about.
+    //
+    // What it is about is the CONTAINER shape — a blue fill at a pill, field,
+    // card or inner radius is a button, a chip or a panel, and those hold text.
+    // Matching the radius rather than the fill is what separates "a mark drawn
+    // in blue" from "a surface someone will put a label on". If a blue button is
+    // ever genuinely wanted, the fix is to lift the token until onAccent clears
+    // AA on it — not to delete this rule.
+    const HOLDS_TEXT = String.raw`RADIUS\.(?:pill|field|card|inner)`;
+    expect(
+      codeHits(new RegExp(
+        String.raw`backgroundColor:\s*(?:C|palette)\.blue\b[^\n]*borderRadius:\s*${HOLDS_TEXT}` +
+        String.raw`|borderRadius:\s*${HOLDS_TEXT}[^\n]*backgroundColor:\s*(?:C|palette)\.blue\b`, "g")),
+      "a blue button would carry onAccent at 3.92 — lift the token, or use a tint with txt(C, C.blue) on it",
+    ).toEqual([]);
+  });
+
   it("HARD — alpha is withAlpha(), never a hex suffix", () => {
     // THE RULE ABOVE COULD NOT SEE THIS, which is the point of adding it. The
     // hex-literal ratchet matches QUOTED hex, and 235 of the 247 hand-rolled

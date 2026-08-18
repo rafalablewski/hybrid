@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useState } from "react";
-import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 type Entry = {
   id: string;
@@ -111,7 +111,7 @@ export default function AdminAuditLog() {
                 </tr>
                 {open === e.id && (
                   <tr>
-                    <td colSpan={5} style={{ padding: "0 16px 14px", borderBottom: `1px solid ${LINE}`, background: "#0a0b0a" }}>
+                    <td colSpan={5} style={{ padding: "0 16px 14px", borderBottom: `1px solid ${LINE}`, background: INK }}>
                       <pre style={{ ...mono, fontSize: fs.caption, color: txt(ASH), whiteSpace: "pre-wrap", wordBreak: "break-word", margin: "10px 0 0", lineHeight: 1.5 }}>
                         {JSON.stringify({ ip: e.ip, targetType: e.targetType, targetId: e.targetId, metadata: e.metadata }, null, 2)}
                       </pre>

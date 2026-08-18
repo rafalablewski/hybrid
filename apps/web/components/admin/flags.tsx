@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { PREMIUM_ACCENT_FLAG, PREMIUM_ACCENT_PRESETS, PREMIUM_ACCENT_DEFAULT, normalizePremiumAccent, resolvePremiumAccent, wcagRating, isHexColor, type WcagGrade } from "@hybrid/core";
+import { colors, PREMIUM_ACCENT_FLAG, PREMIUM_ACCENT_PRESETS, PREMIUM_ACCENT_DEFAULT, normalizePremiumAccent, resolvePremiumAccent, wcagRating, isHexColor, type WcagGrade } from "@hybrid/core";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Flag = {
@@ -189,7 +189,9 @@ const resetBtn: React.CSSProperties = {
 
 // The dark card surface the accent-as-text sits on (palette.dark.card) — the
 // reference background for the "text on card" contrast check.
-const CARD_DARK = "#151715";
+// The card the readout measures against. Reads the token: this was a literal
+// #151715 — a third copy of --color-card under a third name (audit/12 §5.1).
+const CARD_DARK = colors.card;
 const gradeColor = (g: WcagGrade) => (g === "AAA" ? LIME : g === "AA" ? AMBER : RED);
 
 /** Admin picker for the premium-CTA accent: palette swatches + a custom hex,

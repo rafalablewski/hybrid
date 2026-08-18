@@ -55,6 +55,25 @@ describe("theme palettes meet WCAG AA", () => {
       expect(contrastRatio(t.onAccent, t.accent)).toBeGreaterThanOrEqual(WCAG.AA);
     });
 
+    // ONACCENT ON EVERY FILL THAT CARRIES IT. audit/12 §5.5 asked for this and it
+    // could not simply be switched on: `blue` is the darkest fill in the set and
+    // near-black ink on it measures 3.92 — AA-large, not AA. The honest guard is
+    // therefore two claims rather than one loosened one:
+    //
+    //   (a) every fill a caller MIGHT put ink on clears AA, and
+    //   (b) `blue` is not one of them — asserted at the call sites, in the mobile
+    //       design-token rule, rather than assumed here.
+    //
+    // Loosening (a) to AA-large for everything would have been the easy move and
+    // it would have licensed a blue button with unreadable ink. Naming the one
+    // exception is what makes the rest of the rule mean something.
+    const INK_BEARING = ["lime", "amber", "red"] as const;
+    for (const an of INK_BEARING) {
+      it(`${name}: onAccent on the ${an} fill ≥ AA`, () => {
+        expect(contrastRatio(t.onAccent, colors[an])).toBeGreaterThanOrEqual(WCAG.AA);
+      });
+    }
+
     // EVERY FILL HAS TO BE VISIBLE AS A MARK. An accent is not only type: it is a
     // bar, a chart stroke, a dot, a ring segment, a border — and WCAG 1.4.11 puts
     // those at 3:1 against their ground, a bar the AA text rule never checks.

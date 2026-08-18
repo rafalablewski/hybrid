@@ -40,6 +40,7 @@ export const CARD_PAD = space.xl;
 // recharts SVG presentation attrs, where CSS var() does not resolve. ASH +
 // accents stay raw hex for the same reason.
 export const INK = "var(--color-ink)",
+  INK_HEX = colors.ink,
   INK2 = "var(--color-ink2)",
   CARD = "var(--color-card)",
   LINE = "var(--color-line)",

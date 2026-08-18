@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, AMBER, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Stat } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, AMBER, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Stat, INK_HEX } from "@/lib/ui";
 import { METRIC_LABEL, K_ANON, type BenchmarkMetric, type ReliabilityBucket } from "@hybrid/core";
 
 type Norm = { cohortKey: string; sport: string; sex: string; ageBand: string; metric: BenchmarkMetric; n: number; mean: number; sd: number; p10: number; p50: number; p90: number };
@@ -286,7 +286,7 @@ function ReliabilityChart({ buckets }: { buckets: ReliabilityBucket[] }) {
         {/* perfect calibration */}
         <line x1={x(0)} y1={y(0)} x2={x(max)} y2={y(max)} stroke={ASH} strokeWidth={1} strokeDasharray="4 4" />
         {buckets.map((b) => (
-          <circle key={b.lo} cx={x(b.meanPredicted)} cy={y(b.observedRate)} r={5} fill={LIME_HEX} stroke="#0c0d0c" strokeWidth={2}>
+          <circle key={b.lo} cx={x(b.meanPredicted)} cy={y(b.observedRate)} r={5} fill={LIME_HEX} stroke={INK_HEX} strokeWidth={2}>
             <title>{`predicted ${(b.meanPredicted * 100).toFixed(1)}% – observed ${(b.observedRate * 100).toFixed(1)}% – n=${b.n}`}</title>
           </circle>
         ))}
