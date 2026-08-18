@@ -21,6 +21,14 @@ import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
  * the bar minimized. The draft and the tick therefore live outside the
  * component and both copies subscribe to them.
  *
+ * THE CLOCK IS THE STORE'S, not a component's. Driving it from an effect meant
+ * BOTH copies ran their own interval — two timers a second apart, each writing
+ * `now`, each waking every subscriber — for one clock that renders one figure.
+ * It is the draft that decides whether time is being counted, so the store
+ * starts the interval when a draft appears and clears it when one goes
+ * (`syncClock`), and the copies only read. That also means the tick cannot
+ * outlive the session or start twice.
+ *
  * WHY THE STORE IS ALSO READ BY THE LAYOUT (`useSessionDraft`): rendering null
  * in here is NOT enough to make the accessory go away. UIKit builds the
  * accessory — its own glass capsule, its own height above the bar — from the
@@ -44,7 +52,9 @@ function setSnapshot(next: Partial<Snapshot>) {
   // Cheap identity guard: re-emitting an unchanged snapshot would re-render
   // both copies every second even with no draft on screen.
   if (merged.draft === snapshot.draft && merged.now === snapshot.now) return;
+  const draftChanged = merged.draft !== snapshot.draft;
   snapshot = merged;
+  if (draftChanged) syncClock();
   emit();
 }
 function subscribe(fn: () => void) {
@@ -53,6 +63,24 @@ function subscribe(fn: () => void) {
 }
 function getSnapshot() {
   return snapshot;
+}
+// The DRAFT alone, for subscribers that only care whether there is a session —
+// the tab layout, which mounts the accessory slot on it. Handing them the whole
+// snapshot would re-render them on every tick of a clock they never read.
+function getDraft() {
+  return snapshot.draft;
+}
+
+/** One interval, owned by the draft: running while there is one, gone when
+ *  there isn't. Idempotent, so a redundant call cannot start a second. */
+let clock: ReturnType<typeof setInterval> | null = null;
+function syncClock() {
+  const wanted = snapshot.draft != null;
+  if (wanted && clock == null) clock = setInterval(() => setSnapshot({ now: Date.now() }), 1000);
+  else if (!wanted && clock != null) {
+    clearInterval(clock);
+    clock = null;
+  }
 }
 
 /** Re-read the persisted draft. Called on mount and on every route change. */
@@ -72,7 +100,7 @@ export async function refreshSessionAccessory(): Promise<void> {
  */
 export function useSessionDraft(): Draft | null {
   const pathname = usePathname();
-  const { draft } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const draft = useSyncExternalStore(subscribe, getDraft, getDraft);
   useEffect(() => { void refreshSessionAccessory(); }, [pathname]);
   return draft;
 }
@@ -81,16 +109,10 @@ export default function SessionAccessory() {
   const { palette: C } = useTheme();
   const router = useRouter();
   const placement = NativeTabs.BottomAccessory.usePlacement();
+  // Read-only: both the draft and the clock are the store's (see the header).
+  // The route-change re-read is useSessionDraft's, for the same reason — this
+  // component is unmounted whenever there is no draft to notice one arriving.
   const { draft, now } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-
-  // One shared clock for both copies, running only while a draft exists. The
-  // route-change re-read lives in useSessionDraft above — this component is
-  // unmounted whenever there is no draft, so it cannot do that job itself.
-  useEffect(() => {
-    if (!draft) return;
-    const id = setInterval(() => setSnapshot({ now: Date.now() }), 1000);
-    return () => clearInterval(id);
-  }, [draft]);
 
   if (!draft) return null;
 

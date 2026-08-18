@@ -45,6 +45,26 @@ describe("the session accessory slot", () => {
     expect(layout).toMatch(/const\s+draft\s*=\s*useSessionDraft\(\)/);
   });
 
+  it("keeps the clock in the store, not in the copies", () => {
+    // The accessory renders TWICE (regular + inline placement). An interval
+    // inside the component is therefore two intervals, a second apart, each
+    // waking every subscriber — for one figure. The draft owns the tick.
+    const accessory = read("components/aurora/session-accessory.tsx");
+    const intervals = accessory.match(/setInterval\(/g) ?? [];
+    expect(intervals).toHaveLength(1);
+    expect(accessory.indexOf("setInterval(")).toBeLessThan(accessory.indexOf("export default function SessionAccessory"));
+  });
+
+  it("hands the layout the draft alone, not the ticking snapshot", () => {
+    // useSyncExternalStore re-renders on snapshot IDENTITY, and the snapshot's
+    // changes once a second while a workout runs. Subscribing the layout to the
+    // whole thing would rebuild the tab bar's children every tick of a clock
+    // the layout does not render.
+    const accessory = read("components/aurora/session-accessory.tsx");
+    const hook = accessory.slice(accessory.indexOf("export function useSessionDraft"));
+    expect(hook).toMatch(/useSyncExternalStore\(subscribe,\s*getDraft,\s*getDraft\)/);
+  });
+
   it("carries the route-change re-read, since the accessory cannot", () => {
     // The accessory is unmounted exactly when a NEW draft would need to be
     // noticed, so the refresh has to live in the always-mounted layout.
