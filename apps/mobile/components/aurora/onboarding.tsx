@@ -184,13 +184,19 @@ export default function AuroraOnboarding() {
         </ScrollView>
 
         {/* THE TWO BUTTONS ARE ONE ROW, so they are one height. Back was drawn
-            at a hard 56 while APill measures itself from its label (18dp of
-            padding around fs.subtitle, ~58) — five pixels of disagreement on the
-            only row of the screen where two controls sit side by side. The row
-            stretches now and Back takes its height from the pill, so the two
-            can never drift apart again. `paddingTop` is the scroller's
-            CLEARANCE: the list clips hard at the row's edge, and without it the
-            cut-off card touched the buttons. */}
+            at a hard 56 while APill DERIVES its height from its label: 18dp of
+            padding around fs.subtitle plus whatever line box Archivo gives 16dp
+            type (17.41 — hhea 878/-210 over 1000upm — which iOS rounds to 18),
+            so 54. Two controls in one row, sized by two rules that have never
+            heard of each other, landing on the same number only by luck.
+            THE COUPLE OF dp IS NOT THE POINT, Dynamic Type is: the label scales
+            to MAX_FONT_SCALE and takes the pill with it, and a hardcoded 56
+            cannot follow — the row comes apart furthest for the readers who
+            most need it to hold together. The row stretches now and Back takes
+            its height from the pill, so there is one height and nothing to
+            drift. `paddingTop` is the scroller's CLEARANCE: the list clips hard
+            at the row's edge, and without it the cut-off card touched the
+            buttons. */}
         <View style={{ flexDirection: "row", gap: space.md, alignItems: "stretch", paddingTop: space.md }}>
           <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={back} style={{ width: 64, minHeight: HIT_TARGET, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="back" size={20} color={palette.chalk} />
