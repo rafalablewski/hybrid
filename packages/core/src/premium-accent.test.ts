@@ -66,8 +66,12 @@ describe("wcagRating", () => {
     expect(wcagRating("#000", "#fff").normal).toBe("AAA"); // 21:1
     // dark ink on sand — very high contrast
     expect(wcagRating("#141614", "#d0cd94").normal).toBe("AAA");
-    // a low-contrast pair fails normal but may pass large
-    const mid = wcagRating("#8b8f86", "#141614"); // ash on the fixed premium ink
+    // A MID pair — clears AA, misses AAA. Deliberately spelled out rather than
+    // read from the palette: this test is about wcagRating's BANDING, not about
+    // any particular token, and wiring it to `ash` is how it came to name a
+    // value the palette had already moved on from (#8b8f86, retired for PANTONE
+    // Slate Gray). A grading test should own its fixtures.
+    const mid = wcagRating("#8a9691", "#141614");
     expect(["AA", "fail"]).toContain(mid.normal);
   });
 });
