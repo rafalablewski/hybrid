@@ -5,6 +5,7 @@ import {
   expectedMassKg,
   frameAdjustedMassKg,
   REFERENCE_BMI,
+  REFERENCE_BODY_FAT,
 } from "./athlete-profile";
 import { personalizeLandmarks } from "./landmark-profile";
 
@@ -106,5 +107,44 @@ describe("body mass read against frame", () => {
     const p = personalizeLandmarks({ bodyweightKg: 95, heightCm: 195 });
     const bwFactor = p.factors.find((f) => f.key === "bodyweight");
     if (bwFactor) expect(bwFactor.value).toBe("95 kg");
+  });
+});
+
+describe("mass read as LEAN mass, where composition is known", () => {
+  /**
+   * The penalty exists because more tissue means more to repair, and fat mass
+   * does not need repairing. Two athletes at the same scale weight and height
+   * therefore must not read the same once one of them has logged a body-fat
+   * figure and the other has not been mistaken for them.
+   */
+  it("charges the leaner athlete more, at the same weight and height", () => {
+    const lean = frameAdjustedMassKg(100, 180, 10);
+    const soft = frameAdjustedMassKg(100, 180, 30);
+    expect(lean).toBeGreaterThan(soft);
+  });
+
+  /** The reference cancels: an athlete AT it reads exactly as they did before
+   *  composition was known, which is what keeps this a refinement of the frame
+   *  rule rather than a second rule stacked on top of it. */
+  it("changes nothing at the reference body fat", () => {
+    const withBf = frameAdjustedMassKg(90, 180, REFERENCE_BODY_FAT * 100);
+    expect(withBf).toBeCloseTo(frameAdjustedMassKg(90, 180), 1);
+  });
+
+  it("changes nothing at all when no reading exists", () => {
+    expect(frameAdjustedMassKg(95, 185)).toBe(frameAdjustedMassKg(95, 185, null));
+    expect(frameAdjustedMassKg(95, 185, undefined)).toBe(frameAdjustedMassKg(95, 185));
+  });
+
+  /** A mistyped 0 or 90 would invert the term rather than sharpen it. */
+  it("refuses a reading a body cannot take", () => {
+    for (const bad of [0, 1, 61, 100, NaN]) {
+      expect(frameAdjustedMassKg(90, 180, bad), String(bad)).toBe(frameAdjustedMassKg(90, 180));
+    }
+  });
+
+  it("applies composition alone when height is unknown", () => {
+    expect(frameAdjustedMassKg(100, null, 10)).toBeGreaterThan(100 * 0.9);
+    expect(frameAdjustedMassKg(100, null, 30)).toBeLessThan(100);
   });
 });

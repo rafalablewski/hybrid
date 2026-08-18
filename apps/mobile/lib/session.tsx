@@ -14,6 +14,7 @@ import { claimCoachInvite } from "./api";
 import { resetPersona } from "./persona";
 import { resetPlanMaxes } from "./plan-maxes";
 import { resetQuestionnaire } from "./questionnaire";
+import { resetWeighIn } from "./weigh-in";
 import { resetFlags } from "./flags";
 import { disablePush } from "./push";
 
@@ -28,6 +29,7 @@ async function clearClientState() {
   resetPersona();
   resetPlanMaxes();
   resetQuestionnaire();
+  resetWeighIn();
   resetFlags();
   try {
     const keys = await AsyncStorage.getAllKeys();

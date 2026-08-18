@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import {
   athleteLandmarks,
   measuredProfile, withMeasured, measuredFields,
-  resolveExperience,
+  resolveExperience, effectiveAgeYears, birthYearFromAge,
   readReports, placeReads, QUICK_CHECKIN_METRIC,
   type AthleteVolumeProfile, type LoggedSession, type RecoveryReport,
 } from "@hybrid/core";
@@ -10,7 +10,7 @@ import { useHeatSignalsQuery, useNutritionSignalsQuery } from "./queries";
 import { useRecoveryReports } from "./use-recovery-reports";
 import { useLoggerPrefs } from "./logger-prefs";
 import { setQuestionnaire, useQuestionnaireSync } from "./questionnaire";
-import { useAthleteHeight, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
+import { useAthleteHeight, useBodyFatPct, useBodyweight, useBodyweightPoints } from "./use-bodyweight";
 import { useFitnessLevel } from "./use-fitness-level";
 
 /**
@@ -43,6 +43,9 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   // Height comes from the body log the athlete already filled in (Profile →
   // Body & progress) rather than being asked for a second time here.
   const loggedHeightCm = useAthleteHeight();
+  // …and their composition, from the same log. It makes the body-mass factor
+  // read LEAN mass (engines/athlete-profile.ts) and does nothing without one.
+  const loggedBodyFatPct = useBodyFatPct();
   // Heat is a MEASURED profile field — there is no form for it and there is not
   // going to be one, because the athlete already told us by logging.
   const { data: heatSignals = [] } = useHeatSignalsQuery();
@@ -66,13 +69,16 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   const recovery = useRecoveryReports(sessions);
 
   const measured = useMemo(
-    () => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, heatSignals, nutritionSignals }),
-    [recovery, bodyweightPoints, loggedHeightCm, heatSignals, nutritionSignals],
+    () => measuredProfile({ checkins: recovery, bodyweight: bodyweightPoints, heightCm: loggedHeightCm, bodyFatPct: loggedBodyFatPct, heatSignals, nutritionSignals }),
+    [recovery, bodyweightPoints, loggedHeightCm, loggedBodyFatPct, heatSignals, nutritionSignals],
   );
   const measuredKeys = useMemo(() => {
     const keys = measuredFields(prefs.volumeProfile, measured);
-    // Body mass is measured too — it comes from the bodyweight log, not this form.
-    if (prefs.volumeProfile.bodyweightKg === undefined && bodyweight != null) keys.add("bodyweightKg");
+    // BODY MASS IS ALWAYS MEASURED WHEN THE LOG HAS ONE, even if the profile
+    // also carries a typed figure — because the log wins now (see the inversion
+    // in core `withMeasured`). `measuredFields` cannot know that: it applies the
+    // general rule, which is that a typed value beats a measured one.
+    if (bodyweight != null) keys.add("bodyweightKg");
     return keys;
   }, [prefs.volumeProfile, measured, bodyweight]);
 
@@ -97,7 +103,16 @@ export function useVolumeModel(sessions: LoggedSession[]) {
   const profile = useMemo<AthleteVolumeProfile>(() => ({
     ...withMeasured(prefs.volumeProfile, measured),
     experience: experience.experience,
-    bodyweightKg: prefs.volumeProfile.bodyweightKg ?? bodyweight ?? undefined,
+    // AGE IS DERIVED FROM THE BIRTH YEAR, so it has a birthday. A stored age is
+    // the same number five years later while the recovery factor moves 1.2% for
+    // every one of them; the engine derives this itself, and so does this
+    // profile, so the figure the screen prints and the figure the model uses
+    // cannot be a year apart.
+    ageYears: effectiveAgeYears(prefs.volumeProfile),
+    // The newest weigh-in, always. `withMeasured` already prefers the log over
+    // a typed figure; this only covers the case where the points list produced
+    // a current weight the measured layer did not (an empty dated series).
+    bodyweightKg: bodyweight ?? withMeasured(prefs.volumeProfile, measured).bodyweightKg,
   }), [prefs.volumeProfile, measured, bodyweight, experience.experience]);
 
   /**
@@ -151,7 +166,18 @@ export function useVolumeModel(sessions: LoggedSession[]) {
    * for what happens when two devices disagree.
    */
   const setProfile = (patch: Partial<AthleteVolumeProfile>) => {
-    const next = { ...prefs.volumeProfile, ...patch };
+    const next: AthleteVolumeProfile = { ...prefs.volumeProfile, ...patch };
+    // AN AGE IS STORED AS THE YEAR IT IMPLIES. The athlete is asked their age,
+    // because that is the question a person answers without thinking; the year
+    // is what survives, because an age does not age. Converted at the single
+    // write path so no caller has to remember — and the stale `ageYears` from a
+    // pre-Aug-2026 profile is dropped as it is replaced, rather than left
+    // behind to be preferred by some future reader.
+    if ("ageYears" in patch) {
+      const age = patch.ageYears;
+      delete next.ageYears;
+      next.birthYear = age === undefined ? undefined : birthYearFromAge(age);
+    }
     for (const k of Object.keys(next) as (keyof AthleteVolumeProfile)[]) if (next[k] === undefined) delete next[k];
     setQuestionnaire(next);
   };

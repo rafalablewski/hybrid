@@ -1,6 +1,9 @@
 import type { Sex } from "./benchmarks";
 import type { OnboardingAnswerMap, OnboardingEngineKey, OnboardingQuestion } from "./onboarding";
-import { sanitizeVolumeProfile, type AthleteVolumeProfile, type LandmarkFactor } from "./engines/landmark-profile";
+import {
+  sanitizeVolumeProfile, effectiveAgeYears, birthYearFromAge,
+  type AthleteVolumeProfile, type LandmarkFactor,
+} from "./engines/landmark-profile";
 import {
   VOLUME_PROFILE_FIELDS,
   VOLUME_PROFILE_FIELD_KEY,
@@ -83,6 +86,13 @@ export interface Question {
   derivable: boolean;
   /** The app answers this one outright. Rendered as a reading, never a blank. */
   measuredOnly?: boolean;
+  /**
+   * The answer is a DATED MEASUREMENT and belongs in the body log, not on the
+   * profile. Still asked, still edited here — but writing it appends a weigh-in
+   * rather than setting a standing field, so it can never go stale and the
+   * scale, the tonnage maths and the maintenance fit all see the same number.
+   */
+  logged?: boolean;
   /**
    * The question this one SHARPENS rather than answers on its own.
    *
@@ -190,7 +200,17 @@ export const QUESTIONNAIRE: QuestionnaireSection[] = [
       q("sex", { kind: "choice", choices: SEX_CHOICES, feeds: "standards" }),
       q("ageYears", { kind: "number", min: 10, max: 100, step: 1, seed: 30, unitKey: "w.quiz.unit.years", feeds: "age" }),
       q("heightCm", { kind: "number", min: 120, max: 230, step: 1, seed: 175, unitKey: "w.quiz.unit.cm", feeds: "bodyweight", refines: "bodyweightKg" }),
-      q("bodyweightKg", { kind: "number", min: 25, max: 300, step: 0.5, seed: 80, unitKey: "w.quiz.unit.kg", feeds: "bodyweight" }),
+      // ── THE ONE QUESTION THAT IS A MEASUREMENT ────────────────────────
+      // Body mass is not a standing claim about the athlete, it is a reading
+      // with a date, and they take a new one every time they step on a scale.
+      // The answer therefore lives in the BODY LOG rather than on the profile,
+      // and this row edits that log — which is why the value shows as measured
+      // the moment a weigh-in exists. See `withMeasured` for the precedence
+      // inversion that makes the newest reading win over anything typed.
+      q("bodyweightKg", {
+        kind: "number", min: 25, max: 300, step: 0.5, seed: 80,
+        unitKey: "w.quiz.unit.kg", feeds: "bodyweight", logged: true,
+      }),
     ],
   },
   {
@@ -281,6 +301,7 @@ export const QUESTIONS: Question[] = QUESTIONNAIRE.flatMap((s) => s.questions);
 export function questionnaireFromAnswers(
   questions: OnboardingQuestion[],
   answers: OnboardingAnswerMap,
+  opts: { now?: number } = {},
 ): AthleteVolumeProfile {
   const read = (k: OnboardingEngineKey): unknown => {
     const q = questions.find((x) => x.engineKey === k);
@@ -297,13 +318,32 @@ export function questionnaireFromAnswers(
     const x = typeof v === "number" ? v : Number(v);
     return Number.isFinite(x) ? x : undefined;
   };
+  const age = n(read("ageYears"));
   return sanitizeVolumeProfile({
     experience: read("experience"),
     sex: read("sex"),
-    ageYears: n(read("ageYears")),
-    bodyweightKg: n(read("bodyweightKg")),
+    // Stored as the year, derived back as an age — see `birthYearFromAge`. A
+    // stored age is the same number five years later, and the recovery factor
+    // moves every one of those years.
+    birthYear: age === undefined ? undefined : birthYearFromAge(age, opts.now),
     daysPerWeek: n(read("daysPerWeek")),
-  });
+    // BODY MASS IS DELIBERATELY ABSENT. It is a reading with a date, not a
+    // standing answer, so setup writes it to the BODY LOG — the same store the
+    // scale, the nutrition maintenance fit and every bodyweight-aware tonnage
+    // already read. `bodyMassFromAnswers` below is what the caller posts.
+  }, { now: opts.now });
+}
+
+/** The body mass setup collected, for the caller to log as a dated weigh-in.
+ *  Undefined when the athlete skipped it — nothing is invented. */
+export function bodyMassFromAnswers(
+  questions: OnboardingQuestion[],
+  answers: OnboardingAnswerMap,
+): number | undefined {
+  const q = questions.find((x) => x.engineKey === "bodyweightKg");
+  const v = q ? answers[q.key] : undefined;
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) && n >= 25 && n <= 300 ? n : undefined;
 }
 
 /** One question by key — the lookup both clients would otherwise hand-roll. */
@@ -360,7 +400,14 @@ export interface QuestionnaireProgress {
 export function questionnaireProgress(
   profile: FullAthleteProfile | null | undefined,
   measuredKeys: Iterable<string> = [],
+  opts: { now?: number } = {},
 ): QuestionnaireProgress {
+  // AGE IS DERIVED, so a profile carrying only a birth year has answered it.
+  // Resolving here rather than at every call site is what stops the form and
+  // the Profile card disagreeing about whether the question is done.
+  const resolved: FullAthleteProfile | null | undefined = profile
+    ? { ...profile, ageYears: effectiveAgeYears(profile, opts.now) }
+    : profile;
   const measuredSet = new Set(measuredKeys);
   const measured: QuestionKey[] = [];
   const gaps: Question[] = [];
@@ -374,11 +421,11 @@ export function questionnaireProgress(
     let sAnswered = 0;
     let sCount = 0;
     for (const x of section.questions) {
-      if (measuredSet.has(x.key) && has(profile?.[x.key as keyof FullAthleteProfile])) measured.push(x.key);
+      if (measuredSet.has(x.key) && has(resolved?.[x.key as keyof FullAthleteProfile])) measured.push(x.key);
       if (!isScored(x)) continue;
       sTotal += x.weight;
       sCount += 1;
-      if (has(profile?.[x.key as keyof FullAthleteProfile])) {
+      if (has(resolved?.[x.key as keyof FullAthleteProfile])) {
         sScore += x.weight;
         sAnswered += 1;
       } else {

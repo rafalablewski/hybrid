@@ -255,7 +255,7 @@ export const web_analyze = {
     "w.quiz.changed.none": "Nothing yet — your bands are still the population table. Answer anything above and the multiplier it earned shows up here.",
     "w.quiz.machine.title": "The model itself",
     "w.quiz.machine.blurb": "The per-muscle landmarks, the adaptive ceiling and the block. Outputs, not questions.",
-    "w.analyze.vol.measuredWhy": "The green fields are read from your own data — sleep from your check-ins, body mass from your weigh-ins, energy intake from the trend on the scale. Type over any of them and your number wins.",
+    "w.analyze.vol.measuredWhy": "The green fields are read from your own data — sleep from your check-ins, energy intake from the trend on the scale, sauna and protein from your logs. Type over any of them and your number wins. Body mass is the exception: it is a weigh-in, so the newest one always wins, and changing it here records a new one.",
 
     // volume — the block ramp (MEV → MAV → deload)
     "w.analyze.vol.thisBlock": "This block",
@@ -777,7 +777,7 @@ export const web_analyze = {
     "w.quiz.changed.none": "Jeszcze nic — Twoje pasma to wciąż tabela populacyjna. Odpowiedz na cokolwiek powyżej, a mnożnik, który to dało, pojawi się tutaj.",
     "w.quiz.machine.title": "Sam model",
     "w.quiz.machine.blurb": "Punkty odniesienia dla mięśni, adaptacyjny sufit i blok. To wyniki, nie pytania.",
-    "w.analyze.vol.measuredWhy": "Zielone pola pochodzą z Twoich danych — sen z check-inów, masa ciała z ważeń, podaż energii z trendu na wadze. Wpisz własną wartość, a Twoja liczba wygrywa.",
+    "w.analyze.vol.measuredWhy": "Zielone pola pochodzą z Twoich danych — sen z check-inów, podaż energii z trendu na wadze, sauna i białko z dzienników. Wpisz własną wartość, a Twoja liczba wygrywa. Wyjątkiem jest masa ciała: to ważenie, więc zawsze wygrywa najnowsze, a zmiana tutaj zapisuje nowe.",
 
     // volume — rampa bloku (MEV → MAV → deload)
     "w.analyze.vol.thisBlock": "Ten blok",
@@ -1296,7 +1296,7 @@ export const web_analyze = {
     "w.quiz.changed.none": "Noch nichts — deine Bänder sind weiterhin die Bevölkerungstabelle. Beantworte irgendetwas oben, und der dadurch verdiente Multiplikator erscheint hier.",
     "w.quiz.machine.title": "Das Modell selbst",
     "w.quiz.machine.blurb": "Die Landmarken je Muskel, die adaptive Decke und der Block. Ergebnisse, keine Fragen.",
-    "w.analyze.vol.measuredWhy": "Die grünen Felder stammen aus deinen eigenen Daten — Schlaf aus deinen Check-ins, Körpermasse aus deinen Wiegungen, Energiezufuhr aus dem Trend auf der Waage. Trag etwas ein und deine Zahl gewinnt.",
+    "w.analyze.vol.measuredWhy": "Die grünen Felder stammen aus deinen eigenen Daten — Schlaf aus deinen Check-ins, Energiezufuhr aus dem Trend auf der Waage, Sauna und Protein aus deinen Logs. Trag etwas ein und deine Zahl gewinnt. Ausnahme ist die Körpermasse: sie ist eine Wiegung, also gewinnt immer die neueste, und eine Änderung hier trägt eine neue ein.",
 
     // volume — die Blockrampe (MEV → MAV → Deload)
     "w.analyze.vol.thisBlock": "Dieser Block",

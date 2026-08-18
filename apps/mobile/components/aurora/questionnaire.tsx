@@ -12,6 +12,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useLoggerPrefs, setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { setQuestionnaire } from "../../lib/questionnaire";
+import { logWeighIn } from "../../lib/weigh-in";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP, TABULAR } from "../../lib/ui";
@@ -99,6 +100,26 @@ export default function AuroraQuestionnaire() {
   const answered = progress.sections.reduce((n, s) => n + s.answered, 0);
   const total = progress.sections.reduce((n, s) => n + s.total, 0);
 
+  /**
+   * SAVE AN ANSWER — to the profile, or to the body log where the answer is a
+   * measurement.
+   *
+   * Body mass is the one question whose answer has a DATE. Writing it as a
+   * standing profile field is what let a figure typed once at setup outrank
+   * every subsequent weigh-in for the life of the account, so this row appends
+   * to the body log instead — the same store the scale form writes, debounced
+   * so a drag from 80 to 74 leaves one reading rather than the trail of numbers
+   * it crossed (lib/weigh-in.ts). The local copy is set too, so the control
+   * answers the thumb immediately; the log supersedes it the moment it lands.
+   */
+  const answer = (patch: Partial<AthleteVolumeProfile>) => {
+    for (const [key, value] of Object.entries(patch)) {
+      const q = QUESTIONNAIRE.flatMap((s) => s.questions).find((x) => x.key === key);
+      if (q?.logged && typeof value === "number") logWeighIn(value);
+    }
+    setProfile(patch);
+  };
+
   return (
     <AuroraScreen
       refreshing={refreshing}
@@ -118,7 +139,7 @@ export default function AuroraQuestionnaire() {
           measuredKeys={measuredKeys}
           open={open === section.id}
           onToggle={() => { haptic.selection(); setOpen((o) => (o === section.id ? null : section.id)); }}
-          onAnswer={setProfile}
+          onAnswer={answer}
         />
       ))}
 

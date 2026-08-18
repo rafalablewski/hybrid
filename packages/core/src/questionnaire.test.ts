@@ -7,12 +7,13 @@ import {
   question,
   questionnaireProgress,
   questionnaireFromAnswers,
+  bodyMassFromAnswers,
   type Question,
   type QuestionKey,
 } from "./questionnaire";
 import { VOLUME_PROFILE_FIELDS } from "./engines/athlete-profile";
 import { DEFAULT_ONBOARDING_QUESTIONS, onboardingQuestionsForClient } from "./onboarding";
-import { personalizeLandmarks, sanitizeVolumeProfile, type AthleteVolumeProfile } from "./engines/landmark-profile";
+import { personalizeLandmarks, sanitizeVolumeProfile, effectiveAgeYears, type AthleteVolumeProfile } from "./engines/landmark-profile";
 
 /** A legal answer to any question, for the round-trip and factor checks. */
 function sample(x: Question): unknown {
@@ -20,6 +21,8 @@ function sample(x: Question): unknown {
   // A value comfortably inside the bounds, and DIFFERENT from the model's
   // neutral point where one exists — a factor that only fires off the default
   // would pass a test written against the default and do nothing in the app.
+  // The age question stores a BIRTH YEAR; the sanitizer round-trip below tests
+  // that field, so the sample has to be one the sanitizer will keep.
   if (x.key === "ageYears") return 45;
   if (x.key === "bodyweightKg") return 110;
   if (x.key === "heightCm") return 178;
@@ -225,12 +228,41 @@ describe("progress", () => {
 describe("what setup already asked", () => {
   const qs = onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS);
 
+  const NOW = Date.UTC(2026, 7, 18);
+
   it("carries the intake's answers onto the profile", () => {
     const p = questionnaireFromAnswers(qs, {
       persona: "athlete", goal: "hybrid", experience: "advanced",
       sex: "F", age: 34, bodyweight: 61.5, days: 5, equipment: "full",
-    });
-    expect(p).toEqual({ experience: "advanced", sex: "F", ageYears: 34, bodyweightKg: 61.5, daysPerWeek: 5 });
+    }, { now: NOW });
+    // Age is stored as the YEAR, and body mass is not here at all — it is a
+    // dated measurement and goes to the body log.
+    expect(p).toEqual({ experience: "advanced", sex: "F", birthYear: 1992, daysPerWeek: 5 });
+    expect(effectiveAgeYears(p, NOW)).toBe(34);
+    expect(bodyMassFromAnswers(qs, { bodyweight: 61.5 })).toBe(61.5);
+  });
+
+  /** A stored age is the same number five years later, while the recovery
+   *  factor moves 1.2% for every one of them. The year is what stays true. */
+  it("ages with the athlete instead of freezing at setup", () => {
+    const p = questionnaireFromAnswers(qs, { age: 30 }, { now: NOW });
+    expect(effectiveAgeYears(p, NOW)).toBe(30);
+    expect(effectiveAgeYears(p, Date.UTC(2031, 7, 18))).toBe(35);
+    // …and the factor follows it, which is the whole point.
+    const then = personalizeLandmarks(p, undefined, { now: Date.UTC(2031, 7, 18) });
+    const now = personalizeLandmarks(p, undefined, { now: NOW });
+    expect(then.recovery).toBeLessThan(now.recovery);
+  });
+
+  it("still reads a legacy profile that only has an age", () => {
+    expect(effectiveAgeYears({ ageYears: 41 }, NOW)).toBe(41);
+    // …and prefers the year when a profile carries both.
+    expect(effectiveAgeYears({ ageYears: 41, birthYear: 1990 }, NOW)).toBe(36);
+  });
+
+  it("skips the body mass rather than inventing one", () => {
+    expect(bodyMassFromAnswers(qs, {})).toBeUndefined();
+    expect(bodyMassFromAnswers(qs, { bodyweight: 4 })).toBeUndefined();
   });
 
   /**
@@ -247,9 +279,21 @@ describe("what setup already asked", () => {
   });
 
   it("takes an athlete most of the way before their first session", () => {
-    const p = questionnaireFromAnswers(qs, { experience: "intermediate", sex: "M", age: 28, bodyweight: 79, days: 4 });
+    const answers = { experience: "intermediate", sex: "M", age: 28, bodyweight: 79, days: 4 };
+    const p = questionnaireFromAnswers(qs, answers, { now: NOW });
+    // Body mass reaches the profile the way it does in the app: setup logs a
+    // weigh-in, and the measured layer merges the newest one back in.
+    const resolved = { ...p, bodyweightKg: bodyMassFromAnswers(qs, answers) };
     // experience .27 + sex .08 + age .13 + mass .17 + days .11 = .76
-    expect(questionnaireProgress(p).score).toBe(0.76);
+    expect(questionnaireProgress(resolved, [], { now: NOW }).score).toBe(0.76);
+  });
+
+  /** The age question counts as answered from the birth year alone — the form
+   *  and the Profile card must not disagree about whether it is done. */
+  it("counts a birth year as an answered age", () => {
+    const p = questionnaireFromAnswers(qs, { age: 28 }, { now: NOW });
+    expect(p.ageYears).toBeUndefined();
+    expect(questionnaireProgress(p, [], { now: NOW }).score).toBe(0.13);
   });
 
   /** A default written into the profile is an answer nobody gave. The three

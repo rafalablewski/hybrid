@@ -4,6 +4,7 @@ import {
   onboardingQuestionsForClient,
   recommendFromAnswers,
   questionnaireFromAnswers,
+  bodyMassFromAnswers,
   extractEngineAnswers,
   isEmptyVolumeProfile,
   DEFAULT_ONBOARDING_QUESTIONS,
@@ -15,6 +16,7 @@ import { fetchOnboardingQuestions, submitOnboarding as apiSubmit } from "./api";
 import { setClientPersona } from "./persona";
 import { getLoggerPrefs } from "./logger-prefs";
 import { setQuestionnaire } from "./questionnaire";
+import { logWeighInNow } from "./weigh-in";
 
 export type AnswerValue = string | number | string[];
 
@@ -93,6 +95,13 @@ export async function finishOnboarding(
   if (!isEmptyVolumeProfile(fromIntake)) {
     setQuestionnaire({ ...getLoggerPrefs().volumeProfile, ...fromIntake });
   }
+  // BODY MASS IS NOT ONE OF THOSE ANSWERS — it is a reading with a date, so it
+  // goes to the body log, which is the store the scale, bodyweight-aware
+  // tonnage, e1RM and the nutrition maintenance fit already share. Writing it
+  // here is also what stops the questionnaire falling back to a typed figure:
+  // from the athlete's first session there is a real weigh-in to prefer.
+  const kg = bodyMassFromAnswers(questions, answers);
+  if (kg !== undefined) await logWeighInNow(kg);
   try {
     await AsyncStorage.setItem("hybrid.equipment", extractEngineAnswers(questions, answers).equipment);
   } catch { /* ignore */ }

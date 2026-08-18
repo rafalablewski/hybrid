@@ -169,6 +169,21 @@ export function volumeProfileCompleteness(
 /** The body mass a height predicts, at the model's reference build. */
 export const REFERENCE_BMI = 24.5;
 
+/**
+ * THE BODY FAT THE REFERENCE BUILD CARRIES — a NORMALISING CONSTANT, and
+ * deliberately not a claim about anybody.
+ *
+ * It cancels at itself: an athlete whose body fat equals this reads exactly as
+ * they did before composition was known, because
+ * `(kg × (1 − bf)) / (expected × (1 − REF))` reduces to `kg / expected` when
+ * `bf === REF`. Only the DISTANCE from it moves anything, so the number's job
+ * is to sit in the middle of the population rather than to describe a sex, an
+ * age or a sport — which matters, because the landmark maths is forbidden from
+ * reading sex (that is for the published STANDARDS, see AthleteVolumeProfile.sex)
+ * and a reference chosen per sex would smuggle it in through the back door.
+ */
+export const REFERENCE_BODY_FAT = 0.18;
+
 /** Body mass above which extra mass starts costing recovery, and the reference
  *  a frame-adjusted mass is expressed against. Lives here with the frame maths
  *  rather than in landmark-profile, so the two can never drift apart. */
@@ -184,11 +199,48 @@ export function expectedMassKg(heightCm: number): number | null {
  * The mass the recovery factor should read: the athlete's mass expressed
  * against an 80 kg-equivalent frame, so a tall athlete is not docked for being
  * tall. Returns the raw mass unchanged when height is unknown.
+ *
+ * ── AND LEAN MASS WHERE COMPOSITION IS KNOWN ───────────────────────────────
+ *
+ * The penalty this feeds exists because more mass means more absolute load
+ * moved per set and more tissue to repair. FAT MASS DOES NOT NEED REPAIRING,
+ * so reading total mass overstates the cost for a heavier, softer athlete and
+ * understates it for a lean one carrying the same number on the scale. A
+ * 100 kg athlete at 10% body fat has 90 kg of contractile tissue to recover;
+ * at 30% they have 70 kg, and the flat rule charges them identically.
+ *
+ * The comment that stood here said the app "cannot see composition and
+ * pretending otherwise would be the same class of error as inventing a sleep
+ * score", and that was true right up until the body log started carrying a
+ * body-fat field the athlete fills in themselves (BodyMetric.bodyFatPct,
+ * Profile → Body & progress). It is not inferred and it is not modelled: it is
+ * a measurement, read from where they already entered it. Where it is absent,
+ * NOTHING CHANGES — the raw-kg and frame rules apply exactly as before.
+ *
+ * The composition term is expressed against `REFERENCE_BODY_FAT` so it cancels
+ * at the reference, which is what keeps this a refinement of the existing rule
+ * rather than a second rule stacked on top of it.
  */
-export function frameAdjustedMassKg(bodyweightKg: number, heightCm?: number | null): number {
+export function frameAdjustedMassKg(
+  bodyweightKg: number,
+  heightCm?: number | null,
+  bodyFatPct?: number | null,
+): number {
   if (!Number.isFinite(bodyweightKg) || bodyweightKg <= 0) return bodyweightKg;
+  // Composition, when it is known. Bounded to a range a body-composition
+  // measurement can actually take, so a mistyped 0 or 90 cannot invert the term.
+  const bf =
+    typeof bodyFatPct === "number" && Number.isFinite(bodyFatPct) && bodyFatPct >= 3 && bodyFatPct <= 60
+      ? bodyFatPct / 100
+      : null;
+  const lean = bf == null ? 1 : (1 - bf) / (1 - REFERENCE_BODY_FAT);
+
   const expected = heightCm != null ? expectedMassKg(heightCm) : null;
-  if (expected == null || expected <= 0) return bodyweightKg;
-  // Scale the athlete's mass-for-frame ratio onto the model's reference mass.
-  return Math.round((bodyweightKg / expected) * BODYWEIGHT_REF_KG * 10) / 10;
+  if (expected == null || expected <= 0) {
+    // No frame to read against — apply composition alone, on the raw mass.
+    return bf == null ? bodyweightKg : Math.round(bodyweightKg * lean * 10) / 10;
+  }
+  // Scale the athlete's mass-for-frame ratio onto the model's reference mass,
+  // reading LEAN mass for frame where composition is known.
+  return Math.round((bodyweightKg / expected) * lean * BODYWEIGHT_REF_KG * 10) / 10;
 }

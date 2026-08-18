@@ -81,7 +81,12 @@ vi.mock("../lib/use-bodyweight", () => ({
   useBodyweight: () => 82,
   useBodyweightPoints: () => [],
   useAthleteHeight: () => 180,
+  // No composition logged: the body-mass factor reads raw mass against the
+  // frame exactly as it did before body fat could sharpen it, which keeps this
+  // fixture's figures the ones the assertions below were written against.
+  useBodyFatPct: () => null,
   useBodyweightLookup: () => () => 82,
+  refreshBodyweight: () => {},
 }));
 
 const { default: AuroraLearned, LearnedLead } = await import("../components/aurora/learned");
