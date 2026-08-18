@@ -1090,7 +1090,13 @@ describe("presentation", () => {
     // because APill takes ONE `label` and that CTA carries a title plus a
     // sub-line; giving it the component means restructuring the copy, which is a
     // different change from a retint.
-    burnDown(found, 36, "2026-12-31", "hand-rolled lime pill → <APill />");
+    // 36 → 35 with the step-rail merge: nutrition's guided setup drew its
+    // progress as a single lime bar at RADIUS.pill with a percentage width, and
+    // this rule counted it as a pill because a bar and a pill are the same two
+    // properties. It is `AStepRail` now, so the site is gone rather than
+    // reclassified — but it is a reminder that the pattern cannot tell a BUTTON
+    // from a lime bar, and the count has always carried a few of the latter.
+    burnDown(found, 35, "2026-12-31", "hand-rolled lime pill → <APill />");
   });
 
   it("RATCHET — bespoke OUTLINE pills give way to APill variant=\"outline\"", () => {

@@ -136,10 +136,14 @@ export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () =
         </View>
         <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: tracking.display, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
       </View>
-      {/* one tick per step — the method's length, stated by the plate itself */}
+      {/* One tick per step — the method's length, stated by the plate itself.
+          NOT the kit's `AStepRail`, and this is the one rail that genuinely
+          differs: it is drawn OVER A PHOTOGRAPH, where the rail's `line` track
+          (a near-black hairline) would vanish. Its unfilled tick is chalk at a
+          tint-scale alpha instead of the raw rgba it carried. */}
       <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, flexDirection: "row", gap: 2 }}>
         {Array.from({ length: cook.steps }, (_, i) => (
-          <View key={i} style={{ flex: 1, height: 3, backgroundColor: i <= cook.index ? C.lime : "rgba(255,255,255,0.18)" }} />
+          <View key={i} style={{ flex: 1, height: 3, backgroundColor: i <= cook.index ? C.lime : withAlpha(C.chalk, ALPHA.solid) }} />
         ))}
       </View>
     </View>

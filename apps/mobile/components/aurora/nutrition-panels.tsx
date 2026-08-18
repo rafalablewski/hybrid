@@ -10,7 +10,7 @@ import { fs, space, leading, tracking, F, PressScale as Pressable, HIT_SLOP } fr
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard, AChoice, ASection, AMeter, RADIUS } from "./kit";
+import { APill, ACard, AChoice, ASection, AMeter, AStepRail, RADIUS } from "./kit";
 import { AuroraIcon, Glyph } from "./icons";
 import { haptic } from "../../lib/haptics";
 import { withAlpha } from "./field";
@@ -219,7 +219,11 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
         {step > 0 ? <Pressable onPress={() => setStep((s) => s - 1)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.back")} hitSlop={HIT_SLOP} style={{ width: 36, height: 36, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={16} color={C.chalk} /></Pressable> : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepOf").replace("{n}", String(step + 1))}</Text>
       </View>
-      <View style={{ height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink, overflow: "hidden", marginTop: 12 }}><View style={{ width: `${((step + 1) / 3) * 100}%`, height: 4, backgroundColor: C.lime }} /></View>
+      {/* Was a single 4dp bar with a percentage width — a continuous readout of
+          a discrete thing. Three steps are three segments, on the kit's shared
+          rail, so this wizard's progress is drawn the same way the other two
+          draw theirs. */}
+      <AStepRail marks={[0, 1, 2].map((i) => (i <= step ? "done" : "empty"))} style={{ marginTop: space.md }} />
 
       {step === 0 ? (
         <View style={{ marginTop: 24 }}>

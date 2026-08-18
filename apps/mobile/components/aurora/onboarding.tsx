@@ -21,7 +21,7 @@ import {
   HIT_SLOP, LoadSwap, Skeleton, useEntrance,
 } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ACard, AChoice, APill, ASegment, ANumberField, ABirthField, AHeading, ASub, AuroraField, RADIUS } from "./kit";
+import { ACard, AChoice, APill, ASegment, ANumberField, ABirthField, AHeading, AStepRail, ASub, AuroraField, RADIUS } from "./kit";
 
 /**
  * AURORA onboarding — the stepped wizard, driven by the admin-editable question
@@ -144,7 +144,10 @@ export default function AuroraOnboarding() {
           for the screens it shells, and this one shells itself. */}
       <AuroraField />
       <Animated.View style={[{ flex: 1, padding: space.xxl }, enterStyle]}>
-        <StepRail total={total} at={idx} />
+        {/* Filled by POSITION: every step up to the one you are on. The rail
+            itself is the kit's now (`AStepRail`) — four wizards drew four of
+            them and only this one animated. */}
+        <AStepRail marks={Array.from({ length: total }, (_, i) => (i <= idx ? "done" : "empty"))} style={{ marginTop: space.sm }} />
         <Pressable
           onPress={leave}
           accessibilityRole="button"
@@ -318,60 +321,6 @@ function StepSwap({ step, dir, children }: { step: number; dir: 1 | -1; children
           {gone.node}
         </Animated.View>
       )}
-    </View>
-  );
-}
-
-/**
- * THE PROGRESS RAIL — one segment per step, filled up to where you are.
- *
- * The segments used to swap colour in a single frame, which made the only
- * element on the screen whose job is to REPORT TRAVEL the one element that
- * did not travel. Each segment now fills from its leading edge on
- * `springs.slide` — the wizard's own spring, so the bar and the step it
- * describes move on one curve.
- */
-function StepRail({ total, at }: { total: number; at: number }) {
-  return (
-    <View
-      accessibilityRole="progressbar"
-      accessibilityValue={{ min: 1, max: total, now: at + 1 }}
-      style={{ flexDirection: "row", gap: space.sm, marginTop: space.sm }}
-    >
-      {Array.from({ length: total }).map((_, i) => (
-        <RailSeg key={i} on={i <= at} />
-      ))}
-    </View>
-  );
-}
-
-function RailSeg({ on }: { on: boolean }) {
-  const { palette } = useTheme();
-  const reduced = useReducedMotion();
-  const [w, setW] = useState(0);
-  const fill = useRef(new Animated.Value(on ? 1 : 0)).current;
-  useEffect(() => {
-    const anim = reduced
-      ? Animated.timing(fill, { toValue: on ? 1 : 0, duration: durations.reduced, easing: Easing.linear, useNativeDriver: true })
-      : Animated.spring(fill, { toValue: on ? 1 : 0, ...springToRN(springs.slide), useNativeDriver: true });
-    anim.start();
-    return () => anim.stop();
-  }, [on, fill, reduced]);
-  // Rebuilt only when the measured width changes (once) or Reduce Motion is
-  // toggled — `interpolate` registers a node on the value every call.
-  const style = useMemo(
-    () =>
-      reduced
-        ? { opacity: fill }
-        : { transform: [{ translateX: fill.interpolate({ inputRange: [0, 1], outputRange: [-w, 0] }) }] },
-    [fill, w, reduced],
-  );
-  return (
-    <View
-      onLayout={(e) => setW(e.nativeEvent.layout.width)}
-      style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: palette.line, overflow: "hidden" }}
-    >
-      <Animated.View style={[{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, backgroundColor: palette.lime }, style]} />
     </View>
   );
 }

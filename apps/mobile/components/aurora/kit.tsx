@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { Image, View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle, type TextInputProps } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -2198,6 +2198,109 @@ export function AChoice({ active, title, sub, onPress, sheet }: {
         <ACheckMark on={active} size={22} />
       </Animated.View>
     </Pressable>
+  );
+}
+
+/**
+ * ONE MARK OF A STEP RAIL. The three states a segment can be in, and the reason
+ * this is a TYPE rather than a boolean: the wizards do not disagree about how a
+ * rail is DRAWN, they disagree about what fills one, and that difference has to
+ * survive the merge.
+ */
+export type StepMark = "done" | "current" | "empty";
+
+/**
+ * THE STEP RAIL — one segment per step, filled up to where you are.
+ *
+ * FOUR RAILS, ONE DRAWING. Onboarding, the check-in wizard, nutrition's guided
+ * setup and (nearly) recipe-library's cook mode each drew their own: 5dp at
+ * RADIUS.mark on an 8 gap, 5dp at RADIUS.pill on a 6 gap, a single 4dp bar with
+ * a percentage width, 3dp ticks with no radius at all. Only ONE of them
+ * animated, only one declared `progressbar` to VoiceOver, and the differences
+ * between them were not decisions — nobody chose 6 over 8.
+ *
+ * WHAT IS NOT MERGED IS THE MEANING, and that is the whole design of this
+ * component. The callers genuinely disagree about what fills a segment, and
+ * they are each right:
+ *
+ *   • onboarding fills by POSITION — every step up to the one you are on.
+ *   • check-in fills by ANSWERS, not position (see its own note: filling by
+ *     position drew a complete bar over a check-in holding one answer, the
+ *     screen asserting "done" while the review card underneath showed dashes).
+ *   • nutrition's setup fills by position across three steps.
+ *
+ * So the caller hands in `marks` and keeps its own rule. A `current` segment is
+ * drawn faint rather than full, which is what check-in needs for "you are here
+ * but you have not answered"; a caller with no such state simply never sends it.
+ *
+ * THE FILL TRAVELS, from the leading edge on `springs.slide` — the wizard's own
+ * spring, so the bar and the step it describes move on one curve. That
+ * behaviour existed on exactly one of the four rails before this; it is the
+ * element on screen whose entire job is to report travel, so a rail that snaps
+ * is the one thing it must not do. Reduce Motion substitutes a cross-fade.
+ *
+ * `now` FOR VOICEOVER IS THE COUNT OF `done`, which is correct under BOTH
+ * meanings without the component having to know which one it is serving:
+ * position-filled rails have exactly `at + 1` done marks, answer-filled rails
+ * have exactly as many as are answered.
+ */
+export function AStepRail({ marks, style }: { marks: StepMark[]; style?: StyleProp<ViewStyle> }) {
+  const done = marks.filter((m) => m === "done").length;
+  return (
+    <View
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: marks.length, now: done }}
+      style={[{ flexDirection: "row", gap: space.sm }, style]}
+    >
+      {marks.map((m, i) => (
+        <StepSeg key={i} mark={m} />
+      ))}
+    </View>
+  );
+}
+
+/** The rail's thickness. One number, and it is the one the two 5dp rails already
+ *  drew — nutrition's 4 and cook mode's 3 were the outliers. */
+const RAIL_H = 5;
+
+function StepSeg({ mark }: { mark: StepMark }) {
+  const { palette } = useTheme();
+  const reduced = useReducedMotion();
+  const on = mark !== "empty";
+  const fill = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    const anim = reduced
+      ? Animated.timing(fill, { toValue: on ? 1 : 0, duration: durations.reduced, easing: Easing.linear, useNativeDriver: true })
+      : Animated.spring(fill, { toValue: on ? 1 : 0, ...springToRN(springs.slide), useNativeDriver: true });
+    anim.start();
+    return () => anim.stop();
+  }, [on, fill, reduced]);
+  // Rebuilt only when Reduce Motion is toggled — `interpolate` registers a node
+  // on the value every call. The travel is a percentage of the segment's own
+  // width, so nothing has to be MEASURED first (the previous copy carried an
+  // onLayout and a width state purely to compute this).
+  const style = useMemo(
+    () =>
+      reduced
+        ? { opacity: fill }
+        : { transform: [{ translateX: fill.interpolate({ inputRange: [0, 1], outputRange: ["-100%", "0%"] }) }] },
+    [fill, reduced],
+  );
+  return (
+    <View style={{ flex: 1, height: RAIL_H, borderRadius: RADIUS.pill, backgroundColor: palette.line, overflow: "hidden" }}>
+      <Animated.View
+        style={[
+          {
+            position: "absolute", top: 0, bottom: 0, left: 0, right: 0,
+            // A CURRENT step is drawn faint: you are here, and this is not yet
+            // an achievement. `line` on the accent is the same rung the rest of
+            // the app uses for "present but not asserted".
+            backgroundColor: mark === "current" ? withAlpha(palette.lime, ALPHA.line) : palette.lime,
+          },
+          style,
+        ]}
+      />
+    </View>
   );
 }
 

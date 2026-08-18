@@ -22,7 +22,7 @@ import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
-import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
+import { AuroraScreen, ACard, APill, AStepRail, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
 import { useConfirm } from "./confirm";
@@ -301,18 +301,13 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
           complete bar over a check-in that held one answer — the screen
           asserting "done" while the review card underneath showed dashes. A bar
           is solid when its question is answered, faint while you're on it, and
-          empty otherwise. */}
-      <View style={{ flexDirection: "row", gap: 6 }}>
-        {steps.map((st, i) => (
-          <View
-            key={i}
-            style={{
-              flex: 1, height: 5, borderRadius: RADIUS.pill,
-              backgroundColor: done || isAnswered(st) ? C.lime : i === step ? withAlpha(C.lime, ALPHA.line) : C.line,
-            }}
-          />
-        ))}
-      </View>
+          empty otherwise.
+          THAT RULE IS THE PART THAT IS LOCAL. The DRAWING is the kit's
+          `AStepRail` now, shared with the other two wizards, and the rule
+          survives as the marks this screen hands it — which is where a rule
+          about THIS screen's meaning belongs. The rail also gained a travelling
+          fill and a `progressbar` role it never declared. */}
+      <AStepRail marks={steps.map((st, i) => (done || isAnswered(st) ? "done" : i === step ? "current" : "empty"))} />
 
       {/* SAVED / EDITING — the state banner. Locked, it says the answers are
           stored and offers the one control that changes that; editing, it says
