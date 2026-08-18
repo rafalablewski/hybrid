@@ -263,16 +263,28 @@ export function workoutColor(label: string): LoadColor {
   return "blue";
 }
 
-/** The accent colour for a day's session marker — so the SAME session reads in
- *  the same hue on every surface (the Plans program table + the Today week-rail
- *  can't drift). AM/MID/PM get fixed hues; an untimed session cycles by ordinal
- *  so a "Training 1 / 2 / 3" day still reads as three distinct blocks. */
-export function sessionColor(label: string | null | undefined, index: number): LoadColor {
-  if (label === "AM") return "lime";
-  if (label === "MID") return "amber";
-  if (label === "PM") return "blue";
-  return (["lime", "amber", "blue"] as const)[index % 3]!;
-}
+/*
+ * RETIRED — `sessionColor`. It gave AM/MID/PM fixed hues and cycled untimed
+ * sessions by ordinal, so a "Training 1 / 2 / 3" day read as three colours.
+ *
+ * That is COLOUR ENCODING IDENTITY, which theme/tokens.ts says the palette no
+ * longer does — and here it was the third redundant signal for one fact: the
+ * marker row already prints the session's NAME, and already carries a hairline
+ * rule beneath it. Nothing was learnable from the hue that the word did not say.
+ *
+ * Its stated reason had also expired. The header argued it kept "the Plans
+ * program table + the Today week-rail" from drifting across surfaces — but the
+ * web client was retired in Aug 2026, and by the time this was looked at there
+ * was exactly one consumer left (percent-program.tsx). A function that exists to
+ * keep two things in step, with one of them gone, is a function keeping itself
+ * in step.
+ *
+ * The marker now draws in `chalk` — it is the block's name, so it reads as a
+ * heading — with its volume staying in `ash` beside it. Hierarchy by weight,
+ * which is what the rest of the app does.
+ *
+ * TO REVISIT: a real argument would have to name something the LABEL cannot say.
+ */
 
 /** Map a conditioning effort tier to its intensity colour — the circuit's wave,
  *  on the SAME blue→lime→amber→red scale the % loads ride, with recover → ash.

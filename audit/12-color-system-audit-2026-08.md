@@ -658,51 +658,81 @@ before the next TestFlight; **MEDIUM** = consistency; **LOW** = refinement.
 
 ### CRITICAL
 
-| # | File | Change |
-|---|---|---|
-| C1 | `apps/web/app/error.tsx:60`, `apps/web/app/global-error.tsx:55` | `#2a2d2a` → `#242724`. Same stale value the mobile fallback was fixed for. |
-| C2 | `apps/web/__tests__/` (new `fallback-palette.test.ts`) | Port `apps/mobile/lib/error-boundary-palette.test.ts` to the six web files that hardcode the palette (`error`, `global-error`, `not-found`, `page`, `privacy`, `terms`). Read as text, diff against `colors`. |
-| C3 | `packages/core/src/theme/palette.test.ts:82` | Widen `COST_ROLES` to **all** role pairs. Expect `go`/`caution` to fail at 17.4 → retune `amber` (e.g. warm it or drop luminance until ΔE ≥ 18 vs `lime`) **or** lower `DISTINCT_ROLE_DE` with the argument written down. Do not leave the floor unenforced. |
-| C4 | `packages/core/src/theme/palette.test.ts` | Add: `onAccent` vs **every** fill ≥ AA. Today only `accent` is tested; `blue` would fail at 3.88. |
-| C5 | `apps/mobile/app/workout.tsx:2833–2835` | `chalk`-on-`violet` CTA is **2.67:1**. Repaint as the standard primary (`lime` fill + `onAccent`) or use `violet` as an outline with `txt(C, C.violet)` text. |
-| C6 | `apps/mobile/components/aurora/user-recipes.tsx:541` | `#fff` on `red` is **3.40:1**. Use `onAccent` (5.72:1) or make it a destructive outline button. |
+| # | File | Change | Status |
+|---|---|---|---|
+| C1 | `apps/web/app/error.tsx:60`, `apps/web/app/global-error.tsx:55` | `#2a2d2a` → `#242724`. Same stale value the mobile fallback was fixed for. | ✅ done |
+| C2 | `apps/web/__tests__/` (new `fallback-palette.test.ts`) | Port `apps/mobile/lib/error-boundary-palette.test.ts` to the six web files that hardcode the palette (`error`, `global-error`, `not-found`, `page`, `privacy`, `terms`). Read as text, diff against `colors`. | ✅ done |
+| C3 | `packages/core/src/theme/palette.test.ts:82` | Widen `COST_ROLES` to **all** role pairs. Expect `go`/`caution` to fail at 17.4 → retune `amber` (e.g. warm it or drop luminance until ΔE ≥ 18 vs `lime`) **or** lower `DISTINCT_ROLE_DE` with the argument written down. Do not leave the floor unenforced. | ✅ done |
+| C4 | `packages/core/src/theme/palette.test.ts` | Add: `onAccent` vs **every** fill ≥ AA. Today only `accent` is tested; `blue` would fail at 3.88. | ✅ done (split in two — see the note) |
+| C5 | `apps/mobile/app/workout.tsx:2833–2835` | `chalk`-on-`violet` CTA is **2.67:1**. Repaint as the standard primary (`lime` fill + `onAccent`) or use `violet` as an outline with `txt(C, C.violet)` text. | ✅ done |
+| C6 | `apps/mobile/components/aurora/user-recipes.tsx:541` | `#fff` on `red` is **3.40:1**. Use `onAccent` (5.72:1) or make it a destructive outline button. | ✅ done |
 
 ### HIGH
 
-| # | File | Change |
-|---|---|---|
-| H1 | `packages/core/src/theme/tokens.ts`, `palette.ts`, `globals.css:13`, `apps/web/lib/ui.tsx:44` | **Retire `card`.** Migrate the 7 mobile + 15 web sites to `ink2` (they render identically). Keep the key as a deprecated alias for one release, then delete. Record as `retired` in `capabilities.ts`. |
-| H2 | `apps/web/components/admin/flags.tsx:192` | delete `CARD_DARK`, use `INK2`. |
-| H3 | `apps/mobile/components/aurora/{trends.tsx:86, week-verdict.tsx:635, endurance-summary.tsx:98}`, `components/workout-wrapped.tsx:547` | One `deltaRole(dir)` in core returning `go`/`danger`/`neutral`; wire `statSubTone()` (currently 0 consumers) to it. Pick **red** for down — three of four surfaces already do. |
-| H4 | `apps/mobile/components/aurora/nutrition.tsx:2181,2621,2670` + the 13 `withAlpha(C.ash, .533/.6)` sites | Two placeholder tokens only: `text.placeholder` (`ash`, AA) and `text.ghost` (55% + italic, *suggested values only*). Delete `C.line` and `#3a3d34` as placeholder inks. |
+| # | File | Change | Status |
+|---|---|---|---|
+| H1 | `packages/core/src/theme/tokens.ts`, `palette.ts`, `globals.css:13`, `apps/web/lib/ui.tsx:44` | **Retire `card`.** Migrate the 7 mobile + 15 web sites to `ink2` (they render identically). Keep the key as a deprecated alias for one release, then delete. Record as `retired` in `capabilities.ts`. | ✅ done |
+| H2 | `apps/web/components/admin/flags.tsx:192` | delete `CARD_DARK`, use `INK2`. | ✅ done |
+| H3 | `apps/mobile/components/aurora/{trends.tsx:86, week-verdict.tsx:635, endurance-summary.tsx:98}`, `components/workout-wrapped.tsx:547` | One `deltaRole(dir)` in core returning `go`/`danger`/`neutral`; wire `statSubTone()` (currently 0 consumers) to it. Pick **red** for down — three of four surfaces already do. | ✅ done |
+| H4 | `apps/mobile/components/aurora/nutrition.tsx:2181,2621,2670` + the 13 `withAlpha(C.ash, .533/.6)` sites | Two placeholder tokens only: `text.placeholder` (`ash`, AA) and `text.ghost` (55% + italic, *suggested values only*). Delete `C.line` and `#3a3d34` as placeholder inks. | ✅ done |
 | ~~H5~~ | `packages/core/src/plan-program.ts:294` | **RETRACTED — no change needed.** `repZoneColor` does not invert the ramp; see §5.8. Closed by adding the reasoning as a comment, not by reordering. |
-| H6 | new `packages/core/src/theme/semantic-tokens.ts` | Introduce the §9 semantic layer. Mobile resolves via `lib/theme.tsx`, web via `globals.css` vars + `lib/ui.tsx`. |
-| H7 | `apps/web/__tests__/` (new) | Port the hex-literal ratchet from `apps/mobile/lib/design-tokens.test.ts:814–852`, seeded at today's web count. |
+| H6 | new `packages/core/src/theme/semantic-tokens.ts` | Introduce the §9 semantic layer. Mobile resolves via `lib/theme.tsx`, web via `globals.css` vars + `lib/ui.tsx`. | ⛔ **superseded — see below** |
+| H7 | `apps/web/__tests__/` (new) | Port the hex-literal ratchet from `apps/mobile/lib/design-tokens.test.ts:814–852`, seeded at today's web count. | ✅ done |
 
 ### MEDIUM
 
-| # | File | Change |
-|---|---|---|
-| M1 | `plan-program.ts:233`, `session-feel.ts:29`, `readiness-feeling.ts:18`, `activity.ts:10`, `social.ts:110,666`, `engines/fitness-level.ts:592`, `recipes.ts:26`, `notes.ts:19`, `aurora/team-compare.tsx:11` | Collapse the 11 unions onto `AccentKey` / `SemanticRole`. Delete `loadHex` (`percent-program.tsx:48`) and `toneColor` (`aurora/settings.tsx:135`) in favour of one resolver per client. |
-| M2 | `apps/web/lib/ui.tsx:94`, 16 `color-mix` sites, `globals.css` | Route web tints through `tint(colour, ALPHA.x)`; retire the ten ad-hoc percentages. |
-| M3 | `apps/mobile/components/tour.tsx:36`, `apps/web/components/admin/users.tsx:352,499,739` + 3 web rgba scrims | One `overlay.scrim` (`ink`) × `motion.scrim*`. |
-| M4 | ~50 sites both clients | `text.disabled` / `action.disabled` instead of raw `opacity: 0.3–0.6`. |
-| M5 | `packages/core/src/semantic.ts:26` | Split `premium` off `amber`, **or** write down why commerce and caution share a hue and ban them from co-occurring. |
-| M6 | `packages/core/src/plans.ts:88–160` | Reduce 19 goal hues to an ordered 8-hue set assigned by category; add a ΔE guard. Fix the three that fail AA as text (`run`, `crossfit`, `mobility`). |
-| M7 | `apps/web/lib/email.ts:51–53` | `#c6f135` → `#c6f84f`; `#2a2c2a` → `#242724`; `#e9e9e9`/`#ffffff` → `#f3f4ef`. |
-| M8 | `apps/web/app/invite/[token]/page.tsx:14–19` | Replace the six-value local micro-palette with the tokens (`#f3f5ef`→chalk, `#a7ad9e`→ash, `#2a2e28`→line, `CARD`→`INK2`). |
-| M9 | `apps/web/components/admin/agents.tsx:721`, `admin/audit.tsx:114` | `#e06666` → `RED`; `#0a0b0a` → `INK`. |
+| # | File | Change | Status |
+|---|---|---|---|
+| M1 | `plan-program.ts:233`, `session-feel.ts:29`, `readiness-feeling.ts:18`, `activity.ts:10`, `social.ts:110,666`, `engines/fitness-level.ts:592`, `recipes.ts:26`, `notes.ts:19`, `aurora/team-compare.tsx:11` | Collapse the 11 unions onto `AccentKey` / `SemanticRole`. Delete `loadHex` (`percent-program.tsx:48`) and `toneColor` (`aurora/settings.tsx:135`) in favour of one resolver per client. | ✅ done |
+| M2 | `apps/web/lib/ui.tsx:94`, 16 `color-mix` sites, `globals.css` | Route web tints through `tint(colour, ALPHA.x)`; retire the ten ad-hoc percentages. | ✅ done |
+| M3 | `apps/mobile/components/tour.tsx:36`, `apps/web/components/admin/users.tsx:352,499,739` + 3 web rgba scrims | One `overlay.scrim` (`ink`) × `motion.scrim*`. | ✅ done |
+| M4 | ~50 sites both clients | `text.disabled` / `action.disabled` instead of raw `opacity: 0.3–0.6`. | ✅ done |
+| M5 | `packages/core/src/semantic.ts:26` | Split `premium` off `amber`, **or** write down why commerce and caution share a hue and ban them from co-occurring. | ✅ documented, not split |
+| M6 | `packages/core/src/plans.ts:88–160` | Reduce 19 goal hues to an ordered 8-hue set assigned by category; add a ΔE guard. Fix the three that fail AA as text (`run`, `crossfit`, `mobility`). | ⏸ out of scope (design pass) |
+| M7 | `apps/web/lib/email.ts:51–53` | `#c6f135` → `#c6f84f`; `#2a2c2a` → `#242724`; `#e9e9e9`/`#ffffff` → `#f3f4ef`. | ✅ done |
+| M8 | `apps/web/app/invite/[token]/page.tsx:14–19` | Replace the six-value local micro-palette with the tokens (`#f3f5ef`→chalk, `#a7ad9e`→ash, `#2a2e28`→line, `CARD`→`INK2`). | ✅ done |
+| M9 | `apps/web/components/admin/agents.tsx:721`, `admin/audit.tsx:114` | `#e06666` → `RED`; `#0a0b0a` → `INK`. | ✅ done |
 
 ### LOW
 
-| # | File | Change |
-|---|---|---|
-| L1 | `apps/mobile/components/aurora/icons.tsx:178` | Make `color` required on `AuroraIcon` (as `Glyph` already is). Remove the `?? "#000"` default. |
-| L2 | `apps/web/app/globals.css` | Delete the orphaned block: `--premium-accent*`, `--accent-text`, `--back-surface`, `--back-shadow`, `--cover-bleed`, `.aurora-navglass`, `.start-glow`, `.ghost-ph`, `.skip-link`, `.motion-*`, the `::view-transition` section (~200 lines). Add a comment on `--color-red`/`--color-gold` noting they are reached only via `roleVar()`/`accentText()` interpolation. |
-| L3 | `packages/core/src/theme/tokens.ts:22` | Rename `violet` → `steel` with a deprecated alias, or write the legacy-name note into the type. |
-| L4 | `packages/core/src/theme/index.ts:9` | Remove the reference to the non-existent `templates.ts`; correct "light/dark surface palettes" to dark-only. |
-| L5 | `apps/mobile/app/leaderboard.tsx:16`, `aurora/profile.tsx:805,807`, `aurora/run-track.tsx:90`, `aurora/hero.tsx:196`, `percent-program.tsx:295` | Name the deliberate off-palette literals (`MEDAL_INK` already is; the others are not) or move them onto tokens. `#0d0e0d` (ΔE 0.2 from ink) and `#5a5e56` should simply become `ink` and `ash`. |
-| L6 | `apps/mobile/lib/ui.tsx` `cardShadow()` vs `globals.css:39` `--shadow-card` | 0.18 vs 0.55 opacity for "the one card shadow". Reconcile or document the platform difference. |
+| # | File | Change | Status |
+|---|---|---|---|
+| L1 | `apps/mobile/components/aurora/icons.tsx:178` | Make `color` required on `AuroraIcon` (as `Glyph` already is). Remove the `?? "#000"` default. | ✅ done |
+| L2 | `apps/web/app/globals.css` | Delete the orphaned block: `--premium-accent*`, `--accent-text`, `--back-surface`, `--back-shadow`, `--cover-bleed`, `.aurora-navglass`, `.start-glow`, `.ghost-ph`, `.skip-link`, `.motion-*`, the `::view-transition` section (~200 lines). Add a comment on `--color-red`/`--color-gold` noting they are reached only via `roleVar()`/`accentText()` interpolation. | ✅ done (view-transition block left — motion, not colour) |
+| L3 | `packages/core/src/theme/tokens.ts:22` | Rename `violet` → `steel` with a deprecated alias, or write the legacy-name note into the type. | n/a — `violet` retired |
+| L4 | `packages/core/src/theme/index.ts:9` | Remove the reference to the non-existent `templates.ts`; correct "light/dark surface palettes" to dark-only. | ✅ done |
+| L5 | `apps/mobile/app/leaderboard.tsx:16`, `aurora/profile.tsx:805,807`, `aurora/run-track.tsx:90`, `aurora/hero.tsx:196`, `percent-program.tsx:295` | Name the deliberate off-palette literals (`MEDAL_INK` already is; the others are not) or move them onto tokens. `#0d0e0d` (ΔE 0.2 from ink) and `#5a5e56` should simply become `ink` and `ash`. | ◐ partly — the deliberate ones named |
+| L6 | `apps/mobile/lib/ui.tsx` `cardShadow()` vs `globals.css:39` `--shadow-card` | 0.18 vs 0.55 opacity for "the one card shadow". Reconcile or document the platform difference. | ⛔ retracted — not a drift |
+
+### H6 — why the full semantic layer was NOT built
+
+This was §7's headline recommendation and it is the one item deliberately left
+undone, so the reasoning belongs here rather than in a commit nobody re-reads.
+
+**The layer's value was in the specific gaps it would close, and those closed
+one at a time under their own names:**
+
+| The gap §7 cited | What actually closed it |
+|---|---|
+| `status.success/warning/error/info` | `theme/feedback.ts` |
+| `text.disabled` | `STATE_OPACITY.disabled` / `.busy` |
+| `input.placeholder` vs a ghost | `GHOST_PLACEHOLDER_ALPHA` |
+| `sheet.scrim` | `SCRIM` + `motion.scrimObscure` |
+| `border.subtle/default/strong` | the `ALPHA` rungs, now on **both** clients |
+| one accent vocabulary | `AccentKey` / `BrandAccent` + one `accentColor()` |
+
+**What remains is renaming.** `ink` → `background.primary`, `ink2` →
+`surface.primary`, `chalk` → `text.primary`, across ~1 280 call sites. For a
+palette of **two surfaces, four accents and two text tones**, that is churn: it
+adds an indirection without adding a decision anyone has to make. The audit's own
+§7 warned against the mirror-image mistake ("do NOT introduce a 50-step primitive
+ramp… this product has two surfaces and one accent *by design*") and the same
+argument applies going the other way.
+
+**What WOULD justify revisiting it:** a second theme. The moment `ThemeName` has
+more than one member, `ink` stops being a value and starts being a role, and the
+rename pays for itself. Until then the honest architecture is *primitive +
+named-purpose tokens*, which is what now exists.
 
 ### Migration strategy
 

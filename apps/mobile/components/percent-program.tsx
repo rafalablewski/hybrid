@@ -7,7 +7,6 @@ import {
   inputEcho,
   rpeColor,
   workoutColor,
-  sessionColor,
   isProseLift,
   liftKind,
   dayContentSummary,
@@ -424,10 +423,13 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
 // The merged rule line (idea 01): ONE quiet row carries what used to be two
 // tinted band strips — the session marker (its semantic colour kept) with the
 // session volume on the right. No background wash.
-function SessionRule({ marker, color, volume, top, C }: { marker: string; color: string; volume: string | null; top: boolean; C: Palette }) {
+// The marker is the block's NAME, so it reads as a heading in chalk. It used to
+// cycle through three hues (core sessionColor, now retired): colour encoding
+// identity, beside a label that already said which session it was.
+function SessionRule({ marker, volume, top, C }: { marker: string; volume: string | null; top: boolean; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, color) }}>{marker}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.chalk }}>{marker}</Text>
       {!!volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{volume}</Text>}
     </View>
   );
@@ -445,7 +447,7 @@ function SessionBlock({ s, si, count, day, C, onLift }: { s: ProgramSessionView;
   const press = (l: ProgramLiftView) => onLift(l, marker);
   return (
     <View>
-      {!!marker && <SessionRule marker={marker} color={loadHex(C, sessionColor(s.label, si))} volume={s.volume} top={si > 0} C={C} />}
+      {!!marker && <SessionRule marker={marker} volume={s.volume} top={si > 0} C={C} />}
       {groups.map((g, gi) => {
         const label = mixed ? groupLabel(g.kind, g.lifts.length, hasPercent) : null;
         const top = (gi > 0 || si > 0) && !marker;

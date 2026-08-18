@@ -2,9 +2,13 @@
  * Theme palette — the single source of truth for the app's surface, text and
  * FOREGROUND-accent colours.
  *
- * MIRRORED by apps/web/app/globals.css (the `:root` defaults). Keep the two in
- * lockstep — the contrast test (theme.test.ts) guards the ratios, but it can
- * only see THIS file.
+ * MIRRORED by apps/web/app/globals.css (the `:root` defaults), because CSS cannot
+ * import a TypeScript object. That copy is DIFFED against this file by
+ * apps/web/__tests__/palette-mirror.test.ts, in both directions — a var that
+ * drifts fails, and so does a var that outlives the token it mirrors. This
+ * header used to say the contrast test "can only see THIS file", which was true
+ * and was the hole: the second copy was checked by nobody, which is the same
+ * failure that left a retired hairline drawing on the web crash pages.
  *
  * Note: the accents in tokens.ts (lime/blue/amber/red) are used for fills,
  * borders and chart strokes; `accentText` here is the variant used when an
