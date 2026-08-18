@@ -189,9 +189,9 @@ const resetBtn: React.CSSProperties = {
 
 // The dark card surface the accent-as-text sits on (palette.dark.card) — the
 // reference background for the "text on card" contrast check.
-// The card the readout measures against. Reads the token: this was a literal
-// #151715 — a third copy of --color-card under a third name (audit/12 §5.1).
-const CARD_DARK = colors.card;
+// The surface the readout measures against. Was a literal #151715 — a third
+// copy of a token that has since been retired for being ΔE 0.3 from ink2.
+const CARD_DARK = colors.ink2;
 const gradeColor = (g: WcagGrade) => (g === "AAA" ? LIME : g === "AA" ? AMBER : RED);
 
 /** Admin picker for the premium-CTA accent: palette swatches + a custom hex,

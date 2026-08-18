@@ -65,8 +65,7 @@ import {
   recordLog, usualAtHour, nutritionGap, nutritionFigures, figureText, wouldOvershoot,
   NAV_SURFACE_FOOD_PICKER,
   type PickerSourceKey,
-  ALPHA,
-} from "@hybrid/core";
+  ALPHA, GHOST_PLACEHOLDER_ALPHA } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
@@ -2178,7 +2177,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <View key={tile.k} style={{ width: "47.5%", flexGrow: 1, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, paddingHorizontal: 16 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: tile.color }}>{tile.label}</Text>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5, marginTop: 4 }}>
-              <TextInput value={f[tile.k]} onChangeText={(v) => setF((s) => ({ ...s, [tile.k]: v }))} keyboardType="numeric" placeholder="0" placeholderTextColor={C.line} accessibilityLabel={tile.label} style={{ flex: 1, fontFamily: F.black, fontSize: 27, letterSpacing: tracking.display, color: C.chalk, padding: 0 }} />
+              <TextInput value={f[tile.k]} onChangeText={(v) => setF((s) => ({ ...s, [tile.k]: v }))} keyboardType="numeric" placeholder="0" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} accessibilityLabel={tile.label} style={{ flex: 1, fontFamily: F.black, fontSize: 27, letterSpacing: tracking.display, color: C.chalk, padding: 0 }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{tile.unit}</Text>
             </View>
           </View>
@@ -2618,7 +2617,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         {/* Title plate — Name + the personal Subname, one surface. */}
         <LinearGradient colors={[withAlpha(C.lime, 0.07), C.ink2]} start={{ x: 0.1, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: CARD_PAD }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.recovery.nutrition.foodName")}</Text>
-          <TextInput value={createForm.name} onChangeText={(v) => setCF({ name: v })} placeholder={t("w.recovery.nutrition.foodNamePh")} placeholderTextColor="#3a3d34" accessibilityLabel={t("w.recovery.nutrition.foodName")} style={{ fontFamily: F.black, fontSize: 27, letterSpacing: tracking.display, color: C.chalk, padding: 0 }} />
+          <TextInput value={createForm.name} onChangeText={(v) => setCF({ name: v })} placeholder={t("w.recovery.nutrition.foodNamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.foodName")} style={{ fontFamily: F.black, fontSize: 27, letterSpacing: tracking.display, color: C.chalk, padding: 0 }} />
           <View style={{ height: 1, backgroundColor: C.line, marginVertical: 16 }} />
           <TextInput value={createForm.subname} onChangeText={(v) => setCF({ subname: v })} placeholder={t("w.recovery.nutrition.subnamePh")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.subname")} style={{ fontFamily: F.reg, fontSize: fs.subtitle, color: C.ash, padding: 0 }} />
         </LinearGradient>
@@ -2667,7 +2666,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                     onChangeText={(v) => setCF({ [key]: v } as Partial<typeof createForm>)}
                     keyboardType="decimal-pad"
                     placeholder="—"
-                    placeholderTextColor={C.line}
+                    placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)}
                     accessibilityLabel={t(lab)}
                     style={{ flex: 1, fontFamily: F.black, fontSize: fs.heading, color: C.chalk, padding: 0, paddingTop: 3 }}
                   />

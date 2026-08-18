@@ -292,9 +292,20 @@ export function conditioningColor(effort: ConditioningEffort): LoadColor {
  *  so a sets×reps plan rides the same coloured intensity wave the % and RPE plans
  *  do. Thresholds live here so the wave can't drift across clients. */
 export function repZoneColor(reps: number): LoadColor {
-  if (reps <= 6) return "amber"; // strength
+  // READS BACKWARDS AGAINST loadColor ON PURPOSE, and this has already been
+  // misread once (audit/12 §5.8 called it an inversion; it is not). The two
+  // functions take arguments that run in OPPOSITE directions — %1RM rises with
+  // load, reps FALL as load rises — so the listings have to be mirror images for
+  // the meaning to line up, and they are:
+  //
+  //   heavy    loadColor amber/red   repZoneColor amber
+  //   moderate loadColor lime        repZoneColor lime
+  //   light    loadColor blue        repZoneColor blue
+  //
+  // One wave, read from either end. Do not "align" this by reordering it.
+  if (reps <= 6) return "amber"; // strength — few reps, heavy load
   if (reps <= 12) return "lime"; // hypertrophy
-  return "blue"; // endurance
+  return "blue"; // endurance — many reps, light load
 }
 
 /** The rep number a scheme prescribes (e.g. 20 from "3 × 20"; reps should be single

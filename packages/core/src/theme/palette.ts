@@ -22,8 +22,6 @@ export interface ThemePalette {
   ink: string;
   /** raised surface */
   ink2: string;
-  /** card surface (the usual text background) */
-  card: string;
   /** hairline borders */
   line: string;
   /** primary text */
@@ -51,7 +49,6 @@ export const THEMES: Record<ThemeName, ThemePalette> = {
   dark: {
     ink: "#0c0d0c",
     ink2: "#141614",
-    card: "#151715",
     line: "#242724",
     chalk: "#f3f4ef",
     ash: "#8b8f86",

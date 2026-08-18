@@ -30,7 +30,7 @@ describe("theme palettes meet WCAG AA", () => {
       ["ash", t.ash],
     ];
     const surfaces: [string, string][] = [
-      ["card", t.card],
+      ["ink2", t.ink2],
       ["ink", t.ink],
     ];
 
@@ -43,8 +43,8 @@ describe("theme palettes meet WCAG AA", () => {
     }
 
     for (const [an, ac] of Object.entries(t.accentText)) {
-      it(`${name}: ${an} accent-text on card ≥ AA`, () => {
-        expect(contrastRatio(ac, t.card)).toBeGreaterThanOrEqual(WCAG.AA);
+      it(`${name}: ${an} accent-text on ink2 ≥ AA`, () => {
+        expect(contrastRatio(ac, t.ink2)).toBeGreaterThanOrEqual(WCAG.AA);
       });
     }
 
@@ -196,8 +196,8 @@ describe("feedback colours", () => {
   const KINDS = Object.keys(FEEDBACK) as FeedbackKind[];
 
   for (const k of KINDS) {
-    it(`${k} clears AA on the card`, () => {
-      expect(contrastRatio(FEEDBACK[k], t.card)).toBeGreaterThanOrEqual(WCAG.AA);
+    it(`${k} clears AA on the raised surface`, () => {
+      expect(contrastRatio(FEEDBACK[k], t.ink2)).toBeGreaterThanOrEqual(WCAG.AA);
     });
     it(`${k} clears AA on ink`, () => {
       expect(contrastRatio(FEEDBACK[k], t.ink)).toBeGreaterThanOrEqual(WCAG.AA);

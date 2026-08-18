@@ -201,7 +201,7 @@ export default function SwipeRow({ children, onDelete, label, leading, backgroun
     >
       {leading && action(leading.color ?? C.red, leading.label, commitLeading, "left")}
       {action(FEEDBACK.error, label, commitDelete, "right")}
-      <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: background ?? C.card }} {...pan.panHandlers}>
+      <Animated.View style={{ transform: [{ translateX: tx }], backgroundColor: background ?? C.ink2 }} {...pan.panHandlers}>
         {children}
       </Animated.View>
     </View>

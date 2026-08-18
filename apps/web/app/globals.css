@@ -10,7 +10,6 @@
 @theme {
   --color-ink: #0c0d0c;
   --color-ink2: #141614;
-  --color-card: #151715;
   --color-line: #242724;
   /* THE PANTONE FOUR (mirror packages/core/src/theme/tokens.ts, which records
      what each one is and why blue is not its raw Pantone value):

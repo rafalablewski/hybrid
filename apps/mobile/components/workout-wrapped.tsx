@@ -74,7 +74,7 @@ import { useLang } from "../lib/i18n";
 import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
 import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
-import { useTheme, txt } from "../lib/theme";
+import { useTheme, txt, deltaPaint } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 import { withAlpha } from "./aurora/field";
 
@@ -544,7 +544,7 @@ export function WorkoutWrapped({
             {wrapped.facts.map((f) => (
               <View key={f.labelKey + f.value} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: fs.display, color: f.tone === "up" || f.labelKey === "session.wrapped.est1rm" ? txt(C, C.lime) : txt(C, C.blue) }}>{f.value}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.display, color: f.labelKey === "session.wrapped.est1rm" ? txt(C, C.lime) : deltaPaint(C, !f.tone || f.tone === "neutral" ? "flat" : f.tone) }}>{f.value}</Text>
               </View>
             ))}
             {!full && (

@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { THEMES, colors, ROLE_COLOR, type SemanticRole, type ThemeName, type ThemePalette } from "@hybrid/core";
+import { THEMES, colors, ROLE_COLOR, deltaRole, type SemanticRole, type StatSubTone, type ThemeName, type ThemePalette } from "@hybrid/core";
 
 /**
  * Mobile theme — AURORA (dark), the app's one theme. The four brand accents
@@ -57,6 +57,14 @@ export function txt(palette: Palette, c: string): string {
  *  The one client mapping every state colour goes through, so meaning lives in
  *  core and can't drift per-screen. Wrap with txt() when used as TEXT. */
 export const roleColor = (palette: Palette, role: SemanticRole): string => palette[ROLE_COLOR[role]];
+
+
+/** A DELTA'S COLOUR — direction → role → the accent-TEXT tone, in one call.
+ *  Four surfaces used to each decide what a fall looks like (audit/12 §5.4);
+ *  this is the only place that answers it now. `dir` is already
+ *  valence-normalised upstream — see core deltaRole. */
+export const deltaPaint = (palette: Palette, dir: StatSubTone): string =>
+  txt(palette, roleColor(palette, deltaRole(dir)));
 
 interface ThemeCtx {
   scheme: ThemeName;

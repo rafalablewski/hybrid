@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
-import { fs, space, INK, INK2, CARD, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useIsMobile } from "@/lib/use-media-query";
 import { AuroraIcon } from "@/components/aurora/icons";
@@ -304,7 +304,7 @@ export default function AdminPanel() {
                 border: `1px solid ${LINE}`,
                 borderRadius: 999,
                 padding: "6px 12px",
-                background: CARD,
+                background: INK2,
               }}
             >
               Restricted – admin only

@@ -10,15 +10,14 @@ import {
   fitMonoFigure,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
-  type VerdictDirection, type WeightUnit,
-} from "@hybrid/core";
+  type VerdictDirection, type WeightUnit, deltaRole } from "@hybrid/core";
 import { ACard, withAlpha , RADIUS} from "./kit";
 import ActivityCompare from "./activity-compare";
 import PeriodRecords from "./period-records";
 import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, deltaPaint } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, TABULAR, tracking, trackFigure } from "../../lib/ui";
 import { Mark } from "./mark";
@@ -631,8 +630,7 @@ export default function AuroraWeekVerdict({
    *  SENTENCE's and reads ash when flat: a column the athlete deliberately
    *  opened is being read, so its flat state is chalk, not the muted grey of a
    *  figure nobody asked about. */
-  const dirColor = (d: VerdictDirection) =>
-    d === "down" ? txt(C, C.red) : d === "up" ? txt(C, C.lime) : C.chalk;
+  const dirColor = (d: VerdictDirection) => deltaPaint(C, d);
 
   // THE OPEN COLUMN'S OWN COMPARISON — the working-out for the colour the press
   // just produced, printed where it was produced. Absent when the metric has no

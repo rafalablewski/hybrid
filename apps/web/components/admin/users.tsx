@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { useDialog } from "../../lib/use-dialog";
 import AdminAnonSessions from "./anon-sessions";
 import { Loading } from "../aurora/skeleton";
@@ -350,7 +350,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 50, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "6vh 16px" }}>
-      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: 460, maxWidth: "94vw", background: CARD, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 26, ...disp, maxHeight: "88vh", overflowY: "auto" }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: 460, maxWidth: "94vw", background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 26, ...disp, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
           <div>
             <Mono s={{ fontSize: fs.micro, letterSpacing: ".12em", textTransform: "uppercase" }} c={AMBER}>New account</Mono>
@@ -426,7 +426,7 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
         textTransform: "uppercase",
         letterSpacing: ".08em",
         color: disabled ? ASH : CHALK,
-        background: CARD,
+        background: INK2,
         border: `1px solid ${LINE}`,
         borderRadius: "var(--r-field)",
         padding: "10px 14px",
@@ -504,7 +504,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
           width: 460,
           maxWidth: "92vw",
           height: "100%",
-          background: CARD,
+          background: INK2,
           borderLeft: `1px solid ${LINE}`,
           padding: 26,
           overflowY: "auto",
@@ -750,7 +750,7 @@ function DeleteAccountDialog({
         style={{
           width: 440,
           maxWidth: "94vw",
-          background: CARD,
+          background: INK2,
           border: `1px solid ${RED}55`,
           borderRadius: "var(--r-card)",
           padding: 26,

@@ -405,9 +405,12 @@ identity". Live counter-examples:
   on the card: `run #3c787e` 3.59, `crossfit #b5533c` 3.66, `mobility #4f7f5e` 3.89.
 - `plan-program.ts:265 sessionColor` — cycles lime/amber/blue by ordinal to make
   "Training 1/2/3" read as three blocks. That is identity, not state.
-- `repZoneColor` **inverts** the intensity ramp: `amber` = low reps (strength)
-  where `loadColor`/`conditioningColor` use `amber` = hard. Same hue, opposite
-  meaning, both on the plan table.
+- ~~`repZoneColor` **inverts** the intensity ramp.~~ **RETRACTED — this finding
+  was wrong.** Few reps means a HEAVY load, so `amber` at ≤6 reps is the same
+  "hard" that `amber` at 75–85% means. The two functions take arguments running
+  in opposite directions (%1RM rises with load, reps fall as it rises), so their
+  listings must be mirror images for the meaning to align — and they are. The
+  reasoning is now a comment on the function so this is not misread a third time.
 
 ### 5.9 MEDIUM — `amber` carries three meanings
 
@@ -620,8 +623,8 @@ data.sleep:               NOT FOUND IN CODEBASE — do not invent one until the
 data.heartRate:           NOT FOUND IN CODEBASE — HR is rendered as figures, not
                           zone colour
 data.intensity ramp:      #3c787e → #c6f84f → #d0cd94 → #d56f3e   (loadColor,
-                          conditioningColor; `repZoneColor` MUST be re-ordered
-                          onto this direction — see §5.8)
+                          conditioningColor, and `repZoneColor` read from the
+                          other end — see §5.8)
 
 CHARTS   (ordered categorical; first three are the only ones most charts need)
 chart.1:                  #c6f84f
@@ -672,7 +675,7 @@ before the next TestFlight; **MEDIUM** = consistency; **LOW** = refinement.
 | H2 | `apps/web/components/admin/flags.tsx:192` | delete `CARD_DARK`, use `INK2`. |
 | H3 | `apps/mobile/components/aurora/{trends.tsx:86, week-verdict.tsx:635, endurance-summary.tsx:98}`, `components/workout-wrapped.tsx:547` | One `deltaRole(dir)` in core returning `go`/`danger`/`neutral`; wire `statSubTone()` (currently 0 consumers) to it. Pick **red** for down — three of four surfaces already do. |
 | H4 | `apps/mobile/components/aurora/nutrition.tsx:2181,2621,2670` + the 13 `withAlpha(C.ash, .533/.6)` sites | Two placeholder tokens only: `text.placeholder` (`ash`, AA) and `text.ghost` (55% + italic, *suggested values only*). Delete `C.line` and `#3a3d34` as placeholder inks. |
-| H5 | `packages/core/src/plan-program.ts:294` | `repZoneColor` inverts the intensity ramp. Re-order to `blue → lime → amber` in the same direction as `loadColor`, or rename it so it is not read as an intensity. |
+| ~~H5~~ | `packages/core/src/plan-program.ts:294` | **RETRACTED — no change needed.** `repZoneColor` does not invert the ramp; see §5.8. Closed by adding the reasoning as a comment, not by reordering. |
 | H6 | new `packages/core/src/theme/semantic-tokens.ts` | Introduce the §9 semantic layer. Mobile resolves via `lib/theme.tsx`, web via `globals.css` vars + `lib/ui.tsx`. |
 | H7 | `apps/web/__tests__/` (new) | Port the hex-literal ratchet from `apps/mobile/lib/design-tokens.test.ts:814–852`, seeded at today's web count. |
 

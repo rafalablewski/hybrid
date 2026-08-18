@@ -30,7 +30,7 @@ import {
   type StrengthSet,
   type WeightUnit,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, GHOST_PLACEHOLDER_ALPHA } from "@hybrid/core";
 import { useRoutineBuilder, type EditableBlock } from "../../lib/use-routine-builder";
 import { useBodyweight } from "../../lib/use-bodyweight";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -475,12 +475,12 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: accent ? txt(C, accent) : C.ash }}>{setTypeBadge(s, i)}</Text>
               </Pressable>
               {showLoad && (
-                <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
+                <TextInput value={displayLoad(s.load, units)} onChangeText={(v) => builder.updateSet(b.uid, i, "load", storeLoad(v, units))} keyboardType="numeric" placeholder={loadPh} placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={[field, { flex: 1 }]} />
               )}
-              <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
-              <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
+              <TextInput value={s.reps} onChangeText={(v) => builder.updateSet(b.uid, i, "reps", v)} keyboardType="numeric" placeholder={repsPh} placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={[field, { flex: 1 }]} />
+              <TextInput value={rpeRirSwap(s.rpe ?? "", rirMode)} onChangeText={(v) => builder.updateSet(b.uid, i, "rpe", rpeRirSwap(v, rirMode))} keyboardType="numeric" placeholder={rirMode ? "2" : "8"} placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={[field, { flex: 1 }]} />
               {velocity && (
-                <TextInput value={s.vel ?? ""} onChangeText={(v) => builder.updateSet(b.uid, i, "vel", v)} keyboardType="numeric" placeholder="0.50" placeholderTextColor={withAlpha(C.ash, 0.533)} style={[field, { flex: 1 }]} />
+                <TextInput value={s.vel ?? ""} onChangeText={(v) => builder.updateSet(b.uid, i, "vel", v)} keyboardType="numeric" placeholder="0.50" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={[field, { flex: 1 }]} />
               )}
               <View style={{ width: 22, alignItems: "center", justifyContent: "center" }}>
                 <DragHandle
@@ -589,7 +589,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={distDraft ?? displaySportDistance(b.distance, b.name)}
               onChangeText={(v) => { setDistDraft(v); builder.setField(b.uid, "distance", parseSportDistance(v, b.name)); }}
-              keyboardType="numeric" placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
+              keyboardType="numeric" placeholder={sportDistanceUnit(b.name) === "m" ? "400" : "8"} placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={field}
             />
           </View>
         )}
@@ -598,7 +598,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           <TextInput
             value={minDraft ?? (b.minutes == null ? "" : String(b.minutes))}
             onChangeText={(v) => { setMinDraft(v); builder.setField(b.uid, "minutes", num(v)); }}
-            keyboardType="numeric" placeholder="45" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
+            keyboardType="numeric" placeholder="45" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={field}
           />
         </View>
       </View>
@@ -620,7 +620,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={inclineDraft ?? (b.incline == null ? "" : String(b.incline))}
               onChangeText={(v) => { setInclineDraft(v); builder.setField(b.uid, "incline", num(v)); }}
-              keyboardType="numeric" placeholder="1.5" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
+              keyboardType="numeric" placeholder="1.5" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={field}
             />
           </View>
         )}
@@ -630,7 +630,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={b.stroke ?? ""}
               onChangeText={(v) => builder.setField(b.uid, "stroke", v || undefined)}
-              placeholder="Free" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
+              placeholder="Free" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={field}
             />
           </View>
         )}
@@ -640,7 +640,7 @@ function CardioEditor({ b, C, builder, field, label }: {
             <TextInput
               value={elevDraft ?? (b.elevation == null ? "" : String(b.elevation))}
               onChangeText={(v) => { setElevDraft(v); builder.setField(b.uid, "elevation", num(v)); }}
-              keyboardType="numeric" placeholder="120" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
+              keyboardType="numeric" placeholder="120" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={field}
             />
           </View>
         )}
@@ -649,7 +649,7 @@ function CardioEditor({ b, C, builder, field, label }: {
           <TextInput
             value={zoneDraft ?? (b.zone == null ? "" : String(b.zone))}
             onChangeText={(v) => { setZoneDraft(v); builder.setField(b.uid, "zone", num(v)); }}
-            keyboardType="numeric" placeholder="2" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
+            keyboardType="numeric" placeholder="2" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={field}
           />
         </View>
       </View>
@@ -682,7 +682,7 @@ function ConditioningEditor({ b, C, builder, field, label }: {
           const n = parseFloat(v);
           builder.setField(b.uid, key, v.trim() === "" || !Number.isFinite(n) ? undefined : n);
         }}
-        keyboardType="numeric" placeholder={ph} placeholderTextColor={withAlpha(C.ash, 0.533)} style={field}
+        keyboardType="numeric" placeholder={ph} placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={field}
       />
     </View>
   );
@@ -691,7 +691,7 @@ function ConditioningEditor({ b, C, builder, field, label }: {
       <View style={{ flexDirection: "row", gap: space.ms }}>
         <View style={{ flex: 1 }}>
           {label(t("w.train.blocks.format"))}
-          <TextInput value={b.format ?? ""} onChangeText={(v) => builder.setField(b.uid, "format", v || undefined)} placeholder="AMRAP" placeholderTextColor={withAlpha(C.ash, 0.533)} style={field} />
+          <TextInput value={b.format ?? ""} onChangeText={(v) => builder.setField(b.uid, "format", v || undefined)} placeholder="AMRAP" placeholderTextColor={withAlpha(C.ash, GHOST_PLACEHOLDER_ALPHA)} style={field} />
         </View>
         {numField("rounds", t("w.train.blocks.roundsCol"), "8")}
       </View>

@@ -853,7 +853,9 @@ describe("colour", () => {
     // the last raw white sitting on an accent fill, and it became ON_FEEDBACK when
     // that button moved onto the outcome colours. It is the shape this rule wants —
     // a literal that turned out to have a name once the surface it sat on had one.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 60, "2026-12-31", "hex literal → a palette token");
+    // 60 → 59: nutrition's `#3a3d34` placeholder ink (1.64:1 — a hint nobody
+    // could read) became C.ash when the two placeholder kinds were named apart.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 59, "2026-12-31", "hex literal → a palette token");
   });
 });
 
@@ -885,7 +887,13 @@ describe("colour arithmetic", () => {
     // scrims, neither of which is a palette choice. Every other ratchet in this
     // file now carries a date it must reach zero by; this one carries a reason
     // it must not. A second `floorAt` would be a date being dodged.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 119,
+    // 119 → 107. Thirteen of these were the SET-EDITOR GHOST — withAlpha(C.ash,
+    // 0.533) and one 0.6, the suggested-value placeholder — and they are gone from
+    // this count for the right reason: they now read GHOST_PLACEHOLDER_ALPHA, so
+    // they are no longer a raw number at all. That is exactly the shape this rule
+    // wants, and the reason it can keep falling without the remainder moving: what
+    // is left really is ramp stops and scrims.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 107,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });

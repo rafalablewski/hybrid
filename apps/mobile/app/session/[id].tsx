@@ -155,7 +155,7 @@ export default function SessionDetail() {
       </Mono>
 
       {prs.length + cardioPrs.length > 1 && (
-        <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 14 }}>
+        <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 14 }}>
           {prs.map((p) => (
             <View key={p.lift} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.amber} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{prLine(p, t, units)}</Text></View>
           ))}

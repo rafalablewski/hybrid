@@ -7,11 +7,19 @@
 export const colors = {
   ink: "#0c0d0c", // near-black background
   ink2: "#141614", // raised surface
-  // card + line MUST match THEMES.dark in palette.ts and the :root defaults in
-  // apps/web/app/globals.css — these were stale (#161816/#2a2d2a) for a while,
-  // which made every chart hairline draw in a different grey than every border.
-  card: "#151715", // card surface
+  // `line` MUST match THEMES.dark in palette.ts and the :root defaults in
+  // apps/web/app/globals.css — it was stale (#2a2d2a) for a while, which made
+  // every chart hairline draw in a different grey than every border.
   line: "#242724", // hairline borders
+  //
+  // THERE IS NO `card`. It held #151715 and sat ΔE 0.3 / contrast 1.01 from
+  // `ink2` — the same colour under two names (audit/12 §5.1) — and the kit never
+  // used it: ACard paints `ink2`, so `card` survived only at seven hand-rolled
+  // surfaces on the phone and thirteen in the admin panel, plus a third copy
+  // under a third name (`CARD_DARK`) and a fourth as a local `const CARD` that
+  // actually held ink2. Every one of those now reads `ink2` and renders
+  // byte-identically. If a genuinely distinct third surface is ever wanted, it
+  // needs a value somebody designed and a contrast to `ink2` a person can see.
   // ── THE PANTONE FOUR ─────────────────────────────────────────────────────
   //
   // The brand palette is now four named PANTONE colours, and FOUR IS THE WHOLE
@@ -171,3 +179,24 @@ export const ALPHA = {
 } as const;
 
 export type TintRole = keyof typeof ALPHA;
+
+/**
+ * THE SUGGESTED-VALUE INK — a placeholder that must NOT read as entered data.
+ *
+ * There are two kinds of placeholder and they want opposite things. An
+ * INSTRUCTIONAL one carries real content ("you@email.com", "e.g. Chicken
+ * breast") and has to clear AA, so it draws in `ash` at full strength. A
+ * SUGGESTED one is a ghost of what the field would hold ("0", "8", "—") and has
+ * to be legible as a hint while being unmistakably NOT a value the athlete
+ * typed — so it is deliberately held below AA, and paired with italics on web.
+ *
+ * Web already made this distinction (globals.css `.ghost-ph`, 55%). Mobile had
+ * the alpha and not the name, which is how it also grew `C.line` (1.20:1 — an
+ * invisible hint) and a raw `#3a3d34` (1.64:1) doing the same job at two more
+ * strengths. Naming it is what makes those two readable as bugs rather than as
+ * choices (audit/12 §5.6).
+ *
+ * 0.55 rather than mobile's old 0.533: same perceived value, and it is the
+ * number web's rule already carries, so the two clients now state one figure.
+ */
+export const GHOST_PLACEHOLDER_ALPHA = 0.55;

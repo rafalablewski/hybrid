@@ -42,7 +42,6 @@ export const CARD_PAD = space.xl;
 export const INK = "var(--color-ink)",
   INK_HEX = colors.ink,
   INK2 = "var(--color-ink2)",
-  CARD = "var(--color-card)",
   LINE = "var(--color-line)",
   LINE_HEX = colors.line;
 // LIME is the brand accent as a CSS var so every fill/border/text follows the
@@ -211,7 +210,7 @@ export function Card({
     <div
       onClick={onClick}
       style={{
-        background: CARD,
+        background: INK2,
         border: `1px solid ${LINE}`,
         borderRadius: "var(--r-card)",
         padding: space.xl,
