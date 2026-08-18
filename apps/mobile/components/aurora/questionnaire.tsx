@@ -564,8 +564,12 @@ function BirthAnswer({ C, t, profile, onAnswer }: {
               accessibilityState={{ selected: on, disabled: year == null }}
               accessibilityLabel={t(key)}
               style={{
-                minWidth: 52, minHeight: 44, alignItems: "center", justifyContent: "center",
-                paddingHorizontal: space.sm, borderRadius: RADIUS.pill, borderWidth: 1,
+                // FOUR PER ROW, so twelve months read as quarters rather than
+                // as a ragged 5/5/2 the eye has to re-parse. `flexBasis` under
+                // the row's gap does it without measuring the screen.
+                flexBasis: "22%", flexGrow: 1,
+                minHeight: 44, alignItems: "center", justifyContent: "center",
+                paddingHorizontal: space.xs, borderRadius: RADIUS.pill, borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
                 backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
               }}

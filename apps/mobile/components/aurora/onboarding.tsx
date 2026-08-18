@@ -569,8 +569,10 @@ function BirthStep({ q, answers, setAnswer }: {
               accessibilityState={{ selected: on, disabled: year == null }}
               accessibilityLabel={t(key)}
               style={{
-                minWidth: 54, minHeight: 44, alignItems: "center", justifyContent: "center",
-                paddingHorizontal: space.sm, borderRadius: RADIUS.pill, borderWidth: 1,
+                // Four per row — twelve months as quarters, not a ragged 5/5/2.
+                flexBasis: "22%", flexGrow: 1,
+                minHeight: 44, alignItems: "center", justifyContent: "center",
+                paddingHorizontal: space.xs, borderRadius: RADIUS.pill, borderWidth: 1,
                 borderColor: on ? C.lime : C.line,
                 backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : "transparent",
               }}
