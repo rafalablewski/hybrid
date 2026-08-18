@@ -72,18 +72,23 @@ describe("the onboarding wizard's option row", () => {
 });
 
 /**
- * A NUMBER QUESTION MUST NOT SHOW A FIGURE IT WAS NEVER GIVEN.
+ * A NUMBER QUESTION SHOWS NO FIGURE IT WAS NEVER GIVEN — AND COSTS NO TAP.
  *
- * The intake asks for age and body mass now, and neither ships a
- * `defaultValue` — deliberately, because the client seeds every answer from its
- * default, so a default here would mean an athlete who stepped past the screen
- * had "80 kg" written down as their own body mass. That is a fabricated
- * measurement, and the volume model goes on to explain the athlete's recovery
- * ceiling with it.
+ * Two invariants that pull in opposite directions until you separate the value
+ * from the control, which is what this asserts.
  *
- * The guard is on the RENDER because that is where it would be given away: a
- * screen showing "80" over a "Next" button has told the athlete they answered,
- * whatever the answer map holds.
+ * NO FABRICATED FIGURE. The intake asks for age and body mass, and neither
+ * ships a `defaultValue` — deliberately, because the client seeds every answer
+ * from its default, so a default would mean an athlete who stepped past the
+ * screen had "80 kg" written down as their own body mass. The model then goes
+ * on to explain their recovery ceiling with it. The guard is on the RENDER
+ * because that is where it would be given away: a screen showing "80" over a
+ * Next button has told the athlete they answered, whatever the map holds.
+ *
+ * AND NO TOLL. The first cut satisfied the above with an "Answer" button — one
+ * tap to reveal a field that could have been there all along, on a screen whose
+ * whole purpose is to be answered. The field is present and live now, and only
+ * empty; the seed is where it starts when touched, not something to ask for.
  */
 describe("a number the athlete has not answered", () => {
   const next = (container: HTMLElement) => {
@@ -112,7 +117,13 @@ describe("a number the athlete has not answered", () => {
     // The seed is 30 and the range starts at 10. Neither may be on screen: the
     // question is unanswered and has to look it.
     expect(body).not.toMatch(/\b30\b/);
-    // Ninety segments is the failure this control replaced — a `number`
+    // …but the control IS on screen, ready, with nothing standing in front of
+    // it. AScrubField declares `adjustable`, which react-native-web renders as
+    // a slider. Nothing stands between the athlete and it — the field is empty,
+    // not absent, and the dash is what says so.
+    expect(container.querySelector('[role="slider"]'), "the field is gated").not.toBeNull();
+    expect(body, "the empty field must read as empty").toContain("—");
+    // Ninety segments is the other failure this control replaced — a `number`
     // question used to draw one option per step.
     expect(container.querySelectorAll('[role="radio"]').length).toBeLessThan(10);
   });

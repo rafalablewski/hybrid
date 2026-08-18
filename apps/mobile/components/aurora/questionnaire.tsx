@@ -428,44 +428,42 @@ function Scale({ C, t, q, value, onPick, tone }: {
 }
 
 /**
- * A quantity.
+ * A quantity — one control, whether or not it has been answered.
  *
- * Unanswered, it shows NO FIGURE — only the control that starts one. That is
- * the whole discipline of this screen in one place: the seed (80 kg, 175 cm)
- * exists so the athlete lands somewhere plausible and drags a short way, and
- * showing it before they have touched anything would be the app quietly
- * inventing a measurement and then explaining its own ceiling with it.
+ * THE FIELD IS ALWAYS HERE; ONLY THE VALUE IS ABSENT. Unanswered it reads as a
+ * dash and the first drag or press gives the answer, from the seed. Answered it
+ * is the same control with a figure in it. Nothing is added to the row and
+ * nothing is taken away when the state changes, so the athlete never has to
+ * find a different affordance depending on what they have already done.
  *
- * Answered, it is `AScrubField` — drag the figure to travel, −/＋ to land
- * exactly. The old screen used a 30%-wide `TextInput` with `defaultValue`,
- * which is uncontrolled: once the value changed underneath it (a hydrate from
- * the account, a measured fill), the box went on displaying the number it had
- * mounted with.
+ * THIS REPLACED AN "ANSWER" BUTTON, and that button was a mistake worth naming
+ * because the reasoning behind it was half right. A number the athlete has not
+ * given must not be DISPLAYED as though they gave it — a seeded 80 kg shown as
+ * their body mass is a fabricated measurement, and the model goes on to explain
+ * their own recovery ceiling with it. True. But that is a constraint on the
+ * VALUE, and it was paid for by gating the CONTROL: every unanswered number
+ * cost one tap to reveal a field that could have been there all along, on a
+ * screen whose entire purpose is to be answered. Twelve questions, twelve
+ * tolls.
+ *
+ * The old screen used a 30%-wide `TextInput` with `defaultValue`, which is
+ * uncontrolled: once the value changed underneath it (a hydrate from the
+ * account, a measured fill), the box went on displaying the number it mounted
+ * with.
  */
 function NumberAnswer({ C, t, q, value, onPick, tone }: {
   C: Palette; t: (k: string) => string; q: Question; value: number | undefined; onPick: (v: number | undefined) => void; tone: string;
 }) {
   const unit = q.unitKey ? t(q.unitKey) : undefined;
   const dp = String(q.step ?? 1).split(".")[1]?.length ?? 0;
-  if (value == null) {
-    return (
-      <Pressable
-        onPress={() => { haptic.selection(); onPick(q.seed ?? q.min ?? 0); }}
-        accessibilityRole="button"
-        accessibilityLabel={`${t("w.quiz.answer")} ${t(q.labelKey)}`}
-        style={{
-          alignSelf: "flex-start", minHeight: 44, justifyContent: "center",
-          paddingHorizontal: space.lg, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line,
-        }}
-      >
-        <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.quiz.answer")}</Text>
-      </Pressable>
-    );
-  }
+  const empty = value == null;
   return (
     <View style={{ opacity: tone === C.chalk ? 1 : 0.92 }}>
       <AScrubField
-        value={value}
+        // Where the control STARTS when it is first touched — never displayed
+        // until then. See the `unset` prop in the kit.
+        value={empty ? (q.seed ?? q.min ?? 0) : value}
+        unset={empty}
         onChange={onPick}
         min={q.min!}
         max={q.max!}

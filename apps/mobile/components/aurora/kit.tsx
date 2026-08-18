@@ -1785,6 +1785,8 @@ export function AScrubField({
   format,
   suffix,
   a11y,
+  unset,
+  unsetLabel = "—",
 }: {
   value: number;
   onChange: (v: number) => void;
@@ -1798,9 +1800,30 @@ export function AScrubField({
   /** The accessible name. The row prints only the value, so without this the
    *  control reads out as a bare number. */
   a11y: string;
+  /**
+   * NOTHING HAS BEEN ANSWERED YET — the figure reads as a dash and `value` is
+   * only where the control STARTS when it is first touched.
+   *
+   * The two requirements here look like they fight and do not. A number the
+   * athlete has not given must not be DISPLAYED as though they gave it: a
+   * seeded 80 kg shown as their body mass is a fabricated measurement, and the
+   * model goes on to explain their own recovery ceiling with it. But gating the
+   * whole control behind an "Answer" button — which is what this replaced —
+   * charges a tap for that correctness, and the constraint was never on the
+   * control, only on the value.
+   *
+   * So the field is here from the first frame, live, and empty. Drag it and it
+   * travels from `value`; press ＋ or − and it lands ON `value`, because the
+   * first press means "start here" rather than "one step up from a number I
+   * cannot see". Either way the answer is given by the same gesture that would
+   * have adjusted it, and no tap is spent asking permission to begin.
+   */
+  unset?: boolean;
+  /** What the empty figure reads as. A dash by default. */
+  unsetLabel?: string;
 }) {
   const { palette: C } = useTheme();
-  const show = (format ?? String)(value);
+  const show = unset ? unsetLabel : (format ?? String)(value);
 
   // Read through refs so the responder is built ONCE: rebuilding it per value
   // would drop the gesture mid-drag.
@@ -1811,15 +1834,27 @@ export function AScrubField({
   const cb = useRef(onChange);
   cb.current = onChange;
   const from = useRef(value);
+  // Whether the field is still empty, read through a ref for the same reason:
+  // the responder closes over it and must see the CURRENT state, not the one
+  // that existed when the gesture handler was built.
+  const emptyRef = useRef(!!unset);
+  emptyRef.current = !!unset;
 
   const commit = (next: number) => {
     const { min: lo, max: hi, step: by } = cfg.current;
     const dp = String(by).split(".")[1]?.length ?? 0;
     const v = Math.min(hi, Math.max(lo, Number(next.toFixed(dp))));
-    if (v === vRef.current) return;
+    // An empty field always commits, even when the value it lands on equals the
+    // seed it started from: there IS no current value to be equal to, and the
+    // early return below would otherwise swallow the athlete's first press.
+    if (v === vRef.current && !emptyRef.current) return;
     haptic.selection();
     cb.current(v);
   };
+
+  /** A press of ＋ or − lands ON the seed while the field is empty — the first
+   *  press means "start here", not "one step up from a number I cannot see". */
+  const nudge = (dir: 1 | -1) => commit(emptyRef.current ? vRef.current : vRef.current + dir * cfg.current.step);
 
   const pan = useRef(
     PanResponder.create({
@@ -1843,14 +1878,14 @@ export function AScrubField({
         accessible
         accessibilityRole="adjustable"
         accessibilityLabel={a11y}
-        accessibilityValue={{ text: `${show}${suffix ? ` ${suffix}` : ""}` }}
+        accessibilityValue={{ text: unset ? unsetLabel : `${show}${suffix ? ` ${suffix}` : ""}` }}
         accessibilityActions={[{ name: "increment" }, { name: "decrement" }]}
-        onAccessibilityAction={(e) => commit(value + (e.nativeEvent.actionName === "increment" ? step : -step))}
+        onAccessibilityAction={(e) => nudge(e.nativeEvent.actionName === "increment" ? 1 : -1)}
         style={{ flex: 1, flexDirection: "row", alignItems: "baseline", gap: space.xs, paddingVertical: space.sm }}
       >
         <RollingNumber
           value={show}
-          style={{ fontFamily: F.black, fontSize: fs.hero, color: C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking.display }}
+          style={{ fontFamily: F.black, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking.display }}
         />
         {suffix ? (
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>
@@ -1860,20 +1895,20 @@ export function AScrubField({
       </View>
       <View style={{ flexDirection: "row" }}>
         <Pressable
-          onPress={() => commit(value - step)}
-          disabled={value <= min}
+          onPress={() => nudge(-1)}
+          disabled={!unset && value <= min}
           accessibilityRole="button"
           accessibilityLabel={`${a11y} −`}
-          style={[btn, value <= min && { opacity: 0.35 }]}
+          style={[btn, !unset && value <= min && { opacity: 0.35 }]}
         >
           <Text style={glyph}>−</Text>
         </Pressable>
         <Pressable
-          onPress={() => commit(value + step)}
-          disabled={value >= max}
+          onPress={() => nudge(1)}
+          disabled={!unset && value >= max}
           accessibilityRole="button"
           accessibilityLabel={`${a11y} ＋`}
-          style={[btn, value >= max && { opacity: 0.35 }]}
+          style={[btn, !unset && value >= max && { opacity: 0.35 }]}
         >
           <Text style={glyph}>+</Text>
         </Pressable>

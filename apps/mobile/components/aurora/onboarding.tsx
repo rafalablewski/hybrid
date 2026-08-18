@@ -461,10 +461,14 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
  * scrub field — drag the figure to travel, ＋/− to land exactly, which is the
  * same control the questionnaire screen uses for the same values.
  *
- * AN UNANSWERED QUESTION SHOWS NO FIGURE. The body questions ship without a
- * `defaultValue` precisely so a skipped one stays unanswered, and rendering the
- * seed as though it were an answer would hand that guarantee straight back —
- * the athlete would step past a screen reading "80 kg" and have said it.
+ * AN UNANSWERED QUESTION SHOWS NO FIGURE, and costs no tap to start. The body
+ * questions ship without a `defaultValue` precisely so a skipped one stays
+ * unanswered, and rendering the seed as though it were an answer would hand
+ * that guarantee straight back — the athlete would step past a screen reading
+ * "80 kg" and have said it. But that constraint is on the VALUE: the field
+ * itself is present and live, empty, and the first drag or press answers it.
+ * An "Answer" button here would charge a tap on a screen that exists to be
+ * answered, which is the one place a toll is least defensible.
  */
 function NumberStep({ q, answers, setAnswer }: {
   q: OnboardingQuestion;
@@ -491,18 +495,13 @@ function NumberStep({ q, answers, setAnswer }: {
     );
   }
 
-  if (value == null) {
-    return (
-      <APill
-        label={t("w.quiz.answer")}
-        onPress={() => { haptic.selection(); setAnswer(q.key, seedFor(q, min, max)); }}
-      />
-    );
-  }
   const dp = String(step).split(".")[1]?.length ?? 0;
   return (
     <AScrubField
-      value={value}
+      // Empty until touched, and live from the first frame: the seed is where
+      // the control starts, not something the athlete has to ask for.
+      value={value ?? seedFor(q, min, max)}
+      unset={value == null}
       onChange={(v) => setAnswer(q.key, v)}
       min={min}
       max={max}
