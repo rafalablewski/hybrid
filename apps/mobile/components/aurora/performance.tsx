@@ -328,11 +328,15 @@ function Full({ top }: { top?: ReactNode }) {
               </Text>
             </View>
 
-            {/* THE PLOT. Mobile ships no SVG renderer, so freshness is drawn as
-                bars and readiness as a per-day marker — but both are sized from
-                the SHARED geometry (@hybrid/core trajectoryPlot), so the domain,
-                the days and the session marks are identical to web's line. Form
-                carries the series identity here, never hue alone. */}
+            {/* THE PLOT — the fortnight, as two real lines. It used to be
+                approximated with bars and per-day markers because mobile drew
+                no SVG; react-native-svg was already in the app for the injury
+                mannequin, so both series are stroked from the SHARED geometry
+                (@hybrid/core trajectoryPlot) — the domain, the days and the
+                session marks come off one engine. Form carries the series
+                identity here, never hue alone: readiness is the DASHED line.
+                This is a HISTORY, not the day's reading — the day's reading is
+                the ring on Today, and it is the only readiness on this tab. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flexDirection: "row", alignItems: "baseline" }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.home.cockpit.last14")}</Text>
