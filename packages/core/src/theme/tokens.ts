@@ -9,7 +9,8 @@ export const colors = {
   //
   // ── THE RAISED SURFACE IS A PANTONE NOW, AND IT DRAGGED THE HAIRLINE ──────
   //
-  //   ink2 → PANTONE 19-3911 TCX  Black Beauty  #212126  (as specified)
+  //   ink2 → #212126, taken as PANTONE 19-3911 TCX Black Beauty — SEE THE
+  //          ATTRIBUTION NOTE BELOW, which is weaker than it first looked.
   //   line → #2f2f36 — DERIVED from it, and the derivation is below.
   //
   // WHY THE CARD MOVED AT ALL. `ink2` was #141614, which sat ΔE 2.49 and 1.07:1
@@ -42,10 +43,35 @@ export const colors = {
   // this change — which is exactly why the collision was invisible until it was
   // measured. palette.test.ts now holds `line` against both surfaces.
   //
+  // ── THE BLACK BEAUTY ATTRIBUTION IS DISPUTED, AND THE HEX IS KEPT ─────────
+  //
+  // A verification pass against the reference libraries puts the chip LIGHTER
+  // than this token: Color-Name lists 19-3911 TCX at #27272a and Colorbook at
+  // #26262a. Against #26262a this value is ΔE76 2.50 / ΔE2000 1.71; against
+  // #27272a, 3.19 / 2.32. Perceptible, and the two references do not agree with
+  // each other either, so "the true chip" is not one number.
+  //
+  // THE HEX STAYS AND THE NAME IS QUALIFIED, for a reason that is measured
+  // rather than preferred. Re-keying the card to #26262a breaks two shipped
+  // guards outright:
+  //
+  //   error text  4.73 → 4.44 on the card   (under AA — a FOURTH derivation)
+  //   line        1.21 → 1.13 against it    (under the hairline floor)
+  //
+  // and it shaves the blue fill from 3.23 to 3.04, leaving 0.04 over the mark
+  // floor. It is doable — `line` would become #343438 and the error tone
+  // #d96b74 — but it moves every surface again on a reference two sources
+  // disagree about, days after the palette shipped.
+  //
+  // SO THE HONEST STATEMENT IS THE NARROW ONE: every ratio in this file is true
+  // of #212126, which is what renders. Whether #212126 IS Black Beauty is a
+  // claim about a chip, and it is the part to doubt. Do not quote the Pantone
+  // name as the source of a contrast figure.
+  //
   // `line` MUST match THEMES.dark in palette.ts and the :root defaults in
   // apps/web/app/globals.css — it was stale (#2a2d2a) for a while, which made
   // every chart hairline draw in a different grey than every border.
-  ink2: "#212126", // PANTONE Black Beauty — raised surface
+  ink2: "#212126", // the card — Black Beauty attribution disputed, see above
   line: "#2f2f36", // hairline borders — derived from Black Beauty (see above)
   //
   // THERE IS NO `card`. It held #151715 and sat ΔE 0.3 / contrast 1.01 from
@@ -70,8 +96,8 @@ export const colors = {
   //   lime  → PANTONE 13-0540 TCX  Wild Lime      #c3d363  (as specified)
   //   red   → PANTONE 15-1242 TCX  Muskmelon      #ec935e  (as specified)
   //   amber → PANTONE 20-0047 TPM  Fleur De Lis   #daa51d  (as specified)
-  //   blue  → PANTONE 19-4340 TCX  Lyons Blue     #015871  → RENDERED #2f7893,
-  //                                               which is itself PANTONE 633 C
+  //   blue  → PANTONE 19-4340 TCX  Lyons Blue     #015871  → RENDERED #2f7893
+  //                                               (derived; carries no chip of its own)
   //
   // WHY BLUE IS NOT ITS SOURCE PANTONE'S VALUE, and this is the one place the
   // set had to bend. Lyons Blue #015871 measures 2.44:1 against `ink` — below
@@ -85,31 +111,40 @@ export const colors = {
   // it is not a token because nothing draws one yet, and a token with no
   // consumer is how the palette grew a `card` nobody paints.
   //
-  // ── AND THE LIFT LANDED ON A PANTONE OF ITS OWN: 633 C ────────────────────
+  // ── IT IS NOT PANTONE 633 C. CHECKED, AND WITHDRAWN ──────────────────────
   //
-  // #2f7893 is PANTONE 633 C. That was not the goal and it is not why the value
-  // was chosen — it was derived, by the rule at the top of this file, and only
-  // afterwards identified. Which makes it the best evidence the method has:
+  // This block briefly recorded #2f7893 as PANTONE 633 C, on a hex→Pantone
+  // lookup. An independent verification pass checked it against the reference
+  // libraries and the identification does not hold:
   //
-  //   Lyons Blue #015871   L* 34.35   Lab hue 238.24°
-  //   this token #2f7893   L* 47.16   Lab hue 237.39°
+  //   PANTONE 633 C  →  #007396   (ColorXS, Columbia Omni Studio, Perbang)
+  //   this token     →  #2f7893   ΔE76 5.85 from that chip, ΔE2000 3.28
   //
-  // The lift moved L* by 12.81 and the hue by **0.86°**. "Preserve the identity,
-  // adjust the lightness" walked along a near-constant hue line from one named
-  // Pantone and stopped on another. A derivation that lands on a specified
-  // colour is a derivation that was pointed the right way.
+  // Both are well above the ΔE ≈ 2 usually treated as perceptible, and
+  // Encycolorpedia's page for #2f7893 lists paint matches but NO Pantone at all.
+  // It is nearer 633 U (#27829e, ΔE76 4.69) than 633 C, and not close to either.
   //
-  // THE EVIDENCE CLASS IS DIFFERENT FROM THE OTHERS, and that is worth stating
-  // rather than flattening. Black Beauty, Stalactite, Slate Gray, Wild Lime,
-  // Muskmelon and Fleur De Lis are TCX chips, which publish an sRGB value — the
-  // hex IS the specification. 633 C is a COATED SPOT colour, which has no single
-  // canonical sRGB: the conversion depends on rendering intent and source, so
-  // this identification is a REVERSE lookup from the hex rather than a value
-  // taken from a chip. It is recorded because it is true of this value and
-  // useful to know; it is not the reason the value is what it is.
+  // AND THE REAL CHIP WOULD NOT SURVIVE HERE ANYWAY, which is the useful half of
+  // the finding: #007396 measures 3.61:1 on `ink` and 2.97 on the card — it
+  // FAILS the 3:1 mark floor this token exists to clear. So "adopt the true
+  // value" was never available; the choice was always between an accurate name
+  // and a working colour, and the name is the part that was wrong.
   //
-  // The token therefore keeps its DERIVED provenance. Nothing here changes the
-  // hex, the guards, or a single rendered pixel.
+  // `blue` is therefore what it always was: a DERIVED value, Lyons Blue's Lab
+  // hue angle lifted in L* until it clears the mark floor. It carries no Pantone
+  // identity of its own and should not be given one. The caution written here
+  // when 633 C was first recorded — that a spot-colour hex lookup is a reverse
+  // match rather than a published sRGB value — turned out to be the whole story.
+  //
+  // ── AND WHAT `blue` MAY BE USED FOR, since 3.92:1 is the governing number ──
+  //
+  // 3.92 on ink and 3.23 on the card clears WCAG 1.4.11 (3:1, non-text marks)
+  // and FAILS 1.4.3 (4.5:1, normal text). That is not a defect, it is the
+  // token's job: `blue` is a FILL — a bar, a stroke, a dot, a ring segment — and
+  // `accentText.blue` (#6bb4d4, 6.95 on the card) is the value for type. The
+  // split is guarded two ways: palette.test.ts asserts the fill clears 3:1 and
+  // the text clears AA, and a mobile rule asserts `blue` is not an ink-bearing
+  // fill. Do not set normal-size type in this token.
   //
   // WHY THERE IS NO `violet`. It held a steel/slate blue (#8296c4) and, before
   // that, a lavender — and it never had one job: coach, non-premium, comment,

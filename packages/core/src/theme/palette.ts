@@ -17,10 +17,11 @@
  * THE PANTONE FOUR — Wild Lime / Muskmelon / Lyons Blue / Fleur De Lis — plus
  * three Pantone NEUTRALS: Stalactite (`chalk`), Slate Gray (`ash`) and Black
  * Beauty (`ink2`, with `line` derived from it). See tokens.ts, which records
- * what each one is, why Lyons Blue is rendered lifted on this ground (and that
- * the lifted value is itself PANTONE 633 C, arrived at by derivation rather than
- * chosen), why Stalactite needed no adaptation at all, what Slate Gray cost in
- * perceptual distance, and why there is still no fifth ACCENT and no gold.
+ * what each one is, why Lyons Blue is rendered lifted on this ground (and why
+ * the lifted value carries no chip of its own — a 633 C identification was
+ * recorded, checked and withdrawn), why Stalactite needed no adaptation at all,
+ * what Slate Gray cost in perceptual distance, and why there is still no fifth
+ * ACCENT and no gold.
  *
  * Only BLUE needs a distinct text variant here; the other three clear AA as
  * type verbatim (guarded by palette.test.ts, which checks every pair rather

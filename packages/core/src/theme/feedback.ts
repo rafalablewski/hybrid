@@ -85,8 +85,25 @@ export const FEEDBACK: Record<FeedbackKind, FeedbackTone> = {
    */
   success: { fill: "#00ab84", ink: THEMES.dark.onAccent, text: "#00ab84" },
 
-  /** Fleur De Lis, unchanged. Lab hue 83° is already the conventional yellow, so
-   *  the warning channel needed a NAME, not a new value. 7.16 as type. */
+  /**
+   * Fleur De Lis, unchanged — the warning channel needed a NAME, not a new
+   * value. 7.16 as type on the card.
+   *
+   * IT IS A GOLDEN YELLOW, NOT "the conventional yellow", which is what this
+   * comment used to say and is imprecise. Unique yellow — the hue where the
+   * red/green opponent channel balances — sits at 92° in CIELAB (90° in
+   * CIECAM02). Fleur De Lis measures 83.1°, so it is ~9° warm of that locus: a
+   * gold leaning orange. It is still classified as a yellow, and virtually every
+   * industry warning yellow is a warm gold for the same reason — pure unique
+   * yellow is too light to hold contrast as type or as an icon.
+   *
+   * A SECOND CAVEAT ON THE SOURCE, since TPM is not TCX: 20-0047 TPM belongs to
+   * Pantone's METALLIC SHIMMERS textile library, whose chips carry actual
+   * shimmer pigment. A hex can only express the base tone — the metallic
+   * behaviour does not survive the translation, and a screen renders #daa51d as
+   * an ordinary flat gold. Citing the chip as the origin is fair; expecting the
+   * "premium" quality the metal implies to arrive with the hex is not.
+   */
   warning: { fill: colors.amber, ink: THEMES.dark.onAccent, text: colors.amber },
 
   /**
