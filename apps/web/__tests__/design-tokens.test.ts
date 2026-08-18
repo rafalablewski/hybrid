@@ -70,7 +70,10 @@ describe("colour", () => {
   it("RATCHET — no new hex literals outside the palette", () => {
     const found = hits(QUOTED_HEX);
     const sites = `\n  ${found.join("\n  ")}`;
-    // 8 at the time the rule was written, after the retint and the three that
+    // 8 when the rule was written, 5 after the three admin modal scrims became
+    // one `scrim()` call. What is left is the two Apple brand colours and
+    // engine-room's two SVG presentation attrs — all four with a real reason.
+    // (was: 8 at the time the rule was written), after the retint and the three that
     // this change cleared (flags' third copy of --color-card, audit's ad-hoc
     // surface ΔE 0.4 from ink, datanet's recharts stroke). What is left is the
     // two Apple brand colours, the modal scrims, and engine-room's two SVG
@@ -78,13 +81,13 @@ describe("colour", () => {
     // scrims have a named fix waiting (audit/12 §5.11).
     expect(
       found.length,
-      `\nhex literal → a palette token\nRATCHET BROKEN — ceiling 8, found ${found.length}:${sites}`,
-    ).toBeLessThanOrEqual(8);
+      `\nhex literal → a palette token\nRATCHET BROKEN — ceiling 5, found ${found.length}:${sites}`,
+    ).toBeLessThanOrEqual(5);
     expect(
       found.length,
-      `\nhex literal → a palette token\nSLACK — the ceiling is 8 and there are only ${found.length}. ` +
+      `\nhex literal → a palette token\nSLACK — the ceiling is 5 and there are only ${found.length}. ` +
         `Lower it in this change: unclaimed headroom is room for a new violation.`,
-    ).toBe(8);
+    ).toBe(5);
   });
 
   it("HARD — the retired tokens cannot come back", () => {

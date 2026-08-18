@@ -4,10 +4,10 @@
  * Everything that defines the app's LOOK lives in this folder and is re-exported
  * here, so the rest of the codebase only ever imports from `@hybrid/core`:
  *
- *   tokens.ts     — raw brand tokens: colours + font families (scale: ../scale.ts).
+ *   tokens.ts     — raw brand tokens: the PANTONE four + font families, the
+ *                   ALPHA ladder, SCRIM and STATE_OPACITY (scale: ../scale.ts).
  *   palette.ts    — the dark surface + text palette (ThemePalette, THEMES).
  *   feedback.ts   — success / warning / error / info, the OUTCOME colours.
- *   templates.ts  — the skin registry + active-skin switch (Classic ⇄ Aurora).
  *   icons.ts      — the Aurora icon set (AuroraIconName + SVG path data).
  *
  * The per-client RENDERERS (which can't be cross-package code) consume these:

@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ago, until } from "@hybrid/core";
+import { ALPHA, ago, until, STATE_OPACITY } from "@hybrid/core";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
-import { fs, space, INK, INK2, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Stat, Select, txt, OK, WARN, ERR, INFO, ERR_HEX } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Stat, Select, txt, OK, WARN, ERR, INFO, ERR_HEX, tint } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
 import { Loading } from "../aurora/skeleton";
@@ -368,7 +368,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 title="Drag me onto the dropzone"
-                style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, padding: "10px 12px", borderRadius: "var(--r-field)", cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
+                style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, padding: "10px 12px", borderRadius: "var(--r-field)", cursor: "grab", border: `1px solid ${agentId === a.id ? LIME : LINE}`, background: agentId === a.id ? tint(LIME, ALPHA.fill) : INK2, color: txt(agentId === a.id ? LIME : CHALK), display: "flex", alignItems: "center", gap: 7 }}
               >
                 <span style={{ color: txt(ASH) }}>⠿</span>
                 <span style={{ width: 7, height: 7, borderRadius: 99, background: DOT[a.status] ?? ASH }} />
@@ -389,7 +389,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
               if (id) setAgentId(id);
               setDragOver(false);
             }}
-            style={{ flex: 1, minWidth: 220, border: `2px dashed ${dragOver ? LIME : LINE}`, borderRadius: "var(--r-card)", padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: dragOver ? `color-mix(in srgb, var(--color-lime) 7%, transparent)` : "transparent", transition: "all .12s", minHeight: 88 }}
+            style={{ flex: 1, minWidth: 220, border: `2px dashed ${dragOver ? LIME : LINE}`, borderRadius: "var(--r-card)", padding: 20, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: dragOver ? tint(LIME, ALPHA.wash) : "transparent", transition: "all .12s", minHeight: 88 }}
           >
             {assignedName ? (
               <Mono s={{ fontSize: fs.bodyLg, fontWeight: 700, textAlign: "center" }} c={LIME}>✓ {assignedName} assigned — add a task below</Mono>
@@ -418,7 +418,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
           <button className="pressable"
             disabled={busy || !agentId || !task.trim()}
             onClick={run}
-            style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy || !agentId || !task.trim() ? 0.5 : 1 }}
+            style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 800, textTransform: "uppercase", letterSpacing: ".08em", padding: "10px 18px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: tint(LIME, ALPHA.fill), color: txt(LIME), opacity: busy || !agentId || !task.trim() ? STATE_OPACITY.busy : 1 }}
           >
             {busy ? "Running…" : "Run"}
           </button>
@@ -608,7 +608,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
         <button className="pressable"
           disabled={busy || val === ""}
           onClick={log}
-          style={{ ...disp, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "7px 10px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(val === "" ? ASH : LIME), opacity: busy ? 0.5 : 1 }}
+          style={{ ...disp, fontSize: fs.caption, fontWeight: 700, textTransform: "uppercase", padding: "7px 10px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: INK2, color: txt(val === "" ? ASH : LIME), opacity: busy ? STATE_OPACITY.busy : 1 }}
         >
           log
         </button>
@@ -717,7 +717,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
               <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
             </div>
             <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
-              <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...disp, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`, color: txt(LIME), opacity: busy === a.id ? 0.5 : 1 }}>
+              <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "approve")} style={{ ...disp, fontSize: fs.body, fontWeight: 800, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LIME}`, background: tint(LIME, ALPHA.fill), color: txt(LIME), opacity: busy === a.id ? STATE_OPACITY.busy : 1 }}>
                 Approve &amp; run
               </button>
               <button className="pressable" disabled={busy === a.id} onClick={() => decide(a.id, "deny")} style={{ ...disp, fontSize: fs.body, fontWeight: 700, textTransform: "uppercase", padding: "10px 14px", borderRadius: "var(--r-field)", cursor: "pointer", border: `1px solid ${LINE}`, background: "transparent", color: txt(ASH) }}>
@@ -888,7 +888,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
             )}
           </div>
           {list.map((n) => (
-            <div key={n.id} style={{ display: "flex", gap: space.ms, alignItems: "baseline", padding: "9px 0", borderBottom: `1px solid ${LINE}`, opacity: n.read ? 0.5 : 1 }}>
+            <div key={n.id} style={{ display: "flex", gap: space.ms, alignItems: "baseline", padding: "9px 0", borderBottom: `1px solid ${LINE}`, opacity: n.read ? STATE_OPACITY.disabled : 1 }}>
               <span style={{ width: 7, height: 7, borderRadius: 99, background: sevColor(n.severity), flexShrink: 0, marginTop: 5 }} />
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>{n.title}</div>

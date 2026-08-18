@@ -56,8 +56,7 @@ import {
   type WeightUnit,
   type BodyweightLookup,
   ALPHA,
-  THEMES,
-} from "@hybrid/core";
+  THEMES, STATE_OPACITY } from "@hybrid/core";
 import { fetchConnections, patchSessionDevice } from "../lib/api";
 import { healthKitAvailability } from "../lib/healthkit";
 import { useHeatSignalsQuery, useRevalidate } from "../lib/queries";
@@ -595,7 +594,7 @@ export function WorkoutWrapped({
               <Pressable onPress={() => setMatchOpen(true)}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{t("session.device.rematch")}</Text>
               </Pressable>
-              <Pressable onPress={() => void unlinkDevice()} disabled={unlinking} style={{ opacity: unlinking ? 0.5 : 1 }}>
+              <Pressable onPress={() => void unlinkDevice()} disabled={unlinking} style={{ opacity: unlinking ? STATE_OPACITY.busy : 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("session.device.unlink")}</Text>
               </Pressable>
             </View>

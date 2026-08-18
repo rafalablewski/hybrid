@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput, ActivityIndicator } from "react-native";
-import { isValidTotpCode , ALPHA, FEEDBACK } from "@hybrid/core";
+import { isValidTotpCode , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
@@ -129,7 +129,7 @@ export default function MfaSettings() {
             {verified.map((f) => (
               <View key={f.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{f.friendly_name || "Authenticator"}</Text>
-                <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? 0.5 : 1 }}>
+                <Pressable onPress={() => remove(f.id)} disabled={busy} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 5, opacity: busy ? STATE_OPACITY.busy : 1 }}>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error }}>Remove</Text>
                 </Pressable>
               </View>
@@ -167,7 +167,7 @@ export default function MfaSettings() {
                     accessibilityLabel="Authenticator code"
                     style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, letterSpacing: 3, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
                   />
-                  <Pressable onPress={confirm} disabled={busy || !isValidTotpCode(code)} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 12, alignItems: "center", opacity: busy || !isValidTotpCode(code) ? 0.5 : 1 }}>
+                  <Pressable onPress={confirm} disabled={busy || !isValidTotpCode(code)} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 12, alignItems: "center", opacity: busy || !isValidTotpCode(code) ? STATE_OPACITY.busy : 1 }}>
                     <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>Confirm</Text>
                   </Pressable>
                 </View>

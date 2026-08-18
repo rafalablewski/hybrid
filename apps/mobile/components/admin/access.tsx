@@ -8,7 +8,7 @@ import {
   type Persona,
   type PersonaAccess,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { adminGet, adminSend } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Kicker, Chip, LoadSwap, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
@@ -260,7 +260,7 @@ export default function AdminAccess() {
                                       borderRadius: RADIUS.pill,
                                       paddingVertical: 5,
                                       paddingHorizontal: 11,
-                                      opacity: busy ? 0.6 : 1,
+                                      opacity: busy ? STATE_OPACITY.busy : 1,
                                     }}
                                   >
                                     <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: on ? txt(palette, palette.lime) : palette.ash }}>

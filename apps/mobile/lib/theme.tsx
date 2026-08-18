@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { THEMES, colors, ROLE_COLOR, deltaRole, type SemanticRole, type StatSubTone, type ThemeName, type ThemePalette } from "@hybrid/core";
+import { THEMES, colors, ROLE_COLOR, deltaRole, type AccentKey, type SemanticRole, type StatSubTone, type ThemeName, type ThemePalette } from "@hybrid/core";
 
 /**
  * Mobile theme — AURORA (dark), the app's one theme. The four brand accents
@@ -65,6 +65,21 @@ export const roleColor = (palette: Palette, role: SemanticRole): string => palet
  *  valence-normalised upstream — see core deltaRole. */
 export const deltaPaint = (palette: Palette, dir: StatSubTone): string =>
   txt(palette, roleColor(palette, deltaRole(dir)));
+
+
+/**
+ * AN ACCENT KEY → ITS FILL. The one lookup, for the many core types that name an
+ * accent BY KEY rather than through a semantic role (a recipe tint, a feed item,
+ * a load band, a badge).
+ *
+ * There used to be four of these — `loadHex` in percent-program, `toneColor` in
+ * settings, `RECIPE_TINT_COLOR` in core and this file's `roleColor` — because
+ * eleven core types each declared their own accent union and nothing said they
+ * were the same set (audit/12 §5.7). They are aliases of `AccentKey` now, so one
+ * lookup serves all of them. `chalk` is accepted because a fitness-level badge
+ * climbs through it on its way to the warm end.
+ */
+export const accentColor = (palette: Palette, key: AccentKey | "chalk"): string => palette[key];
 
 interface ThemeCtx {
   scheme: ThemeName;

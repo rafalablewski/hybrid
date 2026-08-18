@@ -4,8 +4,7 @@ import {
   fs, fmtWeight,
   FITNESS_LEVELS, LEVEL_KEY, ENDURANCE_DISCIPLINE_KEY, enduranceFigure,
   type LevelEvidence,
-  type LoggedSession, type WeightUnit, type FitnessLevelEstimate,
-} from "@hybrid/core";
+  type LoggedSession, type WeightUnit, type FitnessLevelEstimate, STATE_OPACITY } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { F, tracking, leading } from "../../lib/ui";
@@ -125,7 +124,7 @@ export default function LevelCard({ sessions, read }: {
               borderRadius: 2,
               overflow: "hidden",
               backgroundColor: i < index ? C.lime : C.ink,
-              opacity: i < index ? 0.4 : 1,
+              opacity: i < index ? STATE_OPACITY.disabled : 1,
             }}
           >
             {/* A floor of 4%, so an athlete two percent into a tier still sees

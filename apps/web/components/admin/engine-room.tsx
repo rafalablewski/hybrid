@@ -101,8 +101,7 @@ import {
   type HpiWeights,
   type TrainingLog,
   type ReadinessDeficit,
-  type ReadinessCost,
-} from "@hybrid/core";
+  type ReadinessCost, STATE_OPACITY } from "@hybrid/core";
 
 // ---------------------------------------------------------------------------
 // Engine Room — the transparency console over the intelligence stack.
@@ -736,7 +735,7 @@ export default function EngineRoom() {
                   borderRadius: 999,
                   padding: "5px 10px",
                   cursor: "pointer",
-                  opacity: scenarios.some((s) => s.name === p.name) ? 0.4 : 1,
+                  opacity: scenarios.some((s) => s.name === p.name) ? STATE_OPACITY.disabled : 1,
                 }}
               >
                 + {p.name}
@@ -879,7 +878,7 @@ export default function EngineRoom() {
             return (
               <div key={m.label} style={{ position: "absolute", left: `${pct}%`, top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
                 <Mono s={{ fontSize: fs.nano, display: "block", whiteSpace: "nowrap" }} c={m.c}>{m.label}</Mono>
-                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? 0.7 : 1 }} />
+                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? STATE_OPACITY.disabled : 1 }} />
               </div>
             );
           })}
@@ -939,7 +938,7 @@ export default function EngineRoom() {
             return (
               <div key={m.label} style={{ position: "absolute", left: `${pct}%`, top: 0, transform: "translateX(-50%)", textAlign: "center" }}>
                 <Mono s={{ fontSize: fs.nano, display: "block", whiteSpace: "nowrap" }} c={m.c}>{m.label}</Mono>
-                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? 0.7 : 1 }} />
+                <div style={{ width: m.dashed ? 2 : 4, height: 14, background: m.c, margin: "2px auto 0", borderRadius: 2, opacity: m.dashed ? STATE_OPACITY.disabled : 1 }} />
               </div>
             );
           })}
@@ -1859,7 +1858,7 @@ function Slider({
   disabled?: boolean;
 }) {
   return (
-    <label style={{ display: "block", opacity: disabled ? 0.45 : 1 }}>
+    <label style={{ display: "block", opacity: disabled ? STATE_OPACITY.disabled : 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: space.sm, marginBottom: 6 }}>
         <Mono s={{ fontSize: fs.nano, textTransform: "uppercase", letterSpacing: ".12em" }}>{label}</Mono>
         <Mono s={{ fontSize: fs.micro }} c={CHALK}>{display}</Mono>

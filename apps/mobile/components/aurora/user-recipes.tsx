@@ -11,7 +11,7 @@ import {
   type NutritionFacts,
   type RecipeSource,
   type UserRecipe,
-  type UserRecipeIngredient, FEEDBACK, ON_FEEDBACK } from "@hybrid/core";
+  type UserRecipeIngredient, FEEDBACK, ON_FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
@@ -145,7 +145,7 @@ function StepButton({ label, onPress, disabled, small }: { label: string; onPres
         width: d, height: d, borderRadius: RADIUS.pill,
         borderWidth: 1, borderColor: C.line,
         alignItems: "center", justifyContent: "center",
-        opacity: disabled ? 0.4 : 1,
+        opacity: disabled ? STATE_OPACITY.disabled : 1,
       }}
     >
       <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: small ? 15 : 17, color: C.chalk }}>{label}</Text>
@@ -472,7 +472,7 @@ export function UserRecipeEditor({
           accessibilityRole="button"
           accessibilityLabel={t("w.recovery.nutrition.recipeSave")}
           accessibilityState={{ disabled: !!saving }}
-          style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", opacity: saving ? 0.6 : 1 }}
+          style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 13, alignItems: "center", opacity: saving ? STATE_OPACITY.busy : 1 }}
         >
           <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>
             {t("w.recovery.nutrition.recipeSave")}

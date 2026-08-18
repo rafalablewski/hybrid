@@ -16,7 +16,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, ASub, RADIUS, withAlpha } from "./kit";
 import { CtaLabel } from "./cta-label";
-import { ALPHA, FEEDBACK } from "@hybrid/core";
+import { ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const statusColor = (s: string, C: Palette) =>
@@ -72,7 +72,7 @@ export default function AuroraConnectionPage({ provider }: { provider: string })
         borderRadius: RADIUS.pill,
         paddingVertical: 12,
         alignItems: "center",
-        opacity: opts?.disabled ? 0.6 : 1,
+        opacity: opts?.disabled ? STATE_OPACITY.disabled : 1,
         marginTop: 10,
       }}
     >
@@ -211,7 +211,7 @@ function AppleHealthSection({ onChanged }: { onChanged: () => void }) {
         borderRadius: RADIUS.pill,
         paddingVertical: 12,
         alignItems: "center",
-        opacity: busy ? 0.6 : 1,
+        opacity: busy ? STATE_OPACITY.busy : 1,
         marginTop: 10,
       }}
     >

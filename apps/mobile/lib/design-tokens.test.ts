@@ -855,7 +855,8 @@ describe("colour", () => {
     // a literal that turned out to have a name once the surface it sat on had one.
     // 60 → 59: nutrition's `#3a3d34` placeholder ink (1.64:1 — a hint nobody
     // could read) became C.ash when the two placeholder kinds were named apart.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 59, "2026-12-31", "hex literal → a palette token");
+    // 59 → 58: the sheet's scrim `"#000"` became the SCRIM token.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 58, "2026-12-31", "hex literal → a palette token");
   });
 });
 

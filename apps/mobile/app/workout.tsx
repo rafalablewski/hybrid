@@ -115,7 +115,7 @@ import {
   HERO,
   SATELLITE,
   type ReadinessFeeling,
-  ALPHA, FEEDBACK } from "@hybrid/core";
+  ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { fetchSessions, createSession, renameSession, patchSessionNote, logBodyweight, fetchRoutines, createRoutine, fetchMacrocycle, fetchCheckins, type NewSession, type Routine } from "../lib/api";
 
 // Today's one-tap readiness feeling from the check-in list → scales the AI
@@ -2135,7 +2135,7 @@ export default function Workout() {
                   onPress={() => { setConfirmFinish(false); void finish(); }}
                   disabled={saving}
                   accessibilityRole="button"
-                  style={{ height: 44, paddingHorizontal: 20, justifyContent: "center", borderRadius: RADIUS.pill, backgroundColor: C.lime, opacity: saving ? 0.6 : 1 }}
+                  style={{ height: 44, paddingHorizontal: 20, justifyContent: "center", borderRadius: RADIUS.pill, backgroundColor: C.lime, opacity: saving ? STATE_OPACITY.busy : 1 }}
                 >
                   {saving ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.onAccent }}>{t("workout.finish")}</Text>}
                 </Pressable>
@@ -3025,7 +3025,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
       <Pressable
         onPress={save}
         disabled={state === "saving"}
-        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 10, opacity: state === "saving" ? 0.6 : 1 }}
+        style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 10, opacity: state === "saving" ? STATE_OPACITY.busy : 1 }}
       >
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
       </Pressable>
@@ -3142,7 +3142,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
           );
         })}
       </View>
-      <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center", opacity: saving ? 0.6 : 1 }}>
+      <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center", opacity: saving ? STATE_OPACITY.busy : 1 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>
       </Pressable>
     </View>
@@ -3273,7 +3273,7 @@ function BodyweightNudge({ C, t, units }: { C: Palette; t: (k: string) => string
           />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{units}</Text>
         </View>
-        <Pressable onPress={save} disabled={state === "saving"} style={{ backgroundColor: a, borderRadius: RADIUS.pill, paddingVertical: 10, paddingHorizontal: 16, opacity: state === "saving" ? 0.6 : 1 }}>
+        <Pressable onPress={save} disabled={state === "saving"} style={{ backgroundColor: a, borderRadius: RADIUS.pill, paddingVertical: 10, paddingHorizontal: 16, opacity: state === "saving" ? STATE_OPACITY.busy : 1 }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.caption, color: C.onAccent }}>
             {state === "saving" ? t("live.bwNudgeSaving") : state === "saved" ? t("w.train.logger.bwNudgeSaved") : t("w.train.logger.bwNudgeSave")}
           </Text>

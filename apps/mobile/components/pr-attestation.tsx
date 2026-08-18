@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, TextInput } from "react-native";
-import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit, FEEDBACK } from "@hybrid/core";
+import { prTier, prBadge, fmtWeight, type PrAttestation, type WeightUnit, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { fetchAttestations, requestAttestation } from "../lib/api";
 import { useTheme, txt } from "../lib/theme";
 import { leading, tracking, fs, space, F, PressScale as Pressable } from "../lib/ui";
@@ -120,7 +120,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
               <Text style={{ flex: 1, minWidth: 120, fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>
                 {lift} <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{fmtWeight(topLoad, units)}</Text>
               </Text>
-              <View style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: tier === 2 ? C.lime : C.line, paddingHorizontal: 10, paddingVertical: 2, opacity: pending ? 0.75 : 1 }}>
+              <View style={{ borderRadius: RADIUS.pill, borderWidth: 1, borderColor: tier === 2 ? C.lime : C.line, paddingHorizontal: 10, paddingVertical: 2, opacity: pending ? STATE_OPACITY.busy : 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: tier === 2 ? txt(C, C.lime) : tier === 1 ? C.chalk : C.ash }}>
                   {pending ? `${badge.label} — witness asked` : badge.label}
                   {tier === 2 && signer?.witnessHandle ? ` by @${signer.witnessHandle}` : ""}

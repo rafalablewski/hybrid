@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "@/lib/session";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, txt, GlassField } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, txt, GlassField, scrim } from "@/lib/ui";
 import { useCollapsible } from "@/lib/use-collapsible";
 import { useIsMobile } from "@/lib/use-media-query";
 import { AuroraIcon } from "@/components/aurora/icons";
@@ -120,7 +120,7 @@ export default function AdminPanel() {
         <div
           onClick={() => setDrawerOpen(false)}
           aria-hidden
-          style={{ position: "fixed", inset: 0, zIndex: 59, background: "rgba(0,0,0,.5)", backdropFilter: "blur(2px)" }}
+          style={{ position: "fixed", inset: 0, zIndex: 59, background: scrim(), backdropFilter: "blur(2px)" }}
         />
       )}
 

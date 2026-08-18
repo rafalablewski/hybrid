@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
+import { ALPHA,
   buildSystemPrompt,
   MODELS,
   EFFORTS,
@@ -12,9 +12,8 @@ import {
   AGENT_STATUSES,
   type AgentDefinition,
   type AgentStatus,
-  type Kpi,
-} from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt, OK, ERR } from "@/lib/ui";
+  type Kpi, STATE_OPACITY } from "@hybrid/core";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt, OK, ERR, tint } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
@@ -531,7 +530,7 @@ export default function AdminAgents() {
                     <button className="pressable"
                       key={t.value}
                       onClick={() => set("tools", on ? draft.tools.filter((x) => x !== t.value) : [...draft.tools, t.value])}
-                      style={{ ...chipBtn, background: on ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : INK2, color: txt(on ? LIME : ASH), borderColor: on ? LIME : LINE }}
+                      style={{ ...chipBtn, background: on ? tint(LIME, ALPHA.fill) : INK2, color: txt(on ? LIME : ASH), borderColor: on ? LIME : LINE }}
                     >
                       {on ? "✓ " : "+ "}{t.label}
                     </button>
@@ -591,7 +590,7 @@ export default function AdminAgents() {
                     <button className="pressable"
                       disabled={runBusy || dirty || !task.trim()}
                       onClick={runTask}
-                      style={{ ...primaryBtn, opacity: runBusy || dirty || !task.trim() ? 0.5 : 1 }}
+                      style={{ ...primaryBtn, opacity: runBusy || dirty || !task.trim() ? STATE_OPACITY.disabled : 1 }}
                     >
                       {runBusy ? "Running…" : "Run agent"}
                     </button>
@@ -903,7 +902,7 @@ const primaryBtn: React.CSSProperties = {
   borderRadius: "var(--r-field)",
   cursor: "pointer",
   border: `1px solid ${LIME}`,
-  background: `color-mix(in srgb, var(--color-lime) 13%, transparent)`,
+  background: tint(LIME, ALPHA.fill),
   color: txt(LIME),
 };
 const dangerBtn: React.CSSProperties = {
@@ -959,7 +958,7 @@ function toggle(on: boolean): React.CSSProperties {
     height: 24,
     borderRadius: 999,
     border: `1px solid ${on ? LIME : LINE}`,
-    background: on ? `color-mix(in srgb, var(--color-lime) 20%, transparent)` : INK2,
+    background: on ? tint(LIME, ALPHA.solid) : INK2,
     cursor: "pointer",
     padding: 2,
     display: "flex",

@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, space, LINE, LIME, CHALK, ASH, BLUE, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, BLUE, disp, mono, Mono, Card, txt, tint } from "@/lib/ui";
+import { ALPHA } from "@hybrid/core";
 
 type CoachApp = {
   id: string;
@@ -59,7 +60,7 @@ export default function CoachApplications() {
               </Mono>
             </div>
             <div style={{ display: "flex", gap: space.sm, flexShrink: 0 }}>
-              <button className="pressable" onClick={() => decide(a.id, "approve")} style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: txt(LIME), background: `color-mix(in srgb, var(--color-lime) 10%, transparent)`, border: `1px solid ${LIME}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Approve</button>
+              <button className="pressable" onClick={() => decide(a.id, "approve")} style={{ ...mono, fontSize: fs.body, fontWeight: 700, color: txt(LIME), background: tint(LIME, ALPHA.wash), border: `1px solid ${LIME}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Approve</button>
               <button className="pressable" onClick={() => decide(a.id, "deny")} style={{ ...mono, fontSize: fs.body, color: txt(ASH), background: "none", border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", padding: "9px 14px", cursor: "pointer" }}>Deny</button>
             </div>
           </div>

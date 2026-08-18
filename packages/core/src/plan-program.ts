@@ -1,3 +1,4 @@
+import type { AccentKey } from "./semantic";
 /**
  * @hybrid/core — discipline-shaped training plans.
  *
@@ -230,7 +231,8 @@ export function formatLift(lift: PlanLift, maxes?: Record<string, number>): stri
 
 /** Brand colour token keyed to lift intensity, shared so every client colours
  *  loads / RPE identically (web hex/CSS-var, mobile palette). */
-export type LoadColor = "blue" | "lime" | "amber" | "red" | "ash";
+/** The accent keys, neutral included — see semantic.ts AccentKey. */
+export type LoadColor = AccentKey;
 
 /** Map a working % to its intensity colour. Bodyweight (`null`) → ash. Thresholds
  *  live here (not per-client) so the colour wave can't drift. */

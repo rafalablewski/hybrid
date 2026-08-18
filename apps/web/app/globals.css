@@ -35,10 +35,11 @@
 /* Screen-header BACK button surface — AURORA is a transparent outlined square.
    Parity with the mobile ABack primitive. */
 :root {
-  --back-surface: transparent;
-  --back-shadow: none;
   /* The one card shadow — the deep black bloom. Every aurora card reads this
-     var instead of a hardcoded rgba. */
+     var instead of a hardcoded rgba. The opacity is HIGHER than the mobile
+     twin's 0.18 because of the -12px spread, which CSS has and the RN shadow
+     model does not: the two are tuned per renderer to the same intent, and
+     matching the numbers would make them look less alike (see lib/ui cardShadow). */
   --shadow-card: 0 6px 22px -12px rgba(0, 0, 0, 0.55);
 }
 
@@ -93,11 +94,6 @@ html {
 /* Set-editor ghosts (workout-blocks): a SUGGESTED value ("100", "8") must never
    read as entered data — dimmer + italic, unlike the AA instructional
    placeholders above. Real entered values render upright at full chalk. */
-.ghost-ph::placeholder {
-  color: color-mix(in srgb, var(--color-ash) 55%, transparent);
-  font-style: italic;
-}
-
 /* Visible keyboard-focus ring. ~40 inputs/buttons set `outline:none` inline, so
    this needs `!important` to win over the inline style — :focus-visible keeps it
    keyboard-only (mouse/touch clicks don't get the ring). */
@@ -111,49 +107,11 @@ html {
    action reads as alive and tappable instead of a static slab. The halo is the
    live --color-lime token. Mobile parity lives in apps/mobile/lib/ui.tsx →
    startGlow(). */
-.start-glow {
-  transition: box-shadow 0.25s ease, transform 0.18s ease;
-}
-.start-glow:hover,
-.start-glow:focus-visible {
-  box-shadow: 0 0 34px -4px color-mix(in srgb, var(--color-lime) 55%, transparent);
-  transform: translateY(-1px);
-}
-.start-glow:active {
-  transform: translateY(0);
-  box-shadow: 0 0 22px -6px color-mix(in srgb, var(--color-lime) 45%, transparent);
-}
 @media (prefers-reduced-motion: reduce) {
-  .start-glow {
-    transition: none;
-  }
-  .start-glow:hover,
-  .start-glow:focus-visible {
-    transform: none;
-  }
 }
 
 /* Skip-to-content link: off-screen until focused, then it pins to the top-left
    so the first Tab press reveals "Skip to content" jumping past the sidebar. */
-.skip-link {
-  position: fixed;
-  top: -100px;
-  left: 12px;
-  z-index: 200;
-  padding: 10px 16px;
-  border-radius: 8px;
-  background: var(--color-lime);
-  color: var(--color-ink);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 700;
-  text-decoration: none;
-  transition: top 0.15s ease;
-}
-.skip-link:focus {
-  top: 12px;
-}
-
 /* ════════════════════════════════════════════════════════════════════
    LIQUID GLASS — reusable material layer (mirrors
    reference/liquid-glass/system.html, contrast-audited to WCAG AA+).
@@ -193,8 +151,7 @@ html {
   --drop: rgba(0, 0, 0, 0.6);
   --lg-bright: 1.06;
   --grain-blend: overlay;
-  --grain-opacity: 0.05;
-  --accent-text: var(--color-lime); /* lime is readable on dark surfaces */
+  --grain-opacity: 0.05; /* lime is readable on dark surfaces */
   --on-accent: #0c0d0c; /* dark text on the bright lime fill (Aurora) */
   /* foreground accent text — the accents themselves (LIME/BLUE/… in lib/ui) stay
      for backgrounds/borders/chart strokes. Only BLUE needs a different value as
@@ -218,9 +175,6 @@ html {
      Admin can override at runtime (theme.premiumAccent flag) — PremiumAccentStyle
      restamps these on <html> from the resolved value. Premium surfaces reference
      these, never --amber-* directly, so one setting recolours them all. */
-  --premium-accent: var(--color-amber);
-  --premium-accent-text: var(--amber-text);
-  --premium-accent-ink: #141614;
   /* The accent-glow RGB for the Liquid-Glass rim/orb/active-tile shadows, as a
      bare `r, g, b` triple so it drops into rgba() — chartreuse, following the
      accent. */
@@ -229,7 +183,6 @@ html {
   /* Plan/goal cover → page transition (components/aurora/plans.tsx CoverHero).
      1 = the cover's ink bleeds down into the page and dissolves, so its wash
      cross-fades with the page's instead of meeting it at a visible cut. */
-  --cover-bleed: 1;
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -319,64 +272,13 @@ html {
    from iOS 7-18, opaque enough that nothing behind it survived, so the edge had
    nothing left to bend. Numbers live in AURORA_NAV_MATERIAL (@hybrid/core) and
    are shared with the mobile fallback bar so the clients cannot drift. */
-.aurora-navglass { --nav-lip: rgba(0, 0, 0, 0.42); }
-
-.aurora-navglass {
-  position: relative;
-  background: rgba(var(--glass-rgb), 0.06);
-  -webkit-backdrop-filter: blur(14px) saturate(1.8) brightness(1.08);
-  backdrop-filter: blur(14px) saturate(1.8) brightness(1.08);
-  box-shadow:
-    0 14px 34px -8px rgba(0, 0, 0, 0.5),
-    0 3px 8px -2px rgba(0, 0, 0, 0.32),
-    inset 0 1px 1px rgba(255, 255, 255, 0.13),
-    inset 0 -1px 0 var(--nav-lip);
-}
-
-.aurora-navglass::before,
-.aurora-navglass::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-}
 /* the specular arc */
-.aurora-navglass::before {
-  padding: 1.2px;
-  background: conic-gradient(
-    from 210deg,
-    var(--rim-hi) 0deg,
-    rgba(var(--glass-rgb), 0.16) 46deg,
-    transparent 130deg,
-    transparent 250deg,
-    rgba(var(--glass-rgb), 0.16) 316deg,
-    var(--rim-hi) 360deg
-  );
-}
 /* the refraction band */
-.aurora-navglass::after {
-  padding: 9px;
-  -webkit-backdrop-filter: blur(1px) saturate(2.5) brightness(1.16);
-  backdrop-filter: blur(1px) saturate(2.5) brightness(1.16);
-  transform: scale(1.055);
-}
 /* Reduced transparency and no-backdrop-filter both fall back to a solid bar:
    nav must never render as an invisible surface. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .aurora-navglass { background: rgba(var(--glass-base), 0.94); }
-  .aurora-navglass::after { display: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .aurora-navglass {
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    background: rgba(var(--glass-base), 0.97) !important;
-  }
-  .aurora-navglass::after { display: none !important; }
 }
 
 /* Admin data tables → stacked cards on phones (≤640px). Each row becomes a

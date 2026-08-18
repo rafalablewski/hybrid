@@ -5,7 +5,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { CtaLabel } from "../aurora/cta-label";
 import { ACard, AStat, cardStack, RADIUS, AChip } from "../aurora/kit";
 import { withAlpha } from "../aurora/field";
-import { ALPHA } from "@hybrid/core";
+import { ALPHA, STATE_OPACITY } from "@hybrid/core";
 
 // Shared building blocks for the mobile admin section screens, so all 19 sections
 // share one look (matching the web console's lib/ui primitives). Section bodies
@@ -167,7 +167,7 @@ export function PillBtn({
         paddingHorizontal: 16,
         // The drawing stays compact; the TARGET clears the HIG minimum.
         minHeight: HIT_TARGET,
-        opacity: disabled ? 0.5 : 1,
+        opacity: disabled ? STATE_OPACITY.disabled : 1,
         alignSelf: "flex-start",
       }}
     >

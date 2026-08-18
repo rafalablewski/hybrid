@@ -10,7 +10,7 @@ import {
   fitMonoFigure,
   type ActivityDetail, type ActivityEntry, type ActivityGroup, type ActivityMetric,
   type ActivityVerdict, type BodyweightInput, type LoggedSession,
-  type VerdictDirection, type WeightUnit, deltaRole } from "@hybrid/core";
+  type VerdictDirection, type WeightUnit, deltaRole, STATE_OPACITY } from "@hybrid/core";
 import { ACard, withAlpha , RADIUS} from "./kit";
 import ActivityCompare from "./activity-compare";
 import PeriodRecords from "./period-records";
@@ -1103,7 +1103,7 @@ function MetricDetail({
               <View key={g.id} style={{
                 flexGrow: Math.max(g.share, 0.02), flexBasis: 0, borderRadius: RADIUS.pill,
                 backgroundColor: i === 0 ? C.chalk : i === 1 ? C.ash : C.line,
-                opacity: group && group !== g.id ? 0.35 : 1,
+                opacity: group && group !== g.id ? STATE_OPACITY.disabled : 1,
               }} />
             ))}
           </View>

@@ -200,3 +200,44 @@ export type TintRole = keyof typeof ALPHA;
  * number web's rule already carries, so the two clients now state one figure.
  */
 export const GHOST_PLACEHOLDER_ALPHA = 0.55;
+
+/**
+ * THE SCRIM — the wash a sheet, modal or overlay lays over the screen behind it.
+ *
+ * Its OPACITY has been a token for a while (motion.ts `scrimWithRecede` /
+ * `scrimFlat`); its COLOUR never was, so the app grew five of them: `#000` on
+ * the mobile sheet, `rgba(8,9,11,.82)` in the tour, `#000a` and `#000b` on two
+ * admin modals, and `rgba(0,0,0,.5/.7/.75)` elsewhere on web (audit/12 §5.11).
+ * Nobody chose five — each site typed a black.
+ *
+ * It is `ink`, not `#000`: the app's ground is a near-black with a green cast,
+ * and a scrim in pure black over it reads very slightly cold at high opacity.
+ * Composited at the opacities above the difference is small, which is exactly
+ * why five values could coexist unnoticed — and exactly why it needs a name
+ * rather than a fresh judgement call at each new overlay.
+ */
+export const SCRIM = colors.ink;
+
+/**
+ * A CONTROL'S OWN OPACITY when it is not fully available.
+ *
+ * THE DRIFT (audit/12 §5.12): there was no token at all, so ~40 controls each
+ * typed a number — 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7. Checking whether
+ * that spread encoded anything is what makes this two tokens rather than one:
+ * it does NOT. `busy` appears at both 0.5 and 0.6, and so does `disabled`, so
+ * the same condition was being drawn two ways depending on the file.
+ *
+ * But the DISTINCTION underneath is real, and worth keeping now that it can be
+ * stated: a DISABLED control is unavailable — pressing it does nothing, ever,
+ * until something else changes. A BUSY one is alive and mid-flight; it is going
+ * to come back. Drawing them the same tells the athlete a spinner is a dead end.
+ *
+ * The values are the ones that already dominated each meaning, so the majority
+ * of call sites do not move at all and none moves by more than 0.1.
+ */
+export const STATE_OPACITY = {
+  /** Unavailable — nothing will happen. */
+  disabled: 0.5,
+  /** In flight — something IS happening; still alive, just waiting. */
+  busy: 0.6,
+} as const;

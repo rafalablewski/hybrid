@@ -1,3 +1,4 @@
+import type { BrandAccent } from "./semantic";
 /**
  * Readiness feeling — the shared model behind the Readiness picker AND the Today
  * glance strip's middle column. The quick picker offers four feelings
@@ -15,7 +16,8 @@ export type ReadinessFeeling = (typeof READINESS_FEELINGS)[number];
 /** The mood-shaped mouth for a feeling's face. */
 export type ReadinessMouth = "grin" | "smile" | "flat" | "frown";
 /** Semantic accent tone (palette key) a feeling's face is drawn in. */
-export type ReadinessAccent = "lime" | "blue" | "amber" | "red";
+/** The four accents — see semantic.ts BrandAccent. */
+export type ReadinessAccent = BrandAccent;
 
 /** Face expression + accent per feeling — one source of truth for both the
  *  picker and the glance strip, on web and native. */

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { allTranslationKeys, baselineString, LANGS, type Lang } from "@hybrid/core";
+import { allTranslationKeys, baselineString, LANGS, type Lang, STATE_OPACITY } from "@hybrid/core";
 import { fs, space, INK2, LINE, LIME, CHALK, ASH, AMBER, disp, mono, Mono, Card, Select, txt } from "@/lib/ui";
 
 const LANG_LIST = Object.keys(LANGS) as Lang[];
@@ -177,7 +177,7 @@ export default function AdminTranslations() {
                             outline: "none",
                             resize: "vertical",
                             boxSizing: "border-box",
-                            opacity: savingCell === ck ? 0.5 : 1,
+                            opacity: savingCell === ck ? STATE_OPACITY.disabled : 1,
                           }}
                         />
                         {overridden && (

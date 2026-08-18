@@ -1,7 +1,7 @@
 import { useState, useCallback, type ReactNode } from "react";
 import { View, Text, TextInput, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId , ALPHA, FEEDBACK } from "@hybrid/core";
+import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId , ALPHA, FEEDBACK, type AccentKey } from "@hybrid/core";
 import { resetAccount, deleteAccount } from "../../lib/api";
 import { iapAvailable, manageSubscriptions } from "../../lib/iap";
 import { clearGuestSessions } from "../../lib/guest";
@@ -12,7 +12,7 @@ import { useAccountSettings } from "../../lib/account";
 import { pushSupported, usePushSwitch } from "../../lib/push";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme, txt, accentColor } from "../../lib/theme";
 import { leading, tracking, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
 import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS, ASearch } from "./kit";
@@ -45,7 +45,7 @@ export const SETTINGS_ROUTES: Partial<Record<SettingsCategoryId, string>> = {
   coaching: "/coach-apply",
 };
 
-const TONE: Record<SettingsCategoryId, "lime" | "blue" | "amber" | "red" | "ash"> = {
+const TONE: Record<SettingsCategoryId, AccentKey> = {
   account: "ash", preferences: "ash", logger: "ash", notifications: "ash",
   privacy: "ash", coaching: "ash", security: "ash", subscription: "ash",
   data: "ash", danger: "red",
@@ -132,7 +132,7 @@ export default function AuroraSettings({ landOn }: {
   };
 
   const tone = (c: string) => ({ tile: withAlpha(c, ALPHA.solid), fg: txt(C, c) });
-  const toneColor: Record<string, string> = { lime: C.lime, blue: C.blue, amber: C.amber, red: C.red, ash: C.ash };
+  // Was a local copy of one lookup — see lib/theme accentColor.
 
   // The expandable body for each category, generated lazily so only the OPEN
   // category's JSX is built (not all of them on every keystroke). Rows not
@@ -389,7 +389,7 @@ export default function AuroraSettings({ landOn }: {
   // tinted icon chip, the title, a one-line value/subtitle and a chevron. A
   // hairline separates rows within the card (first row draws none).
   const renderRow = (c: SettingsCategory, first: boolean) => {
-    const accent = toneColor[TONE[c.id]];
+    const accent = accentColor(C, TONE[c.id]);
     const { tile, fg } = tone(accent);
     const line = summary(c.id) || c.subtitle;
     const titleColor = c.danger ? (txt(C, C.red) as string) : C.chalk;

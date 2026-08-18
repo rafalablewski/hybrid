@@ -12,8 +12,7 @@ import {
   releaseVelocity,
   rubberBand,
   sheetPadBottom,
-  type SheetDetent,
-} from "@hybrid/core";
+  type SheetDetent, SCRIM } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { sheetInsetBottom } from "../../lib/layout";
 import { useSheetRecede } from "../../lib/sheet-recede";
@@ -372,7 +371,7 @@ export default function Sheet({
           covers the whole screen; wrapping it in the KAV would shrink the dimming
           (and undim the area behind the keyboard) when padding is added. */}
       <Pressable onPress={onClose} style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close">
-        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: "#000", opacity: scrimOpacity }]} />
+        <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: SCRIM, opacity: scrimOpacity }]} />
       </Pressable>
       {/* Lift the panel above the keyboard so low inputs (nutrition quick-add,
           any sheet-hosted field) aren't hidden when the keyboard opens.

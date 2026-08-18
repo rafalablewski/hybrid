@@ -17,13 +17,15 @@
 import { colors } from "./theme/tokens";
 
 import { glyphMark, type Mark } from "./theme/mark";
+import type { BrandAccent } from "./semantic";
 
 export type RecipeMeal = "breakfast" | "lunch" | "dinner" | "snack";
 
 /** Hero tint — recipes have no photo assets, so the hero is a warm gradient
  *  keyed to one of the brand accents plus the dish mark. Keeps the library
  *  self-contained (no external images) and on-system. */
-export type RecipeTint = "amber" | "blue" | "red" | "lime";
+/** The four accents — see semantic.ts BrandAccent. */
+export type RecipeTint = BrandAccent;
 
 export interface RecipeIngredient {
   name: string;

@@ -33,6 +33,7 @@ import {
 import type { WeightUnit } from "./units";
 import { roundKm } from "./distance";
 import { isLive } from "./feed-live";
+import type { BrandAccent } from "./semantic";
 
 // ---------------------------------------------------------------- handles ----
 export const HANDLE_MIN = 3;
@@ -107,7 +108,8 @@ export function canViewResults(visibility: Visibility, relation: Relation): bool
 
 // ------------------------------------------------------------------- feed ----
 export type FeedKind = "session" | "pr" | "recap" | "post";
-export type FeedAccent = "lime" | "blue" | "amber" | "red";
+/** The four accents — see semantic.ts BrandAccent. */
+export type FeedAccent = BrandAccent;
 
 /** A first-class shared post (status / PR card / workout card) from an author. */
 export interface FeedPostInput {
@@ -663,7 +665,8 @@ export function buildSocialNotifications(events: SocialNotifEvent[], now = Date.
 }
 
 // ------------------------------------------------- coach discovery rail ------
-export type CoachAccent = "lime" | "blue" | "amber" | "red";
+/** The four accents — see semantic.ts BrandAccent. */
+export type CoachAccent = BrandAccent;
 
 /** A coach card for the "Follow a coach" rail on Today — shared shape for both
  *  the real marketplace coaches AND the placeholder people shown before any

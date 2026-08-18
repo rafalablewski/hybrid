@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, space, INK, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip, txt, OK, ERR } from "@/lib/ui";
+import { fs, space, INK, LINE, LIME, CHALK, ASH, AMBER, RED, BLUE, disp, mono, Mono, Card, Chip, txt, OK, ERR, tint } from "@/lib/ui";
+import { ALPHA } from "@hybrid/core";
 
 type RunStep = { agent: string; role: string; task: string; output: string };
 type RunRow = {
@@ -62,7 +63,7 @@ export default function AdminAgentRuns() {
               borderRadius: 999,
               cursor: "pointer",
               border: `1px solid ${filter === f ? LIME : LINE}`,
-              background: filter === f ? `color-mix(in srgb, var(--color-lime) 12%, transparent)` : "transparent",
+              background: filter === f ? tint(LIME, ALPHA.fill) : "transparent",
               color: txt(filter === f ? LIME : ASH),
             }}
           >

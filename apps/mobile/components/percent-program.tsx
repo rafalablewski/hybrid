@@ -36,7 +36,7 @@ import MeasuredOutcome from "./measured-outcome";
 import { useRevalidate } from "../lib/queries";
 import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
-import { useTheme, txt } from "../lib/theme";
+import { useTheme, txt, accentColor } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
 import { ACard, cardStack, withAlpha, ASection, DockRail, DockChip } from "./aurora/kit";
@@ -44,7 +44,8 @@ import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill, COVER_GUTTER } from "./plan-hero";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
-const loadHex = (C: Palette, c: LoadColor): string => ({ blue: C.blue, lime: C.lime, amber: C.amber, red: C.red, ash: C.ash })[c];
+// Was a fifth copy of one lookup — see lib/theme accentColor.
+const loadHex = accentColor;
 // Quiet intra-card hairline — derived from the theme's line colour, not a
 // fixed 5% white.
 const hair = (C: Palette) => withAlpha(C.line, 0.6);

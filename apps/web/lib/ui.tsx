@@ -2,7 +2,7 @@
 
 import type { CSSProperties, ReactNode, SelectHTMLAttributes } from "react";
 import { useState } from "react";
-import { colors, FEEDBACK, ROLE_COLOR, statSubTone, type AccentKey, type SemanticRole, fs, space, TABULAR_NUMS } from "@hybrid/core";
+import { ALPHA, colors, FEEDBACK, ROLE_COLOR, motion, statSubTone, type AccentKey, type SemanticRole, fs, space, TABULAR_NUMS, STATE_OPACITY } from "@hybrid/core";
 import RollingNumber from "@/components/aurora/rolling-number";
 
 // Re-export the shared scale so screens import sizing from one place:
@@ -89,9 +89,20 @@ export const roleText = (role: SemanticRole): string => {
 export const accentText = (accent: AccentKey | "ash"): string =>
   accent === "ash" ? "var(--color-ash)" : `var(--${accent}-text)`;
 
-/** A colour held back to `pct`% opacity, composited on whatever is behind it. */
-export const tint = (color: string, pct: number): string =>
-  `color-mix(in srgb, ${color} ${pct}%, transparent)`;
+/**
+ * A colour held back to `alpha` (0–1), composited on whatever is behind it.
+ *
+ * TAKES THE SAME ARGUMENT MOBILE'S `withAlpha` DOES, on purpose: the two clients
+ * now spell one tint identically — `tint(LIME, ALPHA.fill)` here,
+ * `withAlpha(C.lime, ALPHA.fill)` there — so the ladder in
+ * @hybrid/core theme/tokens.ts is finally usable on both. It had 196 call sites
+ * on the phone and ZERO on web, where fourteen hand-typed color-mix percentages
+ * were doing the job instead: 7 / 10 / 11 / 12 / 13 / 20 / 33 / 45 %, which is
+ * the same "eight values in one band" drift ALPHA was written to end (audit/12
+ * §5.10).
+ */
+export const tint = (color: string, alpha: number): string =>
+  `color-mix(in srgb, ${color} ${Math.round(alpha * 100)}%, transparent)`;
 
 // Near-black for text/icons placed ON the bright accent fill (lime/amber/…).
 // Mirrors --on-accent in globals.css. Replaces scattered "#0c0d0c".
@@ -133,6 +144,19 @@ const ACCENT_TEXT: Record<string, string> = {
  *  else through unchanged. Accepts an optional colour (e.g. Mono's `c?`) and
  *  returns undefined for it. Use for inline accent TEXT: `color: txt(BLUE)`. */
 export const txt = (c?: string): string | undefined => (c ? ACCENT_TEXT[c] ?? c : undefined);
+
+
+/**
+ * THE MODAL SCRIM — one wash, at the opacity core already names.
+ *
+ * Three admin overlays each spelled their own: `#000a` (67%), `#000b` (73%) and
+ * `rgba(0,0,0,.5)`. Nobody chose three — each site typed a black (audit/12
+ * §5.11). The colour is `ink` rather than pure black for the reason core's SCRIM
+ * gives, and the opacity is `motion.scrimFlat`, which is the number the mobile
+ * sheet already uses when its parent does NOT recede — which is exactly what a
+ * web modal does.
+ */
+export const scrim = (): string => tint(INK, Math.round(motion.scrimFlat * 100));
 
 /** The ambient Liquid Glass field — slow-drifting accent blobs that the glass
  *  surfaces refract. Render once per page/shell, behind the content (the
@@ -329,12 +353,12 @@ export function Button({
         fontWeight: 700,
         color: outline ? txt(color ?? ASH) : ON_ACCENT,
         background: outline ? "none" : color ?? LIME,
-        border: outline ? `1px solid ${color ? `color-mix(in srgb, ${color} 45%, transparent)` : LINE}` : "none",
+        border: outline ? `1px solid ${color ? tint(color, ALPHA.rim) : LINE}` : "none",
         borderRadius: 999,
         padding: compact ? "8px 16px" : "12px 24px",
         minHeight: compact ? 32 : 44,
         cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.5 : 1,
+        opacity: disabled ? STATE_OPACITY.disabled : 1,
         whiteSpace: "nowrap",
         ...style,
       }}

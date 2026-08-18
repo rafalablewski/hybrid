@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { sketchBrief, sketchCoverage } from "@hybrid/core";
+import { sketchBrief, sketchCoverage, STATE_OPACITY } from "@hybrid/core";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, txt, ERR } from "@/lib/ui";
 
@@ -172,7 +172,7 @@ export default function AdminMedia() {
               if (fileRef.current) fileRef.current.value = "";
             }}
           />
-          <button className="pressable" disabled={busy || !supabase} onClick={() => fileRef.current?.click()} style={{ ...primaryBtn, opacity: busy || !supabase ? 0.6 : 1 }}>
+          <button className="pressable" disabled={busy || !supabase} onClick={() => fileRef.current?.click()} style={{ ...primaryBtn, opacity: busy || !supabase ? STATE_OPACITY.busy : 1 }}>
             {busy ? "Uploading…" : "↑ Upload media"}
           </button>
         </div>

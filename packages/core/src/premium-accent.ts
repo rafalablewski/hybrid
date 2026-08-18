@@ -9,13 +9,17 @@
 import { colors } from "./theme/tokens";
 import { THEMES, type ThemeName } from "./theme/palette";
 import { contrastRatio, WCAG } from "./contrast";
+import type { BrandAccent } from "./semantic";
 
 /** The feature-flag key that carries the admin-chosen premium accent value. */
 export const PREMIUM_ACCENT_FLAG = "theme.premiumAccent";
 
-/** Palette keys offered as premium-accent presets (ash is not an accent). */
-export const PREMIUM_ACCENT_PRESETS = ["amber", "lime", "blue", "red"] as const;
-export type PremiumAccentPreset = (typeof PREMIUM_ACCENT_PRESETS)[number];
+/** Palette keys offered as premium-accent presets — the four accents, which is
+ *  the whole set (ash is a neutral, not something to sell an upgrade in). The
+ *  ARRAY is real: the admin picker enumerates it at runtime. The TYPE is derived
+ *  from semantic.ts, so this cannot quietly fall out of step with the palette. */
+export const PREMIUM_ACCENT_PRESETS = ["amber", "lime", "blue", "red"] as const satisfies readonly BrandAccent[];
+export type PremiumAccentPreset = BrandAccent;
 
 /** The default when no admin override is set — sand. */
 export const PREMIUM_ACCENT_DEFAULT: PremiumAccentPreset = "amber";

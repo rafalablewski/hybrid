@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK2, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt, scrim } from "@/lib/ui";
 import { useDialog } from "../../lib/use-dialog";
 import AdminAnonSessions from "./anon-sessions";
 import { Loading } from "../aurora/skeleton";
 import { Glyph } from "@/components/aurora/icons";
+import { STATE_OPACITY } from "@hybrid/core";
 
 type Row = {
   id: string;
@@ -349,7 +350,7 @@ function AddUserModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
   const labelCss = { fontSize: fs.caption, display: "block", marginBottom: 5 } as const;
 
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 50, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "6vh 16px" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: scrim(), zIndex: 50, display: "flex", justifyContent: "center", alignItems: "flex-start", padding: "6vh 16px" }}>
       <div ref={dialogRef} role="dialog" aria-modal="true" tabIndex={-1} onClick={(e) => e.stopPropagation()} style={{ width: 460, maxWidth: "94vw", background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: 26, ...disp, maxHeight: "88vh", overflowY: "auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
           <div>
@@ -431,7 +432,7 @@ function PageBtn({ children, disabled, onClick }: { children: React.ReactNode; d
         borderRadius: "var(--r-field)",
         padding: "10px 14px",
         cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.5 : 1,
+        opacity: disabled ? STATE_OPACITY.disabled : 1,
       }}
     >
       {children}
@@ -496,7 +497,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
   return (
     <div
       onClick={onClose}
-      style={{ position: "fixed", inset: 0, background: "#000a", zIndex: 50, display: "flex", justifyContent: "flex-end" }}
+      style={{ position: "fixed", inset: 0, background: scrim(), zIndex: 50, display: "flex", justifyContent: "flex-end" }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -736,7 +737,7 @@ function DeleteAccountDialog({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      style={{ position: "fixed", inset: 0, background: "#000b", zIndex: 60, display: "flex", justifyContent: "center", alignItems: "center", padding: "6vh 16px", backdropFilter: "blur(2px)" }}
+      style={{ position: "fixed", inset: 0, background: scrim(), zIndex: 60, display: "flex", justifyContent: "center", alignItems: "center", padding: "6vh 16px", backdropFilter: "blur(2px)" }}
     >
       <div
         ref={dialogRef}
@@ -829,7 +830,7 @@ function DeleteAccountDialog({
               borderRadius: "var(--r-card)",
               padding: "11px 0",
               cursor: deleting ? "default" : "pointer",
-              opacity: deleting ? 0.5 : 1,
+              opacity: deleting ? STATE_OPACITY.busy : 1,
             }}
           >
             Cancel

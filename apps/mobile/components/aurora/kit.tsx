@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank , ALPHA, FEEDBACK, ON_FEEDBACK } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank , ALPHA, FEEDBACK, ON_FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { registerPerson, useSharedSurfaceTarget } from "../../lib/shared-element";
@@ -818,7 +818,7 @@ export function APill({
           alignItems: "center",
           justifyContent: "center",
           minHeight: HIT_TARGET,
-          opacity: disabled ? 0.5 : 1,
+          opacity: disabled ? STATE_OPACITY.disabled : 1,
           borderWidth: variant === "soft" || outline ? 1 : 0,
           borderColor: outline && color ? withAlpha(color, ALPHA.rim) : palette.line,
           overflow: "hidden",

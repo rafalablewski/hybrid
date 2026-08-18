@@ -6,7 +6,7 @@ import {
   latestHeightCm, fmtHeight, displayHeight, storeHeightCm, heightUnitFor,
   type BodyMetric, type MetricTrend, type WeeklyReport, type TrendDirection,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { sapi } from "../../lib/social-api";
 import { refreshBodyweight } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
@@ -279,7 +279,7 @@ function HeightRow({ C, units, heightCm, onSaved }: { C: Palette; units: "kg" | 
             disabled={busy || parsed == null}
             accessibilityRole="button"
             accessibilityLabel={t("common.save")}
-            style={{ borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? 0.6 : 1 }}
+            style={{ borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 8, backgroundColor: parsed == null ? "transparent" : C.lime, borderWidth: parsed == null ? 1 : 0, borderColor: C.line, opacity: busy ? STATE_OPACITY.busy : 1 }}
           >
             {busy ? <ActivityIndicator color={parsed == null ? C.ash : C.onAccent} /> : <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: parsed == null ? C.ash : C.onAccent }}>{t("common.save")}</Text>}
           </Pressable>

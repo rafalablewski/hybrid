@@ -65,7 +65,7 @@ import {
   recordLog, usualAtHour, nutritionGap, nutritionFigures, figureText, wouldOvershoot,
   NAV_SURFACE_FOOD_PICKER,
   type PickerSourceKey,
-  ALPHA, GHOST_PLACEHOLDER_ALPHA } from "@hybrid/core";
+  ALPHA, GHOST_PLACEHOLDER_ALPHA, STATE_OPACITY } from "@hybrid/core";
 import {
   logBodyweight, getAssignedDiet, scanNutritionLabel,
   fetchSavedMeals, createSavedMeal, deleteSavedMeal,
@@ -1800,7 +1800,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         {/* Add meal + Scan label — side-by-side rounded pills (Scan is AI vision, Full only → upgrade) */}
         <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
           <APill label={t("w.recovery.nutrition.addMeal")} savingLabel={t("w.recovery.nutrition.adding")} state={saving ? "saving" : "idle"} onPress={add} style={{ flex: 1 }} />
-          <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t(scanning ? "w.recovery.nutrition.scanning" : "w.recovery.nutrition.scanLabel")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.rim), backgroundColor: "transparent", opacity: scanning ? 0.6 : 1 }}>
+          <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t(scanning ? "w.recovery.nutrition.scanning" : "w.recovery.nutrition.scanLabel")} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, paddingHorizontal: 12, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.rim), backgroundColor: "transparent", opacity: scanning ? STATE_OPACITY.busy : 1 }}>
             {/* The GLYPH SLOT carries the in-flight state, not the word: a
                 fixed-size box so the spinner and the icon occupy the same
                 space, and the label stops changing width mid-scan. Its sibling
@@ -1869,7 +1869,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       <View>
         <View style={{ flexDirection: "row", gap: 8 }}>
           <TextInput value={newPart} onChangeText={setNewPart} maxLength={32} placeholder={t("w.recovery.nutrition.partNamePh")} placeholderTextColor={C.ash} onSubmitEditing={addPart} accessibilityLabel={t("w.recovery.nutrition.addPart")} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 12 }} />
-          <Pressable onPress={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.field, paddingHorizontal: 16, justifyContent: "center", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? 0.5 : 1 }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addPartCta")}</Text></Pressable>
+          <Pressable onPress={addPart} disabled={!newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS} style={{ borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.field, paddingHorizontal: 16, justifyContent: "center", opacity: !newPart.trim() || customParts.length >= MAX_CUSTOM_MEAL_PARTS ? STATE_OPACITY.disabled : 1 }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addPartCta")}</Text></Pressable>
         </View>
         {customParts.length > 0 ? (
           <View style={{ marginTop: 16 }}>
@@ -3667,7 +3667,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <AuroraIcon name="add" size={20} color={txt(C, C.lime)} />
             <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.nutrition.addToToday")}</Text>
           </View>
-          <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t(scanning ? "w.recovery.nutrition.scanning" : "w.recovery.nutrition.scanLabel")} style={{ flexDirection: "row", alignItems: "center", gap: 8, opacity: scanning ? 0.6 : 1 }}>
+          <Pressable onPress={scan} disabled={scanning} accessibilityRole="button" accessibilityLabel={t(scanning ? "w.recovery.nutrition.scanning" : "w.recovery.nutrition.scanLabel")} style={{ flexDirection: "row", alignItems: "center", gap: 8, opacity: scanning ? STATE_OPACITY.busy : 1 }}>
             <View style={{ width: 16, height: 16, alignItems: "center", justifyContent: "center" }}>
               {scanning ? <ActivityIndicator size="small" color={pa.text} /> : <Glyph name="scan" size={16} color={pa.text} />}
             </View>

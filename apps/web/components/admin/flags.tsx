@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { colors, PREMIUM_ACCENT_FLAG, PREMIUM_ACCENT_PRESETS, PREMIUM_ACCENT_DEFAULT, normalizePremiumAccent, resolvePremiumAccent, wcagRating, isHexColor, type WcagGrade } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { ALPHA, colors, PREMIUM_ACCENT_FLAG, PREMIUM_ACCENT_PRESETS, PREMIUM_ACCENT_DEFAULT, normalizePremiumAccent, resolvePremiumAccent, wcagRating, isHexColor, type WcagGrade  } from "@hybrid/core";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, RED, disp, mono, Mono, Card, Chip, Select, txt, tint } from "@/lib/ui";
 
 type Flag = {
   key: string;
@@ -161,7 +161,7 @@ function toggle(on: boolean): React.CSSProperties {
     height: 26,
     borderRadius: 999,
     border: `1px solid ${on ? LIME : LINE}`,
-    background: on ? `color-mix(in srgb, var(--color-lime) 20%, transparent)` : INK2,
+    background: on ? tint(LIME, ALPHA.solid) : INK2,
     cursor: "pointer",
     padding: 2,
     display: "flex",

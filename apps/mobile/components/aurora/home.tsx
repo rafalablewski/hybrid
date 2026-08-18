@@ -61,8 +61,7 @@ import {
   type Equipment,
   type ScheduledDay,
   type LogbookDay,
-  ALPHA,
-} from "@hybrid/core";
+  ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -1671,7 +1670,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
              when the next read opens — and the countdown returns the moment the
              window shuts. Chalk, not the accent: the accent is the "go" colour,
              and this undoes a go. */
-          <Pressable onPress={undo} disabled={busy} accessibilityRole="button" accessibilityLabel={t("w.home.today.readUndoA11y")} hitSlop={10} style={{ opacity: busy ? 0.5 : 1 }}>
+          <Pressable onPress={undo} disabled={busy} accessibilityRole="button" accessibilityLabel={t("w.home.today.readUndoA11y")} hitSlop={10} style={{ opacity: busy ? STATE_OPACITY.busy : 1 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.chalk }}>
               {t("w.home.today.readUndo")}
             </Text>
@@ -1749,7 +1748,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           const accent = txt(C, C[READINESS_FACE[key].accent]);
           return (
             <PressScale key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
-              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? withAlpha(accent, ALPHA.rim) : "transparent", backgroundColor: on ? withAlpha(accent, ALPHA.fill) : "transparent", opacity: locked && !on ? 0.45 : 1 }}>
+              style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? withAlpha(accent, ALPHA.rim) : "transparent", backgroundColor: on ? withAlpha(accent, ALPHA.fill) : "transparent", opacity: locked && !on ? STATE_OPACITY.disabled : 1 }}>
               <ReadinessFace feeling={key} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
             </PressScale>
