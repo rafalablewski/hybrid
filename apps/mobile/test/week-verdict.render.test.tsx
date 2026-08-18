@@ -437,8 +437,8 @@ describe("the row's backgrounds", () => {
   it("fills only under a finger, in that column's own tone", () => {
     renderScreen(<AuroraWeekVerdict sessions={bothEnds} units="kg" />);
     fireEvent.click(columnFor("Distance")!);
-    // 9% of terracotta (#e58a5c) — selection's channel, not the mark's.
-    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgba(229, 138, 92, 0.09)");
+    // 9% of Muskmelon (#ec935e) — selection's channel, not the mark's.
+    expect(columnFor("Distance")!.style.backgroundColor).toBe("rgba(236, 147, 94, 0.09)");
     // …and it is the ONLY column filled: selection travels, the marks do not.
     for (const prefix of ["Tonnage", "Sessions", "Hours"]) {
       expect(bare(columnFor(prefix)!.style.backgroundColor)).toBe(true);

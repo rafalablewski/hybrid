@@ -227,7 +227,7 @@ function CoachAnalytics() {
   return (
     <>
       <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -5, marginTop: 12 }}>
-        <StatCell label={t("w.home.analytics.clients")} value={roster.length} accent={C.violet} />
+        <StatCell label={t("w.home.analytics.clients")} value={roster.length} accent={C.blue} />
         <StatCell label={t("w.home.analytics.avgAdherence")} value={`${avgAdh}%`} accent={C.lime} />
         <StatCell label={t("w.home.analytics.avgReadiness")} value={avgRead ?? "—"} accent={C.blue} />
         <StatCell label={t("w.home.analytics.rosterVolume")} value={`${(totalVol / 1000).toFixed(1)}k`} sub="kg" />
@@ -289,7 +289,7 @@ function OperatorAnalytics() {
         <StatCell label={t("w.home.analytics.totalUsers")} value={stats.totalUsers.toLocaleString()} sub={`+${stats.newUsers30} / 30d`} accent={C.lime} />
         <StatCell label={t("w.home.analytics.active30d")} value={stats.mau.toLocaleString()} sub={t("w.home.analytics.trainedIn30d")} accent={C.lime} />
         <StatCell label={t("w.home.analytics.sessionsLogged")} value={stats.sessions.toLocaleString()} />
-        <StatCell label={t("w.home.analytics.coaches")} value={stats.coaches.toLocaleString()} accent={C.violet} />
+        <StatCell label={t("w.home.analytics.coaches")} value={stats.coaches.toLocaleString()} accent={C.blue} />
       </View>
 
       {stats.planPopularity.length > 0 && (
@@ -346,7 +346,7 @@ export default function AuroraAnalytics() {
         </View>
       )}
 
-      <PrivacyNote scope={active} accent={active === "operator" ? C.amber : active === "coach" ? C.violet : C.lime} />
+      <PrivacyNote scope={active} accent={active === "operator" ? C.amber : active === "coach" ? C.blue : C.lime} />
 
       {active === "athlete" && <AthleteAnalytics sessions={sessions} />}
       {active === "coach" && <CoachAnalytics />}

@@ -49,7 +49,7 @@ function renderHtml(subject: string, bodyText: string): string {
     .join("");
   return `<!doctype html><html><body style="margin:0;background:#0c0d0c;padding:24px;">
     <div style="max-width:560px;margin:0 auto;background:#141614;border:1px solid #2a2c2a;border-radius:16px;padding:32px;font-family:Arial,Helvetica,sans-serif;color:#e9e9e9;">
-      <div style="font-weight:800;font-size:20px;letter-spacing:-0.02em;margin-bottom:20px;">HYBRID<span style="color:#c6f135;">.</span></div>
+      <div style="font-weight:800;font-size:20px;letter-spacing:-0.02em;margin-bottom:20px;">HYBRID<span style="color:#c3d363;">.</span></div>
       <h1 style="font-size:20px;margin:0 0 16px;color:#ffffff;">${esc(subject)}</h1>
       ${paragraphs}
     </div>

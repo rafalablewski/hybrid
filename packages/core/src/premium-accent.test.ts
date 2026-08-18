@@ -12,7 +12,7 @@ import { colors } from "./theme/tokens";
 describe("normalizePremiumAccent", () => {
   it("accepts valid preset keys", () => {
     expect(normalizePremiumAccent("amber")).toBe("amber");
-    expect(normalizePremiumAccent("violet")).toBe("violet");
+    expect(normalizePremiumAccent("blue")).toBe("blue");
   });
   it("accepts + lowercases valid hex", () => {
     expect(normalizePremiumAccent("#AABBCC")).toBe("#aabbcc");
@@ -40,7 +40,7 @@ describe("resolvePremiumAccent", () => {
     const dark = resolvePremiumAccent("amber", "dark");
     expect(dark.custom).toBe(false);
     expect(dark.fill).toBe(colors.amber);
-    expect(dark.text).toBe("#d0cd94"); // dark accentText.amber
+    expect(dark.text).toBe("#daa51d"); // dark accentText.amber — Fleur De Lis reads as type verbatim
   });
   it("resolves a custom hex to fill=text=hex with an auto ink", () => {
     const r = resolvePremiumAccent("#d0cd94");

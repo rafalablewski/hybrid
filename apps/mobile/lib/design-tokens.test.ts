@@ -1036,7 +1036,16 @@ describe("presentation", () => {
     const found = hits(new RegExp(
       String.raw`backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*${RAD}` +
       String.raw`|borderRadius:\s*${RAD}[^\n]*backgroundColor:\s*(?:C|palette)\.lime`, "g"));
-    burnDown(found, 35, "2026-12-31", "hand-rolled lime pill → <APill />");
+    // 35 → 36 on the PANTONE retint, and it is the same blind-spot argument the
+    // paragraph above makes rather than a second exception. The guest-save CTA
+    // (app/workout.tsx) has always been a hand-rolled filled pill; it was drawn
+    // in the retired `violet`, and this rule only matches `C.lime`, so it was
+    // never counted. Nothing was hand-rolled that was not hand-rolled before —
+    // the colour it was hiding behind stopped existing. It is not converted here
+    // because APill takes ONE `label` and that CTA carries a title plus a
+    // sub-line; giving it the component means restructuring the copy, which is a
+    // different change from a retint.
+    burnDown(found, 36, "2026-12-31", "hand-rolled lime pill → <APill />");
   });
 
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {

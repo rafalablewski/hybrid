@@ -13,7 +13,6 @@ import {
   ASH,
   AMBER,
   BLUE,
-  VIOLET,
   RED,
   disp,
   mono,
@@ -149,7 +148,7 @@ const DRIVER_COLOR: Record<string, string> = {
   spike: RED,
   load: AMBER,
   detrain: BLUE,
-  recovery: VIOLET,
+  recovery: BLUE,
 };
 const DRIVER_LABEL: Record<string, string> = {
   spike: "Workload spike",
@@ -577,11 +576,11 @@ export default function EngineRoom() {
       {/* ---- what-if simulator ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
             What-if simulator
           </Mono>
           <div style={{ display: "flex", gap: space.sm, alignItems: "center" }}>
-            {whatIfActive && <Chip c={VIOLET}>simulating</Chip>}
+            {whatIfActive && <Chip c={BLUE}>simulating</Chip>}
             {whatIfActive && <Button label="Reset to actual" variant="outline" onClick={() => setWhatIf(WHATIF_OFF)} />}
           </div>
         </div>
@@ -856,10 +855,10 @@ export default function EngineRoom() {
       {/* ---- personal model ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
             Personal model – this athlete&apos;s ACWR spike onset
           </Mono>
-          {personal?.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
+          {personal?.personalized ? <Chip c={BLUE}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
         </div>
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
           The population model starts ramping spike risk at ACWR {SPIKE_ONSET_PRIOR}. The personal
@@ -873,7 +872,7 @@ export default function EngineRoom() {
           {[
             { v: SPIKE_ONSET_PRIOR, label: `prior ${SPIKE_ONSET_PRIOR}`, c: ASH, dashed: true },
             ...(spikeOnset !== SPIKE_ONSET_PRIOR
-              ? [{ v: spikeOnset, label: `personal ${spikeOnset}`, c: VIOLET, dashed: false }]
+              ? [{ v: spikeOnset, label: `personal ${spikeOnset}`, c: BLUE, dashed: false }]
               : []),
           ].map((m) => {
             const pct = ((m.v - SPIKE_ONSET_MIN) / (SPIKE_ONSET_MAX - SPIKE_ONSET_MIN)) * 100;
@@ -906,7 +905,7 @@ export default function EngineRoom() {
       {/* ---- effort model ---- */}
       <Card>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: space.sm }}>
-          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
+          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
             Effort model – what this athlete says the work costs them
           </Mono>
           <div style={{ display: "flex", gap: space.sm, alignItems: "baseline" }}>
@@ -916,7 +915,7 @@ export default function EngineRoom() {
                 operator dragged a slider. Said out loud so a static card next to
                 moving ones doesn't read as a bug. */}
             {whatIfActive && <Chip c={ASH}>not simulated</Chip>}
-            {effort?.model.personalized ? <Chip c={VIOLET}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
+            {effort?.model.personalized ? <Chip c={BLUE}>personalized</Chip> : <Chip c={ASH}>population prior</Chip>}
           </div>
         </div>
         <Mono s={{ fontSize: fs.caption, display: "block", marginTop: 4, lineHeight: 1.5 }}>
@@ -933,7 +932,7 @@ export default function EngineRoom() {
           {[
             { v: 0, label: "prior 0", c: ASH, dashed: true },
             ...(effort && effort.model.bias !== 0
-              ? [{ v: effort.model.bias, label: `personal ${effort.model.bias > 0 ? "+" : ""}${effort.model.bias}`, c: VIOLET, dashed: false }]
+              ? [{ v: effort.model.bias, label: `personal ${effort.model.bias > 0 ? "+" : ""}${effort.model.bias}`, c: BLUE, dashed: false }]
               : []),
           ].map((m) => {
             const pct = ((m.v + EFFORT_BIAS_MAX) / (2 * EFFORT_BIAS_MAX)) * 100;

@@ -58,7 +58,7 @@ import { withAlpha } from "./field";
 type Palette = ReturnType<typeof useTheme>["palette"];
 
 const kindColor = (k: BlockKind, C: Palette) =>
-  k === "strength" ? C.lime : k === "cardio" ? C.blue : C.violet;
+  k === "strength" ? C.lime : k === "cardio" ? C.blue : C.amber;
 
 /** AURORA Builder (mobile) — the SIGNAL BOARD routine editor. Each exercise is
  *  a collapsible card with a LIVE metric row (scheme, top load, tonnage /
@@ -230,7 +230,7 @@ export default function AuroraBuilder() {
  * every exercise added (composing feels like loading a bar, not filling a
  * form). Tonnage + moves ride along as one hairline meta; the strength ⇄
  * conditioning ⇄ endurance balance is a thin bar whose segment colours encode
- * modality (lime / violet / teal — information, not decoration), labelled
+ * modality (lime / teal / gold — information, not decoration), labelled
  * only for the modalities actually present. Replaces the old three stat
  * tiles + balance card (four boxes saying what one number can). Twin of the
  * web Builder hero.
@@ -240,7 +240,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
   const sig = sessionSignal(items, { bodyweightKg });
   const segs = [
     { pct: sig.split.strength, fill: C.lime, label: t("w.train.signal.str") },
-    { pct: sig.split.conditioning, fill: C.violet, label: t("w.train.signal.cond") },
+    { pct: sig.split.conditioning, fill: C.amber, label: t("w.train.signal.cond") },
     { pct: sig.split.endurance, fill: C.blue, label: t("w.train.signal.end") },
   ];
   return (
@@ -373,7 +373,7 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
           <>
             <Metric C={C} label={t("w.train.blocks.format")} value={b.format || "—"} />
             <Metric C={C} label={t("w.train.blocks.roundsCol")} value={b.rounds ? String(b.rounds) : "—"} />
-            <Metric C={C} label={t("w.train.signal.estTime")} value={`${minutes} min`} c={C.violet} />
+            <Metric C={C} label={t("w.train.signal.estTime")} value={`${minutes} min`} c={C.amber} />
           </>
         )}
       </View>

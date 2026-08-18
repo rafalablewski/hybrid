@@ -2099,7 +2099,7 @@ export function ADrawer({ open, children }: { open: boolean; children: ReactNode
 /** The level chip's ink — ash and chalk for the lower tiers, the lime
  *  accent-text tone for advanced, gold reserved for elite. */
 export const levelInk = (C: ReturnType<typeof useTheme>["palette"], accent: BadgeAccent): string =>
-  accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
+  accent === "amber" ? C.amber : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
 
 export function initials(name?: string | null, handle?: string) {
   const s = (name || handle || "?").trim();
@@ -2147,7 +2147,7 @@ export function Stars({ rating, size = 13 }: { rating: number | null; size?: num
   const full = Math.round(rating);
   return (
     <Text style={{ fontSize: size }}>
-      <Text style={{ color: C.gold }}>{"★".repeat(full)}</Text>
+      <Text style={{ color: C.amber }}>{"★".repeat(full)}</Text>
       <Text style={{ color: C.line }}>{"★".repeat(5 - full)}</Text>
       <Text style={{ color: C.ash, fontFamily: F.mono }}> {rating.toFixed(1)}</Text>
     </Text>

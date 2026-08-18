@@ -55,7 +55,7 @@ const INK2 = "#141614";
 const LINE = "#242724";
 const CHALK = "#f3f4ef";
 const ASH = "#8b8f86";
-const LIME = "#c6f84f";
+const LIME = "#c3d363";
 const MONO = Platform.OS === "ios" ? "Menlo" : "monospace";
 
 /** The message plus the first frames of the stack — enough to name the

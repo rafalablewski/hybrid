@@ -54,6 +54,30 @@ describe("theme palettes meet WCAG AA", () => {
       expect(contrastRatio(t.onAccent, t.accent)).toBeGreaterThanOrEqual(WCAG.AA);
     });
 
+    // EVERY FILL HAS TO BE VISIBLE AS A MARK. An accent is not only type: it is a
+    // bar, a chart stroke, a dot, a ring segment, a border — and WCAG 1.4.11 puts
+    // those at 3:1 against their ground, a bar the AA text rule never checks.
+    //
+    // This is the guard that decides how far Lyons Blue gets lifted. The Pantone
+    // value #015871 measures 2.44 against `ink`: correct on the white chip it was
+    // specified on, invisible as a 2px stroke here. `colors.blue` therefore holds
+    // the lifted rendering, and this test is why it cannot drift back down.
+    for (const [an, ac] of Object.entries(colors)) {
+      if (!["lime", "blue", "amber", "red"].includes(an)) continue;
+      it(`${name}: ${an} fill ≥ 3:1 on ink (usable as a mark)`, () => {
+        expect(contrastRatio(ac, t.ink)).toBeGreaterThanOrEqual(WCAG.AA_LARGE);
+      });
+    }
+
+    // THE PALETTE IS FOUR ACCENTS. Not five, and not four-plus-a-gold. Both extra
+    // keys existed and both were near-duplicates of a colour already in the set
+    // (steel blue ΔE 14.0 from lifted Lyons Blue; rating gold ΔE 8.6 from Fleur
+    // De Lis). A fifth has to clear the loop above, which is the real bar.
+    it(`${name}: no fifth accent creeps back in`, () => {
+      expect(Object.keys(colors).filter((k) => /violet|gold/i.test(k))).toEqual([]);
+      expect(Object.keys(t.accentText).sort()).toEqual(["amber", "blue", "lime", "red"]);
+    });
+
     // THE PALETTE CARRIES NO COMPOSITED WASHES. `maroon` / `maroonLit` were
     // here for the activity card's fallen column and left with it — three
     // guards went with them. A background is a named SURFACE or a withAlpha()
@@ -75,13 +99,21 @@ describe("theme palettes meet WCAG AA", () => {
  * athlete had to tell apart to read the ring beside them. Contrast measures a
  * colour against its GROUND; nothing measured the swatches against EACH OTHER.
  *
- * These are the roles that appear together at full strength in one legend. The
- * readiness ring's kept arc is deliberately NOT here: it wears its band's hue —
- * which does collide, in every band but the top — and is separated by weight
- * instead (KEPT_ARC_ALPHA), which is the whole design of that ring.
+ * The readiness ring's kept arc is deliberately NOT covered: it wears its band's
+ * hue — which does collide, in every band but the top — and is separated by
+ * weight instead (KEPT_ARC_ALPHA), which is the whole design of that ring.
+ *
+ * EVERY PAIR, NOT A CHOSEN THREE. This used to test `danger` / `info` /
+ * `caution` only, and the gap was not academic: the pair it did not cover was
+ * `go` vs `caution`, which is the readiness band step, the middle two rungs of
+ * the load ramp, the conditioning wave, the calorie ring's under/over and every
+ * trend arrow — the most frequent adjacency in the product. Under the old
+ * chartreuse-and-sand it measured ΔE 17.4, below this file's own floor, and
+ * nothing failed. The Pantone four clear 18 on all ten pairs, so the guard can
+ * finally be what it always claimed to be.
  */
 describe("state colours are distinguishable from each other, not just from the ground", () => {
-  const COST_ROLES: SemanticRole[] = ["danger", "info", "caution"];
+  const ROLES: SemanticRole[] = ["go", "info", "caution", "danger", "neutral"];
 
   for (const name of Object.keys(THEMES) as ThemeName[]) {
     const t = THEMES[name];
@@ -90,9 +122,12 @@ describe("state colours are distinguishable from each other, not just from the g
       return accent === "ash" ? t.ash : t.accentText[accent];
     };
 
-    for (let i = 0; i < COST_ROLES.length; i++) {
-      for (let j = i + 1; j < COST_ROLES.length; j++) {
-        const [a, b] = [COST_ROLES[i]!, COST_ROLES[j]!];
+    for (let i = 0; i < ROLES.length; i++) {
+      for (let j = i + 1; j < ROLES.length; j++) {
+        const [a, b] = [ROLES[i]!, ROLES[j]!];
+        // `premium` and `caution` deliberately share `amber`, so a role-pair
+        // loop must run over DISTINCT paints, not over every role name.
+        if (ROLE_COLOR[a] === ROLE_COLOR[b]) continue;
         it(`${name}: ${a} vs ${b} ≥ ΔE ${DISTINCT_ROLE_DE}`, () => {
           expect(deltaE2000(paint(a), paint(b))).toBeGreaterThanOrEqual(DISTINCT_ROLE_DE);
         });

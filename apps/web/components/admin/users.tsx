@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, VIOLET, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK2, CARD, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, ON_ACCENT, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { useDialog } from "../../lib/use-dialog";
 import AdminAnonSessions from "./anon-sessions";
 import { Loading } from "../aurora/skeleton";
@@ -42,7 +42,7 @@ type Detail = {
   lastActiveAt: string | null;
 };
 
-const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: VIOLET, CLIENT: LIME };
+const roleColor: Record<string, string> = { ADMIN: AMBER, COACH: BLUE, CLIENT: LIME };
 const planColor = (e: string) => (e === "paid" ? LIME : ASH);
 const planLabel = (e: string) => (e === "paid" ? "Premium" : "Free");
 const fmt = (d: string | null) => (d ? new Date(d).toISOString().slice(0, 10) : "—");
@@ -549,7 +549,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
                 {d.orgs.map((o) => (
                   <div key={o.id} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderBottom: `1px solid ${LINE}` }}>
                     <Mono s={{ fontSize: fs.bodyLg }} c={CHALK}>{o.name}</Mono>
-                    <Mono s={{ fontSize: fs.body }} c={VIOLET}>{o.role}</Mono>
+                    <Mono s={{ fontSize: fs.body }} c={BLUE}>{o.role}</Mono>
                   </div>
                 ))}
               </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space, LINE, LIME, CHALK, ASH, VIOLET, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, BLUE, AMBER, RED, disp, mono, Mono, Card, Chip } from "@/lib/ui";
 import { Loading } from "../aurora/skeleton";
 
 type Link = { id: string; status: string; createdAt: string; coach: string; client: string; notes: number };
@@ -32,7 +32,7 @@ export default function AdminDirectory() {
       )}
       {/* coaching links */}
       <section>
-        <SectionTitle title="Coaching relationships" kicker="Coach ↔ client links" c={VIOLET} />
+        <SectionTitle title="Coaching relationships" kicker="Coach ↔ client links" c={BLUE} />
         <div style={{ display: "flex", gap: space.sm, marginBottom: 12, flexWrap: "wrap" }}>
           {counts.map((c) => (
             <Chip key={c.status} c={statusColor[c.status] ?? CHALK}>{c.status} – {c.n}</Chip>

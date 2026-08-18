@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ago, until } from "@hybrid/core";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
-import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, VIOLET, BLUE, RED, disp, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, CARD, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Stat, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 import AdminAgentRuns from "./agent-runs";
 import { Loading } from "../aurora/skeleton";
@@ -175,7 +175,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
         <Stat label="Runs today" value={stats.runs.today} sub={`${stats.runs.week} this week`} />
         <Stat label="Success rate 7d" value={stats.runs.successRate == null ? "—" : `${stats.runs.successRate}%`} c={stats.runs.successRate != null && stats.runs.successRate < 80 ? AMBER : LIME} />
         <Stat label="Cost 7d" value={fmtUsd(stats.cost.week)} sub={`${fmtUsd(stats.cost.today)} today – ${fmtTok(stats.tokens.week)} tok`} />
-        <Stat label="Scheduled" value={stats.schedules.enabled} sub={`${stats.schedules.total} total`} c={VIOLET} />
+        <Stat label="Scheduled" value={stats.schedules.enabled} sub={`${stats.schedules.total} total`} c={BLUE} />
         {stats.attention > 0 && <Stat label="Needs attention" value={stats.attention} sub="see Inbox" c={RED} />}
       </div>
 
@@ -220,7 +220,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>
                       {r.agentName} <span style={{ color: txt(ASH), fontWeight: 400 }}>– {r.agentRole}</span>
-                      {r.delegations > 0 && <span style={{ color: txt(VIOLET), fontSize: fs.caption }}> – {r.delegations} delegated</span>}
+                      {r.delegations > 0 && <span style={{ color: txt(BLUE), fontSize: fs.caption }}> – {r.delegations} delegated</span>}
                     </div>
                     <Mono s={{ fontSize: fs.caption, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{r.task}</Mono>
                   </div>
@@ -242,7 +242,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
                 <div key={u.id} style={{ display: "flex", gap: space.ms, alignItems: "baseline", padding: "9px 0", borderBottom: `1px solid ${LINE}` }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>
-                      {u.agentName} <Chip c={VIOLET}>{u.cadence}</Chip>
+                      {u.agentName} <Chip c={BLUE}>{u.cadence}</Chip>
                     </div>
                     <Mono s={{ fontSize: fs.caption, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{u.task}</Mono>
                   </div>
@@ -443,7 +443,7 @@ function Work({ data, onRan }: { data: Overview | null; onRan: () => void }) {
           ) : (
             data.upcoming.map((u) => (
               <div key={u.id} style={{ padding: "9px 0", borderBottom: `1px solid ${LINE}` }}>
-                <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>{u.agentName} <Chip c={VIOLET}>{u.cadence}</Chip></div>
+                <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>{u.agentName} <Chip c={BLUE}>{u.cadence}</Chip></div>
                 <Mono s={{ fontSize: fs.caption, display: "block" }} c={ASH}>{u.task}</Mono>
                 <Mono s={{ fontSize: fs.micro }} c={u.status === "active" ? BLUE : AMBER}>{u.status === "active" ? until(u.nextRunAt) : "agent paused"}</Mono>
               </div>
@@ -495,7 +495,7 @@ function ScorecardCard({ s, onChange }: { s: Scorecard; onChange: () => void }) 
           <div style={{ ...disp, fontWeight: 800, fontSize: fs.subtitle, color: CHALK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</div>
           <Mono s={{ fontSize: fs.micro, display: "block" }} c={ASH}>{s.role} – {s.model.replace("claude-", "")}{s.runtime === "managed" ? " – managed" : ""}</Mono>
         </div>
-        <Chip c={s.authority === "executive" ? VIOLET : ASH}>{s.authority}</Chip>
+        <Chip c={s.authority === "executive" ? BLUE : ASH}>{s.authority}</Chip>
       </div>
 
       {/* success rate vs a 90% target */}
@@ -711,7 +711,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
           <div style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ ...disp, fontSize: fs.note, fontWeight: 800, color: CHALK }}>
-                {a.agentName} <Chip c={ASH}>{a.runtime}</Chip>{a.estimateUsd > 0 && <Chip c={VIOLET}>est ${a.estimateUsd.toFixed(2)}</Chip>}
+                {a.agentName} <Chip c={ASH}>{a.runtime}</Chip>{a.estimateUsd > 0 && <Chip c={BLUE}>est ${a.estimateUsd.toFixed(2)}</Chip>}
               </div>
               <Mono s={{ fontSize: fs.body, display: "block", marginTop: 2, whiteSpace: "pre-wrap" }} c={ASH}>{a.task}</Mono>
               <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 4 }} c={ASH}>requested by {a.requestedByEmail ?? "—"} – {ago(a.createdAt)}</Mono>
@@ -912,7 +912,7 @@ function Inbox({ data, onChange }: { data: Overview | null; onChange: () => void
             <div key={b.id} style={{ display: "flex", gap: space.ms, alignItems: "baseline", padding: "9px 0", borderBottom: `1px solid ${LINE}` }}>
               <span style={{ width: 7, height: 7, borderRadius: 99, background: AMBER, flexShrink: 0, marginTop: 5 }} />
               <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>{b.agentName} <Chip c={VIOLET}>{b.cadence}</Chip> <Chip c={AMBER}>{b.reason}</Chip></div>
+                <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 700, color: CHALK }}>{b.agentName} <Chip c={BLUE}>{b.cadence}</Chip> <Chip c={AMBER}>{b.reason}</Chip></div>
                 <Mono s={{ fontSize: fs.caption, display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} c={ASH}>{b.task}</Mono>
               </div>
             </div>

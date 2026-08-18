@@ -45,7 +45,7 @@ export const SETTINGS_ROUTES: Partial<Record<SettingsCategoryId, string>> = {
   coaching: "/coach-apply",
 };
 
-const TONE: Record<SettingsCategoryId, "lime" | "blue" | "violet" | "amber" | "red" | "ash"> = {
+const TONE: Record<SettingsCategoryId, "lime" | "blue" | "amber" | "red" | "ash"> = {
   account: "ash", preferences: "ash", logger: "ash", notifications: "ash",
   privacy: "ash", coaching: "ash", security: "ash", subscription: "ash",
   data: "ash", danger: "red",
@@ -132,7 +132,7 @@ export default function AuroraSettings({ landOn }: {
   };
 
   const tone = (c: string) => ({ tile: withAlpha(c, ALPHA.solid), fg: txt(C, c) });
-  const toneColor: Record<string, string> = { lime: C.lime, blue: C.blue, violet: C.violet, amber: C.amber, red: C.red, ash: C.ash };
+  const toneColor: Record<string, string> = { lime: C.lime, blue: C.blue, amber: C.amber, red: C.red, ash: C.ash };
 
   // The expandable body for each category, generated lazily so only the OPEN
   // category's JSX is built (not all of them on every keystroke). Rows not

@@ -204,7 +204,7 @@ export function AuroraExerciseAvatar({
  *  rows already used for their initials (strength / cardio / conditioning). */
 export function modalityTint(name: string, C: Palette): string {
   const kind = inferBlockKind(name);
-  return txt(C, kind === "strength" ? C.lime : kind === "cardio" ? C.blue : C.violet);
+  return txt(C, kind === "strength" ? C.lime : kind === "cardio" ? C.blue : C.amber);
 }
 
 function Thumb({ name, size, tint }: { name: string; size: number; tint: string }) {

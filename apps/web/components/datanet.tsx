@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, VIOLET, AMBER, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Stat } from "@/lib/ui";
+import { fs, space, LINE, LINE_HEX, LIME, LIME_HEX, CHALK, ASH, BLUE, AMBER, ON_ACCENT, disp, mono, txt, Mono, Card, Chip, Stat } from "@/lib/ui";
 import { METRIC_LABEL, K_ANON, type BenchmarkMetric, type ReliabilityBucket } from "@hybrid/core";
 
 type Norm = { cohortKey: string; sport: string; sex: string; ageBand: string; metric: BenchmarkMetric; n: number; mean: number; sd: number; p10: number; p50: number; p90: number };
@@ -66,8 +66,8 @@ export default function DataNet() {
 
   return (
     <div style={{ display: "grid", gap: space.lg }}>
-      <Card style={{ borderLeft: `3px solid ${VIOLET}` }}>
-        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={VIOLET}>
+      <Card style={{ borderLeft: `3px solid ${BLUE}` }}>
+        <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={BLUE}>
           Data network – benchmarking intelligence
         </Mono>
         <Mono s={{ fontSize: fs.body, display: "block", marginTop: 6, lineHeight: 1.5 }} c={CHALK}>
@@ -82,7 +82,7 @@ export default function DataNet() {
           <Stat label="Athletes (consented)" value={stats.athletes} c={LIME} />
           <Stat label="Observations" value={stats.observations} c={BLUE} />
           <Stat label="Cohorts" value={stats.cohorts} c={CHALK} />
-          <Stat label={`Releasable (≥${K_ANON})`} value={stats.releasableCohorts} c={VIOLET} />
+          <Stat label={`Releasable (≥${K_ANON})`} value={stats.releasableCohorts} c={BLUE} />
         </div>
       )}
 

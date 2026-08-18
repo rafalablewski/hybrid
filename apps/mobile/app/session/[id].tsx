@@ -157,10 +157,10 @@ export default function SessionDetail() {
       {prs.length + cardioPrs.length > 1 && (
         <View style={{ backgroundColor: C.card, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 14 }}>
           {prs.map((p) => (
-            <View key={p.lift} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.gold} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{prLine(p, t, units)}</Text></View>
+            <View key={p.lift} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.amber} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{prLine(p, t, units)}</Text></View>
           ))}
           {cardioPrs.map((p) => (
-            <View key={`${p.move}-${p.kind}`} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.gold} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{cardioPrLineDetail(p, t)}</Text></View>
+            <View key={`${p.move}-${p.kind}`} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.amber} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{cardioPrLineDetail(p, t)}</Text></View>
           ))}
         </View>
       )}
@@ -185,8 +185,8 @@ export default function SessionDetail() {
           <ACard key={i} style={cardStack}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.violet) }}>{b.kind.toUpperCase()}</Text>
-                {prSet.has(b.name) || (b.kind === "cardio" && cardioPrMoves.has(b.name)) ? <Glyph name="trophy" size={fs.body} color={C.gold} label={t("w.train.logger.newPr")} /> : null}
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.amber) }}>{b.kind.toUpperCase()}</Text>
+                {prSet.has(b.name) || (b.kind === "cardio" && cardioPrMoves.has(b.name)) ? <Glyph name="trophy" size={fs.body} color={C.amber} label={t("w.train.logger.newPr")} /> : null}
                 {b.kind === "conditioning" ? (
                   <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>
                     {b.name}

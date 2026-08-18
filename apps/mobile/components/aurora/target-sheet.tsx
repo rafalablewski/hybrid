@@ -64,7 +64,7 @@ export default function TargetSheet({
   };
   const unit: Record<TargetField, string> = { kcal: "kcal", protein: "g", carbs: "g", fat: "g" };
   const tint: Record<TargetField, string> = {
-    kcal: txt(C, C.lime), protein: txt(C, C.blue), carbs: txt(C, C.amber), fat: txt(C, C.violet),
+    kcal: txt(C, C.lime), protein: txt(C, C.blue), carbs: txt(C, C.amber), fat: txt(C, C.red),
   };
   const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash } as const;
 

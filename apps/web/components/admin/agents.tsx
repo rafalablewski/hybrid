@@ -14,7 +14,7 @@ import {
   type AgentStatus,
   type Kpi,
 } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 import { useIsMobile } from "@/lib/use-media-query";
 
 type Preset = { key: string; role: string; mandate: string; model: string; authority: string };
@@ -409,7 +409,7 @@ export default function AdminAgents() {
                   </div>
                   <div style={{ marginTop: 4 }}>
                     <Chip c={STATUS_COLOR[a.status]}>{a.status}</Chip>
-                    <Chip c={a.authority === "executive" ? VIOLET : ASH}>{a.role}</Chip>
+                    <Chip c={a.authority === "executive" ? BLUE : ASH}>{a.role}</Chip>
                   </div>
                   <Mono s={{ fontSize: fs.micro, display: "block", marginTop: 6 }} c={ASH}>
                     {a.model.replace("claude-", "")} – effort {a.effort} – {a.kpis.length} KPIs
@@ -610,8 +610,8 @@ export default function AdminAgents() {
                   {(run || liveText || liveSteps.length > 0) && (
                     <div style={{ marginTop: 12 }}>
                       {liveSteps.map((s, i) => (
-                        <div key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeft: `2px solid ${VIOLET}` }}>
-                          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={VIOLET}>
+                        <div key={i} style={{ marginBottom: 10, paddingLeft: 10, borderLeft: `2px solid ${BLUE}` }}>
+                          <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em", display: "block" }} c={BLUE}>
                             ↳ delegated to {s.role} — {s.agent}
                           </Mono>
                           <Mono s={{ fontSize: fs.caption, display: "block", margin: "2px 0 4px" }} c={ASH}>
@@ -693,7 +693,7 @@ export default function AdminAgents() {
               <Section title="Timeline" hint="config edits – runs – approvals">
                 <div style={{ display: "flex", flexDirection: "column" }}>
                   {timeline.map((t) => {
-                    const c = t.kind === "run" ? LIME : t.kind === "approval" ? AMBER : VIOLET;
+                    const c = t.kind === "run" ? LIME : t.kind === "approval" ? AMBER : RED;
                     return (
                       <div key={t.id} style={{ display: "flex", gap: space.ms, alignItems: "baseline", padding: "8px 0", borderBottom: `1px solid ${LINE}` }}>
                         <span style={{ width: 7, height: 7, borderRadius: 99, background: c, flexShrink: 0, marginTop: 5 }} />
@@ -725,8 +725,8 @@ export default function AdminAgents() {
                       </summary>
                       <div style={{ marginTop: 8 }}>
                         {r.steps.map((s, i) => (
-                          <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${VIOLET}` }}>
-                            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", display: "block" }} c={VIOLET}>↳ {s.role}</Mono>
+                          <div key={i} style={{ marginBottom: 8, paddingLeft: 8, borderLeft: `2px solid ${BLUE}` }}>
+                            <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", display: "block" }} c={BLUE}>↳ {s.role}</Mono>
                             <div style={{ ...mono, fontSize: fs.caption, color: CHALK, whiteSpace: "pre-wrap" }}>{s.output}</div>
                           </div>
                         ))}

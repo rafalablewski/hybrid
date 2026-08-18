@@ -30,7 +30,7 @@ const kicker: React.CSSProperties = {
   fontSize: 12,
   letterSpacing: ".25em",
   textTransform: "uppercase",
-  color: "#c6f84f",
+  color: "#c3d363",
 };
 const quiet: React.CSSProperties = { color: "#8b8f86", fontSize: 14, lineHeight: 1.65 };
 const a: React.CSSProperties = { color: "#8b8f86", textDecoration: "underline", textUnderlineOffset: 3 };
@@ -39,7 +39,7 @@ export default function LandingPage() {
   return (
     <main style={wrap}>
       <h1 style={{ fontSize: 44, fontWeight: 900, letterSpacing: "-.05em", margin: 0 }}>
-        HYBRID<span style={{ color: "#c6f84f" }}>.</span>
+        HYBRID<span style={{ color: "#c3d363" }}>.</span>
       </h1>
       <p style={{ ...kicker, marginTop: 10 }}>{brand.tagline}</p>
       <p style={{ ...quiet, maxWidth: 420, marginTop: 28 }}>

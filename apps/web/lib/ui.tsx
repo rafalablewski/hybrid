@@ -52,7 +52,6 @@ export const LIME = "var(--color-lime)",
   CHALK = "var(--color-chalk)",
   ASH = colors.ash,
   BLUE = colors.blue,
-  VIOLET = colors.violet,
   AMBER = colors.amber,
   RED = colors.red;
 
@@ -105,14 +104,12 @@ export const ON_ACCENT = "var(--on-accent)";
 // text colour automatically.
 export const LIME_T = "var(--lime-text)",
   BLUE_T = "var(--blue-text)",
-  VIOLET_T = "var(--violet-text)",
   AMBER_T = "var(--amber-text)",
   RED_T = "var(--red-text)";
 
 const ACCENT_TEXT: Record<string, string> = {
   [colors.lime]: LIME_T,
   [colors.blue]: BLUE_T,
-  [colors.violet]: VIOLET_T,
   [colors.amber]: AMBER_T,
   [colors.red]: RED_T,
   [colors.ash]: "var(--color-ash)",

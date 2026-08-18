@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, space, LINE, LIME, CHALK, ASH, VIOLET, disp, mono, Mono, Card, txt } from "@/lib/ui";
+import { fs, space, LINE, LIME, CHALK, ASH, BLUE, disp, mono, Mono, Card, txt } from "@/lib/ui";
 
 type CoachApp = {
   id: string;
@@ -44,8 +44,8 @@ export default function CoachApplications() {
   if (apps.length === 0) return null;
 
   return (
-    <Card style={{ borderLeft: `3px solid ${VIOLET}`, marginBottom: 16 }}>
-      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={VIOLET}>
+    <Card style={{ borderLeft: `3px solid ${BLUE}`, marginBottom: 16 }}>
+      <Mono s={{ fontSize: fs.caption, textTransform: "uppercase", letterSpacing: ".12em", display: "block", marginBottom: 10 }} c={BLUE}>
         Pending coach applications – {apps.length}
       </Mono>
       <div style={{ display: "grid", gap: space.sm }}>

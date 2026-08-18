@@ -12,7 +12,7 @@ import { useParams } from "next/navigation";
 // screen can also claim a pending invite directly.
 
 const INK = "#0c0d0c";
-const LIME = "#c6f84f";
+const LIME = "#c3d363";
 const FG = "#f3f5ef";
 const DIM = "#a7ad9e";
 const LINE = "#2a2e28";

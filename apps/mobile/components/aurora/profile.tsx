@@ -56,7 +56,7 @@ type P = ReturnType<typeof useTheme>["palette"];
  * near-black card. Mirrors web's badgeInk in aurora/profile.tsx.
  */
 const badgeInk = (C: P, accent: BadgeAccent): string =>
-  accent === "gold" ? C.gold : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
+  accent === "amber" ? C.amber : accent === "lime" ? txt(C, C.lime) : accent === "chalk" ? C.chalk : C.ash;
 type TabId = "overview" | "prs" | "activity";
 
 /**
@@ -271,7 +271,7 @@ export default function AuroraProfile() {
           the avatar and name. */}
       <View style={{ height: 96, borderRadius: RADIUS.card, overflow: "hidden" }}>
         <LinearGradient
-          colors={[withAlpha(C.violet, 0.4), withAlpha(C.lime, 0.2), C.ink2]}
+          colors={[withAlpha(C.blue, 0.4), withAlpha(C.lime, 0.2), C.ink2]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={StyleSheet.absoluteFill}

@@ -45,7 +45,7 @@ export default function AuroraTeamMonitor() {
   const acwrColor = (band: string) =>
     band === "sweet-spot" ? txt(C, C.lime) : band === "caution" ? txt(C, C.amber) : band === "danger" ? txt(C, C.red) : band === "detraining" ? txt(C, C.blue) : C.ash;
   const segColor = (s: AthleteSegment) =>
-    s === "needs-attention" ? txt(C, C.red) : s === "dormant" ? txt(C, C.violet) : s === "new" ? txt(C, C.blue) : txt(C, C.lime);
+    s === "needs-attention" ? txt(C, C.red) : s === "dormant" ? txt(C, C.amber) : s === "new" ? txt(C, C.blue) : txt(C, C.lime);
 
   const segOf = (a: SquadRow): AthleteSegment =>
     athleteSegment({

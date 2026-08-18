@@ -7,8 +7,8 @@
 
 // Goal accent hues — ONE unique hex per goal, hand-authored (never runtime HSL
 // math) so each can be tuned. All sit in the muted, slightly-desaturated
-// register of the five brand accents (chartreuse #c6f84f, teal #3c787e, sand
-// #d0cd94, terracotta #d56f3e, steel #8296c4) and extend the wheel segments the
+// register of the four brand accents (Wild Lime #c3d363, Lyons Blue #2f7893,
+// Fleur De Lis #daa51d, Muskmelon #ec935e) and extend the wheel segments the
 // brand already occupies: greens (chartreuse→moss→pine), teals→slate blues,
 // sands→ochres→terracottas, plus a muted plum/mauve and stone grey-greens for
 // the outliers. The hue only ever drives the cover/tile duotone wash (mixed
@@ -87,9 +87,9 @@ export interface PlanDetail {
 // programFor()); the rest stay empty until authored in their own shape.
 export const GOAL_TREE: GoalNode[] = [
   // ---- Strength ----
-  { id: "power", name: "Powerlifting", icon: "▬", color: "#8296c4" /* steel blue — brand accent, kept */, category: "Strength", blurb: "One goal: a bigger squat, bench, and deadlift total.",
+  { id: "power", name: "Powerlifting", icon: "▬", color: "#8296c4" /* steel blue — WAS the fifth brand accent; that token is retired (see theme/tokens.ts), so this is now a goal hue in its own right, like the fourteen below it */, category: "Strength", blurb: "One goal: a bigger squat, bench, and deadlift total.",
     plans: [] },
-  { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: "#d0cd94" /* sand — brand accent, kept */, category: "Strength", blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
+  { id: "oly", name: "Olympic Weightlifting", icon: "◢", color: "#daa51d" /* Fleur De Lis — brand accent, kept */, category: "Strength", blurb: "Snatch and clean & jerk. Explosive power, mobility, and technical precision.",
     plans: [
       { id: "oly-soviet-8wk", name: "Soviet 8-Week Peaking", weeks: 8, sessions: 6, tag: "% of 1RM", desc: "A classic Soviet block: percentage-based snatch, clean & jerk, squat and pull work that waves volume and intensity across 8 weeks and tapers into a competition. AM/PM training days, complexes, tempo pulls — programmed by number of lifts, not reps to failure.", focus: ["Power", "Technique"], hot: true },
     ] },
@@ -100,14 +100,14 @@ export const GOAL_TREE: GoalNode[] = [
     plans: [
       { id: "bb-ppl-6day", name: "6-Day Push/Pull/Legs", weeks: 1, sessions: 6, tag: "Repeat weekly", desc: "The modern bodybuilding split: two push, two pull and two leg days, each built on a big compound you progressively overload. Run the week on repeat, adding weight or reps every cycle.", focus: ["Hypertrophy", "Strength"], hot: true },
     ] },
-  { id: "fatloss", name: "Fat Loss", icon: "◐", color: "#d56f3e" /* terracotta — brand accent, the burn */, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
+  { id: "fatloss", name: "Fat Loss", icon: "◐", color: "#ec935e" /* Muskmelon — brand accent, the burn */, category: "Physique", blurb: "Drop fat and keep the muscle. Train hard, recover smart, recomp the right way.",
     plans: [
       { id: "fatloss-kb-saturday", name: "Saturday Kettlebell Burn", weeks: 1, sessions: 1, tag: "Circuit", desc: "A single ~90-minute kettlebell circuit for fat loss, core tightening and full-body conditioning — a warm-up, five work blocks (legs, push/pull, core, balance), a no-rest finisher and a cool-down. Run it once a week, ideally fasted, and rotate the emphasis (form → speed → volume → heavier) each week.", focus: ["Conditioning", "Core"], hot: true },
     ] },
   // ---- Endurance ----
   { id: "tri", name: "Triathlon", icon: "◆", color: "#5b84a8" /* harbor slate blue */, category: "Endurance", blurb: "Swim-bike-run endurance. Strength work that supports, not sabotages.",
     plans: [] },
-  { id: "run", name: "Running", icon: "▶", color: "#3c787e" /* teal — brand accent, kept */, category: "Endurance", blurb: "Get faster over 5k, 10k, half or full. Build the aerobic engine and durable legs.",
+  { id: "run", name: "Running", icon: "▶", color: "#2f7893" /* Lyons Blue — brand accent, kept */, category: "Endurance", blurb: "Get faster over 5k, 10k, half or full. Build the aerobic engine and durable legs.",
     plans: [
       { id: "run-5k-beginner-9wk", name: "5K Beginner — 9 Weeks", weeks: 9, sessions: 4, tag: "Pace-based", desc: "A 9-week build to your first or fastest 5K: a weekly interval/hills day, a tempo day, easy miles and a long run, all run to your goal paces. Waves up the volume, then tapers into race week.", focus: ["Endurance", "Speed"], hot: true },
     ] },
@@ -120,7 +120,7 @@ export const GOAL_TREE: GoalNode[] = [
     plans: [] },
   { id: "crossfit", name: "CrossFit", icon: "✚", color: "#b5533c" /* rust ember */, category: "Functional & Sport", blurb: "Constantly varied, high-intensity functional fitness. Be ready for anything.",
     plans: [] },
-  { id: "hybrid", name: "Hybrid Athlete", icon: "▲", color: "#c6f84f" /* chartreuse — brand primary, the flagship goal keeps it */, category: "Functional & Sport", blurb: "Lift heavy and train your sport. Strength that carries over to running, combat, court, or crag.",
+  { id: "hybrid", name: "Hybrid Athlete", icon: "▲", color: "#c3d363" /* Wild Lime — brand primary, the flagship goal keeps it */, category: "Functional & Sport", blurb: "Lift heavy and train your sport. Strength that carries over to running, combat, court, or crag.",
     plans: [
       { id: "hybrid-engine-base", name: "Hybrid Base — Strength & Engine", weeks: 1, sessions: 5, tag: "Repeat weekly", desc: "A hybrid base week that carries heavy barbell strength AND an aerobic engine, run on repeat. Two key days are three-a-day — a morning strength session, a midday conditioning piece and an easy evening run — with speed and tempo runs midweek and a long-run-plus-lifting Saturday. Add weight when the lifts feel easy, keep the easy runs easy.", focus: ["Strength", "Endurance"], hot: true },
     ] },

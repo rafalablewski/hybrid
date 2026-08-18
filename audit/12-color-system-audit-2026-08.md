@@ -1,5 +1,15 @@
 # 12 — Colour-system audit (Aug 2026)
 
+> **SUPERSEDED IN PART — the palette was retinted the same month.** The brand
+> accents are now the PANTONE four (Wild Lime `#c3d363`, Muskmelon `#ec935e`,
+> Lyons Blue rendered `#2f7893`, Fleur De Lis `#daa51d`); `violet` and `gold`
+> are retired; the ΔE-18 guard now runs over every role pair and passes. See
+> capability `pantone-four-palette`. **Everything below is the measurement of
+> the palette as it stood before that change** and is kept as the dated record —
+> the findings it lists that were NOT fixed by the retint (the semantic layer,
+> the eleven accent unions, the `card`/`ink2` duplicate, the disabled token, the
+> 19 goal hues) are all still live, and §10's plan still stands for them.
+
 **Scope:** every colour value in `packages/core`, `apps/mobile`, `apps/web`.
 **Method:** exhaustive grep of hex / rgb / rgba / hsl / named colours / CSS
 variables / token exports / accent unions, followed by call-site tracing and

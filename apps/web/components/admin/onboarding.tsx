@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import type { OnboardingQuestion, OnboardingChoice } from "@hybrid/core";
-import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, VIOLET, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
+import { fs, space, INK, INK2, LINE, LIME, CHALK, ASH, AMBER, BLUE, RED, disp, mono, Mono, Card, Chip, Select, txt } from "@/lib/ui";
 
 type Draft = {
   key: string;
@@ -132,13 +132,13 @@ export default function AdminOnboarding() {
             {editing === q.key ? (
               <QuestionEditor draft={toDraft(q)} busy={busy} onCancel={() => setEditing(null)} onSave={(d) => save(draftToBody(d))} />
             ) : (
-              <Card style={{ borderLeft: `3px solid ${q.enabled ? (q.system ? VIOLET : LIME) : ASH}` }}>
+              <Card style={{ borderLeft: `3px solid ${q.enabled ? (q.system ? BLUE : LIME) : ASH}` }}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "flex-start", flexWrap: "wrap" }}>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ marginBottom: 4 }}>
                       <Chip c={q.enabled ? LIME : ASH}>{q.enabled ? "on" : "off"}</Chip>
                       <Chip c={ASH}>{q.kind}</Chip>
-                      {q.system ? <Chip c={VIOLET}>built-in</Chip> : <Chip c={AMBER}>custom</Chip>}
+                      {q.system ? <Chip c={BLUE}>built-in</Chip> : <Chip c={AMBER}>custom</Chip>}
                       {q.engineKey && <Chip c={ASH}>→ {q.engineKey}</Chip>}
                       {q.required && <Chip c={ASH}>required</Chip>}
                     </div>

@@ -27,7 +27,7 @@ export default function PrivacyPage() {
   return (
     <main style={wrap}>
       <p style={muted}>
-        <Link href="/" style={{ color: "#c6f84f" }}>
+        <Link href="/" style={{ color: "#c3d363" }}>
           ← {LEGAL.appName}
         </Link>
       </p>
@@ -135,7 +135,7 @@ export default function PrivacyPage() {
 
       <h2 style={h2}>Contact</h2>
       <p>
-        Questions or requests: <a href={`mailto:${LEGAL.contactEmail}`} style={{ color: "#c6f84f" }}>{LEGAL.contactEmail}</a>.
+        Questions or requests: <a href={`mailto:${LEGAL.contactEmail}`} style={{ color: "#c3d363" }}>{LEGAL.contactEmail}</a>.
       </p>
 
       <p style={{ ...muted, marginTop: 40 }}>

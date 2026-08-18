@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fs, INK2, LINE, LIME, ASH, BLUE, VIOLET, RED, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
+import { fs, INK2, LINE, LIME, ASH, BLUE, RED, disp, mono, Mono, Card, Chip, txt } from "@/lib/ui";
 
 // Anonymous (guest, pre-account) workouts — sessions logged on a device before
 // the user ever signed in. Admin-only housekeeping: review and prune them.
@@ -16,7 +16,7 @@ type AnonSession = {
   createdAt: string;
 };
 
-const platformColor = (p: string | null) => (p === "ios" ? BLUE : p === "web" ? LIME : p === "android" ? VIOLET : ASH);
+const platformColor = (p: string | null) => (p === "ios" ? BLUE : p === "web" ? LIME : p === "android" ? RED : ASH);
 const fmt = (d: string) => new Date(d).toISOString().slice(0, 19).replace("T", " ");
 const trunc = (s: string) => (s.length > 12 ? `${s.slice(0, 8)}…${s.slice(-4)}` : s);
 

@@ -1,14 +1,14 @@
 /**
  * SEMANTIC COLOR — the one place that says what each accent MEANS.
  *
- * The HYBRID palette (brand.ts) has five accents. A 2026-grade UI spends them as
+ * The HYBRID palette (theme/tokens.ts) has four accents. A 2026-grade UI spends them as
  * a *vocabulary*, not decoration: a colour should mean the same thing on every
  * screen. This module is the single source of truth for state→colour, so the
  * web and mobile clients can't drift on thresholds or meaning.
  *
  *   go       → lime    — positive / on-track / "push" (high readiness, low risk)
  *   info     → blue    — neutral-good / informational (conditioning, "ok")
- *   premium  → amber   — paid / Full-upgrade cue (sand; was violet — see premium-accent-sand)
+ *   premium  → amber   — paid / Full-upgrade cue
  *   caution  → amber   — watch it / deload / moderate risk
  *   danger   → red     — hold back / flagged / high risk
  *   neutral  → ash     — muted / not-yet / no data
@@ -20,7 +20,7 @@
 export type SemanticRole = "go" | "info" | "premium" | "caution" | "danger" | "neutral";
 
 /** A brand accent key (a subset of ColorToken) every role maps onto. */
-export type AccentKey = "lime" | "blue" | "violet" | "amber" | "red" | "ash";
+export type AccentKey = "lime" | "blue" | "amber" | "red" | "ash";
 
 /** role → brand accent key. The ONE mapping both clients resolve against. */
 export const ROLE_COLOR: Record<SemanticRole, AccentKey> = {

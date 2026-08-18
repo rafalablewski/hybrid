@@ -2,15 +2,15 @@ import { createContext, useContext, type ReactNode } from "react";
 import { THEMES, colors, ROLE_COLOR, type SemanticRole, type ThemeName, type ThemePalette } from "@hybrid/core";
 
 /**
- * Mobile theme — AURORA (dark), the app's one theme. The bright brand accents
- * (lime/blue/…) are the fills, while `accentText` carries the AA-guarded tones
- * for accents rendered as TEXT. Palette values come from @hybrid/core THEMES so
- * web + mobile share one source.
+ * Mobile theme — AURORA (dark), the app's one theme. The four brand accents
+ * (Wild Lime / Lyons Blue / Fleur De Lis / Muskmelon) are the fills, while
+ * `accentText` carries the AA-guarded tone for the one accent that needs a
+ * different value as TEXT. Palette values come from @hybrid/core THEMES so web
+ * + mobile share one source.
  */
 export interface Palette extends ThemePalette {
   lime: string;
   blue: string;
-  violet: string;
   amber: string;
   red: string;
   /** fixed near-black for text/icons ON a bright accent fill */
@@ -18,9 +18,8 @@ export interface Palette extends ThemePalette {
 }
 
 const fillsFor = (t: ThemePalette) => ({
-  lime: t.accent, // primary action fill (chartreuse)
+  lime: t.accent, // primary action fill (Wild Lime)
   blue: colors.blue,
-  violet: colors.violet,
   amber: colors.amber,
   red: colors.red,
   onAccent: t.onAccent,
@@ -43,8 +42,6 @@ export function txt(palette: Palette, c: string): string {
     case palette.blue:
     case colors.blue:
       return palette.accentText.blue;
-    case colors.violet:
-      return palette.accentText.violet;
     case colors.amber:
       return palette.accentText.amber;
     case colors.red:

@@ -2825,15 +2825,15 @@ function Summary({
             >
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
             </Pressable>
-            <View style={{ backgroundColor: withAlpha(C.violet, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(C.violet, ALPHA.line), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.violet) }}>✓ {t("summary.guestSaved")}</Text>
+            <View style={{ backgroundColor: withAlpha(C.blue, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(C.blue, ALPHA.line), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>✓ {t("summary.guestSaved")}</Text>
             </View>
             <Pressable
               onPress={() => router.replace("/login?mode=signup")}
-              style={{ backgroundColor: C.violet, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
+              style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 12 }}
             >
-              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{t("summary.guestSave")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk, opacity: 0.8, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.onAccent }}>{t("summary.guestSave")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.onAccent, opacity: 0.72, marginTop: 3 }}>{t("summary.guestSaveSub")}</Text>
             </Pressable>
             <Pressable onPress={() => router.replace("/welcome")} style={{ paddingVertical: 16, alignItems: "center" }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("summary.notNow")}</Text>

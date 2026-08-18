@@ -128,7 +128,7 @@ describe("nothing in a footer takes the accent", () => {
   /** An accent APPLIED — not the word in a comment, since the primitive
    *  explains at length why the accent left. */
   const ACCENT_APPLIED = [
-    /\bC\.(lime|blue|violet|amber|red)\b/, // palette member
+    /\bC\.(lime|blue|amber|red)\b/, // palette member
     /\btxt\(/,                             // the mapper
   ];
 

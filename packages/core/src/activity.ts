@@ -7,7 +7,7 @@
 import type { AuroraIconName } from "./theme/icons";
 import type { LoggedSession } from "./engines/session";
 
-export type ActivityAccent = "lime" | "blue" | "violet" | "amber";
+export type ActivityAccent = "lime" | "blue" | "amber" | "red";
 
 export interface ActivityItem {
   id: string;
@@ -71,7 +71,7 @@ export function buildActivityFeed(input: ActivityInput): ActivityItem[] {
       detail: a.name,
       at,
       icon: "calendar",
-      accent: "violet",
+      accent: "red",
     });
   }
 

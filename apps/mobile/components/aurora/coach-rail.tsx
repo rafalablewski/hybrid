@@ -33,7 +33,7 @@ function Stat({ C, value, label, first, star }: { C: Palette; value: string; lab
   return (
     <View style={{ flex: 1, paddingTop: 10, borderLeftWidth: first ? 0 : 1, borderLeftColor: C.line, paddingLeft: first ? 0 : 12 }}>
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>
-        {star ? <Text style={{ color: C.gold }}>★ </Text> : null}{value}
+        {star ? <Text style={{ color: C.amber }}>★ </Text> : null}{value}
       </Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: withAlpha(C.ash, 0.702), marginTop: 4 }}>{label}</Text>
     </View>

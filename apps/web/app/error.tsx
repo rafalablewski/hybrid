@@ -79,7 +79,7 @@ export default function Error({
             border: "none",
             cursor: "pointer",
             fontWeight: 700,
-            background: "#c6f84f",
+            background: "#c3d363",
             color: "#0c0d0c",
           }}
         >

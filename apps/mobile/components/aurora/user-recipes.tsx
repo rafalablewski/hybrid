@@ -104,7 +104,7 @@ function MacroLine({ f, big }: { f: NutritionFacts; big?: boolean }) {
   const macros = [
     [t("w.recovery.nutrition.protein"), f.protein, txt(C, C.blue)],
     [t("w.recovery.nutrition.carbs"), f.carbs, txt(C, C.amber)],
-    [t("w.recovery.nutrition.fat"), f.fat, txt(C, C.violet)],
+    [t("w.recovery.nutrition.fat"), f.fat, txt(C, C.red)],
   ] as const;
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: big ? 14 : 10, flexWrap: "wrap" }}>

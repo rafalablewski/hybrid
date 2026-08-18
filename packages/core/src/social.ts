@@ -107,7 +107,7 @@ export function canViewResults(visibility: Visibility, relation: Relation): bool
 
 // ------------------------------------------------------------------- feed ----
 export type FeedKind = "session" | "pr" | "recap" | "post";
-export type FeedAccent = "lime" | "blue" | "violet" | "amber";
+export type FeedAccent = "lime" | "blue" | "amber" | "red";
 
 /** A first-class shared post (status / PR card / workout card) from an author. */
 export interface FeedPostInput {
@@ -361,7 +361,7 @@ export function buildSocialFeed(subjects: FeedSubjectInput[], opts: FeedOptions 
       } else {
         title = `${nm} posted`;
         body = post.text || null;
-        accent = "violet";
+        accent = "red";
       }
       // a caption on a shared card becomes the prose body above the summary
       if (post.text && post.kind !== "status") body = post.text;
@@ -645,7 +645,7 @@ export function buildSocialNotifications(events: SocialNotifEvent[], now = Date.
       case "follow": title = `${who} followed you`; accent = "blue"; break;
       case "follow_request": title = `${who} requested to follow you`; accent = "blue"; actionable = true; break;
       case "kudos": title = `${who} cheered your ${e.text || "workout"}`; accent = "lime"; break;
-      case "comment": title = `${who} commented: "${(e.text || "").slice(0, 80)}"`; accent = "violet"; break;
+      case "comment": title = `${who} commented: "${(e.text || "").slice(0, 80)}"`; accent = "blue"; break;
       case "enroll_request": title = `${who} wants to start ${e.text || "your program"}`; accent = "amber"; actionable = true; break;
       case "enroll_active": title = `${who} accepted your enrolment in ${e.text || "the program"}`; accent = "lime"; break;
       case "enroll_declined": title = `${who} declined your enrolment in ${e.text || "the program"}`; accent = "amber"; break;
@@ -663,7 +663,7 @@ export function buildSocialNotifications(events: SocialNotifEvent[], now = Date.
 }
 
 // ------------------------------------------------- coach discovery rail ------
-export type CoachAccent = "lime" | "blue" | "violet" | "amber";
+export type CoachAccent = "lime" | "blue" | "amber" | "red";
 
 /** A coach card for the "Follow a coach" rail on Today — shared shape for both
  *  the real marketplace coaches AND the placeholder people shown before any
@@ -693,15 +693,15 @@ export interface DiscoverCoach {
  *  Deliberately diverse + clearly illustrative; the rail swaps to live coaches
  *  the moment the marketplace returns any. */
 export const PLACEHOLDER_COACHES: DiscoverCoach[] = [
-  { handle: "priya_nair", name: "Priya Nair", headline: "Olympic weightlifting, 10y", specialties: ["Olympic lifting", "Peaking"], rating: 4.9, reviews: 128, verified: true, accent: "violet", placeholder: true, quote: "She rebuilt my snatch from scratch in twelve weeks. Worth every session.", years: 10 },
+  { handle: "priya_nair", name: "Priya Nair", headline: "Olympic weightlifting, 10y", specialties: ["Olympic lifting", "Peaking"], rating: 4.9, reviews: 128, verified: true, accent: "red", placeholder: true, quote: "She rebuilt my snatch from scratch in twelve weeks. Worth every session.", years: 10 },
   { handle: "marcus_bell", name: "Marcus Bell", headline: "Hybrid & Hyrox specialist", specialties: ["Hyrox", "Conditioning"], rating: 4.7, reviews: 64, verified: true, accent: "lime", placeholder: true, quote: "Took nine minutes off my Hyrox time without losing my squat.", years: 7 },
   { handle: "sofia_almeida", name: "Sofia Almeida", headline: "Marathon & 5k coach", specialties: ["Running", "Endurance"], rating: 4.8, reviews: 91, verified: false, accent: "blue", placeholder: true, quote: "First marathon under four hours, still lifting twice a week.", years: 8 },
   { handle: "dmitri_volkov", name: "Dmitri Volkov", headline: "Powerlifting, raw totals", specialties: ["Powerlifting", "Strength"], rating: 4.6, reviews: 42, verified: false, accent: "amber", placeholder: true, quote: "Forty kilos on my total in one prep. The man is a spreadsheet.", years: 12 },
-  { handle: "lena_hoffmann", name: "Lena Hoffmann", headline: "Fat loss & physique", specialties: ["Bodybuilding", "Fat loss"], rating: 5.0, reviews: 73, verified: true, accent: "violet", placeholder: true, quote: "Leaner than ever and stronger in every single lift.", years: 6 },
+  { handle: "lena_hoffmann", name: "Lena Hoffmann", headline: "Fat loss & physique", specialties: ["Bodybuilding", "Fat loss"], rating: 5.0, reviews: 73, verified: true, accent: "blue", placeholder: true, quote: "Leaner than ever and stronger in every single lift.", years: 6 },
   { handle: "coach_bray", name: "Coach Bray", headline: "Tactical & military prep", specialties: ["Tactical", "Strength"], rating: 4.4, reviews: 37, verified: false, accent: "lime", placeholder: true, quote: "Passed selection with room to spare. The rucks were dialled.", years: 15 },
 ];
 
-const RAIL_ACCENTS: CoachAccent[] = ["lime", "blue", "violet", "amber"];
+const RAIL_ACCENTS: CoachAccent[] = ["lime", "blue", "amber", "red"];
 
 /** Map the marketplace API's coach cards into the rail shape; falls back to the
  *  placeholder people when the marketplace is empty (no coaches yet / schema not

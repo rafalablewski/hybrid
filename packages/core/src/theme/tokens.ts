@@ -12,22 +12,55 @@ export const colors = {
   // which made every chart hairline draw in a different grey than every border.
   card: "#151715", // card surface
   line: "#242724", // hairline borders
-  // AURORA SPECTRUM accents — the brand's coolors palette (chartreuse / teal /
-  // sand / terracotta), layered over the unchanged dark surfaces. State meaning
-  // routes through semantic.ts ROLE_COLOR; chartreuse stays the ONE action
-  // accent. Surfaces above are untouched. (The old SECTION_COLOR per-section
-  // decoration map was removed with its last consumer — colour now only ever
-  // encodes state, never section identity.)
-  // (The `violet` KEY is a legacy name: it now holds a steel/slate
-  // BLUE and is the coach / non-premium 5th accent — the premium-upgrade cue
-  // moved to sand/amber, see premium-accent-sand + coach-accent-steel.)
-  lime: "#c6f84f", // chartreuse — the primary accent (action / "go" / Train)
+  // ── THE PANTONE FOUR ─────────────────────────────────────────────────────
+  //
+  // The brand palette is now four named PANTONE colours, and FOUR IS THE WHOLE
+  // SET — there is no fifth accent and no separate rating gold. State meaning
+  // routes through semantic.ts ROLE_COLOR; Wild Lime stays the ONE action
+  // accent. The surfaces above are untouched.
+  //
+  //   lime  → PANTONE 13-0540 TCX  Wild Lime      #c3d363  (as specified)
+  //   red   → PANTONE 15-1242 TCX  Muskmelon      #ec935e  (as specified)
+  //   amber → PANTONE 20-0047 TPM  Fleur De Lis   #daa51d  (as specified)
+  //   blue  → PANTONE 19-4340 TCX  Lyons Blue     #015871  → RENDERED #2f7893
+  //
+  // WHY BLUE IS NOT ITS PANTONE VALUE, and this is the one place the set had to
+  // bend. Lyons Blue #015871 measures 2.44:1 against `ink` — below even WCAG's
+  // 3:1 floor for non-text marks. It is a TCX chip, specified to be read on
+  // white; on a near-black ground a chart stroke, bar, dot or border drawn in it
+  // is close to invisible. So `blue` carries the value Lyons Blue RESOLVES TO on
+  // this ground: its exact CIE-Lab hue angle, lifted in L* until it reaches
+  // 3.63:1 on the card — the same contrast the outgoing teal held (3.59), so
+  // every chart and bar already tuned around that number is unchanged.
+  // #015871 itself remains correct as a FILLED SURFACE (chalk on it is 7.21:1);
+  // it is not a token because nothing draws one yet, and a token with no
+  // consumer is how the palette grew a `card` nobody paints.
+  //
+  // WHY THERE IS NO `violet`. It held a steel/slate blue (#8296c4) and, before
+  // that, a lavender — and it never had one job: coach, non-premium, comment,
+  // fat, season bar, "not up". Lifting Lyons Blue onto this ground put the two
+  // blues ΔE 14.0 apart, under the DISTINCT_ROLE_DE floor of 18 that
+  // contrast.ts sets for two colours carrying different meanings side by side.
+  // Rather than ship that collision its ~120 sites were reassigned by what each
+  // one MEANT: a 4th categorical slot → `red`; the conditioning/other modality →
+  // `amber` (which is what kindStroke already said); a quiet secondary channel →
+  // `blue`; the 5th step of the ordered velocity ramp → the lighter blue tint,
+  // which an ordered ramp is allowed to do (see contrast.ts on hue repeating
+  // when separation is carried by weight instead).
+  //
+  // WHY THERE IS NO `gold`. Fleur De Lis IS the gold. The old rating gold
+  // (#e6c34e) sat ΔE 8.6 from it — two golds nobody could tell apart — so the
+  // coach ★ and the elite badge draw in `amber` like everything else warm.
+  //
+  // TO ADD A FIFTH: it has to clear ΔE 18 against all four in the accent-TEXT
+  // channel (palette.test.ts checks every pair now, not a chosen three), and it
+  // has to name the job no existing accent does. Both halves, or it is decoration.
+  lime: "#c3d363", // Wild Lime — the primary accent (action / "go" / Train)
   chalk: "#f3f4ef", // primary text
   ash: "#8b8f86", // muted text
-  blue: "#3c787e", // teal — conditioning / info accent (Feel)
-  violet: "#8296c4", // steel/slate blue — coach & non-premium accent (was #c9a9f0 lavender)
-  amber: "#d0cd94", // sand — sport / caution accent (Plan) + the premium-upgrade cue
-  red: "#d56f3e", // terracotta — alert / injury / streak (Connect)
+  blue: "#2f7893", // Lyons Blue on dark — conditioning / info accent (Feel)
+  amber: "#daa51d", // Fleur De Lis — sport / caution / premium / ratings (Plan)
+  red: "#ec935e", // Muskmelon — alert / injury / streak (Connect)
   // NO WASH TOKENS. `maroon` / `maroonLit` lived here for one consumer — the
   // activity card's fallen column, which sat in a dark stain so the fall would
   // outweigh the rise. It is gone (Aug 2026): a stain made that one column a

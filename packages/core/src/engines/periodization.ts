@@ -9,20 +9,20 @@ export const PHASE_MODELS: Record<string, { name: string; phases: Phase[] }> = {
   endurance: {
     name: "Endurance model",
     phases: [
-      { key: "base", label: "Base", weeks: 4, intensity: 45, volume: 90, color: "#3c787e", focus: "Aerobic & muscular endurance", pattern: "3 load / 1 recovery" },
-      { key: "build", label: "Build", weeks: 3, intensity: 70, volume: 75, color: "#c6f84f", focus: "Threshold & VO₂ max", pattern: "2 load / 1 recovery" },
-      { key: "peak", label: "Peak", weeks: 3, intensity: 90, volume: 50, color: "#d0cd94", focus: "Anaerobic capacity & power", pattern: "2 load / 1 recovery" },
-      { key: "taper", label: "Taper", weeks: 1, intensity: 75, volume: 30, color: "#8296c4", focus: "Sharpen, shed fatigue", pattern: "race week" },
+      { key: "base", label: "Base", weeks: 4, intensity: 45, volume: 90, color: "#2f7893", focus: "Aerobic & muscular endurance", pattern: "3 load / 1 recovery" },
+      { key: "build", label: "Build", weeks: 3, intensity: 70, volume: 75, color: "#c3d363", focus: "Threshold & VO₂ max", pattern: "2 load / 1 recovery" },
+      { key: "peak", label: "Peak", weeks: 3, intensity: 90, volume: 50, color: "#daa51d", focus: "Anaerobic capacity & power", pattern: "2 load / 1 recovery" },
+      { key: "taper", label: "Taper", weeks: 1, intensity: 75, volume: 30, color: "#ec935e", focus: "Sharpen, shed fatigue", pattern: "race week" },
       { key: "recovery", label: "Recovery", weeks: 2, intensity: 30, volume: 35, color: "#8b8f86", focus: "Rest & regenerate", pattern: "easy" },
     ],
   },
   strength: {
     name: "Strength model",
     phases: [
-      { key: "hypertrophy", label: "Hypertrophy", weeks: 4, intensity: 60, volume: 90, color: "#3c787e", focus: "Muscle mass, work capacity", pattern: "3 load / 1 deload" },
-      { key: "strength", label: "Strength", weeks: 4, intensity: 80, volume: 65, color: "#c6f84f", focus: "Maximal force, heavy loads", pattern: "3 load / 1 deload" },
-      { key: "power", label: "Power", weeks: 3, intensity: 85, volume: 45, color: "#d0cd94", focus: "Rate of force, explosiveness", pattern: "2 load / 1 deload" },
-      { key: "peak", label: "Peak", weeks: 1, intensity: 95, volume: 25, color: "#8296c4", focus: "Express peak strength", pattern: "test week" },
+      { key: "hypertrophy", label: "Hypertrophy", weeks: 4, intensity: 60, volume: 90, color: "#2f7893", focus: "Muscle mass, work capacity", pattern: "3 load / 1 deload" },
+      { key: "strength", label: "Strength", weeks: 4, intensity: 80, volume: 65, color: "#c3d363", focus: "Maximal force, heavy loads", pattern: "3 load / 1 deload" },
+      { key: "power", label: "Power", weeks: 3, intensity: 85, volume: 45, color: "#daa51d", focus: "Rate of force, explosiveness", pattern: "2 load / 1 deload" },
+      { key: "peak", label: "Peak", weeks: 1, intensity: 95, volume: 25, color: "#ec935e", focus: "Express peak strength", pattern: "test week" },
       { key: "deload", label: "Deload", weeks: 2, intensity: 35, volume: 35, color: "#8b8f86", focus: "Supercompensate", pattern: "easy" },
     ],
   },

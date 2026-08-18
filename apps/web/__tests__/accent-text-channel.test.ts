@@ -12,9 +12,9 @@ import { join } from "node:path";
  * `var(--color-red)`, which that mapping never saw, so 78 call sites quietly
  * painted glyphs in the fill.
  *
- * What that cost, measured against the card: `blue` #3c787e is 3.59:1 —
- * and the type scale here runs 10–14px, so WCAG's large-text exemption (3:1)
- * covers none of it.
+ * What that cost, measured against the card: `blue` is the darkest fill in the
+ * set — #2f7893, 3.63:1 (Lyons Blue's own #015871 is 2.26) — and the type scale
+ * here runs 10–14px, so WCAG's large-text exemption (3:1) covers none of it.
  *
  * A reviewer cannot hold that distinction in their head across 32 files, so it
  * is a test instead: no `color:` may resolve to an accent FILL. Backgrounds,
@@ -22,7 +22,7 @@ import { join } from "node:path";
  * only ever looks at the `color` property.
  */
 
-const ACCENTS = ["lime", "blue", "violet", "amber", "red"] as const;
+const ACCENTS = ["lime", "blue", "amber", "red"] as const;
 
 /** `color: C("red")` — a glyph painted in a fill. Never legitimate. */
 const FILL_AS_TEXT = new RegExp(`color:\\s*C\\("(${ACCENTS.join("|")})"\\)`, "g");

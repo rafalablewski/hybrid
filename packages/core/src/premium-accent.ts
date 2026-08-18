@@ -2,7 +2,7 @@
  * PREMIUM ACCENT — the one colour every "buy Full" CTA wears (Go Full cards, the
  * upgrade sheet, locked-feature badges, the upsell strips). It is ADMIN-SETTABLE
  * at runtime via the `theme.premiumAccent` feature flag (no redeploy): the value
- * is either a brand-palette KEY (amber/violet/lime/blue/red) or a custom `#hex`.
+ * is either a brand-palette KEY (amber/lime/blue/red) or a custom `#hex`.
  * Default is `amber` (sand). Both clients resolve through here so web + mobile
  * can't drift, and the admin panel shows a live WCAG readout for custom hexes.
  */
@@ -14,7 +14,7 @@ import { contrastRatio, WCAG } from "./contrast";
 export const PREMIUM_ACCENT_FLAG = "theme.premiumAccent";
 
 /** Palette keys offered as premium-accent presets (ash is not an accent). */
-export const PREMIUM_ACCENT_PRESETS = ["amber", "violet", "lime", "blue", "red"] as const;
+export const PREMIUM_ACCENT_PRESETS = ["amber", "lime", "blue", "red"] as const;
 export type PremiumAccentPreset = (typeof PREMIUM_ACCENT_PRESETS)[number];
 
 /** The default when no admin override is set — sand. */

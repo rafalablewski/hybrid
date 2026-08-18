@@ -27,7 +27,7 @@ export default function TermsPage() {
   return (
     <main style={wrap}>
       <p style={muted}>
-        <Link href="/" style={{ color: "#c6f84f" }}>
+        <Link href="/" style={{ color: "#c3d363" }}>
           ← {LEGAL.appName}
         </Link>
       </p>
@@ -91,7 +91,7 @@ export default function TermsPage() {
       <p>
         You retain ownership of the data and content you add. You grant us the limited rights needed to host
         and process it to operate the Service for you. We handle your data as described in our{" "}
-        <Link href="/privacy" style={{ color: "#c6f84f" }}>Privacy Policy</Link>.
+        <Link href="/privacy" style={{ color: "#c3d363" }}>Privacy Policy</Link>.
       </p>
 
       <h2 style={h2}>Termination</h2>
@@ -117,7 +117,7 @@ export default function TermsPage() {
 
       <h2 style={h2}>Contact</h2>
       <p>
-        Questions: <a href={`mailto:${LEGAL.contactEmail}`} style={{ color: "#c6f84f" }}>{LEGAL.contactEmail}</a>.
+        Questions: <a href={`mailto:${LEGAL.contactEmail}`} style={{ color: "#c3d363" }}>{LEGAL.contactEmail}</a>.
       </p>
 
       <p style={{ ...muted, marginTop: 40 }}>

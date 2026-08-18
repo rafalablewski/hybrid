@@ -18,7 +18,7 @@ const todayKey = localTodayKey;
 
 /** AURORA Calendar — month heat-grid + selected-day detail. Layers the athlete's
  *  sessions (lime heat) with coach
- *  assignments (violet dots + mark-done) — parity with the web calendar, reusing
+ *  assignments (blue dots + mark-done) — parity with the web calendar, reusing
  *  the shared engine (sessionsByDay / monthMatrix / loadIntensity) and the same
  *  /api/assignments endpoint. */
 export default function AuroraCalendar() {
@@ -108,7 +108,7 @@ export default function AuroraCalendar() {
                 }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? withAlpha(C.lime, ALPHA.rim) : C.line, backgroundColor: cellBg }}>
                   {asg ? (
                     <View style={{ position: "absolute", top: 3, right: 3, flexDirection: "row", gap: 2 }}>
-                      <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: C.violet }} />
+                      <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: C.blue }} />
                     </View>
                   ) : null}
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: isToday ? txt(C, C.lime) : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
@@ -119,7 +119,7 @@ export default function AuroraCalendar() {
           </View>
         ))}
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>
-          {t("w.analyze.cal.legendPre")} <Text style={{ color: txt(C, C.violet) }}>●</Text> {t("w.analyze.cal.legendAssigned")}
+          {t("w.analyze.cal.legendPre")} <Text style={{ color: txt(C, C.blue) }}>●</Text> {t("w.analyze.cal.legendAssigned")}
         </Text>
       </ACard>
 
@@ -132,7 +132,7 @@ export default function AuroraCalendar() {
 
       {selAssignments.map((a) => (
         <ACard key={a.id} style={{ marginBottom: 12 }}>
-          {chip(C.violet, t("w.analyze.cal.assigned"))}
+          {chip(C.blue, t("w.analyze.cal.assigned"))}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 6 }}>
             <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
             {a.status === "completed" ? chip(C.lime, t("w.analyze.cal.done")) : (

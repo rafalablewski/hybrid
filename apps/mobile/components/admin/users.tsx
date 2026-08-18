@@ -67,7 +67,7 @@ export default function AdminUsers() {
 
 function AccountsTab() {
   const { palette } = useTheme();
-  const roleColor: Record<string, string> = { ADMIN: palette.amber, COACH: palette.violet, CLIENT: palette.lime };
+  const roleColor: Record<string, string> = { ADMIN: palette.amber, COACH: palette.blue, CLIENT: palette.lime };
 
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
@@ -171,7 +171,7 @@ function UserDetail({
   onDeleted: () => void;
 }) {
   const { palette } = useTheme();
-  const roleColor: Record<string, string> = { ADMIN: palette.amber, COACH: palette.violet, CLIENT: palette.lime };
+  const roleColor: Record<string, string> = { ADMIN: palette.amber, COACH: palette.blue, CLIENT: palette.lime };
 
   const [d, setD] = useState<Detail | null>(null);
   const [role, setRole] = useState<RoleVal>("CLIENT");
