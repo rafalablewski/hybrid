@@ -2153,13 +2153,27 @@ export function ACheckMark({ on, size = 20, accent }: { on: boolean; size?: numb
  *
  * THE HAPTIC IS THE CALLER'S: a radio pick is Selection, a multi-select toggle
  * is Impact Light (lib/haptics), and only the caller knows which it is.
+ *
+ * `glyph` EXISTS SO THE SHEET PICKERS COULD JOIN, and it is the reason there is
+ * no second row component. Nutrition's meal and unit sheets drew their own
+ * pick-one row — a glyph, a label, and a trailing check ICON that VANISHED when
+ * the row was not picked, so an unpicked row said nothing about being pickable.
+ * Two sites is below the threshold this kit extracts at, and they were already
+ * disagreeing with each other about the label's face (F.bold in one, F.reg in
+ * the other) 400 lines apart in ONE file. Folding them in here costs one
+ * optional prop and hands them the mark that shows both states.
  */
-export function AChoice({ active, title, sub, onPress, sheet }: {
+export function AChoice({ active, title, sub, onPress, sheet, glyph }: {
   active: boolean;
   title: string;
   /** The line under the title. Optional — a bare label row is a valid option. */
   sub?: string;
   onPress: () => void;
+  /** A leading icon, for a row whose options are a KIND of thing rather than a
+   *  described choice (a meal part, a serving unit). It sits before the label
+   *  and takes the accent when picked, the same beat as the border and the
+   *  mark. */
+  glyph?: (color: string) => ReactNode;
   /** The row is rendered INSIDE A SHEET, whose panel is already ink2 — so the
    *  resting fill drops a step to ink rather than painting the row the exact
    *  colour of the surface it sits on. A boolean and not a colour: the ground
@@ -2169,6 +2183,7 @@ export function AChoice({ active, title, sub, onPress, sheet }: {
 }) {
   const { palette } = useTheme();
   const rest = sheet ? palette.ink : palette.ink2;
+  const glyphColor = active ? txt(palette, palette.lime) : palette.ash;
   const on = useRef(new Animated.Value(active ? 1 : 0)).current;
   useEffect(() => {
     Animated.timing(on, {
@@ -2191,6 +2206,7 @@ export function AChoice({ active, title, sub, onPress, sheet }: {
           padding: space.lg,
         }}
       >
+        {glyph?.(glyphColor)}
         <View style={{ flex: 1 }}>
           <Animated.Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: tint(palette.chalk, txt(palette, palette.lime)) }}>{title}</Animated.Text>
           {!!sub && <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: space.xxs, lineHeight: leading(fs.caption) }}>{sub}</Text>}

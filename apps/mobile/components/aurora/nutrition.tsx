@@ -2374,13 +2374,21 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         )}
 
         <Sheet visible={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
-          <View style={{ gap: 8 }}>
+          {/* The pick-one row in a sheet is the kit's `AChoice` now, with its
+              leading `glyph`. It drew its own before: a trailing check ICON that
+              VANISHED when unpicked, so an unpicked row said nothing about being
+              pickable — and the unit sheet 400 lines below drew the same row
+              with a different label face. */}
+          <View style={{ gap: space.ms }}>
             {partList.map((p) => (
-              <Pressable key={p.key} onPress={() => { setMealType(p.key); setMealPicker(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: mealType === p.key ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16 }}>
-                <Glyph name={mealGlyph(p.key)} size={20} color={mealType === p.key ? txt(C, C.lime) : C.ash} />
-                <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{p.label}</Text>
-                {mealType === p.key ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : null}
-              </Pressable>
+              <AChoice
+                key={p.key}
+                sheet
+                active={mealType === p.key}
+                title={p.label}
+                glyph={(color) => <Glyph name={mealGlyph(p.key)} size={20} color={color} />}
+                onPress={() => { haptic.selection(); setMealType(p.key); setMealPicker(false); }}
+              />
             ))}
             {full ? (
               <Pressable onPress={() => { setMealPicker(false); setPartSheet(true); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: RADIUS.field, padding: 16 }}>
@@ -2809,12 +2817,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </Pressable>
 
         <Sheet visible={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")}>
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: space.ms }}>
             {SERVING_UNITS.map(({ id: u }) => (
-              <Pressable key={u} onPress={() => { setCreateForm((s) => ({ ...s, unit: u })); setUnitPicker(false); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.ink, borderWidth: 1, borderColor: createForm.unit === u ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16 }}>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{unitLabel(u)}</Text>
-                {createForm.unit === u ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : null}
-              </Pressable>
+              <AChoice
+                key={u}
+                sheet
+                active={createForm.unit === u}
+                title={unitLabel(u)}
+                onPress={() => { haptic.selection(); setCreateForm((s) => ({ ...s, unit: u })); setUnitPicker(false); }}
+              />
             ))}
           </View>
         </Sheet>
