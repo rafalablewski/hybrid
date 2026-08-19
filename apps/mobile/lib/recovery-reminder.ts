@@ -103,20 +103,20 @@ export async function scheduleRecoveryReminder(opts: {
   lang?: Lang;
   now?: number;
 }): Promise<number | null> {
+  // Clear the old one FIRST, and unconditionally. Whatever happens below, a
+  // reminder about a previous session must not survive this one — including
+  // when we bail out. Permission revoked between two sessions and then granted
+  // again would otherwise deliver a question about a workout the athlete has
+  // long since forgotten.
+  await cancelRecoveryReminder();
+
   const at = recoveryReminderAt(opts.sessionEnd, opts.now ?? Date.now());
-  if (at == null) {
-    // A newer session with nothing to ask about must still clear an older
-    // session's pending reminder, or yesterday's question arrives tomorrow.
-    await cancelRecoveryReminder();
-    return null;
-  }
+  if (at == null) return null;
 
   // Never PROMPT here. The finish screen is a bad moment to spend the one
   // permission ask on, and a silent no-op is better than a modal nobody
   // expected — enablePush() owns the asking, at a moment chosen for it.
   if ((await pushPermission()) !== "granted") return null;
-
-  await cancelRecoveryReminder();
 
   const t = makeT(opts.lang ?? "en");
   const title = opts.title?.trim()

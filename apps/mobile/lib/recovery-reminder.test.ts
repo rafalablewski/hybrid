@@ -114,6 +114,22 @@ describe("the recovery reminder", () => {
     expect(Notifications.requestPermissionsAsync).not.toHaveProperty("mock");
   });
 
+  it("clears a stale reminder even when permission has since been revoked", async () => {
+    // Granted, scheduled, revoked, then a new session. Bailing out without
+    // cancelling would leave the old ask alive, and re-granting later would
+    // deliver a question about a workout long forgotten.
+    const morning = localAt(0, 9);
+    await scheduleRecoveryReminder({ sessionEnd: morning, sessionId: "s1", now: morning + 1000 });
+    const stale = scheduled[0]!.id;
+
+    permission.value = "denied";
+    const midday = localAt(0, 12);
+    expect(await scheduleRecoveryReminder({ sessionEnd: midday, sessionId: "s2", now: midday + 1000 })).toBeNull();
+
+    expect(cancelled).toContain(stale);
+    expect(scheduled).toHaveLength(1);
+  });
+
   it("clears a stale reminder when the new session has nothing to ask about", async () => {
     // Otherwise yesterday's question arrives tomorrow, about a session the
     // athlete has long since forgotten.
