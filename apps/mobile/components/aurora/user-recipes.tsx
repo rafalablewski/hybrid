@@ -5,17 +5,20 @@ import {
   MAX_RECIPE_SERVINGS,
   formatIngredientQty,
   recipeTotals,
+  canLogRecipe,
+  linkIngredient,
   refreshIngredients,
   scaleRecipeTo,
   staleIngredients,
   type NutritionFacts,
   type RecipeSource,
   type UserRecipe,
-  type UserRecipeIngredient, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
+  type UserRecipeIngredient, FEEDBACK, STATE_OPACITY, ALPHA } from "@hybrid/core";
 import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { APill, ACard, RADIUS } from "./kit";
+import { withAlpha } from "./field";
 import { AuroraIcon, Glyph } from "./icons";
 import Sheet from "./sheet";
 import { useListMotion } from "../../lib/list-motion";
@@ -50,6 +53,8 @@ export type RecipeRow = {
     satFat?: number | null; sugar?: number | null; fiber?: number | null; salt?: number | null;
     productId?: string | null;
     verifiedId?: string | null;
+    /** the line's numbers are not known — see @hybrid/core user-recipes.ts */
+    unstated?: boolean;
     position: number;
   }[];
 };
@@ -74,6 +79,9 @@ export const toUserRecipe = (r: RecipeRow): UserRecipe => ({
     },
     productId: i.productId ?? null,
     verifiedId: i.verifiedId ?? null,
+    // An older row (or an un-migrated database) has no column, and an absent
+    // flag means STATED — those rows are real measurements.
+    unstated: i.unstated === true,
     position: i.position,
   })),
 });
@@ -92,6 +100,7 @@ export const toRecipeBody = (r: UserRecipe) => ({
     ...i.facts,
     productId: i.productId,
     verifiedId: i.verifiedId,
+    unstated: i.unstated === true,
   })),
 });
 
@@ -270,7 +279,11 @@ export function UserRecipeEditor({
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const [picker, setPicker] = useState(false);
+  // The picker either ADDS a line or gives an existing one its numbers. Holding
+  // the target here (rather than mounting a second sheet) is what keeps the two
+  // paths one list with one search — a "link" sheet that drifted from the "add"
+  // sheet would be the same catalogue, twice.
+  const [picker, setPicker] = useState<null | { link?: string }>(null);
   const [query, setQuery] = useState("");
   // Survivors of a filter MOVE to their new positions; only arrivals fade.
   const refilter = useListMotion();
@@ -296,6 +309,17 @@ export function UserRecipeEditor({
     onChange({ ...recipe, ingredients: recipe.ingredients.filter((i) => i.id !== id).map((i, n) => ({ ...i, position: n })) });
 
   const addFromProduct = (p: RecipeSource) => {
+    // Linking an unknown line: it KEEPS ITS NAME (the recipe's word for it) and
+    // takes the food's serving, snapshot and provenance. Quantity starts at one
+    // of that serving — the stepper beside the row is how you say how much, and
+    // guessing it from a name would be the wrong kind of clever.
+    const target = picker?.link;
+    if (target) {
+      onChange(linkIngredient(recipe, target, { id: p.id, servingLabel: p.servingLabel, facts: p.facts }, 1));
+      setPicker(null);
+      setQuery("");
+      return;
+    }
     if (recipe.ingredients.length >= MAX_RECIPE_INGREDIENTS) return;
     const ing: UserRecipeIngredient = {
       // Client-side until the server assigns one — the editor keys rows by it,
@@ -310,7 +334,7 @@ export function UserRecipeEditor({
       position: recipe.ingredients.length,
     };
     onChange({ ...recipe, ingredients: [...recipe.ingredients, ing] });
-    setPicker(false);
+    setPicker(null);
     setQuery("");
   };
 
@@ -385,17 +409,46 @@ export function UserRecipeEditor({
             >
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.semi, fontSize: fs.body, color: C.chalk }}>{ing.name}</Text>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3, fontVariant: ["tabular-nums"] }}>
-                  {formatIngredientQty(ing)}
-                </Text>
+                {ing.unstated ? (
+                  // The line's own measure, and then the honest part: this row
+                  // is not a measurement, and the app says so where the numbers
+                  // would be rather than printing a zero in their place.
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 3 }}>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{ing.servingLabel}</Text>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.amber) }}>
+                      {t("w.recovery.nutrition.recipeUnstatedRow")}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3, fontVariant: ["tabular-nums"] }}>
+                    {formatIngredientQty(ing)}
+                  </Text>
+                )}
               </View>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                <StepButton label="−" small onPress={() => setQty(ing.id, ing.qty - stepFor(ing.qty))} />
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, minWidth: 34, textAlign: "center", fontVariant: ["tabular-nums"] }}>
-                  {Math.round(ing.qty * 100) / 100}
-                </Text>
-                <StepButton label="+" small onPress={() => setQty(ing.id, ing.qty + stepFor(ing.qty))} />
-              </View>
+              {ing.unstated ? (
+                // No stepper: stepping a quantity whose numbers are unknown
+                // changes nothing you could read. The way forward is to say
+                // WHICH food it is, so that is the only control the row offers.
+                <PressScale
+                  onPress={() => setPicker({ link: ing.id })}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t("w.recovery.nutrition.recipeLinkFood")} – ${ing.name}`}
+                  hitSlop={HIT_SLOP}
+                  style={{ borderWidth: 1, borderColor: withAlpha(C.amber, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 7, paddingHorizontal: 12 }}
+                >
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.amber) }}>
+                    {t("w.recovery.nutrition.recipeLinkFood")}
+                  </Text>
+                </PressScale>
+              ) : (
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                  <StepButton label="−" small onPress={() => setQty(ing.id, ing.qty - stepFor(ing.qty))} />
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, minWidth: 34, textAlign: "center", fontVariant: ["tabular-nums"] }}>
+                    {Math.round(ing.qty * 100) / 100}
+                  </Text>
+                  <StepButton label="+" small onPress={() => setQty(ing.id, ing.qty + stepFor(ing.qty))} />
+                </View>
+              )}
               <PressScale onPress={() => removeIngredient(ing.id)} accessibilityRole="button" accessibilityLabel={ing.name} hitSlop={HIT_SLOP} style={{ padding: 4 }}>
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>×</Text>
               </PressScale>
@@ -405,7 +458,7 @@ export function UserRecipeEditor({
 
         {recipe.ingredients.length < MAX_RECIPE_INGREDIENTS ? (
           <PressScale
-            onPress={() => setPicker(true)}
+            onPress={() => setPicker({})}
             accessibilityRole="button"
             accessibilityLabel={t("w.recovery.nutrition.recipeAddIngredient")}
             style={{ flexDirection: "row", alignItems: "center", gap: space.md, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 14, paddingBottom: 4, marginTop: recipe.ingredients.length ? 0 : space.lg }}
@@ -442,12 +495,21 @@ export function UserRecipeEditor({
       {/* TOTALS — derived, twice. */}
       {recipe.ingredients.length > 0 ? (
         <ACard style={{ marginTop: space.lg }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...mono, textTransform: "uppercase" }}>{t("w.recovery.nutrition.recipePerServing")}</Text>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...mono, textTransform: "uppercase" }}>
+            {totals.unstated.length > 0 ? t("w.recovery.nutrition.recipePerServingFloor") : t("w.recovery.nutrition.recipePerServing")}
+          </Text>
           <View style={{ marginTop: space.xs }}><MacroLine f={totals.perServing} big /></View>
           <View style={{ marginTop: space.lg, paddingTop: space.md, borderTopWidth: 1, borderTopColor: C.line }}>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...mono, textTransform: "uppercase" }}>{t("w.recovery.nutrition.recipeTotal")}</Text>
             <View style={{ marginTop: space.xs }}><MacroLine f={totals.total} /></View>
           </View>
+          {/* WHICH lines are missing, by name — a count alone ("2 unknown")
+              leaves you scrolling the list to find them. */}
+          {totals.unstated.length > 0 ? (
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.amber), marginTop: space.md, lineHeight: leading(fs.nano, "relaxed") }}>
+              {t("w.recovery.nutrition.recipeUnstatedNote").replace("{v}", totals.unstated.join(", "))}
+            </Text>
+          ) : null}
           {totals.partial.length > 0 ? (
             <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: space.md, lineHeight: leading(fs.nano, "relaxed") }}>
               {t("w.recovery.nutrition.recipePartial").replace("{v}", [...new Set(totals.partial)].map((k) => t(`w.recovery.nutrition.facts.${k}`)).join(", "))}
@@ -464,8 +526,21 @@ export function UserRecipeEditor({
 
       {/* ACTIONS */}
       <View style={{ gap: space.sm, marginTop: space.xl }}>
+        {/* LOGGING IS REFUSED while any line is unknown — the diary is the one
+            place a floor is indefensible, because an entry that under-reports
+            what was eaten is invisible to everything downstream. The button
+            does not vanish (that would read as a missing feature); it states
+            the condition. */}
         {onLog && recipe.ingredients.length > 0 ? (
-          <APill label={t("w.recovery.nutrition.recipeLog")} onPress={() => onLog(1)} />
+          canLogRecipe(recipe) ? (
+            <APill label={t("w.recovery.nutrition.recipeLog")} onPress={() => onLog(1)} />
+          ) : (
+            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 16, alignItems: "center", opacity: STATE_OPACITY.busy }}>
+              <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center" }}>
+                {t("w.recovery.nutrition.recipeCannotLog").replace("{n}", String(totals.unstated.length))}
+              </Text>
+            </View>
+          )
         ) : null}
         <PressScale
           onPress={saving ? () => {} : onSave}
@@ -488,7 +563,11 @@ export function UserRecipeEditor({
       </View>
 
       {/* PICK AN INGREDIENT — from the products library. */}
-      <Sheet visible={picker} onClose={() => setPicker(false)} title={t("w.recovery.nutrition.recipeFromProducts")}>
+      <Sheet
+        visible={picker != null}
+        onClose={() => setPicker(null)}
+        title={picker?.link ? t("w.recovery.nutrition.recipeLinkFood") : t("w.recovery.nutrition.recipeFromProducts")}
+      >
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 4 }}>
           <AuroraIcon name="search" size={18} color={C.ash} />
           <TextInput

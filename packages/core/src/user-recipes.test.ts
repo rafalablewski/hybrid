@@ -11,6 +11,9 @@ import {
   refreshIngredients,
   scaleRecipeTo,
   staleIngredients,
+  canLogRecipe,
+  libraryRecipeToUserRecipe,
+  linkIngredient,
   userRecipeShareText,
   userRecipeShareView,
   type UserRecipe,
@@ -321,5 +324,105 @@ describe("sharing your own recipe", () => {
     expect(userRecipeShareView(pasta(), T).meta).toEqual(["serves 2"]);
     expect(userRecipeShareView({ ...pasta(), timeMins: 25 }, T).meta).toEqual(["25 min", "serves 2"]);
     expect(userRecipeShareView({ ...pasta(), timeMins: 0 }, T).meta).toEqual(["serves 2"]);
+  });
+});
+
+describe("a line that does not know its numbers", () => {
+  const withUnknown = (): UserRecipe => {
+    const r = pasta();
+    r.ingredients[1] = { ...r.ingredients[1]!, unstated: true, facts: facts({ kcal: 0 }), qty: 1, servingLabel: "100 g" };
+    return r;
+  };
+
+  it("is left OUT of the totals and named, never summed as zero", () => {
+    const t = recipeTotals(withUnknown());
+    expect(t.unstated).toEqual(["Pasta"]);
+    // The two counted lines still add up; the pasta simply is not in it.
+    const counted = recipeTotals({ ...pasta(), ingredients: [pasta().ingredients[0]!, pasta().ingredients[2]!] });
+    expect(t.total.kcal).toBe(counted.total.kcal);
+    expect(t.ingredientCount).toBe(3);
+  });
+
+  it("reports nothing unstated for an ordinary recipe", () => {
+    expect(recipeTotals(pasta()).unstated).toEqual([]);
+  });
+
+  it("cannot be logged to the day — a floor is not a total", () => {
+    expect(canLogRecipe(pasta())).toBe(true);
+    expect(canLogRecipe(withUnknown())).toBe(false);
+    expect(canLogRecipe({ ...pasta(), ingredients: [] })).toBe(false);
+  });
+
+  it("clears when the line is linked to a food that states its numbers", () => {
+    const r = withUnknown();
+    const linked = linkIngredient(r, "i2", { id: "p9", servingLabel: "100 g", facts: facts({ kcal: 350, protein: 12, carbs: 71, fat: 1.5 }) }, 2);
+    const line = linked.ingredients.find((i) => i.id === "i2")!;
+    expect(line.unstated).toBe(false);
+    expect(line.name).toBe("Pasta");
+    expect(line.qty).toBe(2);
+    expect(line.productId).toBe("p9");
+    expect(canLogRecipe(linked)).toBe(true);
+    expect(recipeTotals(linked).unstated).toEqual([]);
+  });
+
+  it("links a VERIFIED source through the other id", () => {
+    const linked = linkIngredient(withUnknown(), "i2", { id: "v1", servingLabel: "100 g", facts: facts({ kcal: 10 }), verified: true });
+    const line = linked.ingredients.find((i) => i.id === "i2")!;
+    expect(line.verifiedId).toBe("v1");
+    expect(line.productId).toBeNull();
+  });
+});
+
+describe("copying a library recipe into your own", () => {
+  const shakshuka = RECIPES.find((r) => r.id === "shakshuka")!;
+  const source = (name: string, servingLabel: string, kcal: number) => ({
+    id: name.toLowerCase(), name, servingLabel, facts: facts({ kcal }),
+  });
+
+  it("copies every line, with the ones it could not identify marked unstated", () => {
+    const { recipe, matched, unmatched } = libraryRecipeToUserRecipe(shakshuka, 2, [source("Chopped tomatoes", "100 g", 20)]);
+    expect(recipe.name).toBe("Shakshuka");
+    expect(recipe.servings).toBe(2);
+    expect(recipe.timeMins).toBe(20);
+    expect(recipe.ingredients).toHaveLength(shakshuka.ingredients.length);
+    expect(matched).toBe(1);
+    expect(unmatched).toBe(shakshuka.ingredients.length - 1);
+    const tomatoes = recipe.ingredients.find((i) => i.name === "Chopped tomatoes")!;
+    expect(tomatoes.unstated).toBe(false);
+    expect(tomatoes.qty).toBe(4);
+    expect(tomatoes.productId).toBe("chopped tomatoes");
+  });
+
+  it("never writes a confident zero — an unmatched line SAYS it is unknown", () => {
+    const { recipe } = libraryRecipeToUserRecipe(shakshuka, 2, []);
+    for (const line of recipe.ingredients) {
+      expect(line.unstated, line.name).toBe(true);
+      expect(line.facts.kcal).toBe(0);
+    }
+    // …and the recipe that results refuses to be logged.
+    expect(canLogRecipe({ id: "", ...recipe })).toBe(false);
+    expect(recipeTotals({ id: "", ...recipe }).unstated).toHaveLength(shakshuka.ingredients.length);
+  });
+
+  it("keeps the RECIPE'S OWN measure on an unknown line, so the row still says how much", () => {
+    const { recipe } = libraryRecipeToUserRecipe(shakshuka, 4, []);
+    const tomatoes = recipe.ingredients.find((i) => i.name === "Chopped tomatoes")!;
+    // 400 g for two servings, copied at four.
+    expect(tomatoes.servingLabel).toBe("800 g");
+    const eggs = recipe.ingredients.find((i) => i.name === "Large eggs")!;
+    expect(eggs.servingLabel).toBe("8");
+  });
+
+  it("is taken at the serving count on screen, and clamps a nonsense one", () => {
+    expect(libraryRecipeToUserRecipe(shakshuka, 6, []).recipe.servings).toBe(6);
+    expect(libraryRecipeToUserRecipe(shakshuka, 0, []).recipe.servings).toBe(shakshuka.baseServes);
+    expect(libraryRecipeToUserRecipe(shakshuka, -4, []).recipe.servings).toBe(shakshuka.baseServes);
+    expect(libraryRecipeToUserRecipe(shakshuka, 9999, []).recipe.servings).toBe(MAX_RECIPE_SERVINGS);
+  });
+
+  it("carries no method — the model holds foods and quantities, not prose", () => {
+    const { recipe } = libraryRecipeToUserRecipe(shakshuka, 2, []);
+    expect(recipe.note).toBe(shakshuka.note);
+    expect(Object.keys(recipe)).not.toContain("steps");
   });
 });

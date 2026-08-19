@@ -14,7 +14,7 @@ import {
   fuelToday, hydrationToday,
   canSaveRecipe, emptyUserRecipe, recipeToLog, libraryRecipeToLog, type UserRecipe, type RecipeSource,
   NAV_SURFACE_RECIPES, recipeShareView, recipeShareText, recipeLibraryShareLink, savedRecipes,
-  userRecipeShareText,
+  userRecipeShareText, libraryRecipeToUserRecipe,
   type CopyPlan, type CopyableEntry,
   estimateMaintenance,
   dailyNutrition,
@@ -742,6 +742,30 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
    *  four things worth doing with a dish. The rows are named here rather than
    *  in the renderer so the system menu and the RN fallback card can never
    *  offer different ones. */
+  /**
+   * MAKE IT MINE — the curated dish copied into Your recipes, editable.
+   *
+   * Every line is matched against foods that actually STATE their numbers (the
+   * athlete's saved products, through core's recipe-match: exact names, exact
+   * unit arithmetic, no guessing). A line that finds none arrives visibly
+   * UNKNOWN rather than as a zero — which is the whole reason this could not be
+   * built before `UserRecipeIngredient.unstated` existed. The copy is taken at
+   * the serving count on screen, and the screen says how much of it came with
+   * numbers, because "3 of 7 ingredients need their numbers" is the difference
+   * between a draft you can finish and one you distrust.
+   */
+  const makeItMine = (r: Recipe, serves: number) => {
+    if (!canSaveRecipe(persona, userRecipes.length)) { router.push("/upgrade"); return; }
+    const { recipe: draft, matched, unmatched } = libraryRecipeToUserRecipe(r, serves, recipeSources);
+    setEditRecipe({ id: "", ...draft });
+    setUserRecipeMsg(
+      unmatched === 0
+        ? t("w.recovery.nutrition.recipeCopiedAll").replace("{n}", String(matched))
+        : t("w.recovery.nutrition.recipeCopiedPartial").replace("{n}", String(unmatched)),
+    );
+    setView("myRecipe");
+  };
+
   const recipeActions = (r: Recipe, serves: number) => ({
     items: [
       { key: "share", label: t("w.recovery.nutrition.recipeShareAction") },
@@ -751,12 +775,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         key: "save",
         label: t(savedIds.includes(r.id) ? "w.recovery.nutrition.recipeUnsaveAction" : "w.recovery.nutrition.recipeSaveAction"),
       },
+      { key: "mine", label: t("w.recovery.nutrition.recipeMakeMine") },
     ],
     onSelect: (key: string) => {
       if (key === "share") shareRecipe(r, serves);
       else if (key === "card") void shareRecipeCard(r, serves);
       else if (key === "ingredients") shareIngredients(r, serves);
       else if (key === "save") toggleSaveRecipe(r);
+      else if (key === "mine") makeItMine(r, serves);
     },
   });
 
