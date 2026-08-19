@@ -345,8 +345,20 @@ export function weeklyFixture(sessions: LoggedSession[], now: number = Date.now(
   return out.sort((a, b) => b.weeks - a.weeks);
 }
 
-/** The fixture that falls on TOMORROW, as an event the ladder can protect. */
-export function fixtureTomorrow(sessions: LoggedSession[], now: number = Date.now()): DayEvent | null {
+/**
+ * The fixture that falls on TOMORROW, as an event the ladder can protect.
+ *
+ * `reject` is what the athlete has already said is not happening — the "not
+ * today?" tap under an inferred band. It belongs HERE rather than downstream
+ * because a rejected fixture must not merely be re-labelled: the whole point of
+ * the tap is that the band drops to the rung below and says something the
+ * athlete can use.
+ */
+export function fixtureTomorrow(
+  sessions: LoggedSession[],
+  now: number = Date.now(),
+  reject: readonly TrainingKind[] = [],
+): DayEvent | null {
   const tomorrow = new Date(localMidnightMs(now) + DAY_MS).getDay();
   // Only a SPORT fixture is worth protecting a day for. A Thursday gym habit is
   // a habit; missing it costs nothing, and a band that says "nothing on the
@@ -355,7 +367,12 @@ export function fixtureTomorrow(sessions: LoggedSession[], now: number = Date.no
   // FIXTURE_STALE_DAYS. A habit that stopped a month ago is history, and the
   // count inside the six-week window cannot tell the difference on its own.
   const hit = weeklyFixture(sessions, now).find(
-    (f) => f.weekday === tomorrow && f.kind !== "gym" && f.kind !== "walking" && f.daysSince <= FIXTURE_STALE_DAYS,
+    (f) =>
+      f.weekday === tomorrow &&
+      f.kind !== "gym" &&
+      f.kind !== "walking" &&
+      f.daysSince <= FIXTURE_STALE_DAYS &&
+      !reject.includes(f.kind),
   );
   return hit
     ? { kind: hit.kind, source: "fixture", seen: { weeks: hit.weeks, of: FIXTURE_LOOKBACK_WEEKS, weekday: hit.weekday } }
