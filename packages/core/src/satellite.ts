@@ -36,6 +36,15 @@ export const SATELLITE = {
    *  measured from the circle's bottom edge. */
   captionGap: 6,
   /**
+   * How far a FILLED capsule's word may shrink before it truncates — the one
+   * capsule that can run out of room, since it takes the row's width instead of
+   * making its own. Both renderers read it (RN `minimumFontScale`, SwiftUI
+   * `minimumScaleFactor`) so the word gives way by the same amount whichever
+   * one answers, which is the whole reason it is a number here and not a
+   * literal in each.
+   */
+  wordMinScale: 0.75,
+  /**
    * THE FLOOR'S RIM — what the control wears wherever the real material does
    * not render (Android, iOS < 26, and the web twin's non-glass ground).
    *

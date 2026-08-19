@@ -99,6 +99,7 @@ import { toggleSavedRecipeId, useSavedRecipeIds } from "../../lib/recipe-saved";
 import { haptic } from "../../lib/haptics";
 import { AuroraScreen, ACard, AChoice, APressCard, AField, ASearch, APill, AHeading, AMeter, Empty, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroAction, HeroNav } from "./hero";
+import { SHARE_MARK } from "./share-mark";
 import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
 import { HubMasthead } from "./hub-masthead";
@@ -3311,8 +3312,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             right:
               editRecipe.id && editRecipe.name.trim() ? (
                 <HeroAction
-                  glyph="square.and.arrow.up"
-                  fallbackGlyph="share"
+                  glyph={SHARE_MARK.glyph}
+                  fallbackGlyph={SHARE_MARK.fallback}
                   onDark={false}
                   label={`${t("w.recovery.nutrition.recipeShareAction")} – ${editRecipe.name}`}
                   onPress={() => {
@@ -3380,8 +3381,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         scrollApi={recipeScroll}
         trailing={
           <HeroAction
-            glyph="square.and.arrow.up"
-            fallbackGlyph="share"
+            glyph={SHARE_MARK.glyph}
+            fallbackGlyph={SHARE_MARK.fallback}
             label={t("w.recovery.nutrition.recipeShareLibrary")}
             onPress={() => {
               Share.share({
@@ -3462,8 +3463,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         back={() => setView("recipes")}
         trailing={
           <HeroAction
-            glyph="square.and.arrow.up"
-            fallbackGlyph="share"
+            glyph={SHARE_MARK.glyph}
+            fallbackGlyph={SHARE_MARK.fallback}
             label={t("w.recovery.nutrition.recipeShareCollection")}
             onPress={() => {
               // A collection has no address of its own, so the message carries
@@ -3517,8 +3518,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         back={() => setView(recipeFrom === "collection" && collection ? "collection" : "recipes")}
         trailing={
           <HeroAction
-            glyph="square.and.arrow.up"
-            fallbackGlyph="share"
+            glyph={SHARE_MARK.glyph}
+            fallbackGlyph={SHARE_MARK.fallback}
             label={`${t("w.recovery.nutrition.recipeShareAction")} – ${rc.name}`}
             {...recipeActions(rc, recipeServes)}
           />
