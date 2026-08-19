@@ -951,7 +951,11 @@ describe("colour", () => {
     // same circle as the leading one — six literals across the two ends of one
     // rail, which is the drift this rule exists to catch, collapsed to a name.
     // 49 → 48: the wrapped screen's story-card shadow went with the share sheet.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 48, "2026-12-31", "hex literal → a palette token");
+    // 48 → 47: the app header's unread badge wrote its count in a literal white,
+    // which the day field then made unreadable — on a chartreuse or amber ground
+    // the badge inverts to the measured ink and the count has to be the GROUND.
+    // Reaching for the ground colour retired the last hard-coded white in the row.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 47, "2026-12-31", "hex literal → a palette token");
   });
 });
 

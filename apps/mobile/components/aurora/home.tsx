@@ -73,6 +73,7 @@ import {
   type LogbookDay,
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
+import { bandHue, barLatched, foldProgress } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { recoveryReadAnswered } from "../../lib/recovery-reminder";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -83,7 +84,7 @@ import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt, roleColor } from "../../lib/theme";
+import { useTheme, txt, roleColor, accentColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
 import { track } from "../../lib/track";
@@ -105,6 +106,7 @@ import ReadinessSheet from "./readiness-sheet";
 // host. Performance drew the same card from the same component until Aug 2026;
 // two placements of one reading made the first look provisional.
 import AuroraDayBand from "./day-band";
+import AuroraDayBar from "./day-bar";
 import { readRejected, readRejectedEvents, rejectEvent, rejectKind } from "../../lib/day-band-prefs";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
@@ -540,6 +542,22 @@ export default function AuroraHome() {
     }),
     [deficit, readyVerdict.muscle, rx, hasData, planToday, sessions, bandRot, bandNow, rejectedEvents],
   );
+  // ── THE FOLD ───────────────────────────────────────────────────────────
+  // One signal, published by this screen's own scroller. The thresholds and the
+  // ramp live in @hybrid/core (day-fold.ts) so the field's compression, the
+  // bar's latch and the admin band preview cannot drift apart; the latch is
+  // kept in a ref as well as state because the handler runs every frame and
+  // must read the CURRENT value, not the one captured when it was created.
+  const fold = useRef(new Animated.Value(0)).current;
+  const [folded, setFolded] = useState(false);
+  const foldedRef = useRef(false);
+  const onFoldScroll = useCallback((e: { nativeEvent?: { contentOffset?: { y?: number } } }) => {
+    const y = e?.nativeEvent?.contentOffset?.y ?? 0;
+    fold.setValue(foldProgress(y));
+    const next = barLatched(y, foldedRef.current);
+    if (next !== foldedRef.current) { foldedRef.current = next; setFolded(next); }
+  }, [fold]);
+
   // Offered only when the rotation has somewhere else to go — a correction that
   // cannot correct anything is a control that does nothing.
   const bandNext = useMemo(() => nextDueKind(bandRot, [...rejectedKinds, ...band.kinds]), [bandRot, rejectedKinds, band.kinds]);
@@ -759,7 +777,7 @@ export default function AuroraHome() {
   // Hoisted so the other two tabs render the SAME header without a second copy
   // of it — they hand it to their screen through AuroraScreen's `top` slot, so
   // the pills sit in exactly the same place on all three tabs.
-  const hubHeader = (
+  const hubHeader = (ground?: string) => (
     <>
       {/* THE APP HEADER — profile, the HYBRID LOCKUP, bell. The SHARED row
           (aurora/app-header.tsx), the same component the Nutrition tab root
@@ -768,16 +786,50 @@ export default function AuroraHome() {
           its own name, streak and unread count. This screen passes only the
           one thing that is TODAY'S: the hub the drawer switches in place.
           Mirrors web home/today.tsx. */}
-      <AppHeader hub={{ value: tab, onChange: selectTab }} />
+      <AppHeader hub={{ value: tab, onChange: selectTab }} ground={ground} />
 
       {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the
           profile row and above the calendar. Today is the athlete's home, and
           these three are what a home holds: the day's plan, the numbers behind
           it, and the people around it. Registry shared with web
           (@hybrid/core today-tabs.ts). */}
-      <TodayTabs value={tab} onChange={selectTab} />
+      <TodayTabs value={tab} onChange={selectTab} ground={ground} />
     </>
   );
+
+  // THE WHOLE TOP OF THE SCREEN, as one slot: the app row, the pills and the
+  // masthead. Dashboard hands it to the day field, which draws it on the day's
+  // colour; Performance and Feed render the same components on the page. The
+  // masthead is still the shared component with its own numbers — this only
+  // tells it which ground it is standing on.
+  const topChrome = (ground?: string) => (
+    <>
+      {hubHeader(ground)}
+      {/* THE MASTHEAD — the SHARED hub head (aurora/hub-masthead.tsx), the same
+          component Performance and Feed render, so the three tabs of one hub
+          cannot present three different heads. Everything measurable about it
+          lives in @hybrid/core hub-masthead.ts; this screen passes only WORDS.
+          The headline NAMES THE VIEWED DAY (masthead() in @hybrid/core):
+          "Today" until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1,
+          the weekday name beyond — a static "Today" over Friday's session would
+          lie in the largest type on screen. */}
+      <HubMasthead eyebrow={mastCaption} meta={mastTag} metaTone="accent" title={mastTitle} ground={ground} />
+    </>
+  );
+
+  // Whether there is a reading to draw a field FROM. Without one the chrome
+  // still has to render, on the page, exactly as the other two tabs draw it —
+  // a fabricated score under a full-bleed field of colour is a loud way to be
+  // wrong (see the `none` rung in day-band.ts).
+  const fieldOn = !initialLoad && isAthlete && hasData && readyVerdict.kind !== "empty" && band.rung !== "none";
+  // THE GROUND, only when the field is FILLED. A quiet field is a 16% wash on
+  // near-black, where the chrome's own tones are already the legible ones —
+  // handing those rows a hue to measure against would swap them for no reason.
+  const fieldGround = fieldOn && band.fill ? roleColor(C, band.fill) : undefined;
+  // The BAR's colour, and it is solid whatever the rung — the field dilutes the
+  // hue on a reporting day, the bar never does (day-fold.ts says why).
+  const dayHue = bandHue(band);
+  const barHue = dayHue ? accentColor(C, dayHue) : null;
 
   // ── THE OTHER TWO TABS ────────────────────────────────────────────────────
   // Each is the SAME screen its own route renders, handed the hub chrome
@@ -793,9 +845,9 @@ export default function AuroraHome() {
   // into a floating row of glass pills that hung over all three views (see the
   // retired today-hub-floating-pills capability); nothing persists at the top
   // edge now, so the whole viewport below the status bar is the view you chose.
-  if (tab === "performance") return <AuroraPerformance top={hubHeader} />;
+  if (tab === "performance") return <AuroraPerformance top={hubHeader()} />;
 
-  if (tab === "feed") return <FeedView top={hubHeader} />;
+  if (tab === "feed") return <FeedView top={hubHeader()} />;
 
   return (
     // Inset PADDING, not a SafeAreaView: this shell remounts in full view when
@@ -826,10 +878,14 @@ export default function AuroraHome() {
         // from AuroraScreen).
         contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: auroraScrollClearance(insets.bottom) }}
         {...navScroll}
+        // The nav pill's collapse and the day's fold read the SAME offset —
+        // composed here rather than given two listeners, which is how two
+        // signals off one scroller end up at two different rates.
+        onScroll={(e) => { navScroll.onScroll?.(e); onFoldScroll(e); }}
+        scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={load} tintColor={C.lime} />}
       >
         <Animated.View style={enterStyle}>
-        {hubHeader}
 
         {/* Coming BACK from Performance/Feed, the dashboard body dissolves in
             under the still chrome — the same hub move those tabs play
@@ -849,12 +905,6 @@ export default function AuroraHome() {
             would lie in the largest type on screen. Off today, the scrub
             distance rides the caption line as the mono tag; the rail's today
             chip is the way back. Mirrors web today.tsx. */}
-        <HubMasthead
-          eyebrow={mastCaption}
-          meta={mastTag}
-          metaTone="accent"
-          title={mastTitle}
-        />
 
         {/* ═════ THE DAY OBJECT — the readiness ring, and it sits HERE ═════
             Above the first cluster and below the head, in its own right,
@@ -885,10 +935,16 @@ export default function AuroraHome() {
             the plan card's own comment gives: a bare onboarding macrocycle must
             never surface a fabricated readiness score, and an empty log has
             nothing to subtract from. ═════ */}
-        {!initialLoad && isAthlete && hasData && readyVerdict.kind !== "empty" && (
+        {/* THE FIELD, or the bare chrome when there is no reading to draw. The
+            hub row, the pills and the masthead are the SAME components either
+            way — they simply learn which ground they are on — so Dashboard and
+            the other two hub tabs still present one head rather than three. */}
+        {fieldOn ? (
           <View style={{ marginBottom: 16 }}>
             <AuroraDayBand
               band={band}
+              fold={fold}
+              top={topChrome(fieldGround)}
               onExplain={() => setDayOpen(true)}
               // TWO CORRECTIONS BEHIND ONE WORD, and they have to be told
               // apart. On the PROTECT rung the athlete is answering about
@@ -914,7 +970,7 @@ export default function AuroraHome() {
               }
             />
           </View>
-        )}
+        ) : topChrome()}
 
         {/* ═════ GROUP: TRAIN — the day's work. The scheduled session (or the
             path to one) and, below it, what was actually done. First of the
@@ -1380,6 +1436,14 @@ export default function AuroraHome() {
         </Animated.View>
       </ScrollView>
       </View>
+
+      {/* THE DAY BAR — outside the scroller and over it, because it is the head
+          the field hands over to rather than a row inside the content. It draws
+          nothing until the latch says so, and it takes the day's colour from
+          the same `bandHue` the field does. */}
+      {fieldOn && barHue ? (
+        <AuroraDayBar hue={barHue} folded={folded} hub={{ value: tab, onChange: selectTab }} />
+      ) : null}
 
       {/* QUICK LOG sheet — the sport-log carousel, opened from the glance strip. */}
       <Sheet visible={quickOpen} onClose={() => { setQuickOpen(false); setQuickDay(null); }} title={t("w.home.quickSport.title")} sub={t("w.home.quickSport.sub")}>

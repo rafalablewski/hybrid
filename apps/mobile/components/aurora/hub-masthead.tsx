@@ -1,6 +1,10 @@
 import { type ReactNode } from "react";
 import { Animated, Text, View } from "react-native";
-import { HUB_MASTHEAD, HUB_MASTHEAD_HEIGHT, hubTitleType, type HubMetaTone } from "@hybrid/core";
+import { HUB_MASTHEAD, HUB_MASTHEAD_HEIGHT, hubTitleType, inkOn, type HubMetaTone } from "@hybrid/core";
+
+/** The held-back tone on a coloured ground — the same 0.78 the day field uses
+ *  for its own second line, so the two hold their hierarchy identically. */
+const HUB_MASTHEAD_SOFT = 0.78;
 import { useNavScroll } from "../../lib/nav-scroll";
 import { useTheme, txt } from "../../lib/theme";
 import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
@@ -34,15 +38,24 @@ export function HubMasthead({
   /** Rendered inline after the title. Decorative only — anything with
    *  meaning belongs in a slot of its own. */
   mark,
+  /** The coloured ground the head is sitting on, when Today's day field is
+   *  carrying it. Same contract as AppHeader's and the hub pills': the GROUND,
+   *  never the ink. Absent, the head draws on the page as it always has, which
+   *  is what Performance and Feed still do. */
+  ground,
 }: {
   eyebrow?: string | null;
   meta?: string | null;
   metaTone?: HubMetaTone;
   title: string;
   mark?: ReactNode;
+  ground?: string;
 }) {
   const { palette: C } = useTheme();
   const type = hubTitleType(title);
+  // MEASURED, never chosen — and the meta's own tone gives way to it, because
+  // an amber "3 DAYS AGO" on an amber field is a line nobody can read.
+  const ink = ground ? inkOn(ground, [C.ink, C.chalk]) : null;
 
   // THE COLLAPSE, for all three tabs. Every hub view already publishes its
   // offset to this signal to collapse the floating nav (the dashboard's own
@@ -56,7 +69,7 @@ export function HubMasthead({
     : 1;
   const metaFade = collapse ? collapse.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) : 1;
 
-  const metaColor = metaTone === "accent" ? txt(C, C.amber) : metaTone === "fresh" ? txt(C, C.lime) : C.ash;
+  const metaColor = ink ?? (metaTone === "accent" ? txt(C, C.amber) : metaTone === "fresh" ? txt(C, C.lime) : C.ash);
   const metaType = {
     fontFamily: F.mono,
     fontSize: HUB_MASTHEAD.meta.size,
@@ -82,11 +95,11 @@ export function HubMasthead({
       >
         {/* The LEFT slot truncates and the right one never does: a clipped
             season is readable, a clipped phase is not. */}
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={[metaType, { flexShrink: 1, color: C.ash }]}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={[metaType, { flexShrink: 1, color: ink ?? C.ash, opacity: ink ? HUB_MASTHEAD_SOFT : 1 }]}>
           {eyebrow ?? ""}
         </Text>
         {meta ? (
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={[metaType, { color: metaColor }]}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={[metaType, { color: metaColor, opacity: ink && metaTone === "plain" ? HUB_MASTHEAD_SOFT : 1 }]}>
             {meta}
           </Text>
         ) : null}
@@ -123,7 +136,7 @@ export function HubMasthead({
             fontSize: type.size,
             lineHeight: type.lineHeight,
             letterSpacing: type.tracking,
-            color: C.chalk,
+            color: ink ?? C.chalk,
           }}
         >
           {title}
