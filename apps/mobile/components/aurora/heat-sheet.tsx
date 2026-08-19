@@ -7,7 +7,6 @@ import {
   HEAT_TEMP_BOUNDS,
   heatAlreadyLogged,
   heatIntensity,
-  heatSittings,
   fmtTemp,
   leading,
   space,
@@ -19,10 +18,10 @@ import { useLang } from "../../lib/i18n";
 import { fs, F, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { haptic } from "../../lib/haptics";
-import { deleteHeat, logHeat } from "../../lib/api";
+import { logHeat } from "../../lib/api";
 import { useHeatSignalsQuery } from "../../lib/queries";
 import Sheet from "./sheet";
-import { ADrawer, APill, ASegment, AScrubField } from "./kit";
+import { APill, ASegment, AScrubField } from "./kit";
 import { AuroraIcon } from "./icons";
 import { RollingNumber } from "./rolling-number";
 import { NativeDateField, LIQUID_GLASS_SUPPORTED } from "./swiftui";
@@ -67,10 +66,23 @@ import { NativeDateField, LIQUID_GLASS_SUPPORTED } from "./swiftui";
  * before this guard a second press wrote a second sitting an hour off the
  * first, which `heatAdjustment` sums inside one 48 h window and
  * `heatWeeklyFrequency` counts as two. The check is `heatAlreadyLogged` and it
- * WARNS rather than blocks: it names the sitting already on the record, opens
- * the recent list so it can be deleted, and lets a second press through — an
- * athlete who really did sit twice before supper is not wrong, and this sheet
- * does not get to tell them they are.
+ * WARNS rather than blocks: it names the sitting already on the record — the
+ * day, the minutes and the temperature, so it can be recognised rather than
+ * guessed at — and lets a second press through. An athlete who really did sit
+ * twice before supper is not wrong, and this sheet does not get to tell them
+ * they are.
+ *
+ * THERE IS NO HISTORY IN HERE, and there was, for exactly as long as this was
+ * the only surface that had ever heard of a sitting. RECENT listed the last
+ * three and carried the delete. Both jobs moved the day the sauna joined the
+ * day's log (aurora/heat-accent.tsx): the READING belongs on Today's done
+ * floor, where it sits under the session it followed and in the day it
+ * happened — which is more than a three-row list behind an expander ever said
+ * — and the DELETE belongs on that row, behind the same swipe that removes a
+ * session, because the place you notice a wrong entry is the place you are
+ * reading it. A log sheet that also lists the log is two screens wearing one
+ * title, and the expander was the tell: a surface you have to open to see is
+ * not the surface anyone checks.
  *
  * TEMPERATURE IS NOT DECORATION. Twenty minutes at 90 °C and twenty minutes in
  * a 55 °C infrared cabin are not the same stimulus, so minutes are converted to
@@ -121,7 +133,6 @@ export function HeatSheet({
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   const [msg, setMsg] = useState("");
-  const [showRecent, setShowRecent] = useState(false);
   // The sitting already on the record that this save would duplicate, once the
   // athlete has been told about it. Set by the first press, cleared whenever
   // `when` moves — a different time is a different sitting, and a warning that
@@ -140,29 +151,14 @@ export function HeatSheet({
     if (!visible) return;
     setWhen(initialAt ?? new Date());
     setPickWhen(!!initialAt);
-    setShowRecent(false);
     setDupe(null);
     setFailed(false);
     setMsg("");
   }, [visible, initialAt]);
 
+  // Read ONLY for the duplicate guard now — the rows themselves are read on
+  // Today's done floor, which is where they happened.
   const { data: heatRows = [] } = useHeatSignalsQuery();
-  const [removing, setRemoving] = useState<string | null>(null);
-  // The three most recent sittings, so a mis-tap is correctable here rather
-  // than nowhere. More than three would turn a log sheet into a history screen
-  // — and even three do, if they are always on screen, which is why they are
-  // behind an expander now. A bare ＋ with an ash count: it GROWS the sheet in
-  // place, it does not go anywhere (the exit-affordance rule).
-  const recent = useMemo(() => heatSittings(heatRows).slice(0, 3), [heatRows]);
-
-  const remove = async (ids: string[]) => {
-    if (!ids.length) return;
-    setRemoving(ids[0]!);
-    const ok = await deleteHeat(ids);
-    setRemoving(null);
-    if (ok) onLogged?.();
-    else setMsg(t("w.recovery.heat.failed"));
-  };
 
   const intensity = useMemo(() => heatIntensity(tempC, protocol), [tempC, protocol]);
   const equiv = minutes * intensity;
@@ -190,7 +186,6 @@ export function HeatSheet({
       if (clash) {
         haptic.warning();
         setDupe({ ts: clash.ts, minutes: clash.minutes, tempC: clash.tempC });
-        setShowRecent(true);
         return;
       }
     }
@@ -347,8 +342,9 @@ export function HeatSheet({
       {/* ── ALREADY LOGGED? ──────────────────────────────────────────────
           It quotes the sitting rather than warning in the abstract: "you may
           already have logged this" is a hedge, and the athlete cannot check it
-          without leaving. The recent list below is open by the time this
-          appears, so the correction is one row down. */}
+          without leaving. Day, minutes and temperature are all named, so the
+          athlete recognises the entry instead of taking the app's word for it —
+          and the entry itself is on Today, under the session it followed. */}
       {dupe && (
         <Text
           accessibilityLiveRegion="polite"
@@ -369,62 +365,6 @@ export function HeatSheet({
           state={saving ? "saving" : failed ? "error" : "idle"}
         />
       </View>
-
-      {/* ── UNDO A MIS-TAP ───────────────────────────────────────────────
-          Both rows a sitting wrote, removed together. Without this the only
-          way to correct a fat-fingered 90-minute entry would be to log a
-          second one on top of it, and the engine would happily sum them.
-          Behind an expander: it is a correction path, not a third of the
-          resting sheet. */}
-      {recent.length > 0 && (
-        <View style={{ marginTop: space.xl }}>
-          <Pressable
-            onPress={() => setShowRecent((v) => !v)}
-            hitSlop={HIT_SLOP}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: showRecent }}
-            accessibilityLabel={t("w.recovery.heat.recent")}
-            style={{ flexDirection: "row", alignItems: "center", gap: space.sm, alignSelf: "flex-start" }}
-          >
-            <Text style={label}>{t("w.recovery.heat.recent")}</Text>
-            {/* Bare ＋/− in ash, no ring — it grows the sheet in place. */}
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>
-              {showRecent ? "−" : `＋ ${recent.length}`}
-            </Text>
-          </Pressable>
-          <ADrawer open={showRecent}>
-            <View style={{ marginTop: space.sm }}>
-              {recent.map((x) => (
-                <View
-                  key={x.ts}
-                  style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 11, borderBottomWidth: 1, borderBottomColor: C.line }}
-                >
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
-                    {new Date(x.ts).toLocaleDateString(undefined, { weekday: "short", hour: "2-digit", minute: "2-digit" })}
-                  </Text>
-                  <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>
-                    {t(`w.recovery.heat.protocol.${x.protocol}`)}
-                  </Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>
-                    {x.minutes} {t("w.recovery.heat.min")}   {fmtTemp(x.tempC, weightUnit)}
-                  </Text>
-                  <Pressable
-                    onPress={() => remove(x.ids)}
-                    disabled={!x.ids.length || removing === x.ts}
-                    hitSlop={HIT_SLOP}
-                    accessibilityRole="button"
-                    accessibilityLabel={t("w.recovery.heat.remove")}
-                  >
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: txt(C, C.red), opacity: x.ids.length ? 1 : 0.35 }}>
-                      {removing === x.ts ? "…" : "×"}
-                    </Text>
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          </ADrawer>
-        </View>
-      )}
 
       {!!msg && (
         <Text accessibilityLiveRegion="polite" style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.red), marginTop: space.ms, lineHeight: leading(fs.caption) }}>
