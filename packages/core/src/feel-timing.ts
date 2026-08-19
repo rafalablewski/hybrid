@@ -306,6 +306,47 @@ export const MIN_PAIR_GAP_H = 4;
 export const MIN_PAIR_FATIGUE = MIN_STRAIN_FATIGUE;
 export const MIN_PAIR_COST = 0.2;
 
+/**
+ * THE BAND CANNOT BE NARROWER THAN THE SCALE IT READS.
+ *
+ * The athlete answers on a five-point scale, so one step is 0.25 of the raw
+ * range — and the reads that matter arrive hours later, where the residual has
+ * shrunk. Dividing a fixed 0.25 by a small residual is what makes the reachable
+ * RATIOS spread out: at a fourteen-hour gap, adjacent answers land about 0.8
+ * apart, against a band CLEARANCE_FAST…CLEARANCE_SLOW only 0.30 wide. The band
+ * then sits in a GAP between two buttons, and no answer the athlete is able to
+ * give reads as on-track.
+ *
+ * That is not a rare corner. Across the immediate answers and gaps this app
+ * actually collects, most combinations have no on-track answer available at
+ * all, and the readiness picker's four levels make it worse than the five-point
+ * row on the finish screen. The athlete cannot report normal recovery, because
+ * normal recovery is not one of the buttons — so an ordinary recoverer is
+ * pushed onto "fast" or "slow" by rounding rather than by physiology.
+ *
+ * So the band widens to half a step whenever half a step is wider, which is
+ * exactly the condition for "the nearest reachable answer to on-curve reads as
+ * on-curve". Where the scale is fine enough to resolve the original ±15% — short
+ * gaps, a costly session — nothing changes and the floor still governs.
+ *
+ * WHAT THIS DOES NOT FIX, stated because the number is easy to misread: the
+ * band is the LABEL. `recoveryIndex` averages the ratios themselves and
+ * `clearanceFactor` reads that mean, so neither moves by a hair here. Rounding
+ * a between-buttons answer up still biases the ratio, and that bias reaches
+ * prescribed volume. Widening the band is the honest half of the fix — it stops
+ * the app calling normal recovery abnormal — not the whole of it.
+ */
+/** One level on the 1–5 answer scale, in raw (0…1) terms. */
+export const SCALE_STEP = 0.25;
+
+/** The narrowest the on-track band may be — the original ±15% corridor. */
+export const BAND_HALF_FLOOR = (CLEARANCE_SLOW - CLEARANCE_FAST) / 2;
+
+export function clearanceBandHalf(immediateCost: number, laterHoursAfter: number): number {
+  const step = SCALE_STEP / (expectedResidual(laterHoursAfter) * immediateCost);
+  return Math.max(BAND_HALF_FLOOR, step / 2);
+}
+
 export interface RecoveryCurve {
   /** later.cost ÷ immediate.cost. 1 means "exactly as the curve predicts". */
   ratio: number;
@@ -314,6 +355,13 @@ export interface RecoveryCurve {
   gapH: number;
   /** 0…1 — the pair's influence, the lesser of the two reports' weights. */
   weight: number;
+  /**
+   * How far from 1 the ratio had to be for this pair to read fast or slow —
+   * `clearanceBandHalf` at this pair's lag and cost. Carried so a surface can
+   * say how much resolution the pair actually had, rather than implying the
+   * ±15% corridor applied when it didn't.
+   */
+  bandHalf: number;
 }
 
 /**
@@ -329,11 +377,13 @@ export function recoveryCurve(immediate: FeelReading | null, later: FeelReading 
   if (immediate.fatigue < MIN_PAIR_FATIGUE || immediate.cost < MIN_PAIR_COST) return null;
 
   const ratio = Math.round((later.cost / immediate.cost) * 1000) / 1000;
+  const bandHalf = Math.round(clearanceBandHalf(immediate.cost, later.hoursAfter) * 1000) / 1000;
   return {
     ratio,
-    clearance: ratio < CLEARANCE_FAST ? "fast" : ratio > CLEARANCE_SLOW ? "slow" : "onTrack",
+    clearance: ratio < 1 - bandHalf ? "fast" : ratio > 1 + bandHalf ? "slow" : "onTrack",
     gapH,
     weight: Math.min(immediate.weight, later.weight),
+    bandHalf,
   };
 }
 

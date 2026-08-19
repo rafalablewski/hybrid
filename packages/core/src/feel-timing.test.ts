@@ -12,6 +12,12 @@ import {
   hoursSince,
   RESIDUAL_FLOOR,
   MAX_COST,
+  recoveryCurve,
+  clearanceBandHalf,
+  SCALE_STEP,
+  BAND_HALF_FLOOR,
+  CLEARANCE_FAST,
+  CLEARANCE_SLOW,
 } from "./feel-timing";
 
 describe("how long after the session the feel was logged", () => {
@@ -199,5 +205,79 @@ describe("reading today's check-in against the last session", () => {
 
   it("ignores a session stamped in the future", () => {
     expect(hoursSince(new Date(NOW + 3_600_000).toISOString(), NOW)).toBeNull();
+  });
+});
+
+describe("the on-track band against the scale it reads", () => {
+  /** The spentness the curve wants at `gap` hours, given an immediate answer.
+   *  Unrounded — the value the athlete would tap if the buttons were continuous. */
+  const onCurveSpent = (immF: number, gap: number) => {
+    const imm = feelReading(immF, 0.1)!;
+    return 1 + 4 * imm.cost * expectedResidual(gap + 0.1);
+  };
+
+  it("THE POINT: the nearest answer the athlete CAN tap always reads on-track", () => {
+    // The defect this band exists for. The reachable answers are whole numbers;
+    // the curve's target almost never is. Before the band widened with the
+    // scale, most (immediate, gap) combinations had NO reachable answer inside
+    // the corridor at all — so an ordinary recoverer was pushed onto "fast" or
+    // "slow" by rounding, and the volume ceiling moved on the strength of it.
+    const gaps = [6, 8, 10, 12, 14, 18, 24];
+    for (const immF of [3, 4, 5]) {
+      for (const gap of gaps) {
+        const target = onCurveSpent(immF, gap);
+        // What the athlete would actually tap: the nearest button to the target,
+        // clamped to the scale.
+        const nearest = Math.min(5, Math.max(1, Math.round(target)));
+        const c = recoveryCurve(feelReading(immF, 0.1)!, feelReading(nearest, gap + 0.1)!);
+        expect(c, `immediate ${immF} at gap ${gap}h`).not.toBeNull();
+        expect(c!.clearance, `immediate ${immF} at gap ${gap}h — tapped ${nearest}, curve wanted ${target.toFixed(2)}`).toBe("onTrack");
+      }
+    }
+  });
+
+  it("and a whole step past the nearest answer still reads as a departure", () => {
+    // Widening the band must not swallow the signal: one button beyond the
+    // nearest is a real, resolvable difference and has to keep its verdict.
+    const immF = 4;
+    for (const gap of [8, 12, 14, 18]) {
+      const nearest = Math.round(onCurveSpent(immF, gap));
+      const worse = Math.min(5, nearest + 1);
+      const better = Math.max(1, nearest - 1);
+      const imm = () => feelReading(immF, 0.1)!;
+      expect(recoveryCurve(imm(), feelReading(worse, gap + 0.1)!)!.clearance, `gap ${gap}h, tapped ${worse}`).toBe("slow");
+      expect(recoveryCurve(imm(), feelReading(better, gap + 0.1)!)!.clearance, `gap ${gap}h, tapped ${better}`).toBe("fast");
+    }
+  });
+
+  it("never narrows below the population corridor", () => {
+    expect(BAND_HALF_FLOOR).toBeCloseTo((CLEARANCE_SLOW - CLEARANCE_FAST) / 2, 10);
+    for (const cost of [0.2, 0.5, 1, 1.5]) {
+      for (const h of [0, 1, 6, 12, 24, 48]) {
+        expect(clearanceBandHalf(cost, h)).toBeGreaterThanOrEqual(BAND_HALF_FLOOR);
+      }
+    }
+  });
+
+  it("keeps the original ±15% where the scale can actually resolve it", () => {
+    // A costly session read back soon after: one button is a small move in
+    // ratio terms, so the floor governs and nothing about the band changed.
+    expect(clearanceBandHalf(1.5, 0)).toBe(BAND_HALF_FLOOR);
+    expect(SCALE_STEP / (expectedResidual(0) * 1.5) / 2).toBeLessThan(BAND_HALF_FLOOR);
+  });
+
+  it("widens as the residual drains, because the reachable ratios spread out", () => {
+    // Same session, later read: dividing a fixed 0.25 by a shrinking residual
+    // is what pushes adjacent answers apart, so the band has to follow.
+    const at = (h: number) => clearanceBandHalf(0.75, h);
+    expect(at(24)).toBeGreaterThan(at(12));
+    expect(at(12)).toBeGreaterThan(at(6));
+  });
+
+  it("reports the band it actually used, so no surface implies false precision", () => {
+    const wide = recoveryCurve(feelReading(3, 0.5)!, feelReading(2, 20)!)!;
+    expect(wide.bandHalf).toBeGreaterThan(BAND_HALF_FLOOR);
+    const tight = recoveryCurve(feelReading(5, 0.1)!, feelReading(4, 6)!)!;
+    expect(tight.bandHalf).toBeLessThan(wide.bandHalf);
   });
 });
