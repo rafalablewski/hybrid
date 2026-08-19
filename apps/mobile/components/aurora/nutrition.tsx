@@ -3033,8 +3033,16 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
         {screenHead(src?.name ?? t("w.recovery.nutrition.verified"), () => setView(pageBack), {
           icon: "back",
+          // The same control the recipe pages put in this slot, down to the
+          // mark: a flat ash glyph in a bare box was the last share on this tab
+          // that answered the thumb with nothing, on the one page whose whole
+          // job is to be worth passing on.
           right: (
-            <Pressable
+            <HeroAction
+              glyph={SHARE_MARK.glyph}
+              fallbackGlyph={SHARE_MARK.fallback}
+              onDark={false}
+              label={`${t("w.recovery.nutrition.shareLink")} – ${f.name}`}
               onPress={() => {
                 // The https form, not hybrid:// — a link is only worth sharing
                 // if it opens for someone who hasn't installed the app. The
@@ -3043,13 +3051,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 // fallback rather than a dead scheme.
                 Share.share({ message: `https://hybrid.app/app?s=nutrition&food=${f.id}` }).catch(() => {});
               }}
-              accessibilityRole="button"
-              accessibilityLabel={t("w.recovery.nutrition.shareLink")}
-              hitSlop={8}
-              style={{ width: 40, height: 40, alignItems: "center", justifyContent: "center" }}
-            >
-              <AuroraIcon name="share" size={17} color={C.ash} />
-            </Pressable>
+            />
           ),
         })}
 
