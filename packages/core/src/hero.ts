@@ -61,6 +61,14 @@ import type { AuroraIconName } from "./theme/icons";
  *             thing with an accent and a mark: a goal, a plan, a recipe, an
  *             exercise, a workout. Full-bleed, fixed-dark, accent wash + emblem.
  *
+ * THE SPORT PAGE KEEPS ITS COVER. That is a product decision, taken on review
+ * of the alternative rendered side by side, and it is recorded here so it is
+ * not reopened as an efficiency: demoting the one `cover` to `title` would tidy
+ * the taxonomy and cost the app the only place a sport is a SUBJECT rather than
+ * a row. The drawn mark is the single thing that tells 65 otherwise-identical
+ * sport pages apart before the title is read, and a 132pt title hero has
+ * nowhere to put it. The rank is not on trial; its adoption is.
+ *
  * `cover` HAS EXACTLY ONE CALLER, and that is a standing debt rather than a
  * settled design. The list above names five kinds of page it was built for — a
  * goal, a plan, a recipe, an exercise, a workout — and the mobile app ships
@@ -75,7 +83,8 @@ import type { AuroraIconName } from "./theme/icons";
  *
  * WHY IT IS WRITTEN DOWN RATHER THAN FIXED HERE: the missing piece is a mark
  * set, which is a drawing commission, not a refactor. Until one exists the
- * honest position is that the rank is CORRECT and UNDER-ADOPTED.
+ * honest position is that the rank is CORRECT and UNDER-ADOPTED — and the fix
+ * runs one way only. More callers, never fewer.
  *
  * THE COST OF LEAVING IT, so nobody has to rediscover it: a rank with one
  * caller has a test surface of one. Nothing else in the app exercises cover
