@@ -37,9 +37,17 @@ export function StreakMark({
   /** Close whatever the mark is inside before it leaves — a sheet, chiefly.
    *  The only thing a caller may say about the tap. */
   onDismiss,
+  /** THE ONE THING A COLOURED GROUND MAY SAY. The mark is Muskmelon on the
+   *  app's own near-black, and that is still the default — but the day field
+   *  and the day bar (aurora/day-bar.tsx) draw it on a fill that can BE
+   *  Muskmelon, where a red flame on red is a mark nobody can see. A caller
+   *  that owns a coloured ground passes the ink it already measured for that
+   *  ground; it may not pass anything else. */
+  ink,
 }: {
   rung?: StreakRung;
   onDismiss?: () => void;
+  ink?: string;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
@@ -49,7 +57,7 @@ export function StreakMark({
   if (days <= 0) return null;
 
   const type = STREAK_MARK[rung];
-  const tone = txt(C, C.red);
+  const tone = ink ?? txt(C, C.red);
   const markType = {
     fontFamily: F.mono,
     fontSize: type.size,
