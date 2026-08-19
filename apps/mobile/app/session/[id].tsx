@@ -10,7 +10,6 @@ import {
   prsForSession,
   e1rmSeries,
   e1rmPointReading,
-  volumeByMuscle,
   conditioningSummary,
   cardioSummary,
   supersetLabels,
@@ -34,7 +33,6 @@ import {
   mmss,
   sessionCelebration,
   statCountUp,
-  type LoggedSession,
   type PrHit,
   type CardioPrHit,
   type E1rmPoint,
@@ -176,8 +174,6 @@ export default function SessionDetail() {
         />
       )}
 
-      <MuscleFocus blocks={session.blocks} bodyweightKg={bwHere} t={t} />
-
       <View style={{ marginTop: 16 }}>
         {/* The breakdown reads the session as the DEVICE measured it — the typed
             figures live on the summary's comparison panel and nowhere else. */}
@@ -280,41 +276,6 @@ const prLine = (p: PrHit, t: (k: string) => string, units: WeightUnit = "kg") =>
 // otherwise) — one shared core formatter, see formatCardioPr.
 const cardioPrLineDetail = (p: CardioPrHit, t: (k: string) => string) =>
   formatCardioPr(p, t("summary.firstTime"));
-
-const MUSCLE_LABEL: Record<string, string> = {
-  quads: "Quads",
-  glutes: "Glutes",
-  posterior: "Posterior chain",
-  back: "Back",
-  chest: "Chest",
-  shoulders: "Shoulders",
-  triceps: "Triceps",
-};
-
-function MuscleFocus({ blocks, bodyweightKg, t }: { blocks: LoggedSession["blocks"]; bodyweightKg?: number | null; t: (k: string) => string }) {
-  const C = useTheme().palette;
-  const vol = volumeByMuscle(blocks, false, bodyweightKg);
-  if (vol.length === 0) return null;
-  const max = vol[0]!.volume || 1;
-  return (
-    <ACard style={[cardStack, { marginTop: 16 }]}>
-      <Kicker>{t("session.muscleFocus")}</Kicker>
-      <View style={{ marginTop: 10, gap: space.sm }}>
-        {vol.map((m) => (
-          <View key={m.muscle}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-              <Mono color={C.chalk}>{MUSCLE_LABEL[m.muscle] ?? m.muscle}</Mono>
-              <Mono color={C.ash}>{m.volume.toLocaleString()} kg</Mono>
-            </View>
-            <View style={{ height: 8, borderRadius: 4, backgroundColor: C.ink2, overflow: "hidden" }}>
-              <View style={{ width: `${Math.max(6, (m.volume / max) * 100)}%`, height: 8, borderRadius: 4, backgroundColor: C.lime }} />
-            </View>
-          </View>
-        ))}
-      </View>
-    </ACard>
-  );
-}
 
 /** A trend point's date, as the strip prints it. */
 const fmtPointDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");

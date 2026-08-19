@@ -18,6 +18,9 @@ import {
   loadBaseline,
   doneReceipt,
   sessionCelebration,
+  sessionMuscleMap,
+  muscleBaseline,
+  muscleCoverage,
   springs,
   springToRN,
   isFullAccess,
@@ -66,6 +69,7 @@ import { AuroraIcon } from "./aurora/icons";
 import { HeroEyebrow, HeroNav } from "./aurora/hero";
 import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
+import SessionBody from "./aurora/session-body";
 import { HeatSheet } from "./aurora/heat-sheet";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
@@ -221,6 +225,20 @@ export function WorkoutWrapped({
     () => loadBaseline(feelSamples(all, bw), { excludeId: session.id }),
     [all, bw, session.id],
   );
+  // WHERE THE WORK LANDED — the session's own muscle map, each row measured
+  // against that muscle's 28-day norm from the sessions BEFORE this one (a
+  // session cannot be part of its own baseline). Memoised together: the
+  // baseline walks a month of sessions and coverage walks two, and both re-run
+  // the whole map per session.
+  const muscleRead = useMemo(() => {
+    const prior = all.filter((s) => s.id !== session.id);
+    const now = new Date(session.startedAt);
+    const baseline = muscleBaseline(prior, { bw, now });
+    return {
+      map: sessionMuscleMap(view, { bw, baseline }),
+      coverage: muscleCoverage(prior, { bw, now }),
+    };
+  }, [all, bw, session.id, session.startedAt, view]);
   const prs = prsForSession(all, session.id, bw);
   const cardioPrs = cardioPrsForSession(all, session.id);
   const cel = sessionCelebration(prs, cardioPrs);
@@ -375,9 +393,12 @@ export function WorkoutWrapped({
   };
 
   // Which panels exist (dots + snap offsets), details rides after them.
-  const keys: ("reveal" | "hero" | "feel" | "premium" | "device" | "signature")[] = [
+  const keys: ("reveal" | "hero" | "body" | "feel" | "premium" | "device" | "signature")[] = [
     ...(cel ? ["reveal" as const] : []),
     "hero" as const,
+    // A session with no mapped lifting (a run, a match, an all-custom day) has
+    // no body to light, so the panel is absent rather than dark.
+    ...(muscleRead.map.muscles.length ? ["body" as const] : []),
     "feel" as const,
     ...(wrapped.facts.length ? ["premium" as const] : []),
     ...(device || showDeviceAd ? ["device" as const] : []),
@@ -481,6 +502,17 @@ export function WorkoutWrapped({
           ) : null}
           {scrollHint}
         </Panel>
+
+        {/* ── WHERE THE WORK LANDED ── */}
+        {/* The body, lit by this session's own share of effort. It follows the
+            hero because the hero says HOW MUCH and this says WHERE — and it is
+            the one panel nobody else's summary can produce. */}
+        {muscleRead.map.muscles.length > 0 && (
+          <Panel glows={<Glow size={panelH * 0.55} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.18} left={-80} />}>
+            {eyebrow(t("session.body.title"))}
+            <SessionBody map={muscleRead.map} coverage={muscleRead.coverage} units={units} />
+          </Panel>
+        )}
 
         {/* ── HOW DID THAT FEEL? ── */}
         {/* The immediate read, for a session opened later that was never rated.
