@@ -8,6 +8,10 @@ import {
   IMMEDIATE_WINDOW_H,
   RECOVERY_DUE_H,
   RECOVERY_WINDOW_H,
+  recoveryReminderAt,
+  clampToWaking,
+  WAKING_FROM_H,
+  WAKING_TO_H,
   type FeelSessionRef,
 } from "./feel-schedule";
 
@@ -163,5 +167,95 @@ describe("nothing to ask about", () => {
   it("a session in the future is not asked about yet", () => {
     const s = feelSchedule({ sessions: [session({ startedAt: iso(-H), completedAt: iso(-H) })], now: NOW });
     expect(s.prompts).toEqual([]);
+  });
+});
+
+describe("when to fire the recovery reminder", () => {
+  const H_MS = 3_600_000;
+  /** A local-time instant, built so these tests hold in any timezone. */
+  const localAt = (dayOffset: number, hour: number, min = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + dayOffset);
+    d.setHours(hour, min, 0, 0);
+    return d.getTime();
+  };
+
+  it("fires six hours after a session that ends in the morning", () => {
+    const end = localAt(0, 9);
+    const at = recoveryReminderAt(end, end + 60_000);
+    expect(at).not.toBeNull();
+    expect(at! - end).toBe(RECOVERY_DUE_H * H_MS);
+    expect(new Date(at!).getHours()).toBe(15);
+  });
+
+  it("THE POINT: never in the middle of the night", () => {
+    // Six hours after a 21:00 session is 03:00. Sending then does not get a
+    // considered answer, it gets the notification permission revoked — and the
+    // read stays useful for 36 h, so the morning costs the model almost nothing.
+    const end = localAt(0, 21);
+    const at = recoveryReminderAt(end, end + 60_000)!;
+    const h = new Date(at).getHours();
+    expect(h).toBeGreaterThanOrEqual(WAKING_FROM_H);
+    expect(h).toBeLessThan(WAKING_TO_H);
+    expect(at).toBeGreaterThan(end + RECOVERY_DUE_H * H_MS);
+    // …and still well inside the window the answer is a measurement in.
+    expect(at - end).toBeLessThan(RECOVERY_WINDOW_H * H_MS);
+  });
+
+  it("holds every clamped time inside waking hours, whatever hour you train", () => {
+    for (let hour = 0; hour < 24; hour++) {
+      const end = localAt(0, hour);
+      const at = recoveryReminderAt(end, end + 60_000);
+      if (at == null) continue;
+      const h = new Date(at).getHours();
+      expect(h, `session ending at ${hour}:00`).toBeGreaterThanOrEqual(WAKING_FROM_H);
+      expect(h, `session ending at ${hour}:00`).toBeLessThan(WAKING_TO_H);
+      expect(at, `session ending at ${hour}:00`).toBeGreaterThanOrEqual(end + RECOVERY_DUE_H * H_MS);
+    }
+  });
+
+  it("does not schedule a reminder for a moment already past", () => {
+    // The athlete is holding the phone and the read is already due — that is
+    // the card's job, not a notification's.
+    const end = localAt(-1, 10);
+    expect(recoveryReminderAt(end, Date.now())).toBeNull();
+  });
+
+  it("does not schedule one for a session whose window has closed", () => {
+    const end = localAt(-3, 10);
+    expect(recoveryReminderAt(end, Date.now())).toBeNull();
+  });
+
+  it("refuses an unparseable or missing session end", () => {
+    expect(recoveryReminderAt(null)).toBeNull();
+    expect(recoveryReminderAt(undefined)).toBeNull();
+    expect(recoveryReminderAt("not a date")).toBeNull();
+  });
+
+  it("accepts an ISO string as readily as an epoch", () => {
+    const end = localAt(0, 9);
+    expect(recoveryReminderAt(new Date(end).toISOString(), end + 60_000)).toBe(
+      recoveryReminderAt(end, end + 60_000),
+    );
+  });
+
+  it("leaves an hour already inside the window alone", () => {
+    const noon = localAt(0, 12);
+    expect(clampToWaking(noon)).toBe(noon);
+  });
+
+  it("moves a late-evening hour to the NEXT morning, not the same one", () => {
+    const late = localAt(0, 23, 30);
+    const moved = clampToWaking(late);
+    expect(moved).toBeGreaterThan(late);
+    expect(new Date(moved).getHours()).toBe(WAKING_FROM_H);
+  });
+
+  it("moves a pre-dawn hour forward to the same morning", () => {
+    const small = localAt(0, 3);
+    const moved = clampToWaking(small);
+    expect(moved).toBeGreaterThan(small);
+    expect(new Date(moved).getDate()).toBe(new Date(small).getDate());
+    expect(new Date(moved).getHours()).toBe(WAKING_FROM_H);
   });
 });

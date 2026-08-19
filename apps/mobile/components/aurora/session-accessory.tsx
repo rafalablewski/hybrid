@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { View, Text } from "react-native";
 import { useRouter, usePathname } from "expo-router";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
@@ -20,6 +20,24 @@ import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
  * copies separate drafts and separate clocks, so they would disagree the moment
  * the bar minimized. The draft and the tick therefore live outside the
  * component and both copies subscribe to them.
+ *
+ * THE CLOCK IS THE STORE'S, not a component's. Driving it from an effect meant
+ * BOTH copies ran their own interval — two timers a second apart, each writing
+ * `now`, each waking every subscriber — for one clock that renders one figure.
+ * It is the draft that decides whether time is being counted, so the store
+ * starts the interval when a draft appears and clears it when one goes
+ * (`syncClock`), and the copies only read. That also means the tick cannot
+ * outlive the session or start twice.
+ *
+ * WHY THE STORE IS ALSO READ BY THE LAYOUT (`useSessionDraft`): rendering null
+ * in here is NOT enough to make the accessory go away. UIKit builds the
+ * accessory — its own glass capsule, its own height above the bar — from the
+ * mere PRESENCE of the `<NativeTabs.BottomAccessory>` slot, so an empty child
+ * left an empty bar hovering over the pills with nothing in it. The slot itself
+ * has to be unmounted, which only the layout can do, so the layout subscribes
+ * to the same draft and mounts the slot only when there is a minimized workout
+ * to show. That also makes the layout the owner of the route-change re-read:
+ * the accessory is gone exactly when a new draft would need to be noticed.
  */
 
 type Snapshot = { draft: Draft | null; now: number };
@@ -34,7 +52,9 @@ function setSnapshot(next: Partial<Snapshot>) {
   // Cheap identity guard: re-emitting an unchanged snapshot would re-render
   // both copies every second even with no draft on screen.
   if (merged.draft === snapshot.draft && merged.now === snapshot.now) return;
+  const draftChanged = merged.draft !== snapshot.draft;
   snapshot = merged;
+  if (draftChanged) syncClock();
   emit();
 }
 function subscribe(fn: () => void) {
@@ -43,6 +63,24 @@ function subscribe(fn: () => void) {
 }
 function getSnapshot() {
   return snapshot;
+}
+// The DRAFT alone, for subscribers that only care whether there is a session —
+// the tab layout, which mounts the accessory slot on it. Handing them the whole
+// snapshot would re-render them on every tick of a clock they never read.
+function getDraft() {
+  return snapshot.draft;
+}
+
+/** One interval, owned by the draft: running while there is one, gone when
+ *  there isn't. Idempotent, so a redundant call cannot start a second. */
+let clock: ReturnType<typeof setInterval> | null = null;
+function syncClock() {
+  const wanted = snapshot.draft != null;
+  if (wanted && clock == null) clock = setInterval(() => setSnapshot({ now: Date.now() }), 1000);
+  else if (!wanted && clock != null) {
+    clearInterval(clock);
+    clock = null;
+  }
 }
 
 /** Re-read the persisted draft. Called on mount and on every route change. */
@@ -55,26 +93,26 @@ export async function refreshSessionAccessory(): Promise<void> {
   if (!same(d, snapshot.draft)) setSnapshot({ draft: d });
 }
 
+/**
+ * The live draft, for the tab layout: it mounts the accessory slot only while
+ * this is non-null. Stays mounted across tab switches and pushes, so it also
+ * carries the re-read on every route change.
+ */
+export function useSessionDraft(): Draft | null {
+  const pathname = usePathname();
+  const draft = useSyncExternalStore(subscribe, getDraft, getDraft);
+  useEffect(() => { void refreshSessionAccessory(); }, [pathname]);
+  return draft;
+}
+
 export default function SessionAccessory() {
   const { palette: C } = useTheme();
   const router = useRouter();
-  const pathname = usePathname();
   const placement = NativeTabs.BottomAccessory.usePlacement();
+  // Read-only: both the draft and the clock are the store's (see the header).
+  // The route-change re-read is useSessionDraft's, for the same reason — this
+  // component is unmounted whenever there is no draft to notice one arriving.
   const { draft, now } = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  const [ticking, setTicking] = useState(false);
-
-  // Re-read whenever the route changes — this component lives in the tab
-  // layout, so it stays mounted across tab switches and pushes.
-  useEffect(() => { void refreshSessionAccessory(); }, [pathname]);
-
-  // One shared clock for both copies, running only while a draft exists.
-  useEffect(() => {
-    setTicking(draft != null);
-    if (!draft) return;
-    const id = setInterval(() => setSnapshot({ now: Date.now() }), 1000);
-    return () => clearInterval(id);
-  }, [draft]);
-  void ticking;
 
   if (!draft) return null;
 

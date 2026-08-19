@@ -78,8 +78,49 @@ const LEDGER: { rule: string; count: number; ceiling: number; by: string }[] = [
  * `by` is an ISO date. Pick it from the shape of the remaining work, not from
  * optimism: a rule with three mechanical sites gets weeks, one that needs a
  * person to look at 160 call sites gets a couple of quarters.
+ *
+ * ── AND A FOURTH ASSERTION: THE COUNT MUST BE CLASSIFIED ──────────────────
+ *
+ * A ratchet's number is only a statement about debt if everything it counts IS
+ * the debt. Both pill rules had learned otherwise the hard way. The lime rule
+ * counted nutrition's progress BAR as a hand-rolled pill for months, because a
+ * bar and a pill are the same two properties; the outline rule uses vertical
+ * padding as a proxy for "is a button", which is a heuristic and will be wrong
+ * somewhere. Where a rule knows it over-counts, that knowledge lived in a
+ * COMMENT — which is to say nowhere the test could act on it, and nowhere that
+ * fails when the exception stops being true.
+ *
+ * So a rule may declare `exempt` matchers, each with a reason. Hits whose
+ * SOURCE LINE matches one are not debt; the ceiling is measured against what is
+ * left. Two things follow, and the second is the one that earns its keep:
+ *
+ *   • the ceiling finally means "sites that should change", not "lines the
+ *     regex found", so a burn-down to zero is actually reachable; and
+ *   • AN EXEMPTION THAT MATCHES NOTHING FAILS THE BUILD. A dead exemption is
+ *     slack of a nastier kind than a loose ceiling: it silences a whole
+ *     CATEGORY that no longer exists, so the next thing to land in that
+ *     category is waved through on the strength of an argument about something
+ *     else. Same reasoning as "a ceiling above its count is a budget" — an
+ *     exception nobody needs is a permission nobody asked for.
  */
-function burnDown(found: string[], ceiling: number, by: string, rule: string) {
+type Exempt = { where: RegExp; why: string };
+
+function burnDown(found: string[], ceiling: number, by: string, rule: string, exempt: Exempt[] = []) {
+  const isExempt = (site: string) => exempt.some((e) => e.where.test(lineAt(site)));
+  const excused = found.filter(isExempt);
+  found = found.filter((site) => !isExempt(site));
+
+  // A dead exemption, before anything else — it is the assertion most likely to
+  // be true after somebody else's sweep, and the least likely to be noticed.
+  for (const e of exempt) {
+    expect(
+      excused.some((site) => e.where.test(lineAt(site))),
+      `\n${rule}\nDEAD EXEMPTION — nothing matches ${e.where}\n  ("${e.why}")\n` +
+        `The thing it excused is gone. Delete the exemption rather than leaving a ` +
+        `standing permission for whatever lands in that shape next.`,
+    ).toBe(true);
+  }
+
   LEDGER.push({ rule, count: found.length, ceiling, by });
   const sites = `\n  ${found.slice(0, 25).join("\n  ")}${found.length > 25 ? `\n  …and ${found.length - 25} more` : ""}`;
 
@@ -470,7 +511,11 @@ describe("geometry", () => {
     // alive by a one-character emoji fix on a screen main had removed.
     // Cross-rule slack is exactly what the anti-slack assertion is for, and a
     // merge is where it accumulates fastest.
-    burnDown(hits(/borderRadius:\s*\d/g), 147, "2027-02-28", "raw borderRadius → RADIUS.*");
+    //
+    // 147 → 146: the nutrition goal sheet's hand-drawn 22dp radio (a `borderRadius:
+    // 11` circle that popped in one frame) went with the option-row convergence —
+    // it is the kit's `AChoice` now, on `ACheckMark`.
+    burnDown(hits(/borderRadius:\s*\d/g), 146, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -806,7 +851,12 @@ describe("loading", () => {
     // and its right-hand slot otherwise holds a word that changes ("Allow" →
     // "3 fetched"), so the spinner sits exactly where the permitted four do:
     // in-flight state inside a control, in a slot that holds its own size.
-    burnDown(hits(/<ActivityIndicator/g), 18, "2026-10-31", "content ActivityIndicator → <Loading />");
+    // 18 → 15 with the filled-CTA sweep. Three of these were not "content
+    // arriving" at all — they were a spinner REPLACING a button's label
+    // (leave-plan, and Settings' erase + delete), which is the resize-under-a-
+    // resting-finger defect APill's `state` owns. Moving those buttons onto
+    // APill deleted the indicator along with the hand-rolled pill.
+    burnDown(hits(/<ActivityIndicator/g), 15, "2026-10-31", "content ActivityIndicator → <Loading />");
   });
 });
 
@@ -856,11 +906,16 @@ describe("colour", () => {
     // 60 → 59: nutrition's `#3a3d34` placeholder ink (1.64:1 — a hint nobody
     // could read) became C.ash when the two placeholder kinds were named apart.
     // 59 → 58: the sheet's scrim `"#000"` became the SCRIM token.
-    // 58 → 56: the hero rail's on-art white became ON_ART when the TRAILING
-    // control (HeroAction, the recipe share button) had to draw the same circle
-    // as the leading one — six literals across the two ends of one rail, which
-    // is the drift this rule exists to catch, collapsed to a single name.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 56, "2026-12-31", "hex literal → a palette token");
+    // 58 → 51 with the filled-CTA sweep: the hand-rolled destructive pills
+    // carried `color: "#fff"` (2.36:1 on Muskmelon — see APill's ink note) and
+    // run-track carried a bespoke "#12170f" for its amber state. APill derives
+    // both from the palette by measurement now, so seven literals went with the
+    // buttons that were hiding them.
+    // …and → 49 on the hero rail: its on-art white became ON_ART when the
+    // TRAILING control (HeroAction, the recipe share button) had to draw the
+    // same circle as the leading one — six literals across the two ends of one
+    // rail, which is the drift this rule exists to catch, collapsed to a name.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 49, "2026-12-31", "hex literal → a palette token");
   });
 });
 
@@ -898,7 +953,13 @@ describe("colour arithmetic", () => {
     // they are no longer a raw number at all. That is exactly the shape this rule
     // wants, and the reason it can keep falling without the remainder moving: what
     // is left really is ramp stops and scrims.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 107,
+    //
+    // 107 → 105. The Records block's two EDGE DISSOLVES — withAlpha(C.ink, 0.0)
+    // at each end of the old rail. They were ramp stops, so the rule was right
+    // to allow them; they were also painting opaque ink over the Aurora field,
+    // which is why the rail went. A ceiling that is not re-pinned after a
+    // deletion is headroom for two new violations nobody agreed to.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 105,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
@@ -1090,7 +1151,166 @@ describe("presentation", () => {
     // because APill takes ONE `label` and that CTA carries a title plus a
     // sub-line; giving it the component means restructuring the copy, which is a
     // different change from a retint.
-    burnDown(found, 36, "2026-12-31", "hand-rolled lime pill → <APill />");
+    // 36 → 35 with the step-rail merge: nutrition's guided setup drew its
+    // progress as a single lime bar at RADIUS.pill with a percentage width, and
+    // this rule counted it as a pill because a bar and a pill are the same two
+    // properties. It is `AStepRail` now, so the site is gone rather than
+    // reclassified — but it is a reminder that the pattern cannot tell a BUTTON
+    // from a lime bar, and the count has always carried a few of the latter.
+    // THE OVER-COUNT IS DECLARED NOW instead of confessed in a comment. This
+    // pattern cannot tell a BUTTON from a lime BAR — the two are the same two
+    // properties — and it counted nutrition's progress bar as a pill for months
+    // before the step-rail merge removed it. The exemption fails the build the
+    // day nothing matches it, so it cannot outlive the shape it excuses.
+    // 35 → 29 with the coverage sweep: seven hand-rolled FILLED CTAs in a
+    // non-lime accent went onto APill, and several of them were lime-adjacent
+    // enough to be counted here.
+    burnDown(found, 29, "2026-12-31", "hand-rolled lime pill → <APill />", [
+      {
+        where: /height:\s*\d+[^\n]*(?:width|flex):|(?:width|flex):[^\n]*height:\s*\d+/,
+        why: "a lime BAR or disc, not a button — a fixed cross-measure with no label",
+
+      },
+    ]);
+  });
+
+  it("RATCHET — bespoke OUTLINE pills give way to APill variant=\"outline\"", () => {
+    // THE RULE ABOVE COULD ONLY SEE HALF THE BUTTONS, and this is that other
+    // half. It matches a lime FILL paired with a pill radius, so a bordered
+    // pill with no fill — the app's secondary CTA, the Skip, the Back, the
+    // "Continue on Free" — never touched it. The convergence number was
+    // therefore never a statement about the button vocabulary; it was a
+    // statement about the filled part of it, and the unfilled part was free to
+    // grow. Same argument as that rule's own re-pin: a number kept low by a
+    // blind spot is worse than an honest larger one.
+    //
+    // WHAT COUNTS AS ONE, and the shape has to be narrow or it degenerates into
+    // "every bordered thing". A pill radius plus a 1px border is also a CHIP, a
+    // BADGE and a meter track, and none of those want APill. The discriminator
+    // is the vertical measure: a CTA pads 12–24 (APill's own is 18), a chip pads
+    // 4–8, a track pads nothing. So: pill radius + 1px border + CTA-sized
+    // paddingVertical, minus anything the filled rule already owns.
+    //
+    // PLUS ONE SHAPE THAT DECLARES NO HEIGHT AT ALL, which is the site that
+    // motivated the whole rule. check-in's Back had paddingHorizontal and
+    // nothing else — no paddingVertical, no height, no minHeight. It LOOKS
+    // right on screen because the APill beside it stretches the row, and it is
+    // invisible to a padding-based pattern for exactly the same reason it is
+    // broken: there is no height to find. Rendered on its own it collapses
+    // under the 44dp touch floor. A pill whose height is a side effect of its
+    // neighbour is a pill that has not been designed, so it is counted here.
+    const PILL_RAD = String.raw`(?:999|RADIUS\.pill)`;
+    const SHAPE = new RegExp(
+      String.raw`borderRadius:\s*${PILL_RAD}[^\n]*borderWidth:\s*1[,\s}]` +
+      String.raw`|borderWidth:\s*1[,\s}][^\n]*borderRadius:\s*${PILL_RAD}`,
+    );
+    const CTA_PAD = /paddingVertical:\s*(1[2-9]|2[0-9])\b|paddingVertical:\s*space\.(lg|xl|xxl)/;
+    const NO_HEIGHT = (l: string) =>
+      /paddingHorizontal:\s*(1[6-9]|2[0-9])\b/.test(l) && !/paddingVertical|height:|minHeight/.test(l);
+    const outlines: string[] = [];
+    for (const { path, text } of FILES) {
+      if (path.endsWith("aurora/kit.tsx")) continue;   // APill itself
+      text.split("\n").forEach((line, i) => {
+        if (!SHAPE.test(line)) return;
+        if (/backgroundColor:\s*(?:C|palette)\.lime/.test(line)) return;  // the filled rule owns it
+        if (CTA_PAD.test(line) || NO_HEIGHT(line)) outlines.push(`${path}:${i + 1}`);
+      });
+    }
+    // FIRST MEASUREMENT 25, and 25 → 23 in the same change: check-in's Back and
+    // Skip are `APill variant="outline"` now, which is where the rule's own
+    // example came from. The date is a year out because the remaining 23 are
+    // spread across nutrition, workout and the pantry, and several carry an
+    // ICON beside the label — APill takes one `label` and no glyph slot, so
+    // those want a component change before a call-site change, not a blind
+    // sweep. See capabilities `outline-pill-convergence`.
+    // 25 → 23 → 17. The second step is the `glyph` slot: APill grew a leading
+    // icon (the prop this rule's own note said the remaining sites were waiting
+    // on), and six icon-bearing outline CTAs converted the same day. The 17 that
+    // remain need no component change — they are label-only outline pills, which
+    // is call-site work plus a device round, not a blocked design.
+    burnDown(outlines, 17, "2027-08-31", "hand-rolled outline pill → <APill variant=\"outline\" />");
+  });
+
+  it("COVERAGE — every tappable pill is accounted for by SOME rule", () => {
+    // ── WHY THIS EXISTS, AND IT IS NOT A THIRD RATCHET ───────────────────────
+    //
+    // The two rules above each count a shape. Neither can tell you what they
+    // MISS, and missing is how both of them actually failed:
+    //
+    //   • the lime rule matches `C.lime` + a pill radius, so an OUTLINE pill was
+    //     invisible to it — the whole secondary CTA vocabulary grew unwatched
+    //     while the filled count was being burned down;
+    //   • both of them together still could not see a hand-rolled FILLED pill in
+    //     any other accent, so seven destructive / premium / amber CTAs sat
+    //     outside every guard. Three carried `color: "#fff"` on Muskmelon —
+    //     2.36:1, under even the 3:1 large-text floor, on "Delete account",
+    //     "Erase everything" and "Leave plan".
+    //
+    // Neither failure was a ratchet breaking. Both were the ratchets being
+    // asked a question they had no way to answer, and the file's own history
+    // shows how it goes: the miss is found by a person reading one screen beside
+    // another, months later, if at all. A count cannot audit its own blind spot.
+    //
+    // So this asserts the PARTITION rather than a number: take every tappable
+    // thing in the tree that draws a pill radius, and require each one to be
+    // claimed — it is APill, or one of the ratchets counts it, or it matches a
+    // declared shape that is deliberately not a CTA. Nothing may be unclaimed.
+    // A new hand-rolled pill in a colour nobody thought of fails HERE, on the
+    // day it lands, naming itself.
+    //
+    // IT IS HARD, NOT RATCHETED, and that is affordable only because the sweep
+    // that came with it took the unclaimed set to zero. A ratcheted coverage
+    // rule would be a budget for more blind spots, which is the one thing this
+    // rule exists to refuse.
+    const PRESSABLE = /<(Pressable|PressScale|TouchableOpacity|AnimatedPressable)\b/;
+    const PILL_R = /borderRadius:\s*(?:999|RADIUS\.pill)/;
+
+    // The shapes that wear a pill radius and are legitimately NOT a CTA. Each is
+    // a CATEGORY with a reason, not a list of sites — a manifest of individual
+    // lines would be churn, and churn gets rubber-stamped.
+    const NOT_A_CTA: { name: string; where: RegExp }[] = [
+      { name: "glyph disc", where: /width:\s*\d+[^\n]*height:\s*\d+|height:\s*\d+[^\n]*width:\s*\d+/ },
+      { name: "chip / badge", where: /paddingVertical:\s*([0-9]|1[01])\b|paddingVertical:\s*space\.(none|xxs|xs|sm|ms)/ },
+      { name: "measured square", where: /\bsize\b\s*,|width:\s*(ROW_LEAD|size)/ },
+    ];
+
+    const RAD = String.raw`(?:999|RADIUS\.(?:pill|inner|field)|1[0-9]\b|2[0-9]\b)`;
+    const LIME_RULE = new RegExp(
+      String.raw`backgroundColor:\s*(?:C|palette)\.lime[^\n]*borderRadius:\s*${RAD}` +
+      String.raw`|borderRadius:\s*${RAD}[^\n]*backgroundColor:\s*(?:C|palette)\.lime`,
+    );
+    const OUTLINE_SHAPE = new RegExp(
+      String.raw`borderRadius:\s*(?:999|RADIUS\.pill)[^\n]*borderWidth:\s*1[,\s}]` +
+      String.raw`|borderWidth:\s*1[,\s}][^\n]*borderRadius:\s*(?:999|RADIUS\.pill)`,
+    );
+    const OUTLINE_PAD = /paddingVertical:\s*(1[2-9]|2[0-9])\b|paddingVertical:\s*space\.(lg|xl|xxl)/;
+    const OUTLINE_NO_HEIGHT = (l: string) =>
+      /paddingHorizontal:\s*(1[6-9]|2[0-9])\b/.test(l) && !/paddingVertical|height:|minHeight/.test(l);
+
+    const unclaimed: string[] = [];
+    for (const { path, text } of FILES) {
+      if (path.endsWith("aurora/kit.tsx")) continue;   // APill's own drawing
+      const lines = text.split("\n");
+      lines.forEach((line, i) => {
+        if (!PRESSABLE.test(line)) return;
+        // A multi-line element keeps its style on the next line or two.
+        const el = lines.slice(i, i + 3).join(" ");
+        if (!PILL_R.test(el)) return;
+        if (LIME_RULE.test(el)) return;                                  // counted above
+        if (OUTLINE_SHAPE.test(el) && (OUTLINE_PAD.test(el) || OUTLINE_NO_HEIGHT(el))) return;  // counted above
+        if (NOT_A_CTA.some((c) => c.where.test(el))) return;             // declared not-a-CTA
+        unclaimed.push(`${path}:${i + 1}`);
+      });
+    }
+
+    expect(
+      unclaimed,
+      "\nUNCLAIMED PILL — a tappable pill-shaped surface that no rule can see.\n" +
+        "Either it is a button (use APill, or widen a ratchet so the debt is counted)\n" +
+        "or it is not (add its SHAPE to NOT_A_CTA with a reason). What it may not be\n" +
+        "is invisible — that is how the outline vocabulary grew unwatched, and how\n" +
+        "three destructive CTAs shipped at 2.36:1.\n  " + unclaimed.join("\n  "),
+    ).toEqual([]);
   });
 
   it("HARD — Today offers 'log a sport' ONCE per surface", () => {

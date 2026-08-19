@@ -308,8 +308,16 @@ describe("ENGINE_FORMULAS", () => {
     expect(mul.expression).toContain("0.35");
     expect(mul.expression).toContain("0.85, 1.12");
     expect(CLEARANCE_FACTOR_BOUNDS).toEqual([0.85, 1.12]);
-    expect(clearanceFactor(recoveryIndex([slow, slow, slow]))).toBeCloseTo(0.85, 3);
-    expect(clearanceFactor(recoveryIndex([fast, fast]))).toBeCloseTo(1.032, 3);
+
+    // THE MULTIPLIER IS DAMPED BY HOW MUCH THE PAIRS COULD RESOLVE, not by how
+    // many there are. Three identical coarse pairs used to slam this into its
+    // 0.85 floor — the strongest statement the engine can make, off three
+    // intervals each about 1.6 wide against a band of 0.30 (feel-timing.ts,
+    // `resolutionOf`). They now move it a fraction of that. The floor is still
+    // reachable, but it has to be earned with enough evidence to justify it.
+    expect(clearanceFactor(recoveryIndex([slow, slow, slow]))).toBeCloseTo(0.916, 3);
+    expect(clearanceFactor(recoveryIndex([fast, fast]))).toBeCloseTo(1.018, 3);
+    expect(clearanceFactor(recoveryIndex(Array.from({ length: 30 }, () => slow)))).toBeCloseTo(0.85, 3);
   });
 
   it("the running standards are the ones that score (drift guard)", () => {

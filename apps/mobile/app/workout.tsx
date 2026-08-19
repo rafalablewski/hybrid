@@ -138,6 +138,7 @@ import { RollingNumber } from "../components/aurora/rolling-number";
 import Sheet from "../components/aurora/sheet";
 import { useConfirm } from "../components/aurora/confirm";
 import { FeelPrompt } from "../components/feel-prompt";
+import { scheduleRecoveryReminder } from "../lib/recovery-reminder";
 import SwipeRow from "../components/swipe-row";
 import HoldDragRow from "../components/hold-drag-row";
 import { useDragReorder } from "../lib/use-drag-reorder";
@@ -300,6 +301,10 @@ type Summ = {
   /** The saved session's id (null for guests / offline) — backs the rename. */
   sessionId: string | null;
   title: string;
+  /** ISO — when the session ended. The finish screen reads the feel prompt's
+   *  lag from this; without it the read classifies as "unknown" and the line
+   *  promising a second ask never renders. */
+  completedAt: string;
   blocks: SessionBlock[];
   volume: number;
   sets: number;
@@ -331,7 +336,7 @@ export default function Workout() {
   const { palette: C, scheme } = useTheme();
   const pa = usePremiumAccent();
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { session, ready } = useSession();
   const revalidate = useRevalidate();
   const guest = !session;
@@ -1130,6 +1135,20 @@ export default function Workout() {
       }
     }
     await clearDraft();
+
+    // The recovery read has a clock, and until now nothing carried it to a
+    // pocketed phone. Schedule it against THIS session's end — six hours out,
+    // moved into waking hours — so the second ask arrives on the day rather
+    // than waiting for a fixed 07:00 nudge with no relation to when you
+    // trained. Guests included: the read is local either way, and a guest who
+    // signs up later keeps the habit. See lib/recovery-reminder.ts.
+    void scheduleRecoveryReminder({
+      sessionEnd: payload.completedAt,
+      sessionId,
+      title: payload.title,
+      lang,
+    });
+
     setSaving(false);
     const sets = blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
 
@@ -1172,6 +1191,7 @@ export default function Workout() {
     setSummary({
       sessionId,
       title: payload.title,
+      completedAt: payload.completedAt!,
       blocks,
       volume: sessionVolume(blocks, false, bodyweightKg),
       sets,
@@ -2794,7 +2814,13 @@ function Summary({
             The daily card asks the second half; it does not replace this one.
             See core/feel-schedule.ts. */}
         {!summary.guest && (
-          <FeelPrompt compact sessionId={summary.sessionId} minutes={summary.minutes} baseline={feelBaseline} />
+          <FeelPrompt
+            compact
+            sessionId={summary.sessionId}
+            minutes={summary.minutes}
+            sessionEnd={summary.completedAt}
+            baseline={feelBaseline}
+          />
         )}
 
         {!summary.guest && <SummaryRename sessionId={summary.sessionId} value={title} onRenamed={setTitle} t={t} />}

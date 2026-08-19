@@ -10,7 +10,7 @@ import { useTheme, txt } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { AuroraIcon, Glyph } from "./icons";
-import { ACard, DockRail, DockChip, GUTTER , RADIUS} from "./kit";
+import { ACard, APill, DockRail, DockChip, GUTTER , RADIUS} from "./kit";
 import GroupMark from "./group-mark";
 import { FoodRow, savedFoodMenu, packMenu, type RowPortion } from "./nutrition-kit";
 import { withAlpha } from "./field";
@@ -307,10 +307,14 @@ export function PantryScreen<T extends PantryFood>({
       {q.length >= 2 ? dbSlot : null}
 
       {canCreate ? (
-        <Pressable onPress={onCreate} accessibilityRole="button" style={{ marginTop: 24, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14 }}>
-          <Glyph name="plus" size={15} color={txt(C, C.lime)} />
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addManually")}</Text>
-        </Pressable>
+        <APill
+          label={t("w.recovery.nutrition.addManually")}
+          variant="outline"
+          color={C.lime}
+          glyph={(c) => <Glyph name="plus" size={15} color={c} />}
+          onPress={onCreate}
+          style={{ marginTop: 24 }}
+        />
       ) : (
         /* The cap gates the ADD, never the library: every food already saved
            stays loggable, searchable and deletable at the cap. */

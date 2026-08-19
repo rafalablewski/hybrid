@@ -306,6 +306,149 @@ export const MIN_PAIR_GAP_H = 4;
 export const MIN_PAIR_FATIGUE = MIN_STRAIN_FATIGUE;
 export const MIN_PAIR_COST = 0.2;
 
+/**
+ * THE BAND CANNOT BE NARROWER THAN THE SCALE IT READS.
+ *
+ * The athlete answers on a five-point scale, so one step is 0.25 of the raw
+ * range — and the reads that matter arrive hours later, where the residual has
+ * shrunk. Dividing a fixed 0.25 by a small residual is what makes the reachable
+ * RATIOS spread out: at a fourteen-hour gap, adjacent answers land about 0.8
+ * apart, against a band CLEARANCE_FAST…CLEARANCE_SLOW only 0.30 wide. The band
+ * then sits in a GAP between two buttons, and no answer the athlete is able to
+ * give reads as on-track.
+ *
+ * That is not a rare corner. Across the immediate answers and gaps this app
+ * actually collects, most combinations have no on-track answer available at
+ * all, and the readiness picker's four levels make it worse than the five-point
+ * row on the finish screen. The athlete cannot report normal recovery, because
+ * normal recovery is not one of the buttons — so an ordinary recoverer is
+ * pushed onto "fast" or "slow" by rounding rather than by physiology.
+ *
+ * So the band widens to half a step whenever half a step is wider, which is
+ * exactly the condition for "the nearest reachable answer to on-curve reads as
+ * on-curve". Where the scale is fine enough to resolve the original ±15% — short
+ * gaps, a costly session — nothing changes and the floor still governs.
+ *
+ * WHAT THIS DOES NOT FIX, stated because the number is easy to misread: the
+ * band is the LABEL. `recoveryIndex` averages the ratios themselves and
+ * `clearanceFactor` reads that mean, so neither moves by a hair here. Rounding
+ * a between-buttons answer up still biases the ratio, and that bias reaches
+ * prescribed volume. Widening the band is the honest half of the fix — it stops
+ * the app calling normal recovery abnormal — not the whole of it.
+ */
+/** One level on the 1–5 answer scale, in raw (0…1) terms. */
+export const SCALE_STEP = 0.25;
+
+/** The narrowest the on-track band may be — the original ±15% corridor. */
+export const BAND_HALF_FLOOR = (CLEARANCE_SLOW - CLEARANCE_FAST) / 2;
+
+export function clearanceBandHalf(immediateCost: number, laterHoursAfter: number): number {
+  const step = SCALE_STEP / (expectedResidual(laterHoursAfter) * immediateCost);
+  return Math.max(BAND_HALF_FLOOR, step / 2);
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * THE OTHER HALF OF THE QUANTISATION PROBLEM — and what was measured.
+ *
+ * `clearanceBandHalf` above fixed the LABEL: it stopped the app calling normal
+ * recovery abnormal. It could not fix the MEAN, because `recoveryIndex`
+ * averages the ratios themselves and `clearanceFactor` reads that mean, never
+ * the label. So the question was what the ratio's own error actually is.
+ *
+ * Monte-Carlo against this module's own model, athletes placed exactly on the
+ * population curve and their answers put through the real scales:
+ *
+ *   THE BIAS IS LAG-DEPENDENT, NOT DIRECTIONAL. An on-curve athlete reads
+ *   −0.05 at a six-hour gap and +0.08 at twenty-four. Averaged over the gaps
+ *   the app collects it is ~0.00. So the defect is not "the app scores people
+ *   slow" — it is that the SAME athlete reads about 13 points apart depending
+ *   on what time they happened to tap, which is precisely what this file
+ *   exists to eliminate.
+ *
+ *   THE FOUR-LEVEL PICKER IS NOT THE CULPRIT. It performs identically to a
+ *   five-level row, because at these lags true spentness rarely reaches the
+ *   level the picker cannot express. Widening the readiness picker buys
+ *   nothing; only a much finer scale (nine steps, a slider) helps, and it takes
+ *   the worst gap error from 0.08 to about 0.03 — the remaining 0.02 being the
+ *   IMMEDIATE read's own five-level quantisation, which no change here reaches.
+ *
+ * THREE CORRECTIONS WERE TRIED AND ARE ALL WORSE. Written down because each is
+ * the obvious next idea, and each looks right until measured:
+ *
+ *   SHRINK-TO-NULL (take the point in the interval nearest 1) removes the
+ *     lag bias perfectly — exactly 1.000 at every gap — and destroys the
+ *     feature: a genuinely impaired athlete at a true 1.50 reads 1.06. The
+ *     interval is wider than the effect, so shrinking always lands on 1.
+ *
+ *   INVERSE-VARIANCE WEIGHTING by interval width keeps sensitivity but
+ *     introduces a −0.05…−0.14 bias of its own: narrow bins are not a random
+ *     subsample, so weighting on width is weighting on the value.
+ *
+ *   PER-PAIR CALIBRATION (divide by what an on-curve athlete would have been
+ *     forced to report at this lag) sounds exact and is the worst of the three:
+ *     both numerator and denominator are quantised, so instead of cancelling
+ *     they compound. Worst gap error 0.14, and the spread for one athlete
+ *     across gaps goes from 0.07 to 0.31.
+ *
+ * SO THE FIX IS NOT TO CORRECT THE NUMBER — every correction costs more than
+ * the error. It is to stop pretending the number is a point measurement. The
+ * interval is carried through to the index, where it widens the published band
+ * and scales `confidence`, so coarse evidence moves a volume ceiling
+ * proportionally less instead of at full strength. The bias remains; what it
+ * can no longer do is move training as though it were signal.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * AN ANSWER IS A BIN, NOT A NUMBER.
+ *
+ * "Good" does not mean spentness is exactly 2. It means the athlete's true
+ * spentness was nearer 2 than 1 or 3 — anywhere in ±half a level. Every ratio
+ * this file computes divides one such bin by another and prints the result to
+ * three decimals, which is the most confident-looking number in the app
+ * standing on the least evidence.
+ *
+ * The bounds are clamped to the scale at both ends: "fresh" cannot mean less
+ * than nothing, and "wrecked" cannot mean more than the top.
+ */
+export function answerBounds(fatigue: number): [number, number] {
+  const lo = clamp((fatigue - 1.5) / 4, 0, 1);
+  const hi = clamp((fatigue - 0.5) / 4, 0, 1);
+  return [lo, hi];
+}
+
+/** The same bin expressed as a cost at that lag. */
+export function costBounds(fatigue: number, hoursAfter: number | null): [number, number] {
+  const [lo, hi] = answerBounds(fatigue);
+  const r = hoursAfter == null ? 1 : expectedResidual(hoursAfter);
+  return [clamp(lo / r, 0, MAX_COST), clamp(hi / r, 0, MAX_COST)];
+}
+
+/**
+ * The ratio interval a pair actually supports — both bins, divided.
+ *
+ * WHAT THIS EXPOSES, and it is the number that should govern how much anything
+ * downstream leans on a pair. Measured across every answer combination the app
+ * can actually collect, an unclamped interval runs 0.51 to 2.23 wide, median
+ * 1.03 — against an on-track band 0.30 wide. No single pair can place itself
+ * inside that band; the point estimate is a number drawn from a range three
+ * times wider than the classification it feeds, and nothing said so.
+ *
+ * A width BELOW the band is always a clamp, never precision: `cost` saturates
+ * at MAX_COST, so a pair like "wrecked → tired the next day" reports 0.21
+ * because both bounds ran into the ceiling, not because it measured anything
+ * finely. Read a narrow width as "off the top of the scale", not "certain".
+ */
+export function ratioBounds(immediate: FeelReading, later: FeelReading): [number, number] {
+  const [il, ih] = costBounds(immediate.fatigue, immediate.hoursAfter);
+  const [ll, lh] = costBounds(later.fatigue, later.hoursAfter);
+  // A zero-cost immediate is already refused by MIN_PAIR_COST; guard anyway so
+  // the bound can never be an infinity that propagates into a mean.
+  if (ih <= 0 || il <= 0) return [0, MAX_COST / MIN_PAIR_COST];
+  const lo = ll / ih;
+  const hi = lh / il;
+  return [Math.min(lo, hi), Math.max(lo, hi)];
+}
+
 export interface RecoveryCurve {
   /** later.cost ÷ immediate.cost. 1 means "exactly as the curve predicts". */
   ratio: number;
@@ -314,6 +457,19 @@ export interface RecoveryCurve {
   gapH: number;
   /** 0…1 — the pair's influence, the lesser of the two reports' weights. */
   weight: number;
+  /**
+   * How far from 1 the ratio had to be for this pair to read fast or slow —
+   * `clearanceBandHalf` at this pair's lag and cost. Carried so a surface can
+   * say how much resolution the pair actually had, rather than implying the
+   * ±15% corridor applied when it didn't.
+   */
+  bandHalf: number;
+  /** The ratio interval both answers' bins actually support — `ratioBounds`. */
+  lo: number;
+  hi: number;
+  /** `hi − lo`. Between about 0.5 and 2.4, against a 0.30 band: this is how
+   *  much a single pair can pin down, which is much less than `ratio` looks. */
+  width: number;
 }
 
 /**
@@ -329,11 +485,20 @@ export function recoveryCurve(immediate: FeelReading | null, later: FeelReading 
   if (immediate.fatigue < MIN_PAIR_FATIGUE || immediate.cost < MIN_PAIR_COST) return null;
 
   const ratio = Math.round((later.cost / immediate.cost) * 1000) / 1000;
+  const bandHalf = Math.round(clearanceBandHalf(immediate.cost, later.hoursAfter) * 1000) / 1000;
+  const [lo, hi] = ratioBounds(immediate, later);
   return {
     ratio,
-    clearance: ratio < CLEARANCE_FAST ? "fast" : ratio > CLEARANCE_SLOW ? "slow" : "onTrack",
+    clearance: ratio < 1 - bandHalf ? "fast" : ratio > 1 + bandHalf ? "slow" : "onTrack",
     gapH,
     weight: Math.min(immediate.weight, later.weight),
+    bandHalf,
+    lo: Math.round(lo * 1000) / 1000,
+    hi: Math.round(hi * 1000) / 1000,
+    // From the ROUNDED bounds, not the raw ones: a width that disagrees with
+    // hi − lo by a thousandth is the kind of thing a caller eventually asserts
+    // on and loses an afternoon to.
+    width: Math.round(hi * 1000) / 1000 - Math.round(lo * 1000) / 1000,
   };
 }
 
@@ -345,6 +510,13 @@ export interface RecoveryIndex {
   /** Pairs behind it. */
   pairs: number;
   clearance: Clearance;
+  /**
+   * 0…1 — how much the pairs behind this index could actually RESOLVE, as
+   * distinct from how many there are. See `resolutionOf`. It scales
+   * `confidence`, which is what stops coarse evidence moving a volume ceiling
+   * at full strength.
+   */
+  resolution: number;
   /**
    * THE STATED INTERVAL, and it ships with the number for the same reason
    * `MrvEstimate.lo/hi` does: an estimate shown bare reads as a measurement.
@@ -377,7 +549,7 @@ export const CLEARANCE_INTERVAL_FLOOR = 0.05;
 export function recoveryIndex(curves: (RecoveryCurve | null)[]): RecoveryIndex {
   const usable = curves.filter((c): c is RecoveryCurve => !!c && c.weight > 0);
   if (usable.length < MIN_RECOVERY_PAIRS) {
-    return { index: 1, confidence: 0, pairs: usable.length, clearance: "onTrack", lo: CLEARANCE_FAST, hi: CLEARANCE_SLOW };
+    return { index: 1, confidence: 0, pairs: usable.length, clearance: "onTrack", resolution: 0, lo: CLEARANCE_FAST, hi: CLEARANCE_SLOW };
   }
   let num = 0;
   let den = 0;
@@ -398,15 +570,60 @@ export function recoveryIndex(curves: (RecoveryCurve | null)[]): RecoveryIndex {
     sqW += c.weight ** 2;
   }
   const nEff = sqW > 0 ? (den * den) / sqW : usable.length;
-  const half = Math.max(CLEARANCE_INTERVAL_FLOOR, nEff > 0 ? Math.sqrt(sqDev / den) / Math.sqrt(nEff) : CLEARANCE_INTERVAL_FLOOR);
+  const spreadHalf = nEff > 0 ? Math.sqrt(sqDev / den) / Math.sqrt(nEff) : CLEARANCE_INTERVAL_FLOOR;
+
+  // THE QUANTISATION HALF-WIDTH, which the standard error above cannot see.
+  //
+  // Spread measures how much the pairs disagree with EACH OTHER. It says
+  // nothing about how much any one of them could be wrong, and every one of
+  // them is a bin divided by a bin (`ratioBounds`). Three pairs that agree to
+  // the decimal have a spread near zero and an honest uncertainty of about a
+  // full ratio unit — which is how the least evidence in the app was producing
+  // the narrowest claim on the screen.
+  //
+  // It averages down like any independent error: different sessions land in
+  // different bins, so the mean's share is the typical width over √nEff.
+  const meanWidth = usable.reduce((a, c) => a + c.width * c.weight, 0) / den;
+  const quantHalf = meanWidth / 2 / Math.sqrt(Math.max(1, nEff));
+  const half = Math.max(CLEARANCE_INTERVAL_FLOOR, spreadHalf, quantHalf);
+
   return {
     index,
-    confidence: Math.round(Math.min(0.8, 0.25 + (usable.length - MIN_RECOVERY_PAIRS) * 0.15) * 100) / 100,
+    // Confidence is scaled by how much the pairs could actually RESOLVE. Pair
+    // count alone was measuring diligence, not evidence: twenty pairs of
+    // "worked → good, next morning" are twenty intervals two units wide, and
+    // they should not move a volume ceiling as if they were twenty
+    // measurements. `clearanceFactor` reads this, so coarse evidence now moves
+    // training proportionally less instead of at full strength.
+    confidence:
+      Math.round(
+        Math.min(0.8, 0.25 + (usable.length - MIN_RECOVERY_PAIRS) * 0.15) * resolutionOf(meanWidth, nEff) * 100,
+      ) / 100,
     pairs: usable.length,
     clearance: index < CLEARANCE_FAST ? "fast" : index > CLEARANCE_SLOW ? "slow" : "onTrack",
+    resolution: Math.round(resolutionOf(meanWidth, nEff) * 100) / 100,
     lo: Math.round(Math.max(0, index - half) * 1000) / 1000,
     hi: Math.round((index + half) * 1000) / 1000,
   };
+}
+
+/**
+ * How much the evidence behind an index can actually resolve, 0…1.
+ *
+ * 1 means the mean's interval has narrowed to the on-track band itself — the
+ * point at which the estimate can genuinely place an athlete inside or outside
+ * the corridor. Below that it is the ratio of what the band needs to what the
+ * evidence offers, so it rises with √pairs exactly as the interval narrows.
+ *
+ * NOTHING reaches 1 off a handful of pairs, and that is the correct reading:
+ * the widths measured off real answer combinations run 0.5 to 2.4 against a
+ * band of 0.30, so even the tightest single pair is short by a factor of ~1.7.
+ */
+export function resolutionOf(meanWidth: number, nEff: number): number {
+  const band = CLEARANCE_SLOW - CLEARANCE_FAST;
+  const meanW = meanWidth / Math.sqrt(Math.max(1, nEff));
+  if (!Number.isFinite(meanW) || meanW <= 0) return 1;
+  return clamp(band / Math.max(meanW, band), 0, 1);
 }
 
 /** How hard a measured clearance rate may move the recovery multiplier. Kept

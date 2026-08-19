@@ -547,9 +547,13 @@ export function WorkoutWrapped({
               </View>
             ))}
             {!full && (
-              <Pressable onPress={() => { onBack(); router.push("/upgrade"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: premium.fill, borderRadius: RADIUS.pill, paddingVertical: 12, paddingHorizontal: 20 }}>
-                <Text style={{ fontFamily: F.black, fontSize: fs.note, color: premium.ink }}>✦ {t("session.wrapped.unlock")}</Text>
-              </Pressable>
+              <APill
+                label={t("session.wrapped.unlock")}
+                color={premium.fill}
+                glyph={(c) => <Text style={{ fontFamily: F.black, fontSize: fs.note, color: c }}>✦</Text>}
+                onPress={() => { onBack(); router.push("/upgrade"); }}
+                style={{ marginTop: 24, alignSelf: "flex-start" }}
+              />
             )}
           </Panel>
         )}

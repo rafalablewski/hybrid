@@ -97,7 +97,7 @@ import { CookStepTimer } from "./cook-timer";
 import { CookAwake } from "./cook-awake";
 import { toggleSavedRecipeId, useSavedRecipeIds } from "../../lib/recipe-saved";
 import { haptic } from "../../lib/haptics";
-import { AuroraScreen, ACard, APressCard, AField, ASearch, APill, AHeading, AMeter, Empty, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
+import { AuroraScreen, ACard, AChoice, APressCard, AField, ASearch, APill, AHeading, AMeter, Empty, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroAction, HeroNav } from "./hero";
 import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
@@ -2517,13 +2517,21 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         )}
 
         <Sheet visible={mealPicker} onClose={() => setMealPicker(false)} title={t("w.recovery.nutrition.chooseMeal")}>
-          <View style={{ gap: 8 }}>
+          {/* The pick-one row in a sheet is the kit's `AChoice` now, with its
+              leading `glyph`. It drew its own before: a trailing check ICON that
+              VANISHED when unpicked, so an unpicked row said nothing about being
+              pickable — and the unit sheet 400 lines below drew the same row
+              with a different label face. */}
+          <View style={{ gap: space.ms }}>
             {partList.map((p) => (
-              <Pressable key={p.key} onPress={() => { setMealType(p.key); setMealPicker(false); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: mealType === p.key ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16 }}>
-                <Glyph name={mealGlyph(p.key)} size={20} color={mealType === p.key ? txt(C, C.lime) : C.ash} />
-                <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{p.label}</Text>
-                {mealType === p.key ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : null}
-              </Pressable>
+              <AChoice
+                key={p.key}
+                sheet
+                active={mealType === p.key}
+                title={p.label}
+                glyph={(color) => <Glyph name={mealGlyph(p.key)} size={20} color={color} />}
+                onPress={() => { haptic.selection(); setMealType(p.key); setMealPicker(false); }}
+              />
             ))}
             {full ? (
               <Pressable onPress={() => { setMealPicker(false); setPartSheet(true); }} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: RADIUS.field, padding: 16 }}>
@@ -2847,9 +2855,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 <Pressable onPress={() => removeMealComp(c.productId)} accessibilityLabel={t("w.recovery.nutrition.remove")} hitSlop={8} style={{ padding: 2 }}><Text style={{ fontSize: fs.subtitle, color: C.ash }}>×</Text></Pressable>
               </View>
             ))}
-            <Pressable onPress={() => { setCompQuery(""); setCompPicker(true); }} style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12 }}>
-              <Glyph name="plus" size={15} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addProduct")}</Text>
-            </Pressable>
+            <APill
+              label={t("w.recovery.nutrition.addProduct")}
+              variant="outline"
+              color={C.lime}
+              glyph={(c) => <Glyph name="plus" size={15} color={c} />}
+              onPress={() => { setCompQuery(""); setCompPicker(true); }}
+              style={{ marginTop: 12 }}
+            />
           </View>
         ) : null}
 
@@ -2952,12 +2965,15 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         </Pressable>
 
         <Sheet visible={unitPicker} onClose={() => setUnitPicker(false)} title={t("w.recovery.nutrition.unit")}>
-          <View style={{ gap: 8 }}>
+          <View style={{ gap: space.ms }}>
             {SERVING_UNITS.map(({ id: u }) => (
-              <Pressable key={u} onPress={() => { setCreateForm((s) => ({ ...s, unit: u })); setUnitPicker(false); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: C.ink, borderWidth: 1, borderColor: createForm.unit === u ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16 }}>
-                <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk }}>{unitLabel(u)}</Text>
-                {createForm.unit === u ? <AuroraIcon name="check" size={16} color={txt(C, C.lime)} /> : null}
-              </Pressable>
+              <AChoice
+                key={u}
+                sheet
+                active={createForm.unit === u}
+                title={unitLabel(u)}
+                onPress={() => { haptic.selection(); setCreateForm((s) => ({ ...s, unit: u })); setUnitPicker(false); }}
+              />
             ))}
           </View>
         </Sheet>
@@ -3176,10 +3192,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         ) : null}
 
         <View style={{ flexDirection: "row", gap: 12, marginTop: 24, marginBottom: 12 }}>
-          <Pressable onPress={() => saveFood(hit)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, paddingHorizontal: 20 }}>
-            <Glyph name="plus" size={16} color={txt(C, C.lime)} />
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveToFoods")}</Text>
-          </Pressable>
+          <APill
+            label={t("w.recovery.nutrition.saveToFoods")}
+            variant="outline"
+            color={C.lime}
+            glyph={(c) => <Glyph name="plus" size={16} color={c} />}
+            onPress={() => saveFood(hit)}
+          />
           <APill label={t("w.recovery.nutrition.logThis")} onPress={() => logFood(hit)} style={{ flex: 1 }} />
         </View>
         {renderPortionSheet()}
@@ -4050,10 +4069,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </View>
           </View>
         ) : canSaveAnotherMeal ? (
-          <Pressable onPress={() => openCreate("meal")} accessibilityRole="button" style={{ marginTop: 16, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12 }}>
-            <AuroraIcon name="add" size={15} color={txt(C, C.lime)} />
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text>
-          </Pressable>
+          <APill
+            label={t("w.recovery.nutrition.createMeal")}
+            variant="outline"
+            color={C.lime}
+            glyph={(c) => <AuroraIcon name="add" size={15} color={c} />}
+            onPress={() => openCreate("meal")}
+            style={{ marginTop: 16 }}
+          />
         ) : (
           <Pressable onPress={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} accessibilityRole="button" style={{ marginTop: 16, flexDirection: "row", justifyContent: "center", gap: 8, backgroundColor: withAlpha(pa.fill, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.rim), borderRadius: RADIUS.pill, paddingVertical: 12 }}>
             <Text style={{ color: pa.text }}>✦</Text><Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: pa.text }}>{t("w.recovery.nutrition.unlockMoreMeals")}</Text>
@@ -4371,19 +4394,23 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       />
 
       <Sheet visible={goalPicker} onClose={() => setGoalPicker(false)} title={t("w.recovery.nutrition.goalSheetTitle")} sub={t("w.recovery.nutrition.goalSheetSub")}>
-        <View style={{ gap: 10 }}>
-          {GOALS.map((g) => {
-            const on = goal === g.id;
-            return (
-              <Pressable key={g.id} onPress={() => { chooseGoal(g.id); setGoalPicker(false); }} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16 }}>
-                <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t(g.labelKey)}</Text>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{goalSub(g.id)}</Text>
-                </View>
-                <View style={{ width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : "transparent", alignItems: "center", justifyContent: "center" }}>{on ? <AuroraIcon name="check" size={12} color={C.onAccent} /> : null}</View>
-              </Pressable>
-            );
-          })}
+        {/* THE SAME QUESTION THE NUTRITION WIZARD ASKS, so it is now the same
+            control: the kit's `AChoice`. This sheet drew its own copy of the
+            option row — the title a face heavier, the blurb in mono, and a
+            private 22dp radio that popped in a single frame — so "lose fat"
+            looked like two different choices depending on whether you were
+            setting up or changing your mind later. */}
+        <View style={{ gap: space.ms }}>
+          {GOALS.map((g) => (
+            <AChoice
+              key={g.id}
+              sheet
+              active={goal === g.id}
+              title={t(g.labelKey)}
+              sub={goalSub(g.id)}
+              onPress={() => { haptic.selection(); chooseGoal(g.id); setGoalPicker(false); }}
+            />
+          ))}
         </View>
       </Sheet>
 

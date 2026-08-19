@@ -555,11 +555,16 @@ export function UserRecipeEditor({
           canLogRecipe(recipe) ? (
             <APill label={t("w.recovery.nutrition.recipeLog")} onPress={() => onLog(1)} />
           ) : (
-            <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 13, paddingHorizontal: 16, alignItems: "center", opacity: STATE_OPACITY.busy }}>
-              <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center" }}>
-                {t("w.recovery.nutrition.recipeCannotLog").replace("{n}", String(totals.unstated.length))}
-              </Text>
-            </View>
+            // NOT a bordered pill, and that is the point: this is a SENTENCE
+            // explaining why the button is absent, not a control. Drawn as one
+            // it would be a CTA-shaped thing that answers no press — which is
+            // both the outline-pill ratchet's concern and a worse screen.
+            <Text
+              maxFontSizeMultiplier={MAX_FONT_SCALE}
+              style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", paddingVertical: 6, lineHeight: leading(fs.caption, "relaxed") }}
+            >
+              {t("w.recovery.nutrition.recipeCannotLog").replace("{n}", String(totals.unstated.length))}
+            </Text>
           )
         ) : null}
         <PressScale
@@ -636,9 +641,12 @@ export function UserRecipeEditor({
           <PressScale onPress={() => setConfirmDelete(false)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.cancel")} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text>
           </PressScale>
-          <PressScale onPress={() => { setConfirmDelete(false); onDelete?.(); }} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.recipeDelete")} style={{ flex: 1, backgroundColor: FEEDBACK.error.fill, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: FEEDBACK.error.ink }}>{t("w.recovery.nutrition.recipeDelete")}</Text>
-          </PressScale>
+          <APill
+            label={t("w.recovery.nutrition.recipeDelete")}
+            color={FEEDBACK.error.fill}
+            onPress={() => { setConfirmDelete(false); onDelete?.(); }}
+            style={{ flex: 1 }}
+          />
         </View>
       </Sheet>
     </View>

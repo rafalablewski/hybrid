@@ -81,12 +81,35 @@ export default defineConfig({
             // TEXT and then runs it through the real core readers, so it proves
             // a screen invariant without importing the screen.
             "lib/nutrition-form.test.ts",
+            // Reads the tab layout as TEXT to prove the bottom-accessory SLOT
+            // is gated on the draft. The slot IS the bar — a child rendering
+            // null still leaves an empty one over the nav pill — and the render
+            // project cannot mount this file (its `expo-router` alias swallows
+            // native tabs too).
+            "lib/nav-accessory.test.ts",
             // Reads the live logger as TEXT to prove every set-list mutation
             // arms a layout animation before it commits. A missing one is the
             // quietest bug we can ship — correct code, passing tests, an app
             // that just feels cheap — and it is only visible on a device.
             "lib/list-motion.test.ts",
+            // The recovery reminder's glue: that a second ask is actually
+            // scheduled, that a second session REPLACES it rather than stacking
+            // a second question on one lock screen, and that answering cancels
+            // it. The clock it reads is core's and is tested there; only the
+            // scheduling can be checked here. It touches expo-notifications and
+            // AsyncStorage and nothing else native, which is why those two get
+            // aliases below and react-native still does not.
+            "lib/recovery-reminder.test.ts",
           ],
+        },
+        resolve: {
+          alias: {
+            // The ONLY two native modules inside the pure boundary. The
+            // notifications stub is its own file precisely so it can be used
+            // here — native.tsx imports react-native and cannot be.
+            "expo-notifications": stub("notifications.ts"),
+            "@react-native-async-storage/async-storage": stub("async-storage.ts"),
+          },
         },
       },
       {

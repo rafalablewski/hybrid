@@ -6,7 +6,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
 import { F } from "../../lib/ui";
 import { useNavSurface, runNavAction } from "../../lib/nav-surface";
-import SessionAccessory from "../../components/aurora/session-accessory";
+import SessionAccessory, { useSessionDraft } from "../../components/aurora/session-accessory";
 
 /**
  * THE BOTTOM NAV — the real system tab bar, in the SPLIT anatomy.
@@ -50,6 +50,14 @@ import SessionAccessory from "../../components/aurora/session-accessory";
  * Off iOS 26 there is no detached slot, so this degrades to a trailing tab that
  * changes its glyph — which is the right degradation: the verb is still stated,
  * it simply is not separated.
+ *
+ * THE ACCESSORY IS NOT ALWAYS THERE. The mini-player slot is mounted ONLY
+ * while a workout is minimized (a persisted draft exists). It is not enough for
+ * the accessory's child to render null: UIKit builds the accessory from the
+ * presence of the `<NativeTabs.BottomAccessory>` slot, glass capsule and all,
+ * so an empty child still parked an empty bar above the pills on every screen —
+ * a mini-player with nothing playing. The slot is therefore gated on the draft
+ * itself, which is what the accessory shows anyway.
  *
  * Other native-bar consequences, still deliberate:
  *  - The bar no longer appears on pushed sub-pages (Statistics, Settings,
@@ -115,6 +123,8 @@ export default function TabsLayout() {
   // time this screen has no session.
   const surface = useNavSurface();
   const action = AURORA_NAV_ACTIONS[auroraNavAction(surface)];
+  // A minimized workout, or null. Gates the accessory slot below.
+  const draft = useSessionDraft();
 
   if (!ready) return null;
   if (!session) return <Redirect href="/login" />;
@@ -138,10 +148,14 @@ export default function TabsLayout() {
     >
       {/* A workout in progress lives in the system accessory — the mini-player
           slot above the bar. iOS 26+ only; older iOS and Android simply don't
-          render it, which is the correct degradation for a system affordance. */}
-      <NativeTabs.BottomAccessory>
-        <SessionAccessory />
-      </NativeTabs.BottomAccessory>
+          render it, which is the correct degradation for a system affordance.
+          Mounted only while there IS one to show: the slot is the bar, so an
+          always-mounted one is an empty bar (see the header). */}
+      {draft ? (
+        <NativeTabs.BottomAccessory>
+          <SessionAccessory />
+        </NativeTabs.BottomAccessory>
+      ) : null}
 
       {/* The capsule: Today, Nutrition, Messages, Profile. */}
       {AURORA_NAV_TABS.map((tab) => (
