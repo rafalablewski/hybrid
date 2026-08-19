@@ -802,7 +802,7 @@ export default function AuroraHome() {
   // colour; Performance and Feed render the same components on the page. The
   // masthead is still the shared component with its own numbers — this only
   // tells it which ground it is standing on.
-  const topChrome = (ground?: string) => (
+  const topChrome = (ground?: string, masthead = true) => (
     <>
       {hubHeader(ground)}
       {/* THE MASTHEAD — the SHARED hub head (aurora/hub-masthead.tsx), the same
@@ -813,9 +813,30 @@ export default function AuroraHome() {
           "Today" until the week rail is scrubbed, "Yesterday"/"Tomorrow" at ±1,
           the weekday name beyond — a static "Today" over Friday's session would
           lie in the largest type on screen. */}
-      <HubMasthead eyebrow={mastCaption} meta={mastTag} metaTone="accent" title={mastTitle} ground={ground} />
+      {masthead ? (
+        <HubMasthead eyebrow={mastCaption} meta={mastTag} metaTone="accent" title={mastTitle} ground={ground} />
+      ) : null}
     </>
   );
+
+  // ── THE FIELD'S MASTHEAD IS HIDDEN, TEMPORARILY ────────────────────────
+  // "WEDNESDAY, 19 AUGUST / Today" is held back while the field is carrying the
+  // day: the field already opens with the reading and the instruction, the tab
+  // bar already names the screen, and a date plus a screen label above them
+  // pushes the one sentence that matters down the screen for no answer. Flip
+  // this to `true` to bring it back — it is one argument, deliberately, rather
+  // than a deletion.
+  //
+  // IT COMES BACK THE MOMENT THE VIEWED DAY IS NOT TODAY, and that part is NOT
+  // optional. The masthead's own contract is that it NAMES THE VIEWED DAY
+  // (masthead() in @hybrid/core) — "Yesterday", "Friday" — precisely because a
+  // static "Today" over Friday's session would lie in the largest type on the
+  // screen. Hiding it while the week rail is scrubbed off today would not print
+  // the lie, it would print nothing at all, which is the same defect with the
+  // evidence removed: the screen would show another day's training under the
+  // day's own colour with no label saying so.
+  const FIELD_MASTHEAD = false;
+  const fieldMasthead = FIELD_MASTHEAD || !dayIsToday;
 
   // Whether there is a reading to draw a field FROM. Without one the chrome
   // still has to render, on the page, exactly as the other two tabs draw it —
@@ -944,7 +965,7 @@ export default function AuroraHome() {
             <AuroraDayBand
               band={band}
               fold={fold}
-              top={topChrome(fieldGround)}
+              top={topChrome(fieldGround, fieldMasthead)}
               onExplain={() => setDayOpen(true)}
               // TWO CORRECTIONS BEHIND ONE WORD, and they have to be told
               // apart. On the PROTECT rung the athlete is answering about
