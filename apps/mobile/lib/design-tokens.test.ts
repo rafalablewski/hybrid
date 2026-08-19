@@ -470,7 +470,7 @@ describe("geometry", () => {
     // alive by a one-character emoji fix on a screen main had removed.
     // Cross-rule slack is exactly what the anti-slack assertion is for, and a
     // merge is where it accumulates fastest.
-    burnDown(hits(/borderRadius:\s*\d/g), 145, "2027-02-28", "raw borderRadius → RADIUS.*");
+    burnDown(hits(/borderRadius:\s*\d/g), 144, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -856,7 +856,8 @@ describe("colour", () => {
     // 60 → 59: nutrition's `#3a3d34` placeholder ink (1.64:1 — a hint nobody
     // could read) became C.ash when the two placeholder kinds were named apart.
     // 59 → 58: the sheet's scrim `"#000"` became the SCRIM token.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 58, "2026-12-31", "hex literal → a palette token");
+    // 58 → 57: the wrapped screen's story-card shadow went with the share sheet.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 57, "2026-12-31", "hex literal → a palette token");
   });
 });
 

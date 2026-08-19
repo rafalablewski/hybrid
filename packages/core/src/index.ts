@@ -136,6 +136,7 @@ export * from "./session-celebration";
 export * from "./session-wrapped";
 export * from "./session-muscle-map";
 export * from "./session-panels";
+export * from "./session-spine";
 export * from "./session-edit";
 export * from "./session-feel";
 export * from "./session-device";

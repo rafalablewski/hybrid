@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { APill , RADIUS} from "./aurora/kit";
 import { View, Text, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -26,11 +25,12 @@ import {
   springToRN,
   isFullAccess,
   sessionVolume,
-  sessionSignature,
-  SIGNATURE_MIN_BARS,
+  brand,
+  sessionSpine,
+  SPINE_MIN_BARS,
+  mmss,
   blockTopLoad,
   strengthPrDelta,
-  formatCardioPr,
   workoutShareCaption,
   fmtWeight,
   heatAfterSession,
@@ -38,16 +38,12 @@ import {
   statCountUp,
   prsForSession,
   cardioPrsForSession,
-  storyStyle,
-  STORY_STYLES,
-  DEFAULT_STORY_STYLE,
   deviceComparisonRows,
   deviceImportedSession,
   deviceMarkFor,
   deviceSourceLabel,
   sessionEnergy,
   type DeviceWorkout,
-  type StoryStyleId,
   HERO_TAKEOVER_INK,
   HERO_TAKEOVER_RAISED,
   type LoggedSession,
@@ -65,16 +61,17 @@ import { HeroEyebrow, HeroNav } from "./aurora/hero";
 import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
 import SessionBody from "./aurora/session-body";
+import { TonnageCurve, SetSpine } from "./aurora/session-spine";
 import { HeatSheet } from "./aurora/heat-sheet";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
-import { SlideStoryCard, shareWorkout, panelSlides, heroFigure, prRowDelta, type SlideData, type ShareBest } from "../lib/share";
-import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
+import { shareWorkout, heroFigure, type ShareBest } from "../lib/share";
+import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, trackFigure , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
-import { useTheme, txt, deltaPaint } from "../lib/theme";
-import Sheet from "./aurora/sheet";
+import { useTheme, txt, deltaPaint, type Palette } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
+import { RADIUS } from "./aurora/kit";
 
 // `gold` is a THEME value, and this const is module scope — so it names the
 // one theme the app has rather than copying its hex. (The light theme was
@@ -89,6 +86,20 @@ const CONFETTI = Array.from({ length: 16 }, (_, i) => {
 });
 
 // A soft translucent glow disc — the RN parity of the artifact's radial-gradients.
+/** One ledger row under an instrument: a mono label, the figure, and an
+ *  optional denominator that must never compete with it. */
+function WorkRow({ label, value, note, C, last }: { label: string; value: string; note?: string; C: Palette; last?: boolean }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{value}</Text>
+        {note ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{note}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
 function Glow({ size, color, top, left, right, bottom }: { size: number; color: string; top?: number; left?: number; right?: number; bottom?: number }) {
   return <View pointerEvents="none" style={{ position: "absolute", width: size, height: size, borderRadius: size / 2, backgroundColor: color, top, left, right, bottom }} />;
 }
@@ -150,13 +161,9 @@ export function WorkoutWrapped({
 
   const win = Dimensions.get("window");
   const panelH = win.height;
-  const previewW = Math.min(300, win.width - 84);
 
   const [panel, setPanel] = useState(0);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [heatOpen, setHeatOpen] = useState(false);
-  const [active, setActive] = useState(0);
-  const [styleId, setStyleId] = useState<StoryStyleId>(DEFAULT_STORY_STYLE);
   // null = not known yet (don't flash a "connect a device" prompt at someone
   // who already has one connected).
   const [deviceConnected, setDeviceConnected] = useState<boolean | null>(null);
@@ -192,8 +199,6 @@ export function WorkoutWrapped({
     () => heatAfterSession(heatRows, session.completedAt ?? session.startedAt ?? null),
     [heatRows, session.completedAt, session.startedAt],
   );
-  const pagerRef = useRef<ScrollView>(null);
-  const storyRefs = useRef<Record<number, View | null>>({});
 
   useEffect(() => {
     let alive = true;
@@ -242,7 +247,11 @@ export function WorkoutWrapped({
   const minutes = receipt.durationMin ?? (session.completedAt ? Math.max(1, Math.round((new Date(session.completedAt).getTime() - new Date(session.startedAt).getTime()) / 60000)) : 0);
   const volume = sessionVolume(session.blocks, false, bwHere);
   const sets = session.blocks.reduce((n, b) => n + (b.kind === "strength" ? b.sets.length : 1), 0);
-  const signature = sessionSignature(session);
+  // The session as its own sets — the hero's accumulation curve and the work
+  // panel's spine read ONE model, so they cannot disagree about what a set
+  // weighed. Memoised: it projects every set of every block.
+  const spine = useMemo(() => sessionSpine(view, { bw }), [view, bw]);
+  const hasSpine = spine.bars.length >= SPINE_MIN_BARS;
 
   // Per-lift bests = the HEAVIEST weight actually moved (#231), never an e1RM.
   const bestMap = new Map<string, number>();
@@ -270,34 +279,9 @@ export function WorkoutWrapped({
       : cel.move
     : session.title;
 
-  // ── the share deck ──
-  // ASSEMBLED IN CORE (session-panels.ts), not here. This screen and the finish
-  // screen used to each build their own list from the same ingredients, and had
-  // already drifted — the finish screen dealt an overview card to a swim ("1
-  // SET, 0.0 t") and a second stat card for time. Now both read one manifest,
-  // and only the strings that need the athlete's language are formed here.
-  const prRows: { left: string; right: string; hot?: boolean }[] = [
-    ...prs.map((p) => ({ left: p.lift, right: prRowDelta(p, t, units), hot: true })),
-    // The shared cardio formatter — raw km would read a 400 m swim PR as
-    // "Swimming 0.4 km" and drop the delta.
-    ...cardioPrs.map((p) => ({ left: formatCardioPr(p, t("summary.firstTime")), right: "", hot: true })),
-    ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
-  ];
-  // Pluralized — "1 new PR", not "1 new PRs".
-  const prHeadline = prs.length > 0 ? `${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}` : cardioPrs.length > 0 ? `${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}` : t("summary.todaysBests");
-  const slides: SlideData[] = panelSlides(panels, {
-    t,
-    units,
-    overview: { title: session.title, minutes, sets, volume, bests },
-    prHeadline,
-    prRows,
-    heroValue: heroBig,
-  });
-  const activeIdx = Math.min(active, slides.length - 1);
-  const st = storyStyle(styleId);
-  const cycleStyle = () => setStyleId((cur) => STORY_STYLES[(STORY_STYLES.findIndex((s) => s.id === cur) + 1) % STORY_STYLES.length]!.id);
-  // The caption headlines the SAME record the reveal hero showed — `cel`, not
-  // prs[0] (which is ordered by e1RM gain and can be a different lift).
+  // THE SHARE CAPTION — the text that rides beside the captured panel. It
+  // headlines the SAME record the reveal hero showed (`cel`, not prs[0], which
+  // is ordered by e1RM gain and can be a different lift).
   const captionHeadline =
     cel && cel.kind === "strength"
       ? `\u{1F3C6} ${cel.lift} ${fmtWeight(cel.topLoad, units)}`
@@ -305,7 +289,6 @@ export function WorkoutWrapped({
         ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].weight, units)}`
         : null;
   const shareText = workoutShareCaption({ title: session.title, minutes, sets, volume, headline: captionHeadline }, units, t);
-  const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
 
   // SHARED ELEMENT (destination) — see the HERO title below. Only claimed for a
   // non-celebration session; `cel` sessions own their panel's motion.
@@ -373,7 +356,7 @@ export function WorkoutWrapped({
   };
 
   // Which panels exist (dots + snap offsets), details rides after them.
-  const keys: ("reveal" | "hero" | "body" | "feel" | "premium" | "device" | "signature")[] = [
+  const keys: ("reveal" | "hero" | "body" | "feel" | "premium" | "device" | "work")[] = [
     ...(cel ? ["reveal" as const] : []),
     "hero" as const,
     // A session with no mapped lifting (a run, a match, an all-custom day) has
@@ -382,9 +365,32 @@ export function WorkoutWrapped({
     "feel" as const,
     ...(wrapped.facts.length ? ["premium" as const] : []),
     ...(device || showDeviceAd ? ["device" as const] : []),
-    "signature" as const,
+    // The set spine needs enough sets to be a shape; a two-set session has
+    // nothing to draw, so the panel is absent rather than nearly empty.
+    ...(hasSpine ? ["work" as const] : []),
   ];
   const detailsIndex = keys.length;
+  /** A panel's position in the sequence — the capture reads the node by it. */
+  const at = (k: (typeof keys)[number]) => keys.indexOf(k);
+  // ── CAPTURE ──
+  // The share control hands over the panel the athlete is looking at. Chrome
+  // (the rail, the dots) drops for the frame the shot is taken on, and the
+  // panel signs itself; nothing is re-laid-out, so what lands in the camera
+  // roll is what was on the screen.
+  const panelRefs = useRef<Record<number, View | null>>({});
+  const [capturing, setCapturing] = useState(false);
+  const captureStamp = `${new Date(session.startedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })} – ${session.title}`.toUpperCase();
+  const sharePanel = async () => {
+    const i = Math.min(panel, keys.length - 1);
+    setCapturing(true);
+    // Two frames: one for the chrome to leave, one for the footer to land.
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+    try {
+      await shareWorkout({ current: panelRefs.current[i] ?? null }, shareText, t("summary.shareStory"));
+    } finally {
+      setCapturing(false);
+    }
+  };
   const snapOffsets = keys.map((_, i) => i * panelH);
   const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => setPanel(Math.round(e.nativeEvent.contentOffset.y / panelH));
   const showDock = panel < detailsIndex;
@@ -402,10 +408,25 @@ export function WorkoutWrapped({
   const geom = heroGeometry("cover", insets.top, "takeover");
   const padTop = geom.barHeight;
 
-  const Panel = ({ children, center, glows }: { children: ReactNode; center?: boolean; glows?: ReactNode }) => (
-    <View style={{ height: panelH, paddingHorizontal: HERO.gutter.hero, paddingTop: padTop, paddingBottom: 150, justifyContent: center ? "center" : "flex-start", overflow: "hidden" }}>
+  // EVERY PANEL IS ITS OWN SHARE ASSET. The panel registers the node the
+  // capture reads, and in capture mode it drops the pad that existed for the
+  // dock and signs itself instead. What gets shared is the panel as rendered —
+  // there is no second composition to keep in step with this one, which is
+  // exactly how the old two story decks drifted.
+  const Panel = ({ children, center, glows, index }: { children: ReactNode; center?: boolean; glows?: ReactNode; index: number }) => (
+    <View
+      ref={(n) => { panelRefs.current[index] = n; }}
+      collapsable={false}
+      style={{ height: panelH, paddingHorizontal: HERO.gutter.hero, paddingTop: padTop, paddingBottom: capturing ? 28 : 150, justifyContent: center ? "center" : "flex-start", overflow: "hidden", backgroundColor: HERO_TAKEOVER_INK }}
+    >
       {glows}
       {children}
+      {capturing && (
+        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: C.line, paddingTop: 9, marginTop: 14 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.caption, letterSpacing: tracking.label, color: C.chalk }}>{brand.name.toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>{captureStamp}</Text>
+        </View>
+      )}
     </View>
   );
 
@@ -421,7 +442,7 @@ export function WorkoutWrapped({
       >
         {/* ── REVEAL ── */}
         {cel && (
-          <Panel center glows={<><View pointerEvents="none" style={{ position: "absolute", top: "34%", left: "50%", marginLeft: -230, marginTop: -230, width: 460, height: 460 }}><Animated.View style={{ flex: 1, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}><LinearGradient colors={[withAlpha(GOLD, 0.15), "transparent", withAlpha(C.lime, 0.11), "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 230 }} /></Animated.View></View></>}>
+          <Panel index={at("reveal")} center glows={<><View pointerEvents="none" style={{ position: "absolute", top: "34%", left: "50%", marginLeft: -230, marginTop: -230, width: 460, height: 460 }}><Animated.View style={{ flex: 1, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}><LinearGradient colors={[withAlpha(GOLD, 0.15), "transparent", withAlpha(C.lime, 0.11), "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 230 }} /></Animated.View></View></>}>
             <View style={{ alignItems: "center" }}>
               {CONFETTI.map((c, i) => (
                 <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", top: -20, width: 7, height: 7, borderRadius: 2, backgroundColor: [C.lime, GOLD, C.blue, C.red][c.ci], opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) }, { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) }] }} />
@@ -435,7 +456,7 @@ export function WorkoutWrapped({
         )}
 
         {/* ── HERO ── */}
-        <Panel glows={<><Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.fill)} top={-40} right={-80} /><Glow size={panelH * 0.5} color={withAlpha(C.lime, ALPHA.wash)} bottom={panelH * 0.2} left={-90} /></>}>
+        <Panel index={at("hero")} glows={<><Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.fill)} top={-40} right={-80} /><Glow size={panelH * 0.5} color={withAlpha(C.lime, ALPHA.wash)} bottom={panelH * 0.2} left={-90} /></>}>
           {eyebrow(t("session.wrapped.title"))}
           {/* SHARED ELEMENT (destination). The title the tapped row was showing
               flies here and scales up instead of the page re-rendering it.
@@ -446,7 +467,27 @@ export function WorkoutWrapped({
           <Text ref={titleRef} numberOfLines={titleType.maxLines} style={{ ...titleStyle, marginTop: 12, opacity: titleHidden ? 0 : 1 }}>
             {session.title}
           </Text>
-          <View style={{ flex: 1 }} />
+          {/* THE INSTRUMENT ZONE. What used to be here was a bare flex spacer:
+              a title at the top, a figure at the bottom, and 380pt of untouched
+              ink between them — on the first thing an athlete sees after
+              training. The accumulation curve fills it with the session's own
+              sets, and it is the one figure on this screen that shows the work
+              as something that BUILT rather than a total that arrived.
+
+              A session with too few sets to make a curve keeps the space: the
+              spacer is the fallback, never the layout. */}
+          {hasSpine ? (
+            <View style={{ flex: 1, justifyContent: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+                {t("session.work.tonnageThrough")}
+              </Text>
+              <View style={{ marginTop: 10 }}>
+                <TonnageCurve spine={spine} width={win.width - HERO.gutter.hero * 2} />
+              </View>
+            </View>
+          ) : (
+            <View style={{ flex: 1 }} />
+          )}
           <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size }} />
           <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: cel ? txt(C, C.lime) : C.chalk, marginTop: 10 }}>{heroSub}</Text>
           <View style={{ flexDirection: "row", marginTop: 20, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
@@ -488,7 +529,7 @@ export function WorkoutWrapped({
             hero because the hero says HOW MUCH and this says WHERE — and it is
             the one panel nobody else's summary can produce. */}
         {muscleRead.map.muscles.length > 0 && (
-          <Panel glows={<Glow size={panelH * 0.55} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.18} left={-80} />}>
+          <Panel index={at("body")} glows={<Glow size={panelH * 0.55} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.18} left={-80} />}>
             {eyebrow(t("session.body.title"))}
             <SessionBody map={muscleRead.map} coverage={muscleRead.coverage} units={units} />
           </Panel>
@@ -498,7 +539,7 @@ export function WorkoutWrapped({
         {/* The immediate read, for a session opened later that was never rated.
             The card says what a late answer is worth rather than pretending it
             is the in-the-gym reading. See core/feel-schedule.ts. */}
-        <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.05} left={-90} />}>
+        <Panel index={at("feel")} center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.05} left={-90} />}>
           <FeelPrompt
             sessionId={session.id}
             minutes={receipt.durationMin}
@@ -549,7 +590,7 @@ export function WorkoutWrapped({
 
         {/* ── PREMIUM ── */}
         {wrapped.facts.length > 0 && (
-          <Panel center glows={<Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.wash)} top={0} left={-100} />}>
+          <Panel index={at("premium")} center glows={<Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.wash)} top={0} left={-100} />}>
             {eyebrow(t("session.wrapped.premium"))}
             <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, marginTop: 8, marginBottom: 20 }}>{t("session.wrapped.premiumLead")}</Text>
             {wrapped.facts.map((f) => (
@@ -568,7 +609,7 @@ export function WorkoutWrapped({
 
         {/* ── THE DEVICE'S READ (matched) ── */}
         {device && (
-          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
+          <Panel index={at("device")} center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.device.panelTitle"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: leading(28, "tight"), marginTop: 12 }}>{device.activityLabel}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
@@ -615,7 +656,7 @@ export function WorkoutWrapped({
 
         {/* ── CONNECT A DEVICE ── */}
         {showDeviceAd && (
-          <Panel center glows={<Glow size={panelH * 0.45} color={withAlpha(C.blue, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
+          <Panel index={at("device")} center glows={<Glow size={panelH * 0.45} color={withAlpha(C.blue, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
             <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: leading(28, "tight"), marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
             <View style={{ marginTop: 24, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
@@ -640,22 +681,42 @@ export function WorkoutWrapped({
           </Panel>
         )}
 
-        {/* ── SIGNATURE ── */}
-        <Panel center glows={<Glow size={panelH * 0.55} color={withAlpha(GOLD, ALPHA.wash)} top={-panelH * 0.1} left={win.width / 2 - panelH * 0.275} />}>
-          <View style={{ alignItems: "center" }}>
-            {eyebrow(t("session.wrapped.title"))}
-            {signature.length >= SIGNATURE_MIN_BARS && (
+        {/* ── THE WORK ── */}
+        {/* What replaced the signature panel: six unlabelled bars captioned
+            "your session's shape". Every set is here now, in order, at the load
+            it actually moved — a ramp reads as a ramp, straight sets read as a
+            wall — with the figures that describe how the session was RUN
+            underneath. See core/session-spine.ts. */}
+        {hasSpine && (
+          <Panel index={at("work")} glows={<Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.wash)} bottom={panelH * 0.1} right={-90} />}>
+            {eyebrow(t("session.work.title"))}
+            {spine.topSet && (
               <>
-                <View style={{ flexDirection: "row", alignItems: "flex-end", height: 72, marginTop: 34, gap: 3 }}>
-                  {signature.map((v, i) => (
-                    <View key={i} style={{ width: 6, height: `${Math.round(v * 100)}%`, borderRadius: RADIUS.mark, backgroundColor: C.lime, opacity: 0.4 + v * 0.6 }} />
-                  ))}
-                </View>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: 12 }}>{t("session.wrapped.signatureCap")}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.hero, letterSpacing: trackFigure(fs.hero), color: C.chalk, marginTop: 12 }}>
+                  {fmtWeight(spine.topSet.loadKg, units)}
+                  {spine.topSet.reps ? <Text style={{ fontSize: fs.heading, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
+                </Text>
+                <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: txt(C, C.lime), marginTop: 2 }}>
+                  {t("session.work.topSet")} – {spine.topSet.exercise}
+                </Text>
               </>
             )}
-          </View>
-        </Panel>
+            <View style={{ marginTop: 22 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+                {t("session.work.loadPerSet")}
+              </Text>
+              <View style={{ marginTop: 10 }}>
+                <SetSpine spine={spine} width={win.width - HERO.gutter.hero * 2} />
+              </View>
+            </View>
+            <View style={{ flex: 1 }} />
+            <WorkRow label={t("session.work.workingSets")} value={`${spine.workingSets}`} note={t("session.work.ofTotal").replace("{n}", String(spine.totalSets))} C={C} />
+            {spine.medianRestSec != null && (
+              <WorkRow label={t("session.work.medianRest")} value={mmss(spine.medianRestSec)} C={C} />
+            )}
+            {spine.meanRpe != null && <WorkRow label={t("session.work.meanRpe")} value={`${spine.meanRpe}`} C={C} last={true} />}
+          </Panel>
+        )}
 
         {/* ── DETAILS (breakdown + manage) ── */}
         <View style={{ backgroundColor: C.ink, paddingHorizontal: 16, paddingTop: 28, paddingBottom: insets.bottom + 40, minHeight: panelH }}>
@@ -667,19 +728,34 @@ export function WorkoutWrapped({
           other screen. A takeover has no stack under it, so it DISMISSES
           (chevron-down) rather than pops; the geometry is untouched, which is
           why the thumb never has to re-find it. */}
-      <View style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, flexDirection: "row", alignItems: "center", zIndex: 5 }}>
-        <HeroNav onPress={onBack} mode="takeover" material="glass" onDark />
-      </View>
+      {!capturing && (
+        <View style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, flexDirection: "row", alignItems: "center", zIndex: 5 }}>
+          <HeroNav onPress={onBack} mode="takeover" material="glass" onDark />
+          {/* SHARE, OPPOSITE DISMISS. Dismiss is top-left because that is where
+              the back gesture lives, so the only other panel-level action takes
+              the other corner — and holds it on every panel, so the thumb never
+              has to hunt for it. It shares the panel in front of you. */}
+          {showDock && (
+            <Pressable
+              onPress={sharePanel}
+              accessibilityRole="button"
+              accessibilityLabel={t("summary.share")}
+              style={{ marginLeft: "auto", width: HERO.rail.height, height: HERO.rail.height, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), backgroundColor: withAlpha(C.lime, ALPHA.fill) }}
+            >
+              <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: txt(C, C.lime) }}>↗</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
 
-      {/* Sticky share dock — over the wrapped panels only */}
-      {showDock && (
-        <View style={{ position: "absolute", left: 24, right: 24, bottom: insets.bottom + 20 }}>
-          <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginBottom: 16 }}>
-            {keys.map((_, i) => (
-              <View key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: RADIUS.mark, backgroundColor: i === Math.min(panel, keys.length - 1) ? C.lime : C.line }} />
-            ))}
-          </View>
-          <APill label={`↗ ${t("summary.share")}`} onPress={() => { setActive(0); setSheetOpen(true); }} />
+      {/* WHERE YOU ARE IN THE SEQUENCE. The dock used to carry a share pill
+          too; sharing moved to the rail, because the thing being shared is the
+          panel and the control belongs on it rather than under it. */}
+      {showDock && !capturing && (
+        <View style={{ position: "absolute", left: 24, right: 24, bottom: insets.bottom + 20, flexDirection: "row", justifyContent: "center", gap: 6 }}>
+          {keys.map((_, i) => (
+            <View key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: RADIUS.mark, backgroundColor: i === Math.min(panel, keys.length - 1) ? C.lime : C.line }} />
+          ))}
         </View>
       )}
 
@@ -707,27 +783,6 @@ export function WorkoutWrapped({
         onMatched={onMatched}
       />
 
-      {/* ── SHARE SHEET ── */}
-      <Sheet visible={sheetOpen} onClose={() => setSheetOpen(false)} title={t("session.wrapped.chooseStory")}>
-            <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "baseline", marginBottom: 16 }}>
-              <Pressable onPress={() => setSheetOpen(false)}><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("summary.doneToday")}</Text></Pressable>
-            </View>
-            <ScrollView ref={pagerRef} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setActive(Math.round(e.nativeEvent.contentOffset.x / win.width))} snapToInterval={win.width} decelerationRate="fast">
-              {slides.map((s, i) => (
-                <View key={i} style={{ width: win.width - 32, alignItems: "center" }}>
-                  <Pressable onPress={cycleStyle} style={{ borderRadius: previewW * 0.05, backgroundColor: st.bg, shadowColor: "#000", shadowOpacity: 0.4, shadowRadius: 24, shadowOffset: { width: 0, height: 14 }, elevation: 8 }}>
-                    <SlideStoryCard ref={(r) => { storyRefs.current[i] = r; }} slide={s} t={t} units={units} width={previewW} styleId={styleId} animate={i === activeIdx} />
-                  </Pressable>
-                </View>
-              ))}
-            </ScrollView>
-            <View style={{ flexDirection: "row", justifyContent: "center", gap: 8, marginVertical: 16 }}>
-              {slides.map((_, i) => (
-                <View key={i} style={{ width: i === activeIdx ? 20 : 7, height: 7, borderRadius: 4, backgroundColor: i === activeIdx ? C.lime : C.line }} />
-              ))}
-            </View>
-            <APill label={`↗ ${t("summary.shareStory")}`} onPress={shareNow} />
-      </Sheet>
     </View>
   );
 }
