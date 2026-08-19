@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { View, Text } from "react-native";
-import { alsoTodayCopy, heatDayRows, isRated, sessionMark, sessionMeta, type HeatSignalRow, type HeatSitting, type LoggedSession, type WeightUnit , ALPHA} from "@hybrid/core";
+import { alsoTodayCopy, heatDayRows, isRated, sessionMark, sessionMeta, type HeatSignalRow, type LoggedSession, type WeightUnit , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -47,10 +47,10 @@ import HeatAccent from "./heat-accent";
 // until this existed the one surface that names the day's work named everything
 // except the twenty minutes of heat between the gym and the swim. Placement is
 // core's (`heatDayRows`), on the same window the post-session prompt uses, so
-// nothing here decides which workout a sitting belongs to. A sauna row also
-// SWIPES to delete, like the session rows around it — that used to live in the
-// log sheet's Recent list, and it moved here with the reading: the place you
-// notice a wrong entry is the place you are reading it.
+// nothing here decides which workout a sitting belongs to. The sauna line reads
+// and does nothing else — it is half the height of a session row and carries no
+// swipe, so the only destructive gesture in this list still belongs to a
+// workout.
 //
 // This file is the standard. It once had a web twin it mirrored exactly; the
 // web client was retired in Aug 2026 and took it with it.
@@ -70,7 +70,6 @@ export default function DoneFloor({
   onDone,
   onRate,
   onDelete,
-  onDeleteHeat,
   logRow = true,
 }: {
   /** every session logged on the VIEWED day, plan-fulfilling ones included. */
@@ -106,11 +105,6 @@ export default function DoneFloor({
    *  opened it, and then you were in the session, which is the wrong place to
    *  decide it shouldn't exist. */
   onDelete?: (session: LoggedSession) => void;
-  /** Remove a sauna behind an accent row — both its Signal rows. Present → the
-   *  row swipes, exactly as a session's does. This is the ONLY delete path for
-   *  a sitting since the log sheet's Recent list was removed: the reading and
-   *  the correction belong on the same row, in the day it happened. */
-  onDeleteHeat?: (sitting: HeatSitting) => void;
   /** Draw the "log a sport" row at the end of the list. False where the HOST
    *  already offers that action — the logbook rail carries it in its own action
    *  pair on every day state, and two identical offers on one card is the exact
@@ -168,12 +162,12 @@ export default function DoneFloor({
 
       <View style={{ marginTop: rows.length > 0 ? 4 : 6, gap: 4 }}>
         {entries.map((entry) => {
-          // The sauna, as an accent under the workout it followed — never a row
-          // of the same rank, and never swipeable from here: a sitting is
-          // corrected and deleted in the Heat sheet's Recent list, which is the
-          // one place that can also fix the minutes and the temperature.
+          // The sauna, as a half-height accent LINE under the workout it
+          // followed — never a row of the same rank, and it carries no gesture
+          // of its own. It states what happened; correcting or removing a
+          // sitting is not this list's to offer.
           if (entry.kind === "heat") {
-            return <HeatAccent key={`heat:${entry.sitting.ts}`} sitting={entry.sitting} indent={!!entry.under} units={units} onDelete={onDeleteHeat} />;
+            return <HeatAccent key={`heat:${entry.sitting.ts}`} sitting={entry.sitting} indent={!!entry.under} units={units} />;
           }
           const s = entry.session;
           const onPlanRow = planIds.has(s.id);
