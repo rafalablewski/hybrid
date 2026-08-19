@@ -537,9 +537,12 @@ export function UserRecipeEditor({
           <PressScale onPress={() => setConfirmDelete(false)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.cancel")} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.cancel")}</Text>
           </PressScale>
-          <PressScale onPress={() => { setConfirmDelete(false); onDelete?.(); }} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.recipeDelete")} style={{ flex: 1, backgroundColor: FEEDBACK.error.fill, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center" }}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: FEEDBACK.error.ink }}>{t("w.recovery.nutrition.recipeDelete")}</Text>
-          </PressScale>
+          <APill
+            label={t("w.recovery.nutrition.recipeDelete")}
+            color={FEEDBACK.error.fill}
+            onPress={() => { setConfirmDelete(false); onDelete?.(); }}
+            style={{ flex: 1 }}
+          />
         </View>
       </Sheet>
     </View>

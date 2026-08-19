@@ -9,20 +9,19 @@ import {
   springs,
   states,
   type OnboardingQuestion,
-  ALPHA,} from "@hybrid/core";
+} from "@hybrid/core";
 import { useClientPersonaChoice, setClientPersona } from "../../lib/persona";
 import { useOnboarding, finishOnboarding, type AnswerValue } from "../../lib/use-onboarding";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt } from "../../lib/theme";
+import { useTheme } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import {
   leading, fs, space, tracking, F, PressScale as Pressable,
-  HIT_SLOP, HIT_TARGET, LoadSwap, Skeleton, useEntrance,
+  HIT_SLOP, LoadSwap, Skeleton, useEntrance,
 } from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { ACard, ACheckMark, APill, ASegment, ANumberField, ABirthField, AHeading, ASub, AuroraField, RADIUS, withAlpha } from "./kit";
-import { AuroraIcon } from "./icons";
+import { ACard, AChoice, APill, ASegment, ANumberField, ABirthField, AHeading, AStepRail, ASub, AuroraField, RADIUS } from "./kit";
 
 /**
  * AURORA onboarding — the stepped wizard, driven by the admin-editable question
@@ -64,6 +63,13 @@ import { AuroraIcon } from "./icons";
  * funnel step beside welcome/login (`slide_from_right`, no back-swipe) rather
  * than joining `COVER_SCREENS` — it is also the app's FIRST screen on a cold
  * start, where it is entered by `replace` and has nothing to cover.
+ *
+ * THE RHYTHM PASS (Aug 2026) came off a screenshot of the goal step, and it is
+ * spacing rather than motion. The goal step is the ONE question with groups in
+ * it and it was the one question whose rows sat on a different rhythm (see the
+ * comment at the group map); the CTA row's two controls were sized by two
+ * different rules; and `Choice` — this file's own option row, which two other
+ * surfaces had copied — moved into the kit as `AChoice` so there is one of it.
  */
 export default function AuroraOnboarding() {
   const { palette } = useTheme();
@@ -118,7 +124,11 @@ export default function AuroraOnboarding() {
   };
 
   const next = () => { if (idx < total - 1) go(idx + 1, 1); else void finish(); };
-  const back = () => (idx > 0 ? go(idx - 1, -1) : leave());
+  /** Only ever a STEP. It used to fall through to `leave()` at step 0, which
+   *  made Back and skip two vocabularies pointing at one destination on the
+   *  very first screen a new athlete sees — so the control is simply absent
+   *  there now, which is what the check-in wizard has always done. */
+  const back = () => { if (idx > 0) go(idx - 1, -1); };
 
   const answered = (qq: OnboardingQuestion): boolean => {
     if (qq.kind === "persona") return !!(answers[qq.key] ?? persona);
@@ -134,7 +144,10 @@ export default function AuroraOnboarding() {
           for the screens it shells, and this one shells itself. */}
       <AuroraField />
       <Animated.View style={[{ flex: 1, padding: space.xxl }, enterStyle]}>
-        <StepRail total={total} at={idx} />
+        {/* Filled by POSITION: every step up to the one you are on. The rail
+            itself is the kit's now (`AStepRail`) — four wizards drew four of
+            them and only this one animated. */}
+        <AStepRail marks={Array.from({ length: total }, (_, i) => (i <= idx ? "done" : "empty"))} style={{ marginTop: space.sm }} />
         <Pressable
           onPress={leave}
           accessibilityRole="button"
@@ -144,7 +157,13 @@ export default function AuroraOnboarding() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: palette.ash }}>{t("w.account.onboarding.skip")}</Text>
         </Pressable>
 
-        <ScrollView ref={scroller} style={{ marginTop: space.lg }} contentContainerStyle={{ paddingBottom: space.xxl }} showsVerticalScrollIndicator={false}>
+        {/* `flex: 1` is what makes the CTA row below actually PINNED, which this
+            file's header has claimed since the motion pass. Without it the
+            scroller sized to its CONTENT, so a short step (a number, a birth
+            date) let the buttons float up under the answer while a long one —
+            the goal list — pushed them to the floor: the primary action of the
+            wizard moved between questions. */}
+        <ScrollView ref={scroller} style={{ flex: 1, marginTop: space.lg }} contentContainerStyle={{ paddingBottom: space.xxl }} showsVerticalScrollIndicator={false}>
           <LoadSwap loading={waiting} placeholder={<StepSkeleton />}>
             {() => (
               <StepSwap step={idx} dir={dir}>
@@ -170,10 +189,37 @@ export default function AuroraOnboarding() {
           </LoadSwap>
         </ScrollView>
 
-        <View style={{ flexDirection: "row", gap: space.md, alignItems: "center" }}>
-          <Pressable accessibilityRole="button" accessibilityLabel={t("common.back")} onPress={back} style={{ width: 64, height: 56, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: palette.line, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="back" size={20} color={palette.chalk} />
-          </Pressable>
+        {/* THE TWO BUTTONS ARE ONE ROW, so they are one height. Back was drawn
+            at a hard 56 while APill DERIVES its height from its label: 18dp of
+            padding around fs.subtitle plus whatever line box Archivo gives 16dp
+            type (17.41 — hhea 878/-210 over 1000upm — which iOS rounds to 18),
+            so 54. Two controls in one row, sized by two rules that have never
+            heard of each other, landing on the same number only by luck.
+            THE COUPLE OF dp IS NOT THE POINT, Dynamic Type is: the label scales
+            to MAX_FONT_SCALE and takes the pill with it, and a hardcoded 56
+            cannot follow — the row comes apart furthest for the readers who
+            most need it to hold together. The row stretches now and Back takes
+            its height from the pill, so there is one height and nothing to
+            drift. `paddingTop` is the scroller's CLEARANCE: the list clips hard
+            at the row's edge, and without it the cut-off card touched the
+            buttons.
+
+            BACK IS A WORD AND NOT AN ARROW, and it is the same APill the
+            primary is. Three wizards had three back affordances — an arrow in a
+            64dp box here, the word in a padded pill in check-in, a 36dp square
+            in nutrition's setup — and the arrow was the one that could not
+            stay: the hero system already owns ← for SCREEN-level back, so an
+            arrow in the content area made one glyph mean "step" on one row and
+            "screen" on the row above it. That is the argument `card-foot`
+            already made about lime meaning "leaves" on one card and "unfolds"
+            on the next, and it lands the same way here. It also stops being a
+            hand-rolled outline pill, which is a site off the new ratchet.
+
+            IT IS ABSENT ON THE FIRST STEP rather than disabled. There is
+            nothing behind step 0 but the wizard's own exit, and that exit is
+            already on screen as "skip". */}
+        <View style={{ flexDirection: "row", gap: space.md, alignItems: "stretch", paddingTop: space.md }}>
+          {idx > 0 && <APill label={t("common.back")} variant="outline" onPress={back} />}
           <APill
             label={onPlanStep ? (plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
             onPress={next}
@@ -279,60 +325,6 @@ function StepSwap({ step, dir, children }: { step: number; dir: 1 | -1; children
   );
 }
 
-/**
- * THE PROGRESS RAIL — one segment per step, filled up to where you are.
- *
- * The segments used to swap colour in a single frame, which made the only
- * element on the screen whose job is to REPORT TRAVEL the one element that
- * did not travel. Each segment now fills from its leading edge on
- * `springs.slide` — the wizard's own spring, so the bar and the step it
- * describes move on one curve.
- */
-function StepRail({ total, at }: { total: number; at: number }) {
-  return (
-    <View
-      accessibilityRole="progressbar"
-      accessibilityValue={{ min: 1, max: total, now: at + 1 }}
-      style={{ flexDirection: "row", gap: space.sm, marginTop: space.sm }}
-    >
-      {Array.from({ length: total }).map((_, i) => (
-        <RailSeg key={i} on={i <= at} />
-      ))}
-    </View>
-  );
-}
-
-function RailSeg({ on }: { on: boolean }) {
-  const { palette } = useTheme();
-  const reduced = useReducedMotion();
-  const [w, setW] = useState(0);
-  const fill = useRef(new Animated.Value(on ? 1 : 0)).current;
-  useEffect(() => {
-    const anim = reduced
-      ? Animated.timing(fill, { toValue: on ? 1 : 0, duration: durations.reduced, easing: Easing.linear, useNativeDriver: true })
-      : Animated.spring(fill, { toValue: on ? 1 : 0, ...springToRN(springs.slide), useNativeDriver: true });
-    anim.start();
-    return () => anim.stop();
-  }, [on, fill, reduced]);
-  // Rebuilt only when the measured width changes (once) or Reduce Motion is
-  // toggled — `interpolate` registers a node on the value every call.
-  const style = useMemo(
-    () =>
-      reduced
-        ? { opacity: fill }
-        : { transform: [{ translateX: fill.interpolate({ inputRange: [0, 1], outputRange: [-w, 0] }) }] },
-    [fill, w, reduced],
-  );
-  return (
-    <View
-      onLayout={(e) => setW(e.nativeEvent.layout.width)}
-      style={{ flex: 1, height: 5, borderRadius: RADIUS.mark, backgroundColor: palette.line, overflow: "hidden" }}
-    >
-      <Animated.View style={[{ position: "absolute", top: 0, bottom: 0, left: 0, right: 0, backgroundColor: palette.lime }, style]} />
-    </View>
-  );
-}
-
 /** What holds the step's space while the admin's question set is in flight —
  *  the geometry of a question (a title, its line of help, three option rows)
  *  rather than the word "Loading…" it replaces. */
@@ -364,7 +356,7 @@ function QuestionBody({
     return (
       <>
         {(q.choices ?? []).map((o) => (
-          <Choice key={o.value} active={selected === o.value} title={o.label} sub={o.blurb ?? ""} onPress={() => { haptic.selection(); setAnswer(q.key, o.value); if (o.value === "casual" || o.value === "athlete") setClientPersona(o.value); }} />
+          <AChoice key={o.value} active={selected === o.value} title={o.label} sub={o.blurb ?? ""} onPress={() => { haptic.selection(); setAnswer(q.key, o.value); if (o.value === "casual" || o.value === "athlete") setClientPersona(o.value); }} />
         ))}
       </>
     );
@@ -374,11 +366,21 @@ function QuestionBody({
     const selected = answers[q.key] as string | undefined;
     return (
       <>
-        {ONBOARDING_GOAL_GROUPS.map((group) => (
-          <View key={group.category} style={{ marginTop: space.xxs }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: space.md, marginBottom: space.xs }}>{group.category}</Text>
+        {/* THE GOAL STEP IS THE ONE QUESTION WITH GROUPS IN IT, and it used to be
+            the one question whose rows sat on a different rhythm. Every other
+            kind hands its rows straight to `Step`, which stacks them on
+            `space.ms`; this one wrapped each category in a View with NO gap, so
+            inside a category the bordered rows sat flush and their hairlines
+            doubled into a 2px rule — while the only air on the screen was
+            between categories. The rows now take the wizard's own gap and the
+            SEPARATION is what says "new group": ms inside a group, ms + md above
+            a category's name, so a name always sits nearer its own options than
+            to the group above it. */}
+        {ONBOARDING_GOAL_GROUPS.map((group, gi) => (
+          <View key={group.category} style={{ gap: space.ms, marginTop: gi === 0 ? 0 : space.md }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{group.category}</Text>
             {group.goals.map((g) => (
-              <Choice key={g.id} active={selected === g.id} title={g.label} sub={g.blurb} onPress={() => { haptic.selection(); setAnswer(q.key, g.id); }} />
+              <AChoice key={g.id} active={selected === g.id} title={g.label} sub={g.blurb} onPress={() => { haptic.selection(); setAnswer(q.key, g.id); }} />
             ))}
           </View>
         ))}
@@ -406,7 +408,7 @@ function QuestionBody({
           // A multi row is a SWITCH being flipped, not a value being scrubbed
           // past — Impact Light, per the haptic map in lib/haptics.
           const toggle = () => { haptic.light(); const arr = new Set(selectedSet); if (arr.has(o.value)) arr.delete(o.value); else arr.add(o.value); setAnswer(q.key, [...arr]); };
-          return <Choice key={o.value} active={on} title={o.label} sub={o.blurb ?? ""} onPress={toggle} />;
+          return <AChoice key={o.value} active={on} title={o.label} sub={o.blurb ?? ""} onPress={toggle} />;
         })}
       </>
     );
@@ -424,31 +426,6 @@ function Step({ title, sub, children }: { title: string; sub?: string; children:
   );
 }
 
-/**
- * THE WIZARD OPTION ROW — and the app's standard for one (nutrition's onboarding
- * cites this component by name for its geometry: RADIUS.field at padding 16, a
- * 1px border that swaps line → lime when picked, and a lime wash at 8% behind).
- *
- * Two things were wrong with the standard itself, and both were about what
- * happens at the MOMENT OF PICKING:
- *
- *  • THE ROW RESHAPED. The tick was rendered only while active, so selecting an
- *    option inserted a 22dp glyph at the head of the row and shoved the label
- *    sideways — under the finger that had just landed on it. The mark is always
- *    laid out now, at the TRAILING edge (where iOS puts a table row's check, and
- *    where this row's own twin in nutrition-panels already put it), so the
- *    label's left edge never moves.
- *  • NOTHING ANIMATED. The border, the wash and the label all changed in one
- *    frame. They cross-fade now, on the kit `ACheckMark`'s own 120ms curve so
- *    the mark filling and the row tinting land together rather than a third of
- *    a beat apart.
- *
- * All three interpolate COLOUR, which RN can only do on the JS driver, so the
- * whole row runs there — one value, one style node (a JS-driven value and a
- * native-driven one in the same node is the combination RN refuses). It is a
- * 120ms fade on one row; the cost is nothing and the alternative is stacking
- * two copies of every label to cross-fade them.
- */
 /**
  * A NUMBER, ANSWERED THE WAY ITS RANGE DESERVES.
  *
@@ -536,38 +513,4 @@ function seedFor(q: OnboardingQuestion, min: number, max: number): number {
   const seed = q.engineKey ? byKey[q.engineKey] : undefined;
   const v = seed ?? Math.round((min + max) / 2);
   return Math.min(max, Math.max(min, v));
-}
-
-function Choice({ active, title, sub, onPress }: { active: boolean; title: string; sub: string; onPress: () => void }) {
-  const { palette } = useTheme();
-  const on = useRef(new Animated.Value(active ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.timing(on, {
-      toValue: active ? 1 : 0,
-      duration: 120,
-      easing: Easing.out(Easing.quad),
-      useNativeDriver: false,
-    }).start();
-  }, [active, on]);
-  const tint = (from: string, to: string) => on.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}>
-      <Animated.View
-        style={{
-          flexDirection: "row", alignItems: "center", gap: space.md,
-          borderWidth: 1,
-          borderColor: tint(palette.line, palette.lime),
-          backgroundColor: tint(palette.ink2, withAlpha(palette.lime, ALPHA.wash)),
-          borderRadius: RADIUS.field,
-          padding: space.lg,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Animated.Text style={{ fontFamily: F.bold, fontSize: fs.note, color: tint(palette.chalk, txt(palette, palette.lime)) }}>{title}</Animated.Text>
-          {!!sub && <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: 3, lineHeight: leading(fs.caption) }}>{sub}</Text>}
-        </View>
-        <ACheckMark on={active} size={22} />
-      </Animated.View>
-    </Pressable>
-  );
 }

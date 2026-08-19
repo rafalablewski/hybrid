@@ -192,12 +192,12 @@ export default function AuroraBuilder() {
         <View style={{ marginTop: 16, borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.line), backgroundColor: withAlpha(pa.fill, ALPHA.wash), borderRadius: RADIUS.card, padding: 16 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
-          <Pressable
+          <APill
+            label={t("w.train.logger.routineUnlock")}
+            color={pa.fill}
             onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "builder-save" }); router.push("/upgrade"); }}
-            style={{ backgroundColor: pa.fill, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 12 }}
-          >
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: pa.ink }}>{t("w.train.logger.routineUnlock")}</Text>
-          </Pressable>
+            style={{ marginTop: 12 }}
+          />
         </View>
       )}
 
