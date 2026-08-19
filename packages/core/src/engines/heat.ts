@@ -495,3 +495,125 @@ export function heatWeeklyFrequency(signals: HeatSignalRow[], now: number = Date
   }).length;
   return n / HEAT_FREQUENCY_WEEKS;
 }
+
+/* ── THE DAY'S LOG, IN THE ORDER IT HAPPENED ───────────────────────────────── */
+
+/**
+ * ALL A DAY'S LOG NEEDS FROM A SESSION — stated as a type rather than left
+ * implicit, and kept structural so this module still imports nothing from the
+ * session engine. Anything with an id and a clock qualifies.
+ */
+export interface HeatDaySession {
+  id: string;
+  startedAt: string;
+  completedAt?: string | null;
+}
+
+/**
+ * One line of the day's log: a session, or a sitting.
+ *
+ * `under` is the whole point of the type. A sitting that followed a session
+ * carries that session's id and belongs directly BENEATH it — subordinate, not
+ * a second workout; a standalone sitting carries null and stands on its own at
+ * its place in the day.
+ */
+export type HeatDayRow<S extends HeatDaySession> =
+  | { kind: "session"; session: S }
+  | { kind: "heat"; sitting: HeatSitting; under: string | null };
+
+/**
+ * THE DAY'S LOG WITH THE SAUNA IN IT — sessions and sittings as ONE ordered
+ * list, each sitting placed against the session it actually followed.
+ *
+ * WHY THIS EXISTS. A sitting was readable in exactly two places: the week's
+ * count on Today's Heat row, and the sheet's Recent list. Neither says WHEN in
+ * the day it happened, so an athlete who lifted, sat in the sauna, and then
+ * swam could not see the shape of their own afternoon anywhere in the app —
+ * the done floor listed two workouts and the sauna between them was invisible.
+ * The record already knows the answer (`heatAfterSession` has been asking it
+ * for the post-session prompt since the out-of-order pass); this hands the same
+ * answer to a LIST rather than to one session.
+ *
+ * A SITTING IS NOT A SESSION, and the shape of the return says so. It is not
+ * merged into the session list and it never becomes a row of the same rank: it
+ * is attached, so the surface can render it as an accent under its parent.
+ *
+ * THE ATTACHMENT WINDOW IS THE ONE ALREADY IN USE — `HEAT_EDGE_GRACE_MIN`
+ * before the recorded end (clamped to the session's own start, so a 15-minute
+ * run cannot claim the sauna taken BEFORE it) through `HEAT_AFTER_SESSION_H`
+ * after it. Written once, in `heatAfterSession`; a second window invented here
+ * would put the post-session prompt and the day's list in the position of
+ * disagreeing about which workout a sauna followed.
+ *
+ * A sitting can only hang off ONE session — the one whose end it is NEAREST,
+ * the same tie-break the prompt uses — so a sauna between two workouts is never
+ * printed twice. A session can hold SEVERAL: two rounds ninety minutes apart
+ * are two sittings, and both belong to the workout they followed.
+ *
+ * ORDER. `sessions` is consumed in the order given, and the anchors are sorted
+ * by event time in `order` — "desc" (newest first) by default, because that is
+ * what `sessionsOnDay` returns and what the done floor renders. An UNATTACHED
+ * sitting sorts among the sessions by its own instant, so a morning sauna on a
+ * rest afternoon lands where it happened rather than at the end of the list.
+ *
+ * Only sittings on the VIEWED calendar day are placed, matching how the day's
+ * sessions are selected. A sauna taken at 00:30 after a 23:00 session is its
+ * own day's first event — a row that appeared on both days would be one sitting
+ * counted twice by eye.
+ */
+export function heatDayRows<S extends HeatDaySession>(
+  sessions: S[],
+  signals: HeatSignalRow[],
+  opts: { day?: number; order?: "desc" | "asc" } = {},
+): HeatDayRow<S>[] {
+  const day = opts.day ?? Date.now();
+  const dir = opts.order === "asc" ? 1 : -1;
+  if (!Number.isFinite(day)) return sessions.map((session) => ({ kind: "session", session }));
+
+  const key = new Date(day).toDateString();
+  const sittings = heatSittings(signals).filter((s) => new Date(s.ts).toDateString() === key);
+  if (sittings.length === 0) return sessions.map((session) => ({ kind: "session", session }));
+
+  // Each session's attachment window, computed once.
+  const windows = sessions.map((s) => {
+    const start = Date.parse(s.startedAt ?? "");
+    const end = Date.parse(s.completedAt ?? s.startedAt ?? "");
+    if (!Number.isFinite(end)) return null;
+    const grace = end - HEAT_EDGE_GRACE_MIN * 60_000;
+    return { id: s.id, end, from: Number.isFinite(start) ? Math.max(grace, start) : grace, to: end + HEAT_AFTER_SESSION_H * HOUR_MS };
+  });
+
+  const attached = new Map<string, HeatSitting[]>();
+  const loose: HeatSitting[] = [];
+  for (const sitting of sittings) {
+    const t = Date.parse(sitting.ts);
+    let best: { id: string; end: number } | null = null;
+    for (const w of windows) {
+      if (!w || t < w.from || t > w.to) continue;
+      if (!best || Math.abs(t - w.end) < Math.abs(t - best.end)) best = w;
+    }
+    if (!best) { loose.push(sitting); continue; }
+    const list = attached.get(best.id);
+    if (list) list.push(sitting); else attached.set(best.id, [sitting]);
+  }
+
+  // Anchors — sessions and standalone sittings — placed on one clock, then each
+  // session expanded into itself plus whatever it carries.
+  type Anchor = { at: number; i: number; row: HeatDayRow<S> };
+  const anchors: Anchor[] = [];
+  sessions.forEach((session, i) => anchors.push({ at: Date.parse(session.startedAt ?? "") || 0, i, row: { kind: "session", session } }));
+  loose.forEach((sitting, j) => anchors.push({ at: Date.parse(sitting.ts), i: sessions.length + j, row: { kind: "heat", sitting, under: null } }));
+  anchors.sort((a, b) => (a.at === b.at ? a.i - b.i : (a.at - b.at) * dir));
+
+  const out: HeatDayRow<S>[] = [];
+  for (const a of anchors) {
+    out.push(a.row);
+    if (a.row.kind !== "session") continue;
+    const mine = attached.get(a.row.session.id);
+    if (!mine) continue;
+    for (const sitting of mine.slice().sort((x, y) => (Date.parse(x.ts) - Date.parse(y.ts)) * dir)) {
+      out.push({ kind: "heat", sitting, under: a.row.session.id });
+    }
+  }
+  return out;
+}

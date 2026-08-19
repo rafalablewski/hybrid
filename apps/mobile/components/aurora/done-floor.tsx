@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { View, Text } from "react-native";
-import { alsoTodayCopy, isRated, sessionMark, sessionMeta, type LoggedSession, type WeightUnit , ALPHA} from "@hybrid/core";
+import { alsoTodayCopy, heatDayRows, isRated, sessionMark, sessionMeta, type HeatSignalRow, type LoggedSession, type WeightUnit , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
@@ -9,6 +10,7 @@ import SwipeRow from "../swipe-row";
 import AActionPair from "./action-pair";
 import { useConfirm } from "./confirm";
 import { Mark } from "./mark";
+import HeatAccent from "./heat-accent";
 
 // ── AURORA Done floor (mobile) ──────────────────────────────────────────────
 // What was ACTUALLY logged on the viewed day — one row per session — as the
@@ -40,7 +42,15 @@ import { Mark } from "./mark";
 // directly. It is a plain lime word, not a chip: a bordered box at the end of a
 // row reads as a second thing in the list (see the exit rule in CLAUDE.md).
 //
-// Mirrors the web twin (aurora/done-floor.tsx) exactly.
+// THE SAUNA IS IN THIS LIST TOO, as an accent under the session it followed
+// (aurora/heat-accent.tsx). It is what the athlete DID on the viewed day, and
+// until this existed the one surface that names the day's work named everything
+// except the twenty minutes of heat between the gym and the swim. Placement is
+// core's (`heatDayRows`), on the same window the post-session prompt uses, so
+// nothing here decides which workout a sitting belongs to.
+//
+// This file is the standard. It once had a web twin it mirrored exactly; the
+// web client was retired in Aug 2026 and took it with it.
 export default function DoneFloor({
   rows,
   planIds,
@@ -48,6 +58,8 @@ export default function DoneFloor({
   dayLabel,
   units,
   bw,
+  heat,
+  dayTs,
   pad = 20,
   rule = true,
   onOpen,
@@ -67,6 +79,13 @@ export default function DoneFloor({
   dayLabel: string | null;
   units: WeightUnit;
   bw: (isoDate?: string) => number | null;
+  /** The athlete's `sauna` / `saunaTemp` Signals. Supplied → the day's sittings
+   *  render as accent rows against the sessions they followed (see the note on
+   *  `entries` below); omitted → the floor is exactly the session list it was. */
+  heat?: HeatSignalRow[];
+  /** The VIEWED day, so a scrubbed day places its own sittings and not today's.
+   *  Defaults to now, which is what every caller showing today already means. */
+  dayTs?: number;
   /** the host card's horizontal padding — the seam's hairline bleeds by it. */
   pad?: number;
   /** false when the floor IS the card (nothing above it to be separated from). */
@@ -95,6 +114,19 @@ export default function DoneFloor({
   const quiet = withAlpha(C.ash, 0.6);
   // caption + log-label state machine lives in core so the web twin can't drift
   const copy = alsoTodayCopy({ doneCount: rows.length, isToday });
+  /**
+   * THE DAY, WITH THE SAUNA IN IT. `heatDayRows` (core, engines/heat.ts) hangs
+   * each of the day's sittings off the session it actually followed, reading
+   * the SAME window the post-session prompt reads — so the floor and the
+   * Wrapped can never disagree about which workout a sauna came after. A
+   * sitting that followed nothing sorts by its own instant among the sessions.
+   *
+   * The COUNT above still counts sessions, not rows: "3 done today" on a day
+   * with two workouts and a sauna would be claiming a workout that never
+   * happened, and the seam's number is the one the athlete checks their week
+   * against.
+   */
+  const entries = useMemo(() => heatDayRows(rows, heat ?? [], { day: dayTs }), [rows, heat, dayTs]);
   const countLabel = isToday
     ? `${rows.length} ${t("w.home.today.glanceDone")}`
     : `${rows.length} ${t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "")}`;
@@ -126,7 +158,15 @@ export default function DoneFloor({
       )}
 
       <View style={{ marginTop: rows.length > 0 ? 4 : 6, gap: 4 }}>
-        {rows.map((s) => {
+        {entries.map((entry) => {
+          // The sauna, as an accent under the workout it followed — never a row
+          // of the same rank, and never swipeable from here: a sitting is
+          // corrected and deleted in the Heat sheet's Recent list, which is the
+          // one place that can also fix the minutes and the temperature.
+          if (entry.kind === "heat") {
+            return <HeatAccent key={`heat:${entry.sitting.ts}`} sitting={entry.sitting} indent={!!entry.under} units={units} />;
+          }
+          const s = entry.session;
           const onPlanRow = planIds.has(s.id);
           // The ask, only where there is genuinely no answer. A rated row says
           // nothing about it: the rating is on the summary, and a row that
