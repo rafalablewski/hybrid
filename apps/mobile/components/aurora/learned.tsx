@@ -21,9 +21,9 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { fs, F, leading, space, tracking, trackFigure, TABULAR } from "../../lib/ui";
 import { useLearnedMonth } from "../../lib/use-learned";
-import { AuroraScreen, ACard, APressCard, ASection, AMeter, RADIUS, Empty } from "./kit";
+import { AuroraScreen, ACard, ASection, AMeter, RADIUS, Empty } from "./kit";
 import { DoorRow } from "./week-verdict";
-import { ArrowGlyph } from "./cta-label";
+import { LeadCard } from "./lead-rail";
 import { withAlpha } from "./field";
 
 /**
@@ -302,7 +302,10 @@ function Claim({ f, lead = false }: { f: LearnedFinding; lead?: boolean }) {
  * exists, and the athletes who most need to see it are the ones in their first
  * fortnight.
  */
-export function LearnedLead({ sessions, onOpen }: { sessions: LoggedSession[]; onOpen: () => void }) {
+export function LearnedLead({ sessions, onOpen, inline }: { sessions: LoggedSession[]; onOpen: () => void;
+  /** Rendered inside the You tab's LeadRail — the rail owns the width, the
+      gap and the bottom margin, so the card only fills what it is given. */
+  inline?: boolean }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const month = useLearnedMonth(sessions);
@@ -317,44 +320,17 @@ export function LearnedLead({ sessions, onOpen }: { sessions: LoggedSession[]; o
   const spoken = f ? [t(f.titleKey), figure, t(f.unitKey), delta && delta !== "—" ? delta : null].filter(Boolean).join(" ") : null;
 
   return (
-    <APressCard
-      solid
+    <LeadCard
+      inline={inline}
+      kicker={t("w.learned.leadKicker")}
+      title={f ? t(f.titleKey) : null}
+      figure={figure}
+      unit={f ? t(f.unitKey) : null}
+      delta={delta && delta !== "—" ? delta : null}
+      deltaInk={deltaInk}
+      meta={meta}
       onPress={onOpen}
       a11yLabel={[t("w.learned.leadKicker"), spoken, meta].filter(Boolean).join(" – ")}
-      style={{ marginBottom: space.lg }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
-            {t("w.learned.leadKicker")}
-          </Text>
-          {/* THE CLAIM'S OWN SHAPE, KEPT: subject on one line, figure on the
-              next. A first cut joined them — `${title} ${figure}` — which reads
-              fine on a ceiling ("Quads 20") and is gibberish on the two claims
-              whose subject is a question: "What took the most off you 83". The
-              figure also lost its unit that way, so 83 could have been sets. */}
-          {f ? (
-            <>
-              <Text numberOfLines={2} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: space.xxs }}>
-                {t(f.titleKey)}
-              </Text>
-              <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 2, flexWrap: "wrap" }}>
-                <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, ...TABULAR }}>
-                  {figure}
-                </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(f.unitKey)}</Text>
-                {delta && delta !== "—" ? (
-                  <Text style={{ fontFamily: F.monoBold, fontSize: fs.caption, color: deltaInk, ...TABULAR }}>{delta}</Text>
-                ) : null}
-              </View>
-            </>
-          ) : null}
-          <Text style={{ marginTop: space.xxs, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>
-            {meta}
-          </Text>
-        </View>
-        <ArrowGlyph size={16} color={txt(C, C.lime)} />
-      </View>
-    </APressCard>
+    />
   );
 }
