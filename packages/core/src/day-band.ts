@@ -290,6 +290,19 @@ export function rotation(sessions: LoggedSession[], now: number = Date.now()): R
  */
 export const FIXTURE_LOOKBACK_WEEKS = 6;
 export const FIXTURE_MIN_WEEKS = 3;
+/**
+ * How long a fixture may go unplayed and still protect a day. `rotation()` has
+ * had `ROTATION_STALE_DAYS` since it was written — "nothing logged for this
+ * long and the rotation is history, not a habit" — and the fixture detector,
+ * which makes a LOUDER claim about a SPECIFIC day, had no equivalent at all.
+ *
+ * So three Thursdays in July and then nothing kept protecting every Thursday
+ * into late August: the count still cleared FIXTURE_MIN_WEEKS out of the
+ * six-week window long after the last game. A fortnight is the floor because a
+ * weekly fixture recurs every 7 days — you are allowed to miss one week, not
+ * two, before the app stops planning your day around it.
+ */
+export const FIXTURE_STALE_DAYS = 14;
 
 export interface WeeklyFixture {
   kind: TrainingKind;
@@ -297,27 +310,37 @@ export interface WeeklyFixture {
   weekday: number;
   /** How many distinct weeks it landed on that weekday. */
   weeks: number;
+  /** Whole days since the most recent one. The detector REPORTS this rather
+   *  than filtering on it: finding the pattern and deciding it is still live
+   *  are two different questions, and only the second is the band's. */
+  daysSince: number;
 }
 
 export function weeklyFixture(sessions: LoggedSession[], now: number = Date.now()): WeeklyFixture[] {
   const today = localMidnightMs(now);
   const cutoff = today - FIXTURE_LOOKBACK_WEEKS * 7 * DAY_MS;
-  const seen = new Map<string, Set<number>>();
+  const seen = new Map<string, { weeks: Set<number>; last: number }>();
 
   for (const s of sessions ?? []) {
     const at = localMidnightMs(new Date(s.startedAt).getTime());
     if (!Number.isFinite(at) || at < cutoff || at > today) continue;
     const key = `${sessionKind(s)}|${new Date(at).getDay()}`;
-    const weeks = seen.get(key) ?? new Set<number>();
-    weeks.add(Math.floor((at - cutoff) / (7 * DAY_MS)));
-    seen.set(key, weeks);
+    const rec = seen.get(key) ?? { weeks: new Set<number>(), last: at };
+    rec.weeks.add(Math.floor((at - cutoff) / (7 * DAY_MS)));
+    rec.last = Math.max(rec.last, at);
+    seen.set(key, rec);
   }
 
   const out: WeeklyFixture[] = [];
-  for (const [key, weeks] of seen) {
-    if (weeks.size < FIXTURE_MIN_WEEKS) continue;
+  for (const [key, rec] of seen) {
+    if (rec.weeks.size < FIXTURE_MIN_WEEKS) continue;
     const [kind, day] = key.split("|");
-    out.push({ kind: kind as TrainingKind, weekday: Number(day), weeks: weeks.size });
+    out.push({
+      kind: kind as TrainingKind,
+      weekday: Number(day),
+      weeks: rec.weeks.size,
+      daysSince: Math.round((today - rec.last) / DAY_MS),
+    });
   }
   return out.sort((a, b) => b.weeks - a.weeks);
 }
@@ -328,7 +351,12 @@ export function fixtureTomorrow(sessions: LoggedSession[], now: number = Date.no
   // Only a SPORT fixture is worth protecting a day for. A Thursday gym habit is
   // a habit; missing it costs nothing, and a band that says "nothing on the
   // legs today" before every routine session would be unusable.
-  const hit = weeklyFixture(sessions, now).find((f) => f.weekday === tomorrow && f.kind !== "gym" && f.kind !== "walking");
+  // A fixture protects a day only while it is still being PLAYED — see
+  // FIXTURE_STALE_DAYS. A habit that stopped a month ago is history, and the
+  // count inside the six-week window cannot tell the difference on its own.
+  const hit = weeklyFixture(sessions, now).find(
+    (f) => f.weekday === tomorrow && f.kind !== "gym" && f.kind !== "walking" && f.daysSince <= FIXTURE_STALE_DAYS,
+  );
   return hit
     ? { kind: hit.kind, source: "fixture", seen: { weeks: hit.weeks, of: FIXTURE_LOOKBACK_WEEKS, weekday: hit.weekday } }
     : null;

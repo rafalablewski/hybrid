@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeT } from "./i18n";
 import {
   BAND_HEAD_MAX, BAND_SAY_MAX, CADENCE_SPREAD_MAX, REST_STREAK_DAYS, ROTATION_STALE_DAYS,
-  FIXTURE_LOOKBACK_WEEKS,
+  FIXTURE_LOOKBACK_WEEKS, FIXTURE_MIN_WEEKS, FIXTURE_STALE_DAYS,
   TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, fixtureTomorrow, nextDueKind, rotation,
   sessionKind, trainingStreak, weeklyFixture,
   type DayBand, type DayBandInput, type TrainingKind,
@@ -172,6 +172,25 @@ describe("weekly fixtures", () => {
     // the legs today" before every ordinary session would be unusable.
     const log = Array.from({ length: 5 }, (_, i) => session(6 + i * 7, "gym", `g${i}`));
     expect(fixtureTomorrow(log, NOW)).toBeNull();
+  });
+
+  it("stops protecting a fixture that stopped being played", () => {
+    // Three Thursdays inside the six-week window, the most recent one a month
+    // ago. The COUNT still clears the floor — which is exactly why the count
+    // alone was never enough to keep planning a day around it.
+    const tomorrowDow = new Date(NOW + DAY).getDay();
+    // Days back from NOW to the most recent occurrence of tomorrow's weekday.
+    const firstMatch = (new Date(NOW).getDay() - tomorrowDow + 7) % 7 || 7;
+    const stale = [0, 1, 2].map((i) => session(firstMatch + 21 + i * 7, "sport", `old${i}`));
+    expect(weeklyFixture(stale, NOW)[0]!.weekday).toBe(tomorrowDow);
+    expect(weeklyFixture(stale, NOW)[0]!.weeks).toBeGreaterThanOrEqual(FIXTURE_MIN_WEEKS);
+    expect(weeklyFixture(stale, NOW)[0]!.daysSince).toBeGreaterThan(FIXTURE_STALE_DAYS);
+    expect(fixtureTomorrow(stale, NOW)).toBeNull();
+
+    // Missing ONE week is allowed — a fixture is weekly, so a single skip is
+    // an ordinary week, not the end of the habit.
+    const live = [0, 1, 2].map((i) => session(firstMatch + 7 + i * 7, "sport", `live${i}`));
+    expect(fixtureTomorrow(live, NOW)).not.toBeNull();
   });
 
   it("ignores a sport played at random", () => {
