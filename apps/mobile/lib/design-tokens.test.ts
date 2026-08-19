@@ -1473,6 +1473,54 @@ describe("presentation", () => {
     expect(bad).toEqual([]);
   });
 
+  it("HARD — share is ONE mark, and the pair has ONE owner", () => {
+    // Share was this app's most re-implemented affordance: SIX drawings of one
+    // verb, counted in Aug 2026. The recipe cover's SF Symbol; the finish
+    // summary's text arrow inside a hand-rolled chartreuse pill; the Wrapped
+    // rail's, inside a lime-washed box; the verified food page's flat ash
+    // vector in a bare 40pt box; a Settings chip's; and the public profile
+    // rendering the WORD "share" through HeroAccessory — the METADATA
+    // component — in the slot HeroAction was built for.
+    //
+    // Every one of them passed every guard in this file. The emoji rule allows
+    // the arrow by name (it is a real typographic mark, and the warmup RAMP
+    // badge and the elevation-gain figure use it for what it draws), and the
+    // mark rule only catches the `{x.icon}` shape. So the drift needs its own
+    // rule, and it has two halves because it had two shapes.
+    //
+    // ONE OWNER FOR THE PAIR. The SF Symbol and the house vector are named
+    // together in share-mark.ts, so a screen COMPOSES `SHARE_MARK` and never
+    // spells out half of it — which is how the summary came to wear a different
+    // mark from the recipe one tab away.
+    const OWNER = "components/aurora/share-mark.ts";
+    const respelt = codeHits(/square\.and\.arrow\.up/g).filter((h) => !h.startsWith(OWNER));
+    expect(
+      respelt,
+      `\nthe share pair belongs to SHARE_MARK — compose it, don't respell it:\n  ${respelt.join("\n  ")}`,
+    ).toEqual([]);
+
+    // AND NO STAND-IN. A file that actually PERFORMS a share may not draw a
+    // text arrow. Scoped to those files deliberately: the character stays legal
+    // everywhere it means what it draws, and is banned only where it would be
+    // standing in for a mark this app already owns.
+    const SHARES = /\bShare\.share\(|shareCardImage\(|runShare\(|Sharing\.shareAsync\(/;
+    const standIns: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!SHARES.test(text)) continue;
+      text.split("\n").forEach((line, i) => {
+        // A comment may NAME the mark the file dropped — but only in the two
+        // forms this file's comment filter recognises, NOT a JSX `{/* … */}`
+        // continuation line, which is indistinguishable from code here.
+        if (/^\s*(?:\/\/|\/?\*)/.test(line)) return;
+        if (line.includes("\u2197")) standIns.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      standIns,
+      `\na share drawn as a text arrow — use SHARE_MARK:\n  ${standIns.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
   it("HARD — the segmented control is never a native Picker", () => {
     // A SwiftUI `Host` sizes its RN box from the SwiftUI content ONCE, at mount
     // (`matchContents`, the prop's own documented limit). Every segmented

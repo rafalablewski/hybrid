@@ -2884,8 +2884,8 @@ function Summary({
         ) : (
           <>
             {/* The floating cluster — ONE control drawn three times now. Share
-                used to be a hand-rolled chartreuse pill with a `↗︎` text
-                character in it, which made the finish screen's most-pressed
+                used to be a hand-rolled chartreuse pill with a text arrow
+                in it, which made the finish screen's most-pressed
                 button the only one on it that was neither the app's shared
                 satellite nor the system's: on iOS 26 the recipe cover's share
                 answered the thumb with real interactive glass and this one did
@@ -2916,7 +2916,7 @@ function Summary({
                 onPress={shareNow}
               />
               <ASatellite
-                mark={<ArrowGlyph size={19} color={C.chalk} />}
+                mark={<ArrowGlyph size={SATELLITE.glyph} color={C.chalk} />}
                 caption={t("summary.orbAnalysis")}
                 a11y={t("summary.seeAnalysis")}
                 onPress={() => router.replace("/history")}

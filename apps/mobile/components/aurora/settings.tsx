@@ -472,9 +472,14 @@ export default function AuroraSettings({ landOn }: {
           <PressScale onPress={openEditProfile} style={{ borderWidth: 1, borderColor: withAlpha(txt(C, C.lime), ALPHA.rim), backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.settings.edit-profile")}</Text>
           </PressScale>
+          {/* No mark. The text arrow that used to lead this label was a third drawing
+              of share — after the recipe cover's SF Symbol and the finish
+              summary's — standing in a chip whose SIBLING carries no mark at
+              all, so it read as a stray arrow rather than an icon language.
+              The label already says what the chip does. */}
           {!!profile?.handle && (
             <PressScale onPress={shareProfile} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>↗ {t("w.account.settings.share-profile")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.share-profile")}</Text>
             </PressScale>
           )}
         </View>
