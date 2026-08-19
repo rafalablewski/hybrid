@@ -50,6 +50,7 @@ import {
   trainingStreak,
   blocksKind,
   fixtureTomorrow,
+  isRated,
   nextDueKind,
   DUE_RATIO,
   MAX_DUE,
@@ -897,6 +898,13 @@ export default function AuroraHome() {
               // rotation candidate required, because collapsing the rung IS
               // the correction. Everywhere else the answer is about TODAY's
               // training, and there has to be somewhere for the band to go.
+              // The band's ask needs a session to open the sheet on, and it is
+              // TODAY's unrated one — not the viewed day's, which the rail may
+              // have scrubbed somewhere else entirely.
+              onRate={() => {
+                const s = sessionsOnDay(sessions, bandNow).find((x) => !isRated(x));
+                if (s) setRating(s);
+              }}
               onNotToday={
                 band.rung === "protect"
                   ? (band.source === "inferred" && band.kinds[0]

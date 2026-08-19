@@ -870,6 +870,12 @@ export const web_home = {
     "w.home.band.system.threshold": "threshold",
     "w.home.band.system.anaerobic": "anaerobic",
     "w.home.band.deload": "Take the deload.",
+    // THE DONE RUNG. The day is trained, so the band stops prescribing. It
+    // asks for the one value the app cannot measure — how it felt — and once
+    // it has one it says it back, because that answer is what today's load is
+    // actually built from (session-feel.ts).
+    "w.home.band.doneRate": "How did that feel?",
+    "w.home.band.doneLogged": "Today's in.",
     "w.home.band.protect": "{event} tomorrow.",
     "w.home.band.protectKind": "You have a {noun} tomorrow.",
     // THE HEDGED HALF of the same rung: a weekly fixture is something the app
@@ -882,6 +888,8 @@ export const web_home = {
     "w.home.band.singleLabel": "{label}",
     "w.home.band.open": "Nothing's due.",
     "w.home.band.sayDeloadFloor": "The scale bottoms out at 35 and today hit it. The number stopped; the load behind it didn't.",
+    "w.home.band.sayDoneRate": "It's the one thing the app can't measure for you.",
+    "w.home.band.sayDoneFeel": "{feel} — and that's what today's load is built from.",
     "w.home.band.sayProtect": "Nothing on the legs today. A walk if you want one.",
     // The count the guess was drawn from — so a wrong one is arguable rather
     // than merely wrong. {weekday} is the PLURAL weekday (see weekday.* below).
@@ -2204,6 +2212,8 @@ export const web_home = {
     "w.home.band.system.threshold": "progowa",
     "w.home.band.system.anaerobic": "beztlenowa",
     "w.home.band.deload": "Zrób deload.",
+    "w.home.band.doneRate": "Jak to było?",
+    "w.home.band.doneLogged": "Dziś zrobione.",
     "w.home.band.protect": "{event} jutro.",
     "w.home.band.protectKind": "Jutro masz: {noun}.",
     "w.home.band.protectUsual": "Zwykle jutro: {noun}.",
@@ -2214,6 +2224,8 @@ export const web_home = {
     "w.home.band.singleLabel": "{label}",
     "w.home.band.open": "Nic nie czeka.",
     "w.home.band.sayDeloadFloor": "Skala kończy się na 35 i dziś na to trafiło. Liczba stanęła, obciążenie pod nią nie.",
+    "w.home.band.sayDoneRate": "Tego jednego aplikacja za ciebie nie zmierzy.",
+    "w.home.band.sayDoneFeel": "{feel} — i z tego liczy się dzisiejsze obciążenie.",
     "w.home.band.sayProtect": "Dziś nic na nogi. Spacer, jeśli chcesz.",
     "w.home.band.sayProtectUsual": "{n} z ostatnich {total} {weekday} — więc dziś nic ciężkiego na nogi.",
     "w.home.band.sayProtectMaybe": "Jeśli się zgadza, dziś nic ciężkiego na nogi.",
@@ -3486,6 +3498,8 @@ export const web_home = {
     "w.home.band.system.threshold": "Schwellen-",
     "w.home.band.system.anaerobic": "anaerobe",
     "w.home.band.deload": "Mach den Deload.",
+    "w.home.band.doneRate": "Wie hat sich das angefühlt?",
+    "w.home.band.doneLogged": "Heute ist drin.",
     "w.home.band.protect": "{event} morgen.",
     "w.home.band.protectKind": "Morgen: {noun}.",
     "w.home.band.protectUsual": "Morgen meistens: {noun}.",
@@ -3496,6 +3510,8 @@ export const web_home = {
     "w.home.band.singleLabel": "{label}",
     "w.home.band.open": "Nichts steht an.",
     "w.home.band.sayDeloadFloor": "Die Skala endet bei 35, und heute ist sie dort. Die Zahl blieb stehen, die Last darunter nicht.",
+    "w.home.band.sayDoneRate": "Das Einzige, was die App nicht für dich messen kann.",
+    "w.home.band.sayDoneFeel": "{feel} — und daraus baut sich die Last von heute.",
     "w.home.band.sayProtect": "Heute nichts auf die Beine. Ein Spaziergang, wenn du magst.",
     "w.home.band.sayProtectUsual": "{n} der letzten {total} {weekday} — heute also nichts Schweres auf die Beine.",
     "w.home.band.sayProtectMaybe": "Wenn das stimmt, heute nichts Schweres auf die Beine.",
