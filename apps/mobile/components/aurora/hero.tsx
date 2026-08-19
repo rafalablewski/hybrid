@@ -801,7 +801,19 @@ export function HeroScreen({
   return (
     <View style={{ flex: 1, backgroundColor: dark ? (mode === "takeover" ? HERO_TAKEOVER_INK : C.ink) : C.ink }}>
       <StatusBar style="light" />
-      {backdrop === "field" && <AuroraField />}
+      {/* THE AMBIENT FIELD — behind the PAGE, on every rank but the takeover.
+          core's `heroBackdrop` rules that a cover's own box may not show the
+          field through it, and it still doesn't: the hero frame below paints
+          opaque HERO_INK across its whole box and the cover's wash sits on top
+          of that, so this layer is only ever visible under the BODY. Gating the
+          field on `backdrop === "field"` read that rule as being about the
+          screen rather than about the hero, and the one cover-rank screen in
+          the app (the sport page) was therefore the only screen in the app
+          whose content sat on flat #0c0d0c — no chartreuse corner, no
+          terracotta counterweight, no teal depth glow. That is what "why is it
+          so black" was. A takeover keeps its bare ground: its subject is the
+          numbers on it and it does not scroll. */}
+      {mode !== "takeover" && <AuroraField />}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.View style={[{ flex: 1 }, entrance]}>
           {/* the hero ink bleeding into the page — glued to the CONTENT, so it

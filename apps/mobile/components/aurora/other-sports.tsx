@@ -181,9 +181,11 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
         </Text>
       </View>
 
-      {/* Eight weeks of frequency in the cluster's shared HistoryStrip. Violet
-          is the app's non-endurance channel — teal already means cardio on the
-          lanes directly above this block. */}
+      {/* Eight weeks of frequency in the cluster's shared HistoryStrip. SAND is
+          the app's non-endurance channel — teal already means cardio on the
+          lanes directly above this block. (The comment said "violet" long after
+          the colour moved; the sport page reads this decision to pick its own
+          charts' hue, so it had to say what it actually draws.) */}
       <View {...scrub.bind} style={{ marginTop: "auto" }}>
         <HistoryStrip bars={bars} color={C.amber} held={scrub.index} />
       </View>

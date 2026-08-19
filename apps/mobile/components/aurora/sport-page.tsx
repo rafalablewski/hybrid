@@ -34,7 +34,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
-import { APill, AuroraScreen, RADIUS } from "./kit";
+import { APill, ASection, AuroraScreen, RADIUS } from "./kit";
 import { DeviceMark } from "./device-mark";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
@@ -172,13 +172,42 @@ export default function AuroraSportPage() {
     .replace("{weeks}", String(SPORT_PAGE_WEEKS))
     .replace("{avg}", m.hasDistance ? `${sportDistance(m.distanceUnit === "m" ? m.weekAvg / 1000 : m.weekAvg, m.distanceUnit)} ${m.distanceUnit}` : formatDuration(m.weekAvg, u));
 
-  /** The Explore SectionHead: display-face title left, mono meta right. */
-  const SectionHead = ({ title, meta }: { title: string; meta?: string }) => (
-    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md, marginBottom: space.md }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
-      {!!meta && <Text style={label()}>{meta}</Text>}
-    </View>
-  );
+  /**
+   * THE SPORT'S CHANNEL — the colour this page's charts are drawn in, and it is
+   * NOT the brand accent.
+   *
+   * Every chart here used to be chartreuse, which broke the app's colour
+   * vocabulary twice over. Chartreuse is the "go" colour — the docked "Log
+   * session" pill, a PR, an improving delta — so painting the volume bars, the
+   * pace line, the effort split and the marker spark in it left the page with
+   * one hue for everything and nothing that read as go. And it disagreed with
+   * both surfaces that push into this page: the Endurance lanes draw the SAME
+   * eight-week volume and the SAME pace trend in TEAL, and Today's Other-sports
+   * tiles draw a sport's weeks in SAND ("teal already means cardio on the lanes
+   * directly above this block"). A sport was tapped in one colour and its page
+   * opened in another.
+   *
+   * `discipline` comes from the catalog (core sportPageModel), not from this
+   * file — the page decides nothing about what kind of thing a sport is.
+   */
+  const channel = m.discipline === "sport" ? C.amber : C.blue;
+
+  /**
+   * THE CHART PANEL — the ink2 surface a data-dense reading sits on, exactly as
+   * the endurance lanes' `Tile` and the Other-sports tiles draw it (ink2, the
+   * hairline, RADIUS.field). The charts are the one thing on this page that is
+   * a PANEL rather than a row: the ladder, the bests and the recent efforts are
+   * lists, and the app draws lists on the ground with hairlines between them
+   * (the Sports index one screen back does exactly that).
+   */
+  const panel = {
+    backgroundColor: C.ink2,
+    borderWidth: 1,
+    borderColor: C.line,
+    borderRadius: RADIUS.field,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  } as const;
 
   /** Provenance: the device's lockup (white — the device said so) or "typed". */
   const Provenance = ({ provider }: { provider: string | null }) =>
@@ -297,7 +326,7 @@ export default function AuroraSportPage() {
               <Text style={{ ...mono(fs.micro), marginTop: space.xs, lineHeight: leading(fs.micro) }}>{t("w.train.sportPage.timedOnly")}</Text>
             )}
           </View>
-          {m.primary.trend.length >= 2 && <MarkerSpark trend={m.primary.trend} color={C.lime} />}
+          {m.primary.trend.length >= 2 && <MarkerSpark trend={m.primary.trend} color={channel} />}
         </View>
       )}
 
@@ -373,12 +402,13 @@ export default function AuroraSportPage() {
       {m.empty ? null : (
         <>
           {/* ── VOLUME ── */}
-          <View style={{ marginTop: space.xxl }}>
-            <SectionHead title={t("w.train.sportPage.volume")} meta={weeksMeta} />
+          <ASection title={t("w.train.sportPage.volume")} meta={weeksMeta} />
+          <View style={panel}>
             <VolumeBars
               weeks={m.weeks}
               avg={m.weekAvg}
               C={C}
+              accent={channel}
               held={volumeScrub.index}
               bind={volumeScrub.bind}
               readout={chartReadout(volumeRead, m.weeks.length)}
@@ -391,53 +421,60 @@ export default function AuroraSportPage() {
 
           {/* ── PACE — only for a sport that records one ── */}
           {!!m.pace && (
-            <View style={{ marginTop: space.xxl }}>
-              <SectionHead title={t("w.train.sportPage.pace")} meta={t("w.train.sportPage.paceMeta").replace("{weeks}", String(SPORT_PAGE_WEEKS)).replace("{unit}", m.paceUnit)} />
-              <View style={{ flexDirection: "row", gap: space.xxl, marginBottom: space.md }}>
-                {[
-                  { v: sportPace(m.pace.avgSecPerKm, m.pacePer), k: t("w.train.sportPage.average") },
-                  { v: sportPace(m.pace.bestSecPerKm, m.pacePer), k: t("w.train.sportPage.best") },
-                ].map((cell) => (
-                  <View key={cell.k}>
-                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.headline, color: C.chalk }}>{cell.v}</Text>
-                    <Text style={{ ...label(), fontSize: fs.nano, marginTop: 5 }}>{cell.k}</Text>
-                  </View>
-                ))}
+            <>
+              <ASection title={t("w.train.sportPage.pace")} meta={t("w.train.sportPage.paceMeta").replace("{weeks}", String(SPORT_PAGE_WEEKS)).replace("{unit}", m.paceUnit)} />
+              <View style={panel}>
+                <View style={{ flexDirection: "row", gap: space.xxl, marginBottom: space.md }}>
+                  {[
+                    { v: sportPace(m.pace.avgSecPerKm, m.pacePer), k: t("w.train.sportPage.average") },
+                    { v: sportPace(m.pace.bestSecPerKm, m.pacePer), k: t("w.train.sportPage.best") },
+                  ].map((cell) => (
+                    <View key={cell.k}>
+                      <Text style={{ fontFamily: F.monoBold, fontSize: fs.headline, color: C.chalk }}>{cell.v}</Text>
+                      <Text style={{ ...label(), fontSize: fs.nano, marginTop: 5 }}>{cell.k}</Text>
+                    </View>
+                  ))}
+                </View>
+                <PaceTrend
+                  trend={m.pace.trend}
+                  prIndex={m.pace.prIndex}
+                  C={C}
+                  accent={channel}
+                  held={paceScrub.index}
+                  bind={paceScrub.bind}
+                  readout={chartReadout(paceRead, m.pace.trend.length)}
+                />
+                {/* The trend SKIPS the weeks with nothing paced in it, so its
+                    first point is rarely the volume series' first week. Naming
+                    it with `weeks[0]` captioned this chart with someone else's
+                    date. */}
+                <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm }}>
+                  <Text style={mono(fs.nano)}>{fmtDate(m.pace.weekStarts[0] ?? "")}</Text>
+                  <Text style={mono(fs.nano)}>{t("w.train.sportPage.fasterHigher")}</Text>
+                </View>
               </View>
-              <PaceTrend
-                trend={m.pace.trend}
-                prIndex={m.pace.prIndex}
-                C={C}
-                held={paceScrub.index}
-                bind={paceScrub.bind}
-                readout={chartReadout(paceRead, m.pace.trend.length)}
-              />
-              {/* The trend SKIPS the weeks with nothing paced in it, so its first
-                  point is rarely the volume series' first week. Naming it with
-                  `weeks[0]` captioned this chart with someone else's date. */}
-              <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: space.sm }}>
-                <Text style={mono(fs.nano)}>{fmtDate(m.pace.weekStarts[0] ?? "")}</Text>
-                <Text style={mono(fs.nano)}>{t("w.train.sportPage.fasterHigher")}</Text>
-              </View>
-            </View>
+            </>
           )}
 
-          {/* ── EFFORT — one bar, three densities of the one accent ── */}
+          {/* ── EFFORT — one bar, the app's easy/steady/hard ramp ── */}
           {!!m.split && (
-            <View style={{ marginTop: space.xxl }}>
-              <SectionHead title={t("w.train.sportPage.effort")} meta={t("w.train.sportPage.effortMeta").replace("{weeks}", String(SPORT_PAGE_WEEKS))} />
-              <EffortSplitBar split={m.split} C={C} labels={[t("w.train.sportPage.easy"), t("w.train.sportPage.steady"), t("w.train.sportPage.hard")]} />
-            </View>
+            <>
+              <ASection title={t("w.train.sportPage.effort")} meta={t("w.train.sportPage.effortMeta").replace("{weeks}", String(SPORT_PAGE_WEEKS))} />
+              <View style={panel}>
+                <EffortSplitBar split={m.split} C={C} labels={[t("w.train.sportPage.easy"), t("w.train.sportPage.steady"), t("w.train.sportPage.hard")]} />
+              </View>
+            </>
           )}
 
-          {/* ── BESTS — on the page's own hairlines, like every other figure.
-              These were 176-wide bordered cards in a rail, on a page whose
-              totals row was commented "facts on hairlines, no cards": two
-              materials for one job, and the fourth card off the screen edge.
-              All of them are visible at once now. ── */}
+          {/* ── BESTS — on the page's own hairlines, like every other FIGURE.
+              These were 176-wide bordered cards in a rail, and the fourth was
+              off the screen edge; all of them are visible at once now. The
+              page's one surface is the CHART PANEL above — a chart is a drawing
+              that needs a ground to be read against, a figure is a line of text
+              and gets the page's own. ── */}
           {m.bests.length > 0 && (
-            <View style={{ marginTop: space.xxl }}>
-              <SectionHead title={t("w.train.sportPage.bests")} meta={t("w.train.sportPage.allTime")} />
+            <View>
+              <ASection title={t("w.train.sportPage.bests")} meta={t("w.train.sportPage.allTime")} />
               {m.bests.map((b, i) => (
                 <View key={b.id} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, paddingVertical: space.md, ...(i ? dividerTop : null) }}>
                   <Text style={label()}>{bestLabel(b)}</Text>
@@ -477,8 +514,8 @@ export default function AuroraSportPage() {
 
       {/* ── RECENT EFFORTS ── */}
       {m.recent.length > 0 && (
-        <View style={{ marginTop: space.xxl, marginBottom: space.huge }}>
-          <SectionHead title={t("w.train.sportPage.recent")} meta={t("w.train.sportPage.recentMeta").replace("{n}", String(m.recent.length))} />
+        <View style={{ marginBottom: space.huge }}>
+          <ASection title={t("w.train.sportPage.recent")} meta={t("w.train.sportPage.recentMeta").replace("{n}", String(m.recent.length))} />
           {m.recent.map((e, i) => (
             <Pressable
               key={`${e.sessionId}-${i}`}
@@ -547,7 +584,7 @@ export default function AuroraSportPage() {
 
 /* ── the charts — the web twin's geometry, drawn with react-native-svg ────── */
 
-function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]; avg: number; C: Palette; held: number; bind: ScrubBind; readout: ReactNode }) {
+function VolumeBars({ weeks, avg, C, accent, held, bind, readout }: { weeks: SportWeek[]; avg: number; C: Palette; accent: string; held: number; bind: ScrubBind; readout: ReactNode }) {
   const max = Math.max(...weeks.map((w) => w.value), 1);
   const pos = scrubPosition(held, { count: weeks.length, mode: "band" });
   return (
@@ -561,7 +598,11 @@ function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]
             borderRadius: RADIUS.mark,
             // Held, the finger's week is the lit one — the "this week" accent
             // would otherwise compete with the answer the athlete asked for.
-            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? C.lime : withAlpha(C.lime, ALPHA.rim),
+            // Full strength / ALPHA.line is the shared HistoryStrip's own pair,
+            // so a sport's weeks read identically here and in the rail on Today
+            // that opened this page. (The unlit rung was ALPHA.rim, a BORDER
+            // rung, on a surface.)
+            backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? accent : withAlpha(accent, ALPHA.line),
           }}
         />
       ))}
@@ -577,7 +618,7 @@ function VolumeBars({ weeks, avg, C, held, bind, readout }: { weeks: SportWeek[]
 }
 
 /** Reversed, so FASTER sits higher. Same viewBox, padding and stroke as web. */
-function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]; prIndex: number; C: Palette; held: number; bind: ScrubBind; readout: ReactNode }) {
+function PaceTrend({ trend, prIndex, C, accent, held, bind, readout }: { trend: number[]; prIndex: number; C: Palette; accent: string; held: number; bind: ScrubBind; readout: ReactNode }) {
   const W = 326, H = 118, PAD = 10;
   const min = Math.min(...trend), max = Math.max(...trend);
   const span = Math.max(1, max - min);
@@ -591,18 +632,21 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
       <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
         <Defs>
           <LinearGradient id="sportPaceFill" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0" stopColor={C.lime} stopOpacity={0.22} />
-            <Stop offset="1" stopColor={C.lime} stopOpacity={0} />
+            <Stop offset="0" stopColor={accent} stopOpacity={0.22} />
+            <Stop offset="1" stopColor={accent} stopOpacity={0} />
           </LinearGradient>
         </Defs>
         <Path d={area} fill="url(#sportPaceFill)" />
-        <Path d={d} fill="none" stroke={C.lime} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        <Path d={d} fill="none" stroke={accent} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
       </Svg>
       {!!hit && (
         <View pointerEvents="none" style={{ position: "absolute", left: `${(hit[0] / W) * 100}%`, top: 0, bottom: 0, width: 1, backgroundColor: withAlpha(C.ash, 0.55) }} />
       )}
       {/* The PR dot is a View, not a circle: the path is stretched to the
-          column's width and a circle inside a stretched viewBox is an ellipse. */}
+          column's width and a circle inside a stretched viewBox is an ellipse.
+          It is the ONE chartreuse mark on this chart, and that is the point —
+          the line is the sport's channel and the accent means "best". Both dots
+          ring in `ink2`, the panel they now sit on rather than the page. */}
       <View
         pointerEvents="none"
         style={{
@@ -610,7 +654,7 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
           left: `${(pr[0] / W) * 100}%`,
           top: `${(pr[1] / H) * 100}%`,
           width: 9, height: 9, marginLeft: -4.5, marginTop: -4.5,
-          borderRadius: RADIUS.pill, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink,
+          borderRadius: RADIUS.pill, backgroundColor: C.lime, borderWidth: 2, borderColor: C.ink2,
         }}
       />
       {!!hit && (
@@ -621,7 +665,7 @@ function PaceTrend({ trend, prIndex, C, held, bind, readout }: { trend: number[]
             left: `${(hit[0] / W) * 100}%`,
             top: `${(hit[1] / H) * 100}%`,
             width: 13, height: 13, marginLeft: -6.5, marginTop: -6.5,
-            borderRadius: RADIUS.pill, backgroundColor: C.chalk, borderWidth: 2, borderColor: C.ink,
+            borderRadius: RADIUS.pill, backgroundColor: C.chalk, borderWidth: 2, borderColor: C.ink2,
           }}
         />
       )}
@@ -653,12 +697,18 @@ function EffortSplitBar({
 }) {
   const total = Math.max(1, split.easy + split.moderate + split.hard);
   const pct = (v: number) => Math.round((v / total) * 100);
-  // One hue at three densities — three HUES would imply three meanings; this is
-  // one meaning (intensity) at three levels.
+  // CHARTREUSE / SAND / TERRACOTTA — the app's cost ramp, and the very colours
+  // the Endurance lanes' ZoneTile draws this same easy/steady/hard split in.
+  // This bar used to argue for one hue at three densities ("three HUES would
+  // imply three meanings; this is one meaning at three levels"), which is a
+  // fair argument that had already lost: the identical reading, computed by the
+  // identical engine (paceEffortSplit), is coded three-hue one screen away, so
+  // the two disagreed about what an easy week looks like. One reading, one
+  // paint — and cool-to-warm IS the meaning here.
   const bands = [
-    { v: pct(split.easy), k: labels[0]!, bg: withAlpha(C.lime, ALPHA.rim) },
-    { v: pct(split.moderate), k: labels[1]!, bg: withAlpha(C.lime, 0.68) },
-    { v: pct(split.hard), k: labels[2]!, bg: C.lime },
+    { v: pct(split.easy), k: labels[0]!, bg: C.lime },
+    { v: pct(split.moderate), k: labels[1]!, bg: C.amber },
+    { v: pct(split.hard), k: labels[2]!, bg: C.red },
   ];
   // A zero band has no label to place, and a thin one must not collide with its
   // neighbour — so the legend shows only the bands that exist, with a floor.

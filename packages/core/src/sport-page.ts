@@ -284,6 +284,20 @@ export interface SportPageModel {
   category: string;
   /** The S&C family ("Endurance", "Combat", …), or null for a sport with no pool. */
   family: string | null;
+  /**
+   * WHICH CHANNEL THIS SPORT IS ON — the catalog's own answer, so a client
+   * never re-derives it from the name.
+   *
+   * The app already codes activity two ways, and both surfaces that push into
+   * this page have picked a side: the Endurance lanes draw running/cycling/
+   * swimming/rowing/skiing in TEAL (the conditioning channel), and the Today
+   * "Other sports" tiles draw the `"sport"` bucket — racket, team, combat — in
+   * SAND, because "teal already means cardio on the lanes directly above this
+   * block". A page reached from either one has to arrive in the colour it was
+   * tapped in, which it cannot do off `category` alone ("Athletics" holds both
+   * a marathon and a shot put).
+   */
+  discipline: CardioDiscipline;
   hasDistance: boolean;
   hasPace: boolean;
   /** The sport's display distance unit — storage is always km. */
@@ -878,6 +892,9 @@ export function sportPageModel(
     name: sportName,
     category: sport?.category ?? "",
     family: sc?.family ?? null,
+    // The same resolver `sportSessions` narrows the slice with — one answer for
+    // "what kind of activity is this", used for the slice and for the paint.
+    discipline: cardioDiscipline(sportName),
     hasDistance,
     hasPace,
     distanceUnit,

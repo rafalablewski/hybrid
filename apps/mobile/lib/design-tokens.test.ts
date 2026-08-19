@@ -962,7 +962,12 @@ describe("colour arithmetic", () => {
     // to allow them; they were also painting opaque ink over the Aurora field,
     // which is why the rail went. A ceiling that is not re-pinned after a
     // deletion is headroom for two new violations nobody agreed to.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 105,
+    //
+    // 105 → 104. The sport page's effort bar drew its middle band at a raw 0.68
+    // chartreuse — the only stop of a three-density ramp that was neither a rung
+    // nor a real gradient. The band is a hue now (the endurance lanes' own
+    // easy/steady/hard coding), so the number went with the argument for it.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 104,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
