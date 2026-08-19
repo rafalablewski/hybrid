@@ -81,6 +81,12 @@ export default defineConfig({
             // TEXT and then runs it through the real core readers, so it proves
             // a screen invariant without importing the screen.
             "lib/nutrition-form.test.ts",
+            // Reads the tab layout as TEXT to prove the bottom-accessory SLOT
+            // is gated on the draft. The slot IS the bar — a child rendering
+            // null still leaves an empty one over the nav pill — and the render
+            // project cannot mount this file (its `expo-router` alias swallows
+            // native tabs too).
+            "lib/nav-accessory.test.ts",
             // Reads the live logger as TEXT to prove every set-list mutation
             // arms a layout animation before it commits. A missing one is the
             // quietest bug we can ship — correct code, passing tests, an app
