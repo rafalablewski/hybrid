@@ -848,7 +848,9 @@ export const ASKED_QUESTIONS = QUESTIONNAIRE.flatMap((s) => s.questions.filter(i
  * The card leads with the gap rather than the score. "Next: body mass" is a
  * thing a person can act on; a percentage on its own is a grade.
  */
-export function AboutYouLead({ sessions, onOpen }: { sessions: LoggedSession[]; onOpen: () => void }) {
+export function AboutYouLead({ sessions, onOpen, inline }: { sessions: LoggedSession[]; onOpen: () => void;
+  /** Rendered inside the You tab's LeadRail — see LearnedLead's note. */
+  inline?: boolean }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const { measuredKeys, profile } = useVolumeModel(sessions);
@@ -865,7 +867,7 @@ export function AboutYouLead({ sessions, onOpen }: { sessions: LoggedSession[]; 
       solid
       onPress={onOpen}
       a11yLabel={[t("w.quiz.title"), headline, `${answered}/${total}`].filter(Boolean).join(" – ")}
-      style={{ marginBottom: space.lg }}
+      style={inline ? { flex: 1 } : { marginBottom: space.lg }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
         <View style={{ flex: 1 }}>

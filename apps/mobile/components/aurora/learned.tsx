@@ -302,7 +302,10 @@ function Claim({ f, lead = false }: { f: LearnedFinding; lead?: boolean }) {
  * exists, and the athletes who most need to see it are the ones in their first
  * fortnight.
  */
-export function LearnedLead({ sessions, onOpen }: { sessions: LoggedSession[]; onOpen: () => void }) {
+export function LearnedLead({ sessions, onOpen, inline }: { sessions: LoggedSession[]; onOpen: () => void;
+  /** Rendered inside the You tab's LeadRail — the rail owns the width, the
+      gap and the bottom margin, so the card only fills what it is given. */
+  inline?: boolean }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const month = useLearnedMonth(sessions);
@@ -321,7 +324,7 @@ export function LearnedLead({ sessions, onOpen }: { sessions: LoggedSession[]; o
       solid
       onPress={onOpen}
       a11yLabel={[t("w.learned.leadKicker"), spoken, meta].filter(Boolean).join(" – ")}
-      style={{ marginBottom: space.lg }}
+      style={inline ? { flex: 1 } : { marginBottom: space.lg }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
         <View style={{ flex: 1 }}>

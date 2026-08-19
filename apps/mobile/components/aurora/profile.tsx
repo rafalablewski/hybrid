@@ -34,7 +34,7 @@ import { useAccountSettings } from "../../lib/account";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useTheme, txt } from "../../lib/theme";
 import { useFitnessLevel } from "../../lib/use-fitness-level";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { AuroraScreen, RADIUS, CARD_PAD, ASection, ASegment } from "./kit";
 import { getMyProfile, getConnections, getLeaderboard, sapi } from "../../lib/social-api";
@@ -43,6 +43,7 @@ import { AuroraIcon } from "./icons";
 import { StreakMark } from "./streak-mark";
 import { LearnedLead } from "./learned";
 import { AboutYouLead } from "./questionnaire";
+import { LeadRail } from "./lead-rail";
 import { ArrowGlyph } from "./cta-label";
 import { withAlpha } from "./field";
 import { Mark } from "./mark";
@@ -237,46 +238,61 @@ export default function AuroraProfile() {
 
   return (
     <AuroraScreen refreshing={refreshing} onRefresh={load}>
-      {/* WHAT WE LEARNED ABOUT YOU — the tab LEADS with the model, above the
-          cover and the identity block.
+      {/* THE LEAD RAIL — what the app knows about you, what you told it, and
+          (while it is still incomplete) your profile. Three parallel
+          invitations, laid INLINE as a snapping left/right rail rather than
+          stacked.
 
-          The order is the argument. Everything below this is who you are to
-          other people — a banner, an avatar, follower counts, the public
+          The order is still the argument. Everything below this is who you are
+          to other people — a banner, an avatar, follower counts, the public
           highlight grid — and none of it is what the app knows about YOU. The
           ceilings it measured, the recovery rate it clocked and the readiness
           pattern it found are the only things on this screen that no other app
           could show you, and until now they were three levels deep behind a
-          disclosure on another tab. See components/aurora/learned.tsx. */}
-      <LearnedLead sessions={sessions} onOpen={() => router.push("/learned")} />
+          disclosure on another tab (components/aurora/learned.tsx).
 
-      {/* …and its other half. What the app WORKED OUT about you, then what you
-          TOLD it — two authorities on the same question, adjacent, because
-          neither is complete alone and the second is the one you can act on.
+          What stacking got wrong was the SHAPE, not the priority. Three
+          full-width cards ate the entire first screen, so the cover, the avatar
+          and the name — the thing the tab is named for — opened below the fold
+          on every phone, and the vertical order implied a ranking none of these
+          three has over the other two. Side by side they read as the set they
+          are, and the identity block is back where a profile starts.
 
-          The questionnaire had no home before this. Its two doors were both
-          deep inside Performance (a sheet reached through a drawer on the
-          Volume card, and the foot of the monthly story), which is to say it
-          could only be found by someone already looking for it. A screen
-          holding a person's body, training age and recovery belongs where
-          their name and their photo are. */}
-      <AboutYouLead sessions={sessions} onOpen={() => router.push("/questionnaire")} />
+          The second card is the model's other half: what the app WORKED OUT
+          about you beside what you TOLD it — two authorities on the same
+          question, adjacent, because neither is complete alone and the second
+          is the one you can act on. The questionnaire had no home before it;
+          its two doors were both deep inside Performance (a sheet reached
+          through a drawer on the Volume card, and the foot of the monthly
+          story), which is to say it could only be found by someone already
+          looking for it. A screen holding a person's body, training age and
+          recovery belongs where their name and their photo are.
 
-      {/* SET UP YOUR PROFILE — owner-only nudge at the very top; hides once the
-          profile has a photo + bio. (This screen is always your own.) */}
-      {socialP && !sComplete && (
-        /* an icon-tile ROW (tile + text + chevron), not a full-width card — it
-           keeps the compact inset. See CARD_PAD for the variants that stay 16. */
-        <Pressable onPress={() => router.push("/profile-edit")} style={{ flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderColor: C.lime, backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.card, padding: 16, marginBottom: 16 }}>
-          <View style={{ width: 44, height: 44, borderRadius: RADIUS.inner, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-            <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</Text>
-            <Text style={{ color: C.ash, fontSize: fs.body, marginTop: 2, lineHeight: 18 }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</Text>
-          </View>
-          <ArrowGlyph size={16} color={txt(C, C.lime)} />
-        </Pressable>
-      )}
+          The third is the owner-only "set up your profile" nudge; it hides once
+          the profile has a photo + bio, and the rail closes to two. (This
+          screen is always your own.) */}
+      <LeadRail>
+        <LearnedLead inline sessions={sessions} onOpen={() => router.push("/learned")} />
+        <AboutYouLead inline sessions={sessions} onOpen={() => router.push("/questionnaire")} />
+        {socialP && !sComplete ? (
+          /* an icon-tile ROW (tile + text + chevron) in the rail's card box.
+             It takes CARD_PAD rather than the 16 it used to carry as a
+             standalone row: beside two APressCards its inset is now a shared
+             edge, and 16 against their 20 reads as a misalignment. `flex: 1`
+             so it fills the rail's stretched height; the rail owns the width
+             and the bottom margin. */
+          <Pressable onPress={() => router.push("/profile-edit")} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.md, borderWidth: 1, borderColor: C.lime, backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.card, padding: CARD_PAD }}>
+            <View style={{ width: 44, height: 44, borderRadius: RADIUS.inner, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
+              <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</Text>
+              <Text style={{ color: C.ash, fontSize: fs.body, marginTop: 2, lineHeight: leading(fs.body) }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</Text>
+            </View>
+            <ArrowGlyph size={16} color={txt(C, C.lime)} />
+          </Pressable>
+        ) : null}
+      </LeadRail>
 
       {/* COVER BANNER — Aurora gradient wash with a lime corner glow. The
           edit-profile control lives as a frosted chip in the banner's top-right
