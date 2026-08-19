@@ -569,7 +569,7 @@ function useIdentity() {
 function heatColor(level: HeatCell["level"], C: P): string {
   if (level === 0) return C.line;
   const op = level === 1 ? 0.28 : level === 2 ? 0.5 : level === 3 ? 0.74 : 1;
-  return level === 4 ? C.lime : `${C.lime}${Math.round(op * 255).toString(16).padStart(2, "0")}`;
+  return level === 4 ? C.lime : withAlpha(C.lime, op);
 }
 
 // Evenly-spaced month abbreviations across the heatmap window, from the columns'

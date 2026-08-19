@@ -436,7 +436,16 @@ export function HeroBackground({
   // SVG gradient ids are document-global; scope per mount so stacked heroes
   // (push navigation) can't cross-reference each other's hotspot.
   const hotspotId = `hero-hotspot-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  if (backdrop === "field") return <AuroraField />;
+  // THE FIELD IS THE SHELL'S, NEVER THE HERO'S. This used to return a SECOND
+  // AuroraField, and it was wrong twice over. At rest it doubled the shell's —
+  // two identical full-bleed gradient stacks over the same band, roughly twice
+  // the tint, cut off hard at the frame's own `overflow: hidden` edge. And in
+  // motion it was worse than a doubling: this frame is `zIndex: 20` and is
+  // rendered AFTER the scroller, so its field painted OVER the content passing
+  // underneath on the way to the collapsed bar. The bar has its own substrate a
+  // few lines down (a BlurView plus an ink wash, on the hairline's ramp), so
+  // nothing here ever needed a ground of its own.
+  if (backdrop === "field") return null;
   const story = backdrop === "story";
   // A container is lit from the LEFT, the things inside it from the RIGHT — the
   // one cue that tells you which level of a hierarchy you're on.

@@ -1039,7 +1039,24 @@ describe("colour arithmetic", () => {
     // Comment-blind: the sites fixed first are the ones that explain themselves.
     const suffix = codeHits(/`\$\{(?:[^{}]|\{[^{}]*\})+\}[0-9a-fA-F]{2}`/g);
     const eight = codeHits(/["'`]#[0-9a-fA-F]{8}["'`]/g);
-    expect([...suffix, ...eight], "hex alpha suffix → withAlpha(color, 0.xx)").toEqual([]);
+    // AND THE COMPUTED FORM, which is the same defect with the byte worked out
+    // at runtime instead of typed. The two patterns above both end at a LITERAL
+    // pair of hex characters, so `${C.lime}${Math.round(op * 255).toString(16)
+    // .padStart(2, "0")}` sailed past a rule written to make exactly that
+    // impossible — three of them did, in the calendar heat cell, the exercise
+    // page's consistency heat and the profile's achievement grid, each one a
+    // withAlpha() call with the arithmetic spelled out. A rule that can only see
+    // the tidy half of a violation reports the tidy half of the debt.
+    //
+    // `toString(16).padStart(2, "0")` is a SINGLE BYTE as hex, and in this app
+    // there is no reason to format one except an alpha channel. Building a whole
+    // `#rrggbb` is a different thing and stays legal — hero.tsx's chipTint mixes
+    // a colour rather than tinting one — so the pattern is deliberately the
+    // two-character pad and not `toString(16)` alone. withAlpha's own body is
+    // the sanctioned exception, and it has to be: it is the answer.
+    const computed = codeHits(/toString\(16\)[\s\n]*\.padStart\(2/g)
+      .filter((site) => !/components\/aurora\/field\.tsx/.test(site));
+    expect([...suffix, ...eight, ...computed], "hex alpha suffix → withAlpha(color, 0.xx)").toEqual([]);
   });
 });
 

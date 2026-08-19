@@ -90,7 +90,9 @@ export default function AuroraCalendar() {
               const inten = intensity(cell.date);
               const isToday = cell.date === today;
               const isSel = cell.date === selected;
-              const cellBg = day ? `${C.lime}${Math.round(Math.min(1, 0.1 + inten * 0.5) * 255).toString(16).padStart(2, "0")}` : C.ink;
+              // withAlpha, not a hand-built byte: it clamps to [0,1] itself, so
+              // the Math.min went with the concatenation.
+              const cellBg = day ? withAlpha(C.lime, 0.1 + inten * 0.5) : C.ink;
               return (
                 <Pressable key={cell.date} ref={(r: View | null) => { cellRefs.current[cell.date] = r; }} onPress={() => {
                   if (cell.date !== selected) {

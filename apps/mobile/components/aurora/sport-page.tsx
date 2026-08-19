@@ -219,6 +219,13 @@ export default function AuroraSportPage() {
       hero={{
         rank: "cover",
         title: name,
+        // THE COVER WEARS THE SPORT'S CHANNEL TOO. The hero defaults its accent
+        // to the brand chartreuse, which meant every one of the 65 sports got
+        // the same cover wash while the charts a scroll below spoke Lyons Blue
+        // or Fleur De Lis — the top of the screen and the middle of it
+        // disagreeing about what kind of thing the page is about. One fact,
+        // used everywhere it applies.
+        accent: channel,
         // Boxing is Combat / Combat, BJJ and Climbing the same shape — three
         // sports whose category and S&C family are the same word, so the
         // eyebrow read "Combat – Combat". Saying it twice is not a second fact.
