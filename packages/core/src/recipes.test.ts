@@ -15,6 +15,15 @@ import {
   recipeCookView,
   RECIPE_COLLECTIONS,
   RECIPE_COLLECTION_META,
+  isHighProtein,
+  HIGH_PROTEIN_MIN_G,
+  recipeShareLink,
+  recipeLibraryShareLink,
+  recipeShareView,
+  recipeShareText,
+  normalizeSavedRecipes,
+  toggleSavedRecipe,
+  savedRecipes,
   type Recipe,
   type RecipeMeal,
 } from "./recipes";
@@ -105,9 +114,35 @@ describe("filterRecipes", () => {
   it("returns everything for 'all'", () => {
     expect(filterRecipes(RECIPES, "all")).toHaveLength(RECIPES.length);
   });
-  it("filters by meal and by the high-protein flag", () => {
+  it("filters by meal, and by protein the recipe actually carries", () => {
     expect(filterRecipes(RECIPES, "breakfast").every((r) => r.meal === "breakfast")).toBe(true);
-    expect(filterRecipes(RECIPES, "highProtein").every((r) => r.highProtein)).toBe(true);
+    expect(filterRecipes(RECIPES, "highProtein").every(isHighProtein)).toBe(true);
+  });
+});
+
+describe("isHighProtein", () => {
+  // The shelf used to be a hand-typed boolean, and it had drifted: lentil stew
+  // (24 g, 20% of its energy) sat OFF it while shakshuka (22 g, 21%) sat on.
+  it("takes BOTH the grams and the share of energy", () => {
+    const dish = (kcal: number, protein: number): Recipe => ({ ...recipeById("ramen")!, macros: { kcal, protein, carbs: 0, fat: 0 } });
+    // enough grams, but a big meal that merely contains some
+    expect(isHighProtein(dish(900, 30))).toBe(false);
+    // a high share of very little
+    expect(isHighProtein(dish(120, 12))).toBe(false);
+    // both
+    expect(isHighProtein(dish(400, 25))).toBe(true);
+    // exactly on both floors is IN — the thresholds are minimums, not gaps
+    expect(isHighProtein(dish(400, HIGH_PROTEIN_MIN_G))).toBe(true);
+  });
+
+  it("never divides by a zero energy", () => {
+    expect(isHighProtein({ ...recipeById("ramen")!, macros: { kcal: 0, protein: 50, carbs: 0, fat: 0 } })).toBe(false);
+  });
+
+  it("shelves the library the way its numbers say", () => {
+    expect(RECIPES.filter(isHighProtein).map((r) => r.id).sort()).toEqual(
+      ["chicken-wrap", "lentil-stew", "overnight-oats", "power-salad", "salmon-bowl", "shakshuka"],
+    );
   });
 });
 
@@ -151,9 +186,12 @@ describe("the recipes library — the Plans tab's three levels, on food", () => 
   });
 
   it("narrows the shelves by the search, dropping the ones left empty", () => {
-    const shelves = recipeShelves("lentils");
-    expect(shelves).toHaveLength(1);
-    expect(shelves[0]!.key).toBe("dinner");
+    // The stew is a dinner AND clears the protein bar, so it survives on both
+    // of its shelves and on no others — the cross-cut is a second shelf a dish
+    // belongs to, not a filter that replaces the first.
+    expect(recipeShelves("lentils").map((s) => s.key)).toEqual(["dinner", "highProtein"]);
+    // A query nothing answers leaves no shelves at all, rather than empty ones.
+    expect(recipeShelves("zzz")).toEqual([]);
   });
 
   it("counts the library on its cover and lists what it holds", () => {
@@ -190,9 +228,30 @@ describe("the recipes library — the Plans tab's three levels, on food", () => 
     expect(recipeCollectionCoverView("snack", [], { ...CT, title: "Snacks" }).metaParts).toEqual([]);
   });
 
+  const TILE_T = { mins: (n: number) => `${n} min`, kcal: (n: number) => `${n} kcal`, protein: (n: number) => `${n} g protein` };
+
   it("shrinks a recipe to a tile without losing its numbers", () => {
-    const tile = recipeTileView(recipeById("ramen") as Recipe, { mins: (n) => `${n} min`, kcal: (n) => `${n} kcal` });
-    expect(tile).toEqual({ accent: RECIPE_TINT_COLOR.amber, mark: { kind: "glyph", name: "bowl" }, title: "Ramen", count: "15 MIN", meta: "540 kcal" });
+    const tile = recipeTileView(recipeById("ramen") as Recipe, TILE_T);
+    expect(tile).toEqual({
+      accent: RECIPE_TINT_COLOR.amber,
+      mark: { kind: "glyph", name: "bowl" },
+      title: "Ramen",
+      count: "15 MIN",
+      meta: "540 kcal",
+      protein: "15 g protein",
+      // 15 g at 11% of its energy — a bowl of noodles, and the shelf says so.
+      highProtein: false,
+    });
+  });
+
+  it("states protein on the tile, because the library sorts by it", () => {
+    // The collection rail offers a HIGH PROTEIN shelf, so a tile that showed
+    // only time and energy was hiding the number the shelf is chosen on.
+    for (const r of RECIPES) {
+      const tile = recipeTileView(r, TILE_T);
+      expect(tile.protein, r.id).toBe(`${r.macros.protein} g protein`);
+      expect(tile.highProtein, r.id).toBe(isHighProtein(r));
+    }
   });
 
   it("gives a recipe card the three numbers that separate it from its neighbours", () => {
@@ -236,5 +295,121 @@ describe("recipeCookView — the plate the cook screen wears", () => {
       expect(recipeCookView(r, 0, CK).steps).toBe(r.steps.length);
       expect(recipeCookView(r, 0, CK).last).toBe(r.steps.length === 1);
     }
+  });
+});
+
+// ── SHARING ─────────────────────────────────────────────────────────────────
+
+const SHARE = {
+  meal: (m: RecipeMeal) => m[0]!.toUpperCase() + m.slice(1),
+  mins: (n: number) => `${n} min`,
+  serves: (n: number) => `serves ${n}`,
+  macros: (m: { kcal: number; protein: number; carbs: number; fat: number }) =>
+    `${m.kcal} kcal, ${m.protein} g protein, ${m.carbs} g carbs, ${m.fat} g fat per serving`,
+  ingredientsHead: (n: number) => `INGREDIENTS (${n} SERVINGS)`,
+  methodHead: "METHOD",
+  optional: "optional",
+  credit: "From HYBRID",
+};
+
+describe("recipe sharing", () => {
+  const shakshuka = recipeById("shakshuka")!;
+
+  it("addresses a recipe with the same URL vocabulary as a verified food", () => {
+    expect(recipeShareLink("shakshuka")).toBe("https://hybrid.app/app?s=nutrition&recipe=shakshuka");
+    expect(recipeLibraryShareLink()).toBe("https://hybrid.app/app?s=nutrition&recipes=1");
+  });
+
+  it("escapes an id rather than pasting it into the query raw", () => {
+    expect(recipeShareLink("a b&c")).toBe("https://hybrid.app/app?s=nutrition&recipe=a%20b%26c");
+  });
+
+  it("shares the recipe at the serving count on screen, not the stored one", () => {
+    const two = recipeShareView(shakshuka, 2, SHARE);
+    const four = recipeShareView(shakshuka, 4, SHARE);
+    expect(two.ingredients[0]).toBe("4 Large eggs");
+    expect(four.ingredients[0]).toBe("8 Large eggs");
+    expect(four.ingredients[1]).toBe("800 g Chopped tomatoes");
+    expect(four.ingredientsHead).toBe("INGREDIENTS (4 SERVINGS)");
+    // Per-SERVE macros are constant as the yield changes — that is what
+    // per-serve means, and a share that scaled them would be wrong.
+    expect(two.macroLine).toBe(four.macroLine);
+  });
+
+  it("falls back to the recipe's own yield when the serves count is nonsense", () => {
+    for (const bad of [0, -2, Number.NaN]) {
+      expect(recipeShareView(shakshuka, bad, SHARE).ingredients[0]).toBe("4 Large eggs");
+    }
+  });
+
+  it("marks an optional ingredient as optional rather than dropping it", () => {
+    const v = recipeShareView(shakshuka, 2, SHARE);
+    expect(v.ingredients.at(-1)).toBe("40 g Feta (optional)");
+  });
+
+  it("renders a message a person can cook from, with the link as the last line", () => {
+    const text = recipeShareText(recipeShareView(shakshuka, 2, SHARE));
+    const lines = text.split("\n");
+    expect(lines[0]).toBe("Shakshuka");
+    expect(lines[1]).toBe("Breakfast – 20 min – serves 2");
+    expect(text).toContain("INGREDIENTS (2 SERVINGS)");
+    expect(text).toContain("METHOD");
+    // The method is numbered, because a method is genuinely a sequence.
+    expect(text).toContain("1. Soften the diced onion");
+    expect(text).toContain(`4. ${shakshuka.steps[3]!.text}`);
+    expect(lines.at(-2)).toBe("From HYBRID");
+    expect(lines.at(-1)).toBe(recipeShareLink("shakshuka"));
+  });
+
+  it("never joins the meta line with a middot (the house separator rule)", () => {
+    for (const r of RECIPES) {
+      const text = recipeShareText(recipeShareView(r, r.baseServes, SHARE));
+      expect(text.includes("·"), r.id).toBe(false);
+      expect(text.includes("•"), r.id).toBe(false);
+    }
+  });
+
+  it("omits a block the recipe has nothing for, rather than printing its heading", () => {
+    const text = recipeShareText({
+      title: "Leftovers",
+      meta: [],
+      macroLine: "",
+      ingredientsHead: "INGREDIENTS",
+      ingredients: ["1 bowl Rice"],
+      methodHead: "METHOD",
+      steps: [],
+      credit: "From HYBRID",
+    });
+    expect(text).toContain("INGREDIENTS");
+    expect(text).not.toContain("METHOD");
+    expect(text.endsWith("From HYBRID")).toBe(true);
+  });
+});
+
+describe("saved library recipes", () => {
+  it("keeps only ids that still exist, deduped and in order", () => {
+    expect(normalizeSavedRecipes(["shakshuka", "shakshuka", "gone", 7, null, "ramen"])).toEqual([
+      "shakshuka",
+      "ramen",
+    ]);
+  });
+
+  it("degrades a corrupt blob to an empty shelf rather than throwing", () => {
+    for (const junk of [null, undefined, "shakshuka", 3, {}]) {
+      expect(normalizeSavedRecipes(junk)).toEqual([]);
+    }
+  });
+
+  it("saves newest first and unsaves in place", () => {
+    const one = toggleSavedRecipe([], "ramen");
+    expect(one).toEqual(["ramen"]);
+    const two = toggleSavedRecipe(one, "shakshuka");
+    expect(two).toEqual(["shakshuka", "ramen"]);
+    expect(toggleSavedRecipe(two, "shakshuka")).toEqual(["ramen"]);
+  });
+
+  it("resolves the shelf to real recipes, in save order", () => {
+    const shelf = savedRecipes(["ramen", "gone", "shakshuka"]);
+    expect(shelf.map((r) => r.id)).toEqual(["ramen", "shakshuka"]);
   });
 });

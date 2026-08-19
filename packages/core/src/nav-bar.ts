@@ -84,10 +84,11 @@ export const AURORA_NAV_TABS: readonly AuroraNavTab[] = [
  * resolved per surface by auroraNavAction(): TRAIN by default (it opens the
  * Train launcher, exactly what the retired Train tab did), ADD POST on the
  * feed, where the composer — not the gym — is the thing the athlete came to
- * do, and FIND on the add-to-meal picker. The morph is a glyph
- * crossfade inside the same circle, never a second button. Glyphs are the
- * kit's own: the shared inline dumbbell, the `list-add` compose mark the
- * quick-log already wears, and the `search` magnifier.
+ * do, FIND on the add-to-meal picker, and NEW on the recipes library, where
+ * the screen's whole subject is the athlete's own list of dishes. The morph is
+ * a glyph crossfade inside the same circle, never a second button. Glyphs are
+ * the kit's own: the shared inline dumbbell, the `list-add` compose mark the
+ * quick-log already wears, the `search` magnifier and the bare `plus`.
  *
  * ── TWO KINDS OF ACTION, AND THE DIFFERENCE IS LOAD-BEARING ────────────────
  * Train and Add post are DESTINATIONS: the circle goes somewhere. Find is a
@@ -107,7 +108,7 @@ export const AURORA_NAV_TABS: readonly AuroraNavTab[] = [
  * contract; it is simply that on the one screen whose job IS finding a food,
  * the verb happens to be a search.
  */
-export type AuroraNavActionId = "train" | "post" | "search";
+export type AuroraNavActionId = "train" | "post" | "search" | "recipe";
 
 export type AuroraNavAction = {
   id: AuroraNavActionId;
@@ -133,12 +134,30 @@ export const AURORA_NAV_ACTIONS: Record<AuroraNavActionId, AuroraNavAction> = {
   // metrics, which is worse than saying less. "Find" is the same register as
   // the other two — the circle carries a verb, never a noun.
   search: { id: "search", glyph: "search", labelKey: "nav.find", label: "Find", kind: "screen" },
+  // THE RECIPES LIBRARY'S OWN VERB. The library is the one nutrition screen
+  // whose subject is a list of YOUR OWN documents, so the thing you came to do
+  // there is write another one — not train. `screen`, because the editor is a
+  // view inside the Nutrition screen rather than a route, and because the press
+  // has to run the SAME free-tier gate the shelf's door row runs
+  // (access.canSaveRecipe): a circle that walked past the cap would be a way to
+  // buy nothing.
+  //
+  // ONE WORD, and this one was measured rather than guessed: "Add recipe" is
+  // ten characters, and "Find a food" (eleven) already truncated to "Find a f…"
+  // on the device metrics. The GLYPH carries the verb and the surface carries
+  // the object, which is what lets the label be this short.
+  recipe: { id: "recipe", glyph: "plus", labelKey: "nav.newRecipe", label: "New", kind: "screen" },
 } as const;
 
 /** The surface id the add-to-meal picker publishes while it is the visible
  *  screen — Snacks, Breakfast, whichever meal it was opened for. One constant
  *  so the screen and the bar cannot disagree about the spelling. */
 export const NAV_SURFACE_FOOD_PICKER = "food-picker";
+
+/** The surface id the RECIPES LIBRARY publishes while it is the visible screen.
+ *  Deliberately the library root ONLY: on a curated collection or on a recipe
+ *  detail a plus would read as "add to this", which is not what it does. */
+export const NAV_SURFACE_RECIPES = "recipes";
 
 /**
  * Which action the circle carries on a given surface. `surface` is the visible
@@ -151,6 +170,7 @@ export const NAV_SURFACE_FOOD_PICKER = "food-picker";
 export function auroraNavAction(surface: string | null | undefined): AuroraNavActionId {
   if (surface === "feed") return "post";
   if (surface === NAV_SURFACE_FOOD_PICKER) return "search";
+  if (surface === NAV_SURFACE_RECIPES) return "recipe";
   return "train";
 }
 

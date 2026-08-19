@@ -42,8 +42,10 @@ import SessionAccessory, { useSessionDraft } from "../../components/aurora/sessi
  * (lib/nav-surface): a `route` action is an ordinary trigger that navigates, a
  * `screen` action is a disabled trigger whose press the surface handles itself.
  * On the add-to-meal picker that is the magnifier — see nav-bar.ts for why a
- * magnifier there does NOT reopen the spent-slot trade. Everywhere else it is
- * the dumbbell, navigating to the Train launcher, exactly as before.
+ * magnifier there does NOT reopen the spent-slot trade — and on the recipes
+ * library it is a bare plus that opens the recipe editor, gated by the same
+ * free-tier check the shelf's own door row runs. Everywhere else it is the
+ * dumbbell, navigating to the Train launcher, exactly as before.
  *
  * Off iOS 26 there is no detached slot, so this degrades to a trailing tab that
  * changes its glyph — which is the right degradation: the verb is still stated,
@@ -98,6 +100,10 @@ const ACTION_ICON = {
   train: { sf: { default: "dumbbell", selected: "dumbbell.fill" }, src: require("../../assets/icons/list-add.png") },
   post: { sf: { default: "square.and.pencil", selected: "square.and.pencil" }, src: require("../../assets/icons/list-add.png") },
   search: { sf: { default: "magnifyingglass", selected: "magnifyingglass" }, src: require("../../assets/icons/search.png") },
+  // The recipes library's own verb. A BARE plus — `plus.circle` would draw a
+  // ring inside a circle the system already drew, and the kit's own `add` glyph
+  // carries the house style off iOS.
+  recipe: { sf: { default: "plus", selected: "plus" }, src: require("../../assets/icons/add.png") },
 } as const;
 
 // Route name inside this directory, per tab id.

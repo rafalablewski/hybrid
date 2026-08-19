@@ -70,7 +70,7 @@ import { HeatSheet } from "./aurora/heat-sheet";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
-import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
+import { SlideStoryCard, shareCardImage, type SlideData, type ShareBest } from "../lib/share";
 import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint } from "../lib/theme";
@@ -307,7 +307,7 @@ export function WorkoutWrapped({
         ? `${t("share.topLift")}: ${bests[0].name} ${fmtWeight(bests[0].weight, units)}`
         : null;
   const shareText = workoutShareCaption({ title: session.title, minutes, sets, volume, headline: captionHeadline }, units, t);
-  const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
+  const shareNow = () => shareCardImage({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
 
   // SHARED ELEMENT (destination) — see the HERO title below. Only claimed for a
   // non-celebration session; `cel` sessions own their panel's motion.

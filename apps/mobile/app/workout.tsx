@@ -144,7 +144,7 @@ import HoldDragRow from "../components/hold-drag-row";
 import { useDragReorder } from "../lib/use-drag-reorder";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
-import { shareWorkout, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
+import { shareCardImage, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
 import { useSession } from "../lib/session";
 import { usePersona } from "../lib/persona";
 import { readPlanMaxes } from "../lib/plan-maxes";
@@ -2730,7 +2730,7 @@ function Summary({
   // LIQUID FIELD — the card floats in an intensified Aurora field; every control
   // is the same glass material. Share is the one filled (lime) action; routine +
   // analysis are glass satellites at its sides; exit is a glass ✕ up top.
-  const shareNow = () => shareWorkout({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
+  const shareNow = () => shareCardImage({ current: storyRefs.current[activeIdx] ?? null }, shareText, t("summary.shareStory"));
   return (
     <View style={{ flex: 1, backgroundColor: C.ink }}>
       {/* Both backdrops sit OUTSIDE the safe-area pad — they are `absoluteFill`,

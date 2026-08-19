@@ -34,25 +34,15 @@ import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
  * Five rungs is the whole system. A radius that is not one of these is a
  * decision that needs a reason (the audit found 36 distinct values).
  */
-export const RADIUS = { mark: 3, inner: 12, field: 16, card: 28, pill: 999 } as const;
-
-/**
- * CONCENTRIC RADIUS — a nested corner that shares its parent's centre.
- *
- * iOS 26 made this a rule rather than a taste: a child inset by `pad` inside a
- * container of radius `parent` is only truly concentric at `parent - pad`. Draw
- * it at some other value and the two arcs run on different centres — which is
- * why a 12dp tile inside a 28dp card reads as pasted on rather than set in,
- * even though nobody can say why.
- *
- * It applies to a block INSET ON ALL SIDES by the padding — a panel inside a
- * card, a row group inside a sheet. It does NOT apply to a 40dp glyph tile that
- * happens to sit near an edge: that one is a mark, and marks take `RADIUS.inner`.
- * Clamped at `mark` so a deep pad can't hand back a negative or a hairline
- * corner that reads as a mistake.
- */
-export const concentricRadius = (parent: number, pad: number): number =>
-  Math.max(RADIUS.mark, Math.round(parent - pad));
+// The three pure GEOMETRY constants live one module down (./geometry) and are
+// re-exported here, so every existing `from "./kit"` import is untouched.
+// WHY THEY MOVED: hold-menu.tsx reads them, hero.tsx reads hold-menu (the
+// trailing HeroAction's fallback card), and kit reads hero — a runtime cycle
+// that left `RADIUS` undefined at hold-menu's module scope and took nine test
+// files down with it. Constants that everything reads must not sit in the file
+// that reads everything.
+import { RADIUS, concentricRadius, GUTTER } from "./geometry";
+export { RADIUS, concentricRadius, GUTTER };
 
 /**
  * THE CARD'S INNER PADDING — one number for the whole app.
@@ -79,21 +69,7 @@ export const concentricRadius = (parent: number, pad: number): number =>
  */
 export const CARD_PAD = space.xl;
 
-/** The screen's side gutter, in dp — matches the web app-shell's mobile
- *  --page-pad-x (12px) so content fills the same share of the screen on both
- *  clients. Full-bleed rails bleed by exactly this (see the slider rule in
- *  CLAUDE.md); HERO.gutter.edge in core carries the same value for the hero
- *  system. Vertical rhythm is separate (AuroraScreen's `padding`, 16).
- *
- *  A SCREEN THAT OWNS ITS OWN SCROLLER MUST IMPORT THIS. AuroraScreen and the
- *  hero scaffold apply the gutter for you, so a screen that opts out of them
- *  (Today's hub — its custom entrance + pager; History and the feed — their
- *  own FlatList) is the one place the value can drift. It did: the 16 -> 12
- *  sweep moved every rail on Today to bleed 12 while Today's own ScrollView
- *  stayed at 16, leaving a 4dp sliver of gutter beside every cut card and
- *  shifting the hub chrome 4dp between Dashboard and Performance/Feed. Read
- *  the token, never a number. */
-export const GUTTER = 12;
+
 
 /**
  * The gap below a card that is one of a VERTICAL RUN.

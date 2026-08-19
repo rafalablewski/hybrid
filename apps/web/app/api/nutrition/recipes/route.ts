@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ recipe }, { status: 201 });
   } catch {
     return NextResponse.json(
-      { error: "Recipes aren't available yet — run reference/sql-nutrition-user-recipes.sql.", code: "not_migrated" },
+      { error: "Recipes aren't available yet — run reference/sql-nutrition-user-recipes.sql, then reference/sql-recipe-ingredient-unstated.sql.", code: "not_migrated" },
       { status: 503 },
     );
   }

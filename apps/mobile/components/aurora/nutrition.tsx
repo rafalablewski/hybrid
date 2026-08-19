@@ -13,6 +13,8 @@ import {
   adaptiveTargets,
   fuelToday, hydrationToday,
   canSaveRecipe, emptyUserRecipe, recipeToLog, libraryRecipeToLog, type UserRecipe, type RecipeSource,
+  NAV_SURFACE_RECIPES, recipeShareView, recipeShareText, recipeLibraryShareLink, savedRecipes,
+  userRecipeShareText, libraryRecipeToUserRecipe,
   type CopyPlan, type CopyableEntry,
   estimateMaintenance,
   dailyNutrition,
@@ -48,7 +50,7 @@ import {
   localTodayKey,
   sumMealComponents, recipeToMeal,
   nutritionHubSeries,
-  RECIPES, formatIngredient, recipeById, recipeCoverView,
+  RECIPES, formatIngredient, isHighProtein, recipeById, recipeCoverView, searchRecipes,
   recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeCardStats, recipeCookView,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   type NutritionMealPart, type MealPartDef,
@@ -89,9 +91,14 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP , trackFigure} from "../../lib/ui";
 import { useListMotion } from "../../lib/list-motion";
 import { usePublishNavSurface } from "../../lib/nav-surface";
+import { RecipeShareCard, shareCardImage } from "../../lib/share";
+import { toast } from "./toast";
+import { CookStepTimer } from "./cook-timer";
+import { CookAwake } from "./cook-awake";
+import { toggleSavedRecipeId, useSavedRecipeIds } from "../../lib/recipe-saved";
 import { haptic } from "../../lib/haptics";
-import { AuroraScreen, ACard, AChoice, APressCard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
-import { HeroNav } from "./hero";
+import { AuroraScreen, ACard, AChoice, APressCard, AField, ASearch, APill, AHeading, AMeter, Empty, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
+import { HeroAction, HeroNav } from "./hero";
 import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
 import { HubMasthead } from "./hub-masthead";
@@ -114,7 +121,7 @@ import {
 } from "./nutrition-kit";
 import { HoldMenu, type HoldMenuItem } from "../hold-menu";
 import {
-  collectionTitle, CollectionRail, RecipeShelf, RecipeTile, CookPlate, RecipeCard,
+  collectionTitle, CollectionRail, RecipeShelf, RecipeTile, CookPlate, RecipeCard, SavedRecipeShelf,
 } from "./recipe-library";
 import {
   CDivider, WeightTrend, NutritionNudgeLine, SummaryDashboard, OnboardingGoal, QuadTile, Cell,
@@ -270,7 +277,7 @@ const BLANK_CREATE_FORM = {
 
 // The HYBRID Verified mark — the same quiet lime tick the verified-coach badge
 // uses, so "checked by us" reads identically wherever it appears in the app.
-export default function AuroraNutrition({ compact = false, root = false, onNavigateFull, onUpgrade, openFood, openSource, openRecipe: openRecipeId }: {
+export default function AuroraNutrition({ compact = false, root = false, onNavigateFull, onUpgrade, openFood, openSource, openRecipe: openRecipeId, openRecipes }: {
   compact?: boolean;
   /** Rendered as a BOTTOM-NAV tab root (app/(tabs)/nutrition.tsx) rather than a
    *  pushed screen: there is nothing beneath it in the stack, so the masthead
@@ -282,6 +289,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   openFood?: string;
   /** Land on a recipe by id — the cross-app search's recipe results. */
   openRecipe?: string;
+  /** Land on the LIBRARY itself — what a shared library link addresses. */
+  openRecipes?: boolean;
   /** land directly on a verified source page (app/source/[id]) */
   openSource?: string;
 } = {}) {
@@ -602,7 +611,6 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // Leaving the picker leaves search with it: coming back to Snacks tomorrow
   // should not reopen a keyboard over yesterday's question.
   useEffect(() => { if (view !== "add") closePickerSearch(); }, [view, closePickerSearch]);
-  usePublishNavSurface(view === "add" ? NAV_SURFACE_FOOD_PICKER : null, openPickerSearch);
 
   // ── Editable food log — the per-entry records the Diary lists + edit/delete.
   const [logs, setLogs] = useState<FoodLogRow[]>([]);
@@ -644,6 +652,140 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     setEditRecipe(r ? toUserRecipe(r) : { id: "", ...emptyUserRecipe() });
     setView("myRecipe");
   };
+  /**
+   * THE DETACHED NAV CIRCLE'S VERB, per surface (@hybrid/core nav-bar.ts).
+   *
+   * Two surfaces in this screen claim it: the add-to-meal picker (Find — it
+   * brings the search field back under the thumb) and the RECIPES LIBRARY,
+   * whose verb is writing another one. Both are `screen`-kind, so the native
+   * trigger is disabled and the press comes back here.
+   *
+   * The library's press runs the SAME gate the shelf's own door row runs. A
+   * circle that walked past the free cap would not be a shortcut, it would be a
+   * way to hit a 403 with no explanation attached.
+   */
+  const navSurface = view === "add" ? NAV_SURFACE_FOOD_PICKER : view === "recipes" ? NAV_SURFACE_RECIPES : null;
+  const runNavVerb = useCallback(() => {
+    if (view === "add") { openPickerSearch(); return; }
+    if (view !== "recipes") return;
+    if (canSaveRecipe(persona, userRecipes.length)) openRecipeEditor();
+    else router.push("/upgrade");
+    // openRecipeEditor is stable for this purpose — it only ever sets state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, openPickerSearch, persona, userRecipes.length, router]);
+  usePublishNavSurface(navSurface, runNavVerb);
+
+  // ── SHARING A RECIPE, AND KEEPING ONE ────────────────────────────────────
+  // The saved shelf is a set of ids on the device (lib/recipe-saved.ts over
+  // core's own shape); the messages are core's `recipeShareText`, so the phone
+  // formats nothing and translates nothing on its own.
+  const savedIds = useSavedRecipeIds();
+  const saved = useMemo(() => savedRecipes(savedIds), [savedIds]);
+  // What the off-screen card is currently drawing. Set, captured one frame
+  // later, cleared — the card is never on screen, it is a thing to photograph.
+  const [cardRecipe, setCardRecipe] = useState<Recipe | null>(null);
+  const cardRef = useRef<View>(null);
+
+  const shareLabels = useMemo(
+    () => ({
+      meal: (m: Recipe["meal"]) => t(`w.recovery.nutrition.meal.${m}`),
+      mins: (n: number) => `${n} ${t("w.recovery.nutrition.min")}`,
+      serves: (n: number) => `${n} ${t("w.recovery.nutrition.serves")}`,
+      macros: (m: { kcal: number; protein: number; carbs: number; fat: number }) =>
+        t("w.recovery.nutrition.recipeShareMacros")
+          .replace("{kcal}", String(m.kcal))
+          .replace("{p}", String(m.protein))
+          .replace("{c}", String(m.carbs))
+          .replace("{f}", String(m.fat)),
+      ingredientsHead: (n: number) =>
+        `${t("w.recovery.nutrition.ingredients")} (${n} ${t("w.recovery.nutrition.serves")})`.toUpperCase(),
+      methodHead: t("w.recovery.nutrition.method").toUpperCase(),
+      optional: t("w.recovery.nutrition.recipeShareOptional"),
+      credit: t("w.recovery.nutrition.recipeShareCredit"),
+    }),
+    [t],
+  );
+
+  /** The recipe as a message — the whole dish, then the link. A bare URL would
+   *  reach somebody who has no app and no web page to open it with. */
+  const shareRecipe = (r: Recipe, serves: number) => {
+    Share.share({ message: recipeShareText(recipeShareView(r, serves, shareLabels)) }).catch(() => {
+      /* dismissed */
+    });
+  };
+
+  /** The ingredients ALONE, for the shopping-list-shaped job. It is a SHARE and
+   *  not a copy because the clipboard is a native module this repo may only add
+   *  through `npx expo install` (the one-set rule in CLAUDE.md), and the share
+   *  sheet already offers Copy on both platforms. */
+  const shareIngredients = (r: Recipe, serves: number) => {
+    const v = recipeShareView(r, serves, shareLabels);
+    Share.share({ message: [r.name, "", v.ingredientsHead, ...v.ingredients].join("\n") }).catch(() => {});
+  };
+
+  /** The recipe as an IMAGE, through the same capture path as the workout card.
+   *  The card mounts off-screen, so it needs a frame before it can be shot. */
+  const shareRecipeCard = async (r: Recipe, serves: number) => {
+    setCardRecipe(r);
+    await new Promise((done) => setTimeout(done, 80));
+    await shareCardImage(cardRef, recipeShareText(recipeShareView(r, serves, shareLabels)), r.name);
+    setCardRecipe(null);
+  };
+
+  const toggleSaveRecipe = (r: Recipe) => {
+    const nowSaved = toggleSavedRecipeId(r.id);
+    haptic.selection();
+    toast(t(nowSaved ? "w.recovery.nutrition.recipeSavedToast" : "w.recovery.nutrition.recipeUnsavedToast"));
+  };
+
+  /** The rail's trailing control on a recipe — one glass circle presenting the
+   *  four things worth doing with a dish. The rows are named here rather than
+   *  in the renderer so the system menu and the RN fallback card can never
+   *  offer different ones. */
+  /**
+   * MAKE IT MINE — the curated dish copied into Your recipes, editable.
+   *
+   * Every line is matched against foods that actually STATE their numbers (the
+   * athlete's saved products, through core's recipe-match: exact names, exact
+   * unit arithmetic, no guessing). A line that finds none arrives visibly
+   * UNKNOWN rather than as a zero — which is the whole reason this could not be
+   * built before `UserRecipeIngredient.unstated` existed. The copy is taken at
+   * the serving count on screen, and the screen says how much of it came with
+   * numbers, because "3 of 7 ingredients need their numbers" is the difference
+   * between a draft you can finish and one you distrust.
+   */
+  const makeItMine = (r: Recipe, serves: number) => {
+    if (!canSaveRecipe(persona, userRecipes.length)) { router.push("/upgrade"); return; }
+    const { recipe: draft, matched, unmatched } = libraryRecipeToUserRecipe(r, serves, recipeSources);
+    setEditRecipe({ id: "", ...draft });
+    setUserRecipeMsg(
+      unmatched === 0
+        ? t("w.recovery.nutrition.recipeCopiedAll").replace("{n}", String(matched))
+        : t("w.recovery.nutrition.recipeCopiedPartial").replace("{n}", String(unmatched)),
+    );
+    setView("myRecipe");
+  };
+
+  const recipeActions = (r: Recipe, serves: number) => ({
+    items: [
+      { key: "share", label: t("w.recovery.nutrition.recipeShareAction") },
+      { key: "card", label: t("w.recovery.nutrition.recipeShareCard") },
+      { key: "ingredients", label: t("w.recovery.nutrition.recipeCopyIngredients") },
+      {
+        key: "save",
+        label: t(savedIds.includes(r.id) ? "w.recovery.nutrition.recipeUnsaveAction" : "w.recovery.nutrition.recipeSaveAction"),
+      },
+      { key: "mine", label: t("w.recovery.nutrition.recipeMakeMine") },
+    ],
+    onSelect: (key: string) => {
+      if (key === "share") shareRecipe(r, serves);
+      else if (key === "card") void shareRecipeCard(r, serves);
+      else if (key === "ingredients") shareIngredients(r, serves);
+      else if (key === "save") toggleSaveRecipe(r);
+      else if (key === "mine") makeItMine(r, serves);
+    },
+  });
+
   const saveRecipe = async () => {
     if (!editRecipe) return;
     if (!editRecipe.name.trim()) { setUserRecipeMsg(t("w.recovery.nutrition.recipeNeedsName")); return; }
@@ -893,8 +1035,9 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     if (openFood && verifiedFood(openFood)) { setFoodPageId(openFood); setPageBack("home"); setView("food"); }
     else if (openSource && verifiedSource(openSource)) { setSourcePageId(openSource); setPageBack("home"); setView("source"); }
     else if (openRecipeId) { const r = recipeById(openRecipeId); if (r) openRecipe(r); }
+    else if (openRecipes) { setView("recipes"); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openFood, openSource, openRecipeId]);
+  }, [openFood, openSource, openRecipeId, openRecipes]);
 
   // Log a saved meal → opens the portion editor (default 1×), scaled by quantity.
   // ── QUICK ADD — the athlete's OWN foods, ranked for a typed phrase.
@@ -3158,7 +3301,35 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   if (view === "myRecipe" && editRecipe) {
     return (
       <AuroraScreen scroll>
-        {screenHead(editRecipe.id ? t("w.recovery.nutrition.editRecipe") : t("w.recovery.nutrition.newRecipe"), () => setView("recipes"))}
+        {screenHead(
+          editRecipe.id ? t("w.recovery.nutrition.editRecipe") : t("w.recovery.nutrition.newRecipe"),
+          () => setView("recipes"),
+          {
+            // A dish you wrote can leave the phone too — as TEXT and nothing
+            // else, because a private recipe has no public address to link to.
+            // Only once it exists: a blank form has nothing to send.
+            right:
+              editRecipe.id && editRecipe.name.trim() ? (
+                <HeroAction
+                  glyph="square.and.arrow.up"
+                  fallbackGlyph="share"
+                  onDark={false}
+                  label={`${t("w.recovery.nutrition.recipeShareAction")} – ${editRecipe.name}`}
+                  onPress={() => {
+                    Share.share({
+                      message: userRecipeShareText(editRecipe, {
+                        mins: shareLabels.mins,
+                        serves: shareLabels.serves,
+                        macros: shareLabels.macros,
+                        ingredientsHead: shareLabels.ingredientsHead,
+                        credit: shareLabels.credit,
+                      }),
+                    }).catch(() => {});
+                  }}
+                />
+              ) : undefined,
+          },
+        )}
         <UserRecipeEditor
           recipe={editRecipe}
           products={recipeSources}
@@ -3181,6 +3352,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // arriving as two unrelated screens (a chip filter over a two-column grid).
   if (view === "recipes") {
     const shelves = recipeShelves(recipeQuery);
+    const searching = recipeQuery.trim().length > 0;
+    const q = recipeQuery.trim().toLowerCase();
+    // Your own recipes match on their NAME or on an ingredient's — the same two
+    // fields core's searchRecipes reads on a curated one, so one query behaves
+    // the same way whoever wrote the dish.
+    const mineMatch = !searching
+      ? userRecipes
+      : userRecipes.filter(
+          (r) => r.name.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q)),
+        );
+    const savedMatch = searching ? searchRecipes(saved, recipeQuery) : saved;
     // The meta line names what the library HOLDS, so it lists every collection
     // — not just the ones that survived the search, which would make the cover
     // twitch as you type.
@@ -3196,30 +3378,59 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         backLabel={t("w.recovery.nutrition.title")}
         back={() => setView("home")}
         scrollApi={recipeScroll}
+        trailing={
+          <HeroAction
+            glyph="square.and.arrow.up"
+            fallbackGlyph="share"
+            label={t("w.recovery.nutrition.recipeShareLibrary")}
+            onPress={() => {
+              Share.share({
+                message: [
+                  t("w.recovery.nutrition.recipes"),
+                  `${RECIPES.length} ${t("w.recovery.nutrition.recipesCount")} – ${recipeShelves().map((sh) => collectionTitle(sh.key, t)).join(", ")}`,
+                  "",
+                  t("w.recovery.nutrition.recipeShareCredit"),
+                  recipeLibraryShareLink(),
+                ].join("\n"),
+              }).catch(() => {});
+            }}
+          />
+        }
         rail={shelves.length > 0 ? <CollectionRail keys={shelves.map((sh) => sh.key)} onJump={(k) => { const y = shelfTops.current[k]; if (y != null) recipeScroll.current?.scrollToChild(y); }} /> : undefined}
       >
         <View style={{ marginTop: 16 }}>
-          <AField value={recipeQuery} onChange={setRecipeQuery} placeholder={t("w.recovery.nutrition.searchRecipes")} icon="search" />
+          {/* ASearch, not a bare field: it is the same AField with the CLEAR
+              button attached, which is the one affordance that matters when a
+              query returns nothing — and the one this screen was missing. */}
+          <ASearch value={recipeQuery} onChange={setRecipeQuery} placeholder={t("w.recovery.nutrition.searchRecipes")} />
         </View>
-        {/* Your own recipes lead — but only at rest: while a search is running
-            the screen is answering a question about the curated library, and a
-            shelf that ignores the query would read as a result that matched. */}
-        {!recipeQuery.trim() ? (
+        {/* THE QUERY SEARCHES THE WHOLE SCREEN, not just the curated half.
+            The screen shows three kinds of recipe — the ones you wrote, the
+            ones you kept, and the library — and the search used to read only
+            the third, so typing "pasta" with a pasta recipe of your own
+            answered "nothing matches". Your shelves stay while they match, and
+            they stop carrying their resting chrome: no door row among results,
+            no "you haven't written one yet" under a search that simply missed. */}
+        {mineMatch.length > 0 || !searching ? (
           <UserRecipeShelf
-            recipes={userRecipes}
+            recipes={mineMatch}
             onOpen={(r) => openRecipeEditor(r)}
-            onNew={() => openRecipeEditor()}
+            onNew={searching ? undefined : () => openRecipeEditor()}
             canAdd={canSaveRecipe(persona, userRecipes.length)}
             onUpgrade={() => router.push("/upgrade")}
+            emptyNote={!searching}
           />
         ) : null}
-        {shelves.length === 0 ? (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 16 }}>{t("w.recovery.nutrition.noRecipeMatches")}</Text>
+        {/* What you KEPT, between what you wrote and what we wrote. */}
+        <SavedRecipeShelf recipes={savedMatch} openRecipe={(r) => openRecipe(r, "recipes")} />
+        {shelves.length === 0 && mineMatch.length === 0 && savedMatch.length === 0 ? (
+          <Empty title={t("w.recovery.nutrition.noRecipeMatches")} sub={t("w.recovery.nutrition.noRecipeMatchesSub")} />
         ) : (
           shelves.map((shelf) => (
             <RecipeShelf
               key={shelf.key}
               shelf={shelf}
+              savedIds={savedIds}
               onLayout={(e) => { shelfTops.current[shelf.key] = e.nativeEvent.layout.y; }}
               openCollection={openCollection}
               openRecipe={(r) => openRecipe(r, "recipes")}
@@ -3245,7 +3456,32 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
       upToProtein: (g) => t("w.recovery.nutrition.upToProtein").replace("{n}", String(g)),
     });
     return (
-      <CoverScreen cover={{ ...cover, duration: cover.count, stats: [] }} backLabel={t("w.recovery.nutrition.recipes")} back={() => setView("recipes")}>
+      <CoverScreen
+        cover={{ ...cover, duration: cover.count, stats: [] }}
+        backLabel={t("w.recovery.nutrition.recipes")}
+        back={() => setView("recipes")}
+        trailing={
+          <HeroAction
+            glyph="square.and.arrow.up"
+            fallbackGlyph="share"
+            label={t("w.recovery.nutrition.recipeShareCollection")}
+            onPress={() => {
+              // A collection has no address of its own, so the message carries
+              // what is IN it and links the library. Naming the dishes is the
+              // part worth sending; the link is provenance.
+              Share.share({
+                message: [
+                  `${collectionTitle(collection, t)} – ${t("w.recovery.nutrition.recipes")}`,
+                  ...list.map((r) => `${r.name} – ${r.macros.kcal} kcal – ${r.timeMins} ${t("w.recovery.nutrition.min")}`),
+                  "",
+                  t("w.recovery.nutrition.recipeShareCredit"),
+                  recipeLibraryShareLink(),
+                ].join("\n"),
+              }).catch(() => {});
+            }}
+          />
+        }
+      >
         <View style={{ marginTop: 10 }}>
           {list.map((r) => (
             <RecipeCard key={r.id} recipe={r} onOpen={() => openRecipe(r, "collection")} />
@@ -3279,6 +3515,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         })}
         backLabel={recipeFrom === "collection" && collection ? collectionTitle(collection, t) : t("w.recovery.nutrition.recipes")}
         back={() => setView(recipeFrom === "collection" && collection ? "collection" : "recipes")}
+        trailing={
+          <HeroAction
+            glyph="square.and.arrow.up"
+            fallbackGlyph="share"
+            label={`${t("w.recovery.nutrition.recipeShareAction")} – ${rc.name}`}
+            {...recipeActions(rc, recipeServes)}
+          />
+        }
       >
         {/* Ingredients — the stepper scales every quantity live. */}
         <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 24, marginBottom: 2 }}>
@@ -3332,6 +3576,28 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <Pressable onPress={() => logLibraryRecipe(rc, recipeServes)} style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 14, paddingHorizontal: 12 }}><AuroraIcon name="check" size={14} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.logServing")}</Text></Pressable>
         </View>
         <APill label={t("w.recovery.nutrition.startCooking")} onPress={() => { setCookStep(0); setView("cook"); }} style={{ marginTop: 12 }} />
+
+        {/* THE THING BEING PHOTOGRAPHED. Mounted only while a card share is in
+            flight, and far off the left edge: react-native-view-shot captures a
+            view's own rendering, so it has to be laid out and drawn — it does
+            not have to be somewhere anybody can see. */}
+        {cardRecipe ? (
+          <View pointerEvents="none" style={{ position: "absolute", left: -1000, top: 0, width: 340 }}>
+            <RecipeShareCard
+              ref={cardRef}
+              recipe={cardRecipe}
+              labels={{
+                eyebrow: [t(`w.recovery.nutrition.meal.${cardRecipe.meal}`), isHighProtein(cardRecipe) ? t("w.recovery.nutrition.recipeFilter.highProtein") : null]
+                  .filter(Boolean)
+                  .join(" – "),
+                kcal: t("w.recovery.nutrition.energy"),
+                protein: t("w.recovery.nutrition.protein"),
+                time: t("w.recovery.nutrition.time"),
+                ingredients: t("w.recovery.nutrition.ingredientsN").replace("{n}", String(cardRecipe.ingredients.length)),
+              }}
+            />
+          </View>
+        ) : null}
       </CoverScreen>
     );
   }
@@ -3350,11 +3616,18 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     });
     return (
       <AuroraScreen refreshing={refreshing} onRefresh={load}>
+        {/* Wet hands, a phone on the counter, and a method you are halfway
+            through: the one screen in Nutrition that must not sleep. Mounted
+            here rather than hooked in the component, because the hook has to be
+            scoped to THIS view and a component's mount is that scope. */}
+        <CookAwake />
         <CookPlate cook={cook} onBack={() => setView("recipe")} />
         <Text style={{ fontFamily: F.bold, fontSize: 23, lineHeight: 31, letterSpacing: tracking.display, color: C.chalk, marginTop: 20 }}>{cook.step.text}</Text>
+        {/* The step's timer, and it RUNS — see aurora/cook-timer.tsx for why a
+            chip that only printed the number was worse than no number. */}
         {cook.step.timerSec != null ? (
-          <View style={{ flexDirection: "row", alignSelf: "flex-start", alignItems: "center", gap: 8, marginTop: 20, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 16 }}>
-            <Glyph name="stopwatch" size={15} color={txt(C, C.amber)} /><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.amber) }}>{Math.floor(cook.step.timerSec / 60)}:{String(cook.step.timerSec % 60).padStart(2, "0")} {t("w.recovery.nutrition.timer")}</Text>
+          <View style={{ marginTop: 12 }}>
+            <CookStepTimer seconds={cook.step.timerSec} stepNumber={cook.index + 1} />
           </View>
         ) : null}
         {/* On the last step the accent moves to the LOG: the end of cooking is

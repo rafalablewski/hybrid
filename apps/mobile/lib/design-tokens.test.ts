@@ -911,7 +911,11 @@ describe("colour", () => {
     // run-track carried a bespoke "#12170f" for its amber state. APill derives
     // both from the palette by measurement now, so seven literals went with the
     // buttons that were hiding them.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 51, "2026-12-31", "hex literal → a palette token");
+    // …and → 49 on the hero rail: its on-art white became ON_ART when the
+    // TRAILING control (HeroAction, the recipe share button) had to draw the
+    // same circle as the leading one — six literals across the two ends of one
+    // rail, which is the drift this rule exists to catch, collapsed to a name.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 49, "2026-12-31", "hex literal → a palette token");
   });
 });
 

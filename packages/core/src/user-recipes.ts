@@ -41,7 +41,8 @@
  */
 
 import { scaleFacts, sumFacts, type MicroKey, type NutritionFacts } from "./food-facts";
-import type { Recipe } from "./recipes";
+import { recipeShareText, type Recipe, type RecipeShareView } from "./recipes";
+import { matchRecipeLine, type FoodCandidate } from "./recipe-match";
 
 /** One line of a recipe: a food, and how much of it went in. */
 export interface UserRecipeIngredient {
@@ -55,6 +56,27 @@ export interface UserRecipeIngredient {
   servingLabel: string;
   /** The source food's facts for ONE serving — the snapshot (see the file note). */
   facts: NutritionFacts;
+  /**
+   * TRUE when this line's NUMBERS ARE NOT KNOWN — the quantity and the name are
+   * real, the `facts` are placeholder zeros, and nothing may treat them as a
+   * measurement.
+   *
+   * WHY THE MODEL NEEDED THIS. Every other unknown in nutrition is already
+   * representable: a panel field absent from a label stays null and `sumFacts`
+   * drops the whole total rather than adding a zero to it. MACROS could not say
+   * it — `NutritionFacts` requires kcal/protein/carbs/fat as numbers — so a
+   * line whose food had not been identified yet could only be written as a
+   * confident zero, which is the one thing this file's whole discipline exists
+   * to prevent. That is what blocked copying a curated recipe into your own
+   * (it states per-serve macros and NO per-ingredient figures), and it is the
+   * same gap an imported recipe would hit on its first unmatched line.
+   *
+   * The flag is the honest minimum: four columns stay non-null, `recipeTotals`
+   * reports which lines it could not count, the totals read as a FLOOR while
+   * any remain, and logging is refused until they are resolved. Link the line
+   * to a real food (`linkIngredient`) and it clears.
+   */
+  unstated?: boolean;
   /** The saved FoodProduct this came from, if any. Provenance + staleness only. */
   productId?: string | null;
   /** The HYBRID Verified catalog id this came from, if any. */
@@ -104,6 +126,16 @@ export interface RecipeTotals {
   partial: MicroKey[];
   servings: number;
   ingredientCount: number;
+  /**
+   * The NAMES of the lines whose numbers are not known (`unstated`), in order.
+   *
+   * While this is non-empty the two totals above are a FLOOR — what the counted
+   * lines add up to — and every surface must say so rather than printing them
+   * as the recipe's macros. It is the same stance the label panel already
+   * takes: a figure computed from part of the food is a floor, and "over"
+   * means "already over on what we can see".
+   */
+  unstated: string[];
 }
 
 /**
@@ -114,7 +146,11 @@ export interface RecipeTotals {
  */
 export function recipeTotals(r: UserRecipe): RecipeTotals {
   const servings = recipeServings(r);
-  const { total, partial } = sumFacts(r.ingredients.map(ingredientFacts));
+  // An unstated line is NOT summed as zero — it is left out and named. Adding
+  // its placeholder facts would turn "we do not know" into "it contributes
+  // nothing", which is the same wrong answer wearing a total's clothes.
+  const counted = r.ingredients.filter((i) => !i.unstated);
+  const { total, partial } = sumFacts(counted.map(ingredientFacts));
   return {
     total,
     // Dividing through scaleFacts rather than by hand keeps the not-stated rule:
@@ -123,6 +159,52 @@ export function recipeTotals(r: UserRecipe): RecipeTotals {
     partial,
     servings,
     ingredientCount: r.ingredients.length,
+    unstated: r.ingredients.filter((i) => i.unstated).map((i) => i.name),
+  };
+}
+
+/**
+ * May this recipe be LOGGED to the day?
+ *
+ * Only when every line has been counted. A recipe with unknown lines has a
+ * floor, not a total, and the diary is the one place a floor is indefensible:
+ * an entry that under-reports what was eaten is worse than no entry, because
+ * nothing downstream — the ring, the targets, the week — can tell that it did.
+ */
+export function canLogRecipe(r: UserRecipe): boolean {
+  return r.ingredients.length > 0 && r.ingredients.every((i) => !i.unstated);
+}
+
+/**
+ * Give an unknown line its numbers, from a food that states them.
+ *
+ * The line KEEPS ITS NAME — "Chopped tomatoes" is what the recipe calls it and
+ * what the athlete is reading — while taking the source's serving label, its
+ * facts snapshot and its provenance id, and dropping the unstated flag. `qty`
+ * comes from the caller because only it knows whether the athlete picked a
+ * conversion or just a food.
+ */
+export function linkIngredient(
+  r: UserRecipe,
+  ingredientId: string,
+  source: { id: string; servingLabel: string; facts: NutritionFacts; verified?: boolean },
+  qty = 1,
+): UserRecipe {
+  return {
+    ...r,
+    ingredients: r.ingredients.map((i) =>
+      i.id !== ingredientId
+        ? i
+        : {
+            ...i,
+            qty: Math.max(0.05, Math.round(qty * 100) / 100),
+            servingLabel: source.servingLabel,
+            facts: source.facts,
+            productId: source.verified ? null : source.id,
+            verifiedId: source.verified ? source.id : null,
+            unstated: false,
+          },
+    ),
   };
 }
 
@@ -303,4 +385,120 @@ export function formatIngredientQty(ing: Pick<UserRecipeIngredient, "qty" | "ser
 /** A blank recipe, for the "new recipe" form. */
 export function emptyUserRecipe(): Omit<UserRecipe, "id"> {
   return { name: "", note: null, emoji: null, servings: 1, timeMins: null, ingredients: [] };
+}
+
+// ── SHARING YOUR OWN RECIPE ─────────────────────────────────────────────────
+
+/** The labels `userRecipeShareView` needs. A user recipe has no METHOD — the
+ *  model holds ingredients and quantities, not prose — so the renderer's method
+ *  block simply stays empty rather than printing an empty heading. */
+export interface UserRecipeShareLabels {
+  mins: (n: number) => string;
+  serves: (n: number) => string;
+  /** The per-serving macro line, from the DERIVED totals. */
+  macros: (f: NutritionFacts) => string;
+  ingredientsHead: (serves: number) => string;
+  credit: string;
+}
+
+/**
+ * A dish the athlete authored, projected onto the shared share view.
+ *
+ * NO LINK, and that is the honest part: a private recipe has no public address,
+ * so the message carries the recipe and stops. The macro line comes from
+ * `recipeTotals` — the same derived per-serving figures the editor shows, never
+ * a number typed for the occasion.
+ */
+export function userRecipeShareView(r: UserRecipe, t: UserRecipeShareLabels): RecipeShareView {
+  const { perServing, servings } = recipeTotals(r);
+  const meta = [t.serves(servings)];
+  if (r.timeMins != null && r.timeMins > 0) meta.unshift(t.mins(r.timeMins));
+  return {
+    title: r.name,
+    meta,
+    macroLine: t.macros(perServing),
+    ingredientsHead: t.ingredientsHead(servings),
+    ingredients: r.ingredients
+      .slice()
+      .sort((a, b) => a.position - b.position)
+      .map((ing) => `${formatIngredientQty(ing)} ${ing.name}`),
+    methodHead: "",
+    steps: [],
+    credit: t.credit,
+  };
+}
+
+/** The shared message for a user recipe — the same renderer the library uses. */
+export function userRecipeShareText(r: UserRecipe, t: UserRecipeShareLabels): string {
+  return recipeShareText(userRecipeShareView(r, t));
+}
+
+// ── COPYING A CURATED RECIPE INTO YOUR OWN ──────────────────────────────────
+
+/** What a copy produced: the draft, and how much of it came with numbers. */
+export interface RecipeCopy {
+  recipe: Omit<UserRecipe, "id">;
+  /** lines that found a food stating its numbers */
+  matched: number;
+  /** lines that did not, and are therefore `unstated` */
+  unmatched: number;
+}
+
+/**
+ * A LIBRARY RECIPE, COPIED INTO YOURS — editable, and honest about what it does
+ * not know.
+ *
+ * This is the feature that could not be built before the `unstated` flag
+ * existed. A curated recipe states per-SERVE macros an editor typed and no
+ * per-ingredient figures at all, so a naive copy could only write zeros into
+ * seven required macro columns and hand back a recipe reading "0 kcal" out of
+ * real food. Now each line is matched against foods that DO state their numbers
+ * (recipe-match.ts — exact names, exact unit arithmetic, no guessing), and a
+ * line that finds none arrives visibly unknown, carrying its real quantity as
+ * its serving label so the athlete can see what to link it to.
+ *
+ * The copy is taken at the serving count the athlete was LOOKING at, and its
+ * `servings` says so — copy Shakshuka at 4 and the recipe is written for 4.
+ *
+ * NOTE and TIME come across; the METHOD does not, because `UserRecipe` has no
+ * method — it is a list of foods and quantities, and inventing a text column
+ * for the copy would fork the model for one feature.
+ */
+export function libraryRecipeToUserRecipe(recipe: Recipe, serves: number, candidates: FoodCandidate[]): RecipeCopy {
+  const rounded = Math.round(serves);
+  const n = Number.isFinite(rounded) && rounded > 0 ? Math.min(rounded, MAX_RECIPE_SERVINGS) : recipe.baseServes;
+  let matched = 0;
+  const ingredients: UserRecipeIngredient[] = recipe.ingredients.slice(0, MAX_RECIPE_INGREDIENTS).map((line, i) => {
+    const hit = matchRecipeLine(line, candidates, n, recipe.baseServes);
+    if (hit) matched += 1;
+    const scaled = Math.round(((line.qty * n) / Math.max(1, recipe.baseServes)) * 100) / 100;
+    return {
+      // Client-side until the server assigns one, the same convention the
+      // editor's own "add ingredient" uses.
+      id: `new:copy:${i}`,
+      name: line.name,
+      qty: hit ? hit.qty : 1,
+      // An unknown line's serving label is the RECIPE'S OWN measure — "400 g",
+      // "2 tbsp", "1" — so the row still says how much of it goes in while it
+      // waits to be linked.
+      servingLabel: hit ? hit.candidate.servingLabel : `${scaled}${line.unit ? ` ${line.unit}` : ""}`,
+      facts: hit ? hit.candidate.facts : { kcal: 0, protein: 0, carbs: 0, fat: 0, satFat: null, sugar: null, fiber: null, salt: null },
+      productId: hit && !hit.candidate.verified ? hit.candidate.id : null,
+      verifiedId: hit && hit.candidate.verified ? hit.candidate.id : null,
+      position: i,
+      unstated: !hit,
+    };
+  });
+  return {
+    recipe: {
+      name: recipe.name,
+      note: recipe.note,
+      emoji: null,
+      servings: n,
+      timeMins: recipe.timeMins,
+      ingredients,
+    },
+    matched,
+    unmatched: ingredients.length - matched,
+  };
 }
