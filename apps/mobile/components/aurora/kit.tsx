@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank, birthYearBounds, ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, inkOn, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank, birthYearBounds, ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { registerPerson, useSharedSurfaceTarget } from "../../lib/shared-element";
@@ -674,6 +674,7 @@ export function APill({
   state = "idle",
   savingLabel,
   savedLabel,
+  glyph,
 }: {
   label: string;
   onPress: () => void;
@@ -713,6 +714,26 @@ export function APill({
   savingLabel?: string;
   /** Word for the landed state, beside the tick. */
   savedLabel?: string;
+  /**
+   * A LEADING ICON. It exists because its absence was load-bearing: the
+   * outline-pill ratchet's own note had to date its burn-down a year out on the
+   * grounds that "several carry an ICON beside the label and APill takes one
+   * `label` with no glyph slot, so those want a component change before a
+   * call-site change". This is that component change. Nine buttons drew
+   * `<Glyph/> + <Text/>` inside a hand-rolled pill for want of one prop.
+   *
+   * A FUNCTION AND NOT A NODE, so the icon is painted in the pill's CURRENT
+   * foreground without every caller having to re-derive it — which is the thing
+   * a hand-rolled copy always got subtly wrong, painting `C.lime` beside a label
+   * the pill had already resolved to `txt(palette, C.lime)`. `AChoice.glyph`
+   * takes the same shape for the same reason.
+   *
+   * IT FADES WITH THE LABEL, not beside it: an icon left at full opacity under
+   * a "Saving…" overlay reads as a third state nobody designed. The glyph and
+   * the label share one opacity node, which also keeps the width-holder
+   * property intact — the row is laid out at its idle size whatever the state.
+   */
+  glyph?: (color: string) => ReactNode;
 }) {
   const { palette } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED;
@@ -731,13 +752,26 @@ export function APill({
         : glassSoft
           ? "transparent"
           : palette.ink2;
+  // THE INK ON A FILL IS MEASURED, NOT ASSUMED. `onAccent` is near-black and it
+  // is right for every LIGHT accent the brand has — lime reads 11.9:1 on it,
+  // amber 8.7, Muskmelon 8.3. It is wrong the moment a caller hands in a DARK
+  // fill, and callers do: FEEDBACK.error.fill (#9a2b2e) takes chalk at 7.0 and
+  // near-black at 2.6. Every hand-rolled destructive pill in the app had made
+  // the opposite mistake — white on Muskmelon, which measures 2.4:1, under even
+  // the 3:1 large-text floor, on "Delete account", "Erase everything" and
+  // "Leave plan". So the pill picks whichever of the two brand inks actually
+  // reads on the surface it was given, and the answer is a measurement rather
+  // than a guess. The rule itself is core `inkOn` so the admin panel can share
+  // it, and packages/core/src/contrast.test.ts holds every fill the app can
+  // hand a filled control to the AA bar.
+  const filledInk = (fill: string) => inkOn(fill, [palette.onAccent, palette.chalk]);
   const restFg = outline
     ? color
       ? txt(palette, color)
       : palette.ash
     : variant === "soft"
       ? palette.chalk
-      : palette.onAccent;
+      : filledInk(bg);
   // A FAILED commit is drawn as a filled FEEDBACK.error.text pill whatever the variant
   // was — the outcome layer, not the brand accent: a save that failed is not a
   // reading on the training ramp (see theme/feedback.ts).
@@ -836,13 +870,21 @@ export function APill({
           opacity changes — so the pill's size is a function of its LABEL and
           never of its state. This is the layout shift the audit names: a
           button that grows or shrinks under a finger still resting on it. */}
-      <Animated.Text
-        maxFontSizeMultiplier={MAX_FONT_SCALE}
-        numberOfLines={1}
-        style={{ fontFamily: F.bold, fontSize: compact ? fs.note : fs.subtitle, color: fg, opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}
+      <Animated.View
+        style={{
+          flexDirection: "row", alignItems: "center", gap: compact ? space.xs : space.sm,
+          opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+        }}
       >
-        {label}
-      </Animated.Text>
+        {glyph?.(fg)}
+        <Text
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
+          numberOfLines={1}
+          style={{ fontFamily: F.bold, fontSize: compact ? fs.note : fs.subtitle, color: fg }}
+        >
+          {label}
+        </Text>
+      </Animated.View>
       {/* The reporting states sit ON TOP, centred in the space the label
           already claimed. `pointerEvents none` so they never eat the press. */}
       {reporting && (

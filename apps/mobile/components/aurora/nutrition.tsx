@@ -2712,9 +2712,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 <Pressable onPress={() => removeMealComp(c.productId)} accessibilityLabel={t("w.recovery.nutrition.remove")} hitSlop={8} style={{ padding: 2 }}><Text style={{ fontSize: fs.subtitle, color: C.ash }}>×</Text></Pressable>
               </View>
             ))}
-            <Pressable onPress={() => { setCompQuery(""); setCompPicker(true); }} style={{ marginTop: 12, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12 }}>
-              <Glyph name="plus" size={15} color={txt(C, C.lime)} /><Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.addProduct")}</Text>
-            </Pressable>
+            <APill
+              label={t("w.recovery.nutrition.addProduct")}
+              variant="outline"
+              color={C.lime}
+              glyph={(c) => <Glyph name="plus" size={15} color={c} />}
+              onPress={() => { setCompQuery(""); setCompPicker(true); }}
+              style={{ marginTop: 12 }}
+            />
           </View>
         ) : null}
 
@@ -3044,10 +3049,13 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         ) : null}
 
         <View style={{ flexDirection: "row", gap: 12, marginTop: 24, marginBottom: 12 }}>
-          <Pressable onPress={() => saveFood(hit)} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, paddingHorizontal: 20 }}>
-            <Glyph name="plus" size={16} color={txt(C, C.lime)} />
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.saveToFoods")}</Text>
-          </Pressable>
+          <APill
+            label={t("w.recovery.nutrition.saveToFoods")}
+            variant="outline"
+            color={C.lime}
+            glyph={(c) => <Glyph name="plus" size={16} color={c} />}
+            onPress={() => saveFood(hit)}
+          />
           <APill label={t("w.recovery.nutrition.logThis")} onPress={() => logFood(hit)} style={{ flex: 1 }} />
         </View>
         {renderPortionSheet()}
@@ -3788,10 +3796,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </View>
           </View>
         ) : canSaveAnotherMeal ? (
-          <Pressable onPress={() => openCreate("meal")} accessibilityRole="button" style={{ marginTop: 16, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12 }}>
-            <AuroraIcon name="add" size={15} color={txt(C, C.lime)} />
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.createMeal")}</Text>
-          </Pressable>
+          <APill
+            label={t("w.recovery.nutrition.createMeal")}
+            variant="outline"
+            color={C.lime}
+            glyph={(c) => <AuroraIcon name="add" size={15} color={c} />}
+            onPress={() => openCreate("meal")}
+            style={{ marginTop: 16 }}
+          />
         ) : (
           <Pressable onPress={() => (onUpgrade ? onUpgrade() : router.push("/upgrade"))} accessibilityRole="button" style={{ marginTop: 16, flexDirection: "row", justifyContent: "center", gap: 8, backgroundColor: withAlpha(pa.fill, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.rim), borderRadius: RADIUS.pill, paddingVertical: 12 }}>
             <Text style={{ color: pa.text }}>✦</Text><Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: pa.text }}>{t("w.recovery.nutrition.unlockMoreMeals")}</Text>

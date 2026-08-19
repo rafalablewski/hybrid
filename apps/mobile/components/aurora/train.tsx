@@ -169,9 +169,16 @@ export default function AuroraTrain() {
           Aug 2026, so it sent athletes somewhere that no longer exists, in
           three languages. It was also the same restatement the intro was: the
           screen ends on the control, not on prose about what happens next. */}
-      <PressScale onPress={() => router.push("/builder")} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>＋ {t("train.buildRoutine")}</Text>
-      </PressScale>
+      {/* The ＋ was a CHARACTER IN THE LABEL, which is how a glyph gets read
+          aloud by VoiceOver as part of the sentence and how it stops tracking
+          the button's own foreground. It is the pill's `glyph` slot now. */}
+      <APill
+        label={t("train.buildRoutine")}
+        variant="outline"
+        glyph={(c) => <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: c }}>＋</Text>}
+        onPress={() => router.push("/builder")}
+        style={{ marginTop: 16 }}
+      />
     </AuroraScreen>
   );
 }

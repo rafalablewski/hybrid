@@ -436,11 +436,13 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
               <>
                 {/* EDIT LIVES HERE AND ONLY HERE — beside Done, where the
                     athlete already is when they decide the read is wrong. */}
-                <Pressable onPress={() => setEditing(true)} accessibilityRole="button" accessibilityLabel={t("w.recovery.checkins.edit")}
-                  style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 16, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line }}>
-                  <AuroraIcon name="edit" size={16} color={C.ash} />
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{t("w.recovery.checkins.edit")}</Text>
-                </Pressable>
+                <APill
+                  label={t("w.recovery.checkins.edit")}
+                  variant="outline"
+                  glyph={(c) => <AuroraIcon name="edit" size={16} color={c} />}
+                  onPress={() => setEditing(true)}
+                  style={{ flex: 1 }}
+                />
                 {onClose ? <APill label={t("w.recovery.checkins.doneClose")} onPress={onClose} style={{ flex: 1 }} /> : null}
               </>
             ) : (

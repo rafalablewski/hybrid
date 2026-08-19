@@ -5,7 +5,7 @@ import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, tracking, fs, F, PressScale as Pressable } from "../../lib/ui";
-import { ACard, RADIUS } from "./kit";
+import { ACard, APill, RADIUS } from "./kit";
 import { withAlpha } from "./field";
 import { ALPHA, FEEDBACK } from "@hybrid/core";
 
@@ -84,9 +84,20 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
             </View>
           )}
           {error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{t("w.train.plans.leaveError")}</Text>}
-          <Pressable onPress={leave} disabled={!armed || busy} accessibilityRole="button" style={{ backgroundColor: armed && !busy ? C.red : withAlpha(C.red, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 16 }}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: "#fff" }}>{wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}</Text>}
-          </Pressable>
+          {/* WAS WHITE ON MUSKMELON — 2.36:1, under even the 3:1 large-text
+              floor, on the button that ends a plan. APill measures its own ink
+              against the fill and lands on near-black at 8.25:1. It also owns
+              the in-flight state, which was hand-rolled here as a spinner
+              REPLACING the label: the exact resize-under-a-resting-finger
+              defect APill's `state` was built to stop. */}
+          <APill
+            label={wipe ? t("w.train.plans.leaveWipeCta") : t("w.train.plans.leaveCta")}
+            color={C.red}
+            state={busy ? "saving" : "idle"}
+            disabled={!armed || busy}
+            onPress={leave}
+            style={{ marginTop: 16 }}
+          />
           <Pressable onPress={() => { setOpen(false); setWipe(false); setConfirmText(""); setError(false); }} accessibilityRole="button" style={{ alignItems: "center", paddingVertical: 12 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>{t("w.train.plans.leaveCancel")}</Text>
           </Pressable>

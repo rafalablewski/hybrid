@@ -132,3 +132,29 @@ export function deltaE2000(a: string, b: string): number {
  * room for a future retune while staying far above the 13.2 that shipped.
  */
 export const DISTINCT_ROLE_DE = 18;
+
+/**
+ * THE INK THAT ACTUALLY READS ON A FILL.
+ *
+ * Given a surface and the inks a design system is willing to use on it, return
+ * the one with the most contrast. It is three lines and it exists because the
+ * alternative — a component assuming one ink and every caller quietly
+ * disagreeing — is how the app shipped `color: "#fff"` on Muskmelon at 2.36:1,
+ * under even the 3:1 large-text floor, on "Delete account", "Erase everything"
+ * and "Leave plan".
+ *
+ * WHY A CHOICE AND NOT A FORMULA. A generated ink (lighten/darken the fill
+ * until it passes) would pass the maths and leave the brand: the app has TWO
+ * inks, near-black and Stalactite, and every surface in it is one or the other.
+ * So the rule picks between them rather than inventing a third — a measurement
+ * where there was a guess, with the palette still in charge of the answer.
+ *
+ * It does NOT assert the winner is good enough: a fill whose best ink still
+ * fails AA is a bad fill, and that is the palette's problem to fix rather than
+ * a thing a call site can paper over. `contrast.test.ts` holds every accent the
+ * app can hand a filled control to the AA bar.
+ */
+export function inkOn(fill: string, inks: readonly string[]): string {
+  if (inks.length === 0) throw new Error("inkOn: no inks to choose from");
+  return inks.reduce((best, ink) => (contrastRatio(ink, fill) > contrastRatio(best, fill) ? ink : best));
+}
