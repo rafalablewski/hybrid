@@ -682,9 +682,10 @@ export const ENGINE_FORMULAS: EngineFormula[] = [
     constants: [
       { symbol: String(CLEARANCE_SLOPE), value: "slope", meaning: "how hard a measured rate may move the ceiling" },
       { symbol: `${CLEARANCE_FACTOR_BOUNDS[0]}–${CLEARANCE_FACTOR_BOUNDS[1]}`, value: "bounds", meaning: "two taps a day is not a blood panel" },
-      { symbol: "×confidence", value: "scaling", meaning: "two pairs nudge, twenty move it" },
+      { symbol: "×confidence", value: "scaling", meaning: "pair count × resolution — diligence alone is not evidence" },
+      { symbol: "resolution", value: "band ÷ interval", meaning: "how much the pairs could actually pin down" },
     ],
-    note: "Applied BEFORE the week classifier, so the adaptive estimator bounds itself around a prior that already reflects measured recovery. Scales MRV only — how fast you clear fatigue says nothing about how much work it takes to grow you.",
+    note: "Applied BEFORE the week classifier, so the adaptive estimator bounds itself around a prior that already reflects measured recovery. Scales MRV only — how fast you clear fatigue says nothing about how much work it takes to grow you.\n\nCONFIDENCE IS NO LONGER PAIR COUNT ALONE. Every ratio is one answer BIN divided by another (feel-timing.ts `ratioBounds`), and those intervals run 0.51 to 2.23 wide against an on-track band of 0.30 — no single pair can place itself inside the band it is judged against. Counting pairs was therefore measuring diligence rather than evidence: twenty reports of \"worked → good, next morning\" are twenty intervals two units wide, and they were moving a volume ceiling as though they were twenty measurements. Confidence is now scaled by `resolution` — the band over the mean interval, which narrows with √pairs — so coarse evidence moves training proportionally less. Three identical coarse pairs used to slam this multiplier into its 0.85 floor; they now move it a fraction of that, and the floor still has to be earned.",
   },
   {
     id: "level-pace",

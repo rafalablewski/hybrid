@@ -18,6 +18,14 @@ import {
   BAND_HALF_FLOOR,
   CLEARANCE_FAST,
   CLEARANCE_SLOW,
+  answerBounds,
+  costBounds,
+  ratioBounds,
+  recoveryIndex,
+  clearanceFactor,
+  resolutionOf,
+  SCALE_STEP,
+  MIN_RECOVERY_PAIRS,
 } from "./feel-timing";
 
 describe("how long after the session the feel was logged", () => {
@@ -279,5 +287,140 @@ describe("the on-track band against the scale it reads", () => {
     expect(wide.bandHalf).toBeGreaterThan(BAND_HALF_FLOOR);
     const tight = recoveryCurve(feelReading(5, 0.1)!, feelReading(4, 6)!)!;
     expect(tight.bandHalf).toBeLessThan(wide.bandHalf);
+  });
+});
+
+
+/** A pair whose interval ran into an end of the scale — the later read at
+ *  "fresh" (bin truncated at zero) or either cost saturating at MAX_COST. Its
+ *  width is small because the scale ran out, not because it measured finely. */
+const clampedPair = (f0: number, fL: number, h: number): boolean => {
+  const [il, ih] = costBounds(f0, 0.1);
+  const [ll, lh] = costBounds(fL, h);
+  return ll <= 0 || lh >= MAX_COST || il <= 0 || ih >= MAX_COST;
+};
+
+describe("an answer is a bin, not a number", () => {
+  it("stands for half a level either side, clamped to the scale's own ends", () => {
+    expect(answerBounds(3)).toEqual([(3 - 1.5) / 4, (3 - 0.5) / 4]);
+    // "Fresh" cannot mean less than nothing, "wrecked" cannot mean more than all.
+    expect(answerBounds(1)[0]).toBe(0);
+    expect(answerBounds(5)[1]).toBe(1);
+    // One level wide, everywhere it isn't clamped.
+    expect(answerBounds(3)[1] - answerBounds(3)[0]).toBeCloseTo(SCALE_STEP, 10);
+  });
+
+  it("the bin widens in cost terms as the residual drains", () => {
+    const [a6, b6] = costBounds(2, 6);
+    const [a24, b24] = costBounds(2, 24);
+    expect(b24 - a24).toBeGreaterThan(b6 - a6);
+  });
+
+  it("the point estimate always lies inside the pair's own interval", () => {
+    for (const f0 of [3, 4, 5]) for (const fL of [1, 2, 3, 4, 5]) for (const h of [6, 12, 24]) {
+      const c = recoveryCurve(feelReading(f0, 0.1)!, feelReading(fL, h)!);
+      if (!c) continue;
+      expect(c.ratio, `${f0}→${fL} @${h}h`).toBeGreaterThanOrEqual(c.lo - 1e-9);
+      expect(c.ratio, `${f0}→${fL} @${h}h`).toBeLessThanOrEqual(c.hi + 1e-9);
+      expect(c.width).toBeCloseTo(c.hi - c.lo, 6);
+    }
+  });
+
+  it("THE POINT: no pair resolves anything like the band it is judged against", () => {
+    // The whole reason the index cannot be trusted pair-by-pair. Measured
+    // across every answer combination the app can collect, an unclamped
+    // interval is 0.51 to 2.23 wide against an on-track band of 0.30.
+    const band = CLEARANCE_SLOW - CLEARANCE_FAST;
+    const widths: number[] = [];
+    for (const f0 of [3, 4, 5]) for (const fL of [1, 2, 3, 4, 5]) for (const h of [6, 8, 10, 12, 14, 18, 24, 30]) {
+      const c = recoveryCurve(feelReading(f0, 0.1)!, feelReading(fL, h)!);
+      // A bound that ran into MAX_COST is narrow because the scale ran out,
+      // not because the pair measured finely — excluded, and asserted below.
+      if (!c || clampedPair(f0, fL, h)) continue;
+      widths.push(c.width);
+    }
+    expect(widths.length).toBeGreaterThan(10);
+    expect(Math.min(...widths)).toBeGreaterThan(band);
+    expect(Math.min(...widths)).toBeGreaterThan(1.5 * band);
+  });
+
+  it("a width under the band is always the cost ceiling, never precision", () => {
+    // "Wrecked in the gym → tired the next day": the later read's whole bin is
+    // past MAX_COST, so the interval collapses onto the ceiling. Read a narrow
+    // width there as "off the top of the scale", never as "measured finely".
+    const c = recoveryCurve(feelReading(5, 0.1)!, feelReading(4, 24)!)!;
+    expect(c.width).toBeLessThan(CLEARANCE_SLOW - CLEARANCE_FAST);
+    const [lo, hi] = costBounds(4, 24);
+    expect(hi).toBe(MAX_COST);
+    expect(lo).toBe(MAX_COST);
+
+    // Every sub-band width in the whole grid is one of these, never a genuine
+    // measurement — which is what makes the previous test's claim safe.
+    for (const f0 of [3, 4, 5]) for (const fL of [1, 2, 3, 4, 5]) for (const h of [6, 12, 24]) {
+      const x = recoveryCurve(feelReading(f0, 0.1)!, feelReading(fL, h)!);
+      if (!x || x.width >= CLEARANCE_SLOW - CLEARANCE_FAST) continue;
+      expect(clampedPair(f0, fL, h), `${f0}→${fL} @${h}h is narrow without a clamp`).toBe(true);
+    }
+  });
+});
+
+describe("the index stops overstating what it knows", () => {
+  const slow = () => recoveryCurve(feelReading(3, 0.5)!, feelReading(4, 12)!)!;
+
+  it("THE FIX: identical pairs no longer buy a near-zero interval", () => {
+    // Three pairs that agree to the decimal have a SPREAD of zero and a real
+    // uncertainty near a full ratio unit. The standard error cannot see that —
+    // it measures how much the pairs disagree with each other, not how wrong
+    // any of them could be. This was the least evidence in the app producing
+    // the most confident claim on the screen.
+    const idx = recoveryIndex([slow(), slow(), slow()]);
+    expect(idx.hi - idx.lo).toBeGreaterThan(0.5);
+  });
+
+  it("coarse evidence cannot move a volume ceiling at full strength", () => {
+    // Same count, same direction, different resolution: pair count was
+    // measuring diligence, and this makes it measure evidence.
+    const tight = () => recoveryCurve(feelReading(5, 0.1)!, feelReading(4, 6)!)!;
+    const coarse = () => recoveryCurve(feelReading(3, 0.1)!, feelReading(3, 20)!)!;
+    const t = recoveryIndex(Array.from({ length: 5 }, tight));
+    const c = recoveryIndex(Array.from({ length: 5 }, coarse));
+    expect(c.resolution).toBeLessThan(t.resolution);
+    expect(c.confidence).toBeLessThan(t.confidence);
+    expect(c.pairs).toBe(t.pairs);
+  });
+
+  it("resolution rises with the pair count, because the interval narrows", () => {
+    const at = (n: number) => recoveryIndex(Array.from({ length: n }, slow));
+    expect(at(2).resolution).toBeLessThan(at(5).resolution);
+    expect(at(5).resolution).toBeLessThan(at(20).resolution);
+    expect(at(40).resolution).toBeLessThanOrEqual(1);
+    // …and the published interval narrows with it.
+    expect(at(20).hi - at(20).lo).toBeLessThan(at(2).hi - at(2).lo);
+  });
+
+  it("still says nothing at all below the pair floor", () => {
+    const none = recoveryIndex([slow()]);
+    expect(none.confidence).toBe(0);
+    expect(none.resolution).toBe(0);
+    expect(clearanceFactor(none)).toBe(1);
+    expect(MIN_RECOVERY_PAIRS).toBe(2);
+  });
+
+  it("and a consistent, well-resolved clearer still moves the ceiling", () => {
+    // The damping must not become a mute: enough clean pairs and the estimate
+    // is allowed to do its job.
+    const many = recoveryIndex(Array.from({ length: 30 }, slow));
+    expect(many.clearance).toBe("slow");
+    expect(many.confidence).toBeGreaterThan(0.5);
+    expect(clearanceFactor(many)).toBeLessThan(1);
+  });
+
+  it("resolution is 1 only once the mean interval reaches the band", () => {
+    const band = CLEARANCE_SLOW - CLEARANCE_FAST;
+    expect(resolutionOf(band, 1)).toBe(1);
+    expect(resolutionOf(band * 4, 1)).toBeCloseTo(0.25, 6);
+    // Four independent pairs halve the mean's width, so they double resolution.
+    expect(resolutionOf(band * 4, 4)).toBeCloseTo(0.5, 6);
+    expect(resolutionOf(band / 2, 1)).toBe(1);
   });
 });

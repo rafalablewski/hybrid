@@ -191,7 +191,13 @@ describe("when there isn't enough to say anything", () => {
       weeks: 12,
       sets: (w) => Math.min(9 + w * 2, 22),
       load: (w) => 120 + w * 2.5,
-      gymSpent: () => 3,
+      // A WELL-RESOLVED pair (5 in the gym, 2 the next morning), so the
+      // evidence this test needs to age out is evidence that genuinely moved
+      // the estimate. With a 3→2 pair the interval is wide enough that the
+      // clearance term barely moves a landmark at all (feel-timing.ts,
+      // `resolutionOf`), and the fixture would be proving the damping rather
+      // than the ageing-out this test is about.
+      gymSpent: () => 5,
       morningSpent: () => 2,
     });
     const later = NOW + 11 * WEEK;
