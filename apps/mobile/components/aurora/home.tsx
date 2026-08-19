@@ -1243,7 +1243,7 @@ export default function AuroraHome() {
         {/* ═════ GROUP: RECOVER — how the body is answering. The daily
             check-in ritual: readiness reads, the follow-up questions, the
             day's record. Mirrors web today.tsx. ═════ */}
-        <GroupMark label={t("w.home.group.recover")} hue="blue" />
+        <GroupMark label={t("w.home.group.recover")} />
 
         {/* TIER 2 — the feeling-led card: the daily check-in IS the ritual. The
             four faces set the day's readiness inline (one tap, no sheet) —
@@ -1297,7 +1297,7 @@ export default function AuroraHome() {
             reach their own sport, under a single headline claiming all of it
             was "Progress". It is its own section now, below the seam. Mirrors
             web today.tsx. ═════ */}
-        <GroupMark label={t("w.home.group.progress")} hue="amber" />
+        <GroupMark label={t("w.home.group.progress")} />
 
         {/* ───── (a) THIS WEEK — the verdict card, and the screen's date
             filter (Endurance shows the same one again, on the same period). A
@@ -1350,12 +1350,6 @@ export default function AuroraHome() {
                 lane, attached to neither — and a control that orders the whole
                 section belongs at the section's altitude. Hidden with one
                 lane: sorting a list of one is a control that does nothing. */}
-            {/* NO `hue` here, and it is not an oversight: the domain colours mark
-                the four TOP-level clusters, and this is a nested head inside
-                Progress (which is why it carries mt 24 rather than 36). Giving
-                it blue would put two blue headlines in one scroll and stop the
-                colour discriminating between the things it is there to tell
-                apart. */}
             <GroupMark
               label={t("endurance.title")}
               mt={24}
@@ -1419,7 +1413,7 @@ export default function AuroraHome() {
         {/* ═════ GROUP: EXPLORE — beyond your own data: the premium tier and
             the coach marketplace. The label the old Explore tab left behind.
             Mirrors web today.tsx. ═════ */}
-        <GroupMark label={t("w.home.group.explore")} hue="red" />
+        <GroupMark label={t("w.home.group.explore")} />
 
         {/* ───── GO FULL — demoted from two display-weight AccessCards to ONE
             compact quiet row. It is the SHARED DoorRow now (Aug 2026): it had
