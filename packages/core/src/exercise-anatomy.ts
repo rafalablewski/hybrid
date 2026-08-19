@@ -92,7 +92,10 @@ export interface MuscleActivation {
 const primaryWeight = (i: number): number => Math.max(1.7, 3.4 - i * 0.75);
 const secondaryWeight = (j: number): number => Math.max(0.5, 1.25 - j * 0.28);
 
-const levelFor = (tier: ActivationTier, pct: number): ActivationLevel =>
+/** The activation LEVEL band for a tier + share. Exported so the session-wide
+ *  muscle map (session-muscle-map.ts) bands its rows by the same rule a single
+ *  lift's rows are banded by, rather than re-deriving the thresholds. */
+export const levelFor = (tier: ActivationTier, pct: number): ActivationLevel =>
   tier === "primary" ? (pct >= 22 ? "high" : "moderate") : pct >= 12 ? "moderate" : "low";
 
 /** Ranked muscle activation for a lift — primary first, each with a share-of-

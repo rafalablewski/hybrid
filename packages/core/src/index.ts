@@ -134,6 +134,7 @@ export * from "./live-stats";
 export * from "./done-receipt";
 export * from "./session-celebration";
 export * from "./session-wrapped";
+export * from "./session-muscle-map";
 export * from "./session-edit";
 export * from "./session-feel";
 export * from "./session-device";
