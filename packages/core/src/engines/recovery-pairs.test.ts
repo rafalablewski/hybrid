@@ -13,6 +13,7 @@ import {
   CLEARANCE_FAST,
   CLEARANCE_SLOW,
   CLEARANCE_INTERVAL_FLOOR,
+  BAND_HALF_FLOOR,
 } from "../feel-timing";
 import { athleteLandmarks } from "./landmark-resolve";
 import { checkinFromSoreness } from "../checkin-scales";
@@ -64,17 +65,26 @@ describe("the ratio between the two reads", () => {
     expect(c.clearance).toBe("onTrack");
   });
 
-  it("THE POINT: same later reading, opposite verdicts depending on the first", () => {
+  it("THE POINT: same later reading, different verdicts depending on the first", () => {
     // Two athletes both report 2/5 spent the next morning. One walked out of
     // the gym wrecked and has cleared a big disturbance; the other walked out
-    // merely worked and has barely shifted. A single report cannot tell them
+    // merely worked and has shifted much less. A single report cannot tell them
     // apart — it is the same 2 either way. The pair can.
     const nextMorning = feelReading(2, 20)!;
     const drained = recoveryCurve(feelReading(5, 0.5)!, nextMorning)!;
     const stuck = recoveryCurve(feelReading(3, 0.5)!, nextMorning)!;
     expect(drained.ratio).toBeLessThan(stuck.ratio);
     expect(drained.clearance).toBe("fast");
-    expect(stuck.clearance).toBe("slow");
+
+    // The one who left merely "worked" is NOT slow, and this is the case the
+    // quantised band exists for. On the curve their second read should have
+    // been 1.79 on the spentness scale; the scale's buttons are whole numbers,
+    // so 2 is the closest thing they could possibly have tapped. Calling the
+    // nearest reachable answer "slow" was the app scoring the rounding of its
+    // own scale as a recovery problem — and then trimming volume for it.
+    expect(stuck.clearance).toBe("onTrack");
+    expect(stuck.ratio).toBeGreaterThan(drained.ratio);
+    expect(stuck.bandHalf).toBeGreaterThan(BAND_HALF_FLOOR);
   });
 
   it("refuses to judge a session the athlete walked out of fine", () => {

@@ -1,20 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Text, Animated, Easing, ScrollView, useWindowDimensions, type NativeScrollEvent, type NativeSyntheticEvent, type LayoutChangeEvent } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { View, Text } from "react-native";
 import {
-  durations, fmtWeight, prsBetween, splitFigure, strengthPrProof,
-  type ActivityRange, type BodyweightInput, type LoggedSession, type PrHit, type WeightUnit,
+  fmtWeight, prRecordsBetween, splitFigure,
+  type ActivityRange, type BodyweightInput, type LoggedSession, type PrRecord, type PrSet, type WeightUnit,
 } from "@hybrid/core";
-import { GUTTER } from "./kit";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable , tracking} from "../../lib/ui";
-import { useReducedMotion } from "../../lib/use-reduced-motion";
-import { withAlpha } from "./field";
+import { fs, F, PressScale as Pressable, TABULAR, tracking, trackFigure } from "../../lib/ui";
 
 /**
- * RECORDS — the Progress cluster's own block. The TWIN of
- * components/aurora/period-records.tsx on web.
+ * RECORDS — the Progress cluster's own block: ONE QUOTE, THEN A LEDGER.
  *
  * These used to sit on the Performance tab's "Your week" card, computed over a
  * ROLLING seven days while the Today card counted a real calendar week — two
@@ -23,84 +18,91 @@ import { withAlpha } from "./field";
  * the Progress filter is showing, which is why the range arrives as a prop
  * rather than being resolved here.
  *
- * It then spent a while as a mono kicker in the verdict card's foot. Progress
- * now reads as three named things — This week, Records, Exercises — so the
- * block takes the same Explore-standard head its neighbours wear: display-face
- * title left, the window as mono meta right (a "Records" with no window would
- * read as all-time) and nothing else — no count.
+ * ── WHAT THIS WAS, AND WHY IT IS NOT THAT ──────────────────────────────────
+ *
+ * It shipped as a RAIL of equal cells, each a lift, a load at fs.display and a
+ * caption ("more reps", "from 82.5"), with a 24dp dissolve painted over both
+ * edges. Three things were wrong with it and all three are gone:
+ *
+ *   THE DISSOLVE PAINTED THE GROUND IT STOOD ON. It filled two LinearGradients
+ *     with `C.ink` — but this block sits on the SCREEN, and the screen is not
+ *     ink: AuroraField lays a 14% lime bloom, a 16% Muskmelon and a 10% blue
+ *     glow over it. Ink on top does not dissolve anything, it DELETES the field
+ *     for 24dp and leaves a black band with a hard inner edge. Worse, it was
+ *     always on: the viewport width was only ever written by the scroll
+ *     handler, so the first paint compared the content against a viewport of 0
+ *     and lit the right edge before the athlete had touched it. A real soft
+ *     edge has to mask ALPHA (a MaskedView, which this app does not carry);
+ *     painting ink over ink is the version that is cheap and looks broken.
+ *
+ *   A SIXTH HORIZONTAL RAIL SAID NOTHING NEW. Today already scrolls sideways in
+ *     five places. The peeking-cell affordance is fine; a rail of the same
+ *     cards as everything above it is not a reason to build one.
+ *
+ *   THE FIGURE DID NOT ANSWER THE QUESTION. A load alone cannot tell
+ *     `70 × 9 → 70 × 10` — six weeks grinding a rep out — from `65 × 8 →
+ *     70 × 10`, your first plate at 70. Both print "70 kg", and "more reps"
+ *     underneath is a caption, not a path.
+ *
+ * ── WHAT IT IS NOW ─────────────────────────────────────────────────────────
+ *
+ * A QUOTE and a LEDGER, in the market grammar the figures already imply:
+ *
+ *   THE QUOTE is the period's biggest move — the load at fs.stat in CHALK, the
+ *     reps beside it as a quiet multiplier, the pair it moved between under it
+ *     and the delta in chartreuse. The level is context; the change is the news,
+ *     which is why the accent moved off the figure and onto the delta. A lime
+ *     figure that had not moved (a rep record headlines a load that stood still)
+ *     was claiming to be the thing that changed.
+ *
+ *   THE LEDGER is every other record, one line each: the lift, the pair, the
+ *     delta. Tabular mono in a fixed column, so four records compare straight
+ *     down the page — which is the whole value of the block and exactly what a
+ *     rail could never do.
+ *
+ * THE PAIR IS THE DESIGN. Colour and SIZE carry the direction with no legend:
+ * the origin is small and ash, the arrival is larger and chalk, the delta is
+ * chartreuse. `×` and `→` are the same glyphs in every language this app
+ * speaks, so the busiest line in the block needs no translation and no unit
+ * conversion. A first-ever lift takes an em dash for its origin, so it uses the
+ * same shape as everything else rather than a special case.
+ *
+ * NO CHART. The rail's successor carried an eight-session strip for a while: on
+ * a record the newest bar is the maximum BY DEFINITION, so it drew the same
+ * rising shape every time — a picture with one possible outcome. A lift's real
+ * trajectory lives on its exercise page (`topLoadTrendWithPRs`), plotted
+ * against every PR, which is the screen a record row should open into.
+ *
  * Silent when the period holds none: an empty celebration is not a celebration.
  */
 
-/** Records shown before the rail offers "Show all" — a year can hold forty,
- *  and an endless drag is not a celebration. */
-const PRS_RAIL_CAP = 8;
-/** The width of the edge dissolve, in dp. Mirrors web's .pr-rail. */
-const PRS_FADE = 24;
-/** The gap between record cells, in dp. Mirrors web. */
-const PRS_GAP = 14;
-/** AuroraScreen's gutter — what the rail bleeds by, so cards slide under the
- *  physical screen edge. Mirrors web's --page-pad-x. */
-const PRS_BLEED = GUTTER;
+/** Records shown before the ledger offers "Show all" — a year can hold forty,
+ *  and forty rows is a database, not a celebration. */
+const LEDGER_CAP = 4;
 
-/**
- * ONE RECORD, set as a FIGURE — the TWIN of PrCell on web.
+/** ONE PAIR — `70 × 9 → 70 × 10`, the move a record made.
  *
- * The block used to be four hairlines around two 12dp rows: a section rule, a
- * rule under the header and one above every record, fencing content that was
- * already fenced. Whitespace separates two items perfectly well, so the rules
- * went and the budget was spent on the two things a record actually needs —
- * SCALE (the load at fs.display, the largest figure in the cluster, because a
- * personal best is the only thing on Today worth celebrating) and PROOF (the
- * load it beat, which is what makes 90 kg an achievement rather than a fact).
- *
- * The proof's three shapes come from core's strengthPrProof, so this and the
- * session summary can't drift, and it arrives SPLIT — "from 82.5" reads in ash
- * and only the gain takes the accent. The value is bare because the unit is on
- * the figure above it.
- */
-function PrCell({ pr, units, t, width, onOpen }: {
-  pr: PrHit;
-  units: WeightUnit;
-  t: (k: string) => string;
-  /** Fixed cell width inside the rail; unset in the two-up grid, which flexes. */
-  width?: number;
-  onOpen?: () => void;
-}) {
+ *  Sized, not just coloured: `from` sits a rung below `to` so the line GROWS as
+ *  it is read, which is the one thing every record has in common. */
+function Path({ r, big = false }: { r: PrRecord; big?: boolean }) {
   const { palette: C } = useTheme();
-  const [value, unit] = splitFigure(fmtWeight(pr.topLoad, units));
-  const proof = strengthPrProof(pr, units);
-  const body = (
-    <>
-      <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
-        {pr.lift}
-      </Text>
-      <Text style={{ fontFamily: F.monoBold, fontSize: fs.display, letterSpacing: tracking.display, marginTop: 7, color: txt(C, C.lime) }}>
-        {value}
-        <Text style={{ fontSize: fs.caption, letterSpacing: tracking.label }}> {unit}</Text>
-      </Text>
-      <Text numberOfLines={1} style={{ marginTop: 6, fontFamily: F.reg, fontSize: fs.micro, color: C.ash }}>
-        {proof.kind === "climb" ? (
-          <>
-            {t("w.home.act.prFrom").replace("{v}", proof.from ?? "")}{" "}
-            <Text style={{ fontFamily: F.mono, color: txt(C, C.lime) }}>{proof.delta}</Text>
-          </>
-        ) : t(proof.kind === "first" ? "w.home.act.prFirst" : "w.home.act.prReps")}
-      </Text>
-    </>
-  );
-
-  if (!onOpen) return <View style={{ width, flex: width == null ? 1 : undefined }}>{body}</View>;
+  const from = big ? fs.micro : fs.nano;
+  const to = big ? fs.note : fs.body;
   return (
-    <Pressable
-      onPress={onOpen}
-      accessibilityRole="button"
-      accessibilityLabel={`${pr.lift} – ${fmtWeight(pr.topLoad, units)} – ${t("w.home.act.prOpen")}`}
-      style={{ width, flex: width == null ? 1 : undefined }}
-    >
-      {body}
-    </Pressable>
+    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
+      <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: from, color: C.ash }}>
+        {r.prev ? point(r.prev) : "—"}
+      </Text>
+      <Text style={{ fontFamily: F.mono, fontSize: from, color: C.ash, opacity: 0.55 }}>→</Text>
+      <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: to, color: C.chalk }}>{point(r.now)}</Text>
+    </View>
   );
 }
+
+/** A set, as the pair prints it — bare numbers, because the unit is on the
+ *  quote's own figure and repeating it four times per line is noise. */
+const point = (p: PrSet): string => `${trim(p.load)} × ${p.reps}`;
+const trim = (n: number): string => String(Math.round(n * 10) / 10);
 
 export default function PeriodRecords({
   sessions,
@@ -119,143 +121,201 @@ export default function PeriodRecords({
   bw?: BodyweightInput;
   onSession?: (id: string) => void;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { palette: C } = useTheme();
-  const reduced = useReducedMotion();
-  const win = useWindowDimensions();
+  const [all, setAll] = useState(false);
 
-  const [allPrs, setAllPrs] = useState(false);
-  const [railW, setRailW] = useState(0);
+  const records = useMemo(
+    () => prRecordsBetween(sessions, range.from, range.through + 1, bw),
+    [sessions, range, bw],
+  );
 
-  // ── THE RECORDS RAIL (three records and up) — the twin of web's .pr-rail.
-  // Web masks the edges; here two gradient overlays stand in, which is the
-  // idiom coach-rail already ships and needs no MaskedView dependency. The
-  // dissolve is a STATUS either way: an edge fades only while records are
-  // hidden behind it.
-  const fadeL = useRef(new Animated.Value(0)).current;
-  const fadeR = useRef(new Animated.Value(0)).current;
-  /** offset / viewport / content, written by whichever handler last measured. */
-  const railGeom = useRef({ x: 0, w: 0, c: 0 });
-  const fadeOn = useRef({ l: false, r: false });
+  // A new period is a new set of records — an expanded ledger must not carry over.
+  useEffect(() => { setAll(false); }, [range.id]);
 
-  const paintFade = () => {
-    const { x, w, c } = railGeom.current;
-    const max = Math.max(0, c - w);
-    const next = { l: x > 4, r: max - x > 4 };
-    for (const side of ["l", "r"] as const) {
-      if (fadeOn.current[side] === next[side]) continue;
-      fadeOn.current[side] = next[side];
-      Animated.timing(side === "l" ? fadeL : fadeR, {
-        toValue: next[side] ? 1 : 0,
-        duration: reduced ? durations.reduced : 220,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start();
-    }
+  if (records.length === 0) return null;
+
+  const [quote, ...rest] = records;
+  // A LIFT'S RECORDS SIT TOGETHER. Ranking is by gain, so the two rows of an
+  // 80 × 1 / 70 × 10 day can land at opposite ends of the ledger — and the
+  // second one, arriving alone under an unrelated lift, is the fused record all
+  // over again from the reader's side. Grouping keeps each lift where its BEST
+  // record ranked (so the order is still the gain's), puts the quote's sibling
+  // directly under the quote, and is what makes "named once" mean anything.
+  const grouped = [
+    ...rest.filter((r) => r.lift === quote!.lift),
+    ...groupByLift(rest.filter((r) => r.lift !== quote!.lift)),
+  ];
+  const rows = all ? grouped : grouped.slice(0, LEDGER_CAP);
+
+  /** The delta, in the athlete's own units and never an estimate. */
+  const delta = (r: PrRecord): string | null => {
+    if (!r.delta) return null;
+    if (r.delta.kind === "first") return t("w.home.act.prNew");
+    if (r.delta.kind === "load") return `+${fmtWeight(r.delta.kg, units)}`;
+    return r.delta.reps === 1
+      ? t("w.home.act.prRepDeltaOne")
+      : t("w.home.act.prRepDelta").replace("{n}", String(r.delta.reps));
   };
 
-  const onRailScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-    railGeom.current = { x: contentOffset.x, w: layoutMeasurement.width, c: contentSize.width };
-    paintFade();
-  };
+  /** Spoken form — the pair reads as words, and the axis a row is about is
+   *  carried visually by the delta and by nothing a screen reader hears. */
+  const spoken = (r: PrRecord): string =>
+    [
+      r.lift,
+      t(r.axis === "load" ? "w.home.act.prAxisLoad" : "w.home.act.prAxisStrength"),
+      r.prev
+        ? t("w.home.act.prPath").replace("{a}", point(r.prev)).replace("{b}", point(r.now))
+        : point(r.now),
+      delta(r) ?? "",
+      onSession && r.sessionId ? t("w.home.act.prOpen") : "",
+    ]
+      .filter(Boolean)
+      .join(" – ");
 
-  const prs = useMemo(() => prsBetween(sessions, range.from, range.through + 1, bw), [sessions, range, bw]);
-  const shownPrs = allPrs ? prs : prs.slice(0, PRS_RAIL_CAP);
+  const open = (r: PrRecord) =>
+    onSession && r.sessionId ? () => onSession(r.sessionId!) : undefined;
 
-  // A new period is a new set of records — an expanded rail must not carry over.
-  useEffect(() => { setAllPrs(false); }, [range.id]);
-
-  // A cell is HALF THE CONTENT COLUMN — the same width the two-up grid gives
-  // it — so going from two records to three doesn't resize anything: the third
-  // simply appears past the right edge. The rail bleeds by the screen gutter,
-  // so its own width is the whole screen; the window width is that value before
-  // the first layout lands, which keeps the cells from popping.
-  const railWidth = railW || win.width;
-  const prCellW = Math.max(120, Math.round((railWidth - PRS_BLEED * 2 - PRS_GAP) / 2));
-
-  if (prs.length === 0) return null;
+  const [value, unit] = splitFigure(fmtWeight(quote!.now.load, units));
+  const quoteDelta = delta(quote!);
+  const day = quote!.at
+    ? new Date(quote.at).toLocaleDateString(lang, { weekday: "short" })
+    : null;
 
   return (
     <View style={{ marginTop: 24 }}>
       {/* Explore-standard head. The right slot carries the WINDOW and NOTHING
           ELSE — a block headed "Records" with no period would read as all-time,
-          so the window is the one thing that has to be there. The count used to
-          sit beside it from three records up, and it never earned the space:
-          the cells ARE the count, the rail's own dissolve says there is more
-          past the edge, and past PRS_RAIL_CAP the trailing "Show all {n}" cell
-          states the total at the point the reader can act on it. A bare
-          chartreuse numeral floating at the end of a heading read as a badge on
-          a block that is a celebration, not an inbox. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
+          so the window is the one thing that has to be there. */}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 10 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.act.recordsTitle")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{windowName}</Text>
       </View>
 
-      {prs.length < 3 ? (
-        /* ONE OR TWO — the figures sit still. No rail, no fade, nothing to
-           drag: a rail that cannot move is worse than no rail. A single record
-           takes the full width rather than leaving half a row empty. */
-        <View style={{ flexDirection: "row", gap: PRS_GAP }}>
-          {prs.map((pr) => (
-            <PrCell key={pr.lift} pr={pr} units={units} t={t}
-              onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
+      {/* ── THE QUOTE — the period's biggest move, ranked by the very percent
+          the rows print, so the block cannot headline one record while the
+          table argues for another. ─────────────────────────────────────── */}
+      <Quoted onPress={open(quote!)} a11y={spoken(quote!)}>
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+            {quote!.lift}
+          </Text>
+          {day && (
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{day}</Text>
+          )}
+        </View>
+
+        {/* THE FIGURE IS CHALK. The accent belongs to the change — see the
+            header note. The reps ride beside it as a multiplier, at reading
+            size, because they are the second coordinate of the same fact. */}
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 4 }}>
+          <Text style={{ ...TABULAR, fontFamily: F.monoBold, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk }}>
+            {value}
+            <Text style={{ fontSize: fs.subtitle, letterSpacing: tracking.label, color: C.ash }}> {unit}</Text>
+          </Text>
+          <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>× {quote!.now.reps}</Text>
+        </View>
+
+        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
+          <Path r={quote!} big />
+          {quoteDelta && (
+            <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.note, color: txt(C, C.lime) }}>{quoteDelta}</Text>
+          )}
+        </View>
+      </Quoted>
+
+      {/* ── THE LEDGER — every other record, one line each. A lift that set two
+          records in one session (the 80 × 1 / 70 × 10 day) files two rows, and
+          the second leaves the name column EMPTY the way a ledger omits a
+          repeated key. Visually only: the spoken label still names the lift, so
+          a reader never meets a record with no subject. ─────────────────── */}
+      {rows.length > 0 && (
+        <View style={{ marginTop: 22, gap: 13 }}>
+          {rows.map((r, i) => (
+            <Row
+              key={`${r.lift} ${r.axis}`}
+              name={i > 0 && rows[i - 1]!.lift === r.lift ? "" : r.lift}
+              r={r}
+              delta={delta(r)}
+              a11y={spoken(r)}
+              onPress={open(r)}
+            />
           ))}
         </View>
-      ) : (
-        /* THREE AND UP — the same cells become a rail.
-         *
-         * This block sits DIRECTLY ON THE SCREEN, so the rail is full-bleed:
-         * marginHorizontal of the screen gutter with matching content padding,
-         * exactly as the exercise-widget rail does it. Cards slide under the
-         * physical screen edge instead of clipping at the content column with
-         * the gutter showing beside a cut cell.
-         *
-         * The third cell peeking past the edge is the whole affordance, which
-         * is why there are no arrows, no dot row and no "swipe" label.
-         * Deceleration is "fast" with no snapToInterval — the mobile twin of
-         * web's proximity snap, and the feel every other rail already has. */
-        <View
-          style={{ marginHorizontal: -PRS_BLEED }}
-          onLayout={(e: LayoutChangeEvent) => setRailW(e.nativeEvent.layout.width)}
-        >
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            decelerationRate="fast"
-            scrollEventThrottle={16}
-            onScroll={onRailScroll}
-            onContentSizeChange={(w) => { railGeom.current = { ...railGeom.current, c: w }; paintFade(); }}
-            contentContainerStyle={{ paddingHorizontal: PRS_BLEED, gap: PRS_GAP }}
-          >
-            {shownPrs.map((pr) => (
-              <PrCell key={pr.lift} pr={pr} units={units} t={t} width={prCellW}
-                onOpen={onSession && pr.sessionId ? () => onSession(pr.sessionId!) : undefined} />
-            ))}
-            {!allPrs && prs.length > PRS_RAIL_CAP && (
-              <Pressable
-                onPress={() => setAllPrs(true)}
-                accessibilityRole="button"
-                style={{ width: prCellW, justifyContent: "center" }}
-              >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>
-                  {t("w.home.act.showAll").replace("{n}", String(prs.length))}
-                </Text>
-              </Pressable>
-            )}
-          </ScrollView>
+      )}
 
-          {/* THE DISSOLVE — screen-coloured, since this block sits on the
-              screen rather than on a card. Opacity is animated (not the
-              gradient), so it runs on the native driver. */}
-          <Animated.View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeL }}>
-            <LinearGradient colors={[C.ink, withAlpha(C.ink, 0.0)]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
-          </Animated.View>
-          <Animated.View pointerEvents="none" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: PRS_FADE, opacity: fadeR }}>
-            <LinearGradient colors={[withAlpha(C.ink, 0.0), C.ink]} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={{ flex: 1 }} />
-          </Animated.View>
-        </View>
+      {/* THE EXPANDER — it GROWS IN PLACE, so it wears a bare ＋ and no ring,
+          and its label is ash: the accent is the "go" colour and this goes
+          nowhere. (It used to be a bare mono label in a rail slot, which is
+          neither of the two shapes the exit grammar allows.) */}
+      {!all && rest.length > LEDGER_CAP && (
+        <Pressable
+          onPress={() => setAll(true)}
+          accessibilityRole="button"
+          style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, paddingVertical: 6 }}
+        >
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>＋</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>
+            {t("w.home.act.showAll").replace("{n}", String(records.length))}
+          </Text>
+        </Pressable>
       )}
     </View>
+  );
+}
+
+/** Same-lift records made adjacent, each group holding the position its best
+ *  record earned. Stable: a lift that files one record does not move at all. */
+function groupByLift(rows: PrRecord[]): PrRecord[] {
+  const groups = new Map<string, PrRecord[]>();
+  for (const r of rows) {
+    const g = groups.get(r.lift);
+    if (g) g.push(r);
+    else groups.set(r.lift, [r]);
+  }
+  return [...groups.values()].flat();
+}
+
+/** The quote's press target — a record opens the session that set it, the same
+ *  promise the figures above this block make. Plain when there is nothing to
+ *  open, so an untappable figure never presses in. */
+function Quoted({ onPress, a11y, children }: { onPress?: () => void; a11y: string; children: ReactNode }) {
+  if (!onPress) return <View>{children}</View>;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y}>
+      {children}
+    </Pressable>
+  );
+}
+
+/** ONE LEDGER LINE — name, pair, delta. The name truncates and the pair never
+ *  does: the pair is the data, and the lift is the part a reader can infer from
+ *  the row above it. */
+function Row({ name, r, delta, a11y, onPress }: {
+  name: string;
+  r: PrRecord;
+  delta: string | null;
+  a11y: string;
+  onPress?: () => void;
+}) {
+  const { palette: C } = useTheme();
+  const body = (
+    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
+      <Text numberOfLines={1} style={{ width: 88, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+        {name}
+      </Text>
+      <View style={{ flex: 1 }}>
+        <Path r={r} />
+      </View>
+      {delta && (
+        <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{delta}</Text>
+      )}
+    </View>
+  );
+  if (!onPress) return <View accessibilityLabel={a11y}>{body}</View>;
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y}>
+      {body}
+    </Pressable>
   );
 }

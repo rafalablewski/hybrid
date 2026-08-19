@@ -19,6 +19,7 @@ import QueryProvider from "../lib/query";
 import { C } from "../lib/ui";
 import { startIap } from "../lib/iap";
 import { usePushBridge } from "../lib/push";
+import { useRecoveryReadActions } from "../lib/recovery-actions";
 import { supabase } from "../lib/supabase";
 import { ErrorBoundary } from "../components/error-boundary";
 import { ToastHost } from "../components/aurora/toast";
@@ -82,6 +83,12 @@ function Shell() {
   // Requests nothing: the permission is asked for in Settings and once after a
   // check-in (lib/push.ts askPushOnce), never at launch.
   usePushBridge();
+  // The recovery read's four answers, ON the notification — registered and
+  // handled here for the same reason as the bridge above: a press can arrive
+  // with no screen mounted, and there must be exactly one listener. It writes
+  // in place without foregrounding the app, which is the whole point; the
+  // bridge ignores custom actions so the two never both act on one press.
+  useRecoveryReadActions();
   return (
     <NavScrollProvider>
       <StatusBar style="light" />

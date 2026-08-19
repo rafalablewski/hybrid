@@ -64,6 +64,7 @@ import {
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
+import { recoveryReadAnswered } from "../../lib/recovery-reminder";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRecoveryReports } from "../../lib/use-recovery-reports";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useNutritionSignalsQuery, useRecoverySignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
@@ -90,7 +91,9 @@ import Sheet from "./sheet";
 import QuickStartSheet, { type QuickRoutine } from "./quick-start";
 import ReadinessFace from "./readiness-face";
 import ReadinessSheet from "./readiness-sheet";
-// THE DAY OBJECT and its door — the one readiness ring, shared with Performance.
+// THE DAY OBJECT and its door — the one readiness ring, and this is now its one
+// host. Performance drew the same card from the same component until Aug 2026;
+// two placements of one reading made the first look provisional.
 import { ReadinessDayCard } from "./readiness-ring";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
@@ -797,8 +800,11 @@ export default function AuroraHome() {
             the one that could not explain itself.
 
             Now there is ONE ring (aurora/readiness-ring.tsx), drawn here on
-            every branch and again on Performance from the same component, and
-            both open the same explanation. Gated on `hasData` for the reason
+            every branch and NOWHERE ELSE. It was drawn on Performance too, from
+            this same component, until Aug 2026 — one reading in two places, met
+            twice in a session, and nothing on either copy saying which was the
+            reading. This is the screen an athlete opens every morning, so this
+            is where the day's reading lives. Gated on `hasData` for the reason
             the plan card's own comment gives: a bare onboarding macrocycle must
             never surface a fabricated readiness score, and an empty log has
             nothing to subtract from. ═════ */}
@@ -1643,6 +1649,10 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     });
     setBusy(false);
     if (r.ok) {
+      // The read is in — so the reminder asking for it has to go. A
+      // notification that arrives for something already answered is how a
+      // channel earns a mute. See lib/recovery-reminder.ts.
+      void recoveryReadAnswered();
       // Show the tap NOW; the refetch below confirms it a moment later.
       setPicked({ day: dayTs, rating, reads: dayReads.length, at: Date.now() });
       setUndone(null);

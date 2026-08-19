@@ -7,9 +7,12 @@ import { roundKm } from "../distance";
 import {
   newPrsInSession,
   newCardioPrsInSession,
+  prRecordsInSession,
+  comparePrRecords,
   volumeByMuscle,
   type PrHit,
   type CardioPrHit,
+  type PrRecord,
   type MuscleVolume,
 } from "./records";
 
@@ -215,4 +218,42 @@ export function prsBetween(
     }
   }
   return [...best.values()].sort((a, b) => b.topLoad - a.topLoad);
+}
+
+/**
+ * `prsBetween`, AS PATHS - the same window, the same comparison, split by axis
+ * so the Records block can print what each record moved between. See the RECORDS
+ * AS A PATH note in engines/records.ts for why the two views exist.
+ *
+ * Dedup differs from `prsBetween` in the one way that matters: that one keeps
+ * the heaviest hit per LIFT, because it renders one line per lift. A path table
+ * keys on the lift AND its axis, so a week where you added a plate on Tuesday
+ * and a rep on Friday keeps both - they are different records, and collapsing
+ * them would put a pair on screen that no single session ever performed. Within
+ * one axis the biggest gain wins, which is the figure the row prints.
+ */
+export function prRecordsBetween(
+  sessions: LoggedSession[],
+  from: number,
+  to: number,
+  bw?: BodyweightInput,
+): PrRecord[] {
+  const measured = deviceTrueSessions(sessions);
+  const inWindow = measured
+    .filter((s) => {
+      const t = ms(s.startedAt);
+      return Number.isFinite(t) && t >= from && t < to;
+    })
+    .sort((a, b) => ms(a.startedAt) - ms(b.startedAt));
+
+  const best = new Map<string, PrRecord>();
+  for (const s of inWindow) {
+    const prior = sessions.filter((x) => ms(x.startedAt) < ms(s.startedAt));
+    for (const r of prRecordsInSession(s, prior, bw)) {
+      const key = `${r.lift} ${r.axis}`;
+      const cur = best.get(key);
+      if (!cur || comparePrRecords(r, cur) < 0) best.set(key, r);
+    }
+  }
+  return [...best.values()].sort(comparePrRecords);
 }

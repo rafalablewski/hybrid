@@ -246,6 +246,74 @@ export function msUntilNextRead(schedule: FeelSchedule, now: number = Date.now()
   return Math.max(0, schedule.next.dueAt - now);
 }
 
+/* ────────────────────────────────────────────────────────────────────────────
+ * A CLOCK IS NOT A REMINDER.
+ *
+ * Everything above computes WHEN a read is owed. Nothing above can tell an
+ * athlete about it: the in-app list only exists while the app is already open,
+ * which makes it a good list and a useless prompt — by the time you are looking
+ * at it you came back on your own. The recovery read is the one ask in this app
+ * that has to travel to find you, and it was the one with no way to.
+ *
+ * So `msUntilNextRead` finally gets a caller, and this is the part it needs
+ * that the schedule alone cannot supply: an hour a human would accept.
+ *
+ * WHY THE CLAMP IS NOT OPTIONAL. Six hours after an evening session is the
+ * middle of the night. A notification at 02:00 does not get a considered answer
+ * — it gets the permission revoked, and with it every other thing this app
+ * might ever need to say. The read stays useful for thirty-six hours, so
+ * moving a night-time due time to the next morning costs the model very little
+ * (the lag grows from 6 h to ~12 h, both squarely inside the window) and costs
+ * the athlete nothing. Pushing a notification into someone's sleep to protect a
+ * six-hour lag would be optimising the measurement by destroying the channel
+ * that collects it.
+ * ──────────────────────────────────────────────────────────────────────────── */
+
+/** The earliest hour the recovery read may be asked for, local. */
+export const WAKING_FROM_H = 8;
+/** The latest. Past this the ask moves to the next morning. */
+export const WAKING_TO_H = 21;
+
+/**
+ * The instant to fire the recovery reminder for a session that ended at
+ * `sessionEnd`, or null when there is no useful moment left.
+ *
+ * Null means DO NOT SCHEDULE, and it has three causes, all of them real:
+ * the due time has already passed (the athlete is holding the phone now — the
+ * card asks, not a notification), the session is so old the read has expired,
+ * or clamping into waking hours would push the ask past the window entirely.
+ */
+export function recoveryReminderAt(
+  sessionEnd: string | number | null | undefined,
+  now: number = Date.now(),
+): number | null {
+  const end = typeof sessionEnd === "number" ? sessionEnd : sessionEnd ? Date.parse(sessionEnd) : NaN;
+  if (!Number.isFinite(end)) return null;
+
+  const due = end + RECOVERY_DUE_H * HOUR_MS;
+  const expires = end + RECOVERY_WINDOW_H * HOUR_MS;
+  const at = clampToWaking(due);
+  // Already due, or clamped past the point where the answer stops being a
+  // measurement. Either way a notification is the wrong instrument.
+  if (at <= now || at >= expires) return null;
+  return at;
+}
+
+/**
+ * Move an instant into the waking window, in the DEVICE's own timezone —
+ * which is the athlete's, and the only clock that matters for "is this a
+ * reasonable hour". Before the window, wait for it; after it, the next morning.
+ */
+export function clampToWaking(at: number): number {
+  const d = new Date(at);
+  const h = d.getHours();
+  if (h >= WAKING_FROM_H && h < WAKING_TO_H) return at;
+  const target = new Date(at);
+  if (h >= WAKING_TO_H) target.setDate(target.getDate() + 1);
+  target.setHours(WAKING_FROM_H, 0, 0, 0);
+  return target.getTime();
+}
+
 /** i18n key describing what a prompt is asking for — the card's subtitle. */
 export const FEEL_PROMPT_KEY: Record<FeelReadKind, string> = {
   immediate: "session.feel.promptImmediate",

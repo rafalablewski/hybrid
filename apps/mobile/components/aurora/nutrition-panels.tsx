@@ -6,12 +6,13 @@ import {
   type WeightPoint,
   ALPHA,
 } from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale as Pressable } from "../../lib/ui";
+import { fs, space, leading, tracking, F, PressScale as Pressable, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard, ACheckMark, ASection, AMeter, RADIUS } from "./kit";
+import { APill, ACard, AChoice, ASection, AMeter, AStepRail, RADIUS } from "./kit";
 import { AuroraIcon, Glyph } from "./icons";
+import { haptic } from "../../lib/haptics";
 import { withAlpha } from "./field";
 
 /**
@@ -196,42 +197,41 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
     { id: "maintain", label: t("w.recovery.nutrition.goalMaintain"), sub: t("w.recovery.nutrition.goalMaintainSub") },
     { id: "gain", label: t("w.recovery.nutrition.goalGain"), sub: t("w.recovery.nutrition.goalGainSub") },
   ];
-  /* The wizard OPTION ROW — the app's standard for this lives in the onboarding
-     wizard (aurora/onboarding.tsx `Choice`, and the web twin): RADIUS.field at
-     padding 16, a 1px border that swaps line → lime when picked, and a lime wash
-     at 8% behind it. This row drew its selected state by widening its own border
-     to 2 and taking a pixel off the padding to compensate — so picking an option
-     nudged its label; web meanwhile faked the same second border with a shadow
-     ring, on a row it had built at the CARD radius. One control, two shapes and
-     two techniques. Now both read the standard.
-     THE MARK came later, from the same standard: the picked state was drawn
-     here as a private 22dp circle that filled in one frame, so the two wizards
-     ticked an option with two different glyphs. It is the kit's `ACheckMark`
-     on both — the box scales up from the centre and the tick draws over the
-     last third of that fill, which is the difference between a row being
-     MARKED and two pictures being swapped. */
-  const choice = (on: boolean, label: string, sub: string, onPress: () => void) => (
-    <Pressable key={label} onPress={onPress} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: on ? withAlpha(C.lime, ALPHA.wash) : C.ink2, borderWidth: 1, borderColor: on ? C.lime : C.line, borderRadius: RADIUS.field, padding: 16, marginBottom: 10 }}>
-      <View style={{ flex: 1 }}><Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text><Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 3 }}>{sub}</Text></View>
-      <ACheckMark on={on} size={22} />
-    </Pressable>
-  );
+  /* The wizard OPTION ROW is the kit's `AChoice` — the same component the
+     onboarding wizard uses, not a copy of it. This row used to be a copy that
+     cited onboarding by name in a comment, and it had drifted exactly as far as
+     a copy drifts: the title a rung small, the blurb in MONO at fs.nano, the
+     picked label never tinting. A control that needs prose to stay in step
+     wants to be a component. */
   const primary = (label: string, onPress: () => void) => (
     <APill label={label} onPress={onPress} style={{ marginTop: 6 }} />
   );
   return (
     <View style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-        {step > 0 ? <Pressable onPress={() => setStep((s) => s - 1)} accessibilityLabel={t("w.recovery.nutrition.back")} style={{ width: 36, height: 36, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={16} color={C.chalk} /></Pressable> : null}
+        {/* This back stays an ARROW and stays compact, and the difference from the
+            wizards' CTA-row Back is the ROW it lives on: it sits in the step's
+            HEADER beside "Step 2 of 3", which is the hero system's own position
+            and vocabulary for a back — not among the actions at the foot of the
+            screen, where a bare glyph would be the odd one out beside a labelled
+            primary. It is drawn at 36 for that header, so it declares the touch
+            floor with `hitSlop` rather than growing the drawing. */}
+        {step > 0 ? <Pressable onPress={() => setStep((s) => s - 1)} accessibilityRole="button" accessibilityLabel={t("w.recovery.nutrition.back")} hitSlop={HIT_SLOP} style={{ width: 36, height: 36, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}><AuroraIcon name="back" size={16} color={C.chalk} /></Pressable> : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.stepOf").replace("{n}", String(step + 1))}</Text>
       </View>
-      <View style={{ height: 4, borderRadius: RADIUS.pill, backgroundColor: C.ink, overflow: "hidden", marginTop: 12 }}><View style={{ width: `${((step + 1) / 3) * 100}%`, height: 4, backgroundColor: C.lime }} /></View>
+      {/* Was a single 4dp bar with a percentage width — a continuous readout of
+          a discrete thing. Three steps are three segments, on the kit's shared
+          rail, so this wizard's progress is drawn the same way the other two
+          draw theirs. */}
+      <AStepRail marks={[0, 1, 2].map((i) => (i <= step ? "done" : "empty"))} style={{ marginTop: space.md }} />
 
       {step === 0 ? (
         <View style={{ marginTop: 24 }}>
           <ASection title={t("w.recovery.nutrition.pickGoal")} style={{ marginTop: 0, marginBottom: 0 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickGoalSub")}</Text>
-          {GOAL_OPTS.map((o) => choice(goal === o.id, o.label, o.sub, () => setGoal(o.id)))}
+          <View style={{ gap: space.ms }}>
+            {GOAL_OPTS.map((o) => <AChoice key={o.id} active={goal === o.id} title={o.label} sub={o.sub} onPress={() => { haptic.selection(); setGoal(o.id); }} />)}
+          </View>
           {primary(t("w.recovery.nutrition.continue"), () => setStep(1))}
         </View>
       ) : null}
@@ -240,7 +240,9 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
         <View style={{ marginTop: 24 }}>
           <ASection title={t("w.recovery.nutrition.pickActivity")} style={{ marginTop: 0, marginBottom: 0 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6, marginBottom: 16 }}>{t("w.recovery.nutrition.pickActivitySub")}</Text>
-          {MACT.map((a) => choice(activity === a.id, t(a.labelKey), t(a.subKey), () => setActivity(a.id)))}
+          <View style={{ gap: space.ms }}>
+            {MACT.map((a) => <AChoice key={a.id} active={activity === a.id} title={t(a.labelKey)} sub={t(a.subKey)} onPress={() => { haptic.selection(); setActivity(a.id); }} />)}
+          </View>
           <ACard solid style={{ marginTop: 4 }}>
             {currentWeightKg != null ? (
               /* Profile already has a weight — reuse it, don't ask again. */

@@ -71,7 +71,7 @@ import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint, type Palette } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
-import { RADIUS } from "./aurora/kit";
+import { APill, RADIUS } from "./aurora/kit";
 
 // `gold` is a THEME value, and this const is module scope — so it names the
 // one theme the app has rather than copying its hex. (The light theme was
@@ -600,9 +600,13 @@ export function WorkoutWrapped({
               </View>
             ))}
             {!full && (
-              <Pressable onPress={() => { onBack(); router.push("/upgrade"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: premium.fill, borderRadius: RADIUS.pill, paddingVertical: 12, paddingHorizontal: 20 }}>
-                <Text style={{ fontFamily: F.black, fontSize: fs.note, color: premium.ink }}>✦ {t("session.wrapped.unlock")}</Text>
-              </Pressable>
+              <APill
+                label={t("session.wrapped.unlock")}
+                color={premium.fill}
+                glyph={(c) => <Text style={{ fontFamily: F.black, fontSize: fs.note, color: c }}>✦</Text>}
+                onPress={() => { onBack(); router.push("/upgrade"); }}
+                style={{ marginTop: 24, alignSelf: "flex-start" }}
+              />
             )}
           </Panel>
         )}

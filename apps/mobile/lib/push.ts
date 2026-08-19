@@ -335,6 +335,12 @@ export function usePushBridge(): void {
     if (!pushSupported()) return;
 
     const open = (response: Notifications.NotificationResponse) => {
+      // A press on one of a notification's own BUTTONS is not a request to go
+      // anywhere — the recovery read's four answers write in place and the app
+      // may not even come to the foreground. Whoever registered that category
+      // owns the press (lib/recovery-actions.ts); navigating here as well would
+      // answer the question AND open the screen asking it.
+      if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
       const id = response.notification.request.identifier;
       if (id && handled.current === id) return;
       handled.current = id ?? "";

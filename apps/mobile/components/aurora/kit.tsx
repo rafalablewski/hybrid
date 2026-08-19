@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useEffect, useRef, useState } from "react";
+import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from "react";
 import { Image, View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle, type TextInputProps } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -9,7 +9,7 @@ import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, car
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
-import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank, birthYearBounds, ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
+import { heroTitleType, springs, springToRN, durations, states, shakeOffsets, splitBoxStyle, statSubTone, inkOn, DOCK_RAIL, dockChipOn, SHARED_ELEMENTS, type BadgeAccent, type DockChipRole, type AuroraIconName, type HeroRank, birthYearBounds, ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
 import { registerPerson, useSharedSurfaceTarget } from "../../lib/shared-element";
@@ -674,6 +674,7 @@ export function APill({
   state = "idle",
   savingLabel,
   savedLabel,
+  glyph,
 }: {
   label: string;
   onPress: () => void;
@@ -713,6 +714,26 @@ export function APill({
   savingLabel?: string;
   /** Word for the landed state, beside the tick. */
   savedLabel?: string;
+  /**
+   * A LEADING ICON. It exists because its absence was load-bearing: the
+   * outline-pill ratchet's own note had to date its burn-down a year out on the
+   * grounds that "several carry an ICON beside the label and APill takes one
+   * `label` with no glyph slot, so those want a component change before a
+   * call-site change". This is that component change. Nine buttons drew
+   * `<Glyph/> + <Text/>` inside a hand-rolled pill for want of one prop.
+   *
+   * A FUNCTION AND NOT A NODE, so the icon is painted in the pill's CURRENT
+   * foreground without every caller having to re-derive it — which is the thing
+   * a hand-rolled copy always got subtly wrong, painting `C.lime` beside a label
+   * the pill had already resolved to `txt(palette, C.lime)`. `AChoice.glyph`
+   * takes the same shape for the same reason.
+   *
+   * IT FADES WITH THE LABEL, not beside it: an icon left at full opacity under
+   * a "Saving…" overlay reads as a third state nobody designed. The glyph and
+   * the label share one opacity node, which also keeps the width-holder
+   * property intact — the row is laid out at its idle size whatever the state.
+   */
+  glyph?: (color: string) => ReactNode;
 }) {
   const { palette } = useTheme();
   const glass = LIQUID_GLASS_SUPPORTED;
@@ -731,13 +752,26 @@ export function APill({
         : glassSoft
           ? "transparent"
           : palette.ink2;
+  // THE INK ON A FILL IS MEASURED, NOT ASSUMED. `onAccent` is near-black and it
+  // is right for every LIGHT accent the brand has — lime reads 11.9:1 on it,
+  // amber 8.7, Muskmelon 8.3. It is wrong the moment a caller hands in a DARK
+  // fill, and callers do: FEEDBACK.error.fill (#9a2b2e) takes chalk at 7.0 and
+  // near-black at 2.6. Every hand-rolled destructive pill in the app had made
+  // the opposite mistake — white on Muskmelon, which measures 2.4:1, under even
+  // the 3:1 large-text floor, on "Delete account", "Erase everything" and
+  // "Leave plan". So the pill picks whichever of the two brand inks actually
+  // reads on the surface it was given, and the answer is a measurement rather
+  // than a guess. The rule itself is core `inkOn` so the admin panel can share
+  // it, and packages/core/src/contrast.test.ts holds every fill the app can
+  // hand a filled control to the AA bar.
+  const filledInk = (fill: string) => inkOn(fill, [palette.onAccent, palette.chalk]);
   const restFg = outline
     ? color
       ? txt(palette, color)
       : palette.ash
     : variant === "soft"
       ? palette.chalk
-      : palette.onAccent;
+      : filledInk(bg);
   // A FAILED commit is drawn as a filled FEEDBACK.error.text pill whatever the variant
   // was — the outcome layer, not the brand accent: a save that failed is not a
   // reading on the training ramp (see theme/feedback.ts).
@@ -836,13 +870,21 @@ export function APill({
           opacity changes — so the pill's size is a function of its LABEL and
           never of its state. This is the layout shift the audit names: a
           button that grows or shrinks under a finger still resting on it. */}
-      <Animated.Text
-        maxFontSizeMultiplier={MAX_FONT_SCALE}
-        numberOfLines={1}
-        style={{ fontFamily: F.bold, fontSize: compact ? fs.note : fs.subtitle, color: fg, opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }) }}
+      <Animated.View
+        style={{
+          flexDirection: "row", alignItems: "center", gap: compact ? space.xs : space.sm,
+          opacity: fade.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+        }}
       >
-        {label}
-      </Animated.Text>
+        {glyph?.(fg)}
+        <Text
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
+          numberOfLines={1}
+          style={{ fontFamily: F.bold, fontSize: compact ? fs.note : fs.subtitle, color: fg }}
+        >
+          {label}
+        </Text>
+      </Animated.View>
       {/* The reporting states sit ON TOP, centred in the space the label
           already claimed. `pointerEvents none` so they never eat the press. */}
       {reporting && (
@@ -2115,6 +2157,207 @@ export function ACheckMark({ on, size = 20, accent }: { on: boolean; size?: numb
       <Animated.View style={{ opacity: tick, transform: reduced ? [] : [{ scale: tick }] }}>
         <AuroraIcon name="check" size={Math.round(size * 0.62)} color={C.ink} />
       </Animated.View>
+    </View>
+  );
+}
+
+/**
+ * THE WIZARD OPTION ROW — one option in a pick-one/pick-many list, and the
+ * app's standard for one. Title, a line of blurb, a mark at the trailing edge;
+ * RADIUS.field at padding `lg`, a 1px border that swaps line → lime when
+ * picked, and a lime wash at ALPHA.wash behind it.
+ *
+ * IT LIVES HERE BECAUSE TWO WIZARDS DREW IT. The onboarding wizard owned this
+ * anatomy and nutrition's guided setup copied it — and a copy is a drift with a
+ * delay on it: the copy carried the title a rung small (fs.bodyLg), set the
+ * blurb in MONO at fs.nano, and never tinted the picked label, so the two
+ * screens that describe themselves as the same control did not look like it.
+ * The copy's own comment named onboarding as the standard, which is the tell:
+ * when a component has to be cited in prose to stay in step, it wants to be a
+ * component.
+ *
+ * Two things about the MOMENT OF PICKING are the reason the row is animated:
+ *
+ *  • THE ROW MUST NOT RESHAPE. The tick used to be rendered only while active,
+ *    so selecting an option inserted a 22dp glyph at the head of the row and
+ *    shoved the label sideways — under the finger that had just landed on it.
+ *    The mark is always laid out, at the TRAILING edge (where iOS puts a table
+ *    row's check), so the label's left edge never moves.
+ *  • IT CROSS-FADES. The border, the wash and the label change on `ACheckMark`'s
+ *    own 120ms curve, so the mark filling and the row tinting land together
+ *    rather than a third of a beat apart.
+ *
+ * All three interpolate COLOUR, which RN can only do on the JS driver, so the
+ * whole row runs there — one value, one style node (a JS-driven value and a
+ * native-driven one in the same node is the combination RN refuses). It is a
+ * 120ms fade on one row; the cost is nothing and the alternative is stacking
+ * two copies of every label to cross-fade them.
+ *
+ * THE HAPTIC IS THE CALLER'S: a radio pick is Selection, a multi-select toggle
+ * is Impact Light (lib/haptics), and only the caller knows which it is.
+ *
+ * `glyph` EXISTS SO THE SHEET PICKERS COULD JOIN, and it is the reason there is
+ * no second row component. Nutrition's meal and unit sheets drew their own
+ * pick-one row — a glyph, a label, and a trailing check ICON that VANISHED when
+ * the row was not picked, so an unpicked row said nothing about being pickable.
+ * Two sites is below the threshold this kit extracts at, and they were already
+ * disagreeing with each other about the label's face (F.bold in one, F.reg in
+ * the other) 400 lines apart in ONE file. Folding them in here costs one
+ * optional prop and hands them the mark that shows both states.
+ */
+export function AChoice({ active, title, sub, onPress, sheet, glyph }: {
+  active: boolean;
+  title: string;
+  /** The line under the title. Optional — a bare label row is a valid option. */
+  sub?: string;
+  onPress: () => void;
+  /** A leading icon, for a row whose options are a KIND of thing rather than a
+   *  described choice (a meal part, a serving unit). It sits before the label
+   *  and takes the accent when picked, the same beat as the border and the
+   *  mark. */
+  glyph?: (color: string) => ReactNode;
+  /** The row is rendered INSIDE A SHEET, whose panel is already ink2 — so the
+   *  resting fill drops a step to ink rather than painting the row the exact
+   *  colour of the surface it sits on. A boolean and not a colour: the ground
+   *  is one of two things, and a free colour prop is how a shared row goes back
+   *  to being five different rows. */
+  sheet?: boolean;
+}) {
+  const { palette } = useTheme();
+  const rest = sheet ? palette.ink : palette.ink2;
+  const glyphColor = active ? txt(palette, palette.lime) : palette.ash;
+  const on = useRef(new Animated.Value(active ? 1 : 0)).current;
+  useEffect(() => {
+    Animated.timing(on, {
+      toValue: active ? 1 : 0,
+      duration: 120,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: false,
+    }).start();
+  }, [active, on]);
+  const tint = (from: string, to: string) => on.interpolate({ inputRange: [0, 1], outputRange: [from, to] });
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }}>
+      <Animated.View
+        style={{
+          flexDirection: "row", alignItems: "center", gap: space.md,
+          borderWidth: 1,
+          borderColor: tint(palette.line, palette.lime),
+          backgroundColor: tint(rest, withAlpha(palette.lime, ALPHA.wash)),
+          borderRadius: RADIUS.field,
+          padding: space.lg,
+        }}
+      >
+        {glyph?.(glyphColor)}
+        <View style={{ flex: 1 }}>
+          <Animated.Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: tint(palette.chalk, txt(palette, palette.lime)) }}>{title}</Animated.Text>
+          {!!sub && <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: space.xxs, lineHeight: leading(fs.caption) }}>{sub}</Text>}
+        </View>
+        <ACheckMark on={active} size={22} />
+      </Animated.View>
+    </Pressable>
+  );
+}
+
+/**
+ * ONE MARK OF A STEP RAIL. The three states a segment can be in, and the reason
+ * this is a TYPE rather than a boolean: the wizards do not disagree about how a
+ * rail is DRAWN, they disagree about what fills one, and that difference has to
+ * survive the merge.
+ */
+export type StepMark = "done" | "current" | "empty";
+
+/**
+ * THE STEP RAIL — one segment per step, filled up to where you are.
+ *
+ * FOUR RAILS, ONE DRAWING. Onboarding, the check-in wizard, nutrition's guided
+ * setup and (nearly) recipe-library's cook mode each drew their own: 5dp at
+ * RADIUS.mark on an 8 gap, 5dp at RADIUS.pill on a 6 gap, a single 4dp bar with
+ * a percentage width, 3dp ticks with no radius at all. Only ONE of them
+ * animated, only one declared `progressbar` to VoiceOver, and the differences
+ * between them were not decisions — nobody chose 6 over 8.
+ *
+ * WHAT IS NOT MERGED IS THE MEANING, and that is the whole design of this
+ * component. The callers genuinely disagree about what fills a segment, and
+ * they are each right:
+ *
+ *   • onboarding fills by POSITION — every step up to the one you are on.
+ *   • check-in fills by ANSWERS, not position (see its own note: filling by
+ *     position drew a complete bar over a check-in holding one answer, the
+ *     screen asserting "done" while the review card underneath showed dashes).
+ *   • nutrition's setup fills by position across three steps.
+ *
+ * So the caller hands in `marks` and keeps its own rule. A `current` segment is
+ * drawn faint rather than full, which is what check-in needs for "you are here
+ * but you have not answered"; a caller with no such state simply never sends it.
+ *
+ * THE FILL TRAVELS, from the leading edge on `springs.slide` — the wizard's own
+ * spring, so the bar and the step it describes move on one curve. That
+ * behaviour existed on exactly one of the four rails before this; it is the
+ * element on screen whose entire job is to report travel, so a rail that snaps
+ * is the one thing it must not do. Reduce Motion substitutes a cross-fade.
+ *
+ * `now` FOR VOICEOVER IS THE COUNT OF `done`, which is correct under BOTH
+ * meanings without the component having to know which one it is serving:
+ * position-filled rails have exactly `at + 1` done marks, answer-filled rails
+ * have exactly as many as are answered.
+ */
+export function AStepRail({ marks, style }: { marks: StepMark[]; style?: StyleProp<ViewStyle> }) {
+  const done = marks.filter((m) => m === "done").length;
+  return (
+    <View
+      accessibilityRole="progressbar"
+      accessibilityValue={{ min: 0, max: marks.length, now: done }}
+      style={[{ flexDirection: "row", gap: space.sm }, style]}
+    >
+      {marks.map((m, i) => (
+        <StepSeg key={i} mark={m} />
+      ))}
+    </View>
+  );
+}
+
+/** The rail's thickness. One number, and it is the one the two 5dp rails already
+ *  drew — nutrition's 4 and cook mode's 3 were the outliers. */
+const RAIL_H = 5;
+
+function StepSeg({ mark }: { mark: StepMark }) {
+  const { palette } = useTheme();
+  const reduced = useReducedMotion();
+  const on = mark !== "empty";
+  const fill = useRef(new Animated.Value(on ? 1 : 0)).current;
+  useEffect(() => {
+    const anim = reduced
+      ? Animated.timing(fill, { toValue: on ? 1 : 0, duration: durations.reduced, easing: Easing.linear, useNativeDriver: true })
+      : Animated.spring(fill, { toValue: on ? 1 : 0, ...springToRN(springs.slide), useNativeDriver: true });
+    anim.start();
+    return () => anim.stop();
+  }, [on, fill, reduced]);
+  // Rebuilt only when Reduce Motion is toggled — `interpolate` registers a node
+  // on the value every call. The travel is a percentage of the segment's own
+  // width, so nothing has to be MEASURED first (the previous copy carried an
+  // onLayout and a width state purely to compute this).
+  const style = useMemo(
+    () =>
+      reduced
+        ? { opacity: fill }
+        : { transform: [{ translateX: fill.interpolate({ inputRange: [0, 1], outputRange: ["-100%", "0%"] }) }] },
+    [fill, reduced],
+  );
+  return (
+    <View style={{ flex: 1, height: RAIL_H, borderRadius: RADIUS.pill, backgroundColor: palette.line, overflow: "hidden" }}>
+      <Animated.View
+        style={[
+          {
+            position: "absolute", top: 0, bottom: 0, left: 0, right: 0,
+            // A CURRENT step is drawn faint: you are here, and this is not yet
+            // an achievement. `line` on the accent is the same rung the rest of
+            // the app uses for "present but not asserted".
+            backgroundColor: mark === "current" ? withAlpha(palette.lime, ALPHA.line) : palette.lime,
+          },
+          style,
+        ]}
+      />
     </View>
   );
 }
