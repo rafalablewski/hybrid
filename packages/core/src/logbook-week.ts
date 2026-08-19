@@ -1,7 +1,6 @@
 import { localDayKey, localMidnightMs, addLocalDays } from "./day-key";
 import type { LoggedSession } from "./engines/session";
 import { doneReceipt, type DoneReceipt } from "./done-receipt";
-import { sessionKind, type TrainingKind } from "./day-band";
 
 // ============================================================
 //  Logbook week — the plan-less athlete's week rail ("The Constant").
@@ -63,19 +62,6 @@ export interface LogbookDay {
    *  universal ceiling for "a hard day": it is whatever this athlete's hardest
    *  day in view actually was. */
   load: number;
-  /**
-   * WHAT THE DAY WAS, for the strip that draws it. The kind of the day's
-   * LONGEST session, by the same `sessionKind` the day band's rotation reads —
-   * so the bar's colour and the band's vocabulary can never call the same day
-   * two different things.
-   *
-   * The longest rather than the first, because the bar's WIDTH is minutes and
-   * its colour should describe the minutes it is drawing: a 12-minute warm-up
-   * jog before a 70-minute lift is a lifting day, whatever order they were
-   * banked in. Null on a day with nothing logged, and on a day whose sessions
-   * all carry no trustworthy duration to compare.
-   */
-  kind: TrainingKind | null;
 }
 
 export interface LogbookWeekResult {
@@ -99,8 +85,6 @@ export function logbookWeek(
   const byDate = new Map<string, string[]>();
   // Trained minutes per local day, device-true (see LogbookDay.loadMin).
   const minsByDate = new Map<string, number>();
-  // The day's kind, carried with the minutes that won it (see LogbookDay.kind).
-  const kindByDate = new Map<string, { kind: TrainingKind; mins: number; at: number; id: string }>();
   for (const s of sessions) {
     const ts = Date.parse(s.startedAt);
     if (!Number.isFinite(ts)) continue;
@@ -110,19 +94,6 @@ export function logbookWeek(
     else byDate.set(k, [s.id]);
     const mins = doneReceipt(s).durationMin;
     if (mins != null && mins > 0) minsByDate.set(k, (minsByDate.get(k) ?? 0) + mins);
-    // TIES ARE BROKEN BY A TOTAL ORDER, not by arrival. "The longest session
-    // holds the day" leaves a 40-minute run and a 40-minute lift undecided, and
-    // deciding those by whichever the caller happened to list first means the
-    // same week repaints when the same sessions are re-sorted. So: longer wins;
-    // equal minutes go to the one that STARTED LATER, because a day ends as
-    // whatever you finished it doing; and the id settles the last tie, which is
-    // arbitrary but stable, which is the only property that matters by then.
-    const held = kindByDate.get(k);
-    const mine = { kind: sessionKind(s), mins: mins ?? 0, at: ts, id: s.id };
-    if (!held || mine.mins > held.mins
-      || (mine.mins === held.mins && (mine.at > held.at || (mine.at === held.at && mine.id > held.id)))) {
-      kindByDate.set(k, mine);
-    }
   }
 
   const todayMidnight = localMidnightMs(now);
@@ -144,7 +115,6 @@ export function logbookWeek(
       sessionIds,
       logged: sessionIds.length > 0,
       loadMin: Math.round(minsByDate.get(dateKey) ?? 0),
-      kind: kindByDate.get(dateKey)?.kind ?? null,
       load: 0, // normalised below, once the window's heaviest day is known
     });
   }
