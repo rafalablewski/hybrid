@@ -104,7 +104,7 @@ import ReadinessSheet from "./readiness-sheet";
 // host. Performance drew the same card from the same component until Aug 2026;
 // two placements of one reading made the first look provisional.
 import AuroraDayBand from "./day-band";
-import { readRejected, rejectKind } from "../../lib/day-band-prefs";
+import { readRejected, readRejectedEvents, rejectEvent, rejectKind } from "../../lib/day-band-prefs";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
@@ -494,6 +494,11 @@ export default function AuroraHome() {
   // fixture (and later from an event the athlete declares).
   const [rejectedKinds, setRejectedKinds] = useState<TrainingKind[]>([]);
   useEffect(() => { readRejected().then(setRejectedKinds).catch(() => {}); }, [today]);
+  // TOMORROW's rejections, kept apart from today's: "there is no game tomorrow"
+  // and "I am not swimming today" are different answers, and the fixture read
+  // must only honour the first (lib/day-band-prefs.ts).
+  const [rejectedEvents, setRejectedEvents] = useState<TrainingKind[]>([]);
+  useEffect(() => { readRejectedEvents().then(setRejectedEvents).catch(() => {}); }, [today]);
   // The engines take milliseconds; `today` is the day KEY that flips at
   // midnight, so this is a clock read pinned to the day rather than to render.
   const bandNow = useMemo(() => Date.now(), [today]);
@@ -526,13 +531,13 @@ export default function AuroraHome() {
       muscle: readyVerdict.muscle,
       rx: hasData ? rx : null,
       plan: planToday,
-      tomorrow: planToday ? null : fixtureTomorrow(sessions, bandNow),
+      tomorrow: planToday ? null : fixtureTomorrow(sessions, bandNow, rejectedEvents),
       sessions,
       rot: bandRot,
       streakDays: trainingStreak(sessions, bandNow),
       now: bandNow,
     }),
-    [deficit, readyVerdict.muscle, rx, hasData, planToday, sessions, bandRot, bandNow],
+    [deficit, readyVerdict.muscle, rx, hasData, planToday, sessions, bandRot, bandNow, rejectedEvents],
   );
   // Offered only when the rotation has somewhere else to go — a correction that
   // cannot correct anything is a control that does nothing.
@@ -884,7 +889,21 @@ export default function AuroraHome() {
             <AuroraDayBand
               band={band}
               onExplain={() => setDayOpen(true)}
-              onNotToday={bandNext ? () => { const k = band.kinds[0]; if (k) rejectKind(k).then(setRejectedKinds).catch(() => {}); } : undefined}
+              // TWO CORRECTIONS BEHIND ONE WORD, and they have to be told
+              // apart. On the PROTECT rung the athlete is answering about
+              // TOMORROW ("no, there's no game"), so the rejection goes to the
+              // fixture read and the band drops to the rung below — it is
+              // offered whenever the guess is ours to withdraw, with no
+              // rotation candidate required, because collapsing the rung IS
+              // the correction. Everywhere else the answer is about TODAY's
+              // training, and there has to be somewhere for the band to go.
+              onNotToday={
+                band.rung === "protect"
+                  ? (band.source === "inferred" && band.kinds[0]
+                      ? () => { rejectEvent(band.kinds[0]!).then(setRejectedEvents).catch(() => {}); }
+                      : undefined)
+                  : (bandNext ? () => { const k = band.kinds[0]; if (k) rejectKind(k).then(setRejectedKinds).catch(() => {}); } : undefined)
+              }
             />
           </View>
         )}

@@ -193,6 +193,16 @@ describe("weekly fixtures", () => {
     expect(fixtureTomorrow(live, NOW)).not.toBeNull();
   });
 
+  it("drops a fixture the athlete has said is not happening", () => {
+    const log = Array.from({ length: 5 }, (_, i) => session(6 + i * 7, "sport", `s${i}`));
+    expect(fixtureTomorrow(log, NOW)).not.toBeNull();
+    // The "not today?" tap. Before this the rejection went to the ROTATION and
+    // the fixture read consulted nothing, so the band redrew word for word.
+    expect(fixtureTomorrow(log, NOW, ["sport"])).toBeNull();
+    // And it is per-kind: saying no to a game does not dismiss a swim fixture.
+    expect(fixtureTomorrow(log, NOW, ["swimming"])).not.toBeNull();
+  });
+
   it("ignores a sport played at random", () => {
     const log = [0, 3, 9, 17].map((d, i) => session(d, "sport", `s${i}`));
     expect(weeklyFixture(log, NOW).length).toBe(0);
