@@ -330,6 +330,27 @@ export const web_home = {
     "w.home.act.prFirst": "first time",
     "w.home.act.prReps": "more reps",
     "w.home.act.prOpen": "Open the session that set it",
+    // THE DELTA COLUMN, and it never estimates. The load went up, so it names
+    // the load; only the reps went up, so it names the reps. An estimated 1RM
+    // decides whether a record happened and is never the figure shown.
+    //
+    // TWO REP KEYS IN ENGLISH, ONE STRING EVERYWHERE ELSE: "+1 rep" / "+2 reps"
+    // is a plural English handles with two forms and Polish handles with three
+    // (1 / 2-4 / 5+). The abbreviation both other locales already write for a
+    // rep count is plural-invariant, so PL and DE point both keys at it rather
+    // than carrying a plural rule for a two-character column.
+    "w.home.act.prRepDeltaOne": "+1 rep",
+    "w.home.act.prRepDelta": "+{n} reps",
+    // A debut has no origin to print. Short because it sits in the same column
+    // as "+5 kg", not in a sentence.
+    "w.home.act.prNew": "New",
+    // SPOKEN ONLY — a screen reader gets the axis a row is about, since the
+    // difference between the heaviest set and the best one is carried visually
+    // by the delta ("+5 kg" against "+1 rep") and by nothing a reader hears.
+    "w.home.act.prAxisLoad": "heaviest",
+    "w.home.act.prAxisStrength": "best set",
+    // The pair a record moved between, spoken: "70 by 9 to 70 by 10".
+    "w.home.act.prPath": "{a} to {b}",
     "w.home.today.rowNutritionSub": "Log meals & macros",
     "w.home.today.rowCoach": "Follow a coach",
     "w.home.today.rowCoachSub": "Find a coach for your goal",
@@ -1609,6 +1630,12 @@ export const web_home = {
     "w.home.act.prFirst": "pierwszy raz",
     "w.home.act.prReps": "więcej powtórzeń",
     "w.home.act.prOpen": "Otwórz sesję, w której padł",
+    "w.home.act.prRepDeltaOne": "+1 powt.",
+    "w.home.act.prRepDelta": "+{n} powt.",
+    "w.home.act.prNew": "Nowy",
+    "w.home.act.prAxisLoad": "najcięższa",
+    "w.home.act.prAxisStrength": "najlepsza seria",
+    "w.home.act.prPath": "{a} na {b}",
     "w.home.today.rowNutritionSub": "Zapisuj posiłki i makro",
     "w.home.today.rowCoach": "Obserwuj trenera",
     "w.home.today.rowCoachSub": "Znajdź trenera do swojego celu",
@@ -2801,6 +2828,12 @@ export const web_home = {
     "w.home.act.prFirst": "zum ersten Mal",
     "w.home.act.prReps": "mehr Wiederholungen",
     "w.home.act.prOpen": "Session öffnen, in der er aufgestellt wurde",
+    "w.home.act.prRepDeltaOne": "+1 Wdh.",
+    "w.home.act.prRepDelta": "+{n} Wdh.",
+    "w.home.act.prNew": "Neu",
+    "w.home.act.prAxisLoad": "schwerste",
+    "w.home.act.prAxisStrength": "bester Satz",
+    "w.home.act.prPath": "{a} auf {b}",
     "w.home.today.rowNutritionSub": "Mahlzeiten & Makros loggen",
     "w.home.today.rowCoach": "Coach folgen",
     "w.home.today.rowCoachSub": "Finde einen Coach für dein Ziel",

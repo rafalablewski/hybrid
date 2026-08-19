@@ -411,12 +411,37 @@ export function e1rm(load: number, reps: number): number {
  * distance measures) have no meaningful 1RM and return 0.
  */
 export function blockBestE1rm(b: StrengthBlock, bodyweightKg?: number | null): number {
-  if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") return 0;
-  let best = 0;
+  return blockBestE1rmSet(b, bodyweightKg)?.e1rm ?? 0;
+}
+
+/**
+ * ONE SET, AS A POINT — `{ load, reps }`, the shape a record's PATH is drawn
+ * from. `blockBestE1rm` and `blockTopLoad` answer "how much", which is all a
+ * record needed while a record was one number; the Records block prints the
+ * PAIR a lift moved between (`70 × 9 → 70 × 10`), and that needs the reps that
+ * came with the load, not just the load.
+ *
+ * THEY ARE THE PRIMITIVES AND THE NUMBERS ARE THE WRAPPERS, deliberately: the
+ * two used to be independent loops over the same sets with subtly different
+ * guards, and a path assembled from one while the figure came from the other is
+ * exactly the seam this is here to close. Derive the number from the set and
+ * the two cannot disagree.
+ *
+ * Null when the block has no qualifying set — a hold, a carry, an unloaded or
+ * repless entry — which is the same condition the numbers answered with 0.
+ */
+export function blockBestE1rmSet(
+  b: StrengthBlock,
+  bodyweightKg?: number | null,
+): { load: number; reps: number; e1rm: number } | null {
+  if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") return null;
+  let best: { load: number; reps: number; e1rm: number } | null = null;
   for (const s of workingSets(b)) {
     const load = effectiveSetLoadKg(b.name, s.load, bodyweightKg);
     const reps = num(s.reps);
-    if (load > 0 && !Number.isNaN(reps)) best = Math.max(best, e1rm(load, reps));
+    if (load <= 0 || Number.isNaN(reps)) continue;
+    const est = e1rm(load, reps);
+    if (!best || est > best.e1rm) best = { load, reps, e1rm: est };
   }
   return best;
 }
@@ -429,12 +454,29 @@ export function blockBestE1rm(b: StrengthBlock, bodyweightKg?: number | null): n
  * strength number; e1RM stays a secondary, derived stat.
  */
 export function blockTopLoad(b: StrengthBlock, bodyweightKg?: number | null): number {
-  if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") return 0;
-  let best = 0;
+  return blockTopLoadSet(b, bodyweightKg)?.load ?? 0;
+}
+
+/**
+ * The heaviest working set AS A POINT — the load, and the best reps done AT
+ * that load. See `blockBestE1rmSet` for why the set is the primitive.
+ *
+ * TIES GO TO THE REPS: 100 × 3 and 100 × 5 in one session are the same top
+ * load, and the five is the better set — it is the one whose e1RM is higher and
+ * the one an athlete would name. Without this the path pair would print
+ * whichever came first in the log, which is not a fact about the training.
+ */
+export function blockTopLoadSet(
+  b: StrengthBlock,
+  bodyweightKg?: number | null,
+): { load: number; reps: number } | null {
+  if ((gymExercise(b.name)?.measure ?? "reps") !== "reps") return null;
+  let best: { load: number; reps: number } | null = null;
   for (const s of workingSets(b)) {
     const load = effectiveSetLoadKg(b.name, s.load, bodyweightKg);
     const reps = num(s.reps);
-    if (load > 0 && !Number.isNaN(reps) && reps > 0) best = Math.max(best, load);
+    if (load <= 0 || Number.isNaN(reps) || reps <= 0) continue;
+    if (!best || load > best.load || (load === best.load && reps > best.reps)) best = { load, reps };
   }
   return best;
 }

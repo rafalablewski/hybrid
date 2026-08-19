@@ -894,7 +894,13 @@ describe("colour arithmetic", () => {
     // they are no longer a raw number at all. That is exactly the shape this rule
     // wants, and the reason it can keep falling without the remainder moving: what
     // is left really is ramp stops and scrims.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 107,
+    //
+    // 107 → 105. The Records block's two EDGE DISSOLVES — withAlpha(C.ink, 0.0)
+    // at each end of the old rail. They were ramp stops, so the rule was right
+    // to allow them; they were also painting opaque ink over the Aurora field,
+    // which is why the rail went. A ceiling that is not re-pinned after a
+    // deletion is headroom for two new violations nobody agreed to.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 105,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
