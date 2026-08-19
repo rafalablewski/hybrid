@@ -83,6 +83,21 @@ export interface DayEvent {
    *  own noun when absent, so a detected fixture needs no copy of its own. */
   label?: string | null;
   source: "plan" | "fixture" | "declared";
+  /**
+   * THE EVIDENCE, for a `fixture` only — how many of the last `of` weeks this
+   * landed on `weekday`. A plan day and a declared race carry none because
+   * nobody inferred them: they are facts, and a fact does not have to show its
+   * working.
+   *
+   * It exists because the band said "You have a game tomorrow." off the back of
+   * three Thursdays in six weeks, in the flattest declarative in the app, to an
+   * athlete who had no game. The band's own doctrine is that it never asserts a
+   * session that does not exist; rungs 5–6 honour that by changing VOICE
+   * between a scheduled day and an inferred one, and this rung did not. Now the
+   * inference says what it is and shows the count it was drawn from, so a wrong
+   * guess reads as a wrong guess rather than as news.
+   */
+  seen?: { weeks: number; of: number; weekday: number } | null;
 }
 
 /** A training the athlete is actually scheduled to do today, from a plan. */
@@ -314,7 +329,9 @@ export function fixtureTomorrow(sessions: LoggedSession[], now: number = Date.no
   // a habit; missing it costs nothing, and a band that says "nothing on the
   // legs today" before every routine session would be unusable.
   const hit = weeklyFixture(sessions, now).find((f) => f.weekday === tomorrow && f.kind !== "gym" && f.kind !== "walking");
-  return hit ? { kind: hit.kind, source: "fixture" } : null;
+  return hit
+    ? { kind: hit.kind, source: "fixture", seen: { weeks: hit.weeks, of: FIXTURE_LOOKBACK_WEEKS, weekday: hit.weekday } }
+    : null;
 }
 
 // ============================================================
@@ -386,6 +403,11 @@ const leadKey = (k: TrainingKind) => `${K}lead.${k}`;
 const followKey = (k: TrainingKind) => `${K}follow.${k}`;
 const thenKey = (k: TrainingKind) => `${K}then.${k}`;
 const nounKey = (k: TrainingKind) => `${K}noun.${k}`;
+/** A weekday, PLURAL, 0 = Sunday to match `Date#getDay`. It appears in exactly
+ *  one sentence ("3 of the last 6 Thursdays"), so each locale writes it in the
+ *  case that sentence needs — Polish carries the genitive plural (`czwartków`)
+ *  rather than the citation form, because there is nowhere else for it to go. */
+const weekdayKey = (d: number) => `${K}weekday.${d}`;
 const muscleKey = (m: MuscleGroup) => `w.home.today.muscle.${m}`;
 
 /** Which cost is doing the limiting — the biggest one on the ring. */
@@ -427,8 +449,8 @@ export function dayBand(input: DayBandInput): DayBand {
   const figure = d?.kept ?? 0;
   const fill = readinessRole(figure);
 
-  const quiet = (rung: BandRung, voice: BandVoice, head: BandLine, say: BandLine[], mark: TrainingKind | null): DayBand =>
-    ({ rung, fill: null, voice, source: plan ? "plan" : "inferred", figure, head, say, mark, kinds: mark ? [mark] : [] });
+  const quiet = (rung: BandRung, voice: BandVoice, head: BandLine, say: BandLine[], mark: TrainingKind | null, src?: BandSource): DayBand =>
+    ({ rung, fill: null, voice, source: src ?? (plan ? "plan" : "inferred"), figure, head, say, mark, kinds: mark ? [mark] : [] });
 
   // ── 1. NO READING ────────────────────────────────────────────────────────
   if (!d || !Number.isFinite(d.kept) || d.kept <= 0) {
@@ -446,11 +468,35 @@ export function dayBand(input: DayBandInput): DayBand {
   }
 
   // ── 3. SOMETHING IS ON TOMORROW ──────────────────────────────────────────
+  //
+  // TWO VOICES, because there are two completely different claims here. A plan
+  // day and a declared race are FACTS: the athlete or the program put them in
+  // the calendar, and the band states them. A weekly fixture is a GUESS the app
+  // made from the log — and a guess stated as a fact is the defect this rung
+  // shipped with ("You have a game tomorrow." to an athlete with no game).
+  //
+  // So a fixture hedges in the head, shows the count it was drawn from in the
+  // sentence, and reports `source: "inferred"` — which is also what puts the
+  // "not today?" correction under it and keeps it away from a declared event
+  // nobody needs to correct.
   if (tomorrow) {
+    const guessed = tomorrow.source === "fixture";
     const head: BandLine = tomorrow.label
       ? { key: `${K}protect`, values: { event: tomorrow.label } }
-      : { key: `${K}protectKind`, parts: { noun: nounKey(tomorrow.kind) } };
-    return quiet("protect", "protects", head, [{ key: `${K}sayProtect` }], tomorrow.kind);
+      : { key: guessed ? `${K}protectUsual` : `${K}protectKind`, parts: { noun: nounKey(tomorrow.kind) } };
+    // The evidence line, when there is evidence. A fixture handed in without a
+    // `seen` (a caller that predates it) still hedges — it just cannot say how
+    // often, and inventing a count would be worse than not having one.
+    const say: BandLine = !guessed
+      ? { key: `${K}sayProtect` }
+      : tomorrow.seen
+        ? {
+            key: `${K}sayProtectUsual`,
+            parts: { weekday: weekdayKey(tomorrow.seen.weekday) },
+            values: { n: tomorrow.seen.weeks, total: tomorrow.seen.of },
+          }
+        : { key: `${K}sayProtectMaybe` };
+    return quiet("protect", guessed ? "suggests" : "protects", head, [say], tomorrow.kind, guessed ? "inferred" : "plan");
   }
 
   // ── 4. REST ──────────────────────────────────────────────────────────────
