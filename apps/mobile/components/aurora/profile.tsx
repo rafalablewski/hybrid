@@ -43,8 +43,7 @@ import { AuroraIcon } from "./icons";
 import { StreakMark } from "./streak-mark";
 import { LearnedLead } from "./learned";
 import { AboutYouLead } from "./questionnaire";
-import { LeadRail } from "./lead-rail";
-import { ArrowGlyph } from "./cta-label";
+import { LeadRail, LeadCard } from "./lead-rail";
 import { withAlpha } from "./field";
 import { Mark } from "./mark";
 
@@ -277,22 +276,26 @@ export default function AuroraProfile() {
         <LearnedLead inline sessions={sessions} onOpen={() => router.push("/learned")} />
         <AboutYouLead inline sessions={sessions} onOpen={() => router.push("/questionnaire")} />
         {socialP && !sComplete ? (
-          /* an icon-tile ROW (tile + text + chevron) in the rail's card box.
-             It takes CARD_PAD rather than the 16 it used to carry as a
-             standalone row: beside two APressCards its inset is now a shared
-             edge, and 16 against their 20 reads as a misalignment. `flex: 1`
-             so it fills the rail's stretched height; the rail owns the width
-             and the bottom margin. */
-          <Pressable onPress={() => router.push("/profile-edit")} style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.md, borderWidth: 1, borderColor: C.lime, backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.card, padding: CARD_PAD }}>
-            <View style={{ width: 44, height: 44, borderRadius: RADIUS.inner, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-              <AuroraIcon name="user-circle" size={22} color={C.onAccent} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}</Text>
-              <Text style={{ color: C.ash, fontSize: fs.body, marginTop: 2, lineHeight: leading(fs.body) }}>{sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}</Text>
-            </View>
-            <ArrowGlyph size={16} color={txt(C, C.lime)} />
-          </Pressable>
+          /* THE INVITATION, in the same skeleton as the two readings beside it.
+             It carried a shape of its own until the rail put the three in one
+             row: a bigger title, a system-font body, no kicker, no accessible
+             name, its own hand-drawn chrome, and a 44dp icon tile that pushed
+             its text 56dp right of theirs. The lime rim and wash are the whole
+             of its distinction now — the one card that asks you to DO something
+             rather than reporting what the app found. */
+          <LeadCard
+            inline
+            accent
+            kicker={t("w.account.profile.setup-kicker")}
+            title={sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title")}
+            body={sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body")}
+            onPress={() => router.push("/profile-edit")}
+            a11yLabel={[
+              t("w.account.profile.setup-kicker"),
+              sClaimed ? t("w.account.profile.setup-complete-title") : t("w.account.profile.setup-title"),
+              sClaimed ? t("w.account.profile.setup-complete-body") : t("w.account.profile.setup-body"),
+            ].join(" – ")}
+          />
         ) : null}
       </LeadRail>
 
