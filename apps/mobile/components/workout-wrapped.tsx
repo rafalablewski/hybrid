@@ -719,7 +719,12 @@ export function WorkoutWrapped({
         )}
 
         {/* ── DETAILS (breakdown + manage) ── */}
-        <View style={{ backgroundColor: C.ink, paddingHorizontal: 16, paddingTop: 28, paddingBottom: insets.bottom + 40, minHeight: panelH }}>
+        {/* THE LEDGER. It used to open in a different design language — bordered
+            cards, its own gutter, its own ground — one scroll after six
+            full-bleed panels, and the transition read as a seam between two
+            products. It now stands on the panels' ground, at the panels' gutter,
+            with the same hairline rows. */}
+        <View style={{ backgroundColor: HERO_TAKEOVER_INK, paddingHorizontal: HERO.gutter.hero, paddingTop: 28, paddingBottom: insets.bottom + 40, minHeight: panelH }}>
           {details}
         </View>
       </ScrollView>

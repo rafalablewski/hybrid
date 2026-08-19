@@ -47,7 +47,7 @@ import { useSessionActions } from "../../lib/session-actions";
 import { fs, space, Kicker, Mono, Loading, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useChartScrub } from "../../components/aurora/chart-scrub";
-import { AuroraScreen, ACard, cardStack, APill } from "../../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack } from "../../components/aurora/kit";
 import { HeroNav } from "../../components/aurora/hero";
 import { WorkoutWrapped } from "../../components/workout-wrapped";
 import { SessionEditSheet } from "../../components/session-edit";
@@ -153,7 +153,7 @@ export default function SessionDetail() {
       </Mono>
 
       {prs.length + cardioPrs.length > 1 && (
-        <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 14 }}>
+        <View style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, marginTop: 16 }}>
           {prs.map((p) => (
             <View key={p.lift} style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 }}><Glyph name="trophy" size={fs.caption} color={C.amber} /><Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{prLine(p, t, units)}</Text></View>
           ))}
@@ -178,7 +178,7 @@ export default function SessionDetail() {
         {/* The breakdown reads the session as the DEVICE measured it — the typed
             figures live on the summary's comparison panel and nowhere else. */}
         {deviceTrueSession(session).blocks.map((b, i) => (
-          <ACard key={i} style={cardStack}>
+          <View key={i} style={{ borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12, paddingBottom: 14 }}>
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flex: 1 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: b.kind === "strength" ? txt(C, C.lime) : b.kind === "cardio" ? txt(C, C.blue) : txt(C, C.amber) }}>{b.kind.toUpperCase()}</Text>
@@ -238,19 +238,27 @@ export default function SessionDetail() {
             ) : (
               <Mono style={{ marginTop: 8 }}>{conditioningSummary(b, { rpe: true })}</Mono>
             )}
-          </ACard>
+          </View>
         ))}
       </View>
 
-      {/* Correcting what you logged sits with the other manage actions, and
-          leads them: a wrong number is far more common than a workout you want
-          gone (see components/session-edit.tsx). */}
-      <View style={{ marginTop: 24 }}>
-        <APill label={t("session.edit.cta")} variant="outline" onPress={() => setEditOpen(true)} disabled={busy} />
-      </View>
-      <View style={{ flexDirection: "row", gap: space.ms, marginTop: space.ms }}>
-        <APill label={t("w.analyze.hist.archive")} variant="outline" onPress={doArchive} disabled={busy} style={{ flex: 1 }} />
-        <APill label={t("common.delete")} variant="outline" color={FEEDBACK.error.text} onPress={doDelete} disabled={busy} style={{ flex: 1 }} />
+      {/* MAINTENANCE, NOT CONTENT. Three outline pills gave correcting a typo
+          the same visual weight as the session it corrects; on a screen whose
+          panels carry no chrome at all, they were the loudest thing on it.
+          They read as one quiet row now, on the same hairline as everything
+          else, with delete in the error tone and its confirm still in front of
+          it. Correcting a wrong number leads: it is far more common than a
+          workout you want gone (see components/session-edit.tsx). */}
+      <View style={{ flexDirection: "row", alignItems: "center", gap: space.lg, marginTop: 22, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
+        <Pressable onPress={() => setEditOpen(true)} disabled={busy} accessibilityRole="button">
+          <Mono color={C.chalk}>{t("session.edit.cta")}</Mono>
+        </Pressable>
+        <Pressable onPress={doArchive} disabled={busy} accessibilityRole="button">
+          <Mono color={C.ash}>{t("w.analyze.hist.archive")}</Mono>
+        </Pressable>
+        <Pressable onPress={doDelete} disabled={busy} accessibilityRole="button">
+          <Mono color={FEEDBACK.error.text}>{t("common.delete")}</Mono>
+        </Pressable>
       </View>
 
       <SessionEditSheet
