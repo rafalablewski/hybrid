@@ -20,7 +20,7 @@ import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
-import { AuroraScreen, ACard, RADIUS, ASearch } from "./kit";
+import { AuroraScreen, ACard, APanel, RADIUS, ASearch } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 import { AuroraIcon } from "./icons";
 import { withAlpha } from "./field";
@@ -120,9 +120,9 @@ export default function AuroraExercises() {
   };
 
   const Card = ({ list }: { list: ExerciseBrowseEntry[] }) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 4 }}>
+    <APanel style={{ paddingVertical: 4 }}>
       {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} />)}
-    </View>
+    </APanel>
   );
 
   return (

@@ -517,7 +517,10 @@ describe("geometry", () => {
     // it is the kit's `AChoice` now, on `ACheckMark`.
     // 146 → 142: the summary redesign took the story sheet, the per-exercise
     // breakdown cards and the PR list's box with it.
-    burnDown(hits(/borderRadius:\s*\d/g), 142, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 142 → 141: the endurance lanes' ZoneTile drew its three intensity bands
+    // with a raw `borderRadius: 2` each; the bands are the kit's AEffortBar now
+    // and the track carries ONE RADIUS.pill instead of three raw corners.
+    burnDown(hits(/borderRadius:\s*\d/g), 141, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -786,10 +789,23 @@ describe("meters", () => {
     // counted rather than exempted because "is this a column chart or a
     // labelled proportion" is a judgement per site, and a pinned ceiling keeps
     // them visible without pretending the question is settled.
-    const SANCTIONED = /\bAMeter\b/;
+    // 6 → 5, AND A SECOND NAME JOINS THE SANCTIONED LIST for the same reason
+    // AMeter is on it. `AEffortBar` is the kit's INTENSITY TRACK — the three-band
+    // easy/steady/hard bar that the sport page and the endurance lanes' ZoneTile
+    // each used to draw for themselves, disagreeing about the hues (three vs one
+    // at three densities), the band radius and the zero-band rule. It is the
+    // answer this rule points at, so counting it as a violation of itself would
+    // put the same floor under the ratchet that AMeter's own entry did.
+    //
+    // The count FELL because the sport page's `EffortSplitBar` is now
+    // `EffortLegend`: with the bar shared, what is left there draws no bar, and
+    // the file's own lesson from `UndoBar` → `UndoToast` applies — a wrong name
+    // invites a wrong merge as readily as it hides a right one. The code moved
+    // AND the name did; nothing was reclassified to make a number smaller.
+    const SANCTIONED = /\b(?:AMeter|AEffortBar)\b/;
     const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    burnDown(decls, 6, "2026-10-31", "labelled proportion → AMeter");
+    burnDown(decls, 5, "2026-10-31", "labelled proportion → AMeter");
   });
 });
 
@@ -1173,7 +1189,11 @@ describe("presentation", () => {
     // 35 → 29 with the coverage sweep: seven hand-rolled FILLED CTAs in a
     // non-lime accent went onto APill, and several of them were lime-adjacent
     // enough to be counted here.
-    burnDown(found, 29, "2026-12-31", "hand-rolled lime pill → <APill />", [
+    // 29 → 28: the sport page's record sheet had the last hand-rolled save
+    // button on that screen — its own padding, its own face, and no commit
+    // state. It is `<APill size="compact" />` now, which is the size that exists
+    // for a button sitting in a row beside a field.
+    burnDown(found, 28, "2026-12-31", "hand-rolled lime pill → <APill />", [
       {
         where: /height:\s*\d+[^\n]*(?:width|flex):|(?:width|flex):[^\n]*height:\s*\d+/,
         why: "a lime BAR or disc, not a button — a fixed cross-measure with no label",

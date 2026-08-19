@@ -19,6 +19,8 @@ import {
   sportPageModel,
   sportPaceReading,
   sportVolumeReading,
+  zonePercents,
+  type EffortSplit,
   type LoggedSession,
   type SportBest,
   type SportChartReading,
@@ -34,7 +36,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
-import { APill, ASection, AuroraScreen, RADIUS } from "./kit";
+import { AEffortBar, APanel, APill, ASection, AuroraScreen, RADIUS, Spark } from "./kit";
 import { DeviceMark } from "./device-mark";
 import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
@@ -192,23 +194,6 @@ export default function AuroraSportPage() {
    */
   const channel = m.discipline === "sport" ? C.amber : C.blue;
 
-  /**
-   * THE CHART PANEL — the ink2 surface a data-dense reading sits on, exactly as
-   * the endurance lanes' `Tile` and the Other-sports tiles draw it (ink2, the
-   * hairline, RADIUS.field). The charts are the one thing on this page that is
-   * a PANEL rather than a row: the ladder, the bests and the recent efforts are
-   * lists, and the app draws lists on the ground with hairlines between them
-   * (the Sports index one screen back does exactly that).
-   */
-  const panel = {
-    backgroundColor: C.ink2,
-    borderWidth: 1,
-    borderColor: C.line,
-    borderRadius: RADIUS.field,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-  } as const;
-
   /** Provenance: the device's lockup (white — the device said so) or "typed". */
   const Provenance = ({ provider }: { provider: string | null }) =>
     provider
@@ -326,7 +311,7 @@ export default function AuroraSportPage() {
               <Text style={{ ...mono(fs.micro), marginTop: space.xs, lineHeight: leading(fs.micro) }}>{t("w.train.sportPage.timedOnly")}</Text>
             )}
           </View>
-          {m.primary.trend.length >= 2 && <MarkerSpark trend={m.primary.trend} color={channel} />}
+          {m.primary.trend.length >= 2 && <Spark series={m.primary.trend} color={channel} height={44} width={74} />}
         </View>
       )}
 
@@ -402,8 +387,12 @@ export default function AuroraSportPage() {
       {m.empty ? null : (
         <>
           {/* ── VOLUME ── */}
+          {/* The charts are the one thing on this page that is a PANEL rather
+              than a row — the kit's APanel, the same surface the endurance
+              lanes and the Other-sports tiles sit on. The ladder, the bests and
+              the recent efforts stay lists on the ground. */}
           <ASection title={t("w.train.sportPage.volume")} meta={weeksMeta} />
-          <View style={panel}>
+          <APanel>
             <VolumeBars
               weeks={m.weeks}
               avg={m.weekAvg}
@@ -417,13 +406,13 @@ export default function AuroraSportPage() {
               <Text style={mono(fs.nano)}>{fmtDate(m.weeks[0]?.weekStart ?? "")}</Text>
               <Text style={mono(fs.nano)}>{t("w.train.sportPage.thisWeek")}</Text>
             </View>
-          </View>
+          </APanel>
 
           {/* ── PACE — only for a sport that records one ── */}
           {!!m.pace && (
             <>
               <ASection title={t("w.train.sportPage.pace")} meta={t("w.train.sportPage.paceMeta").replace("{weeks}", String(SPORT_PAGE_WEEKS)).replace("{unit}", m.paceUnit)} />
-              <View style={panel}>
+              <APanel>
                 <View style={{ flexDirection: "row", gap: space.xxl, marginBottom: space.md }}>
                   {[
                     { v: sportPace(m.pace.avgSecPerKm, m.pacePer), k: t("w.train.sportPage.average") },
@@ -452,7 +441,7 @@ export default function AuroraSportPage() {
                   <Text style={mono(fs.nano)}>{fmtDate(m.pace.weekStarts[0] ?? "")}</Text>
                   <Text style={mono(fs.nano)}>{t("w.train.sportPage.fasterHigher")}</Text>
                 </View>
-              </View>
+              </APanel>
             </>
           )}
 
@@ -460,9 +449,9 @@ export default function AuroraSportPage() {
           {!!m.split && (
             <>
               <ASection title={t("w.train.sportPage.effort")} meta={t("w.train.sportPage.effortMeta").replace("{weeks}", String(SPORT_PAGE_WEEKS))} />
-              <View style={panel}>
-                <EffortSplitBar split={m.split} C={C} labels={[t("w.train.sportPage.easy"), t("w.train.sportPage.steady"), t("w.train.sportPage.hard")]} />
-              </View>
+              <APanel>
+                <EffortLegend split={m.split} labels={[t("w.train.sportPage.easy"), t("w.train.sportPage.steady"), t("w.train.sportPage.hard")]} />
+              </APanel>
             </>
           )}
 
@@ -571,9 +560,11 @@ export default function AuroraSportPage() {
             accessibilityLabel={m.markerPrompt?.label}
             style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
           />
-          <Pressable onPress={() => saveMarker(draft ?? "")} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 18, paddingVertical: 12 }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.onAccent }}>{t("w.train.sportPage.save")}</Text>
-          </Pressable>
+          {/* The app's one button. This was a hand-rolled chartreuse pill with
+              its own padding and its own face — the exact drift the CTA ratchet
+              exists to burn down; `compact` is the size for a button that sits
+              in a row beside a field, and it still declares the 44dp floor. */}
+          <APill label={t("w.train.sportPage.save")} onPress={() => saveMarker(draft ?? "")} size="compact" />
         </View>
       </Sheet>
     </AuroraScreen>
@@ -674,50 +665,36 @@ function PaceTrend({ trend, prIndex, C, accent, held, bind, readout }: { trend: 
   );
 }
 
-function MarkerSpark({ trend, color }: { trend: number[]; color: string }) {
-  const W = 74, H = 44;
-  const min = Math.min(...trend), max = Math.max(...trend);
-  const span = Math.max(0.0001, max - min);
-  const pts = trend.map((v, i) => [i * (W / Math.max(1, trend.length - 1)), 4 + ((v - min) / span) * (H - 10)] as const);
-  return (
-    <Svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}>
-      <Path d={pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join(" ")} fill="none" stroke={color} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function EffortSplitBar({
-  split,
-  C,
-  labels,
-}: {
-  split: { easy: number; moderate: number; hard: number };
-  C: Palette;
+/**
+ * The effort split's LEGEND — and the name is the point. This was
+ * `EffortSplitBar`, a name it had stopped deserving: the bar itself is the
+ * kit's `AEffortBar` now and what is left here draws no bar at all. The
+ * band order, the three hues and the zero-band rule are the app's vocabulary
+ * and belong in one place (the endurance lanes' ZoneTile draws the same track).
+ * What stays here is the legend, and only because its orientation is a real
+ * function of width: this section is full-bleed so its cells run ACROSS, while
+ * a 152dp rail tile has to stack them or lose to the first long translation.
+ */
+function EffortLegend({ split, labels }: {
+  split: EffortSplit;
   labels: [string, string, string] | string[];
 }) {
-  const total = Math.max(1, split.easy + split.moderate + split.hard);
-  const pct = (v: number) => Math.round((v / total) * 100);
-  // CHARTREUSE / SAND / TERRACOTTA — the app's cost ramp, and the very colours
-  // the Endurance lanes' ZoneTile draws this same easy/steady/hard split in.
-  // This bar used to argue for one hue at three densities ("three HUES would
-  // imply three meanings; this is one meaning at three levels"), which is a
-  // fair argument that had already lost: the identical reading, computed by the
-  // identical engine (paceEffortSplit), is coded three-hue one screen away, so
-  // the two disagreed about what an easy week looks like. One reading, one
-  // paint — and cool-to-warm IS the meaning here.
+  const { palette: C } = useTheme();
+  // Core's percentages, not a local round(): `zonePercents` settles the
+  // remainder so the three integers sum to exactly 100. Rounding each band on
+  // its own — which this did — can print 64 / 24 / 13.
+  const z = zonePercents(split);
   const bands = [
-    { v: pct(split.easy), k: labels[0]!, bg: C.lime },
-    { v: pct(split.moderate), k: labels[1]!, bg: C.amber },
-    { v: pct(split.hard), k: labels[2]!, bg: C.red },
+    { v: z.easy, k: labels[0]! },
+    { v: z.moderate, k: labels[1]! },
+    { v: z.hard, k: labels[2]! },
   ];
   // A zero band has no label to place, and a thin one must not collide with its
   // neighbour — so the legend shows only the bands that exist, with a floor.
   const shown = bands.filter((b) => b.v > 0);
   return (
     <View>
-      <View style={{ flexDirection: "row", gap: 2, height: 12, borderRadius: RADIUS.pill, overflow: "hidden" }}>
-        {bands.map((b) => <View key={b.k} style={{ width: `${b.v}%`, backgroundColor: b.bg }} />)}
-      </View>
+      <AEffortBar zones={z} />
       <View style={{ flexDirection: "row", gap: 2, marginTop: space.md }}>
         {shown.map((b, i) => (
           <View key={b.k} style={{ flexBasis: `${b.v}%`, flexGrow: 0, flexShrink: 1, minWidth: 58, alignItems: i === shown.length - 1 ? "flex-end" : "flex-start" }}>

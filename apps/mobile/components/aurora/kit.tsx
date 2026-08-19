@@ -1,5 +1,5 @@
 import { type ReactNode, type RefObject, useEffect, useMemo, useRef, useState } from "react";
-import { Image, View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type TextStyle, type TextInputProps } from "react-native";
+import { Image, View, Text, ScrollView, TextInput, StyleSheet, ActivityIndicator, RefreshControl, KeyboardAvoidingView, PanResponder, Platform, Animated, Easing, type StyleProp, type ViewStyle, type ViewProps, type TextStyle, type TextInputProps } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
@@ -460,6 +460,120 @@ export function ACard({ children, style, solid, accent }: { children: ReactNode;
  * A SECTION HEAD takes none of them: a marker before a heading is the thing the
  * no-decorative-dot rule exists to stop (see aurora/endurance-lanes).
  */
+/**
+ * THE DATA PANEL — the surface a READING sits on, as against ACard's surface
+ * for a THING.
+ *
+ * `ink2` + the hairline + `RADIUS.field` + a 12dp pad. It was written out
+ * verbatim in seven places — the endurance lanes' Tile, the Other-sports lane,
+ * Today's exercise-favourites card, the endurance summary, the Exercises
+ * browser's slab, the favourites sheet's slab, and (as of the sport-page
+ * repaint) an eighth about to join them. Seven copies of four properties is not
+ * a coincidence, it is a component nobody had written yet, and it is exactly
+ * how a radius drifts: the moment one of them wants a different corner, the
+ * app has two kinds of panel and no way to say which is right.
+ *
+ * WHY IT IS NOT ACard. A card carries a THING (a coach, a recipe, a session) —
+ * it takes the SwiftUI glass on iOS, `RADIUS.card`, `CARD_PAD` (20) and a
+ * shadow, because it is an object you might tap into. A panel carries a
+ * READING — a chart, a stat column, a run of rows — where translucency costs
+ * contrast and 20dp of padding costs plot width. Two surfaces, two jobs; ACard
+ * already has a `solid` prop for the overlap and this does not replace it.
+ *
+ * The panel owns the SURFACE and nothing else: width, minHeight and gap are the
+ * caller's, through `style`, because those are layout and layout belongs to the
+ * parent.
+ */
+export function APanel({
+  children,
+  pad = 12,
+  style,
+  onPress,
+  a11y,
+  bind,
+}: {
+  children: ReactNode;
+  /** The inset, as one number. A caller that needs an asymmetric pad overrides
+   *  the axis it wants through `style` — a list slab whose rows carry their own
+   *  vertical rhythm passes `paddingVertical`, and RN's more-specific-wins rule
+   *  does the rest. */
+  pad?: number;
+  style?: StyleProp<ViewStyle>;
+  /** Makes the whole panel the target. It becomes a PressScale, so a tappable
+   *  panel cannot end up with a different press feel from every other one. */
+  onPress?: () => void;
+  /** The a11y label for a tappable panel. Required in spirit, not in types —
+   *  a panel with no label announces its whole contents. */
+  a11y?: string;
+  /** A chart's scrub handlers (`useChartScrub().bind`), spread onto the panel
+   *  so the ENTIRE tile is the scrub target rather than just the drawing.
+   *  Typed structurally: chart-scrub imports this file, so this file cannot
+   *  import its type back. */
+  bind?: ViewProps;
+}) {
+  const { palette } = useTheme();
+  const surface: ViewStyle = {
+    backgroundColor: palette.ink2,
+    borderWidth: 1,
+    borderColor: palette.line,
+    borderRadius: RADIUS.field,
+    padding: pad,
+  };
+  return onPress ? (
+    <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={a11y} style={[surface, style]}>
+      {children}
+    </PressScale>
+  ) : (
+    <View {...(bind ?? {})} style={[surface, style]}>
+      {children}
+    </View>
+  );
+}
+
+/**
+ * THE INTENSITY TRACK — easy / steady / hard as one stacked bar.
+ *
+ * THE BAR IS SHARED AND THE LEGEND IS NOT, and the split is deliberate. The
+ * bar is the part that must never drift: the band ORDER (cool to warm, easy
+ * first), the three HUES, and the rule that a zero band draws nothing. Those
+ * are the vocabulary. Two surfaces drew this and disagreed about all of it —
+ * the endurance lanes' ZoneTile used three hues while the sport page used one
+ * chartreuse at three densities, so the same reading, from the same engine
+ * (`paceEffortSplit`), looked like two different measurements.
+ *
+ * The LEGEND stays with the caller because its orientation is a real function
+ * of container width, and ZoneTile already wrote the reason down: three zone
+ * words side by side blow a 152dp rail tile apart the moment "Steady" becomes
+ * "Gleichmäßig", so a rail tile stacks its legend and a full-width section runs
+ * it across. Sharing that would force one of them to be wrong.
+ *
+ * THE PERCENTAGES ARE CORE'S (`zonePercents`), not the caller's: it settles the
+ * remainder so the three integers sum to exactly 100. The sport page rounded
+ * each band on its own and could print 64 / 24 / 13.
+ */
+export function AEffortBar({
+  zones,
+  height = 12,
+  style,
+}: {
+  /** Already-percentaged bands — pass core's `zonePercents(split)`. */
+  zones: { easy: number; moderate: number; hard: number };
+  height?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette } = useTheme();
+  const bands: [number, string][] = [
+    [zones.easy, palette.lime],
+    [zones.moderate, palette.amber],
+    [zones.hard, palette.red],
+  ];
+  return (
+    <View style={[{ flexDirection: "row", gap: 2, height, borderRadius: RADIUS.pill, overflow: "hidden" }, style]}>
+      {bands.map(([pct, c]) => pct > 0 && <View key={c} style={{ flex: pct, backgroundColor: c }} />)}
+    </View>
+  );
+}
+
 export function AMarkTile({ size = 40, label, children, style }: {
   size?: number;
   /**

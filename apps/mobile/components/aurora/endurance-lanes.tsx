@@ -12,7 +12,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { useChartScrub, type ScrubBind } from "./chart-scrub";
-import { GUTTER, RADIUS } from "./kit";
+import { AEffortBar, APanel, GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
 import RailTail from "./rail-tail";
 
@@ -321,14 +321,7 @@ function Tile({ w, label, a11y, foot, footRight, bind, children }: {
 }) {
   const { palette: C } = useTheme();
   return (
-    <View
-      {...(bind ?? {})}
-      style={{
-        width: w, minHeight: TILE_H, gap: 6,
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-        paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
-      }}
-    >
+    <APanel bind={bind} style={{ width: w, minHeight: TILE_H, gap: 6 }}>
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
         numberOfLines={1}
@@ -344,7 +337,7 @@ function Tile({ w, label, a11y, foot, footRight, bind, children }: {
           {footRight}
         </View>
       )}
-    </View>
+    </APanel>
   );
 }
 
@@ -524,11 +517,7 @@ function ZoneTile({ lane }: { lane: EnduranceLane }) {
   // Stacked, it survives any language and the percentages align in a column.
   return (
     <Tile w={152} label={t("w.home.end.mZones")} a11y={t("w.home.end.zonesAll")}>
-      <View style={{ flexDirection: "row", gap: 2, height: 8, marginTop: "auto" }}>
-        {([[z.easy, C.lime], [z.moderate, C.amber], [z.hard, C.red]] as [number, string][]).map(
-          ([pct, c]) => pct > 0 && <View key={c} style={{ flex: pct, backgroundColor: c, borderRadius: 2 }} />,
-        )}
-      </View>
+      <AEffortBar zones={z} height={8} style={{ marginTop: "auto" }} />
       <View style={{ gap: 3, marginTop: 2 }}>
         <Leg label={t("running.easy")} pct={z.easy} c={C.lime} />
         <Leg label={t("running.moderate")} pct={z.moderate} c={C.amber} />
