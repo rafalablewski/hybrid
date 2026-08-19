@@ -7,8 +7,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
 import { leading, tracking, fs, F } from "../../lib/ui";
-import { APressCard, Ring, withAlpha } from "./kit";
-import { AuroraIcon } from "./icons";
+import { Ring, withAlpha } from "./kit";
 
 /**
  * THE READINESS RING — the product's one signature object, in ONE file.
@@ -188,74 +187,27 @@ function LedgerRow({
 }
 
 /**
- * THE DAY OBJECT — the ring's card face, and the whole card is the door.
+ * THE DAY OBJECT USED TO LIVE HERE, and what replaced it is worth writing down
+ * rather than discovering from a diff.
  *
- * Three things and no fourth: the ring, one line naming what is limiting the
- * day, and the bar underneath proving the parts sum to the figure. Reading it
- * takes about a second; opening it gives the full arithmetic. That is the
- * entire brief — one object an athlete meets every morning, which can be
- * glanced at and can also be audited, and which never says anything it cannot
- * defend.
+ * `ReadinessDayCard` was the ring, one line naming the day's limiter, and —
+ * under a hairline — the straightened bar with "Kept 64 / Spent 36" beneath its
+ * ends. Two things were wrong with it and only one of them was the bar. The BAR
+ * ON THE FACE proved a sum whose parts it could not name: the runs are
+ * unlabelled until the ledger names them, so on the card it was one number
+ * stated twice next to a strip of colour. It draws in the SHEET now (see
+ * readiness-day-sheet.tsx), directly above the ledger that names every run in
+ * it, which is where the proof was always legible.
  *
- * THE WHOLE CARD IS THE HIT TARGET. The Performance screen put this behind a
- * nano-mono row with a chevron on its right edge; a 10pt label is not something
- * anyone finds with a thumb, and the object being explained — the ring — was
- * not part of the control at all. Here the ring, the sentence and the bar are
- * one press, with the chevron riding the label row as the visible affordance
- * (the same grammar the freshness columns and the reading use).
+ * The deeper fault was the card's whole grammar: it stated a DIAGNOSIS. An
+ * athlete opening the app at six in the morning does not need to be told which
+ * tissue is limiting them; they need to be told what to train. That is the day
+ * BAND (aurora/day-band.tsx, deciding through core's day-band.ts), and it is
+ * the only host of the ring's door now.
  *
- * THE AFFORDANCE IS THE ⓘ, not an arrow or a chevron, because what this opens
- * is an EXPLANATION of the figure beside it — the same mark the freshness
- * columns and the readiness reading already wear for "explain THIS number". The
- * glyph is already a ring, so nothing draws a second one around it.
- *
- * NO DECORATIVE MARKER before the label, and the affordance sits on the RIGHT
- * of the label row: this is the SectionHead idiom the house rule fixes, not a
- * variation on it.
+ * The RING itself is unchanged and still lives above — the sheet draws it at
+ * 112, and any future surface that wants it imports `ReadinessRing`.
  */
-export function ReadinessDayCard({ deficit, verdict, onOpen, style }: {
-  deficit: ReadinessDeficit;
-  verdict: { key: string; muscle: string | null; reasons: number; doorKey: string; deficit: number };
-  onOpen: () => void;
-  style?: Parameters<typeof APressCard>[0]["style"];
-}) {
-  const { palette: C } = useTheme();
-  const { t } = useLang();
-  const line = t(verdict.key).replace("{tissue}", verdict.muscle ? t(`w.home.today.muscle.${verdict.muscle}`) : "");
-  return (
-    <APressCard
-      onPress={onOpen}
-      a11yLabel={`${t("w.home.readiness.dayLabel")} ${deficit.kept} – ${line} – ${t(verdict.doorKey).replace("{n}", String(verdict.deficit))}`}
-      style={style}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-        <ReadinessRing deficit={deficit} size={56} />
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
-              {t("w.home.readiness.dayLabel")}
-            </Text>
-            <AuroraIcon name="info" size={13} color={C.ash} />
-          </View>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 3, lineHeight: leading(fs.subtitle) }}>
-            {line}
-          </Text>
-        </View>
-      </View>
-      {/* The proof, on the face. A ring can be glanced at but its runs cannot be
-          compared around a circle; straightened out they can, and the two
-          figures under the ends are the sum law stated in the open rather than
-          asserted in a source comment. Drawn only when something actually left
-          the 100 — at a clean score there is one run, and a full-width bar of a
-          single colour under two labels reading "Kept 98 / Spent 0" is chrome. */}
-      {deficit.costs.length > 0 && (
-        <View style={{ marginTop: 16, paddingTop: 14, borderTopWidth: 1, borderTopColor: C.line }}>
-          <ReadinessBar deficit={deficit} height={8} />
-        </View>
-      )}
-    </APressCard>
-  );
-}
 
 /** A section head inside the explanation: display-face title left, mono meta on
  *  the RIGHT of the same row, no marker before it (house rule). */

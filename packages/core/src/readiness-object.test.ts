@@ -99,16 +99,31 @@ describe("the one-ring guard — the signature object has exactly one implementa
     }
   });
 
-  it("gives the ring a door on every screen that draws it", () => {
-    // The ring's whole claim is that it can be questioned. A host that renders
-    // the card must therefore also mount the explanation it opens — otherwise
-    // we are back to a figure with no derivation, which is the state Today was
-    // in. Both hosts are checked by the same rule rather than by name, so a
-    // third host inherits it.
-    const hosts = files.filter((p) => /<ReadinessDayCard\b/.test(code(p)));
-    expect(hosts.length, "nothing renders the day object").toBeGreaterThan(0);
+  it("gives the reading a door on every screen that states it", () => {
+    // The ring's whole claim is that it can be questioned. A host that states
+    // the day's reading must therefore also mount the explanation it opens —
+    // otherwise we are back to a figure with no derivation, which is the state
+    // Today was in. The HOST CHANGED in Aug 2026 (the day card became the day
+    // band) and the rule did not: it binds whatever draws the reading to the
+    // sheet, by shape rather than by name, so the next host inherits it.
+    const hosts = files.filter((p) => /<AuroraDayBand\b/.test(code(p)));
+    expect(hosts.length, "nothing states the day's reading").toBeGreaterThan(0);
     for (const p of hosts) {
-      expect(/<ReadinessDaySheet\b/.test(code(p)), `${relative(MOBILE, p)} draws the ring but opens nothing`).toBe(true);
+      expect(/<ReadinessDaySheet\b/.test(code(p)), `${relative(MOBILE, p)} states the reading but opens nothing`).toBe(true);
     }
+  });
+
+  it("keeps the straightened bar inside the explanation, and nowhere else", () => {
+    // THE BAR IS PROOF, AND PROOF NEEDS ITS LEDGER. On the old card face it sat
+    // under a hairline with "Kept 64 / Spent 36" beneath its ends: one number
+    // stated twice, beside runs that nothing on that surface named. It belongs
+    // directly above the ledger that names every run in it — which is to say,
+    // in the sheet. A face that draws it again is re-making the argument the
+    // band exists to replace.
+    const allowed = new Set(["components/aurora/readiness-ring.tsx", "components/aurora/readiness-day-sheet.tsx"]);
+    const drawers = files
+      .filter((p) => /<ReadinessBar\b/.test(code(p)))
+      .map((p) => relative(MOBILE, p).split("\\").join("/"));
+    expect(drawers.filter((r) => !allowed.has(r)), "the bar belongs in the sheet, above its ledger").toEqual([]);
   });
 });

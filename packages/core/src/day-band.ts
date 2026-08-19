@@ -154,14 +154,44 @@ export interface Rotation {
 
 const DAY_MS = 86_400_000;
 
-/** What kind of training a logged session was. A session with any cardio block
- *  is that block's discipline (the first one wins — a brick session is named by
- *  what it opened with); anything else is gym work. */
-export function sessionKind(s: LoggedSession): TrainingKind {
-  for (const b of s.blocks ?? []) {
-    if ((b as { kind?: string }).kind === "cardio") return cardioDiscipline(b.name ?? "");
+/** What kind of training a set of blocks is. The first cardio block wins — a
+ *  brick session is named by what it opened with — and anything else is gym
+ *  work. Takes BLOCKS rather than a session so a plan's day, which has blocks
+ *  and no session, resolves through exactly the same rule. */
+export function blocksKind(blocks: readonly { kind?: string; name?: string }[] | undefined): TrainingKind {
+  for (const b of blocks ?? []) {
+    if (b?.kind === "cardio") return cardioDiscipline(b.name ?? "");
   }
   return "gym";
+}
+
+/** What kind of training a logged session was. */
+export function sessionKind(s: LoggedSession): TrainingKind {
+  return blocksKind(s.blocks as unknown as { kind?: string; name?: string }[]);
+}
+
+/**
+ * DAYS TRAINED IN A ROW, counting back from today — what rung 4 needs for an
+ * athlete with no plan to be told to rest.
+ *
+ * Counts from TODAY if something is logged today, otherwise from yesterday, so
+ * a streak is not broken at midnight by a day that has not happened yet. Two
+ * sessions on one day are one day of the streak.
+ */
+export function trainingStreak(sessions: LoggedSession[], now: number = Date.now()): number {
+  const days = new Set(
+    (sessions ?? [])
+      .map((s) => localMidnightMs(new Date(s.startedAt).getTime()))
+      .filter((ms) => Number.isFinite(ms)),
+  );
+  const today = localMidnightMs(now);
+  let cursor = days.has(today) ? today : today - DAY_MS;
+  let streak = 0;
+  while (days.has(cursor)) {
+    streak++;
+    cursor -= DAY_MS;
+  }
+  return streak;
 }
 
 const median = (xs: number[]): number => {

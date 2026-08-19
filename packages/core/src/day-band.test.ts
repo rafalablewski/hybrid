@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { makeT } from "./i18n";
 import {
   BAND_HEAD_MAX, BAND_SAY_MAX, CADENCE_SPREAD_MAX, REST_STREAK_DAYS, ROTATION_STALE_DAYS,
-  TRAINING_KINDS, bandSay, bandText, dayBand, fixtureTomorrow, nextDueKind, rotation,
-  sessionKind, weeklyFixture,
+  TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, fixtureTomorrow, nextDueKind, rotation,
+  sessionKind, trainingStreak, weeklyFixture,
   type DayBand, type DayBandInput, type TrainingKind,
 } from "./day-band";
 import type { LoggedSession } from "./engines/session";
@@ -134,6 +134,28 @@ describe("rotation — the confidence floor", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+describe("trainingStreak", () => {
+  it("counts back from today, or from yesterday when today is still empty", () => {
+    expect(trainingStreak([session(0, "gym"), session(1, "running"), session(2, "gym", "g2")], NOW)).toBe(3);
+    // Nothing today yet — the streak behind it still stands rather than being
+    // broken by a day that has not happened.
+    expect(trainingStreak([session(1, "running"), session(2, "gym")], NOW)).toBe(2);
+    expect(trainingStreak([session(3, "gym")], NOW)).toBe(0);
+  });
+
+  it("counts a double day once", () => {
+    expect(trainingStreak([session(0, "gym", "a"), session(0, "running", "b"), session(1, "gym", "c")], NOW)).toBe(2);
+  });
+});
+
+describe("blocksKind", () => {
+  it("resolves a plan day's blocks by the same rule a logged session takes", () => {
+    expect(blocksKind([{ kind: "cardio", name: "Easy Run" }])).toBe("running");
+    expect(blocksKind([{ kind: "strength", name: "Back Squat" }])).toBe("gym");
+    expect(blocksKind([])).toBe("gym");
+  });
+});
+
 describe("weekly fixtures", () => {
   it("finds a sport that lands on the same weekday most weeks", () => {
     // Six days ago is the same weekday as tomorrow.

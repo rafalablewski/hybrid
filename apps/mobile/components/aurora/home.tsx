@@ -45,6 +45,14 @@ import {
   type PlacedRead,
   type ReadGate,
   planSchedule,
+  dayBand,
+  rotation,
+  trainingStreak,
+  blocksKind,
+  fixtureTomorrow,
+  nextDueKind,
+  DUE_RATIO,
+  MAX_DUE,
   masthead,
   localDayKey,
   sessionClockTime,
@@ -56,6 +64,7 @@ import {
   sessionsOnDay,
   sessionMeta,
   type LoggedSession,
+  type TrainingKind,
   type SessionBlock,
   type Experience,
   type Equipment,
@@ -94,7 +103,8 @@ import ReadinessSheet from "./readiness-sheet";
 // THE DAY OBJECT and its door — the one readiness ring, and this is now its one
 // host. Performance drew the same card from the same component until Aug 2026;
 // two placements of one reading made the first look provisional.
-import { ReadinessDayCard } from "./readiness-ring";
+import AuroraDayBand from "./day-band";
+import { readRejected, rejectKind } from "../../lib/day-band-prefs";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
@@ -409,6 +419,8 @@ export default function AuroraHome() {
   // far under maintenance the athlete has been eating — lives on the read.
   const readyFacts = useMemo(() => readinessFacts(log, bio, heatAdj, fuel), [log, bio, heatAdj, fuel]);
   const [dayOpen, setDayOpen] = useState(false);
+
+
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();
   const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
@@ -466,6 +478,65 @@ export default function AuroraHome() {
   // those rows "Plan" so the plan workout and the off-plan extras (the tennis
   // match, a freestyle lift) read apart while ALL of them stay listed.
   const fulfilledIds = useMemo(() => new Set(sched?.fulfilledSessionIds ?? []), [sched]);
+
+  // ── THE DAY BAND ──────────────────────────────────────────────────────────
+  // The filled field at the head of the screen, and the only thing on Today
+  // that says what to DO. The ladder lives in core (day-band.ts); this screen
+  // supplies the four things only it has — the reading it already made, the
+  // athlete's own log, what the plan says about today, and what the athlete
+  // said back.
+  //
+  // WHAT IS DELIBERATELY NOT WIRED YET: the plan as a source of "tomorrow".
+  // Rung 3 protects a day, and a plan day is a training day rather than an
+  // EVENT — feeding every scheduled tomorrow into it would put "nothing on the
+  // legs today" over an ordinary Tuesday. Until a plan day can say it is a
+  // race, a test or a key session, tomorrow comes only from a detected weekly
+  // fixture (and later from an event the athlete declares).
+  const [rejectedKinds, setRejectedKinds] = useState<TrainingKind[]>([]);
+  useEffect(() => { readRejected().then(setRejectedKinds).catch(() => {}); }, [today]);
+  // The engines take milliseconds; `today` is the day KEY that flips at
+  // midnight, so this is a clock read pinned to the day rather than to render.
+  const bandNow = useMemo(() => Date.now(), [today]);
+
+  const rot = useMemo(() => rotation(sessions, bandNow), [sessions, bandNow]);
+  // A rejection does two things at once: it drops the kind the athlete just
+  // said no to, and it PROMOTES the next confident one — otherwise "not today"
+  // would silently empty the band rather than correcting it.
+  const bandRot = useMemo(() => {
+    if (!rejectedKinds.length) return rot;
+    const next = nextDueKind(rot, rejectedKinds);
+    const kinds = rot.kinds.filter((k) => !rejectedKinds.includes(k.kind));
+    return { ...rot, kinds, due: kinds.filter((k) => k.confident && (k.ratio >= DUE_RATIO || k.kind === next)).slice(0, MAX_DUE) };
+  }, [rot, rejectedKinds]);
+
+  const planToday = useMemo(() => {
+    const day = sched?.days.find((d) => d.isToday);
+    if (!day) return null;
+    return {
+      isRest: day.isRest,
+      dayNumber: day.trainingDayNumber,
+      trainings: (day.sessions.length ? day.sessions.map((ps) => ({ kind: blocksKind(ps.blocks), label: day.title }))
+                                      : [{ kind: blocksKind(day.blocks), label: day.title }]),
+    };
+  }, [sched]);
+
+  const band = useMemo(
+    () => dayBand({
+      deficit,
+      muscle: readyVerdict.muscle,
+      rx: hasData ? rx : null,
+      plan: planToday,
+      tomorrow: planToday ? null : fixtureTomorrow(sessions, bandNow),
+      sessions,
+      rot: bandRot,
+      streakDays: trainingStreak(sessions, bandNow),
+      now: bandNow,
+    }),
+    [deficit, readyVerdict.muscle, rx, hasData, planToday, sessions, bandRot, bandNow],
+  );
+  // Offered only when the rotation has somewhere else to go — a correction that
+  // cannot correct anything is a control that does nothing.
+  const bandNext = useMemo(() => nextDueKind(bandRot, [...rejectedKinds, ...band.kinds]), [bandRot, rejectedKinds, band.kinds]);
 
   // THE DONE FLOOR — what was actually logged on the viewed day, handed to the
   // week rail to render as the LOWER FLOOR of its card (aurora/done-floor.tsx).
@@ -810,7 +881,11 @@ export default function AuroraHome() {
             nothing to subtract from. ═════ */}
         {!initialLoad && isAthlete && hasData && readyVerdict.kind !== "empty" && (
           <View style={{ marginBottom: 16 }}>
-            <ReadinessDayCard deficit={deficit} verdict={readyVerdict} onOpen={() => setDayOpen(true)} />
+            <AuroraDayBand
+              band={band}
+              onExplain={() => setDayOpen(true)}
+              onNotToday={bandNext ? () => { const k = band.kinds[0]; if (k) rejectKind(k).then(setRejectedKinds).catch(() => {}); } : undefined}
+            />
           </View>
         )}
 
