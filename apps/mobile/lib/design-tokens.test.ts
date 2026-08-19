@@ -415,7 +415,10 @@ describe("leading and tracking", () => {
     // fifth is the portion stepper's −, whose box was 26 on a size of 24: once
     // the size took a rung the pair read as a 1.0 ratio, which is nobody's
     // choice, it is two numbers that used to be different.)
-    burnDown(hits(/lineHeight:\s*\d/g), 39, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    // 39 → 38: the You tab's profile-setup nudge, moved into the lead rail,
+    // took its hand-tuned `lineHeight: 18` with it — on fs.body that is exactly
+    // leading(fs.body), which is to say it was never a tuning.
+    burnDown(hits(/lineHeight:\s*\d/g), 38, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking names its token; a big figure derives it", () => {
@@ -1471,6 +1474,68 @@ describe("presentation", () => {
       }
     }
     expect(bad).toEqual([]);
+  });
+
+  it("HARD — share is ONE mark, and the pair has ONE owner", () => {
+    // Share was this app's most re-implemented affordance: SIX drawings of one
+    // verb, counted in Aug 2026. The recipe cover's SF Symbol; the finish
+    // summary's text arrow inside a hand-rolled chartreuse pill; the Wrapped
+    // rail's, inside a lime-washed box; the verified food page's flat ash
+    // vector in a bare 40pt box; a Settings chip's; and the public profile
+    // rendering the WORD "share" through HeroAccessory — the METADATA
+    // component — in the slot HeroAction was built for.
+    //
+    // Every one of them passed every guard in this file. The emoji rule allows
+    // the arrow by name (it is a real typographic mark, and the warmup RAMP
+    // badge and the elevation-gain figure use it for what it draws), and the
+    // mark rule only catches the `{x.icon}` shape. So the drift needs its own
+    // rule, and it has two halves because it had two shapes.
+    //
+    // ONE OWNER FOR THE PAIR. The SF Symbol and the house vector are named
+    // together in share-mark.ts, so a screen COMPOSES `SHARE_MARK` and never
+    // spells out half of it — which is how the summary came to wear a different
+    // mark from the recipe one tab away.
+    const OWNER = "components/aurora/share-mark.ts";
+    const respelt = codeHits(/square\.and\.arrow\.up/g).filter((h) => !h.startsWith(OWNER));
+    expect(
+      respelt,
+      `\nthe share pair belongs to SHARE_MARK — compose it, don't respell it:\n  ${respelt.join("\n  ")}`,
+    ).toEqual([]);
+
+    // AND NO STAND-IN. A file that actually PERFORMS a share may not draw a
+    // text arrow. Scoped to those files deliberately: the character stays legal
+    // everywhere it means what it draws, and is banned only where it would be
+    // standing in for a mark this app already owns.
+    const SHARES = /\bShare\.share\(|shareCardImage\(|runShare\(|Sharing\.shareAsync\(/;
+    const standIns: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!SHARES.test(text)) continue;
+      text.split("\n").forEach((line, i) => {
+        // A comment may NAME the mark the file dropped — but only in the two
+        // forms this file's comment filter recognises, NOT a JSX `{/* … */}`
+        // continuation line, which is indistinguishable from code here.
+        if (/^\s*(?:\/\/|\/?\*)/.test(line)) return;
+        if (line.includes("\u2197")) standIns.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      standIns,
+      `\na share drawn as a text arrow — use SHARE_MARK:\n  ${standIns.join("\n  ")}`,
+    ).toEqual([]);
+
+    // AND NOT THE OTHER HALF EITHER. The verified food page was the case
+    // neither assertion above would have caught: the RIGHT vector in the wrong
+    // container — `<AuroraIcon name="share">` in a bare 40pt box with no fill,
+    // no rim and ash rather than chalk, on the page whose whole job is to be
+    // worth passing on. A screen that names the house vector by hand has
+    // reached past SHARE_MARK for half the pair, which is where that ends up.
+    const byHand = codeHits(/(?:name|mark|glyph|fallbackGlyph)=\{?["']share["']\}?/g).filter(
+      (h) => !h.startsWith(OWNER),
+    );
+    expect(
+      byHand,
+      `\nthe house vector is SHARE_MARK.fallback — reach for the pair, not the name:\n  ${byHand.join("\n  ")}`,
+    ).toEqual([]);
   });
 
   it("HARD — the segmented control is never a native Picker", () => {

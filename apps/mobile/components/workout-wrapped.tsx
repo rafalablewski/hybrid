@@ -57,7 +57,8 @@ import { useHeatSignalsQuery, useRevalidate } from "../lib/queries";
 import { DeviceMatchSheet } from "./device-match";
 import { DeviceMark } from "./aurora/device-mark";
 import { AuroraIcon } from "./aurora/icons";
-import { HeroEyebrow, HeroNav } from "./aurora/hero";
+import { HeroAction, HeroEyebrow, HeroNav } from "./aurora/hero";
+import { SHARE_MARK } from "./aurora/share-mark";
 import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
 import SessionBody from "./aurora/session-body";
@@ -744,16 +745,21 @@ export function WorkoutWrapped({
           {/* SHARE, OPPOSITE DISMISS. Dismiss is top-left because that is where
               the back gesture lives, so the only other panel-level action takes
               the other corner — and holds it on every panel, so the thumb never
-              has to hunt for it. It shares the panel in front of you. */}
+              has to hunt for it. It shares the panel in front of you.
+
+              Which makes it HeroNav's twin, and it is drawn as one now: the
+              rail's trailing control, in the leading one's material. It spent
+              its life as a lime-washed box with a text arrow in it — a third
+              drawing of share beside the recipe cover's and the finish
+              summary's, on the app's other social surface. */}
           {showDock && (
-            <Pressable
+            <HeroAction
+              glyph={SHARE_MARK.glyph}
+              fallbackGlyph={SHARE_MARK.fallback}
+              label={t("summary.share")}
               onPress={sharePanel}
-              accessibilityRole="button"
-              accessibilityLabel={t("summary.share")}
-              style={{ marginLeft: "auto", width: HERO.rail.height, height: HERO.rail.height, borderRadius: RADIUS.pill, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), backgroundColor: withAlpha(C.lime, ALPHA.fill) }}
-            >
-              <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: txt(C, C.lime) }}>↗</Text>
-            </Pressable>
+              style={{ marginLeft: "auto" }}
+            />
           )}
         </View>
       )}
