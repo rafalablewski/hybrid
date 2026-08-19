@@ -251,12 +251,14 @@ export default function AuroraProfile() {
           could show you, and until now they were three levels deep behind a
           disclosure on another tab (components/aurora/learned.tsx).
 
-          What stacking got wrong was the SHAPE, not the priority. Three
-          full-width cards ate the entire first screen, so the cover, the avatar
-          and the name — the thing the tab is named for — opened below the fold
-          on every phone, and the vertical order implied a ranking none of these
-          three has over the other two. Side by side they read as the set they
-          are, and the identity block is back where a profile starts.
+          What stacking got wrong was the SHAPE, not the priority. The three
+          cards ran ~326dp before the cover even began — 41% of the visible
+          content area on a 6.7-inch screen, and the whole of it on a 4.7-inch
+          one, where the athlete scrolled to reach their own face. The rail runs
+          ~121dp for the same three. And the vertical order implied a ranking
+          none of these three has over the other two. Side by side they read as
+          the set they are, and the identity block is back where a profile
+          starts.
 
           The second card is the model's other half: what the app WORKED OUT
           about you beside what you TOLD it — two authorities on the same
