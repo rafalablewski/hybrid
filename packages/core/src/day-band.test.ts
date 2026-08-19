@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { makeT } from "./i18n";
 import {
   BAND_HEAD_MAX, BAND_SAY_MAX, CADENCE_SPREAD_MAX, REST_STREAK_DAYS, ROTATION_STALE_DAYS,
+  FIXTURE_LOOKBACK_WEEKS,
   TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, fixtureTomorrow, nextDueKind, rotation,
   sessionKind, trainingStreak, weeklyFixture,
   type DayBand, type DayBandInput, type TrainingKind,
@@ -163,7 +164,7 @@ describe("weekly fixtures", () => {
     const f = weeklyFixture(log, NOW);
     expect(f[0]!.kind).toBe("sport");
     expect(f[0]!.weeks).toBeGreaterThanOrEqual(3);
-    expect(fixtureTomorrow(log, NOW)).toEqual({ kind: "sport", source: "fixture" });
+    expect(fixtureTomorrow(log, NOW)).toMatchObject({ kind: "sport", source: "fixture" });
   });
 
   it("does not protect a day for a gym habit", () => {
@@ -206,6 +207,53 @@ describe("the ladder", () => {
     expect(b.rung).toBe("protect");
     expect(b.fill).toBeNull();
     expect(b.mark).toBe("sport");
+  });
+
+  it("hedges an INFERRED fixture and asserts a declared one", () => {
+    // The defect this rung shipped with: three Thursdays in six weeks read back
+    // as "You have a game tomorrow." to an athlete who had no game. A guess now
+    // says it is a guess, shows the count behind it, and reports itself as
+    // inferred so the correction appears under it.
+    const t = makeT("en");
+    const guess = band({
+      deficit: deficit(55),
+      tomorrow: { kind: "sport", source: "fixture", seen: { weeks: 3, of: 6, weekday: 4 } },
+    });
+    expect(guess.rung).toBe("protect");
+    expect(guess.voice).toBe("suggests");
+    expect(guess.source).toBe("inferred");
+    expect(bandText(t, guess.head!)).toBe("Usually a game tomorrow.");
+    expect(bandSay(t, guess)).toContain("3 of the last 6 Thursdays");
+
+    // A race the athlete told us about is a fact, and it keeps the flat voice —
+    // and reports `plan`, so nothing offers to correct what nobody guessed.
+    const declared = band({ deficit: deficit(55), tomorrow: { kind: "running", label: "Half marathon", source: "declared" } });
+    expect(declared.voice).toBe("protects");
+    expect(declared.source).toBe("plan");
+    expect(bandText(t, declared.head!)).toBe("Half marathon tomorrow.");
+
+    // A plan's own day keeps it too.
+    const planned = band({ deficit: deficit(55), tomorrow: { kind: "sport", source: "plan" } });
+    expect(planned.voice).toBe("protects");
+    expect(bandText(t, planned.head!)).toBe("You have a game tomorrow.");
+  });
+
+  it("hedges a fixture that arrives without its evidence", () => {
+    const t = makeT("en");
+    const b = band({ deficit: deficit(55), tomorrow: { kind: "sport", source: "fixture" } });
+    expect(b.voice).toBe("suggests");
+    expect(bandText(t, b.head!)).toBe("Usually a game tomorrow.");
+    expect(bandSay(t, b)).not.toMatch(/\d/);
+  });
+
+  it("carries the evidence out of the fixture read", () => {
+    // Six days ago is the same weekday as tomorrow.
+    const log = Array.from({ length: 5 }, (_, i) => session(6 + i * 7, "sport", `s${i}`));
+    const ev = fixtureTomorrow(log, NOW)!;
+    expect(ev.source).toBe("fixture");
+    expect(ev.seen!.of).toBe(FIXTURE_LOOKBACK_WEEKS);
+    expect(ev.seen!.weeks).toBeGreaterThanOrEqual(3);
+    expect(ev.seen!.weekday).toBe(new Date(NOW + DAY).getDay());
   });
 
   it("states rest without a fill, from a plan or from a streak", () => {
@@ -319,6 +367,14 @@ function everyBand(): DayBand[] {
         out.push(band({ deficit: deficit(kept, costs), muscle: "shoulders", rx: rxx }));
         out.push(band({ deficit: deficit(kept, costs, "floor"), muscle: "quads", rx: rxx }));
         out.push(band({ deficit: deficit(kept, costs), muscle: "quads", rx: rxx, tomorrow: { kind: "sport", source: "fixture" } }));
+        // The same rung WITH its evidence — the line an athlete actually sees,
+        // and the only place the weekday strings are reachable from.
+        for (const weekday of [0, 1, 2, 3, 4, 5, 6]) {
+          out.push(band({
+            deficit: deficit(kept, costs), muscle: "quads", rx: rxx,
+            tomorrow: { kind: "sport", source: "fixture", seen: { weeks: 3, of: 6, weekday } },
+          }));
+        }
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, tomorrow: { kind: "running", label: "Half marathon", source: "declared" } }));
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, plan: { isRest: true, dayNumber: 12, trainings: [] } }));
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, streakDays: REST_STREAK_DAYS }));
