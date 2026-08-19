@@ -415,7 +415,10 @@ describe("leading and tracking", () => {
     // fifth is the portion stepper's −, whose box was 26 on a size of 24: once
     // the size took a rung the pair read as a 1.0 ratio, which is nobody's
     // choice, it is two numbers that used to be different.)
-    burnDown(hits(/lineHeight:\s*\d/g), 39, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    // 39 → 38: the You tab's profile-setup nudge, moved into the lead rail,
+    // took its hand-tuned `lineHeight: 18` with it — on fs.body that is exactly
+    // leading(fs.body), which is to say it was never a tuning.
+    burnDown(hits(/lineHeight:\s*\d/g), 38, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking names its token; a big figure derives it", () => {

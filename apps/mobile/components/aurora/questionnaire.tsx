@@ -15,10 +15,10 @@ import { setQuestionnaire } from "../../lib/questionnaire";
 import { logWeighIn } from "../../lib/weigh-in";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET, TABULAR } from "../../lib/ui";
+import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
-import { AuroraScreen, ACard, ADrawer, APressCard, ASection, ANumberField, ABirthField, AStepper, ACheckMark, RADIUS, withAlpha } from "./kit";
-import { ArrowGlyph } from "./cta-label";
+import { AuroraScreen, ACard, ADrawer, ASection, ANumberField, ABirthField, AStepper, ACheckMark, RADIUS, withAlpha } from "./kit";
+import { LeadCard } from "./lead-rail";
 
 /** The seven group names, from core — see volume-view.ts. A copy written from
  *  the group names prints a raw key for `posterior`, whose key is
@@ -841,14 +841,18 @@ export const ASKED_QUESTIONS = QUESTIONNAIRE.flatMap((s) => s.questions.filter(i
  * anyone should have to hunt for — and when they do go looking, they look where
  * their name and their photo are. Profile is where identity lives.
  *
- * It is deliberately placed directly under `LearnedLead`, and the pairing is
- * the point: what the app WORKED OUT about you, then what you TOLD it. Two
- * halves of one question, answered by two different authorities, adjacent.
+ * It is deliberately placed BESIDE `LearnedLead` — under it until the You tab's
+ * leads became a rail — and the pairing is the point: what the app WORKED OUT
+ * about you, and what you TOLD it. Two halves of one question, answered by two
+ * different authorities, adjacent. Both draw through the shared `LeadCard`, so
+ * the pair cannot disagree about the shape of a claim.
  *
  * The card leads with the gap rather than the score. "Next: body mass" is a
  * thing a person can act on; a percentage on its own is a grade.
  */
-export function AboutYouLead({ sessions, onOpen }: { sessions: LoggedSession[]; onOpen: () => void }) {
+export function AboutYouLead({ sessions, onOpen, inline }: { sessions: LoggedSession[]; onOpen: () => void;
+  /** Rendered inside the You tab's LeadRail — see LearnedLead's note. */
+  inline?: boolean }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const { measuredKeys, profile } = useVolumeModel(sessions);
@@ -861,32 +865,15 @@ export function AboutYouLead({ sessions, onOpen }: { sessions: LoggedSession[]; 
   const headline = progress.next ? t(progress.next.labelKey) : t("w.quiz.leadDone");
 
   return (
-    <APressCard
-      solid
+    <LeadCard
+      inline={inline}
+      kicker={t("w.quiz.title")}
+      title={progress.complete ? t("w.quiz.leadDone") : t("w.quiz.leadNext").replace("{q}", headline)}
+      figure={`${Math.round(progress.score * 100)}%`}
+      unit={t("w.quiz.leadUnit")}
+      meta={t("w.quiz.leadMeta").replace("{n}", String(answered)).replace("{m}", String(total))}
       onPress={onOpen}
       a11yLabel={[t("w.quiz.title"), headline, `${answered}/${total}`].filter(Boolean).join(" – ")}
-      style={{ marginBottom: space.lg }}
-    >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
-            {t("w.quiz.title")}
-          </Text>
-          <Text numberOfLines={2} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: space.xxs }}>
-            {progress.complete ? t("w.quiz.leadDone") : t("w.quiz.leadNext").replace("{q}", headline)}
-          </Text>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: 2, flexWrap: "wrap" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: trackFigure(fs.title), color: C.chalk, ...TABULAR }}>
-              {`${Math.round(progress.score * 100)}%`}
-            </Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.quiz.leadUnit")}</Text>
-          </View>
-          <Text style={{ marginTop: space.xxs, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>
-            {t("w.quiz.leadMeta").replace("{n}", String(answered)).replace("{m}", String(total))}
-          </Text>
-        </View>
-        <ArrowGlyph size={16} color={txt(C, C.lime)} />
-      </View>
-    </APressCard>
+    />
   );
 }
