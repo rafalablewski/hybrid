@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FOLD, FOLD_RISE, bandHue, barLatched, foldProgress, kindHue } from "./day-fold";
+import { FOLD, FOLD_RISE, bandHue, barLatched, foldProgress } from "./day-fold";
 import { TRAINING_KINDS, type DayBand } from "./day-band";
 import { ROLE_COLOR, type SemanticRole } from "./semantic";
 
@@ -118,27 +118,5 @@ describe("the day's hue", () => {
     }
     // and the training kinds the band can mark are untouched by any of this
     expect(TRAINING_KINDS.length).toBeGreaterThan(0);
-  });
-});
-
-describe("a training kind's colour", () => {
-  it("splits the week the way a hybrid athlete's week splits", () => {
-    expect(kindHue("gym")).toBe("lime"); //   the bar
-    expect(kindHue("sport")).toBe("amber"); // the sport
-    for (const k of ["running", "cycling", "swimming", "rowing", "skiing", "walking", "other"] as const) {
-      expect(kindHue(k)).toBe("blue"); //     the engine
-    }
-  });
-
-  it("answers for every kind the app can log, with a real accent", () => {
-    for (const k of TRAINING_KINDS) {
-      expect(["lime", "blue", "amber"]).toContain(kindHue(k));
-    }
-  });
-
-  it("never spends an accent the palette does not hold three of", () => {
-    // Six endurance disciplines would need six hues the palette does not have.
-    // The set is deliberately three, and this is the guard on that decision.
-    expect(new Set(TRAINING_KINDS.map(kindHue)).size).toBe(3);
   });
 });

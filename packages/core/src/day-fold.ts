@@ -28,7 +28,7 @@
  * argument, not a default to drift into.)
  */
 
-import type { DayBand, TrainingKind } from "./day-band";
+import type { DayBand } from "./day-band";
 import { ROLE_COLOR, type AccentKey } from "./semantic";
 import { fs, space, tracking } from "./scale";
 import { APP_HEADER } from "./app-header";
@@ -108,25 +108,6 @@ export function bandHue(band: Pick<DayBand, "fill" | "rung">): AccentKey | null 
   if (band.rung === "none") return null;
   if (band.fill) return ROLE_COLOR[band.fill];
   return REPORT_HUE[band.rung] ?? "blue";
-}
-
-/**
- * WHAT A TRAINING KIND IS COLOURED, wherever a kind has to be drawn rather than
- * named — the logbook strip's load bars, chiefly.
- *
- * THREE COLOURS, NOT NINE, and the three are the distinction this app is about.
- * A hybrid athlete's week is bar work, engine work and their sport; the palette
- * already assigns those exact meanings (tokens.ts: lime is action and the bar,
- * blue is conditioning, amber is sport), so the strip inherits a vocabulary
- * rather than inventing one. Giving each of the six endurance disciplines its
- * own hue would need six accents the palette does not have, and would answer a
- * question — "was Tuesday a swim or a row?" — that the day's own row answers in
- * words a tap away.
- */
-export function kindHue(kind: TrainingKind): AccentKey {
-  if (kind === "gym") return "lime";
-  if (kind === "sport") return "amber";
-  return "blue";
 }
 
 /**

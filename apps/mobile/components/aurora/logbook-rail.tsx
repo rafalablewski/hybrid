@@ -12,10 +12,8 @@ import {
   type LoggedSession,
   type WeightUnit,
 
-  ALPHA,
-  kindHue,
-} from "@hybrid/core";
-import { accentColor, useTheme } from "../../lib/theme";
+  ALPHA,} from "@hybrid/core";
+import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
@@ -217,14 +215,17 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
           untrained day fills nothing — silence, never terracotta, because a
           logbook makes no promises.
 
-          THE FILL'S COLOUR IS WHAT THE DAY WAS. Seven identical chalk bars drew
-          seven different kinds of training in the one row whose whole job is to
-          show a week at a glance — the data was already there and the strip
-          refused to say it. `kindHue` (core day-fold.ts) splits it the way this
-          app splits: the bar is lime, the engine blue, the sport amber. Today
-          keeps no colour of its own; it is already the only ringed day in the
-          row, and a second signal on the same cell would say the same thing
-          twice while overwriting the one thing this bar now carries. */}
+          THE FILL IS CHALK ON EVERY DAY BUT TODAY, and it does not encode what
+          the day WAS. An Aug 2026 change coloured each bar by the kind of the
+          day's longest session (bar lime, engine blue, sport amber); it was
+          reverted ON REQUEST along with the tinted cluster names it shipped
+          beside, and it should not come back by a side door. The strip's job is
+          the SHAPE of a week — seven widths, read in one glance — and a second
+          variable painted onto the same seven marks costs that reading to
+          answer a question ("was Tuesday a swim or a lift?") that the day's own
+          row answers in words, one tap away. Today's lime is the exception and
+          is not the same kind of signal: it says WHICH DAY YOU ARE ON, which is
+          the one thing the strip has to state without being read. */}
       <View style={{ height: 12, alignItems: "center", justifyContent: "center" }}>
         <View style={{ width: LOAD_W, height: LOAD_H, borderRadius: LOAD_H / 2, backgroundColor: withAlpha(C.chalk, ALPHA.fill), overflow: "hidden" }}>
           {day.load > 0 ? (
@@ -233,7 +234,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
                 width: `${Math.max(14, Math.round(day.load * 100))}%`,
                 height: "100%",
                 borderRadius: LOAD_H / 2,
-                backgroundColor: day.kind ? accentColor(C, kindHue(day.kind)) : withAlpha(C.chalk, 0.702),
+                backgroundColor: day.isToday ? C.lime : withAlpha(C.chalk, 0.702),
               }}
             />
           ) : null}
