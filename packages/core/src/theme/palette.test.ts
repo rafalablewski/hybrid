@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { contrastRatio, relativeLuminance, deltaE2000, labOf, WCAG, DISTINCT_ROLE_DE } from "../contrast";
-import { ROLE_COLOR, type SemanticRole } from "../semantic";
+import { contrastRatio, relativeLuminance, deltaE2000, inkOn, labOf, WCAG, DISTINCT_ROLE_DE } from "../contrast";
+import { ROLE_COLOR, readinessRole, type SemanticRole } from "../semantic";
 import { THEMES, type ThemeName } from "./palette";
 import { FEEDBACK, type FeedbackKind } from "./feedback";
 import { colors } from "./tokens";
@@ -325,3 +325,43 @@ describe("feedback colours", () => {
   });
 });
 
+/**
+ * THE DAY BAND'S FILL — the app's one full-bleed filled field (day-band.ts).
+ *
+ * `accent`/`onAccent` were guarded as a PAIR because chartreuse is the action
+ * fill and near-black is what sits on it. The band widened that: its fill is
+ * whichever accent `readinessRole` resolves for the day's score, so amber,
+ * Lyons Blue and the danger red are all now surfaces carrying a 27pt headline
+ * and a sentence — and NOTHING held those to a contrast bar. The ink is chosen
+ * by `inkOn` from the palette's two inks rather than assumed, and this sweeps
+ * every score the engine can produce so a palette edit cannot quietly put an
+ * unreadable instruction in the loudest position on the screen.
+ */
+describe("the day band's fill takes a legible ink at every score", () => {
+  for (const name of Object.keys(THEMES) as ThemeName[]) {
+    const t = THEMES[name];
+    const inks = [t.ink, t.chalk] as const;
+    const roles = new Set<SemanticRole>();
+    for (let score = 1; score <= 98; score++) roles.add(readinessRole(score));
+
+    // The FILL a client resolves for a role: the theme's own action fill for
+    // `go`, the fixed brand accents for the rest — the same composition
+    // paletteFor() does on mobile, kept here rather than imported so a core
+    // test never reaches into an app.
+    const fillFor = (role: SemanticRole): string =>
+      ROLE_COLOR[role] === "lime" ? t.accent : colors[ROLE_COLOR[role] as "blue" | "amber" | "red" | "ash"];
+
+    for (const role of roles) {
+      const fill = fillFor(role);
+      it(`${name}: the ${role} band's best ink clears AA on it`, () => {
+        expect(contrastRatio(inkOn(fill, inks), fill)).toBeGreaterThanOrEqual(WCAG.AA);
+      });
+    }
+
+    it(`${name}: a quiet band's chalk still clears AA on the ground it sits on`, () => {
+      // Rungs 3 and 4 refuse a fill (see day-band.ts). Their type sits on the
+      // page ground, which is a different pairing from every filled case above.
+      expect(contrastRatio(t.chalk, t.ink)).toBeGreaterThanOrEqual(WCAG.AA);
+    });
+  }
+});

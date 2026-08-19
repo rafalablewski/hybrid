@@ -52,6 +52,7 @@ export * from "./olympic-sports";
 export * from "./sport-page";
 export * from "./endurance";
 export * from "./endurance-lanes";
+export * from "./day-band";
 export * from "./bodyweight";
 export * from "./body-progress";
 export * from "./food-facts";
