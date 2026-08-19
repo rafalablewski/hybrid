@@ -1,6 +1,6 @@
 import * as Notifications from "expo-notifications";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { makeT, recoveryReminderAt, PUSH_ROUTE, type Lang } from "@hybrid/core";
+import { makeT, recoveryReminderAt, PUSH_ROUTE, READINESS_FEELINGS, type Lang, type ReadinessFeeling } from "@hybrid/core";
 import { pushPermission } from "./push";
 
 /**
@@ -39,6 +39,40 @@ const FOR_KEY = "hybrid.recoveryReminderFor";
 /** Marks the payload as ours — the tap handler routes on it, and it keeps this
  *  notification distinguishable from the rest-timer cue in the global handler. */
 export const RECOVERY_NOTIF_KIND = "recovery-read";
+
+/**
+ * The category the notification is filed under — what puts the four answer
+ * buttons on it (lib/recovery-actions.ts registers them).
+ *
+ * Declared HERE, not beside the actions, so this module does not have to import
+ * that one: recovery-actions reaches for the API layer, i18n and React, and
+ * pulling those in would drag this module out of the `pure` test project, where
+ * the scheduling can actually be checked. NOT `RECOVERY_NOTIF_KIND` either —
+ * iOS category identifiers must not contain `:` or `-`, and a category that
+ * silently fails to register is a notification that arrives with no buttons and
+ * no error.
+ */
+export const RECOVERY_CATEGORY = "recoveryread";
+
+/** `${RECOVERY_ACTION_PREFIX}${feeling}` — the id iOS hands back on a press.
+ *  Here rather than beside the handler for the same reason as the category. */
+export const RECOVERY_ACTION_PREFIX = "recovery.";
+
+/** The action id standing for one readiness answer. */
+export const recoveryActionId = (f: ReadinessFeeling): string => `${RECOVERY_ACTION_PREFIX}${f}`;
+
+/**
+ * The feeling a pressed button stands for, or null when it isn't one of ours.
+ *
+ * Null is the common case, not an error: every notification response in the app
+ * reaches this, including a plain tap on the body, and only our four buttons
+ * are an answer.
+ */
+export function feelingForAction(identifier: string | null | undefined): ReadinessFeeling | null {
+  if (typeof identifier !== "string" || !identifier.startsWith(RECOVERY_ACTION_PREFIX)) return null;
+  const name = identifier.slice(RECOVERY_ACTION_PREFIX.length);
+  return (READINESS_FEELINGS as readonly string[]).includes(name) ? (name as ReadinessFeeling) : null;
+}
 
 /** Cancel whatever recovery reminder is currently scheduled. Safe to call when
  *  there isn't one. */
@@ -97,6 +131,10 @@ export async function scheduleRecoveryReminder(opts: {
       content: {
         title,
         body: t("notif.recovery.body"),
+        // The four answers, ON the notification. See lib/recovery-actions.ts —
+        // requiring an app launch to deliver one tap is the largest avoidable
+        // tax on whether this read happens at all.
+        categoryIdentifier: RECOVERY_CATEGORY,
         // `route` is what usePushBridge navigates on, through core's allow-list.
         // The readiness screen IS the recovery read (feel-schedule.ts: neither
         // read invents a new instrument), so the tap lands mid-question rather

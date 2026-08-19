@@ -20,3 +20,6 @@ export const addPushTokenListener = () => ({ remove() {} });
 export const scheduleNotificationAsync = async (): Promise<string> => "stub-notification-id";
 export const cancelScheduledNotificationAsync = async (_id?: string): Promise<void> => {};
 export const SchedulableTriggerInputTypes = { TIME_INTERVAL: "timeInterval" } as const;
+export const setNotificationCategoryAsync = async (_id?: string, _actions?: unknown): Promise<void> => {};
+/** iOS's identifier for "tapped the body", as opposed to one of the buttons. */
+export const DEFAULT_ACTION_IDENTIFIER = "expo.modules.notifications.actions.DEFAULT";
