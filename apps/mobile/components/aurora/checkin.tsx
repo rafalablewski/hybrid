@@ -16,6 +16,7 @@ import {
 
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { createCheckin, fetchBillingStatus, fetchCheckins, patchSessionFeel } from "../../lib/api";
+import { recoveryReadAnswered } from "../../lib/recovery-reminder";
 import { askPushOnce } from "../../lib/push";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
@@ -236,6 +237,10 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
       await Promise.all([...effortAnswered].map((id) => patchSessionFeel(id, { feel: efforts[id]! }).catch(() => false)));
       revalidate.sessions();
     }
+
+    // The read is in — cancel the reminder that was asking for it. See
+    // lib/recovery-reminder.ts.
+    void recoveryReadAnswered();
 
     setDone(true);
     setUpdated(isUpdate);

@@ -64,6 +64,7 @@ import {
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
+import { recoveryReadAnswered } from "../../lib/recovery-reminder";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRecoveryReports } from "../../lib/use-recovery-reports";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useNutritionSignalsQuery, useRecoverySignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
@@ -1648,6 +1649,10 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
     });
     setBusy(false);
     if (r.ok) {
+      // The read is in — so the reminder asking for it has to go. A
+      // notification that arrives for something already answered is how a
+      // channel earns a mute. See lib/recovery-reminder.ts.
+      void recoveryReadAnswered();
       // Show the tap NOW; the refetch below confirms it a moment later.
       setPicked({ day: dayTs, rating, reads: dayReads.length, at: Date.now() });
       setUndone(null);
