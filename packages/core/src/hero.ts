@@ -61,6 +61,30 @@ import type { AuroraIconName } from "./theme/icons";
  *             thing with an accent and a mark: a goal, a plan, a recipe, an
  *             exercise, a workout. Full-bleed, fixed-dark, accent wash + emblem.
  *
+ * `cover` HAS EXACTLY ONE CALLER, and that is a standing debt rather than a
+ * settled design. The list above names five kinds of page it was built for — a
+ * goal, a plan, a recipe, an exercise, a workout — and the mobile app ships
+ * forty-five `title` screens, one `bar` and ONE `cover` (the sport page). The
+ * reason is not that the others failed the test; it is that they cannot take
+ * it. A cover's backdrop resolves to `art` only when the screen hands it
+ * `artPaths`, and `sportMarkPaths` (theme/sport-marks.ts, 15 drawn marks) is
+ * the only producer of those in the codebase. An exercise, a plan and a coach
+ * have no drawn mark, so a cover would resolve to a bare `wash` — a 252pt
+ * accent gradient with nothing in it, which is worse than the 132pt title hero
+ * they wear today.
+ *
+ * WHY IT IS WRITTEN DOWN RATHER THAN FIXED HERE: the missing piece is a mark
+ * set, which is a drawing commission, not a refactor. Until one exists the
+ * honest position is that the rank is CORRECT and UNDER-ADOPTED.
+ *
+ * THE COST OF LEAVING IT, so nobody has to rediscover it: a rank with one
+ * caller has a test surface of one. Nothing else in the app exercises cover
+ * geometry, the cover backdrop branch, or the cover collapse track, so a
+ * regression there is invisible until somebody opens a sport. That is not
+ * hypothetical — the duplicate-AuroraField bug (the hero painting its own
+ * ambient field over the scrolling content) lived in the sibling `field` branch
+ * for exactly as long as it did because no test could see a backdrop.
+ *
  * A fourth type was considered and REJECTED as a rank: "immersive". Wrapped is
  * not a bigger hero, it is a different *mode* — a paged takeover with no
  * navigation stack under it. It keeps every anatomy rule (same rail, same nav

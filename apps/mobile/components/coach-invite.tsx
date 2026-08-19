@@ -4,7 +4,7 @@ import QRCode from "qrcode";
 import { fs, Kicker, Mono, F, PressScale as Pressable } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { getCoachInvites, createCoachInvite, revokeCoachInvite, type CoachInviteRow } from "../lib/api";
-import { ACard, cardStack, APill } from "./aurora/kit";
+import { ACard, cardStack, APill, RADIUS } from "./aurora/kit";
 import { colors } from "@hybrid/core";
 
 /** Render a QR code as a grid of Views from the qrcode module matrix — no native
@@ -79,7 +79,7 @@ export default function CoachInvite() {
         placeholderTextColor={C.ash}
         autoCapitalize="none"
         keyboardType="email-address"
-        style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, padding: 12, marginTop: 10 }}
+        style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 12, marginTop: 10 }}
       />
       <View style={{ marginTop: 10 }}><APill label="Generate invite" savingLabel="Generating…" state={busy ? "saving" : "idle"} color={C.lime} onPress={create} /></View>
       {msg && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono></View>}

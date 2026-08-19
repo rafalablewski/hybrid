@@ -5,6 +5,7 @@ import { NUTRITION_GLYPHS, nutritionHubChart, type HubSeries, type NutritionGlyp
 import { fs, F, PressScale , tracking} from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
+import { RADIUS } from "./geometry";
 
 /**
  * NUTRITION HUB BENTO (mobile).
@@ -62,7 +63,7 @@ function StatTile({ glyph, tint, value, unit, caption, name, onPress, palette: C
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={name}
-      style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 14 }}
+      style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 }}
     >
       <Glyph name={glyph} size={16} color={tint} />
       <Text style={{ fontFamily: F.mono, fontSize: 21, color: C.chalk, marginTop: 9 }} numberOfLines={1}>
@@ -99,7 +100,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
   const { today, deltaToday } = series;
   const num = (n: number) => Math.round(n).toLocaleString();
 
-  const tile = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 14 } as const;
+  const tile = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 } as const;
   const keyLabel = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase" as const, color: C.ash };
   const nameLabel = { fontFamily: F.bold, fontSize: fs.note, color: C.chalk };
 

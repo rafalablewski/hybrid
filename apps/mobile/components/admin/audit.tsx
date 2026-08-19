@@ -4,7 +4,7 @@ import { adminGet } from "../../lib/admin-api";
 import { leading, fs, space, Mono, Chip, LoadSwap, F, PressScale as Pressable } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 import { Input, PillBtn, Banner } from "./_kit";
-import { ACard, cardStack } from "../aurora/kit";
+import { ACard, cardStack, RADIUS } from "../aurora/kit";
 import { FEEDBACK } from "@hybrid/core";
 
 // Mobile Audit log — parity with apps/web/components/admin/audit.tsx, fed by
@@ -109,7 +109,7 @@ export default function AdminAudit() {
               </Mono>
             </Pressable>
             {isOpen ? (
-              <View style={{ marginTop: 10, padding: 10, borderRadius: 8, backgroundColor: palette.ink2 }}>
+              <View style={{ marginTop: 10, padding: 10, borderRadius: RADIUS.inner, backgroundColor: palette.ink2 }}>
                 <Mono color={palette.ash} style={{ fontSize: fs.micro, lineHeight: leading(fs.micro) }}>
                   {JSON.stringify({ ip: e.ip, targetType: e.targetType, targetId: e.targetId, metadata: e.metadata }, null, 2)}
                 </Mono>

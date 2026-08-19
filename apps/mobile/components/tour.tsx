@@ -35,7 +35,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDone}>
       <View style={{ flex: 1, backgroundColor: withAlpha(SCRIM, motion.scrimObscure), justifyContent: "flex-end", padding: 16 }}>
-        <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, marginBottom: 24 }}>
+        <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20, marginBottom: 24 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>
             {`Step ${i + 1} / ${steps.length}`}
           </Text>

@@ -21,7 +21,7 @@ import { useLang } from "../lib/i18n";
 import { fs, space, F, PressScale as Pressable , tracking} from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
-import { APill, ASearch, AMarkTile } from "./aurora/kit";
+import { APill, ASearch, AMarkTile, RADIUS } from "./aurora/kit";
 import { DeviceMark } from "./aurora/device-mark";
 import { DeviceImportSheet } from "./device-import";
 import { healthKitAvailability } from "../lib/healthkit";
@@ -109,7 +109,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
     </Pressable>
   );
 
-  const card = { flexGrow: 1, flexBasis: "45%", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, padding: 16 } as const;
+  const card = { flexGrow: 1, flexBasis: "45%", backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16 } as const;
 
   return (
     <>
@@ -118,7 +118,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
       {canImport && (
         <Pressable
           onPress={() => setImportOpen(true)}
-          style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.lime, borderRadius: 18, paddingVertical: 13, paddingHorizontal: 16, marginBottom: 10 }}
+          style={{ flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 13, paddingHorizontal: 16, marginBottom: 10 }}
         >
           <DeviceMark provider="apple" form="mark" height={13} on="dark" label="" />
           <View style={{ flex: 1 }}>
@@ -147,7 +147,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
         ))}
       </View>
       {/* Other — a full-width tile that opens the searchable picker for any sport */}
-      <Pressable onPress={() => setPickerOpen(true)} style={{ marginTop: 10, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 18, paddingVertical: 15 }}>
+      <Pressable onPress={() => setPickerOpen(true)} style={{ marginTop: 10, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 15 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>＋</Text>
         <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.home.quickSport.other")}</Text>
       </Pressable>

@@ -39,7 +39,7 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
     // block, and the hub head above it emits the gap DOWN (HUB_MASTHEAD.gap.below).
     // A top margin here would sit the whole feed 16 lower than web's, since RN
     // does not collapse margins and CSS does.
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.lime, borderRadius: 20, padding: 16, marginBottom: 16 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.field, padding: 16, marginBottom: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>Co-sign requests</Text>
       {inbox.map((i) => (
         <View key={i.id} style={{ marginTop: 10 }}>
@@ -106,7 +106,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
   };
 
   return (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 16 }}>
+    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>Verified record</Text>
       {lifts.map(({ lift, topLoad }) => {
         const forLift = (atts ?? []).filter((a) => a.lift === lift);

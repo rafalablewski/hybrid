@@ -396,7 +396,7 @@ export default function AuroraSideMenu({
             <Pressable
               onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "sidemenu" }); goHref("/upgrade"); }}
               accessibilityRole="button"
-              style={{ marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(pa.fill, 0.5), borderRadius: 22, padding: 16, overflow: "hidden" }}
+              style={{ marginTop: 14, backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(pa.fill, 0.5), borderRadius: RADIUS.field, padding: 16, overflow: "hidden" }}
             >
               <View pointerEvents="none" style={{ position: "absolute", top: -50, right: -40, width: 150, height: 150, borderRadius: 75, backgroundColor: withAlpha(pa.fill, ALPHA.solid) }} />
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: pa.text }}>{t("w.home.pillnav.upgradeKicker")}</Text>

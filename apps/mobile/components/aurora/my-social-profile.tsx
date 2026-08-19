@@ -169,7 +169,10 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
             <ACard style={cardStack}>
               <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
                 <View style={{ width: 58, height: 58, borderRadius: 29, backgroundColor: lime, alignItems: "center", justifyContent: "center" }}>
-                  <View style={{ width: 53, height: 53, borderRadius: 27, borderWidth: 2.5, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
+                  {/* A circle, said with the token — see profile.tsx: 999 clamps to half the
+                      side, so this is the raw `27` it replaces and can no longer be read
+                      as a rounded-rectangle choice. */}
+                  <View style={{ width: 53, height: 53, borderRadius: RADIUS.pill, borderWidth: 2.5, borderColor: C.ink, backgroundColor: C.ink2, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
                     {form.avatarUrl ? <Image source={{ uri: form.avatarUrl }} style={{ width: "100%", height: "100%" }} /> : <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: lime }}>{initials}</Text>}
                   </View>
                 </View>

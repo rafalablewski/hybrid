@@ -18,6 +18,7 @@ import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
 import { leading, fs, tracking, F, PressScale as Pressable, MAX_FONT_SCALE } from "../lib/ui";
+import { RADIUS } from "./aurora/geometry";
 import { useTheme, txt } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
 import { Mark } from "./aurora/mark";
@@ -143,7 +144,7 @@ export function FeelPrompt({
     <View
       style={
         compact
-          ? { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 20, padding: 16, marginTop: 16 }
+          ? { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16, marginTop: 16 }
           : undefined
       }
     >

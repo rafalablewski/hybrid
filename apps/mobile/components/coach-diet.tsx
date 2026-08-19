@@ -3,7 +3,7 @@ import { View, Text, TextInput } from "react-native";
 import { fs, space, Kicker, Mono, F } from "../lib/ui";
 import { useTheme } from "../lib/theme";
 import { getCoachDiet, saveCoachDiet } from "../lib/api";
-import { ACard, cardStack, APill } from "./aurora/kit";
+import { ACard, cardStack, APill, RADIUS } from "./aurora/kit";
 
 type Fields = { kcal: string; protein: string; carbs: string; fat: string; note: string };
 const EMPTY: Fields = { kcal: "", protein: "", carbs: "", fat: "", note: "" };
@@ -47,7 +47,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
         onChangeText={(v) => setD((p) => ({ ...p, [key]: v.replace(/[^0-9]/g, "") }))}
         keyboardType="number-pad"
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10 }}
+        style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 9, paddingHorizontal: 10 }}
       />
     </View>
   );
@@ -66,7 +66,7 @@ export default function CoachDiet({ linkId }: { linkId: string }) {
         onChangeText={(v) => setD((p) => ({ ...p, note: v }))}
         placeholder="note (optional)"
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 10, paddingVertical: 9, paddingHorizontal: 10, marginTop: 8 }}
+        style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 9, paddingHorizontal: 10, marginTop: 8 }}
       />
       <View style={{ marginTop: 10 }}><APill label="Save diet" color={C.lime} onPress={save} /></View>
       {msg !== "" && <View accessibilityLiveRegion="polite"><Mono color={C.lime} style={{ marginTop: 8 }}>{msg}</Mono></View>}

@@ -309,7 +309,11 @@ export default function AuroraProfile() {
             unreliable, so the ring is a lime-filled wrapper View. Matches web's
             `box-shadow: 0 0 0 2px lime` on the avatar. */}
         <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-          <View style={{ width: 84, height: 84, borderRadius: 42, borderWidth: 3, borderColor: C.ink, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+          {/* RADIUS.pill on a SQUARE box IS a circle — RN clamps a radius to half the
+              side, so 999 on 84×84 renders exactly what the raw `42` here used to.
+              That number was arithmetic wearing the costume of a style choice, which
+              is how a radius sweep ends up squaring an avatar. */}
+          <View style={{ width: 84, height: 84, borderRadius: RADIUS.pill, borderWidth: 3, borderColor: C.ink, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={{ width: "100%", height: "100%" }} />
             ) : (

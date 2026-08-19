@@ -136,7 +136,7 @@ export default function AdminMedia() {
                 {a.kind === "image" ? (
                   <Image
                     source={{ uri: a.url }}
-                    style={{ width: "100%", height: 150, borderRadius: 10, marginBottom: 10, backgroundColor: palette.ink2 }}
+                    style={{ width: "100%", height: 150, borderRadius: RADIUS.field, marginBottom: 10, backgroundColor: palette.ink2 }}
                     resizeMode="cover"
                   />
                 ) : null}

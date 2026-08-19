@@ -520,7 +520,21 @@ describe("geometry", () => {
     // 142 → 141: the endurance lanes' ZoneTile drew its three intensity bands
     // with a raw `borderRadius: 2` each; the bands are the kit's AEffortBar now
     // and the track carries ONE RADIUS.pill instead of three raw corners.
-    burnDown(hits(/borderRadius:\s*\d/g), 141, "2027-02-28", "raw borderRadius → RADIUS.*");
+    //
+    // 141 → 120, THE ink2 TRIAGE. Every raised surface in the app (a
+    // `backgroundColor: ink2`) now names its corner: 21 sites carried a raw
+    // integer across SIXTEEN distinct values, and the interesting part is that
+    // they were not one mistake repeated. Sixteen went to `field` (a bounded
+    // block of content on a screen), one to `inner` (a block nested inside a
+    // row), one to `card` (a bottom-presented modal panel) — and THREE to
+    // `pill`, two of which were never rounded rectangles at all. `42` on an
+    // 84×84 avatar and `27` on a 53×53 one are ARITHMETIC: half the side, which
+    // RN clamps `pill` to anyway, so the token renders them identically and says
+    // what they are. A blanket sweep to `field` would have squared both. That is
+    // the argument for why this rule is a ratchet with a human in it rather than
+    // a codemod: the pattern can find a raw radius, it cannot tell you which of
+    // five tokens the object wanted.
+    burnDown(hits(/borderRadius:\s*\d/g), 120, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
