@@ -23,19 +23,17 @@ import Svg, { Path, Line, Circle, Rect } from "react-native-svg";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
-  prescribeSession, computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
+  computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
   runTotals, enduranceSessions, personalTrainingLog, toBiometrics,
   weeklyVolumeTrend, fmtTonnage, fmtWeight, paceClock,
-  velocityProfiles, hpiRole, hpiBandKey, quickCheckinFeeling, READINESS_FACE, SPORTS, LEVELS,
-  readinessVerdict, readinessDeficit, readinessFacts, heatAdjustment, fuelAdjustment,
-  localDayKey, INJURY_AREA_KEY,
+  velocityProfiles, hpiRole, hpiBandKey, SPORTS, LEVELS,
+  INJURY_AREA_KEY,
   freshnessExplain, wearableExplain, wearableSourcePhrase,
   type CapabilityMovement, type FreshnessPillar,
   type WearableExplain,
-
-  ALPHA,} from "@hybrid/core";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useNutritionSignalsQuery, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
+} from "@hybrid/core";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useLang } from "../../lib/i18n";
@@ -51,10 +49,6 @@ import AuroraVolume from "./volume";
 import { AuroraIcon } from "./icons";
 import TissueCard from "./tissue-card";
 import LevelCard from "./level-card";
-import ReadinessFace from "./readiness-face";
-// THE DAY OBJECT and its door — the one readiness ring, shared with Today.
-import { ReadinessDayCard } from "./readiness-ring";
-import ReadinessDaySheet from "./readiness-day-sheet";
 import FreshnessSheet from "./freshness-sheet";
 import WearableSheet from "./wearable-sheet";
 import FetchError from "./fetch-error";
@@ -62,12 +56,11 @@ import { CtaLabel } from "./cta-label";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
 const hpiColor = (b: string, C: Palette) => roleColor(C, hpiRole(b));
-// NO readiness paint helpers here any more. `readyColor`, `rolePaint` and
-// `segPaint` all lived in this file, and a byte-identical set lived in the web
-// twin; they now live once, beside the ring they paint
-// (aurora/readiness-ring.tsx). Re-deriving the kept arc's colour at a call site
-// is what once let a −3 wearable share its hue with 17 ticks of kept score, so
-// the rule is that a run's paint comes off the run and from nowhere else.
+// NO readiness anything here any more — not the ring, not the paint. The day's
+// readiness reading belongs to Today, which opens on it; this screen carried a
+// second copy of the same card halfway down a scroll, so an athlete met the
+// figure twice in one session and could not tell which one was the reading.
+// The object and its paint live beside each other in aurora/readiness-ring.tsx.
 /** The plot's box — the SAME box web uses, because both clients now stroke the
  *  same paths from the same shared geometry. react-native-svg is already in the
  *  app (the injury mannequin), so mobile no longer has to approximate the chart
@@ -96,13 +89,13 @@ const wearableSource = (e: WearableExplain, t: (k: string) => string) => {
  * masthead with a computed VERDICT sentence → YOUR STATE (freshness, the
  * wearable's signed contribution, the limiter as a sentence, two freshness
  * columns, the CAPABILITY trend, the fourteen-day plot with its sessions
- * marked, readiness) → TISSUE → this week's VOLUME hero + a door → SEASON →
- * the exits.
+ * marked) → TISSUE → this week's VOLUME hero + a door → SEASON → the exits.
  *
  * Cut: the HPI and ACWR chips, "Your week" (its PRs moved to Today's activity
  * card, which owns the week on a real calendar window), the Breakdown tabs
- * (three of four panels duplicated the exit rows), the band glossary and the
- * four group markers.
+ * (three of four panels duplicated the exit rows), the band glossary, the
+ * four group markers, and THE READINESS DAY CARD — Today opens on that reading,
+ * above the fold, so a second copy of it here was the same figure met twice.
  *
  * See audit/10-performance-tab-element-audit-2026-08.md.
  */
@@ -128,19 +121,12 @@ function Full({ top }: { top?: ReactNode }) {
   const sessionsRead = useSessionsRead();
   const signalsRead = useSignalsRead();
   const macroRead = useMacrocycleRead();
-  const checkinsRead = useCheckinsRead();
-  const { refreshing, failed } = combineReads(sessionsRead, signalsRead, macroRead, checkinsRead);
+  const { refreshing, failed } = combineReads(sessionsRead, signalsRead, macroRead);
   const sessions = sessionsRead.data ?? [];
-  const signals = signalsRead.data ?? [];
-  // Fetched by KIND rather than sliced out of `signals` — that stream is the
-  // newest rows of any kind, and the food log writes up to eight per meal.
-  const { data: heatSignals = [] } = useHeatSignalsQuery();
-  const { data: nutritionSignals = [] } = useNutritionSignalsQuery();
-  const checkins = checkinsRead.data ?? [];
   const macro = macroRead.data?.macro ?? null;
   const currentWeek = macroRead.data?.currentWeek ?? 1;
   const load = () => {
-    sessionsRead.retry(); signalsRead.retry(); macroRead.retry(); checkinsRead.retry();
+    sessionsRead.retry(); signalsRead.retry(); macroRead.retry();
   };
 
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
@@ -168,45 +154,8 @@ function Full({ top }: { top?: ReactNode }) {
   const { data: recoverySignals = [] } = useRecoverySignalsQuery();
   const bio = useMemo(() => toBiometrics(recoverySignals as unknown as Parameters<typeof toBiometrics>[0]), [recoverySignals, today]);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
-  const todayFeeling = useMemo(
-    () => quickCheckinFeeling(checkins.find((x) => x && x.weekOf && localDayKey(x.weekOf) === today) ?? null),
-    [checkins, today],
-  );
-  // ONE velocityProfiles pass, shared by the prescription and the exits.
+  // ONE velocityProfiles pass, read by the exits.
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
-  // THE HEAT PRIOR. It is computed here rather than inside each engine because
-  // every figure on this block has to come from ONE reading of the day — the
-  // ring, the ledger, the facts and the prescription all take the same number,
-  // so they cannot tell four stories about one sauna. `heatAdjustment` also
-  // zeroes itself whenever `bio` is fresh, so passing the same `bio` the rest
-  // of the block reads is what keeps the prior from ever stacking on a
-  // measurement.
-  const heatAdj = useMemo(() => heatAdjustment(heatSignals, { bio }).points, [heatSignals, bio]);
-  // …and the fuel cost, on the same one-reading-of-the-day contract. `today` is
-  // a dependency rather than an argument: the intake window is measured against
-  // Date.now() at memo time, so an app left open across midnight would keep
-  // excluding yesterday as "today" without it. It takes no `bio` — energy
-  // availability is not suppressed by a wearable the way the heat prior is.
-  const fuel = useMemo(() => fuelAdjustment(nutritionSignals), [nutritionSignals, today]);
-  const fuelAdj = fuel.points;
-  const rx = useMemo(() => prescribeSession(log, bio, { profiles, subjectiveReadiness: todayFeeling ?? undefined, heatAdj, fuelAdj }), [log, bio, profiles, todayFeeling, heatAdj, fuelAdj]);
-  // The block's face, and the measured inputs behind its door. `readinessFacts`
-  // carries only what the ledger's rows CAN'T — the limiting tissue's own
-  // fatigue, the energy-system load, and a wearable nudge that has no row at
-  // all when it gave points back.
-  // heatAdj is passed HERE TOO. The verdict computes its own split for the
-  // door's label and its count, so a verdict read without the credit promises
-  // a figure the ledger behind it does not sum to (engines/performance-state.ts).
-  const verdictReadiness = useMemo(() => readinessVerdict(log, bio, heatAdj, fuelAdj), [log, bio, heatAdj, fuelAdj]);
-  const facts = useMemo(() => readinessFacts(log, bio, heatAdj, fuel), [log, bio, heatAdj, fuel]);
-  // The ring accounts for the whole 100: what today kept, and what each cause
-  // took. `kept` IS the score the figure prints, so the arcs and the number can
-  // never be two readings of the same day.
-  const deficit = useMemo(() => readinessDeficit(log, bio, heatAdj, fuelAdj), [log, bio, heatAdj, fuelAdj]);
-  // The runs, the paint, the bar, the ledger and the provenance line all live in
-  // the shared object now (aurora/readiness-ring.tsx). This screen holds the one
-  // reading of the day and hands it over.
-  const [whyOpen, setWhyOpen] = useState(false);
   const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
   // WHICH FRESHNESS COLUMN IS OPEN, and the explanation behind it — computed
   // only while the sheet is up, from the SAME engine the columns print.
@@ -361,18 +310,6 @@ function Full({ top }: { top?: ReactNode }) {
             </View>
             <FreshnessSheet explain={freshExplain} onClose={() => setFreshOpen(null)} />
             <WearableSheet explain={wearableOpen ? wearable : null} onClose={() => setWearableOpen(false)} />
-            {/* THE EXPLAINED DAY — the readiness ring's own door, the same
-                sheet Today opens. It sits beside the freshness and wearable
-                explainers because it is the third of the same kind: every
-                figure on this card opens onto its inputs, its arithmetic and
-                its caveat. */}
-            <ReadinessDaySheet
-              deficit={whyOpen ? deficit : null}
-              facts={facts}
-              verdict={verdictReadiness}
-              rx={rx}
-              onClose={() => setWhyOpen(false)}
-            />
 
             {/* CAPABILITY — freshness rises on a layoff; this does not. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
@@ -391,11 +328,15 @@ function Full({ top }: { top?: ReactNode }) {
               </Text>
             </View>
 
-            {/* THE PLOT. Mobile ships no SVG renderer, so freshness is drawn as
-                bars and readiness as a per-day marker — but both are sized from
-                the SHARED geometry (@hybrid/core trajectoryPlot), so the domain,
-                the days and the session marks are identical to web's line. Form
-                carries the series identity here, never hue alone. */}
+            {/* THE PLOT — the fortnight, as two real lines. It used to be
+                approximated with bars and per-day markers because mobile drew
+                no SVG; react-native-svg was already in the app for the injury
+                mannequin, so both series are stroked from the SHARED geometry
+                (@hybrid/core trajectoryPlot) — the domain, the days and the
+                session marks come off one engine. Form carries the series
+                identity here, never hue alone: readiness is the DASHED line.
+                This is a HISTORY, not the day's reading — the day's reading is
+                the ring on Today, and it is the only readiness on this tab. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flexDirection: "row", alignItems: "baseline" }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.home.cockpit.last14")}</Text>
@@ -417,52 +358,6 @@ function Full({ top }: { top?: ReactNode }) {
                 ))}
               </Svg>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6, lineHeight: leading(fs.nano) }}>{t("w.home.cockpit.trajectoryKey")}</Text>
-            </View>
-
-            <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.line }}>
-              {/* THE DAY OBJECT — the SAME card Today wears, from the same
-                  component (aurora/readiness-ring.tsx). This block used to be a
-                  hand-rolled ring, a hand-rolled bar, a hand-rolled ledger and
-                  a chevron expander, roughly 120 lines of it, living only here;
-                  Today drew a bare 44dp gauge of the same number. One object
-                  now, on both screens, opening one explanation.
-
-                  IT IS A SHEET, NOT AN EXPANDER, and that is the change worth
-                  writing down. The derivation used to unfold in place, pushing
-                  the rest of a long page down under it — which is why it could
-                  only ever be a footnote to the card and never the thing the
-                  card is FOR. In a sheet the ring is drawn at 112 with its runs
-                  actually separable, and it has room for the two facts the
-                  expander never had: the scale's own floor, when the arithmetic
-                  kept falling after the number stopped, and what the figure
-                  selects for today's session. */}
-              <ReadinessDayCard
-                deficit={deficit}
-                verdict={verdictReadiness}
-                onOpen={() => setWhyOpen(true)}
-                style={{ backgroundColor: "transparent", borderWidth: 0, padding: 0 }}
-              />
-
-              {/* READINESS NUDGE — the one-tap check-in moved today's load;
-                  glanceable, tinted in the feeling's own accent. It stays on
-                  the CARD rather than moving into the sheet with everything
-                  else, because it is not part of the derivation: the score
-                  picks the movement, and this is the athlete's own answer
-                  scaling the bar. Two different claims, so two different
-                  places. (The sheet states it too, under what the number
-                  selects, where the distinction is spelt out.) */}
-              {rx.readinessAdjust && (() => {
-                const adj = rx.readinessAdjust!;
-                const tint = C[READINESS_FACE[adj.feeling].accent];
-                const key = adj.loadPct === undefined ? "rxWreckedBw" : adj.feeling === "primed" ? "rxPrimed" : adj.feeling === "flat" ? "rxFlat" : "rxWrecked";
-                const label = t(`w.home.today.${key}`).replace("{pct}", String(adj.loadPct ?? ""));
-                return (
-                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6, alignSelf: "flex-start", marginTop: 14, paddingVertical: 4, paddingHorizontal: 10, borderRadius: RADIUS.pill, backgroundColor: withAlpha(tint, ALPHA.fill), borderWidth: 1, borderColor: withAlpha(tint, ALPHA.line) }}>
-                    <ReadinessFace feeling={adj.feeling} scale={0.5} />
-                    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, tint) }}>{label}</Text>
-                  </View>
-                );
-              })()}
             </View>
           </>
         ) : sessionsRead.ready ? (
