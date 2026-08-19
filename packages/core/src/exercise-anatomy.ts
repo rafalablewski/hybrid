@@ -48,6 +48,17 @@ export const MUSCLE_LABEL: Record<Muscle, string> = {
   "hip-flexors": "Hip flexors",
 };
 
+/**
+ * The i18n key for a fine-grained muscle's short name.
+ *
+ * MUSCLE_SHORT is English source text — fine for a legend beside an English
+ * anatomical label, wrong the moment a muscle name is the whole content of a
+ * row (the session body panel, the share deck's muscle split). The `muscleFine.`
+ * namespace is deliberately separate from the engine's seven-bucket `muscle.`
+ * keys: "chest" means one thing in each and they are not the same list.
+ */
+export const muscleLabelKey = (m: Muscle): string => `muscleFine.${m}`;
+
 /** Short label (no parenthetical) — for tight rows/legends. */
 export const MUSCLE_SHORT: Record<Muscle, string> = {
   chest: "Chest",

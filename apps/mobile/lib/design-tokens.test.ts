@@ -470,7 +470,7 @@ describe("geometry", () => {
     // alive by a one-character emoji fix on a screen main had removed.
     // Cross-rule slack is exactly what the anti-slack assertion is for, and a
     // merge is where it accumulates fastest.
-    burnDown(hits(/borderRadius:\s*\d/g), 147, "2027-02-28", "raw borderRadius → RADIUS.*");
+    burnDown(hits(/borderRadius:\s*\d/g), 145, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 

@@ -3,7 +3,7 @@ import { View, Text, Share, Animated, type TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit, type Mark as MarkValue } from "@hybrid/core";
+import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, funFactText, muscleLabelKey, strengthPrDelta, formatSportPace, formatSportDistance, type SessionPanel, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit, type Mark as MarkValue } from "@hybrid/core";
 import { C, F, fs, Kicker, TABULAR } from "./ui";
 import { Glyph } from "../components/aurora/icons";
 import { Mark } from "../components/aurora/mark";
@@ -140,6 +140,97 @@ export type SlideData =
   // Bespoke workout-page share designs (reference/pr-wrapped-flow.html):
   | { kind: "trophy"; eyebrow: string; value: string; caption: string; sub: string }
   | { kind: "signature"; eyebrow: string; bars: number[]; value: string; caption: string };
+
+/**
+ * THE ONE PLACE A PANEL BECOMES A SLIDE.
+ *
+ * core/session-panels.ts decides WHICH panels a session has and in what order —
+ * a value both entry points read, so the finish screen and the session review
+ * cannot deal different decks. This turns that manifest into the story cards
+ * this file draws.
+ *
+ * It formats only what needs the athlete's language. Everything a number can
+ * be wrong about — the headline figure, the muscle split, the signature's bars
+ * — arrived already computed, so neither caller can round it its own way.
+ */
+export function panelSlides(
+  panels: SessionPanel[],
+  ctx: {
+    t: (k: string) => string;
+    units: WeightUnit;
+    /** the gym card's figures — only read when the manifest deals an overview */
+    overview: ShareStats;
+    /** true for an athlete's first ever session (the overview card says so) */
+    firstEver?: boolean;
+    /** the PR panel's headline and rows, formatted by the caller's core helpers */
+    prHeadline: string;
+    prRows: { left: string; right: string; hot?: boolean }[];
+    /** the hero figure the trophy and signature cards echo */
+    heroValue: string;
+  },
+): SlideData[] {
+  const { t, units } = ctx;
+  return panels.map((p): SlideData => {
+    switch (p.kind) {
+      case "trophy": {
+        const c = p.celebration;
+        return {
+          kind: "trophy",
+          eyebrow: t(p.eyebrowKey),
+          value: ctx.heroValue,
+          caption: c.kind === "strength" ? c.lift : c.move,
+          sub: c.total > 1 ? `${c.total} ${t("summary.newPrs")}` : t("summary.prOne"),
+        };
+      }
+      case "signature":
+        return { kind: "signature", eyebrow: t(p.eyebrowKey), bars: p.bars, value: ctx.heroValue, caption: ctx.overview.title };
+      case "overview":
+        return { kind: "overview", eyebrow: t(p.eyebrowKey), stats: ctx.overview, firstEver: ctx.firstEver };
+      case "stat":
+        return { kind: "stat", eyebrow: t(p.eyebrowKey), value: p.value, unit: t(p.unitKey) };
+      case "prs":
+        return {
+          kind: "prs",
+          eyebrow: t(p.eyebrowKey),
+          headline: ctx.prHeadline,
+          rows: ctx.prRows.length ? ctx.prRows : [{ left: t("summary.noPrsYet"), right: "" }],
+        };
+      case "muscle":
+        return {
+          kind: "muscle",
+          eyebrow: t(p.eyebrowKey),
+          bars: p.bars.map((b) => ({ label: t(muscleLabelKey(b.muscle)), pct: b.pct, value: fmtWeight(b.volumeKg, units) })),
+        };
+      case "fun":
+        return { kind: "fun", eyebrow: t(p.eyebrowKey), mark: p.fact.mark, text: funFactText(p.fact, units, t) };
+    }
+  });
+}
+
+/**
+ * The figure the deck's hero cards show: the record when there is one — in the
+ * record's own unit, since a pace PR is a split and a distance PR is a distance
+ * — otherwise whatever core called this session's headline.
+ */
+export function heroFigure(
+  panels: SessionPanel[],
+  fallback: string,
+  units: WeightUnit,
+): string {
+  const trophy = panels.find((p) => p.kind === "trophy");
+  if (!trophy || trophy.kind !== "trophy") return fallback;
+  const c = trophy.celebration;
+  if (c.kind === "strength") return fmtWeight(c.topLoad, units);
+  return c.prKind === "distance" ? formatSportDistance(c.value, c.move) : formatSportPace(c.value, c.move);
+}
+
+/** What a record line says on the right. One helper, so "+0 kg" — which would
+ *  read as no progress at all — cannot appear on one screen and not the other. */
+export const prRowDelta = (
+  p: { topLoad: number; previousTopLoad: number | null },
+  t: (k: string) => string,
+  units: WeightUnit,
+): string => strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
 
 // Style-aware stat cell for the story card (colours come from the chosen style).
 // `run` ticks the value up from 0 (overview slide); CountUpText rests on the

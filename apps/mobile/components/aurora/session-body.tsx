@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { View, Text } from "react-native";
 import {
   sessionMuscleGlows,
+  muscleLabelKey,
   fmtWeight,
   BODY_FIGURES,
   type SessionMuscleMap,
@@ -85,7 +86,7 @@ export default function SessionBody({
           <Text style={{ fontSize: fs.heading, color: C.ash }}>%</Text>
         </Text>
         <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: txt(C, C.lime) }}>
-          {shown.short.toLowerCase()} – {fmtWeight(shown.volumeKg, units)}
+          {t(muscleLabelKey(shown.muscle)).toLowerCase()} – {fmtWeight(shown.volumeKg, units)}
         </Text>
       </View>
 
@@ -106,7 +107,7 @@ export default function SessionBody({
             <Pressable
               key={m.muscle}
               accessibilityRole="button"
-              accessibilityLabel={`${m.short} – ${m.pct}% – ${fmtWeight(m.volumeKg, units)}`}
+              accessibilityLabel={`${t(muscleLabelKey(m.muscle))} – ${m.pct}% – ${fmtWeight(m.volumeKg, units)}`}
               onPress={() => setSelected((cur) => (cur === m.muscle ? null : m.muscle))}
               style={{
                 flexDirection: "row",
@@ -128,7 +129,7 @@ export default function SessionBody({
                   color: on ? C.chalk : C.ash,
                 }}
               >
-                {m.short} – {t(m.tier === "driver" ? "session.body.driver" : "session.body.assist")}
+                {t(muscleLabelKey(m.muscle))} – {t(m.tier === "driver" ? "session.body.driver" : "session.body.assist")}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.xs }}>
                 <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>
@@ -158,7 +159,7 @@ export default function SessionBody({
             marginTop: space.ms,
           }}
         >
-          {t("session.body.untouched").replace("{days}", String(neglectDays))} – {neglect.map((n) => n.short).join(", ")}
+          {t("session.body.untouched").replace("{days}", String(neglectDays))} – {neglect.map((n) => t(muscleLabelKey(n.muscle))).join(", ")}
         </Text>
       )}
 

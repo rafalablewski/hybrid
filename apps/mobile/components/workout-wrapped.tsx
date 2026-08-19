@@ -19,14 +19,12 @@ import {
   doneReceipt,
   sessionCelebration,
   sessionMuscleMap,
+  sessionPanels,
   muscleBaseline,
   muscleCoverage,
   springs,
   springToRN,
   isFullAccess,
-  volumeByMuscle,
-  sessionFunFact,
-  funFactText,
   sessionVolume,
   sessionSignature,
   SIGNATURE_MIN_BARS,
@@ -35,10 +33,8 @@ import {
   formatCardioPr,
   workoutShareCaption,
   fmtWeight,
-  formatSportPace,
   heatAfterSession,
   fmtTemp,
-  formatSportDistance,
   statCountUp,
   prsForSession,
   cardioPrsForSession,
@@ -49,7 +45,6 @@ import {
   deviceImportedSession,
   deviceMarkFor,
   deviceSourceLabel,
-  deviceTrueSession,
   sessionEnergy,
   type DeviceWorkout,
   type StoryStyleId,
@@ -74,7 +69,7 @@ import { HeatSheet } from "./aurora/heat-sheet";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
-import { SlideStoryCard, shareWorkout, type SlideData, type ShareBest } from "../lib/share";
+import { SlideStoryCard, shareWorkout, panelSlides, heroFigure, prRowDelta, type SlideData, type ShareBest } from "../lib/share";
 import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint } from "../lib/theme";
@@ -263,9 +258,10 @@ export function WorkoutWrapped({
   // tonnage for everything — which read "0.0 t" on every cardio log.
   // A pace PR reads in the MOVE's own split — a pool swim is "3:52 /100m", not
   // the "39:13 /km" a hard-coded per-km label made of it.
-  const heroBig = cel
-    ? cel.kind === "strength" ? fmtWeight(cel.topLoad, units) : cel.prKind === "distance" ? formatSportDistance(cel.value, cel.move) : formatSportPace(cel.value, cel.move)
-    : wrapped.headline.value;
+  // The record's own figure when there is one, else the session's headline —
+  // resolved once, in the same helper the finish screen uses.
+  const panels = useMemo(() => sessionPanels(view, all, { units, bw }), [view, all, units, bw]);
+  const heroBig = heroFigure(panels, wrapped.headline.value, units);
   // A record isn't always a heavier bar — more reps at the same load is a real
   // PR, and claiming "+0 kg" there would be a lie.
   const heroSub = cel
@@ -274,45 +270,29 @@ export function WorkoutWrapped({
       : cel.move
     : session.title;
 
-  // What a PR row says on the right — shared with the other client so the
-  // three-way branch can't drift ("+0 kg" would read as no progress at all).
-  const prDelta = (p: { topLoad: number; previousTopLoad: number | null }) =>
-    strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
-
-  // ── story slides for the share sheet (trophy + signature lead) ──
-  const muscleVol = volumeByMuscle(session.blocks, false, bwHere);
-  const muscleMax = muscleVol[0]?.volume ?? 0;
-  // The fun fact is a distance/tonnage comparison — measured where a device
-  // measured it.
-  const funFact = sessionFunFact(deviceTrueSession(view).blocks, bwHere);
+  // ── the share deck ──
+  // ASSEMBLED IN CORE (session-panels.ts), not here. This screen and the finish
+  // screen used to each build their own list from the same ingredients, and had
+  // already drifted — the finish screen dealt an overview card to a swim ("1
+  // SET, 0.0 t") and a second stat card for time. Now both read one manifest,
+  // and only the strings that need the athlete's language are formed here.
   const prRows: { left: string; right: string; hot?: boolean }[] = [
-    ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
-    // The shared cardio formatter, same as the post-workout PR slide — raw km
-    // would read a 400 m swim PR as "Swimming 0.4 km" and drop the delta.
+    ...prs.map((p) => ({ left: p.lift, right: prRowDelta(p, t, units), hot: true })),
+    // The shared cardio formatter — raw km would read a 400 m swim PR as
+    // "Swimming 0.4 km" and drop the delta.
     ...cardioPrs.map((p) => ({ left: formatCardioPr(p, t("summary.firstTime")), right: "", hot: true })),
     ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
-  // Pluralized — "1 new PR", not "1 new PRs"; identical on both clients.
+  // Pluralized — "1 new PR", not "1 new PRs".
   const prHeadline = prs.length > 0 ? `${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}` : cardioPrs.length > 0 ? `${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}` : t("summary.todaysBests");
-  const bespoke: SlideData[] = [
-    ...(cel ? [{ kind: "trophy", eyebrow: t("summary.slide.prs"), value: heroBig, caption: cel.kind === "strength" ? cel.lift : cel.move, sub: cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne") } as SlideData] : []),
-    ...(signature.length >= SIGNATURE_MIN_BARS ? [{ kind: "signature", eyebrow: t("session.wrapped.title"), bars: signature, value: heroBig, caption: session.title } as SlideData] : []),
-  ];
-  // The overview card is a GYM card (title + volume/sets/minutes): on a swim it
-  // would read "1 set, 0.0 t", so it only rides along when the session actually
-  // did that kind of work. The single-stat card headlines the same number the
-  // hero does, so a cardio log leads with its distance instead of zero tonnage.
-  const gymSession = wrapped.discipline === "strength" || wrapped.discipline === "mixed";
-  const slides: SlideData[] = [
-    ...bespoke,
-    ...(gymSession
-      ? [{ kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title: session.title, minutes, sets, volume, bests }, firstEver: false } as SlideData]
-      : []),
-    { kind: "stat", eyebrow: t("summary.slide.load"), value: wrapped.headline.value, unit: t(wrapped.headline.labelKey) },
-    { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.todaysBests"), right: "" }] },
-    ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as SlideData] : []),
-    ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), mark: funFact.mark, text: funFactText(funFact, units, t) } as SlideData] : []),
-  ];
+  const slides: SlideData[] = panelSlides(panels, {
+    t,
+    units,
+    overview: { title: session.title, minutes, sets, volume, bests },
+    prHeadline,
+    prRows,
+    heroValue: heroBig,
+  });
   const activeIdx = Math.min(active, slides.length - 1);
   const st = storyStyle(styleId);
   const cycleStyle = () => setStyleId((cur) => STORY_STYLES[(STORY_STYLES.findIndex((s) => s.id === cur) + 1) % STORY_STYLES.length]!.id);
