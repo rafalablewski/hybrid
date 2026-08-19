@@ -27,6 +27,8 @@ import {
   frame,
   glassEffect,
   glassEffectId,
+  lineLimit,
+  minimumScaleFactor,
   padding,
   pickerStyle,
   shapes,
@@ -36,7 +38,7 @@ import {
 import { useTheme } from "../../lib/theme";
 import { nativeFace } from "../../lib/ui";
 import { RADIUS, withAlpha } from "./kit";
-import { ALPHA } from "@hybrid/core";
+import { ALPHA, SATELLITE } from "@hybrid/core";
 
 /**
  * AURORA × SwiftUI — the native iOS layer of the shared kit.
@@ -288,6 +290,12 @@ export function GlassMenuButton({
  * `GlassSatellite` below.
  */
 
+/** SwiftUI's `.infinity`, in an API that takes numbers: @expo/ui's `frame`
+ *  modifier has no infinity, so "fill whatever you are proposed" is a bound no
+ *  phone can reach. The Host is RN-sized when this is used, so the proposal is
+ *  the row's own width and the capsule stops there. */
+const FILL_WIDTH = 10_000;
+
 /**
  * A SATELLITE — a neutral glass button that orbits a filled primary, as a
  * circle when its glyph speaks for itself (`pause.fill`) and as a labelled
@@ -310,6 +318,7 @@ export function GlassSatellite({
   label,
   glyph,
   word,
+  fill,
   fontFamily,
   fontSize = 15,
   fg,
@@ -323,6 +332,20 @@ export function GlassSatellite({
   glyph: SFSymbol;
   /** Present → a labelled capsule. Absent → a circle. */
   word?: string;
+  /**
+   * A capsule that takes its width from RN instead of from its own content.
+   *
+   * This is the round-4 clause honoured rather than dodged: `matchContents`
+   * measures the SwiftUI content ONCE, at mount, and a capsule whose word
+   * arrives from the language preference (read off disk after the first frame)
+   * would hand its layout to a measurement taken before the word existed. With
+   * `fill` the Host carries an RN size — the row's own remaining width — and
+   * SwiftUI lays out INSIDE the proposal, so the drawn frame is the layout
+   * frame by construction. The word then behaves like the RN capsule's: one
+   * line, shrinking rather than overflowing, which a 32-character Polish label
+   * beside two 44pt circles genuinely needs.
+   */
+  fill?: boolean;
   fontFamily?: string;
   fontSize?: number;
   fg: string;
@@ -332,8 +355,15 @@ export function GlassSatellite({
 }) {
   if (!LIQUID_GLASS_RENDERED) return null;
   const capsule = !!word;
+  const wide = capsule && !!fill;
   return (
-    <Host matchContents={capsule ? true : undefined} style={capsule ? undefined : { width: size, height: size }}>
+    <Host
+      // A wide capsule is sized by RN (`flex: 1` on the caller's row) and the
+      // Host hands that width to SwiftUI as the proposal; only a
+      // content-sized capsule asks the native side to measure itself.
+      matchContents={capsule && !wide ? true : undefined}
+      style={wide ? { flex: 1, height: size } : capsule ? undefined : { width: size, height: size }}
+    >
       <Button onPress={onPress} modifiers={[buttonStyle("plain"), accessibilityLabel(label)]}>
         <HStack
           spacing={7}
@@ -341,9 +371,14 @@ export function GlassSatellite({
             // Chain order is the construction, exactly as in GlassNavButton:
             // size the content, glass THAT shape, then make the whole frame
             // tappable. A circle sizes both axes; a capsule sizes its height
-            // and lets the word decide the width.
+            // and lets the word decide the width — unless it FILLS, where the
+            // proposal decides and the word gives way instead.
             capsule ? padding({ horizontal: 17 }) : padding({ all: 0 }),
-            capsule ? frame({ height: size }) : frame({ width: size, height: size }),
+            wide
+              ? frame({ maxWidth: FILL_WIDTH, height: size })
+              : capsule
+                ? frame({ height: size })
+                : frame({ width: size, height: size }),
             glassEffect({
               glass: { variant: "regular", interactive: true },
               shape: capsule ? "capsule" : "circle",
@@ -358,7 +393,18 @@ export function GlassSatellite({
               unresolvable name, which lands on the system face anyway and loses
               the fact that it was asked for. */}
           {word ? (
-            <SwiftText modifiers={[fontFamily ? font({ family: nativeFace(fontFamily), size: fontSize }) : font({ size: fontSize }), foregroundColor(fg)]}>{word}</SwiftText>
+            <SwiftText
+              modifiers={[
+                fontFamily ? font({ family: nativeFace(fontFamily), size: fontSize }) : font({ size: fontSize }),
+                foregroundColor(fg),
+                // The RN capsule's `numberOfLines={1} adjustsFontSizeToFit`,
+                // said in SwiftUI, off the same core figure. Only a filled
+                // capsule can run out of room; a content-sized one makes its own.
+                ...(wide ? [lineLimit(1), minimumScaleFactor(SATELLITE.wordMinScale)] : []),
+              ]}
+            >
+              {word}
+            </SwiftText>
           ) : null}
         </HStack>
       </Button>

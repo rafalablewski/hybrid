@@ -156,6 +156,7 @@ import type { AuroraIconName } from "@hybrid/core";
 import { AuroraField, withAlpha, ACard, cardStack, GUTTER , RADIUS} from "../components/aurora/kit";
 import { GlassSelectMenu, GlassToolbarGroup, LIQUID_GLASS_RENDERED } from "../components/aurora/swiftui";
 import ASatellite from "../components/aurora/satellite";
+import { SHARE_MARK } from "../components/aurora/share-mark";
 import { HeroNav } from "../components/aurora/hero";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { coverInsets } from "../lib/layout";
@@ -2851,20 +2852,21 @@ function Summary({
 
         {summary.guest ? (
           <>
-            <Pressable
-              onPress={shareNow}
-              style={{
-                backgroundColor: withAlpha(C.lime, ALPHA.solid),
-                borderWidth: 1,
-                borderColor: withAlpha(C.lime, ALPHA.rim),
-                borderRadius: RADIUS.pill,
-                paddingVertical: 16,
-                alignItems: "center",
-                marginTop: 16,
-              }}
-            >
-              <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
-            </Pressable>
+            {/* The same control the signed-in cluster shares with — a row so
+                the capsule can take its width from RN rather than from its own
+                word. Here the ONE filled surface is Create an account below;
+                share is the glass beside it. */}
+            <View style={{ flexDirection: "row", marginTop: 16 }}>
+              <ASatellite
+                fill
+                word={shareLabel}
+                a11y={shareLabel}
+                glyph={SHARE_MARK.glyph}
+                mark={SHARE_MARK.fallback}
+                fg={C.lime}
+                onPress={shareNow}
+              />
+            </View>
             <View style={{ backgroundColor: withAlpha(C.blue, ALPHA.wash), borderWidth: 1, borderColor: withAlpha(C.blue, ALPHA.line), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.blue) }}>✓ {t("summary.guestSaved")}</Text>
             </View>
@@ -2881,8 +2883,21 @@ function Summary({
           </>
         ) : (
           <>
-            {/* The floating pill cluster — hierarchy by material: lime fill for
-                Share, glass for the two satellites, nothing else competing. */}
+            {/* The floating cluster — ONE control drawn three times now. Share
+                used to be a hand-rolled chartreuse pill with a text arrow
+                in it, which made the finish screen's most-pressed
+                button the only one on it that was neither the app's shared
+                satellite nor the system's: on iOS 26 the recipe cover's share
+                answered the thumb with real interactive glass and this one did
+                not. It is the same ASatellite as its neighbours now, wearing
+                the same SF Symbol the recipe wears (SHARE_MARK), and it keeps
+                the primary's WIDTH — `fill` — because the cluster's proportions
+                were never the point of the fill.
+
+                The accent survives as the WORD AND MARK's colour, not a
+                surface. A satellite carries no brand paint while a filled
+                primary is beside it; there is no longer one beside it, and the
+                screen's single "go" still belongs on the share. */}
             <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 10, marginTop: 16 }}>
               <ASatellite
                 mark="★"
@@ -2891,22 +2906,17 @@ function Summary({
                 on={routineOpen}
                 onPress={() => setRoutineOpen((v) => !v)}
               />
-              <Pressable
-                onPress={shareNow}
-                style={{
-                  flex: 1,
-                  backgroundColor: withAlpha(C.lime, ALPHA.solid),
-                  borderWidth: 1,
-                  borderColor: withAlpha(C.lime, ALPHA.rim),
-                  borderRadius: RADIUS.pill,
-                  paddingVertical: 16,
-                  alignItems: "center",
-                }}
-              >
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, C.lime) }}>↗︎ {shareLabel}</Text>
-              </Pressable>
               <ASatellite
-                mark={<ArrowGlyph size={19} color={C.chalk} />}
+                fill
+                word={shareLabel}
+                a11y={shareLabel}
+                glyph={SHARE_MARK.glyph}
+                mark={SHARE_MARK.fallback}
+                fg={C.lime}
+                onPress={shareNow}
+              />
+              <ASatellite
+                mark={<ArrowGlyph size={SATELLITE.glyph} color={C.chalk} />}
                 caption={t("summary.orbAnalysis")}
                 a11y={t("summary.seeAnalysis")}
                 onPress={() => router.replace("/history")}

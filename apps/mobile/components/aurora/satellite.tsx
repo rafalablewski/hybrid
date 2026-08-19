@@ -12,9 +12,11 @@ import { RADIUS } from "./kit";
  * ASATELLITE — the ONE neutral glass button.
  *
  * A satellite orbits a filled primary: Pause and Finish beside Log set, the
- * ✕ / ★ / → around Share on the finish summary. The geometry and the floor's
- * rim are @hybrid/core `SATELLITE` — see that file for why the same button had
- * been drawn four ways in one screen.
+ * ✕ / ★ / → on the finish summary — and, since the summary's Share came off
+ * its chartreuse fill, Share itself, as the `fill` word capsule that keeps the
+ * width the primary had. The geometry and the floor's rim are @hybrid/core
+ * `SATELLITE` — see that file for why the same button had been drawn four ways
+ * in one screen.
  *
  * TWO RENDERERS, ONE CONTROL, and the choice is made HERE so no caller can make
  * it differently:
@@ -38,6 +40,7 @@ export default function ASatellite({
   glyph,
   mark,
   word,
+  fill,
   caption,
   on,
   fg,
@@ -61,6 +64,14 @@ export default function ASatellite({
   /** Present → a labelled capsule instead of a circle, for the satellite whose
    *  glyph must not be guessed at. */
   word?: string;
+  /** A word capsule that takes the ROW's remaining width rather than its own
+   *  content's — the finish summary's Share, which stands where a filled
+   *  primary used to and keeps that width. Both renderers shrink the word to
+   *  fit rather than overflow the row (`summary.shareFirst` is 32 characters in
+   *  Polish, beside two 44pt circles). Word capsules only, and not with a
+   *  `caption`: a filled capsule sets the cluster's spacing, which is the one
+   *  thing a caption is documented never to do. */
+  fill?: boolean;
   /** A mono caption UNDER the circle — the summary cluster's ROUTINE /
    *  ANALYSIS. It never changes the button; it names it in place. */
   caption?: string;
@@ -75,7 +86,12 @@ export default function ASatellite({
    *  caller changes it only where the cluster's primary is a different size. */
   size?: number;
   glyphSize?: number;
-}) {
+  // A filled capsule takes the ROW's width (`flex: 1`), and a captioned
+  // satellite puts its face in a COLUMN — where that same flex would grow the
+  // button VERTICALLY instead. So the pair is excluded here rather than
+  // described in prose: the caption's own contract already says it must never
+  // set the cluster's spacing, and a filled capsule sets nothing else.
+} & ({ fill?: false } | { caption?: never })) {
   const C = useTheme().palette;
   const tint = fg ?? C.chalk;
   // Native only when there is a symbol to draw with and no state to carry.
@@ -86,6 +102,7 @@ export default function ASatellite({
       label={a11y}
       glyph={glyph!}
       word={word}
+      fill={fill}
       fontFamily={F.bold}
       fg={tint}
       size={size}
@@ -100,6 +117,7 @@ export default function ASatellite({
       hitSlop={6}
       style={{
         height: size,
+        flex: fill ? 1 : undefined,
         width: word ? undefined : size,
         paddingHorizontal: word ? SATELLITE.wordPad : 0,
         flexDirection: "row",
@@ -125,7 +143,17 @@ export default function ASatellite({
       ) : (
         <Text style={{ fontFamily: F.bold, fontSize: Math.round(size * 0.36), color: tint }}>{mark}</Text>
       )}
-      {word ? <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: tint }}>{word}</Text> : null}
+      {word ? (
+        <Text
+          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          numberOfLines={1}
+          adjustsFontSizeToFit={fill}
+          minimumFontScale={fill ? SATELLITE.wordMinScale : undefined}
+          style={{ fontFamily: F.bold, fontSize: fs.body, color: tint }}
+        >
+          {word}
+        </Text>
+      ) : null}
     </Pressable>
   );
   if (!caption) return face;

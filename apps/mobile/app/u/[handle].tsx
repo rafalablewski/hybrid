@@ -41,7 +41,8 @@ import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useConfirm } from "../../components/aurora/confirm";
-import { HeroAccessory } from "../../components/aurora/hero";
+import { HeroAction } from "../../components/aurora/hero";
+import { SHARE_MARK } from "../../components/aurora/share-mark";
 import {
   blockUser, enrollProgram, follow, getCompare, getUserActivity, getUserPage, getUserPeople, postReview, reportTarget, toggleKudos, unfollow,
 } from "../../lib/social-api";
@@ -178,8 +179,21 @@ export default function UserScreen() {
       hero={hero}
       /* SHARE lives in the rail's trailing slot — the app's own home for a
          screen-level utility, and where iOS puts it. It used to be a fourth
-         button in a row of four, which is how a page ends up with no centre. */
-      accessory={<HeroAccessory label={t("w.user.share")} onPress={doShare} onDark={false} />}
+         button in a row of four, which is how a page ends up with no centre.
+         And then it spent a while as HeroAccessory, which is the METADATA
+         component: this comment described HeroAction — the control built for
+         this slot — while the code rendered the word "share" in the mono face
+         a count or a duration wears. A person's page now shares through the
+         same circle a recipe does. */
+      accessory={
+        <HeroAction
+          glyph={SHARE_MARK.glyph}
+          fallbackGlyph={SHARE_MARK.fallback}
+          label={`${t("w.user.share")} – ${name}`}
+          onPress={doShare}
+          onDark={false}
+        />
+      }
     >
       {/* ── WHO ── the person, at the size a page allows. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
