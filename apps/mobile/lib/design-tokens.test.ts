@@ -1519,6 +1519,20 @@ describe("presentation", () => {
       standIns,
       `\na share drawn as a text arrow — use SHARE_MARK:\n  ${standIns.join("\n  ")}`,
     ).toEqual([]);
+
+    // AND NOT THE OTHER HALF EITHER. The verified food page was the case
+    // neither assertion above would have caught: the RIGHT vector in the wrong
+    // container — `<AuroraIcon name="share">` in a bare 40pt box with no fill,
+    // no rim and ash rather than chalk, on the page whose whole job is to be
+    // worth passing on. A screen that names the house vector by hand has
+    // reached past SHARE_MARK for half the pair, which is where that ends up.
+    const byHand = codeHits(/(?:name|mark|glyph|fallbackGlyph)=\{?["']share["']\}?/g).filter(
+      (h) => !h.startsWith(OWNER),
+    );
+    expect(
+      byHand,
+      `\nthe house vector is SHARE_MARK.fallback — reach for the pair, not the name:\n  ${byHand.join("\n  ")}`,
+    ).toEqual([]);
   });
 
   it("HARD — the segmented control is never a native Picker", () => {
