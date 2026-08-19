@@ -515,7 +515,9 @@ describe("geometry", () => {
     // 147 → 146: the nutrition goal sheet's hand-drawn 22dp radio (a `borderRadius:
     // 11` circle that popped in one frame) went with the option-row convergence —
     // it is the kit's `AChoice` now, on `ACheckMark`.
-    burnDown(hits(/borderRadius:\s*\d/g), 146, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 146 → 142: the summary redesign took the story sheet, the per-exercise
+    // breakdown cards and the PR list's box with it.
+    burnDown(hits(/borderRadius:\s*\d/g), 142, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -915,7 +917,8 @@ describe("colour", () => {
     // TRAILING control (HeroAction, the recipe share button) had to draw the
     // same circle as the leading one — six literals across the two ends of one
     // rail, which is the drift this rule exists to catch, collapsed to a name.
-    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 49, "2026-12-31", "hex literal → a palette token");
+    // 49 → 48: the wrapped screen's story-card shadow went with the share sheet.
+    burnDown(hits(/["'`]#[0-9a-fA-F]{3,8}["'`]/g), 48, "2026-12-31", "hex literal → a palette token");
   });
 });
 

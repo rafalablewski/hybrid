@@ -77,8 +77,47 @@ function Swatch({ C, label, opacity }: { C: Palette; label: string; opacity: num
 function SideCol({ label, C, children }: { label: string; C: Palette; children: React.ReactNode }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
+      {label ? (
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
+      ) : null}
       <View style={{ width: "100%", aspectRatio: 1 }}>{children}</View>
+    </View>
+  );
+}
+
+/**
+ * THE MANNEQUIN PAIR — front and back, muscles lit by whatever intensities the
+ * caller resolved. Exported because the session summary's body panel draws the
+ * same figure as this page: it feeds `sessionMuscleGlows` where the exercise
+ * page feeds `muscleGlows`, and a second copy of the renderer is exactly how
+ * the two would come to disagree about what "lit" means.
+ *
+ * It carries no card, no caption and no legend — those belong to whichever
+ * surface is showing it.
+ */
+export function BodyFigures({
+  figures,
+  intensityOf,
+  selected,
+  onSelect,
+  label,
+  gap = 8,
+}: {
+  figures: BodyFigure[];
+  intensityOf: Record<string, number>;
+  selected?: string | null;
+  onSelect?: (m: string) => void;
+  label?: (side: BodyFigure["side"]) => string;
+  gap?: number;
+}) {
+  const { palette: C } = useTheme();
+  return (
+    <View style={{ flexDirection: "row", gap }}>
+      {figures.map((fig) => (
+        <SideCol key={fig.side} C={C} label={label ? label(fig.side) : ""}>
+          <Figure C={C} fig={fig} intensityOf={intensityOf} selected={selected ?? null} onSelect={onSelect ?? (() => {})} />
+        </SideCol>
+      ))}
     </View>
   );
 }
@@ -93,13 +132,13 @@ function SchematicBody({ map, t }: { map: ExerciseBodyMap; t: (k: string) => str
 
   return (
     <Shell C={C} map={map} selectedGlow={(selected && glowOf[selected]) || null} t={t}>
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        {map.figures.map((fig) => (
-          <SideCol key={fig.side} C={C} label={t(`w.analyze.exp.anatomy.map.${fig.side}`)}>
-            <Figure C={C} fig={fig} intensityOf={map.intensityOf} selected={selected} onSelect={setSelected} />
-          </SideCol>
-        ))}
-      </View>
+      <BodyFigures
+        figures={map.figures}
+        intensityOf={map.intensityOf}
+        selected={selected}
+        onSelect={setSelected}
+        label={(side) => t(`w.analyze.exp.anatomy.map.${side}`)}
+      />
     </Shell>
   );
 }

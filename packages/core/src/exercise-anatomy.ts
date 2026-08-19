@@ -48,6 +48,17 @@ export const MUSCLE_LABEL: Record<Muscle, string> = {
   "hip-flexors": "Hip flexors",
 };
 
+/**
+ * The i18n key for a fine-grained muscle's short name.
+ *
+ * MUSCLE_SHORT is English source text — fine for a legend beside an English
+ * anatomical label, wrong the moment a muscle name is the whole content of a
+ * row (the session body panel, the share deck's muscle split). The `muscleFine.`
+ * namespace is deliberately separate from the engine's seven-bucket `muscle.`
+ * keys: "chest" means one thing in each and they are not the same list.
+ */
+export const muscleLabelKey = (m: Muscle): string => `muscleFine.${m}`;
+
 /** Short label (no parenthetical) — for tight rows/legends. */
 export const MUSCLE_SHORT: Record<Muscle, string> = {
   chest: "Chest",
@@ -92,7 +103,10 @@ export interface MuscleActivation {
 const primaryWeight = (i: number): number => Math.max(1.7, 3.4 - i * 0.75);
 const secondaryWeight = (j: number): number => Math.max(0.5, 1.25 - j * 0.28);
 
-const levelFor = (tier: ActivationTier, pct: number): ActivationLevel =>
+/** The activation LEVEL band for a tier + share. Exported so the session-wide
+ *  muscle map (session-muscle-map.ts) bands its rows by the same rule a single
+ *  lift's rows are banded by, rather than re-deriving the thresholds. */
+export const levelFor = (tier: ActivationTier, pct: number): ActivationLevel =>
   tier === "primary" ? (pct >= 22 ? "high" : "moderate") : pct >= 12 ? "moderate" : "low";
 
 /** Ranked muscle activation for a lift — primary first, each with a share-of-

@@ -21,7 +21,6 @@ import {
   sessionVolume,
   blockTopLoad,
   formatStrengthPr,
-  strengthPrDelta,
   workoutShareCaption,
   newPrsInSession,
   newCardioPrsInSession,
@@ -85,9 +84,7 @@ import {
   type SetRole,
   RPE_SCALE,
   RPE_INTRO,
-  volumeByMuscle,
-  sessionFunFact,
-  funFactText,
+  sessionPanels,
   STORY_STYLES,
   DEFAULT_STORY_STYLE,
   storyStyle,
@@ -144,7 +141,7 @@ import HoldDragRow from "../components/hold-drag-row";
 import { useDragReorder } from "../lib/use-drag-reorder";
 import { saveGuestSession, listGuestSessions } from "../lib/guest";
 import { loadDraft, saveDraft, clearDraft } from "../lib/draft";
-import { shareCardImage, SlideStoryCard, type ShareBest, type SlideData } from "../lib/share";
+import { shareCardImage, SlideStoryCard, panelSlides, heroFigure, prRowDelta, type ShareBest, type SlideData } from "../lib/share";
 import { useSession } from "../lib/session";
 import { usePersona } from "../lib/persona";
 import { readPlanMaxes } from "../lib/plan-maxes";
@@ -301,6 +298,9 @@ type Summ = {
   /** The saved session's id (null for guests / offline) — backs the rename. */
   sessionId: string | null;
   title: string;
+  /** The session's own clock — the share deck is built from a LoggedSession,
+   *  and core needs the real timestamps to place it against the history. */
+  startedAt: string;
   /** ISO — when the session ended. The finish screen reads the feel prompt's
    *  lag from this; without it the read classifies as "unknown" and the line
    *  promising a second ask never renders. */
@@ -1191,6 +1191,9 @@ export default function Workout() {
     setSummary({
       sessionId,
       title: payload.title,
+      startedAt: startedAt.current.toISOString(),
+      // main's source, not `now`: the payload's own end stamp is what the feel
+      // prompt's lag is measured from, so the two must be the same instant.
       completedAt: payload.completedAt!,
       blocks,
       volume: sessionVolume(blocks, false, bodyweightKg),
@@ -2680,10 +2683,6 @@ function Summary({
 
   const prLine = (p: PrHit) =>
     formatStrengthPr(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
-  // What a PR row says on the right — shared with web so the three-way branch
-  // can't drift ("+0 kg" would read as no progress at all).
-  const prDelta = (p: PrHit) =>
-    strengthPrDelta(p, { first: t("summary.firstTime"), moreReps: t("summary.morePrReps") }, units);
 
   const captionHeadline = prs[0]
     ? `\u{1F3C6} ${prLine(prs[0])}`
@@ -2698,33 +2697,49 @@ function Summary({
     t,
   );
 
-  // ── Build the shareable slides (Overview · PRs & bests · Muscle · Fun) ──
-  const muscleVol = volumeByMuscle(summary.blocks, false, bodyweightKg);
-  const muscleMax = muscleVol[0]?.volume ?? 0;
-  const funFact = sessionFunFact(summary.blocks, bodyweightKg);
+  // ── the share deck ──
+  // READ FROM CORE (session-panels.ts), not assembled here. This screen used to
+  // build its own list: it dealt an overview card to every session, so a swim
+  // shared as "1 SET, 0.0 t", and it dealt a second stat card for time while
+  // the session review dealt one for the discipline's own headline. One
+  // manifest now answers which panels a session has, on both screens.
+  const logged: LoggedSession = useMemo(
+    () => ({
+      id: summary.sessionId ?? summary.startedAt,
+      title,
+      startedAt: summary.startedAt,
+      completedAt: summary.completedAt,
+      blocks: summary.blocks,
+    }),
+    [summary, title],
+  );
+  // The session has to be IN the history for records to resolve against it.
+  const panels = useMemo(
+    () => sessionPanels(logged, [...prior, logged], { units, bw: bwLookup }),
+    [logged, prior, units, bwLookup],
+  );
+  const statPanel = panels.find((p) => p.kind === "stat");
+  const heroBig = heroFigure(panels, statPanel?.kind === "stat" ? statPanel.value : fmtTonnage(summary.volume, units), units);
   const prRows: { left: string; right: string; hot?: boolean }[] = [
-    ...prs.map((p) => ({ left: p.lift, right: prDelta(p), hot: true })),
+    ...prs.map((p) => ({ left: p.lift, right: prRowDelta(p, t, units), hot: true })),
     ...cardioPrs.map((p) => ({ left: cardioPrLine(p, t), right: "", hot: true })),
     ...bests.filter((b) => !prs.some((p) => p.lift === b.name)).slice(0, 6).map((b) => ({ left: b.name, right: fmtWeight(b.weight, units) })),
   ];
-  // Pluralized, matching web — "1 new PR", not "1 new PRs".
+  // Pluralized — "1 new PR", not "1 new PRs".
   const prHeadline = prs.length > 0
     ? `${prs.length} ${prs.length > 1 ? t("w.train.logger.newPrs") : t("w.train.logger.newPr")}`
     : cardioPrs.length > 0
       ? `${cardioPrs.length} ${cardioPrs.length > 1 ? t("w.train.logger.cardioPrs") : t("w.train.logger.cardioPr")}`
       : t("summary.todaysBests");
-  const slides: SlideData[] = [
-    { kind: "overview", eyebrow: t("summary.slide.overview"), stats: { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests }, firstEver },
-    // The two single-figure slides run in core figure-order.ts order too — the
-    // deck is paced, but it is still the session's figures one after another,
-    // and a story that leads with the clock while the overview slide before it
-    // leads with the tonnage is the same drift on a slower axis.
-    { kind: "stat", eyebrow: t("summary.slide.load"), value: fmtTonnage(summary.volume, units), unit: t("summary.volumeMoved") },
-    { kind: "stat", eyebrow: t("summary.slide.time"), value: String(summary.minutes), unit: t("summary.minutes") },
-    { kind: "prs", eyebrow: t("summary.slide.prs"), headline: prHeadline, rows: prRows.length ? prRows : [{ left: t("summary.noPrsYet"), right: "" }] },
-    ...(muscleVol.length ? [{ kind: "muscle", eyebrow: t("summary.slide.muscle"), bars: muscleVol.slice(0, 6).map((m) => ({ label: t(`muscle.${m.muscle}`), pct: muscleMax ? Math.round((m.volume / muscleMax) * 100) : 0, value: fmtWeight(m.volume, units) })) } as SlideData] : []),
-    ...(funFact ? [{ kind: "fun", eyebrow: t("summary.slide.fun"), mark: funFact.mark, text: funFactText(funFact, units, t) } as SlideData] : []),
-  ];
+  const slides: SlideData[] = panelSlides(panels, {
+    t,
+    units,
+    overview: { title, minutes: summary.minutes, sets: summary.sets, volume: summary.volume, bests },
+    firstEver,
+    prHeadline,
+    prRows,
+    heroValue: heroBig,
+  });
   const activeIdx = Math.min(active, slides.length - 1);
 
   // LIQUID FIELD — the card floats in an intensified Aurora field; every control
