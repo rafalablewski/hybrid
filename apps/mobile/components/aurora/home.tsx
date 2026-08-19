@@ -14,6 +14,7 @@ import {
   toBiometrics,
   fuelAdjustment,
   heatAdjustment,
+  heatDayRows,
   velocityProfiles,
   readinessDeficit,
   readinessVerdict,
@@ -129,6 +130,7 @@ import { AppHeader } from "./app-header";
 import { StreakMark } from "./streak-mark";
 import { RtpPanel } from "./protocol";
 import { HeatRow } from "./heat-row";
+import HeatAccent from "./heat-accent";
 // THE HUB's other two tabs — the same full screens their own routes render,
 // handed Today's header + pills through the `top` slot so the chrome above
 // them never changes as the athlete switches tab.
@@ -471,6 +473,10 @@ export default function AuroraHome() {
   // Sessions logged on the VIEWED day — the confirmation loop (a finished
   // session OR a quick sport log both land here the moment they save).
   const doneOnDay = useMemo(() => sessionsOnDay(sessions, dayTs), [sessions, dayTs]);
+  // The same day with the SAUNA in it — for the Done-today sheet, which is this
+  // list expanded. The floor computes its own from the same pure function and
+  // the same inputs, so the two can only ever agree.
+  const doneEntries = useMemo(() => heatDayRows(doneOnDay, heatSignals, { day: dayTs }), [doneOnDay, heatSignals, dayTs]);
   // The date-anchored schedule (no overrides — status colouring lives in the
   // rail; here we only need today's prescription + which sessions fulfilled it).
   const sched = useMemo(
@@ -576,6 +582,11 @@ export default function AuroraHome() {
       dayLabel={dayLabel}
       units={units}
       bw={bw}
+      // The day's sauna, placed against the session it followed. The SAME cache
+      // entry the readiness ring and the volume model read, so a sitting saved
+      // in the Heat sheet below appears here on the same revalidation.
+      heat={heatSignals}
+      dayTs={dayTs}
       onOpen={(id) => router.push(`/session/${id}`)}
       onLog={() => setQuickOpen(true)}
       onDone={() => setDoneOpen(true)}
@@ -1229,6 +1240,8 @@ export default function AuroraHome() {
               dayLabel={dayLabel}
               units={units}
               bw={bw}
+              heat={heatSignals}
+              dayTs={dayTs}
               onDelete={async (s) => { await deleteSession(s.id); load(); }}
               pad={CARD_PAD}
               rule={false}
@@ -1529,9 +1542,18 @@ export default function AuroraHome() {
               <StreakMark rung="inline" onDismiss={() => setDoneOpen(false)} />
             </View>
           ) : null}
-          {doneOnDay.length === 0 ? (
+          {doneEntries.length === 0 ? (
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: leading(fs.body), paddingVertical: 8 }}>{t(dayIsToday ? "w.home.today.doneModalEmpty" : "w.home.today.doneModalEmptyDay")}</Text>
-          ) : doneOnDay.map((s) => (
+          ) : doneEntries.map((entry) => {
+            /* The sauna reads here exactly as it does on the floor — under the
+               session it followed — because this sheet IS that list expanded,
+               and a day that names the sauna in one view and not the other is
+               a day disagreeing with itself. */
+            if (entry.kind === "heat") {
+              return <HeatAccent key={`heat:${entry.sitting.ts}`} sitting={entry.sitting} indent={!!entry.under} units={units} variant="sheet" />;
+            }
+            const s = entry.session;
+            return (
             <Pressable
               key={s.id}
               onPress={() => { setDoneOpen(false); router.push(`/session/${s.id}`); }}
@@ -1546,7 +1568,8 @@ export default function AuroraHome() {
               </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
             </Pressable>
-          ))}
+            );
+          })}
           <Pressable onPress={() => { setDoneOpen(false); router.push("/calendar"); }} style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 16, flexDirection: "row", gap: 8, alignItems: "center", justifyContent: "center" }}>
             <AuroraIcon name="calendar" size={15} color={C.ash} />
             <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("w.home.today.doneCalendar")}</Text>

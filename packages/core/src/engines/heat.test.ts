@@ -12,6 +12,7 @@ import {
   heatAdjustment,
   heatAfterSession,
   heatAlreadyLogged,
+  heatDayRows,
   heatSittingsBetween,
   heatIntensity,
   heatSittings,
@@ -703,5 +704,92 @@ describe("recoveryReports — the check-in history on the engine's own terms", (
     const c = saunaClearance([], recoveryReports([]), []);
     expect(c.confidence).toBe(0);
     expect(c.delta).toBe(0);
+  });
+});
+
+/* ── THE DAY'S LOG, IN THE ORDER IT HAPPENED ───────────────────────────────── */
+
+describe("heatDayRows", () => {
+  const DAY = "2026-08-12";
+  const at = (hhmm: string) => Date.parse(`${DAY}T${hhmm}:00.000Z`);
+  const sat = (ms: number, minutes = 20, tempC = 90): HeatSignalRow[] => {
+    const ts = new Date(ms).toISOString();
+    return [
+      { id: `m${ms}`, kind: "sauna", value: minutes, source: "manual", ts },
+      { id: `t${ms}`, kind: "saunaTemp", value: tempC, source: "manual", ts },
+    ];
+  };
+  const sess = (id: string, from: string, to: string) => ({
+    id,
+    startedAt: new Date(at(from)).toISOString(),
+    completedAt: new Date(at(to)).toISOString(),
+  });
+
+  // The reported case, exactly: gym, then the sauna, then a swim.
+  const gym = sess("gym", "09:00", "10:00");
+  const swim = sess("swim", "16:00", "17:00");
+  const day = at("12:00");
+
+  it("hangs the sitting off the session it followed, not the one after it", () => {
+    const rows = heatDayRows([swim, gym], sat(at("10:20")), { day });
+    expect(rows.map((r) => (r.kind === "session" ? r.session.id : `heat:${r.under}`)))
+      .toEqual(["swim", "gym", "heat:gym"]);
+  });
+
+  it("keeps the caller's newest-first reading, and can be asked for the other one", () => {
+    const asc = heatDayRows([gym, swim], sat(at("10:20")), { day, order: "asc" });
+    expect(asc.map((r) => (r.kind === "session" ? r.session.id : `heat:${r.under}`)))
+      .toEqual(["gym", "heat:gym", "swim"]);
+  });
+
+  it("places a sauna that followed nothing at its own place in the day", () => {
+    const rows = heatDayRows([swim, gym], sat(at("14:00")), { day });
+    expect(rows.map((r) => (r.kind === "session" ? r.session.id : `heat:${r.under}`)))
+      .toEqual(["swim", "heat:null", "gym"]);
+  });
+
+  it("gives one sitting to ONE session — the nearest end — never to both", () => {
+    // A cool-down walk logged straight after the gym: the 10:20 sitting falls
+    // inside BOTH windows, and belongs to the end it is nearest.
+    const walk = sess("walk", "10:10", "10:35");
+    const rows = heatDayRows([walk, gym], sat(at("10:20")), { day });
+    const heat = rows.filter((r) => r.kind === "heat");
+    expect(heat).toHaveLength(1);
+    expect(heat[0]!.kind === "heat" && heat[0]!.under).toBe("walk");
+  });
+
+  it("lets one session carry two rounds, in the list's own direction", () => {
+    const rows = heatDayRows([gym], [...sat(at("10:15"), 15), ...sat(at("11:45"), 10)], { day });
+    expect(rows).toHaveLength(3);
+    expect(rows.map((r) => (r.kind === "heat" ? r.sitting.minutes : 0))).toEqual([0, 10, 15]);
+  });
+
+  it("reads the same window the post-session prompt reads", () => {
+    const end = at("10:00");
+    // Just inside the grace before the recorded end — the watch was stopped late.
+    expect(heatDayRows([gym], sat(end - 10 * 60_000), { day })
+      .some((r) => r.kind === "heat" && r.under === "gym")).toBe(true);
+    // Past the tail: its own event, not the workout's.
+    expect(heatDayRows([gym], sat(end + (HEAT_AFTER_SESSION_H * 60 + 5) * 60_000), { day })
+      .some((r) => r.kind === "heat" && r.under === "gym")).toBe(false);
+  });
+
+  it("does not reach back past a short session's start for a sauna taken BEFORE it", () => {
+    const sprint = sess("sprint", "09:50", "10:00");
+    const rows = heatDayRows([sprint], sat(at("09:45")), { day });
+    expect(rows.some((r) => r.kind === "heat" && r.under === "sprint")).toBe(false);
+  });
+
+  it("places only the viewed day's sittings, so none is printed on two days", () => {
+    const lateNight = sat(Date.parse("2026-08-13T00:30:00.000Z"));
+    expect(heatDayRows([gym], lateNight, { day }).filter((r) => r.kind === "heat")).toHaveLength(0);
+    expect(heatDayRows([], lateNight, { day: Date.parse("2026-08-13T09:00:00.000Z") })).toHaveLength(1);
+  });
+
+  it("is exactly the session list when there is no heat to place", () => {
+    expect(heatDayRows([swim, gym], [], { day })).toEqual([
+      { kind: "session", session: swim },
+      { kind: "session", session: gym },
+    ]);
   });
 });
