@@ -583,12 +583,13 @@ export function bandSay(t: (key: string) => string, band: DayBand): string {
  *
  * THE ARITHMETIC, so the next person can move these honestly rather than
  * nudging them until the test passes. On a 390pt screen the band's own gutter
- * leaves 360pt. The head sets in the display face at 27pt, which averages
- * ~0.55em per character — about 24 characters a line, two lines, 44 with the
- * break. The sentence sets at 14.5pt regular, ~46 characters a line, three
- * lines, 130. A head over budget steps DOWN a type rung (27 → 23); it never
- * wraps to a third line and it is never ellipsized, because an instruction
- * with its verb cut off is worse than a smaller instruction.
+ * leaves ~360pt. The head sets in the display face at `fs.display` (26), which
+ * averages ~0.55em per character — about 25 characters a line, two lines, so
+ * 44 leaves room for the break. The sentence sets at `fs.bodyLg` (14) regular,
+ * ~50 characters a line, three lines, so 130 leaves the same slack. A head over
+ * budget steps DOWN a rung (`fs.display` → `fs.headline`); it never wraps to a
+ * third line and it is never ellipsized, because an instruction with its verb
+ * cut off is worse than a smaller instruction.
  */
 export const BAND_HEAD_MAX = 44;
 export const BAND_SAY_MAX = 130;
