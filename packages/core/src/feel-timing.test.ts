@@ -24,7 +24,6 @@ import {
   recoveryIndex,
   clearanceFactor,
   resolutionOf,
-  SCALE_STEP,
   MIN_RECOVERY_PAIRS,
 } from "./feel-timing";
 
