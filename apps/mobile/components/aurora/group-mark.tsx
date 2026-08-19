@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { View, Text } from "react-native";
-import { useTheme } from "../../lib/theme";
+import type { AccentKey } from "@hybrid/core";
+import { accentColor, txt, useTheme } from "../../lib/theme";
 import { leading, F, tracking } from "../../lib/ui";
 
 /** GROUP MARKER — the HEADLINE TIER (cluster-marker study, direction 02).
@@ -22,13 +23,26 @@ import { leading, F, tracking } from "../../lib/ui";
  *  title. Today's period filter lives there: a filter scopes the whole cluster,
  *  so it belongs beside the cluster's name rather than under one block inside
  *  it, where it read as that block's own control. Absent by default, and the
- *  headline is then exactly the bare type it has always been. */
-export default function GroupMark({ label, mt = 36, right }: { label: string; mt?: number; right?: ReactNode }) {
+ *  headline is then exactly the bare type it has always been.
+ *
+ *  `hue` IS THE CLUSTER'S DOMAIN, and it is the only colour on this tier. The
+ *  palette already assigns a meaning to each of its four accents — lime is the
+ *  bar and action, blue is conditioning and feel, amber is sport and plan, red
+ *  is alert and connection — and Today's four clusters ARE those four domains.
+ *  Spending the assignment here rather than on the cards under it is deliberate:
+ *  the headline is the wayfinding tier, it is what the eye lands on when a
+ *  thumb stops mid-scroll, and it is one object per cluster rather than the
+ *  nine that would each have to agree about an alpha. Four tinted cards in one
+ *  scroll read as four warnings the moment those alphas drift; four coloured
+ *  names cannot. Absent, the headline stays chalk — which is what the Train
+ *  cluster would take anyway, since it is the one cluster with no mark at all
+ *  and its colour is already the day field standing directly above it. */
+export default function GroupMark({ label, mt = 36, right, hue }: { label: string; mt?: number; right?: ReactNode; hue?: AccentKey }) {
   const { palette: C } = useTheme();
   const heading = (
     <Text
       accessibilityRole="header"
-      style={{ fontFamily: F.black, fontSize: 23, letterSpacing: tracking.display, lineHeight: leading(23, "tight"), color: C.chalk }}
+      style={{ fontFamily: F.black, fontSize: 23, letterSpacing: tracking.display, lineHeight: leading(23, "tight"), color: hue ? txt(C, accentColor(C, hue)) : C.chalk }}
     >
       {label}
     </Text>
