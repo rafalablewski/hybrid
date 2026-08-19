@@ -1,7 +1,8 @@
 import Svg, { Path } from "react-native-svg";
-import { HUB_GLYPHS, TODAY_TABS, type HubGlyphName, type TodayTabId } from "@hybrid/core";
+import { ALPHA, HUB_GLYPHS, TODAY_TABS, inkOn, type HubGlyphName, type TodayTabId } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
+import { withAlpha } from "./field";
 import { LiquidSeg } from "./liquid-seg";
 
 /** One Today-hub mark, drawn as a true vector at the same 72×72 stroke box and
@@ -59,16 +60,25 @@ export function HubGlyph({ name, color, size = 21, strokeWidth = 3.5 }: { name: 
  * header's side menu, which switches tab in place from any scroll depth —
  * covers reaching Performance or Feed from deep in a page.
  */
-export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (id: TodayTabId) => void }) {
+export function TodayTabs({
+  value,
+  onChange,
+  /** The coloured ground the control is sitting on, when Today's day field is
+   *  carrying it. Same contract as AppHeader's: the GROUND, never the ink, so
+   *  the legible tone stays `inkOn`'s answer. Absent, the track draws on the
+   *  card as it always has. */
+  ground,
+}: { value: TodayTabId; onChange: (id: TodayTabId) => void; ground?: string }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const ink = ground ? inkOn(ground, [C.ink, C.chalk]) : null;
 
   return (
     <LiquidSeg
       items={TODAY_TABS.map((tab) => ({
         key: tab.id,
         label: t(tab.labelKey),
-        render: (on: boolean) => <HubGlyph name={tab.glyph} color={on ? C.chalk : C.ash} />,
+        render: (on: boolean) => <HubGlyph name={tab.glyph} color={ink ? (on ? ink : withAlpha(ink, ALPHA.solid + ALPHA.rim)) : on ? C.chalk : C.ash} />,
       }))}
       index={Math.max(0, TODAY_TABS.findIndex((tab) => tab.id === value))}
       onSelect={(i) => onChange(TODAY_TABS[i]!.id)}
@@ -77,7 +87,7 @@ export function TodayTabs({ value, onChange }: { value: TodayTabId; onChange: (i
       // The hub swaps the whole screen tree on selection, remounting this
       // control mid-move — the flight memory keeps the lens in the air.
       flightKey="today-hub"
-      trackStyle={{ marginTop: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line }}
+      trackStyle={{ marginTop: 16, backgroundColor: ink ? withAlpha(ink, ALPHA.wash) : C.ink2, borderWidth: 1, borderColor: ink ? withAlpha(ink, ALPHA.edge) : C.line }}
     />
   );
 }

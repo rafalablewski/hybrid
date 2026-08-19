@@ -1,11 +1,14 @@
-import { Text, View } from "react-native";
+import { useState, type ReactNode } from "react";
+import { Animated, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  DISCIPLINE_META, bandText, fs, inkOn, leading, tracking,
+  ALPHA, DISCIPLINE_META, FOLD, FOLD_RISE, bandHue, bandText, fs, inkOn, leading, tracking,
   type DayBand, type SemanticRole, type TrainingKind,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
-import { roleColor, useTheme } from "../../lib/theme";
+import { accentColor, roleColor, useTheme } from "../../lib/theme";
 import { F, PressScale as Pressable } from "../../lib/ui";
+import { withAlpha } from "./field";
 import { GUTTER } from "./geometry";
 import { AuroraIcon, Glyph, SportMark } from "./icons";
 
@@ -58,11 +61,23 @@ function KindMark({ kind, color }: { kind: TrainingKind; color: string }) {
 
 export default function AuroraDayBand({
   band,
+  top,
+  fold,
   onExplain,
   onNotToday,
   onRate,
 }: {
   band: DayBand;
+  /** THE APP'S OWN CHROME, rendered INSIDE the field: the header row, the hub
+   *  pills and the masthead. The field is the whole top of Today, not a stripe
+   *  under a black header — so the wordmark, the date and the title sit on the
+   *  day's colour rather than above it, and the colour of the day is the first
+   *  thing on screen. Passed in rather than imported so the other two hub tabs
+   *  keep rendering the identical chrome on the page instead. */
+  top?: ReactNode;
+  /** 0 at rest, 1 folded — `foldProgress()` in core, published by the screen's
+   *  scroller. Absent (the admin preview) the field simply never folds. */
+  fold?: Animated.Value;
   /** Opens the readiness sheet — the same door the ring has always had. */
   onExplain: () => void;
   /** Opens the rating sheet, on the ONE rung that asks for something back
@@ -76,10 +91,22 @@ export default function AuroraDayBand({
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const insets = useSafeAreaInsets();
+  // Measured rather than assumed: the field's height moves with the head's
+  // step-down and with the locale, so the collapse has to read it.
+  const [height, setHeight] = useState(0);
   if (band.rung === "none" || !band.head) return null;
 
   const quiet = band.fill === null;
-  const fill = quiet ? C.ink : roleColor(C, band.fill as SemanticRole);
+  // THE QUIET FIELD IS NOT THE PAGE GROUND. It used to be `ink`, which drew the
+  // tallest object on Today as a black slab and made the two reporting rungs
+  // look like a rendering fault rather than a decision. It is a WASH of the
+  // day's own hue now (`bandHue` in core: amber for a calendar fact, blue for
+  // recovery, lime for a day already trained) — a surface, not a fill, so it
+  // still refuses to read as the call to act that a filled field is.
+  const hue = bandHue(band);
+  const wash = hue ? withAlpha(accentColor(C, hue), ALPHA.solid) : C.ink;
+  const fill = quiet ? wash : roleColor(C, band.fill as SemanticRole);
   const ink = quiet ? C.chalk : inkOn(fill, [C.ink, C.chalk]);
   // The second tone is the same ink held back, so a band never introduces a
   // colour the palette does not own. On a quiet band that is `ash`, which is
@@ -96,20 +123,47 @@ export default function AuroraDayBand({
   // the long end of that range sit properly.
   const headSize = head.length > 24 ? fs.headline : fs.display;
 
+  // THE FIELD COLLAPSES, it does not merely fade. Fading the rows while the box
+  // kept its height left a dead slab of colour between the bar and the first
+  // card — the field had gone and the hole it left had not. The pull is applied
+  // to the MARGIN so the field never reflows its own layout, and it is
+  // monotonic in `fold`, so a shrinking content height cannot feed back into
+  // the scroll offset that produced it.
+  const pull = Math.max(0, height - FOLD.end - COLLAPSE_REST);
+  const at = (from: number, to: number, out: [number, number]) =>
+    fold ? fold.interpolate({ inputRange: [from, to], outputRange: out, extrapolate: "clamp" }) : out[0];
+
   return (
-    <View
+    <Animated.View
       accessible
       accessibilityLabel={[String(band.figure), head, say].filter(Boolean).join(" – ")}
+      onLayout={(e) => setHeight(e.nativeEvent.layout.height)}
       style={{
         marginHorizontal: -GUTTER,
+        // The field runs under the status bar: it is the top of the screen, not
+        // a stripe below it. The shell still owns the inset for the other two
+        // hub tabs, so the field takes it back for itself here rather than
+        // every hub screen having to own one.
+        marginTop: -insets.top,
+        marginBottom: fold ? at(0, 1, [0, -pull]) : 0,
         paddingHorizontal: GUTTER + 3,
-        paddingTop: 18,
+        paddingTop: insets.top + 18,
         paddingBottom: 20,
         backgroundColor: fill,
         borderBottomWidth: quiet ? 1 : 0,
-        borderBottomColor: C.line,
+        borderBottomColor: quiet && hue ? withAlpha(accentColor(C, hue), ALPHA.line) : C.line,
       }}
     >
+      {/* THE CHROME leaves first and travels furthest — the field's own head is
+          the part the bar is about to take over, so peeling it off before the
+          instruction keeps the day's answer on screen longest. */}
+      {top ? (
+        <Animated.View style={{ opacity: at(0, 0.74, [1, 0]), transform: [{ translateY: at(0, 1, [0, FOLD_RISE.date]) }] }}>
+          {top}
+        </Animated.View>
+      ) : null}
+
+      <Animated.View style={{ opacity: at(0.35, 0.85, [1, 0]), transform: [{ translateY: at(0, 1, [0, FOLD_RISE.title]) }] }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
         {band.mark ? <KindMark kind={band.mark} color={quiet ? txtQuietMark(C) : ink} /> : null}
         <Text
@@ -221,7 +275,8 @@ export default function AuroraDayBand({
           </Text>
         </Pressable>
       ) : null}
-    </View>
+      </Animated.View>
+    </Animated.View>
   );
 }
 
@@ -229,3 +284,8 @@ export default function AuroraDayBand({
  *  information rather than a call to act, and `ash` beside `ash` would lose the
  *  one thing the mark is there to say. */
 const txtQuietMark = (C: ReturnType<typeof useTheme>["palette"]) => C.accentText.blue;
+
+/** What is left of the field once it has folded — the gap the first card lands
+ *  in, under the bar. Not zero: a card butted against the bar's lower edge
+ *  reads as one object in two materials rather than a card under a header. */
+const COLLAPSE_REST = 64;
