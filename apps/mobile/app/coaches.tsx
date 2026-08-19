@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, TextInput, ScrollView, ActivityIndicator, type StyleProp, type ViewStyle } from "react-native";
 import { useRouter } from "expo-router";
 import { fs, Loading, LoadSwap, F, PressScale as Pressable } from "../lib/ui";
-import { AuroraScreen, ACard, cardStack, AChip, ASearch, Avatar, Stars, Empty, APill } from "../components/aurora/kit";
+import { AuroraScreen, ACard, cardStack, AChip, ASearch, Avatar, Stars, Empty, APill, RADIUS } from "../components/aurora/kit";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { seedPerson, userPagePath } from "@hybrid/core";
@@ -52,7 +52,7 @@ function Storefront() {
       {() => {
         if (!data) return null;
         if (!data.isCoach) return <Empty title={t("w.coaches.coachesOnly")} sub={t("w.coaches.coachesOnlySub")} />;
-        const inp = { paddingVertical: 10, paddingHorizontal: 12, borderRadius: 14, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: fs.bodyLg, marginBottom: 12 } as const;
+        const inp = { paddingVertical: 10, paddingHorizontal: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: fs.bodyLg, marginBottom: 12 } as const;
 
         return (
           <View>

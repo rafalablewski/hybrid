@@ -520,7 +520,24 @@ describe("geometry", () => {
     // it is the kit's `AChoice` now, on `ACheckMark`.
     // 146 → 142: the summary redesign took the story sheet, the per-exercise
     // breakdown cards and the PR list's box with it.
-    burnDown(hits(/borderRadius:\s*\d/g), 142, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 142 → 141: the endurance lanes' ZoneTile drew its three intensity bands
+    // with a raw `borderRadius: 2` each; the bands are the kit's AEffortBar now
+    // and the track carries ONE RADIUS.pill instead of three raw corners.
+    //
+    // 141 → 120, THE ink2 TRIAGE. Every raised surface in the app (a
+    // `backgroundColor: ink2`) now names its corner: 21 sites carried a raw
+    // integer across SIXTEEN distinct values, and the interesting part is that
+    // they were not one mistake repeated. Sixteen went to `field` (a bounded
+    // block of content on a screen), one to `inner` (a block nested inside a
+    // row), one to `card` (a bottom-presented modal panel) — and THREE to
+    // `pill`, two of which were never rounded rectangles at all. `42` on an
+    // 84×84 avatar and `27` on a 53×53 one are ARITHMETIC: half the side, which
+    // RN clamps `pill` to anyway, so the token renders them identically and says
+    // what they are. A blanket sweep to `field` would have squared both. That is
+    // the argument for why this rule is a ratchet with a human in it rather than
+    // a codemod: the pattern can find a raw radius, it cannot tell you which of
+    // five tokens the object wanted.
+    burnDown(hits(/borderRadius:\s*\d/g), 120, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -789,10 +806,23 @@ describe("meters", () => {
     // counted rather than exempted because "is this a column chart or a
     // labelled proportion" is a judgement per site, and a pinned ceiling keeps
     // them visible without pretending the question is settled.
-    const SANCTIONED = /\bAMeter\b/;
+    // 6 → 5, AND A SECOND NAME JOINS THE SANCTIONED LIST for the same reason
+    // AMeter is on it. `AEffortBar` is the kit's INTENSITY TRACK — the three-band
+    // easy/steady/hard bar that the sport page and the endurance lanes' ZoneTile
+    // each used to draw for themselves, disagreeing about the hues (three vs one
+    // at three densities), the band radius and the zero-band rule. It is the
+    // answer this rule points at, so counting it as a violation of itself would
+    // put the same floor under the ratchet that AMeter's own entry did.
+    //
+    // The count FELL because the sport page's `EffortSplitBar` is now
+    // `EffortLegend`: with the bar shared, what is left there draws no bar, and
+    // the file's own lesson from `UndoBar` → `UndoToast` applies — a wrong name
+    // invites a wrong merge as readily as it hides a right one. The code moved
+    // AND the name did; nothing was reclassified to make a number smaller.
+    const SANCTIONED = /\b(?:AMeter|AEffortBar)\b/;
     const decls = hits(/^\s*(?:export )?function [A-Z][A-Za-z]*(?:Bar|Bars|Meter)[A-Za-z]*\s*\(/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    burnDown(decls, 6, "2026-10-31", "labelled proportion → AMeter");
+    burnDown(decls, 5, "2026-10-31", "labelled proportion → AMeter");
   });
 });
 
@@ -965,7 +995,12 @@ describe("colour arithmetic", () => {
     // to allow them; they were also painting opaque ink over the Aurora field,
     // which is why the rail went. A ceiling that is not re-pinned after a
     // deletion is headroom for two new violations nobody agreed to.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 105,
+    //
+    // 105 → 104. The sport page's effort bar drew its middle band at a raw 0.68
+    // chartreuse — the only stop of a three-density ramp that was neither a rung
+    // nor a real gradient. The band is a hue now (the endurance lanes' own
+    // easy/steady/hard coding), so the number went with the argument for it.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 104,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
@@ -1021,7 +1056,24 @@ describe("colour arithmetic", () => {
     // Comment-blind: the sites fixed first are the ones that explain themselves.
     const suffix = codeHits(/`\$\{(?:[^{}]|\{[^{}]*\})+\}[0-9a-fA-F]{2}`/g);
     const eight = codeHits(/["'`]#[0-9a-fA-F]{8}["'`]/g);
-    expect([...suffix, ...eight], "hex alpha suffix → withAlpha(color, 0.xx)").toEqual([]);
+    // AND THE COMPUTED FORM, which is the same defect with the byte worked out
+    // at runtime instead of typed. The two patterns above both end at a LITERAL
+    // pair of hex characters, so `${C.lime}${Math.round(op * 255).toString(16)
+    // .padStart(2, "0")}` sailed past a rule written to make exactly that
+    // impossible — three of them did, in the calendar heat cell, the exercise
+    // page's consistency heat and the profile's achievement grid, each one a
+    // withAlpha() call with the arithmetic spelled out. A rule that can only see
+    // the tidy half of a violation reports the tidy half of the debt.
+    //
+    // `toString(16).padStart(2, "0")` is a SINGLE BYTE as hex, and in this app
+    // there is no reason to format one except an alpha channel. Building a whole
+    // `#rrggbb` is a different thing and stays legal — hero.tsx's chipTint mixes
+    // a colour rather than tinting one — so the pattern is deliberately the
+    // two-character pad and not `toString(16)` alone. withAlpha's own body is
+    // the sanctioned exception, and it has to be: it is the answer.
+    const computed = codeHits(/toString\(16\)[\s\n]*\.padStart\(2/g)
+      .filter((site) => !/components\/aurora\/field\.tsx/.test(site));
+    expect([...suffix, ...eight, ...computed], "hex alpha suffix → withAlpha(color, 0.xx)").toEqual([]);
   });
 });
 
@@ -1171,7 +1223,11 @@ describe("presentation", () => {
     // 35 → 29 with the coverage sweep: seven hand-rolled FILLED CTAs in a
     // non-lime accent went onto APill, and several of them were lime-adjacent
     // enough to be counted here.
-    burnDown(found, 29, "2026-12-31", "hand-rolled lime pill → <APill />", [
+    // 29 → 28: the sport page's record sheet had the last hand-rolled save
+    // button on that screen — its own padding, its own face, and no commit
+    // state. It is `<APill size="compact" />` now, which is the size that exists
+    // for a button sitting in a row beside a field.
+    burnDown(found, 28, "2026-12-31", "hand-rolled lime pill → <APill />", [
       {
         where: /height:\s*\d+[^\n]*(?:width|flex):|(?:width|flex):[^\n]*height:\s*\d+/,
         why: "a lime BAR or disc, not a button — a fixed cross-measure with no label",

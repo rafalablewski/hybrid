@@ -1523,7 +1523,7 @@ export default function Workout() {
                   this screen, on Log set. */}
               <AuroraExerciseAvatar name={x.name} size={36} glyph={20} tint={C.ash} label={x.kind} />
               {ssLabels[xi] && (
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 6, paddingHorizontal: 5, paddingVertical: 1 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 5, paddingVertical: 1 }}>
                   <Glyph name="link" size={fs.micro} color={C.chalk} />
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.chalk }}>{ssLabels[xi]}</Text>
                 </View>

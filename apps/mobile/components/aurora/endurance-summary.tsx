@@ -8,7 +8,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt, deltaPaint } from "../../lib/theme";
 import { leading, tracking, fs, F, cardShadow, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useActivityRange, useRangeLabels } from "./range-filter";
-import { RADIUS } from "./kit";
+import { APanel } from "./kit";
 
 /**
  * THE ENDURANCE LEAD — the section's opener, as a SENTENCE. The TWIN of
@@ -124,10 +124,7 @@ export default function AuroraEnduranceSummary({
 
   return (
     <View style={{ marginTop: 20 }}>
-      <View style={{
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-        padding: 14, ...cardShadow(),
-      }}>
+      <APanel pad={14} style={cardShadow()}>
         {/* The window, said once. There is no filter here, so this line is what
             stops "5.4 h" being a figure with no period attached. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
@@ -152,7 +149,7 @@ export default function AuroraEnduranceSummary({
             </>
           )}
         </Text>
-      </View>
+      </APanel>
     </View>
   );
 }

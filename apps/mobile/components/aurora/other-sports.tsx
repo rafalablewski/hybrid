@@ -9,7 +9,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
-import { GUTTER, RADIUS, AMarkTile } from "./kit";
+import { APanel, GUTTER, AMarkTile } from "./kit";
 import { useChartScrub } from "./chart-scrub";
 import HistoryStrip from "./history-strip";
 import { SportMark } from "./icons";
@@ -181,9 +181,11 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
         </Text>
       </View>
 
-      {/* Eight weeks of frequency in the cluster's shared HistoryStrip. Violet
-          is the app's non-endurance channel — teal already means cardio on the
-          lanes directly above this block. */}
+      {/* Eight weeks of frequency in the cluster's shared HistoryStrip. SAND is
+          the app's non-endurance channel — teal already means cardio on the
+          lanes directly above this block. (The comment said "violet" long after
+          the colour moved; the sport page reads this decision to pick its own
+          charts' hue, so it had to say what it actually draws.) */}
       <View {...scrub.bind} style={{ marginTop: "auto" }}>
         <HistoryStrip bars={bars} color={C.amber} held={scrub.index} />
       </View>
@@ -201,17 +203,13 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
     </>
   );
 
-  const style = {
-    width: TILE_W, minHeight: TILE_H, gap: 8,
-    backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-    paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
-  } as const;
+  const style = { width: TILE_W, minHeight: TILE_H, gap: 8 } as const;
 
   return onOpen ? (
-    <Pressable onPress={() => onOpen(lane.sport)} accessibilityRole="button" accessibilityLabel={lane.sport} style={style}>
+    <APanel onPress={() => onOpen(lane.sport)} a11y={lane.sport} style={style}>
       {body}
-    </Pressable>
+    </APanel>
   ) : (
-    <View style={style}>{body}</View>
+    <APanel style={style}>{body}</APanel>
   );
 }

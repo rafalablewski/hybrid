@@ -26,7 +26,7 @@ import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { GUTTER, RADIUS, withAlpha } from "./kit";
+import { APanel, GUTTER, RADIUS, withAlpha } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
@@ -119,19 +119,14 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
       : fmtStripDate(read.weekStart)
     : "";
   return (
-    <Pressable
+    <APanel
       // SHARED ELEMENT: the headline figure flies into the exercise
       // page's hero rather than the page re-rendering it. Measured at
       // press time; if the destination never claims it the arm expires
       // and the ordinary screen transition carries the change.
       onPress={open}
-      accessibilityRole="button"
-      accessibilityLabel={`${card.name} — ${h.v} ${h.u}`}
-      style={{
-        width: 200, minHeight: 132, gap: 8,
-        backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field,
-        paddingHorizontal: 12, paddingTop: 12, paddingBottom: 12,
-      }}
+      a11y={`${card.name} — ${h.v} ${h.u}`}
+      style={{ width: 200, minHeight: 132, gap: 8 }}
     >
       {/* THE LIFT'S MARK, then its name. This rail was the last lift surface in
           the app with no picture of the lift on it at all, which is the one
@@ -170,7 +165,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? when : h.label}</Text>
         {!read && <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />}
       </View>
-    </Pressable>
+    </APanel>
   );
 }
 

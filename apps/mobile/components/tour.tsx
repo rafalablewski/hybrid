@@ -3,7 +3,7 @@ import { View, Text, Modal } from "react-native";
 import { leading, tracking, fs, F, space, PressScale as Pressable } from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { CtaLabel } from "./aurora/cta-label";
-import { RADIUS, withAlpha } from "./aurora/kit";
+import { ACard, RADIUS, withAlpha } from "./aurora/kit";
 import { SCRIM, motion } from "@hybrid/core";
 
 // ============================================================
@@ -35,7 +35,14 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onDone}>
       <View style={{ flex: 1, backgroundColor: withAlpha(SCRIM, motion.scrimObscure), justifyContent: "flex-end", padding: 16 }}>
-        <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: 24, padding: 20, marginBottom: 24 }}>
+        {/* THE KIT'S CARD, not a hand-drawn copy of it. The radius triage moved
+            this from a raw 24 onto RADIUS.card — a bottom-presented panel is a
+            sheet — and that is what the card-surface guard is watching for: a
+            card RADIUS plus a card FILL in one style object means the object IS
+            a card, and a literal View can never gain the native glass ACard
+            mounts on iOS. Padding is unchanged (CARD_PAD is 20, which is what
+            was written here); the outer margin stays with the caller. */}
+        <ACard style={{ marginBottom: 24 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>
             {`Step ${i + 1} / ${steps.length}`}
           </Text>
@@ -64,7 +71,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
               </Pressable>
             </View>
           </View>
-        </View>
+        </ACard>
       </View>
     </Modal>
   );

@@ -28,6 +28,7 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, F, leading, PressScale as Pressable, MAX_FONT_SCALE , tracking, trackFigure} from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub } from "./chart-scrub";
 import { AuroraScreen, ASegment , RADIUS} from "./kit";
+import { withAlpha } from "./field";
 import { kindStroke, TickerDelta } from "./exercise-widget";
 import AuroraExerciseAnatomy from "./exercise-anatomy";
 
@@ -492,7 +493,7 @@ const heatColor = (level: number, C: Palette): string => {
   if (level <= 0) return C.line;
   if (level >= 4) return C.lime;
   const op = level === 1 ? 0.28 : level === 2 ? 0.5 : 0.74;
-  return `${C.lime}${Math.round(op * 255).toString(16).padStart(2, "0")}`;
+  return withAlpha(C.lime, op);
 };
 
 function ConsistencyHeat({ C, slide, foot, t }: { C: Palette; slide: SlideOf<"consistency">; foot: string; t: (k: string) => string }) {

@@ -436,7 +436,16 @@ export function HeroBackground({
   // SVG gradient ids are document-global; scope per mount so stacked heroes
   // (push navigation) can't cross-reference each other's hotspot.
   const hotspotId = `hero-hotspot-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  if (backdrop === "field") return <AuroraField />;
+  // THE FIELD IS THE SHELL'S, NEVER THE HERO'S. This used to return a SECOND
+  // AuroraField, and it was wrong twice over. At rest it doubled the shell's —
+  // two identical full-bleed gradient stacks over the same band, roughly twice
+  // the tint, cut off hard at the frame's own `overflow: hidden` edge. And in
+  // motion it was worse than a doubling: this frame is `zIndex: 20` and is
+  // rendered AFTER the scroller, so its field painted OVER the content passing
+  // underneath on the way to the collapsed bar. The bar has its own substrate a
+  // few lines down (a BlurView plus an ink wash, on the hairline's ramp), so
+  // nothing here ever needed a ground of its own.
+  if (backdrop === "field") return null;
   const story = backdrop === "story";
   // A container is lit from the LEFT, the things inside it from the RIGHT — the
   // one cue that tells you which level of a hierarchy you're on.
@@ -801,7 +810,19 @@ export function HeroScreen({
   return (
     <View style={{ flex: 1, backgroundColor: dark ? (mode === "takeover" ? HERO_TAKEOVER_INK : C.ink) : C.ink }}>
       <StatusBar style="light" />
-      {backdrop === "field" && <AuroraField />}
+      {/* THE AMBIENT FIELD — behind the PAGE, on every rank but the takeover.
+          core's `heroBackdrop` rules that a cover's own box may not show the
+          field through it, and it still doesn't: the hero frame below paints
+          opaque HERO_INK across its whole box and the cover's wash sits on top
+          of that, so this layer is only ever visible under the BODY. Gating the
+          field on `backdrop === "field"` read that rule as being about the
+          screen rather than about the hero, and the one cover-rank screen in
+          the app (the sport page) was therefore the only screen in the app
+          whose content sat on flat #0c0d0c — no chartreuse corner, no
+          terracotta counterweight, no teal depth glow. That is what "why is it
+          so black" was. A takeover keeps its bare ground: its subject is the
+          numbers on it and it does not scroll. */}
+      {mode !== "takeover" && <AuroraField />}
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Animated.View style={[{ flex: 1 }, entrance]}>
           {/* the hero ink bleeding into the page — glued to the CONTENT, so it

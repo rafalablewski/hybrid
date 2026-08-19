@@ -8,7 +8,7 @@ import {
   type ExerciseBrowseEntry,
   type LoggedSession, STATE_OPACITY } from "@hybrid/core";
 import Sheet from "./sheet";
-import { ASearch , RADIUS} from "./kit";
+import { APanel, ASearch } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
@@ -97,9 +97,9 @@ export default function ExerciseFavouritesSheet({
   };
 
   const slab = (list: ExerciseBrowseEntry[]) => (
-    <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 4 }}>
+    <APanel style={{ paddingVertical: 4 }}>
       {list.map((e, i) => row(e, i === list.length - 1))}
-    </View>
+    </APanel>
   );
 
   const head = (label: string, count: number) => (

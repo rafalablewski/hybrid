@@ -355,7 +355,7 @@ function Overview({ data, cmp, name, onCompare, busy }: {
   if (!data.canViewResults) {
     const rel = userPageRelation(data);
     return (
-      <View style={{ marginTop: 16, backgroundColor: C.ink2, borderRadius: 14, padding: 16 }}>
+      <View style={{ marginTop: 16, backgroundColor: C.ink2, borderRadius: RADIUS.field, padding: 16 }}>
         <Text style={{ color: C.ash, fontSize: fs.body, lineHeight: leading(fs.body) }}>
           {t("w.social.privateResults")} {rel === "requested" ? t("w.social.followPending") : followsUser(rel) ? "" : t("w.social.followToSee")}
         </Text>
@@ -374,7 +374,7 @@ function Overview({ data, cmp, name, onCompare, busy }: {
             { l: t("w.social.statSessions"), v: stats.totalSessions.toLocaleString() },
             { l: t("w.social.statStreak"), v: `${stats.currentStreak}d` },
           ].map((s) => (
-            <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: 14, paddingVertical: 12, alignItems: "center" }}>
+            <View key={s.l} style={{ flex: 1, backgroundColor: C.ink2, borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center" }}>
               <Text style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle }}>{s.v}</Text>
               <Text style={{ ...label, marginTop: 2 }}>{s.l}</Text>
             </View>
