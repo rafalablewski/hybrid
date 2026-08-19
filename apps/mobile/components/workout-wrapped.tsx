@@ -66,7 +66,7 @@ import { HeatSheet } from "./aurora/heat-sheet";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
-import { shareWorkout, heroFigure, type ShareBest } from "../lib/share";
+import { shareCardImage, heroFigure, type ShareBest } from "../lib/share";
 import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, trackFigure , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint, type Palette } from "../lib/theme";
@@ -290,6 +290,7 @@ export function WorkoutWrapped({
         : null;
   const shareText = workoutShareCaption({ title: session.title, minutes, sets, volume, headline: captionHeadline }, units, t);
 
+
   // SHARED ELEMENT (destination) — see the HERO title below. Only claimed for a
   // non-celebration session; `cel` sessions own their panel's motion.
   // The flying clone must land on EXACTLY the destination's type, so it reads
@@ -386,7 +387,7 @@ export function WorkoutWrapped({
     // Two frames: one for the chrome to leave, one for the footer to land.
     await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
     try {
-      await shareWorkout({ current: panelRefs.current[i] ?? null }, shareText, t("summary.shareStory"));
+      await shareCardImage({ current: panelRefs.current[i] ?? null }, shareText, t("summary.shareStory"));
     } finally {
       setCapturing(false);
     }

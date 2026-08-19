@@ -10,6 +10,12 @@ import { MAX_RECIPE_INGREDIENTS, MAX_RECIPE_SERVINGS } from "@hybrid/core";
  * content is not a sugar-free food, and the whole recipe-total discipline
  * (sumFacts drops a field no ingredient states) collapses the moment a route
  * quietly writes zeros into it.
+ *
+ * THE MACROS CANNOT SAY IT IN A COLUMN — kcal/protein/carbs/fat are required —
+ * so a line whose food has not been identified yet carries `unstated: true`
+ * beside its placeholder zeros, and every reader (core's recipeTotals, the
+ * editor, the diary) is required to treat those four numbers as absent rather
+ * than as nothing.
  */
 
 /** A required macro — absent, negative or unparseable becomes 0. */
@@ -66,6 +72,10 @@ export function ingredientRows(raw: unknown) {
         sugar: panel(o.sugar),
         fiber: panel(o.fiber),
         salt: panel(o.salt),
+        // Only ever true when the client SAYS so — a line arrives stated
+        // unless it declares otherwise, so an older client cannot accidentally
+        // mark a real measurement unknown.
+        unstated: o.unstated === true,
         productId: str(o.productId, 40),
         verifiedId: str(o.verifiedId, 60),
         position: i,

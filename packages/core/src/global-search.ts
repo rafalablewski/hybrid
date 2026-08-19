@@ -1,5 +1,5 @@
 import { GOAL_TREE } from "./plans";
-import { RECIPES } from "./recipes";
+import { RECIPES, isHighProtein } from "./recipes";
 import { NAV_ITEMS } from "./nav";
 import { SETTINGS_ALL } from "./settings-nav";
 import { HELP_ROWS } from "./help";
@@ -217,7 +217,7 @@ export function buildGlobalSearchIndex(src: GlobalSearchSources = {}): RankedEnt
   if (src.recipes !== false)
     for (const r of RECIPES)
       push({ kind: "recipe", id: r.id, title: r.name, sub: `${r.meal} – ${r.macros.kcal} kcal` }, [r.name], {
-        terms: terms(r.meal, "recipe", "food", "meal", ...(r.highProtein ? ["high protein"] : [])),
+        terms: terms(r.meal, "recipe", "food", "meal", ...(isHighProtein(r) ? ["high protein"] : [])),
         weakTerms: terms(r.note, ...r.ingredients.map((i) => i.name)),
       });
 

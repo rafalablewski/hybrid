@@ -198,6 +198,7 @@ export function CoverScreen({
   top,
   rail,
   dock,
+  trailing,
   scrollApi,
   shared,
   children,
@@ -209,6 +210,17 @@ export function CoverScreen({
   top?: ReactNode;
   rail?: ReactNode;
   dock?: ReactNode;
+  /**
+   * A CONTROL at the rail's trailing edge, beside the cover's metadata — the
+   * screen's own verb where it has one (Recipes shares itself from here). It is
+   * `HeroAction`, never a screen's own glass circle: the two ends of the rail
+   * are one control family and drift the moment a caller draws its own.
+   *
+   * The metadata keeps its slot and moves inboard, because the count is what
+   * the cover is SAYING and the control is what you can DO — folding them into
+   * one shape would make "8 RECIPES" look tappable.
+   */
+  trailing?: ReactNode;
   /** filled with the scroll handle, so a `rail` can jump the content. */
   scrollApi?: { current: CoverScreenApi | null };
   /** This cover is the DESTINATION of the tile that opened it — the same recipe
@@ -492,7 +504,10 @@ export function CoverScreen({
                 button never moves on screen. */}
             <Animated.View style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, flexDirection: "row", justifyContent: "space-between", alignItems: "center", zIndex: 3, transform: [{ translateY: counter }] }}>
               <HeroNav onPress={back} fromLabel={backLabel} material="glass" onDark />
-              <HeroAccessory label={cover.duration} />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                <HeroAccessory label={cover.duration} />
+                {trailing}
+              </View>
             </Animated.View>
 
             {/* compact bar title — fades in a beat after the big one leaves */}

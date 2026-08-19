@@ -6,7 +6,10 @@ import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
 import { useReducedMotion } from "../lib/use-reduced-motion";
 import { haptic } from "../lib/haptics";
-import { concentricRadius, GUTTER, RADIUS } from "./aurora/kit";
+// The geometry LEAF, not kit: kit imports hero, hero imports this file for the
+// rail's trailing menu, and reading the constants from kit would close that
+// loop (see aurora/geometry.ts).
+import { concentricRadius, GUTTER, RADIUS } from "./aurora/geometry";
 
 /**
  * HOLD THE THING — the app's one long-press menu, and the card it opens in.

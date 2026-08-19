@@ -867,6 +867,13 @@ model UserRecipeIngredient {
   sugar        Float?
   fiber        Float?
   salt         Float?
+  /// TRUE when this line's numbers are NOT KNOWN — the name and the quantity
+  /// are real, the four macro columns above are placeholder zeros, and nothing
+  /// may read them as a measurement. It is how a copied or imported line that
+  /// found no food stating its numbers is stored honestly; recipeTotals leaves
+  /// it out and names it, and the recipe refuses to be logged until it clears.
+  /// See @hybrid/core user-recipes.ts.
+  unstated     Boolean    @default(false)
   /// the saved FoodProduct this came from, if any (provenance + staleness)
   productId    String?
   /// the HYBRID Verified catalog id this came from, if any

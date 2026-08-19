@@ -147,7 +147,15 @@ export function GlassNavButton({
   onPress: () => void;
   /** The full accessibility phrase ("← Olympic Weightlifting", "Back"). */
   label: string;
-  glyph: "arrow.left" | "chevron.down";
+  /**
+   * An SF Symbol. Was the back button's own two names; widened to the union
+   * `GlassSatellite` in this file already takes, so the rail's TRAILING control
+   * (share) is the same native circle as the leading one rather than a second
+   * glass button drawn beside it. Still the typed union, not a string: a symbol
+   * that does not exist stays a build error rather than a blank circle on a
+   * device this sandbox cannot render.
+   */
+  glyph: SFSymbol;
   /** `clear` keeps the BUTTON but strips the material (glass variant
    *  `identity`), so the field screens' clear↔glass cross-fade changes only
    *  the material — never the renderer, never the glyph. */
@@ -204,6 +212,9 @@ export function GlassMenuButton({
   label,
   glyphColor,
   size = 34,
+  glyph = "ellipsis",
+  glyphSize = 15,
+  circle,
 }: {
   items: { key: string; label: string; destructive?: boolean }[];
   onSelect: (key: string) => void;
@@ -212,6 +223,21 @@ export function GlassMenuButton({
   glyphColor: string;
   /** The square hit box the ⋯ sits in. */
   size?: number;
+  /** The trigger's symbol. `ellipsis` is the row overflow; the rail's share
+   *  control passes its own. */
+  glyph?: SFSymbol;
+  glyphSize?: number;
+  /**
+   * Present → the trigger is a GLASSED CIRCLE of this diameter inside the
+   * `size` hit box, i.e. the nav button's construction with a Menu behind it
+   * instead of a Button. Absent → the bare glyph the feed's ⋯ has always been.
+   *
+   * The two are one component on purpose: a rail control that mounted its own
+   * `Menu` would be a second owner of this leaf, and a glass circle nobody
+   * shares is exactly how the logger grew a 34pt nav circle that agreed with
+   * nothing (see the native-leaf rule in lib/design-tokens.test.ts).
+   */
+  circle?: number;
 }) {
   if (!LIQUID_GLASS_RENDERED) return null;
   return (
@@ -219,10 +245,22 @@ export function GlassMenuButton({
       <Menu
         label={
           <SwiftImage
-            systemName="ellipsis"
-            size={15}
+            systemName={glyph}
+            size={glyphSize}
             color={glyphColor}
-            modifiers={[frame({ width: size, height: size }), contentShape(shapes.rectangle())]}
+            modifiers={
+              circle
+                ? [
+                    // Same chain as GlassNavButton: centre the glyph in the
+                    // visual circle, glass THAT circle, then pad out to the hit
+                    // target and make the whole frame tappable.
+                    frame({ width: circle, height: circle }),
+                    glassEffect({ glass: { variant: "regular", interactive: true }, shape: "circle" }),
+                    frame({ width: size, height: size }),
+                    contentShape(shapes.circle()),
+                  ]
+                : [frame({ width: size, height: size }), contentShape(shapes.rectangle())]
+            }
           />
         }
         modifiers={[accessibilityLabel(label)]}

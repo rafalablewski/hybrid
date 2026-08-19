@@ -60,6 +60,7 @@ export * from "./nutrition-off";
 export * from "./verified-foods";
 export * from "./source-marks";
 export * from "./recipes";
+export * from "./recipe-match";
 export * from "./user-recipes";
 export * from "./copy-day";
 export * from "./nutrition-analytics";

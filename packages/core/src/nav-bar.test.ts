@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { AURORA_NAV_TABS, AURORA_NAV_ACTIONS, AURORA_NAV_GEOMETRY, auroraNavAction, NAV_SURFACE_FOOD_PICKER, formatSessionElapsed } from "./nav-bar";
+import { AURORA_NAV_TABS, AURORA_NAV_ACTIONS, AURORA_NAV_GEOMETRY, auroraNavAction, NAV_SURFACE_FOOD_PICKER, NAV_SURFACE_RECIPES, formatSessionElapsed } from "./nav-bar";
 
 describe("aurora nav bar contract", () => {
   it("carries the four places in the capsule", () => {
@@ -45,8 +45,20 @@ describe("aurora nav bar contract", () => {
   it("resolves the action per surface: Train by default, the surface's own verb where it differs", () => {
     expect(auroraNavAction("feed")).toBe("post");
     expect(auroraNavAction(NAV_SURFACE_FOOD_PICKER)).toBe("search");
+    expect(auroraNavAction(NAV_SURFACE_RECIPES)).toBe("recipe");
     for (const surface of ["today", "nutrition", "messages", "profile", "train", "log", "performance", null, undefined]) {
       expect(auroraNavAction(surface), String(surface)).toBe("train");
+    }
+  });
+
+  it("keeps the recipes plus on the LIBRARY ROOT and nowhere else", () => {
+    // A plus on a curated collection or on a recipe detail would read as "add
+    // to this", which is not what it does. The library root is the one recipes
+    // surface whose subject is the athlete's own list, so it is the only
+    // surface id that resolves to the verb.
+    expect(AURORA_NAV_ACTIONS.recipe.glyph).toBe("plus");
+    for (const surface of ["collection", "recipe", "cook", "myRecipe"]) {
+      expect(auroraNavAction(surface), surface).toBe("train");
     }
   });
 
@@ -57,6 +69,8 @@ describe("aurora nav bar contract", () => {
     expect(AURORA_NAV_ACTIONS.train.kind).toBe("route");
     expect(AURORA_NAV_ACTIONS.post.kind).toBe("route");
     expect(AURORA_NAV_ACTIONS.search.kind).toBe("screen");
+    // The recipe editor is a VIEW inside the Nutrition screen, not a route.
+    expect(AURORA_NAV_ACTIONS.recipe.kind).toBe("screen");
   });
 
   it("keeps the picker's magnifier out of the cross-app-search slot", () => {

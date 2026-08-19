@@ -74,8 +74,9 @@ export interface Recipe {
   macros: RecipeMacros;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
-  /** true = protein-forward; powers the "High protein" filter chip */
-  highProtein?: boolean;
+  // NO `highProtein` FIELD, deliberately — see `isHighProtein` below. It was a
+  // hand-typed boolean, and two dishes with the same numbers ended up on
+  // different shelves.
 }
 
 export const RECIPES: Recipe[] = [
@@ -117,7 +118,6 @@ export const RECIPES: Recipe[] = [
     tint: "blue",
     baseServes: 1,
     macros: { kcal: 380, protein: 32, carbs: 20, fat: 18 },
-    highProtein: true,
     ingredients: [
       { name: "Grilled chicken", qty: 120, unit: "g" },
       { name: "Mixed greens", qty: 80, unit: "g" },
@@ -143,7 +143,6 @@ export const RECIPES: Recipe[] = [
     tint: "red",
     baseServes: 2,
     macros: { kcal: 410, protein: 22, carbs: 24, fat: 26 },
-    highProtein: true,
     ingredients: [
       { name: "Large eggs", qty: 4, unit: "" },
       { name: "Chopped tomatoes", qty: 400, unit: "g" },
@@ -193,7 +192,6 @@ export const RECIPES: Recipe[] = [
     tint: "red",
     baseServes: 2,
     macros: { kcal: 560, protein: 40, carbs: 48, fat: 22 },
-    highProtein: true,
     ingredients: [
       { name: "Chicken thighs", qty: 300, unit: "g" },
       { name: "Tortilla wraps", qty: 2, unit: "" },
@@ -246,7 +244,6 @@ export const RECIPES: Recipe[] = [
     tint: "lime",
     baseServes: 1,
     macros: { kcal: 350, protein: 20, carbs: 48, fat: 9 },
-    highProtein: true,
     ingredients: [
       { name: "Rolled oats", qty: 60, unit: "g" },
       { name: "Milk", qty: 180, unit: "ml" },
@@ -271,7 +268,6 @@ export const RECIPES: Recipe[] = [
     tint: "blue",
     baseServes: 2,
     macros: { kcal: 620, protein: 38, carbs: 60, fat: 24 },
-    highProtein: true,
     ingredients: [
       { name: "Salmon fillets", qty: 300, unit: "g" },
       { name: "Sushi rice", qty: 160, unit: "g" },
@@ -291,12 +287,46 @@ export const RECIPES: Recipe[] = [
 ];
 
 /** Filter categories for the browse chips — "all" + the meals + high-protein. */
+/**
+ * IS THIS A HIGH-PROTEIN DISH? Derived from the recipe's own numbers.
+ *
+ * It used to be a hand-typed `highProtein: true` on each entry, and the library
+ * had grown the failure that invites: lentil stew (24 g, 20% of its energy) sat
+ * OFF the shelf while shakshuka (22 g, 21%) sat on it. Two dishes, the same
+ * numbers, different shelves, and nothing in the file could tell you why —
+ * which makes the shelf a matter of who typed the entry rather than what is in
+ * the bowl.
+ *
+ * The doctrine is the PANTRY'S, applied to a dish: a food's shelf comes from
+ * its own numbers (pantry.ts `foodRole`, which files an egg by where the energy
+ * in it actually is). Two terms, because either alone misfiles something real:
+ *
+ *   • GRAMS, because a 220 kcal snack that is 40% protein carries 22 g and is
+ *     genuinely a protein dish, while a share test alone would also admit a
+ *     90 kcal one carrying nine;
+ *   • SHARE of energy, at 4 kcal/g on the protein itself (never the stated
+ *     kcal, which carries fibre and rounding no macro accounts for), because a
+ *     620 kcal bowl with 25 g of protein is a big meal that happens to contain
+ *     some, not a protein dish.
+ *
+ * On the shipped library the rule keeps all five dishes the flag had, and adds
+ * the lentil stew — the one the numbers always said belonged there.
+ */
+export const HIGH_PROTEIN_MIN_G = 20;
+export const HIGH_PROTEIN_MIN_SHARE = 0.2;
+
+export function isHighProtein(recipe: Recipe): boolean {
+  const { protein, kcal } = recipe.macros;
+  if (protein < HIGH_PROTEIN_MIN_G || kcal <= 0) return false;
+  return (protein * 4) / kcal >= HIGH_PROTEIN_MIN_SHARE;
+}
+
 export type RecipeFilter = "all" | RecipeMeal | "highProtein";
 export const RECIPE_FILTERS: RecipeFilter[] = ["all", "breakfast", "lunch", "dinner", "highProtein"];
 
 export function filterRecipes(recipes: Recipe[], filter: RecipeFilter): Recipe[] {
   if (filter === "all") return recipes;
-  if (filter === "highProtein") return recipes.filter((r) => r.highProtein);
+  if (filter === "highProtein") return recipes.filter(isHighProtein);
   return recipes.filter((r) => r.meal === filter);
 }
 
@@ -400,7 +430,7 @@ export function recipeCoverView(
     metaParts: [
       t.serves(recipe.baseServes),
       t.ingredients(recipe.ingredients.length),
-      recipe.highProtein ? t.highProtein : null,
+      isHighProtein(recipe) ? t.highProtein : null,
     ],
     stats: [
       { value: String(recipe.macros.kcal), unit: null, label: t.energy },
@@ -444,7 +474,7 @@ export const RECIPE_COLLECTION_META: Record<RecipeCollection, { tint: RecipeTint
 
 /** The recipes on one shelf, in library order. */
 export function recipesInCollection(key: RecipeCollection, recipes: Recipe[] = RECIPES): Recipe[] {
-  return key === "highProtein" ? recipes.filter((r) => r.highProtein) : recipes.filter((r) => r.meal === key);
+  return key === "highProtein" ? recipes.filter(isHighProtein) : recipes.filter((r) => r.meal === key);
 }
 
 /** Free-text search over what a cook would actually type — the dish, what it
@@ -563,15 +593,32 @@ export interface RecipeTileView {
   count: string;
   /** the line under the name — "540 kcal". */
   meta: string;
+  /**
+   * The SECOND figure on that line — "22 g protein".
+   *
+   * A tile used to state time and energy only, on a screen whose own collection
+   * rail offers HIGH PROTEIN as one of four shelves: the library could sort by
+   * a number it never showed you. Protein is also the figure this app is about,
+   * and the one a hybrid athlete scans a list of dishes for.
+   */
+  protein: string;
+  /** Whether this dish claims the high-protein shelf, so the tile can mark the
+   *  figure rather than making you open it to find out. */
+  highProtein: boolean;
 }
 
-export function recipeTileView(recipe: Recipe, t: { mins: (n: number) => string; kcal: (n: number) => string }): RecipeTileView {
+export function recipeTileView(
+  recipe: Recipe,
+  t: { mins: (n: number) => string; kcal: (n: number) => string; protein: (n: number) => string },
+): RecipeTileView {
   return {
     accent: RECIPE_TINT_COLOR[recipe.tint],
     mark: recipe.mark,
     title: recipe.name,
     count: t.mins(recipe.timeMins).toUpperCase(),
     meta: t.kcal(recipe.macros.kcal),
+    protein: t.protein(recipe.macros.protein),
+    highProtein: isHighProtein(recipe),
   };
 }
 
@@ -660,4 +707,162 @@ export function recipeToMeal(recipe: Recipe): RecipeMealDraft {
     carbs: recipe.macros.carbs,
     fat: recipe.macros.fat,
   };
+}
+
+// ── SHARING A RECIPE ────────────────────────────────────────────────────────
+
+/**
+ * The https address of a recipe. Deliberately the WEB form and not `hybrid://`:
+ * a link is only worth sending if it opens for someone who has not installed
+ * the app. The universal-link entitlement is what will make it open IN the app
+ * (there is no apple-app-site-association in the repo yet, and no web client
+ * behind hybrid.app since Aug 2026), so today it is provenance rather than a
+ * door — which is exactly why the shared MESSAGE carries the recipe itself and
+ * not just this line. Same shape as the verified-food page's link, so the two
+ * cannot drift into two URL vocabularies.
+ */
+export const RECIPE_SHARE_BASE = "https://hybrid.app/app?s=nutrition";
+
+/** A link to one library recipe. `?recipe=` is already read by the mobile
+ *  Nutrition route, so this lands ON the dish the day links resolve. */
+export const recipeShareLink = (id: string): string => `${RECIPE_SHARE_BASE}&recipe=${encodeURIComponent(id)}`;
+
+/** A link to the library itself, for sharing the shelf rather than a dish. */
+export const recipeLibraryShareLink = (): string => `${RECIPE_SHARE_BASE}&recipes=1`;
+
+/**
+ * WHAT GETS SHARED, as data — the one shape the message is rendered from.
+ *
+ * Both kinds of recipe project onto it (`recipeShareView` here for the curated
+ * library, `userRecipeShareView` in user-recipes.ts for a dish the athlete
+ * authored), so a shared recipe reads the same whoever wrote it, in one
+ * translated renderer rather than two string builders drifting apart.
+ *
+ * Every line arrives ALREADY FORMATTED and already translated. This module
+ * knows how to scale a quantity; it does not know how the athlete's language
+ * writes "serves 4".
+ */
+export interface RecipeShareView {
+  title: string;
+  /** Meal, time, servings — whatever the source can honestly state. */
+  meta: string[];
+  /** The per-serving macro line, or "" where the numbers are not stated. */
+  macroLine: string;
+  /** "INGREDIENTS (2 SERVINGS)" and its lines, already scaled. */
+  ingredientsHead: string;
+  ingredients: string[];
+  /** The method, if the recipe has one. A user recipe has none. */
+  methodHead: string;
+  steps: string[];
+  /** The provenance foot: a wordmark line and the link. */
+  credit: string;
+  link?: string;
+}
+
+/**
+ * The shared message. Plain text, because a share sheet's least common
+ * denominator is a message body and a recipe is worth reading in one — the
+ * recipient of a bare link today has no app and no web page to open it with.
+ *
+ * NO middot separators (house rule): the meta line joins on a spaced en dash.
+ */
+export function recipeShareText(v: RecipeShareView): string {
+  const block = (head: string, lines: string[]) => (lines.length === 0 ? "" : `\n\n${head}\n${lines.join("\n")}`);
+  const numbered = v.steps.map((s, i) => `${i + 1}. ${s}`);
+  return (
+    v.title +
+    (v.meta.length > 0 ? `\n${v.meta.join(" – ")}` : "") +
+    (v.macroLine ? `\n${v.macroLine}` : "") +
+    block(v.ingredientsHead, v.ingredients) +
+    block(v.methodHead, numbered) +
+    `\n\n${v.credit}` +
+    (v.link ? `\n${v.link}` : "")
+  );
+}
+
+/** The labels the share view needs, injected so this stays translated without
+ *  importing the dictionary. */
+export interface RecipeShareLabels {
+  meal: (meal: RecipeMeal) => string;
+  mins: (n: number) => string;
+  serves: (n: number) => string;
+  /** "410 kcal, 22 g protein, 24 g carbs, 26 g fat per serving" */
+  macros: (m: RecipeMacros) => string;
+  /** "INGREDIENTS (2 SERVINGS)" */
+  ingredientsHead: (serves: number) => string;
+  methodHead: string;
+  optional: string;
+  credit: string;
+}
+
+/** A curated library recipe, projected for sharing at the serving count the
+ *  athlete is looking at — set the stepper to 4 and the message says 8 eggs. */
+export function recipeShareView(recipe: Recipe, serves: number, t: RecipeShareLabels): RecipeShareView {
+  // A serves count that is not a real, positive number falls back to the
+  // recipe's OWN yield rather than to 1: the message must describe a dish
+  // somebody can cook, and "1 serving of a recipe written for 2" is a silent
+  // halving of every quantity in it.
+  const rounded = Math.round(serves);
+  const n = Number.isFinite(rounded) && rounded > 0 ? rounded : recipe.baseServes;
+  return {
+    title: recipe.name,
+    meta: [t.meal(recipe.meal), t.mins(recipe.timeMins), t.serves(n)],
+    macroLine: t.macros(recipe.macros),
+    ingredientsHead: t.ingredientsHead(n),
+    ingredients: recipe.ingredients.map(
+      (ing) => `${formatIngredient(ing, recipe.baseServes, n)} ${ing.name}${ing.optional ? ` (${t.optional})` : ""}`,
+    ),
+    methodHead: t.methodHead,
+    steps: recipe.steps.map((s) => s.text),
+    credit: t.credit,
+    link: recipeShareLink(recipe.id),
+  };
+}
+
+// ── KEEPING A LIBRARY RECIPE ────────────────────────────────────────────────
+
+/**
+ * SAVED LIBRARY RECIPES — the athlete's own shelf of the curated ones.
+ *
+ * This is a set of ids and nothing else, held on the device (the mobile store
+ * mirrors the saved-posts idiom: AsyncStorage is what the UI reads, so a star
+ * fills on the press frame and the shelf opens offline).
+ *
+ * IT IS DELIBERATELY NOT A COPY INTO `UserRecipe`, and the reason is a fact
+ * about the model rather than a preference. A user recipe's macros are DERIVED
+ * from each ingredient's own snapshot (user-recipes.ts), and `NutritionFacts`
+ * states kcal/protein/carbs/fat as REQUIRED numbers. A curated recipe carries
+ * per-SERVE macros an editor typed and no per-ingredient figures at all, so a
+ * copy could only fill those lines with zeros — a recipe reading "0 kcal" out
+ * of seven real ingredients, which is precisely the confident-wrong-number
+ * failure the derived-macros rule exists to prevent. Matching each line to a
+ * food that does state its numbers is the importer-shaped problem; it is
+ * recorded as `recipe-copy-to-mine` in capabilities.ts rather than faked here.
+ */
+export const RECIPE_SAVED_STORAGE_KEY = "hybrid.nutrition.savedRecipes.v1";
+
+/** Read a persisted blob into a clean id list: strings only, deduped, and
+ *  PRUNED to recipes that still exist — an id from an older build must leave a
+ *  shorter shelf, never a blank row. Order is the athlete's save order. */
+export function normalizeSavedRecipes(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const known = new Set(RECIPES.map((r) => r.id));
+  const out: string[] = [];
+  for (const v of raw) {
+    if (typeof v !== "string" || !known.has(v) || out.includes(v)) continue;
+    out.push(v);
+  }
+  return out;
+}
+
+/** Save or unsave, newest FIRST — the shelf reads as "what I just kept". */
+export function toggleSavedRecipe(ids: string[], id: string): string[] {
+  return ids.includes(id) ? ids.filter((x) => x !== id) : [id, ...ids];
+}
+
+/** The saved ids as recipes, in save order, skipping any that no longer exist. */
+export function savedRecipes(ids: string[]): Recipe[] {
+  return normalizeSavedRecipes(ids)
+    .map((id) => recipeById(id))
+    .filter((r): r is Recipe => r != null);
 }

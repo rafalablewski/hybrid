@@ -36,7 +36,8 @@ import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
 import { AuroraField, withAlpha } from "./field";
 import { AuroraIcon } from "./icons";
-import { GlassNavButton, LIQUID_GLASS_RENDERED } from "./swiftui";
+import { GlassMenuButton, GlassNavButton, LIQUID_GLASS_RENDERED, type SFSymbol } from "./swiftui";
+import { AnchoredMenu, type HoldMenuAnchor, type HoldMenuItem } from "../hold-menu";
 
 /**
  * THE HERO SYSTEM — mobile.
@@ -54,6 +55,13 @@ import { GlassNavButton, LIQUID_GLASS_RENDERED } from "./swiftui";
  * HeroTitle / HeroMetadata / HeroAccessory), and `HeroScreen` is simply the
  * assembled default that almost every screen wants.
  */
+
+/** The ink of anything drawn ON ART — a cover, a takeover, a plate. Not
+ *  `chalk`: the app's off-white is a page colour, and over a photographic or
+ *  duotone ground the nav chrome is pure white by design. One name, because
+ *  both ends of the rail draw from it and a literal per call site is how the
+ *  two would drift apart by a shade nobody could name. */
+const ON_ART = "#ffffff";
 
 /* ── HeroNav — the one navigation control, everywhere, forever ───────────── */
 
@@ -105,7 +113,7 @@ export function HeroNav({
   const { t } = useLang();
   const routePresented = usePresented();
   const { role, glyph } = heroNavAction(mode, presented ?? routePresented);
-  const fg = onDark ? "#fff" : C.chalk;
+  const fg = onDark ? ON_ART : C.chalk;
   const glass = material === "glass";
   // `fromLabel` names the ORIGIN, and prefixing it with ← claims the button
   // goes back there. A presented detour DISMISSES — there is no stack under it
@@ -154,15 +162,158 @@ export function HeroNav({
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
-          backgroundColor: glass ? withAlpha(onDark ? "#ffffff" : C.ink2, HERO.alpha.navFill) : "transparent",
+          backgroundColor: glass ? withAlpha(onDark ? ON_ART : C.ink2, HERO.alpha.navFill) : "transparent",
           borderWidth: glass ? HERO.nav.stroke : 0,
-          borderColor: withAlpha(onDark ? "#ffffff" : C.chalk, HERO.alpha.navStroke),
+          borderColor: withAlpha(onDark ? ON_ART : C.chalk, HERO.alpha.navStroke),
         }}
       >
         {glass && <BlurView intensity={22} tint={onDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />}
         <AuroraIcon name={glyph} size={HERO.nav.glyph} color={fg} />
       </View>
     </PressScale>
+  );
+}
+
+/* ── HeroAction — the rail's TRAILING control, in the leading one's material ─ */
+
+/**
+ * The other end of the rail.
+ *
+ * `HeroNav` has always drawn a 40pt interactive-glass circle at the rail's
+ * LEADING edge on every screen in the app; the trailing edge held metadata and
+ * nothing else. A screen with something to DO at that end (share this recipe)
+ * had no shared way to say so, and the alternative — a screen drawing its own
+ * glass circle — is the exact drift the native-leaf rule exists to stop.
+ *
+ * So this is HeroNav's twin, deliberately down to the numbers: the same
+ * `HERO.nav` geometry (40pt visual in a 44pt hit box, Apple's minimum), the
+ * same material where Liquid Glass renders, the same white-12% + blur + hairline
+ * fallback everywhere else. The two circles are one control family, mirrored,
+ * which is what makes a cover read as symmetrical rather than as a screen that
+ * ends in a stray word.
+ *
+ * TWO SHAPES OF PRESS, one component:
+ *   - `onPress` — it acts once (a single share).
+ *   - `items` + `onSelect` — it PRESENTS. On iOS 26 that is the system's own
+ *     Menu, zoom-morphing out of this circle's glass; everywhere else it is the
+ *     shared AnchoredMenu card, measured off this button, exactly as the feed's
+ *     ⋯ does. Menus are not re-implemented here.
+ */
+export function HeroAction({
+  glyph,
+  fallbackGlyph,
+  label,
+  onPress,
+  items,
+  onSelect,
+  onDark = true,
+  style,
+}: {
+  /** The SF Symbol, where the material renders. */
+  glyph: SFSymbol;
+  /** The kit glyph for Android and iOS < 26 — the house drawing of the same thing. */
+  fallbackGlyph: Parameters<typeof AuroraIcon>[0]["name"];
+  /** The full accessibility phrase ("Share Shakshuka"). A bare circle has no
+   *  other name. */
+  label: string;
+  /** Present → the control ACTS. Ignored when `items` is given. */
+  onPress?: () => void;
+  /** Present → the control PRESENTS a menu of these rows. */
+  items?: HoldMenuItem[];
+  onSelect?: (key: string) => void;
+  onDark?: boolean;
+  style?: StyleProp<ViewStyle>;
+}) {
+  const { palette: C } = useTheme();
+  const [anchor, setAnchor] = useState<HoldMenuAnchor | null>(null);
+  const ref = useRef<View>(null);
+  const fg = onDark ? ON_ART : C.chalk;
+  // Mirrors HeroNav's optical inset, on the other side: the hit box is wider
+  // than the circle, so the circle only sits ON the gutter if the surplus is
+  // pulled outward.
+  const inset = (HERO.nav.hit - HERO.nav.size) / 2;
+  const menu = items != null && items.length > 0;
+
+  // A menu with nothing in it is a button that does nothing — say nothing.
+  if (items != null && items.length === 0) return null;
+
+  if (LIQUID_GLASS_RENDERED) {
+    return (
+      <View style={[{ marginRight: -inset }, style]}>
+        {menu ? (
+          <GlassMenuButton
+            items={items!}
+            onSelect={(key) => onSelect?.(key)}
+            label={label}
+            glyphColor={fg}
+            glyph={glyph}
+            glyphSize={HERO.nav.glyph}
+            size={HERO.nav.hit}
+            circle={HERO.nav.size}
+          />
+        ) : (
+          <GlassNavButton
+            onPress={() => onPress?.()}
+            label={label}
+            glyph={glyph}
+            size={HERO.nav.size}
+            hit={HERO.nav.hit}
+            glyphSize={HERO.nav.glyph}
+            fg={fg}
+          />
+        )}
+      </View>
+    );
+  }
+
+  // The fallback circle — the same drawing HeroNav falls back to, so the two
+  // ends of the rail cannot diverge on the platforms without the material.
+  return (
+    <>
+      {/* collapsable={false} keeps the View in the native tree: RN prunes
+          layout-only Views on Android, and a pruned view cannot be measured. */}
+      <View ref={ref} collapsable={false} style={[{ marginRight: -inset }, style]}>
+        <PressScale
+          onPress={() => {
+            if (!menu) { onPress?.(); return; }
+            // Impact MEDIUM — a menu is a surface PRESENTING itself. The system
+            // menu plays its own on iOS 26, so this fires only on this path.
+            haptic.medium();
+            ref.current?.measureInWindow((x, y, w, h) => setAnchor({ x, y, w, h }));
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={label}
+          hitSlop={8}
+          style={{ width: HERO.nav.hit, height: HERO.nav.hit, alignItems: "center", justifyContent: "center" }}
+        >
+          <View
+            style={{
+              width: HERO.nav.size,
+              height: HERO.nav.size,
+              borderRadius: HERO.radius.nav,
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              backgroundColor: withAlpha(onDark ? ON_ART : C.ink2, HERO.alpha.navFill),
+              borderWidth: HERO.nav.stroke,
+              borderColor: withAlpha(onDark ? ON_ART : C.chalk, HERO.alpha.navStroke),
+            }}
+          >
+            <BlurView intensity={22} tint={onDark ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+            <AuroraIcon name={fallbackGlyph} size={HERO.nav.glyph} color={fg} />
+          </View>
+        </PressScale>
+      </View>
+      {/* The control sits at the rail's right end, so the card hangs off its
+          RIGHT edge and grows leftward — the side that stays on screen. */}
+      <AnchoredMenu
+        anchor={anchor}
+        items={items ?? []}
+        side="right"
+        onClose={() => setAnchor(null)}
+        onSelect={(key) => { setAnchor(null); onSelect?.(key); }}
+      />
+    </>
   );
 }
 

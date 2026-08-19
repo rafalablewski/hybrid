@@ -39,16 +39,27 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (rows.length > MAX_RECIPE_INGREDIENTS)
     return NextResponse.json({ error: `A recipe holds at most ${MAX_RECIPE_INGREDIENTS} ingredients.` }, { status: 400 });
 
-  const recipe = await prisma.$transaction(async (tx) => {
-    await tx.userRecipeIngredient.deleteMany({ where: { recipeId: id } });
-    return tx.userRecipe.update({
-      where: { id },
-      data: { ...recipeFields(b), ingredients: { create: rows } },
-      include: { ingredients: { orderBy: { position: "asc" } } },
+  // SOFT-GUARDED like POST is, and for the same class of failure: the ingredient
+  // line gained an `unstated` column in a later migration, so a database that
+  // predates it must report the missing migration rather than 500 into a screen
+  // that then looks broken. The transaction means a failed write leaves the
+  // recipe exactly as it was.
+  try {
+    const recipe = await prisma.$transaction(async (tx) => {
+      await tx.userRecipeIngredient.deleteMany({ where: { recipeId: id } });
+      return tx.userRecipe.update({
+        where: { id },
+        data: { ...recipeFields(b), ingredients: { create: rows } },
+        include: { ingredients: { orderBy: { position: "asc" } } },
+      });
     });
-  });
-
-  return NextResponse.json({ recipe });
+    return NextResponse.json({ recipe });
+  } catch {
+    return NextResponse.json(
+      { error: "Recipes aren't fully migrated — run reference/sql-recipe-ingredient-unstated.sql.", code: "not_migrated" },
+      { status: 503 },
+    );
+  }
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {

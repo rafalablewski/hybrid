@@ -1,13 +1,14 @@
 import { forwardRef, useEffect, useRef, useState } from "react";
-import { View, Text, Share, Animated, type TextStyle } from "react-native";
+import { View, Text, Share, Animated, StyleSheet, type TextStyle } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { captureRef } from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
-import { brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, funFactText, muscleLabelKey, strengthPrDelta, formatSportPace, formatSportDistance, type SessionPanel, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit, type Mark as MarkValue } from "@hybrid/core";
+import { ALPHA, RECIPE_TINT_COLOR, brand, fmtWeight, fmtTonnage, kgToUnit, storyStyle, statCountUp, funFactText, muscleLabelKey, strengthPrDelta, formatSportPace, formatSportDistance, type Recipe, type SessionPanel, type StoryStyle, type StoryStyleId, type WeeklyRecap, type WeightUnit, type Mark as MarkValue } from "@hybrid/core";
 import { C, F, fs, Kicker, TABULAR } from "./ui";
 import { Glyph } from "../components/aurora/icons";
 import { Mark } from "../components/aurora/mark";
 import { withAlpha } from "../components/aurora/field";
+import { RADIUS } from "../components/aurora/kit";
 
 const MUSCLE_LABEL: Record<string, string> = {
   quads: "Quads",
@@ -75,7 +76,7 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
 WorkoutShareCard.displayName = "WorkoutShareCard";
 
 // Branded 9:16 STORY card — sized for an Instagram/TikTok story. Rendered
-// off-screen in the summary and captured to a tall PNG via the same shareWorkout
+// off-screen in the summary and captured to a tall PNG via the same shareCardImage
 // path. `width` is the on-screen capture width (device pixel ratio scales the
 // output up, so a phone-width card exports near 1080px wide).
 export const WorkoutStoryCard = forwardRef<View, { stats: ShareStats; t: (k: string) => string; units?: WeightUnit; width: number; firstEver?: boolean }>(
@@ -508,8 +509,14 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Capture the card to an image and open the share sheet; fall back to text. */
-export async function shareWorkout(ref: React.RefObject<View | null>, text: string, title: string) {
+/**
+ * Capture a card to an image and open the share sheet; fall back to text.
+ *
+ * Was `shareWorkout`, and the rename is the point: the same path now carries a
+ * workout's story slides AND a recipe card, and a helper named after one of its
+ * two callers is how the second one ends up copying it.
+ */
+export async function shareCardImage(ref: React.RefObject<View | null>, text: string, title: string) {
   try {
     if (ref.current) {
       const uri = await captureRef(ref, { format: "png", quality: 1, result: "tmpfile" });
@@ -527,3 +534,93 @@ export async function shareWorkout(ref: React.RefObject<View | null>, text: stri
     /* user dismissed */
   }
 }
+
+// ── THE RECIPE CARD ─────────────────────────────────────────────────────────
+
+/** What the card says, already translated — the component takes strings, not a
+ *  `t`, because every figure on it has a unit and a caption in three languages
+ *  and the screen already holds them. */
+export interface RecipeCardLabels {
+  /** "Breakfast", plus "High protein" where the recipe claims it. */
+  eyebrow: string;
+  kcal: string;
+  protein: string;
+  time: string;
+  /** "7 ingredients" */
+  ingredients: string;
+}
+
+/**
+ * A RECIPE AS A CARD — the thing a link cannot be yet.
+ *
+ * Shared as a PNG through the same capture path as the workout card, for a
+ * blunt reason recorded in recipes.ts: there is no universal-link entitlement
+ * and no web client behind hybrid.app, so a bare URL reaches somebody who
+ * cannot open it. An image is legible in any message, on any platform, with no
+ * app installed.
+ *
+ * It is the recipe's own COVER compressed, not a third arrangement: the same
+ * duotone wash off `recipe.tint`, the same ghost dish mark, the same title, and
+ * the three figures the detail hem already leads with. A card that invented its
+ * own palette would be a second thing to keep in step with the screen it was
+ * shared from.
+ */
+export const RecipeShareCard = forwardRef<View, { recipe: Recipe; labels: RecipeCardLabels }>(
+  ({ recipe, labels }, ref) => {
+    const accent = RECIPE_TINT_COLOR[recipe.tint];
+    return (
+      <View
+        ref={ref}
+        collapsable={false}
+        style={{
+          backgroundColor: C.ink,
+          borderWidth: 1,
+          borderColor: withAlpha(accent, ALPHA.edge),
+          borderRadius: RADIUS.card,
+          padding: 20,
+          overflow: "hidden",
+        }}
+      >
+        {/* the cover's own wash, at card scale */}
+        <LinearGradient
+          pointerEvents="none"
+          colors={[withAlpha(accent, ALPHA.rim), withAlpha(accent, ALPHA.wash), "transparent"]}
+          locations={[0, 0.46, 1]}
+          start={{ x: 0.9, y: 0 }}
+          end={{ x: 0.2, y: 0.95 }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View pointerEvents="none" style={{ position: "absolute", top: -10, right: -8 }}>
+          <Mark mark={recipe.mark} size={110} color={withAlpha(accent, ALPHA.fill)} />
+        </View>
+
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: 2, textTransform: "uppercase", color: accent }}>
+          {labels.eyebrow}
+        </Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.hero, color: C.chalk, letterSpacing: -1.2, marginTop: 10 }}>
+          {recipe.name}
+        </Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8 }}>
+          {recipe.note}
+        </Text>
+
+        <View style={{ flexDirection: "row", marginTop: 18, borderTopWidth: 1, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 14 }}>
+          <Stat label={labels.kcal} value={String(recipe.macros.kcal)} />
+          <Stat label={labels.protein} value={`${recipe.macros.protein}g`} />
+          <Stat label={labels.time} value={String(recipe.timeMins)} />
+        </View>
+
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginTop: 18 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, letterSpacing: -0.5 }}>
+            {brand.name}
+            <Text style={{ color: C.lime }}>.</Text>
+          </Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: 1.4, textTransform: "uppercase", color: C.ash }}>
+            {labels.ingredients}
+          </Text>
+        </View>
+      </View>
+    );
+  },
+);
+RecipeShareCard.displayName = "RecipeShareCard";

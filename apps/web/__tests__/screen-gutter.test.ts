@@ -92,7 +92,7 @@ describe("the screen gutter is a token, never a number", () => {
     expect(
       hits,
       `A bleed of ${BLEED_MIN}dp or more is bleeding SOME container's padding — say which:\n` +
-        `  -GUTTER     the screen (kit.tsx), for a rail sitting directly on a screen\n` +
+        `  -GUTTER     the screen (aurora/geometry.ts, re-exported by kit), for a rail on a screen\n` +
         `  -CARD_PAD   the card it lives in — declare the card's padding as a const\n` +
         `  -SHEET_PAD  a sheet's own padding\n${hits.join("\n")}`,
     ).toEqual([]);
@@ -156,11 +156,14 @@ describe("the guard can see the screens that actually drifted", () => {
   }
 
   it("GUTTER matches core's hero gutter, which every hero screen uses instead", () => {
-    const kit = readFileSync(join(MOBILE, "components", "aurora", "kit.tsx"), "utf8");
+    // GUTTER is DECLARED in aurora/geometry.ts (kit re-exports it, so every
+  // `from "./kit"` import still works). It moved there to break the runtime
+  // cycle kit → hero → hold-menu → kit; this guard reads the declaration.
+  const kit = readFileSync(join(MOBILE, "components", "aurora", "geometry.ts"), "utf8");
     const hero = readFileSync(join(__dirname, "..", "..", "..", "packages", "core", "src", "hero.ts"), "utf8");
     const gutter = kit.match(/export const GUTTER = (\d+)/)?.[1];
     const edge = hero.match(/gutter:\s*\{\s*edge:\s*(\d+)/)?.[1];
-    expect(gutter, "kit.tsx must export GUTTER").toBeDefined();
+    expect(gutter, "geometry.ts must export GUTTER").toBeDefined();
     expect(edge, "core hero.ts must declare gutter.edge").toBeDefined();
     expect(gutter).toBe(edge);
   });
@@ -183,7 +186,10 @@ const WEB = join(__dirname, "..");
 const WEB_FILES = [join(WEB, "components"), join(WEB, "app")].flatMap((d) => walk(d));
 
 function mobileGutterPx(): string {
-  const kit = readFileSync(join(MOBILE, "components", "aurora", "kit.tsx"), "utf8");
+  // GUTTER is DECLARED in aurora/geometry.ts (kit re-exports it, so every
+  // `from "./kit"` import still works). It moved there to break the runtime
+  // cycle kit → hero → hold-menu → kit; this guard reads the declaration.
+  const kit = readFileSync(join(MOBILE, "components", "aurora", "geometry.ts"), "utf8");
   const gutter = kit.match(/export const GUTTER = (\d+)/)?.[1];
   return gutter ? `${gutter}px` : "";
 }
@@ -195,7 +201,7 @@ describe("web — the gutter fallback tells the truth", () => {
 
   it("every --page-pad-x fallback matches the kit's GUTTER", () => {
     const want = mobileGutterPx();
-    expect(want, "the mobile kit must export GUTTER").toMatch(/^\d+px$/);
+    expect(want, "the mobile geometry leaf must export GUTTER").toMatch(/^\d+px$/);
     const hits: string[] = [];
     for (const f of [...WEB_FILES, join(WEB, "app", "globals.css")]) {
       const src = readFileSync(f, "utf8");
