@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { View, Text, TextInput, type StyleProp, type ViewStyle } from "react-native";
 import {
+  FREE_RECIPE_LIMIT,
   MAX_RECIPE_INGREDIENTS,
   MAX_RECIPE_SERVINGS,
   formatIngredientQty,
@@ -17,7 +18,7 @@ import {
 import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { APill, ACard, RADIUS } from "./kit";
+import { APill, ACard, ASection, RADIUS } from "./kit";
 import { withAlpha } from "./field";
 import { AuroraIcon, Glyph } from "./icons";
 import Sheet from "./sheet";
@@ -168,15 +169,22 @@ export function UserRecipeShelf({
   recipes,
   onOpen,
   onNew,
-  canAdd,
+  canAdd = false,
   onUpgrade,
+  emptyNote = true,
   style,
 }: {
   recipes: RecipeRow[];
   onOpen: (r: RecipeRow) => void;
-  onNew: () => void;
-  canAdd: boolean;
-  onUpgrade: () => void;
+  /** The way in to the editor. ABSENT → no door row: while a search is running
+   *  this shelf is a RESULT, and a "New recipe" row sitting among results reads
+   *  as one of them. */
+  onNew?: () => void;
+  canAdd?: boolean;
+  onUpgrade?: () => void;
+  /** The empty state's explanation. Off while searching: "you have not written
+   *  one yet" is not the answer to "nothing matched that". */
+  emptyNote?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const { palette: C } = useTheme();
@@ -185,19 +193,20 @@ export function UserRecipeShelf({
 
   return (
     <View style={[{ marginTop: space.xl }, style]}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, marginHorizontal: 2, marginBottom: space.xs }}>
-        <Text accessibilityRole="header" maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>
-          {t("w.recovery.nutrition.myRecipes")}
-        </Text>
-        {recipes.length > 0 ? (
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ ...mono, textTransform: "uppercase" }}>{recipes.length}</Text>
-        ) : null}
-      </View>
+      {/* The shared head, so this shelf and the curated ones below it are one
+          anatomy rather than two that happen to look similar. */}
+      <ASection
+        title={t("w.recovery.nutrition.myRecipes")}
+        meta={recipes.length > 0 ? String(recipes.length) : undefined}
+        style={{ marginHorizontal: 2 }}
+      />
 
       {recipes.length === 0 ? (
-        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption, "relaxed"), marginHorizontal: 2, marginTop: space.xs }}>
-          {t("w.recovery.nutrition.myRecipesSub")}
-        </Text>
+        emptyNote ? (
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption, "relaxed"), marginHorizontal: 2, marginTop: space.xs }}>
+            {t("w.recovery.nutrition.myRecipesSub")}
+          </Text>
+        ) : null
       ) : (
         recipes.map((r) => {
           const { perServing, servings, ingredientCount } = recipeTotals(toUserRecipe(r));
@@ -234,6 +243,7 @@ export function UserRecipeShelf({
       {/* The way in — a DOOR ROW: list hairline, ringed glyph, no fill and no
           border. It leaves for the editor, so it wears a ring; it carries no
           recipe, so it is not a card and is not counted as one. */}
+      {onNew ? (
       <PressScale
         onPress={canAdd ? onNew : onUpgrade}
         accessibilityRole="button"
@@ -243,15 +253,25 @@ export function UserRecipeShelf({
         <View style={{ width: 32, height: 32, borderRadius: RADIUS.pill, borderWidth: 1.4, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <AuroraIcon name="add" size={15} color={C.ash} />
         </View>
+        {/* A DOOR ROW SAYS WHERE IT GOES, and nothing else. It used to carry the
+            section's own sentence as a subtitle — which, on an empty shelf,
+            printed "Build a dish once from real foods…" twice on one screen,
+            sixty points apart, because the empty state says it too. The
+            explanation belongs where the emptiness is; the door keeps its
+            label. The one line worth adding is the one the section did NOT
+            say: why the door is closed. */}
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>
             {canAdd ? t("w.recovery.nutrition.newRecipe") : t("w.recovery.nutrition.unlockMoreRecipes")}
           </Text>
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>
-            {t("w.recovery.nutrition.myRecipesSub")}
-          </Text>
+          {!canAdd ? (
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>
+              {t("w.recovery.nutrition.recipeFreeCap").replace("{n}", String(FREE_RECIPE_LIMIT))}
+            </Text>
+          ) : null}
         </View>
       </PressScale>
+      ) : null}
     </View>
   );
 }

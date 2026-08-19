@@ -50,7 +50,7 @@ import {
   localTodayKey,
   sumMealComponents, recipeToMeal,
   nutritionHubSeries,
-  RECIPES, formatIngredient, recipeById, recipeCoverView,
+  RECIPES, formatIngredient, isHighProtein, recipeById, recipeCoverView, searchRecipes,
   recipeShelves, recipesInCollection, recipeLibraryCoverView, recipeCollectionCoverView, recipeCardStats, recipeCookView,
   resolveMealParts, mealPartKey, DEFAULT_MEAL_PART_KEYS, MAX_CUSTOM_MEAL_PARTS,
   type NutritionMealPart, type MealPartDef,
@@ -97,7 +97,7 @@ import { CookStepTimer } from "./cook-timer";
 import { CookAwake } from "./cook-awake";
 import { toggleSavedRecipeId, useSavedRecipeIds } from "../../lib/recipe-saved";
 import { haptic } from "../../lib/haptics";
-import { AuroraScreen, ACard, APressCard, AField, APill, AHeading, AMeter, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
+import { AuroraScreen, ACard, APressCard, AField, ASearch, APill, AHeading, AMeter, Empty, GUTTER, RADIUS, CARD_PAD, Ring, ASection } from "./kit";
 import { HeroAction, HeroNav } from "./hero";
 import { GlassSelectMenu, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { AppHeader } from "./app-header";
@@ -3333,6 +3333,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   // arriving as two unrelated screens (a chip filter over a two-column grid).
   if (view === "recipes") {
     const shelves = recipeShelves(recipeQuery);
+    const searching = recipeQuery.trim().length > 0;
+    const q = recipeQuery.trim().toLowerCase();
+    // Your own recipes match on their NAME or on an ingredient's — the same two
+    // fields core's searchRecipes reads on a curated one, so one query behaves
+    // the same way whoever wrote the dish.
+    const mineMatch = !searching
+      ? userRecipes
+      : userRecipes.filter(
+          (r) => r.name.toLowerCase().includes(q) || r.ingredients.some((i) => i.name.toLowerCase().includes(q)),
+        );
+    const savedMatch = searching ? searchRecipes(saved, recipeQuery) : saved;
     // The meta line names what the library HOLDS, so it lists every collection
     // — not just the ones that survived the search, which would make the cover
     // twitch as you type.
@@ -3369,32 +3380,38 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         rail={shelves.length > 0 ? <CollectionRail keys={shelves.map((sh) => sh.key)} onJump={(k) => { const y = shelfTops.current[k]; if (y != null) recipeScroll.current?.scrollToChild(y); }} /> : undefined}
       >
         <View style={{ marginTop: 16 }}>
-          <AField value={recipeQuery} onChange={setRecipeQuery} placeholder={t("w.recovery.nutrition.searchRecipes")} icon="search" />
+          {/* ASearch, not a bare field: it is the same AField with the CLEAR
+              button attached, which is the one affordance that matters when a
+              query returns nothing — and the one this screen was missing. */}
+          <ASearch value={recipeQuery} onChange={setRecipeQuery} placeholder={t("w.recovery.nutrition.searchRecipes")} />
         </View>
-        {/* Your own recipes lead — but only at rest: while a search is running
-            the screen is answering a question about the curated library, and a
-            shelf that ignores the query would read as a result that matched. */}
-        {!recipeQuery.trim() ? (
+        {/* THE QUERY SEARCHES THE WHOLE SCREEN, not just the curated half.
+            The screen shows three kinds of recipe — the ones you wrote, the
+            ones you kept, and the library — and the search used to read only
+            the third, so typing "pasta" with a pasta recipe of your own
+            answered "nothing matches". Your shelves stay while they match, and
+            they stop carrying their resting chrome: no door row among results,
+            no "you haven't written one yet" under a search that simply missed. */}
+        {mineMatch.length > 0 || !searching ? (
           <UserRecipeShelf
-            recipes={userRecipes}
+            recipes={mineMatch}
             onOpen={(r) => openRecipeEditor(r)}
-            onNew={() => openRecipeEditor()}
+            onNew={searching ? undefined : () => openRecipeEditor()}
             canAdd={canSaveRecipe(persona, userRecipes.length)}
             onUpgrade={() => router.push("/upgrade")}
+            emptyNote={!searching}
           />
         ) : null}
-        {/* What you KEPT, between what you wrote and what we wrote. Hidden
-            while a search is running, for the same reason your own recipes are:
-            the screen is answering a question about the curated library, and a
-            shelf that ignored the query would read as a result that matched. */}
-        {!recipeQuery.trim() ? <SavedRecipeShelf recipes={saved} openRecipe={(r) => openRecipe(r, "recipes")} /> : null}
-        {shelves.length === 0 ? (
-          <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 16 }}>{t("w.recovery.nutrition.noRecipeMatches")}</Text>
+        {/* What you KEPT, between what you wrote and what we wrote. */}
+        <SavedRecipeShelf recipes={savedMatch} openRecipe={(r) => openRecipe(r, "recipes")} />
+        {shelves.length === 0 && mineMatch.length === 0 && savedMatch.length === 0 ? (
+          <Empty title={t("w.recovery.nutrition.noRecipeMatches")} sub={t("w.recovery.nutrition.noRecipeMatchesSub")} />
         ) : (
           shelves.map((shelf) => (
             <RecipeShelf
               key={shelf.key}
               shelf={shelf}
+              savedIds={savedIds}
               onLayout={(e) => { shelfTops.current[shelf.key] = e.nativeEvent.layout.y; }}
               openCollection={openCollection}
               openRecipe={(r) => openRecipe(r, "recipes")}
@@ -3551,7 +3568,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               ref={cardRef}
               recipe={cardRecipe}
               labels={{
-                eyebrow: [t(`w.recovery.nutrition.meal.${cardRecipe.meal}`), cardRecipe.highProtein ? t("w.recovery.nutrition.recipeFilter.highProtein") : null]
+                eyebrow: [t(`w.recovery.nutrition.meal.${cardRecipe.meal}`), isHighProtein(cardRecipe) ? t("w.recovery.nutrition.recipeFilter.highProtein") : null]
                   .filter(Boolean)
                   .join(" – "),
                 kcal: t("w.recovery.nutrition.energy"),

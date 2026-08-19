@@ -74,8 +74,9 @@ export interface Recipe {
   macros: RecipeMacros;
   ingredients: RecipeIngredient[];
   steps: RecipeStep[];
-  /** true = protein-forward; powers the "High protein" filter chip */
-  highProtein?: boolean;
+  // NO `highProtein` FIELD, deliberately — see `isHighProtein` below. It was a
+  // hand-typed boolean, and two dishes with the same numbers ended up on
+  // different shelves.
 }
 
 export const RECIPES: Recipe[] = [
@@ -117,7 +118,6 @@ export const RECIPES: Recipe[] = [
     tint: "blue",
     baseServes: 1,
     macros: { kcal: 380, protein: 32, carbs: 20, fat: 18 },
-    highProtein: true,
     ingredients: [
       { name: "Grilled chicken", qty: 120, unit: "g" },
       { name: "Mixed greens", qty: 80, unit: "g" },
@@ -143,7 +143,6 @@ export const RECIPES: Recipe[] = [
     tint: "red",
     baseServes: 2,
     macros: { kcal: 410, protein: 22, carbs: 24, fat: 26 },
-    highProtein: true,
     ingredients: [
       { name: "Large eggs", qty: 4, unit: "" },
       { name: "Chopped tomatoes", qty: 400, unit: "g" },
@@ -193,7 +192,6 @@ export const RECIPES: Recipe[] = [
     tint: "red",
     baseServes: 2,
     macros: { kcal: 560, protein: 40, carbs: 48, fat: 22 },
-    highProtein: true,
     ingredients: [
       { name: "Chicken thighs", qty: 300, unit: "g" },
       { name: "Tortilla wraps", qty: 2, unit: "" },
@@ -246,7 +244,6 @@ export const RECIPES: Recipe[] = [
     tint: "lime",
     baseServes: 1,
     macros: { kcal: 350, protein: 20, carbs: 48, fat: 9 },
-    highProtein: true,
     ingredients: [
       { name: "Rolled oats", qty: 60, unit: "g" },
       { name: "Milk", qty: 180, unit: "ml" },
@@ -271,7 +268,6 @@ export const RECIPES: Recipe[] = [
     tint: "blue",
     baseServes: 2,
     macros: { kcal: 620, protein: 38, carbs: 60, fat: 24 },
-    highProtein: true,
     ingredients: [
       { name: "Salmon fillets", qty: 300, unit: "g" },
       { name: "Sushi rice", qty: 160, unit: "g" },
@@ -291,12 +287,46 @@ export const RECIPES: Recipe[] = [
 ];
 
 /** Filter categories for the browse chips — "all" + the meals + high-protein. */
+/**
+ * IS THIS A HIGH-PROTEIN DISH? Derived from the recipe's own numbers.
+ *
+ * It used to be a hand-typed `highProtein: true` on each entry, and the library
+ * had grown the failure that invites: lentil stew (24 g, 20% of its energy) sat
+ * OFF the shelf while shakshuka (22 g, 21%) sat on it. Two dishes, the same
+ * numbers, different shelves, and nothing in the file could tell you why —
+ * which makes the shelf a matter of who typed the entry rather than what is in
+ * the bowl.
+ *
+ * The doctrine is the PANTRY'S, applied to a dish: a food's shelf comes from
+ * its own numbers (pantry.ts `foodRole`, which files an egg by where the energy
+ * in it actually is). Two terms, because either alone misfiles something real:
+ *
+ *   • GRAMS, because a 220 kcal snack that is 40% protein carries 22 g and is
+ *     genuinely a protein dish, while a share test alone would also admit a
+ *     90 kcal one carrying nine;
+ *   • SHARE of energy, at 4 kcal/g on the protein itself (never the stated
+ *     kcal, which carries fibre and rounding no macro accounts for), because a
+ *     620 kcal bowl with 25 g of protein is a big meal that happens to contain
+ *     some, not a protein dish.
+ *
+ * On the shipped library the rule keeps all five dishes the flag had, and adds
+ * the lentil stew — the one the numbers always said belonged there.
+ */
+export const HIGH_PROTEIN_MIN_G = 20;
+export const HIGH_PROTEIN_MIN_SHARE = 0.2;
+
+export function isHighProtein(recipe: Recipe): boolean {
+  const { protein, kcal } = recipe.macros;
+  if (protein < HIGH_PROTEIN_MIN_G || kcal <= 0) return false;
+  return (protein * 4) / kcal >= HIGH_PROTEIN_MIN_SHARE;
+}
+
 export type RecipeFilter = "all" | RecipeMeal | "highProtein";
 export const RECIPE_FILTERS: RecipeFilter[] = ["all", "breakfast", "lunch", "dinner", "highProtein"];
 
 export function filterRecipes(recipes: Recipe[], filter: RecipeFilter): Recipe[] {
   if (filter === "all") return recipes;
-  if (filter === "highProtein") return recipes.filter((r) => r.highProtein);
+  if (filter === "highProtein") return recipes.filter(isHighProtein);
   return recipes.filter((r) => r.meal === filter);
 }
 
@@ -400,7 +430,7 @@ export function recipeCoverView(
     metaParts: [
       t.serves(recipe.baseServes),
       t.ingredients(recipe.ingredients.length),
-      recipe.highProtein ? t.highProtein : null,
+      isHighProtein(recipe) ? t.highProtein : null,
     ],
     stats: [
       { value: String(recipe.macros.kcal), unit: null, label: t.energy },
@@ -444,7 +474,7 @@ export const RECIPE_COLLECTION_META: Record<RecipeCollection, { tint: RecipeTint
 
 /** The recipes on one shelf, in library order. */
 export function recipesInCollection(key: RecipeCollection, recipes: Recipe[] = RECIPES): Recipe[] {
-  return key === "highProtein" ? recipes.filter((r) => r.highProtein) : recipes.filter((r) => r.meal === key);
+  return key === "highProtein" ? recipes.filter(isHighProtein) : recipes.filter((r) => r.meal === key);
 }
 
 /** Free-text search over what a cook would actually type — the dish, what it
@@ -563,15 +593,32 @@ export interface RecipeTileView {
   count: string;
   /** the line under the name — "540 kcal". */
   meta: string;
+  /**
+   * The SECOND figure on that line — "22 g protein".
+   *
+   * A tile used to state time and energy only, on a screen whose own collection
+   * rail offers HIGH PROTEIN as one of four shelves: the library could sort by
+   * a number it never showed you. Protein is also the figure this app is about,
+   * and the one a hybrid athlete scans a list of dishes for.
+   */
+  protein: string;
+  /** Whether this dish claims the high-protein shelf, so the tile can mark the
+   *  figure rather than making you open it to find out. */
+  highProtein: boolean;
 }
 
-export function recipeTileView(recipe: Recipe, t: { mins: (n: number) => string; kcal: (n: number) => string }): RecipeTileView {
+export function recipeTileView(
+  recipe: Recipe,
+  t: { mins: (n: number) => string; kcal: (n: number) => string; protein: (n: number) => string },
+): RecipeTileView {
   return {
     accent: RECIPE_TINT_COLOR[recipe.tint],
     mark: recipe.mark,
     title: recipe.name,
     count: t.mins(recipe.timeMins).toUpperCase(),
     meta: t.kcal(recipe.macros.kcal),
+    protein: t.protein(recipe.macros.protein),
+    highProtein: isHighProtein(recipe),
   };
 }
 

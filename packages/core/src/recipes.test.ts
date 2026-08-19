@@ -15,6 +15,8 @@ import {
   recipeCookView,
   RECIPE_COLLECTIONS,
   RECIPE_COLLECTION_META,
+  isHighProtein,
+  HIGH_PROTEIN_MIN_G,
   recipeShareLink,
   recipeLibraryShareLink,
   recipeShareView,
@@ -112,9 +114,35 @@ describe("filterRecipes", () => {
   it("returns everything for 'all'", () => {
     expect(filterRecipes(RECIPES, "all")).toHaveLength(RECIPES.length);
   });
-  it("filters by meal and by the high-protein flag", () => {
+  it("filters by meal, and by protein the recipe actually carries", () => {
     expect(filterRecipes(RECIPES, "breakfast").every((r) => r.meal === "breakfast")).toBe(true);
-    expect(filterRecipes(RECIPES, "highProtein").every((r) => r.highProtein)).toBe(true);
+    expect(filterRecipes(RECIPES, "highProtein").every(isHighProtein)).toBe(true);
+  });
+});
+
+describe("isHighProtein", () => {
+  // The shelf used to be a hand-typed boolean, and it had drifted: lentil stew
+  // (24 g, 20% of its energy) sat OFF it while shakshuka (22 g, 21%) sat on.
+  it("takes BOTH the grams and the share of energy", () => {
+    const dish = (kcal: number, protein: number): Recipe => ({ ...recipeById("ramen")!, macros: { kcal, protein, carbs: 0, fat: 0 } });
+    // enough grams, but a big meal that merely contains some
+    expect(isHighProtein(dish(900, 30))).toBe(false);
+    // a high share of very little
+    expect(isHighProtein(dish(120, 12))).toBe(false);
+    // both
+    expect(isHighProtein(dish(400, 25))).toBe(true);
+    // exactly on both floors is IN — the thresholds are minimums, not gaps
+    expect(isHighProtein(dish(400, HIGH_PROTEIN_MIN_G))).toBe(true);
+  });
+
+  it("never divides by a zero energy", () => {
+    expect(isHighProtein({ ...recipeById("ramen")!, macros: { kcal: 0, protein: 50, carbs: 0, fat: 0 } })).toBe(false);
+  });
+
+  it("shelves the library the way its numbers say", () => {
+    expect(RECIPES.filter(isHighProtein).map((r) => r.id).sort()).toEqual(
+      ["chicken-wrap", "lentil-stew", "overnight-oats", "power-salad", "salmon-bowl", "shakshuka"],
+    );
   });
 });
 
@@ -158,9 +186,12 @@ describe("the recipes library — the Plans tab's three levels, on food", () => 
   });
 
   it("narrows the shelves by the search, dropping the ones left empty", () => {
-    const shelves = recipeShelves("lentils");
-    expect(shelves).toHaveLength(1);
-    expect(shelves[0]!.key).toBe("dinner");
+    // The stew is a dinner AND clears the protein bar, so it survives on both
+    // of its shelves and on no others — the cross-cut is a second shelf a dish
+    // belongs to, not a filter that replaces the first.
+    expect(recipeShelves("lentils").map((s) => s.key)).toEqual(["dinner", "highProtein"]);
+    // A query nothing answers leaves no shelves at all, rather than empty ones.
+    expect(recipeShelves("zzz")).toEqual([]);
   });
 
   it("counts the library on its cover and lists what it holds", () => {
@@ -197,9 +228,30 @@ describe("the recipes library — the Plans tab's three levels, on food", () => 
     expect(recipeCollectionCoverView("snack", [], { ...CT, title: "Snacks" }).metaParts).toEqual([]);
   });
 
+  const TILE_T = { mins: (n: number) => `${n} min`, kcal: (n: number) => `${n} kcal`, protein: (n: number) => `${n} g protein` };
+
   it("shrinks a recipe to a tile without losing its numbers", () => {
-    const tile = recipeTileView(recipeById("ramen") as Recipe, { mins: (n) => `${n} min`, kcal: (n) => `${n} kcal` });
-    expect(tile).toEqual({ accent: RECIPE_TINT_COLOR.amber, mark: { kind: "glyph", name: "bowl" }, title: "Ramen", count: "15 MIN", meta: "540 kcal" });
+    const tile = recipeTileView(recipeById("ramen") as Recipe, TILE_T);
+    expect(tile).toEqual({
+      accent: RECIPE_TINT_COLOR.amber,
+      mark: { kind: "glyph", name: "bowl" },
+      title: "Ramen",
+      count: "15 MIN",
+      meta: "540 kcal",
+      protein: "15 g protein",
+      // 15 g at 11% of its energy — a bowl of noodles, and the shelf says so.
+      highProtein: false,
+    });
+  });
+
+  it("states protein on the tile, because the library sorts by it", () => {
+    // The collection rail offers a HIGH PROTEIN shelf, so a tile that showed
+    // only time and energy was hiding the number the shelf is chosen on.
+    for (const r of RECIPES) {
+      const tile = recipeTileView(r, TILE_T);
+      expect(tile.protein, r.id).toBe(`${r.macros.protein} g protein`);
+      expect(tile.highProtein, r.id).toBe(isHighProtein(r));
+    }
   });
 
   it("gives a recipe card the three numbers that separate it from its neighbours", () => {

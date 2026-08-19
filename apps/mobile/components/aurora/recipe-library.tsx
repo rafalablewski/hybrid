@@ -1,7 +1,7 @@
 import { View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  RECIPES, recipeCardStats, recipeCookView, recipeCoverView, recipeTileView,
+  RECIPES, isHighProtein, recipeCardStats, recipeCookView, recipeCoverView, recipeTileView,
   type Recipe, type RecipeCollection, type RecipeCookView,
  colors,
   ALPHA,} from "@hybrid/core";
@@ -9,6 +9,7 @@ import { fs, space, leading, tracking, F, PressScale, PressScale as Pressable, F
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { DockRail, DockChip, RADIUS, ACard, ASection } from "./kit";
+import RailTail from "./rail-tail";
 import { withAlpha } from "./field";
 import { HeroNav } from "./hero";
 import { COVER_GUTTER } from "../plan-hero";
@@ -49,37 +50,60 @@ export function CollectionRail({ keys, onJump }: { keys: RecipeCollection[]; onJ
   );
 }
 
-/** One collection = one full-bleed shelf. The head is the way IN to the
- *  collection's own screen, and it states the COUNT so a two-card peek is never
- *  mistaken for the whole shelf. */
-export function RecipeShelf({ shelf, openCollection, openRecipe, onLayout }: {
+/**
+ * One collection = one full-bleed shelf.
+ *
+ * THE HEAD IS NOT THE EXIT, and it used to be: the whole row was pressable and
+ * its right slot read "3 RECIPES →", which is precisely the pattern
+ * aurora/rail-tail.tsx was written to retire — "every rail used to carry a
+ * 'See all ›' up in its section head … it spends the head's right slot, which
+ * per the SectionHead standard is for the section's META". The arrow also put
+ * the door at the top-left of a rail you read left-to-right, so the way in was
+ * behind you by the time you had run out of cards. The Nutrition HUB's own
+ * recipes rail has ended in a `RailTail` since it shipped, so the library
+ * screen and the hub disagreed about the same object.
+ *
+ * Now: the head is the shared `ASection` — title, and the count as meta, saying
+ * how long the shelf is so a two-card peek is never mistaken for the whole of
+ * it — and the way in is the chromeless tail at the END of the scroller, where
+ * the thumb already is.
+ */
+export function RecipeShelf({ shelf, openCollection, openRecipe, onLayout, savedIds = [] }: {
   shelf: { key: RecipeCollection; recipes: Recipe[] };
   openCollection: (key: RecipeCollection) => void;
   openRecipe: (r: Recipe) => void;
   onLayout: (e: LayoutChangeEvent) => void;
+  /** Which of these the athlete has kept — the tile marks them. The SAVED
+   *  shelf itself passes nothing: there, the shelf is the statement. */
+  savedIds?: string[];
 }) {
-  const { palette: C } = useTheme();
   const { t } = useLang();
   const n = shelf.recipes.length;
   return (
     <View onLayout={onLayout} style={{ marginTop: 20 }}>
-      <Pressable
-        onPress={() => openCollection(shelf.key)}
-        accessibilityRole="button"
-        style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}
-      >
-        <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{collectionTitle(shelf.key, t)}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
-          {n} {n === 1 ? t("w.recovery.nutrition.recipeCount") : t("w.recovery.nutrition.recipesCount")} →
-        </Text>
-      </Pressable>
+      <ASection
+        title={collectionTitle(shelf.key, t)}
+        meta={`${n} ${n === 1 ? t("w.recovery.nutrition.recipeCount") : t("w.recovery.nutrition.recipesCount")}`}
+        style={{ marginHorizontal: 2 }}
+      />
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        // The snap grid the app's other rails run on. It is why the tail takes
+        // the tile's own width: an odd-width final child puts the content end
+        // off the grid and leaves the exit half-cut at the last snap.
+        snapToInterval={TILE_W + 12}
+        decelerationRate="fast"
         style={{ marginHorizontal: -COVER_GUTTER }}
         contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_GUTTER }}
       >
-        {shelf.recipes.map((r) => <RecipeTile key={r.id} recipe={r} onOpen={() => openRecipe(r)} />)}
+        {shelf.recipes.map((r) => <RecipeTile key={r.id} recipe={r} onOpen={() => openRecipe(r)} saved={savedIds.includes(r.id)} />)}
+        <RailTail
+          onOpen={() => openCollection(shelf.key)}
+          a11y={`${t("w.explore.seeAll")} – ${collectionTitle(shelf.key, t)}`}
+          w={TILE_W}
+          minHeight={TILE_H}
+        />
       </ScrollView>
     </View>
   );
@@ -106,6 +130,8 @@ export function SavedRecipeShelf({ recipes, openRecipe }: { recipes: Recipe[]; o
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
+        snapToInterval={TILE_W + 12}
+        decelerationRate="fast"
         style={{ marginHorizontal: -COVER_GUTTER }}
         contentContainerStyle={{ gap: 12, paddingHorizontal: COVER_GUTTER }}
       >
@@ -118,15 +144,29 @@ export function SavedRecipeShelf({ recipes, openRecipe }: { recipes: Recipe[]; o
 /** A recipe as a COVER, not a card — the tile the Plans shelves carry, so
  *  tapping one expands it into the same poster at screen scale. The dish emoji
  *  stays FULL COLOUR (a ghosted emoji is a grey smudge, not a dish), which is
- *  the one thing separating a recipe tile from a goal tile. */
-export function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe; onOpen: () => void; width?: number }) {
+ *  the one thing separating a recipe tile from a goal tile.
+ *
+ *  IT STATES PROTEIN, and that is new. The tile carried time and energy while
+ *  the rail above it offered HIGH PROTEIN as one of four shelves — the library
+ *  could sort by a figure it never showed you, on the axis this app is actually
+ *  about. The two figures sit in a ROW with a gap rather than joined by a
+ *  separator: real layout, per the house rule, and no middot. A dish that
+ *  clears the bar (core's isHighProtein) prints its protein in the accent, the
+ *  same signal the collection card already uses, so the shelf's membership is
+ *  legible from the shelf. */
+export function RecipeTile({ recipe, onOpen, width = TILE_W, saved = false }: { recipe: Recipe; onOpen: () => void; width?: number; saved?: boolean }) {
   const { t } = useLang();
-  const tile = recipeTileView(recipe, { mins: (n) => `${n} ${t("w.recovery.nutrition.min")}`, kcal: (n) => `${n} kcal` });
+  const { palette: C } = useTheme();
+  const tile = recipeTileView(recipe, {
+    mins: (n) => `${n} ${t("w.recovery.nutrition.min")}`,
+    kcal: (n) => `${n} kcal`,
+    protein: (n) => `${n} g`,
+  });
   return (
     <Pressable
       onPress={onOpen}
       accessibilityRole="button"
-      accessibilityLabel={`${tile.title} – ${tile.meta}`}
+      accessibilityLabel={`${tile.title} – ${tile.meta}, ${tile.protein} ${t("w.recovery.nutrition.protein")}`}
       style={{ width, height: TILE_H, borderRadius: RADIUS.card, overflow: "hidden", borderWidth: 1, borderColor: "rgba(255,255,255,0.07)", backgroundColor: TILE_INK, padding: 12, justifyContent: "space-between" }}
     >
       {/* alpha-over-ink stops matching web's color-mix wash (52% → 0x85,
@@ -134,10 +174,21 @@ export function RecipeTile({ recipe, onOpen, width = TILE_W }: { recipe: Recipe;
       <LinearGradient pointerEvents="none" colors={[withAlpha(tile.accent, 0.52), withAlpha(tile.accent, 0.15), withAlpha(tile.accent, 0.0)]} locations={[0, 0.46, 1]} start={{ x: 0.9, y: 0 }} end={{ x: 0.2, y: 0.95 }} style={StyleSheet.absoluteFill} />
       <View pointerEvents="none" style={{ position: "absolute", top: -4, right: -6 }}><Mark mark={tile.mark} size={78} color={withAlpha(tile.accent, ALPHA.rim)} /></View>
       <LinearGradient pointerEvents="none" colors={[withAlpha(TILE_INK, 0), withAlpha(TILE_INK, 0.66), TILE_INK]} locations={[0.34, 0.78, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
-      <Text style={{ alignSelf: "flex-end", fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        {/* KEPT — the one thing a shelf of tiles could not say. Saving shipped
+            before the tile knew about it, so a dish you had kept looked exactly
+            like one you had not, on the very screen that lists both. */}
+        {saved ? <Mark mark={{ kind: "glyph", name: "bookmark" }} size={fs.body} color="rgba(255,255,255,0.85)" /> : <View />}
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
+      </View>
       <View>
         <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.subtitle, lineHeight: leading(16, "tight"), letterSpacing: tracking.display, color: "#fff" }}>{tile.title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: "rgba(255,255,255,0.7)", marginTop: 5 }}>{tile.meta}</Text>
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 5 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: "rgba(255,255,255,0.7)" }}>{tile.meta}</Text>
+          <Text style={{ fontFamily: tile.highProtein ? F.monoBold : F.mono, fontSize: fs.nano, color: tile.highProtein ? txt(C, C.lime) : "rgba(255,255,255,0.7)" }}>
+            {tile.protein}
+          </Text>
+        </View>
       </View>
     </Pressable>
   );
@@ -192,7 +243,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
       <ACard style={{ marginBottom: 12 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t(`w.recovery.nutrition.meal.${recipe.meal}`)}</Text>
-          {recipe.highProtein && (
+          {isHighProtein(recipe) && (
             <View style={{ backgroundColor: withAlpha(C.lime, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.recipeFilter.highProtein")}</Text>
             </View>
