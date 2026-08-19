@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { APP_HEADER, APP_HEADER_HEIGHT, avatarInitials, unreadLabel, type TodayTabId , ALPHA} from "@hybrid/core";
+import { APP_HEADER, APP_HEADER_HEIGHT, ALPHA, avatarInitials, inkOn, unreadLabel, type TodayTabId } from "@hybrid/core";
 import { useSession } from "../../lib/session";
 import { useNotifications } from "../../lib/use-notifications";
 import { useLang } from "../../lib/i18n";
@@ -38,14 +38,29 @@ export function AppHeader({
    *  IN PLACE there. Everywhere else they are ordinary destinations and the
    *  drawer routes to the standalone screens. */
   hub,
+  /** THE COLOURED GROUND THIS ROW IS SITTING ON, and nothing else — still not
+   *  a style prop. Today's day field paints the whole top of the screen in the
+   *  day's colour and renders this row inside it, so the avatar's rule, the
+   *  wordmark, the bell and the badge all have to swap off `ink`/`lime`/`red`
+   *  and onto whatever is legible there.
+   *
+   *  IT TAKES THE GROUND, NOT THE INK, on purpose: the ink is `inkOn`'s answer
+   *  and nobody else's, so passing it would let a caller hand this row a colour
+   *  the palette never measured against that fill. Absent (every other tab
+   *  root) the row draws exactly as it always has. */
+  ground,
 }: {
   hub?: { value: TodayTabId; onChange: (tab: TodayTabId) => void };
+  ground?: string;
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const router = useRouter();
   const { name } = useSession();
   const [menuOpen, setMenuOpen] = useState(false);
+  // MEASURED, never chosen — the palette's own two inks, and whichever of them
+  // actually clears against this ground.
+  const ink = ground ? inkOn(ground, [C.ink, C.chalk]) : undefined;
   // The bell badge is the UNREAD count from the shared notifications feed — the
   // same list the screen renders, so the two cannot disagree, and it reaches
   // zero once the athlete has read it.
@@ -68,22 +83,22 @@ export function AppHeader({
           accessibilityRole="button"
           accessibilityLabel={t("nav.openMenu")}
           accessibilityState={{ expanded: menuOpen }}
-          style={{ width: APP_HEADER.tile.size, height: APP_HEADER.tile.size, borderRadius: APP_HEADER.tile.radius, backgroundColor: withAlpha(C.lime, ALPHA.fill), borderWidth: 1, borderColor: C.lime, alignItems: "center", justifyContent: "center" }}
+          style={{ width: APP_HEADER.tile.size, height: APP_HEADER.tile.size, borderRadius: APP_HEADER.tile.radius, backgroundColor: withAlpha(ink ?? C.lime, ALPHA.fill), borderWidth: 1, borderColor: ink ?? C.lime, alignItems: "center", justifyContent: "center" }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{initials}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: ink ?? txt(C, C.lime) }}>{initials}</Text>
         </Pressable>
 
         {/* the lockup — the wordmark, and the day-streak on the line under it */}
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: APP_HEADER.wordmark.size, letterSpacing: APP_HEADER.wordmark.tracking, color: C.chalk }}>
-            HYBRID<Text style={{ color: txt(C, C.lime) }}>.</Text>
+          <Text style={{ fontFamily: F.black, fontSize: APP_HEADER.wordmark.size, letterSpacing: APP_HEADER.wordmark.tracking, color: ink ?? C.chalk }}>
+            HYBRID<Text style={{ color: ink ?? txt(C, C.lime) }}>.</Text>
           </Text>
           {/* THE STREAK (aurora/streak-mark.tsx) — the shared mark, which draws
               itself, sources its own count and opens the history. It renders
               nothing at all when there is no streak, which is why the lockup
               needs no conditional of its own here. */}
           <View style={{ marginTop: APP_HEADER.streak.top }}>
-            <StreakMark />
+            <StreakMark ink={ink} />
           </View>
         </View>
 
@@ -91,12 +106,12 @@ export function AppHeader({
           onPress={() => router.push("/notifications")}
           accessibilityRole="button"
           accessibilityLabel={t("w.home.today.notificationsAria")}
-          style={{ width: APP_HEADER.tile.size, height: APP_HEADER.tile.size, borderRadius: APP_HEADER.tile.radius, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}
+          style={{ width: APP_HEADER.tile.size, height: APP_HEADER.tile.size, borderRadius: APP_HEADER.tile.radius, backgroundColor: ink ? withAlpha(ink, ALPHA.wash) : C.ink2, borderWidth: 1, borderColor: ink ? withAlpha(ink, ALPHA.line) : C.line, alignItems: "center", justifyContent: "center" }}
         >
-          <AuroraIcon name="bell" size={20} color={C.ash} />
+          <AuroraIcon name="bell" size={20} color={ink ?? C.ash} />
           {notifCount > 0 && (
-            <View style={{ position: "absolute", top: APP_HEADER.badge.inset, right: APP_HEADER.badge.inset, minWidth: APP_HEADER.badge.size, height: APP_HEADER.badge.size, paddingHorizontal: 4, borderRadius: APP_HEADER.badge.size / 2, backgroundColor: C.red, borderWidth: APP_HEADER.badge.ring, borderColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: APP_HEADER.badge.text, color: "#fff" }}>{unreadLabel(notifCount)}</Text>
+            <View style={{ position: "absolute", top: APP_HEADER.badge.inset, right: APP_HEADER.badge.inset, minWidth: APP_HEADER.badge.size, height: APP_HEADER.badge.size, paddingHorizontal: 4, borderRadius: APP_HEADER.badge.size / 2, backgroundColor: ink ?? C.red, borderWidth: APP_HEADER.badge.ring, borderColor: ground ?? C.ink, alignItems: "center", justifyContent: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: APP_HEADER.badge.text, color: ground ?? C.chalk }}>{unreadLabel(notifCount)}</Text>
             </View>
           )}
         </Pressable>

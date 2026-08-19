@@ -30,6 +30,8 @@
 
 import type { DayBand } from "./day-band";
 import { ROLE_COLOR, type AccentKey } from "./semantic";
+import { fs, space, tracking } from "./scale";
+import { APP_HEADER } from "./app-header";
 
 /**
  * THE FOLD'S THRESHOLDS, in dp of scroll offset.
@@ -107,3 +109,49 @@ export function bandHue(band: Pick<DayBand, "fill" | "rung">): AccentKey | null 
   if (band.fill) return ROLE_COLOR[band.fill];
   return REPORT_HUE[band.rung] ?? "blue";
 }
+
+/**
+ * THE DAY BAR'S GEOMETRY — the app header's own row, compressed.
+ *
+ * It is deliberately DERIVED from `APP_HEADER` rather than typed fresh: the bar
+ * is not a second header, it is the same three-column row (avatar, lockup,
+ * bell) at the size a floating capsule can carry. Deriving it means a change to
+ * the header's tile or badge cannot leave the folded version behind, which is
+ * exactly how the two copies of that row drifted the last time they existed
+ * separately.
+ *
+ * `clearance` is the extra distance the bar sits above the screen edge when it
+ * is away. Without it, translating by the bar's own height alone leaves its
+ * bottom edge exactly at the inset — a visible sliver of capsule parked at the
+ * top of the screen, which reads as a rendering fault rather than a design.
+ */
+export const DAY_BAR = {
+  /** Both flanks. Two rungs under the header's 44, which is what lets the row
+   *  sit inside a 46dp capsule with its own padding. */
+  tile: { size: 30, radius: 10 },
+  /** The capsule's own height. tile + 2 × padY. */
+  height: 46,
+  /** In from the screen's left and right edges. */
+  inset: space.ms,
+  /** Below the safe-area inset. */
+  top: space.sm,
+  padX: space.ms,
+  padY: space.sm,
+  gap: space.ms,
+  /** A rung under the header's 19 — still unmistakably the wordmark. */
+  wordmark: { size: fs.bodyLg, tracking: APP_HEADER.wordmark.tracking },
+  streak: { top: 1, size: fs.nano, tracking: tracking.label },
+  /** The initials in the avatar tile. A rung under the header's `fs.note`. */
+  initials: fs.body,
+  /** The bell. Two under the header's 20, to sit inside a 30dp tile. */
+  icon: 18,
+  badge: { size: 16, inset: -4, ring: 1.5, text: fs.nano, padX: space.xxs / 2 },
+  /** How far the held-back ink sits behind the full ink — the bell and the
+   *  streak against the wordmark. The same 0.78 the day field's own second
+   *  tone uses, so the two rows hold their hierarchy identically. */
+  softInk: 0.78,
+  clearance: space.lg,
+} as const;
+
+/** How far the bar sits above its resting place while it is away. */
+export const DAY_BAR_AWAY = -(DAY_BAR.height + DAY_BAR.top + DAY_BAR.clearance);
