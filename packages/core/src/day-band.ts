@@ -23,13 +23,28 @@
  *   2 deload   the score is on its floor. Outranks the schedule: a plan that
  *              says "squat heavy" on a day the arithmetic has bottomed out is
  *              the exact case the band exists to catch.
- *   3 protect  something is on tomorrow. NO FILL — see the note below.
- *   4 rest     scheduled rest, or a long enough streak that rest IS the work.
- *   5 order    two trainings due. The band stops naming and starts ORDERING;
+ *   3 done     THE DAY HAS ALREADY BEEN TRAINED. Everything below this rung
+ *              answers "what should you do today?", and the athlete has
+ *              answered it — in the log. The band said "Nothing on the legs
+ *              today. A walk if you want one." on a screen that also showed
+ *              10.2 t and a trap-bar deadlift, because the ladder was never
+ *              handed the one thing it was standing on top of.
+ *   4 protect  something is on tomorrow. NO FILL — see the note below.
+ *   5 rest     scheduled rest, or a long enough streak that rest IS the work.
+ *   6 order    two trainings due. The band stops naming and starts ORDERING;
  *              that order is the only thing here an athlete cannot work out
  *              from two separate cards.
- *   6 single   one training due, named in its own vocabulary.
- *   7 open     nothing due — fall back to the prescription's freshest system.
+ *   7 single   one training due, named in its own vocabulary.
+ *   8 open     nothing due — fall back to the prescription's freshest system.
+ *
+ * ── WHAT THE BAND ASKS FOR, ONCE THE DAY IS DONE ──────────────────────────
+ * A finished session has exactly one fact the app cannot measure: how it FELT.
+ * Every figure around it — tonnage, minutes, distance, pace — is already in the
+ * log or on the watch, and the one value that turns them into training load
+ * (feel × duration, session-feel.ts) has to be asked for. So the done rung
+ * leads with that question while it is still worth answering, and states the
+ * answer back once it has one. It is the only rung that asks the athlete for
+ * something rather than telling them something.
  *
  * ── COLOUR NEVER CONTRADICTS THE INSTRUCTION ──────────────────────────────
  * The fill is the readiness band's own role, so the field and the ring agree by
@@ -48,7 +63,8 @@
  * asserts a session that does not exist.
  */
 
-import { cardioDiscipline, type CardioDiscipline, type LoggedSession } from "./engines/session";
+import { cardioDiscipline, sessionsOnDay, type CardioDiscipline, type LoggedSession } from "./engines/session";
+import { hasFeel, feelDef } from "./session-feel";
 import type { ReadinessDeficit } from "./engines/readiness-deficit";
 import type { MuscleGroup, Prescription } from "./engines/types";
 import { readinessRole, type SemanticRole } from "./semantic";
@@ -98,6 +114,40 @@ export interface DayEvent {
    * guess reads as a wrong guess rather than as news.
    */
   seen?: { weeks: number; of: number; weekday: number } | null;
+}
+
+/**
+ * WHAT TODAY ALREADY HOLDS — the half of the day the ladder never asked about.
+ *
+ * Derived from the log rather than handed in, so a caller cannot disagree with
+ * the screen underneath it about what "today" means. `now` is the real today on
+ * every branch of the Dashboard, including when the week rail is scrubbed: the
+ * band is about the day you are in, not the day you are looking at.
+ */
+export interface DoneToday {
+  /** Sessions logged today. */
+  count: number;
+  /** How many of them carry no "how did that feel?" answer. */
+  unrated: number;
+  /** The feel of the most recent RATED session today (1–5), or null. */
+  feel: number | null;
+  /** What the day's training was — the most recent session's kind. */
+  kind: TrainingKind | null;
+}
+
+export function doneToday(sessions: LoggedSession[], now: number = Date.now()): DoneToday {
+  const today = sessionsOnDay(sessions ?? [], now);
+  if (!today.length) return { count: 0, unrated: 0, feel: null, kind: null };
+  // Most recent first, so "the day's training" and "the day's feel" both mean
+  // the latest thing that happened rather than whatever the array held first.
+  const byTime = [...today].sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
+  const rated = byTime.find(hasFeel);
+  return {
+    count: byTime.length,
+    unrated: byTime.filter((s) => !hasFeel(s)).length,
+    feel: rated?.feel ?? null,
+    kind: sessionKind(byTime[0]!),
+  };
 }
 
 /** A training the athlete is actually scheduled to do today, from a plan. */
@@ -383,12 +433,12 @@ export function fixtureTomorrow(
 //  The band
 // ============================================================
 
-export type BandRung = "none" | "deload" | "protect" | "rest" | "order" | "single" | "open";
+export type BandRung = "none" | "deload" | "done" | "protect" | "rest" | "order" | "single" | "open";
 /** How certain the band is allowed to sound. `suggests` is the unplanned voice. */
 export type BandVoice = "asserts" | "suggests" | "protects" | "states" | "silent";
 /** Where the day came from — surfaced so a client can label an inferred day and
  *  offer the correction that teaches the rotation. */
-export type BandSource = "plan" | "inferred" | "prescription" | "none";
+export type BandSource = "plan" | "inferred" | "logged" | "prescription" | "none";
 
 /** One line of band copy: a key, slots filled with other keys, slots filled
  *  with literals. Rendered by `bandText()` and nothing else. */
@@ -418,6 +468,11 @@ export interface DayBand {
   /** The kinds the band is talking about, in the order it named them — what a
    *  "not today" correction has to cycle through. */
   kinds: TrainingKind[];
+  /** The one thing the band wants BACK from the athlete, when there is one.
+   *  `rate` is the done rung asking how the session felt — the single value the
+   *  app cannot derive from anything it already has. Null on every other rung:
+   *  a band that asked for something on all of them would be a form. */
+  ask?: "rate" | null;
 }
 
 export interface DayBandInput {
@@ -435,6 +490,8 @@ export interface DayBandInput {
   sessions?: LoggedSession[];
   /** Supply a rotation to avoid recomputing it; otherwise it is derived. */
   rot?: Rotation;
+  /** What today already holds. Derived from `sessions` when absent. */
+  done?: DoneToday | null;
   /** Days trained in a row, for the unplanned rest case. */
   streakDays?: number;
   now?: number;
@@ -512,7 +569,45 @@ export function dayBand(input: DayBandInput): DayBand {
     };
   }
 
-  // ── 3. SOMETHING IS ON TOMORROW ──────────────────────────────────────────
+  // ── 3. THE DAY IS ALREADY TRAINED ────────────────────────────────────────
+  //
+  // Everything below this rung answers "what should you do today?" — and once
+  // something is in the log, the athlete has answered it. The band used to
+  // prescribe straight over the top: "Nothing on the legs today. A walk if you
+  // want one." above a card reading 10.2 t, 20 sets, 94 min and a trap-bar
+  // deadlift, because nothing ever handed the ladder today's own sessions.
+  //
+  // A FACT about tomorrow still outranks a report about today: a declared race
+  // or a plan's own day changes what to do with the REST of the evening, so it
+  // keeps the rung below. A GUESS does not — a fixture the app inferred is not
+  // worth overriding what actually happened.
+  const done = input.done ?? doneToday(input.sessions ?? [], now);
+  if (done.count > 0 && (!tomorrow || tomorrow.source === "fixture")) {
+    // The one value the app cannot measure, asked for while it is still worth
+    // answering; the answer stated back once it has one.
+    const feel = feelDef(done.feel);
+    const asking = done.unrated > 0;
+    return {
+      rung: "done",
+      // An ASK is an action, so it takes the reading's own fill; a report is
+      // not, so it goes quiet. Same rule as everywhere else on this ladder.
+      fill: asking ? fill : null,
+      voice: "states",
+      source: "logged",
+      figure,
+      head: { key: asking ? `${K}doneRate` : `${K}doneLogged` },
+      say: asking
+        ? [{ key: `${K}sayDoneRate` }]
+        : feel
+          ? [{ key: `${K}sayDoneFeel`, parts: { feel: feel.labelKey } }]
+          : [],
+      mark: done.kind,
+      kinds: [],
+      ask: asking ? "rate" : null,
+    };
+  }
+
+  // ── 4. SOMETHING IS ON TOMORROW ──────────────────────────────────────────
   //
   // TWO VOICES, because there are two completely different claims here. A plan
   // day and a declared race are FACTS: the athlete or the program put them in
@@ -544,7 +639,7 @@ export function dayBand(input: DayBandInput): DayBand {
     return quiet("protect", guessed ? "suggests" : "protects", head, [say], tomorrow.kind, guessed ? "inferred" : "plan");
   }
 
-  // ── 4. REST ──────────────────────────────────────────────────────────────
+  // ── 5. REST ──────────────────────────────────────────────────────────────
   const streak = input.streakDays ?? 0;
   if (plan?.isRest) {
     return quiet("rest", "states", { key: `${K}rest` },
@@ -566,7 +661,7 @@ export function dayBand(input: DayBandInput): DayBand {
   const limiter = limiterOf(d);
   const tissueLed = limiter === "tissue";
 
-  // ── 5. TWO TRAININGS — the band orders them ──────────────────────────────
+  // ── 6. TWO TRAININGS — the band orders them ──────────────────────────────
   if (kinds.length > 1) {
     const gym = kinds.find((k) => k === "gym");
     const sport = kinds.find((k) => k !== "gym");
@@ -610,7 +705,7 @@ export function dayBand(input: DayBandInput): DayBand {
     };
   }
 
-  // ── 6. ONE TRAINING — named in its own vocabulary ────────────────────────
+  // ── 7. ONE TRAINING — named in its own vocabulary ────────────────────────
   if (kinds.length === 1) {
     const kind = kinds[0]!;
     const isGym = kind === "gym";
@@ -635,7 +730,7 @@ export function dayBand(input: DayBandInput): DayBand {
     return { rung: "single", fill, voice: plan ? "asserts" : "suggests", source, figure, head, say, mark: kind, kinds: [kind] };
   }
 
-  // ── 7. NOTHING DUE — the prescription's own answer ───────────────────────
+  // ── 8. NOTHING DUE — the prescription's own answer ───────────────────────
   const sys = rx?.pickSys ?? "aerobic";
   const say: BandLine[] = [{ key: `${K}sayOpen`, parts: { system: `${K}system.${sys}` } }];
   const lim = limiterLine(d, muscle);

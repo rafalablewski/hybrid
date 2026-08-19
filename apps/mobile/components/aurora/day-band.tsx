@@ -60,10 +60,16 @@ export default function AuroraDayBand({
   band,
   onExplain,
   onNotToday,
+  onRate,
 }: {
   band: DayBand;
   /** Opens the readiness sheet — the same door the ring has always had. */
   onExplain: () => void;
+  /** Opens the rating sheet, on the ONE rung that asks for something back
+   *  (`band.ask === "rate"`). Omitted where the host cannot present a sheet —
+   *  the band then simply states the day and asks nothing, which is better than
+   *  a question with no way to answer it. */
+  onRate?: () => void;
   /** Offered ONLY on an inferred day, and only when the rotation has another
    *  candidate. Absent means the band has nothing to correct itself to. */
   onNotToday?: () => void;
@@ -158,6 +164,36 @@ export default function AuroraDayBand({
         >
           {say}
         </Text>
+      ) : null}
+
+      {/* THE ASK, and it is the only one the band makes. The done rung leads
+          with "How did that feel?" because that answer is the single value the
+          app cannot derive from anything it already holds — and a question
+          printed in the largest type on the screen with no way to answer it
+          would be worse than not asking. Same bare mono word the done floor's
+          own rate control wears (done-floor.tsx): it opens a sheet, but it is
+          a WORD in a field rather than the end of a list of things, so the
+          exit grammar's ringed glyph is not what belongs here. */}
+      {onRate && band.ask === "rate" ? (
+        <Pressable
+          onPress={onRate}
+          accessibilityRole="button"
+          accessibilityHint={t("session.feel.rateUnrated")}
+          hitSlop={12}
+          style={{ minHeight: 44, justifyContent: "flex-end", alignSelf: "flex-start" }}
+        >
+          <Text
+            style={{
+              fontFamily: F.mono,
+              fontSize: fs.nano,
+              textTransform: "uppercase",
+              letterSpacing: tracking.label,
+              color: quiet ? C.accentText.lime : ink,
+            }}
+          >
+            {t("session.feel.rate")}
+          </Text>
+        </Pressable>
       ) : null}
 
       {/* THE CORRECTION. Only ever offered on a day the app INFERRED, because

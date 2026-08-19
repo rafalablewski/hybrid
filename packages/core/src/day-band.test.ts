@@ -3,7 +3,7 @@ import { makeT } from "./i18n";
 import {
   BAND_HEAD_MAX, BAND_SAY_MAX, CADENCE_SPREAD_MAX, REST_STREAK_DAYS, ROTATION_STALE_DAYS,
   FIXTURE_LOOKBACK_WEEKS, FIXTURE_MIN_WEEKS, FIXTURE_STALE_DAYS,
-  TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, fixtureTomorrow, nextDueKind, rotation,
+  TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, doneToday, fixtureTomorrow, nextDueKind, rotation,
   sessionKind, trainingStreak, weeklyFixture,
   type DayBand, type DayBandInput, type TrainingKind,
 } from "./day-band";
@@ -238,6 +238,49 @@ describe("the ladder", () => {
     expect(b.mark).toBe("sport");
   });
 
+  it("stops prescribing a day that has already been trained", () => {
+    // The defect: "Nothing on the legs today. A walk if you want one." over a
+    // card reading 10.2 t, 20 sets, 94 min and a trap-bar deadlift, because
+    // nothing ever handed the ladder today's own sessions.
+    const t = makeT("en");
+    const trained = [session(0, "gym", "today")];
+    const b = band({ deficit: deficit(55), sessions: trained, tomorrow: { kind: "sport", source: "fixture", seen: { weeks: 3, of: 6, weekday: 4 } } });
+    expect(b.rung).toBe("done");
+    expect(b.source).toBe("logged");
+    expect(b.ask).toBe("rate");
+    expect(b.mark).toBe("gym");
+    expect(bandText(t, b.head!)).toBe("How did that feel?");
+
+    // A FACT about tomorrow still outranks a report about today.
+    const race = band({ deficit: deficit(55), sessions: trained, tomorrow: { kind: "running", label: "Half marathon", source: "declared" } });
+    expect(race.rung).toBe("protect");
+  });
+
+  it("states the answer back once it has one, and stops asking", () => {
+    const t = makeT("en");
+    const rated = [{ ...session(0, "running", "today"), feel: 4 } as LoggedSession];
+    const b = band({ deficit: deficit(55), sessions: rated });
+    expect(b.rung).toBe("done");
+    expect(b.ask).toBeNull();
+    expect(b.fill).toBeNull(); // a report is not a call to act
+    expect(bandText(t, b.head!)).toBe("Today's in.");
+    expect(bandSay(t, b)).toBe("Hard — and that's what today's load is built from.");
+  });
+
+  it("reads today off the log — count, the latest kind, and what is unanswered", () => {
+    const d = doneToday([
+      { ...session(0, "gym", "am"), feel: 3 } as LoggedSession,
+      session(0, "running", "pm"),
+      session(1, "swimming", "yesterday"),
+    ], NOW);
+    // session() stamps NOW - daysAgo, so "am" and "pm" share an instant; the
+    // count and the unanswered half are what this is really holding.
+    expect(d.count).toBe(2);
+    expect(d.unrated).toBe(1);
+    expect(d.feel).toBe(3);
+    expect(doneToday([session(1, "gym")], NOW).count).toBe(0);
+  });
+
   it("hedges an INFERRED fixture and asserts a declared one", () => {
     // The defect this rung shipped with: three Thursdays in six weeks read back
     // as "You have a game tomorrow." to an athlete who had no game. A guess now
@@ -296,9 +339,11 @@ describe("the ladder", () => {
   });
 
   it("falls to the prescription when the log cannot support an inference", () => {
-    // Thin log → rung 7. The band claims no session, which is the whole point
-    // of the floor: nothing is asserted that does not exist.
-    const b = band({ deficit: deficit(64, TISSUE), sessions: habit("running", 2, 4) });
+    // Thin log → the last rung. The band claims no session, which is the whole
+    // point of the floor: nothing is asserted that does not exist. The log ends
+    // YESTERDAY, so the done rung is not in play — this is about the bottom of
+    // the ladder, not the top.
+    const b = band({ deficit: deficit(64, TISSUE), sessions: habit("running", 2, 4, 1) });
     expect(b.rung).toBe("open");
     expect(b.kinds).toEqual([]);
     expect(b.source).toBe("prescription");
@@ -407,6 +452,11 @@ function everyBand(): DayBand[] {
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, tomorrow: { kind: "running", label: "Half marathon", source: "declared" } }));
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, plan: { isRest: true, dayNumber: 12, trainings: [] } }));
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, streakDays: REST_STREAK_DAYS }));
+        // THE DONE RUNG, both halves — the ask and every answer it can state.
+        out.push(band({ deficit: deficit(kept, costs), rx: rxx, done: { count: 1, unrated: 1, feel: null, kind: "gym" } }));
+        for (const feel of [1, 2, 3, 4, 5]) {
+          out.push(band({ deficit: deficit(kept, costs), rx: rxx, done: { count: 2, unrated: 0, feel, kind: "running" } }));
+        }
         for (const k of TRAINING_KINDS) {
           out.push(band({ deficit: deficit(kept, costs), muscle: "quads", rx: rxx, sessions: habit(k, 2, 8, 2) }));
           out.push(band({
@@ -430,7 +480,7 @@ describe("band copy", () => {
 
   it("covers every rung the ladder can reach", () => {
     const rungs = new Set(bands.map((b) => b.rung));
-    for (const r of ["deload", "protect", "rest", "order", "single", "open"]) expect(rungs).toContain(r);
+    for (const r of ["deload", "done", "protect", "rest", "order", "single", "open"]) expect(rungs).toContain(r);
   });
 
   it("resolves every key it can emit, in EN/PL/DE", () => {
