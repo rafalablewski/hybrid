@@ -823,20 +823,21 @@ export default function AuroraHome() {
   // "WEDNESDAY, 19 AUGUST / Today" is held back while the field is carrying the
   // day: the field already opens with the reading and the instruction, the tab
   // bar already names the screen, and a date plus a screen label above them
-  // pushes the one sentence that matters down the screen for no answer. Flip
-  // this to `true` to bring it back — it is one argument, deliberately, rather
-  // than a deletion.
+  // push the one sentence that matters down the screen for no answer. Flip this
+  // to `true` to bring it back — one constant, deliberately, not a deletion.
   //
-  // IT COMES BACK THE MOMENT THE VIEWED DAY IS NOT TODAY, and that part is NOT
-  // optional. The masthead's own contract is that it NAMES THE VIEWED DAY
-  // (masthead() in @hybrid/core) — "Yesterday", "Friday" — precisely because a
-  // static "Today" over Friday's session would lie in the largest type on the
-  // screen. Hiding it while the week rail is scrubbed off today would not print
-  // the lie, it would print nothing at all, which is the same defect with the
-  // evidence removed: the screen would show another day's training under the
-  // day's own colour with no label saying so.
+  // ON A SCRUBBED DAY IT STAYS HIDDEN TOO, and the reason is worth writing down
+  // because the opposite was the obvious guess. The masthead's contract is that
+  // it NAMES THE VIEWED DAY, so hiding it off-today looked like it would leave
+  // another day's training drawn under the day's own colour with nothing saying
+  // which day it is. IT DOES NOT: the rail already rings the selected cell and
+  // prints its date, and the done floor's count line reads "N done on FRI 21
+  // AUG" (glanceDoneOn) directly under it. The day is named twice below the
+  // field either way, so the masthead was the third and quietest of the three.
+  // If either of those two ever stops naming the day, this is the line that has
+  // to come back with it.
   const FIELD_MASTHEAD = false;
-  const fieldMasthead = FIELD_MASTHEAD || !dayIsToday;
+  const fieldMasthead = FIELD_MASTHEAD;
 
   // Whether there is a reading to draw a field FROM. Without one the chrome
   // still has to render, on the page, exactly as the other two tabs draw it —
