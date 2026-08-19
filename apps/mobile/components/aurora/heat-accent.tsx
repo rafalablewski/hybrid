@@ -4,6 +4,8 @@ import { useLang } from "../../lib/i18n";
 import { fs, F, MAX_FONT_SCALE } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraIcon } from "./icons";
+import SwipeRow from "../swipe-row";
+import { useConfirm } from "./confirm";
 
 /**
  * A SAUNA, IN THE DAY'S LOG — the accent row under the session it followed.
@@ -38,6 +40,23 @@ import { AuroraIcon } from "./icons";
  * rather than by being shrunk into a footnote. A sitting is a real thing the
  * athlete did; the accent says where it belongs, not that it barely counts.
  *
+ * AND IT IS WHERE A SITTING IS DELETED, because it is where a sitting is now
+ * read. The log sheet used to carry a RECENT list — the last three, behind an
+ * expander, with a × on each — and that list was the only way to correct a
+ * fat-fingered 90-minute entry in the whole product. It is gone: a log sheet
+ * that also lists the log is two screens under one title, and an expander you
+ * have to open to see is not a surface anyone checks. The capability did not
+ * go with it. It moved HERE, behind the standard swipe, so removing a sauna
+ * works exactly as removing a session in the same list does — you notice a
+ * wrong entry where you are reading it, and the fix is under your thumb rather
+ * than two taps into a sheet that exists to write, not to audit.
+ *
+ * BOTH SIGNAL ROWS GO TOGETHER. One sitting writes `sauna` and `saunaTemp` at
+ * one exact instant; `HeatSitting.ids` carries both, and the delete takes the
+ * pair. Removing only the minutes would leave a temperature nobody sat in, and
+ * `heatSittings` drops a lone `saunaTemp` — so the row would vanish from the
+ * screen while a dead signal stayed on the record.
+ *
  * THE FIGURES ARE COMPOSED, NOT JOINED. Two values with a gap between them,
  * for the reason the Heat row's week figures are: a `.replace` into one string
  * is what the middot rule calls out, and it leaves the type nothing to
@@ -45,9 +64,20 @@ import { AuroraIcon } from "./icons";
  * typed it, and the engine's own reference standing in as a measurement is
  * exactly the false precision `assumedTemp` exists to mark.
  */
-export function HeatAccent({ sitting, indent, units, variant = "floor" }: { sitting: HeatSitting; indent: boolean; units: WeightUnit; variant?: "floor" | "sheet" }) {
+export function HeatAccent({ sitting, indent, units, variant = "floor", onDelete }: {
+  sitting: HeatSitting;
+  indent: boolean;
+  units: WeightUnit;
+  variant?: "floor" | "sheet";
+  /** Remove the sitting — both its Signal rows. Present → the row swipes;
+   *  absent → it doesn't, which is right in the Done-today sheet: a sheet is
+   *  not where a destructive gesture belongs, and the floor behind it has the
+   *  same row. */
+  onDelete?: (sitting: HeatSitting) => void;
+}) {
   const { palette: C } = useTheme();
   const { t } = useLang();
+  const { confirm } = useConfirm();
   const label = t(`w.recovery.heat.protocol.${sitting.protocol}`);
   const minutes = `${sitting.minutes} ${t("w.recovery.heat.min")}`;
   const temp = sitting.assumedTemp ? null : fmtTemp(sitting.tempC, units);
@@ -58,7 +88,7 @@ export function HeatAccent({ sitting, indent, units, variant = "floor" }: { sitt
   // the whole reason this row is shaped by its list and not by itself.
   const sheet = variant === "sheet";
 
-  return (
+  const row = (
     <View
       accessibilityRole="text"
       accessibilityLabel={[label, minutes, temp].filter(Boolean).join(", ")}
@@ -84,6 +114,32 @@ export function HeatAccent({ sitting, indent, units, variant = "floor" }: { sitt
         </View>
       </View>
     </View>
+  );
+
+  if (!onDelete) return row;
+  return (
+    /* The app's own confirm sheet, never Alert.alert — the design-token test
+       bans the system alert outright, and a user who has learned this app's
+       sheet gesture should not meet an OS modal at the moment they most need
+       to feel oriented. The swipe itself IS the system's. */
+    <SwipeRow
+      label={t("common.delete")}
+      background="transparent"
+      marginBottom={0}
+      onDelete={async () => {
+        const ok = await confirm({
+          title: t("w.recovery.heat.deleteTitle"),
+          message: t("w.recovery.heat.deleteBody")
+            .replace("{n}", String(sitting.minutes))
+            .replace("{t}", fmtTemp(sitting.tempC, units)),
+          confirmLabel: t("common.delete"),
+          destructive: true,
+        });
+        if (ok) onDelete(sitting);
+      }}
+    >
+      {row}
+    </SwipeRow>
   );
 }
 

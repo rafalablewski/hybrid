@@ -75,7 +75,7 @@ import {
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { bandHue, barLatched, foldProgress } from "@hybrid/core";
-import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
+import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteHeat, deleteSession, type Assignment } from "../../lib/api";
 import { recoveryReadAnswered } from "../../lib/recovery-reminder";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRecoveryReports } from "../../lib/use-recovery-reports";
@@ -323,6 +323,10 @@ export default function AuroraHome() {
   const { data: recoverySignals = [] } = useRecoverySignalsQuery();
   const bio = useMemo(() => toBiometrics(recoverySignals as unknown as Parameters<typeof toBiometrics>[0]), [recoverySignals, today]);
   const { data: heatSignals = [] } = useHeatSignalsQuery();
+  // Shared with the readiness ring and the volume model — a sauna removed here
+  // has to invalidate the one entry all three read, or the row goes and the
+  // score behind it does not.
+  const revalidate = useRevalidate();
   // The food log on the ENGINES' terms, by kind for the same reason: fourteen
   // days of intake against a 28-day maintenance fit is more history than the
   // unfiltered window holds for exactly the athlete who logs most.
@@ -592,6 +596,10 @@ export default function AuroraHome() {
       onDone={() => setDoneOpen(true)}
       onRate={setRating}
       onDelete={async (s) => { await deleteSession(s.id); load(); }}
+      // The sauna's own delete — both Signal rows, then the SHARED cache entry
+      // is invalidated, because the readiness ring and the volume model read
+      // the same rows this row does.
+      onDeleteHeat={async (x) => { await deleteHeat(x.ids); revalidate.heat(); }}
       // In LOGBOOK mode the rail draws its own action pair on every day state,
       // so the floor must not offer the same thing again — for one release both
       // rendered, forty pixels apart, saying "Log a sport" twice. The PLAN rail
