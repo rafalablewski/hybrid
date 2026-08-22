@@ -137,7 +137,7 @@ export default function AuroraExerciseAnatomy({ name }: { name: string }) {
       <Sheet visible={open} onClose={() => setOpen(false)} scroll={false}>
             <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
               <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, flexShrink: 1 }}>
-                <Text style={{ fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking(fs.heading), color: C.chalk }}>{t("w.analyze.exp.anatomy.title")}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking(fs.headline), color: C.chalk }}>{t("w.analyze.exp.anatomy.title")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{meta}</Text>
               </View>
               <Pressable onPress={() => setOpen(false)} hitSlop={12} accessibilityRole="button" accessibilityLabel={t("w.analyze.exp.anatomy.close")}>

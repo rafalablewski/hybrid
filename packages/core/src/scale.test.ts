@@ -13,9 +13,11 @@ import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
  * rung that breaks the ladder's promises.
  */
 
+// Eleven rungs. `note` (15) and `heading` (20) were retired in Aug 2026 — see
+// the note on `fs` for why neither was ever chosen.
 const ORDER: TypeRole[] = [
-  "nano", "micro", "caption", "body", "bodyLg", "note",
-  "subtitle", "title", "heading", "headline", "display", "hero", "stat",
+  "nano", "micro", "caption", "body", "bodyLg",
+  "subtitle", "title", "headline", "display", "hero", "stat",
 ];
 
 const SPACE_ORDER: SpaceToken[] = [
@@ -42,9 +44,37 @@ describe("type scale", () => {
     for (const role of ORDER) expect(fs[role], role).toBeGreaterThanOrEqual(10);
   });
 
-  it("keeps `headline` between a heading and a display", () => {
-    expect(fs.headline).toBeGreaterThan(fs.heading);
-    expect(fs.headline).toBeLessThan(fs.display);
+  it("steps grow with size — a ladder is not a list", () => {
+    // WHAT THIS IS NOT: a floor on how close two rungs may sit. I wrote that
+    // rule first, and it was wrong three times in a row — nano->micro,
+    // micro->caption and caption->body are all a single dp, because at 10dp a
+    // 1dp step is +10% and reads as a level while at 34dp it is +3% and does
+    // not. A dp floor is the wrong unit, and a RATIO floor would not have
+    // justified the retirements either: 20->22 and 10->11 are both 1.10.
+    //
+    // The retirements were earned by DUPLICATED JOB, not by spacing. `note`
+    // (15) and `bodyLg` (14) were both "the emphasised body line"; `heading`
+    // (20) and `headline` (22) were both "the screen sub-heading". Two names
+    // for one job is a defect a measurement cannot find, which is why that
+    // argument lives in prose beside `fs` and not in an assertion here.
+    //
+    // WHAT IS TRUE AND WORTH GUARDING: the steps never shrink as the ladder
+    // climbs. 1,1,1,1,2,2,4,4,8,12. That is the optical property a scale has to
+    // hold — equal-looking increments need proportionally larger jumps — and a
+    // ladder that stepped 4 then 2 would be visibly wrong in a way no single
+    // rung looks wrong on its own.
+    const sizes = ORDER.map((r) => fs[r]);
+    const gaps = sizes.slice(1).map((v, i) => v - sizes[i]!);
+    for (let i = 1; i < gaps.length; i++) {
+      expect(gaps[i]!, `${ORDER[i]} -> ${ORDER[i + 1]} steps back down`).toBeGreaterThanOrEqual(gaps[i - 1]!);
+    }
+  });
+
+  it("has retired `note` and `heading`, and cannot get them back by accident", () => {
+    expect(Object.keys(fs)).not.toContain("note");
+    expect(Object.keys(fs)).not.toContain("heading");
+    expect(Object.values(fs)).not.toContain(15);
+    expect(Object.values(fs)).not.toContain(20);
   });
 
   it("ends at `stat` — a figure larger than this is a design smell", () => {
@@ -141,7 +171,7 @@ describe("tracking", () => {
     expect(tracking(fs.display)).toBe(-0.5);        //  19 sites
     // And the largest move anywhere, which is a correction rather than a drift:
     // a 15dp lead was carrying the 34dp hero's tightening.
-    expect(tracking(fs.note)).toBe(0);
+    expect(tracking(fs.bodyLg)).toBe(0);
   });
 });
 
@@ -261,7 +291,7 @@ describe("fitMonoFigure", () => {
   });
 
   it("keeps the PLAIN figure inside the cell at the largest scale it allows", () => {
-    // The other three cells do not step — they are fixed at fs.heading — so the
+    // The other three cells do not step — they are fixed at fs.headline — so the
     // grid only holds if that rung clears the cell at the multiplier the text
     // is capped to. This is the assertion the four-column row never had.
     expect(cost("6h 52min".length, 20) * 1.4).toBeLessThanOrEqual(CELL);

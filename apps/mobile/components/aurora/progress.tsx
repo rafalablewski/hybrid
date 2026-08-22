@@ -111,10 +111,10 @@ export default function AuroraProgress() {
             <View style={{ flexDirection: "row", gap: space.ms }}>
               <Pressable onPress={takePhoto} disabled={busy} style={{ flex: 1, flexDirection: "row", gap: 8, backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", justifyContent: "center", opacity: busy ? STATE_OPACITY.busy : 1 }}>
                 <AuroraIcon name="add" size={18} color={C.onAccent} />
-                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.takePhoto")}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>{busy ? t("w.recovery.progress.uploading") : t("w.recovery.progress.takePhoto")}</Text>
               </Pressable>
               <Pressable onPress={pickFromLibrary} disabled={busy} style={{ flex: 1, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", opacity: busy ? STATE_OPACITY.busy : 1 }}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.recovery.progress.fromLibrary")}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.progress.fromLibrary")}</Text>
               </Pressable>
             </View>
           </ACard>

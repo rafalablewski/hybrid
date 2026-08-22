@@ -190,7 +190,7 @@ export default function DoneFloor({
                   <Mark mark={sessionMark(s)} size={fs.title} color={onPlanRow ? txt(C, C.lime) as string : txt(C, C.blue) as string} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{s.title}</Text>
                   {/* NO CLOCK TIME HERE — see the web twin. The trailing "21:33" was
                       the record's save time masquerading as the workout's time; the
                       row states what was done, nothing else. */}

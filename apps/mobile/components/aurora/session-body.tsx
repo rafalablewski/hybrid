@@ -83,7 +83,7 @@ export default function SessionBody({
           style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }}
         >
           {shown.pct}
-          <Text style={{ fontSize: fs.heading, color: C.ash }}>%</Text>
+          <Text style={{ fontSize: fs.headline, color: C.ash }}>%</Text>
         </Text>
         <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: txt(C, C.lime) }}>
           {t(muscleLabelKey(shown.muscle)).toLowerCase()} – {fmtWeight(shown.volumeKg, units)}

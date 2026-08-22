@@ -285,10 +285,10 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
           </View>
         ) : selected ? (
           <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{day.dayOfMonth}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{day.dayOfMonth}</Text>
           </View>
         ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: chipNumColor(day, C), textDecorationLine: day.status === "skipped" ? "line-through" : "none" }}>{day.dayOfMonth}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: chipNumColor(day, C), textDecorationLine: day.status === "skipped" ? "line-through" : "none" }}>{day.dayOfMonth}</Text>
         )}
       </View>
       <View style={{ height: 12, alignItems: "center", justifyContent: "center", opacity: day.status === "done" ? STATE_OPACITY.disabled : 1 }}>
@@ -388,7 +388,7 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
       {day.postponedIn.map((it, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
           <View style={{ flex: 1 }}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{it.title}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{it.title}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.home.rail.movedFrom")} {fmtKey(it.fromDateKey)}</Text>
           </View>
           <GhostBtn C={C} label={t("w.home.rail.doItNow")} onPress={() => onStart(it.blocks)} auto />

@@ -316,7 +316,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
 }
 
 /** Pill button — mirrors mobile lib/ui Button (fill | outline): same face
- *  (Archivo bold), same size (fs.note), same ~44px height, so the two clients
+ *  (Archivo bold), same size (fs.bodyLg), same ~44px height, so the two clients
  *  share one button. Fill paints the brand accent (or an explicit `color`) with
  *  onAccent ink; outline is a transparent ghost with a hairline border, `color`
  *  tinting the label + border (muted ash/line when omitted) — e.g. destructive
@@ -349,7 +349,7 @@ export function Button({
       className="pressable"
       style={{
         ...disp,
-        fontSize: compact ? fs.body : fs.note,
+        fontSize: compact ? fs.body : fs.bodyLg,
         fontWeight: 700,
         color: outline ? txt(color ?? ASH) : ON_ACCENT,
         background: outline ? "none" : color ?? LIME,

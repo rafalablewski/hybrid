@@ -710,7 +710,7 @@ export function APressCard({
  *
  * `outline` came across from lib/ui's retired `Button`, which was the other half
  * of this primitive: same job, different geometry (16 vs 18 vertical padding,
- * fs.note vs fs.subtitle) and a different API — it took a `color` and offered a
+ * fs.bodyLg vs fs.subtitle) and a different API — it took a `color` and offered a
  * hairline ghost for destructive actions, which APill could not express, while
  * APill offered the `light` and glass-`soft` fills, which Button could not. Two
  * buttons that each did something the other couldn't is how you end up with
@@ -772,7 +772,7 @@ export function APill({
   /**
    * `regular` (default) is the screen's action: full vertical padding at
    * fs.subtitle, stretched to its parent. `compact` is a button that sits in a
-   * ROW beside other content — content-sized, lighter padding, fs.note — and
+   * ROW beside other content — content-sized, lighter padding, fs.bodyLg — and
    * it still declares the 44dp floor, so only the DRAWING gets smaller.
    */
   size?: PillSize;
@@ -970,7 +970,7 @@ export function APill({
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
           numberOfLines={1}
-          style={{ fontFamily: F.bold, fontSize: compact ? fs.note : fs.subtitle, color: fg }}
+          style={{ fontFamily: F.bold, fontSize: compact ? fs.bodyLg : fs.subtitle, color: fg }}
         >
           {label}
         </Text>
@@ -988,7 +988,7 @@ export function APill({
         >
           {state === "saving" && <ActivityIndicator size="small" color={fg} />}
           {state === "saved" && <AuroraIcon name="check" size={compact ? 14 : 17} color={fg} />}
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: compact ? fs.note : fs.subtitle, color: fg }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: compact ? fs.bodyLg : fs.subtitle, color: fg }}>
             {stateLabel}
           </Text>
         </Animated.View>
@@ -1273,7 +1273,7 @@ export function AField({
         autoCapitalize="none"
         onSubmitEditing={onSubmit}
         returnKeyType={returnKey}
-        style={{ flex: 1, fontFamily: F.reg, fontSize: fs.note, color: palette.chalk, paddingVertical: 17 }}
+        style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.chalk, paddingVertical: 17 }}
       />
       {onClear && (
         <Pressable onPress={onClear} hitSlop={HIT_SLOP} accessibilityRole="button" accessibilityLabel="Clear">
@@ -1480,7 +1480,7 @@ export function ASegment<T extends string>({
  * The standard was documented and then reimplemented eight times — SHead,
  * SecHead, SubHead, RailHead, SectionHead, SectionHeader, SectionLabel ×2 —
  * each agreeing on the SHAPE and disagreeing on everything measurable: title 18
- * vs fs.bodyLg vs fs.title vs fs.note, serif-swapped or not, meta at nano vs
+ * vs fs.bodyLg vs fs.title vs fs.bodyLg, serif-swapped or not, meta at nano vs
  * micro, tracking 0.9 vs 1.2, top margin 6 / 16 / 24 / 28. A standard that lives
  * in prose gets re-derived; a standard that lives in a component gets used.
  *
@@ -2171,7 +2171,7 @@ export function AScrubField({
           style={{ fontFamily: F.black, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking(fs.hero) }}
         />
         {suffix ? (
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>
             {suffix}
           </Text>
         ) : null}
@@ -2340,7 +2340,7 @@ export function AChoice({ active, title, sub, onPress, sheet, glyph }: {
       >
         {glyph?.(glyphColor)}
         <View style={{ flex: 1 }}>
-          <Animated.Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.note, color: tint(palette.chalk, txt(palette, palette.lime)) }}>{title}</Animated.Text>
+          <Animated.Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: tint(palette.chalk, txt(palette, palette.lime)) }}>{title}</Animated.Text>
           {!!sub && <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.reg, fontSize: fs.caption, color: palette.ash, marginTop: space.xxs, lineHeight: leading(fs.caption) }}>{sub}</Text>}
         </View>
         <ACheckMark on={active} size={22} />
@@ -2455,7 +2455,7 @@ function StepSeg({ mark }: { mark: StepMark }) {
 export function ASub({ children, style }: { children: ReactNode; style?: TextStyle }) {
   const { palette } = useTheme();
   return (
-    <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={[{ fontFamily: F.reg, fontSize: fs.note, color: palette.ash, lineHeight: leading(fs.note, "relaxed") }, style]}>
+    <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={[{ fontFamily: F.reg, fontSize: fs.bodyLg, color: palette.ash, lineHeight: leading(fs.bodyLg, "relaxed") }, style]}>
       {children}
     </Text>
   );

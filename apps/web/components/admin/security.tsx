@@ -47,7 +47,7 @@ export default function AdminSecurity() {
         <Card style={{ borderLeft: `3px solid ${scoreColor}` }}>
           <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".12em" }} c={ASH}>Posture score</Mono>
           <div style={{ ...disp, fontWeight: 800, fontSize: 40, color: scoreColor, lineHeight: 1.05, margin: "4px 0 2px" }}>
-            {d.posture.score}<span style={{ fontSize: fs.heading, color: ASH }}>/100</span>
+            {d.posture.score}<span style={{ fontSize: fs.headline, color: ASH }}>/100</span>
           </div>
           <Mono s={{ fontSize: fs.caption }} c={ASH}>{d.posture.pass}/{d.posture.total} controls green</Mono>
         </Card>
@@ -95,7 +95,7 @@ export default function AdminSecurity() {
                 <Card key={c.id} style={{ borderLeft: `3px solid ${statusColor(c.status)}`, padding: 16 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: space.ms, marginBottom: 6, flexWrap: "wrap" }}>
                     <Dot c={statusColor(c.status)} />
-                    <span style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{c.title}</span>
+                    <span style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{c.title}</span>
                     <span style={{ marginLeft: "auto", display: "flex", gap: space.xs }}>
                       <Chip c={sevColor[c.severity]}>{c.severity}</Chip>
                       <Chip c={statusColor(c.status)}>{statusLabel(c.status)}</Chip>

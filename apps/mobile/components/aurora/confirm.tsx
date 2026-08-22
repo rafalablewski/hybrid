@@ -125,7 +125,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
           {pending?.message ? (
             <Text
               maxFontSizeMultiplier={MAX_FONT_SCALE}
-              style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: leading(fs.note, "relaxed"), color: palette.ash }}
+              style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg, "relaxed"), color: palette.ash }}
             >
               {pending.message}
             </Text>
@@ -141,7 +141,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               autoFocus
               style={{
                 fontFamily: F.reg,
-                fontSize: fs.note,
+                fontSize: fs.bodyLg,
                 color: palette.chalk,
                 backgroundColor: palette.ink,
                 borderWidth: 1,

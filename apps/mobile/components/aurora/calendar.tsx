@@ -136,7 +136,7 @@ export default function AuroraCalendar() {
         <ACard key={a.id} style={{ marginBottom: 12 }}>
           {chip(C.blue, t("w.analyze.cal.assigned"))}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 6 }}>
-            <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
+            <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{a.name}</Text>
             {a.status === "completed" ? chip(C.lime, t("w.analyze.cal.done")) : (
               <Pressable accessibilityRole="button" accessibilityLabel={t("w.analyze.cal.markDone")} onPress={() => markDone(a.id)} style={{ backgroundColor: withAlpha(C.lime, ALPHA.solid), borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.analyze.cal.markDone")}</Text>
@@ -150,7 +150,7 @@ export default function AuroraCalendar() {
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}>{t("w.analyze.cal.nothing")}</Text>
       ) : selSessions.map((s) => (
         <ACard key={s.id} style={{ marginBottom: 12 }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{s.title}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg – {s.blocks.length} {t("w.analyze.cal.blocks")}</Text>
         </ACard>
       ))}

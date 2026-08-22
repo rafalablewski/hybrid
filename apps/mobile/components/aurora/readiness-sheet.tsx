@@ -114,7 +114,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
           {e.clearance && e.clearanceKey ? (
             <Block C={C} head={t("w.home.read.pairHead")}>
               <P C={C}>{t("w.home.read.pair").replace("{n}", String(Math.round(e.clearance.gapH)))}</P>
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t(e.clearanceKey)}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t(e.clearanceKey)}</Text>
             </Block>
           ) : null}
 
@@ -148,7 +148,7 @@ function Block({ C, head, meta, children }: {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
-        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{head}</Text>
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{head}</Text>
         {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{meta}</Text> : null}
       </View>
       {children}

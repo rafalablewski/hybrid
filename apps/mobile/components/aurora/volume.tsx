@@ -252,7 +252,7 @@ export default function AuroraVolume({ onOpenModel }: {
     <ACard solid>
       <ASection title={t("w.home.cockpit.weekVolume")} meta={t("w.home.cockpit.last7")} />
       {summary.empty ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: leading(fs.note), color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg), color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
       ) : (
         <>
           <View style={{ flexDirection: "row", alignItems: "baseline" }}>
@@ -643,7 +643,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
           step we were making them take for no reason. */}
       <View style={{ marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk }}>{Math.round(done.score * 100)}%</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk }}>{Math.round(done.score * 100)}%</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.knownAbout")}</Text>
         </View>
         <View style={{ height: 3, borderRadius: RADIUS.pill, backgroundColor: C.ink, marginTop: 10, overflow: "hidden" }}>

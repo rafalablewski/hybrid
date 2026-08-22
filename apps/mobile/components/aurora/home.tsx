@@ -1563,7 +1563,7 @@ export default function AuroraHome() {
                 <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✓</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{s.title}</Text>
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
               </View>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime) }}>{t("w.home.today.doneView")} ›</Text>
@@ -1602,7 +1602,7 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
     <APressCard onPress={onPress} a11yLabel={title} glow={accent}>
       <Text style={{ fontSize: fs.title, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking(19), color: C.chalk, marginTop: 10 }}>{title}</Text>
-      <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "tight") }}>{sub}</Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 6, lineHeight: leading(fs.bodyLg, "tight") }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: tracking(11, "caps"), textTransform: "uppercase", marginTop: 16 }} />
     </APressCard>
   );
@@ -1622,7 +1622,7 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
        pad rather than CARD_PAD, because a 72%-wide card cannot spend 20 a
        side. Everything else is now decided once, in the kit. */
     <APressCard onPress={onPress} a11yLabel={title} glow={accent} style={{ width, padding: 16 }}>
-      <Text style={{ fontSize: fs.note, lineHeight: leading(fs.note, "tight"), color: txt(C, accent) }}>{glyph}</Text>
+      <Text style={{ fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg, "tight"), color: txt(C, accent) }}>{glyph}</Text>
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking(10, "caps"), textTransform: "uppercase", marginTop: 12 }} />
@@ -2013,7 +2013,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
               {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
             </Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length}</Text>
-            <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>{readsOpen ? "↓" : "→"}</Text>
+            <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>{readsOpen ? "↓" : "→"}</Text>
           </Pressable>
           {readsOpen ? (
           <View style={{ gap: 8, marginTop: 12 }}>

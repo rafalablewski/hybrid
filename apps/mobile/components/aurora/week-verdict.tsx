@@ -170,7 +170,7 @@ import { Mark } from "./mark";
  *
  * THE ROW OF FOUR NEVER FITTED. Not at 17dp, not at 20 — the arithmetic is
  * written out at CELL_WIDTH, and it says a quarter-width column would need the
- * app's BODY size to hold "6h 52min". `figSize = wide ? 17 : fs.heading` was a
+ * app's BODY size to hold "6h 52min". `figSize = wide ? 17 : fs.headline` was a
  * layout apologising for itself: it spent a rung of legibility and wrapped
  * anyway. Two up, at the full 20dp, a figure needs 96dp of the cell's 155 —
  * enough spare for Dynamic Type at 1.4×, for German, and for any formatter that
@@ -276,7 +276,7 @@ const CELL_WIDTH = "50%";
  *  cell's type still lands on the card's own content column. */
 const CELL_INSET = space.sm;
 /** The figure size for a cell the sentence is NOT about. See CELL_WIDTH. */
-const FIGURE_SIZE = fs.heading;
+const FIGURE_SIZE = fs.headline;
 
 /**
  * THE NAMED METRIC'S CELL IS DRAWN LARGER — the card's one hero figure, and the
@@ -302,7 +302,7 @@ const FIGURE_SIZE = fs.heading;
  * steps down instead of running off the card. A hero figure that has to be
  * ellipsised was never a hero figure.
  */
-const PROMOTED_LADDER = [fs.display, fs.headline, fs.heading] as const;
+const PROMOTED_LADDER = [fs.display, fs.headline, fs.headline] as const;
 
 /** ONE LINE BOX for every figure, sized to the tallest rung a cell can draw, so
  *  a promoted figure and a plain one share a baseline instead of sitting a few
@@ -379,7 +379,7 @@ export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{sub}</Text>
       </View>
-      <Text style={{ fontSize: fs.note, color: C.ash }}>›</Text>
+      <Text style={{ fontSize: fs.bodyLg, color: C.ash }}>›</Text>
     </PressScale>
   );
 }

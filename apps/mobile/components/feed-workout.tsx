@@ -58,7 +58,7 @@ export function StatGrid({ stats, units }: { stats: FeedStat[]; units: WeightUni
         <View key={s.key} style={{ width: "33.33%", minWidth: 0, paddingRight: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
             {s.device ? <WatchGlyph color={C.ash} /> : null}
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: s.key === "hr" ? txt(C, colors.blue) : C.chalk }}>{feedStatText(s, units, lang)}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: s.key === "hr" ? txt(C, colors.blue) : C.chalk }}>{feedStatText(s, units, lang)}</Text>
           </View>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginTop: 2 }}>{t(FEED_STAT_LABEL_KEY[s.key]).toUpperCase()}</Text>
         </View>
@@ -81,7 +81,7 @@ export function PostRecords({ prs, units }: { prs: FeedPrLine[]; units: WeightUn
   if (!prs.length) return null;
   return (
     <View style={{ marginTop: 12 }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t("feed.post.records")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t("feed.post.records")}</Text>
       {prs.map((pr, i) => {
         const fig = feedFigureText(pr.topLoadKg, units);
         const prev = pr.previousTopLoadKg != null ? feedFigureText(pr.previousTopLoadKg, units) : null;
@@ -96,7 +96,7 @@ export function PostRecords({ prs, units }: { prs: FeedPrLine[]; units: WeightUn
         return (
           <View key={`${pr.lift}-${i}`} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, borderTopWidth: 1, borderTopColor: C.line, marginTop: 8, paddingTop: 8 }}>
             <View style={{ flex: 1, minWidth: 0 }}>
-              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{pr.lift}</Text>
+              <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{pr.lift}</Text>
               {proof ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{proof}</Text> : null}
             </View>
             <View style={{ alignItems: "flex-end" }}>
@@ -132,7 +132,7 @@ function Exercise({ ex, units }: { ex: FeedWorkoutExercise; units: WeightUnit })
   return (
     <View style={{ borderTopWidth: 1, borderTopColor: C.line, paddingVertical: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
+        <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
           {ex.name}
           {ex.superset ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, colors.lime) }}>{`  ${ex.superset}`}</Text> : null}
         </Text>

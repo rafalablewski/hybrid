@@ -151,7 +151,7 @@ export default function PercentProgram({
                     accessibilityLabel={inp.label}
                     value={val}
                     onChangeText={(v) => (inp.kind === "number" ? onMaxChange(inp.key, v) : setVals((m) => ({ ...m, [inp.key]: v })))}
-                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.note, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, ALPHA.edge), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
+                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.bodyLg, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, ALPHA.edge), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
                   />
                 </View>
               );
@@ -712,41 +712,41 @@ function ExerciseSheet({ sel, onClose, C }: { sel: SheetSel | null; onClose: () 
         {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption), marginBottom: 10 }}>{lift.note}</Text>}
         {steps.map((st, i) => (
           <View key={i} style={{ ...row, borderTopWidth: i > 0 ? 1 : 0 }}>
-            <Text style={{ width: 48, fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
-            <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{st.kg ?? ""}</Text>
+            <Text style={{ width: 48, fontFamily: F.monoBold, fontSize: fs.bodyLg, color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
+            <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, fontVariant: ["tabular-nums"] }}>{st.kg ?? ""}</Text>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>{stepWords(st)}</Text>
           </View>
         ))}
         {!!lift.oneRm && (
           <View style={{ ...row, borderTopColor: withAlpha(C.chalk, ALPHA.fill) }}>
-            <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>1RM</Text>
-            <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.oneRm}</Text>
+            <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>1RM</Text>
+            <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.oneRm}</Text>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>from your maxes</Text>
           </View>
         )}
         {steps.length === 0 && !!lift.setsReps && (
           <View style={{ ...row, borderTopWidth: 0 }}>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Sets × reps</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.setsReps}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.setsReps}</Text>
           </View>
         )}
         {steps.length === 0 && lift.weight != null && !!lift.weight && (
           <View style={row}>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Working weight</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.weight}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.weight}</Text>
           </View>
         )}
         {lift.rpe != null && (
           <View style={row}>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Effort</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: txt(C, loadHex(C, rpeColor(lift.rpe))) }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: txt(C, loadHex(C, rpeColor(lift.rpe))) }}>
               @{lift.rpe}
               <Text style={{ color: C.ash }}> — {rpeMeaning(lift.rpe)}</Text>
             </Text>
           </View>
         )}
         {steps.length === 0 && lift.setsReps == null && !!lift.prescription && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, lineHeight: leading(fs.note, "snug") }}>{lift.prescription}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg, "snug") }}>{lift.prescription}</Text>
         )}
       </View>
     </Sheet>

@@ -710,7 +710,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
         <Card key={a.id} style={{ borderLeft: `3px solid ${AMBER}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ ...disp, fontSize: fs.note, fontWeight: 800, color: CHALK }}>
+              <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 800, color: CHALK }}>
                 {a.agentName} <Chip c={ASH}>{a.runtime}</Chip>{a.estimateUsd > 0 && <Chip c={BLUE}>est ${a.estimateUsd.toFixed(2)}</Chip>}
               </div>
               <Mono s={{ fontSize: fs.body, display: "block", marginTop: 2, whiteSpace: "pre-wrap" }} c={ASH}>{a.task}</Mono>

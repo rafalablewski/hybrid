@@ -91,7 +91,7 @@ export default function AdminAgentRuns() {
               <summary style={{ ...mono, fontSize: fs.body, color: CHALK, cursor: "pointer", listStyle: "none", padding: "12px 16px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: space.xs, flexWrap: "wrap" }}>
                   <Chip c={r.status === "ok" ? OK : ERR}>{r.status}</Chip>
-                  <span style={{ ...disp, fontWeight: 800, fontSize: fs.note, color: CHALK }}>{r.agentName}</span>
+                  <span style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, color: CHALK }}>{r.agentName}</span>
                   <Chip c={ASH}>{r.agentRole}</Chip>
                   <Chip c={ASH}>{r.runtime}</Chip>
                   {r.steps.length > 0 && <Chip c={BLUE}>{r.steps.length} delegated</Chip>}

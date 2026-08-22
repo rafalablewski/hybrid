@@ -79,7 +79,7 @@ function detailOf(error: Error, componentStack?: string | null): string {
 function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: () => void; onLeave?: () => void }) {
   return (
     <View style={{ flex: 1, backgroundColor: INK, alignItems: "center", justifyContent: "center", padding: 28 }}>
-      <Text style={{ color: CHALK, fontSize: fs.heading, fontWeight: "800", textAlign: "center" }}>Something went wrong</Text>
+      <Text style={{ color: CHALK, fontSize: fs.headline, fontWeight: "800", textAlign: "center" }}>Something went wrong</Text>
       <Text style={{ color: ASH, fontSize: fs.bodyLg, textAlign: "center", marginTop: 10, lineHeight: 20 }}>
         This screen hit an unexpected error. Your saved data is safe.
       </Text>
@@ -105,7 +105,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
           accessibilityLabel="Try again"
           style={{ backgroundColor: LIME, borderRadius: RADIUS.pill, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
         >
-          <Text style={{ color: INK, fontWeight: "800", fontSize: fs.note }}>Try again</Text>
+          <Text style={{ color: INK, fontWeight: "800", fontSize: fs.bodyLg }}>Try again</Text>
         </Pressable>
         {!!onLeave && (
           <Pressable
@@ -114,7 +114,7 @@ function CrashFallback({ detail, onRetry, onLeave }: { detail: string; onRetry: 
             accessibilityLabel="Back to Today"
             style={{ borderWidth: 1, borderColor: LINE, borderRadius: RADIUS.pill, minHeight: 44, justifyContent: "center", paddingHorizontal: 26 }}
           >
-            <Text style={{ color: CHALK, fontWeight: "700", fontSize: fs.note }}>Back to Today</Text>
+            <Text style={{ color: CHALK, fontWeight: "700", fontSize: fs.bodyLg }}>Back to Today</Text>
           </Pressable>
         )}
       </View>

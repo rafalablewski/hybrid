@@ -574,7 +574,7 @@ export function WorkoutWrapped({
             }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>
                 {t(loggedHeat ? "w.recovery.heat.afterSessionDone" : "w.recovery.heat.afterSession")}
               </Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>
@@ -605,7 +605,7 @@ export function WorkoutWrapped({
               <APill
                 label={t("session.wrapped.unlock")}
                 color={premium.fill}
-                glyph={(c) => <Text style={{ fontFamily: F.black, fontSize: fs.note, color: c }}>✦</Text>}
+                glyph={(c) => <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: c }}>✦</Text>}
                 onPress={() => { onBack(); router.push("/upgrade"); }}
                 style={{ marginTop: 24, alignSelf: "flex-start" }}
               />
@@ -700,7 +700,7 @@ export function WorkoutWrapped({
               <>
                 <Text style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk, marginTop: 12 }}>
                   {fmtWeight(spine.topSet.loadKg, units)}
-                  {spine.topSet.reps ? <Text style={{ fontSize: fs.heading, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
+                  {spine.topSet.reps ? <Text style={{ fontSize: fs.headline, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
                 </Text>
                 <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: txt(C, C.lime), marginTop: 2 }}>
                   {t("session.work.topSet")} – {spine.topSet.exercise}

@@ -230,7 +230,7 @@ export function ChartReadout({ read, side, when, note, C: palette }: {
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: read.best ? txt(C, C.lime) : C.chalk }}>{read.value}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: read.best ? txt(C, C.lime) : C.chalk }}>{read.value}</Text>
         {!!read.unit && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 2 }}>{read.unit}</Text>}
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>

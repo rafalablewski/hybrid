@@ -17,7 +17,7 @@ import { HeroNav } from "./hero";
 
 type FieldKey = "name" | "handle" | "displayName" | "bio" | "email" | "visibility";
 
-const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: fs.note } as const);
+const inpStyle = (C: any) => ({ paddingVertical: 10, paddingHorizontal: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, color: C.chalk, fontSize: fs.bodyLg } as const);
 
 export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
   const C = useTheme().palette;
@@ -107,7 +107,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
 
               {editing === "handle" && (<>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.note }}>@</Text>
+                  <Text style={{ color: C.ash, fontFamily: F.mono, fontSize: fs.bodyLg }}>@</Text>
                   <TextInput value={form.handle} onChangeText={(v) => setForm({ ...form, handle: v })} placeholder={t("w.profile.handlePlaceholder")} placeholderTextColor={C.ash} autoCapitalize="none" autoFocus style={{ ...inp, flex: 1 }} />
                 </View>
                 {form.handle.length > 0 && (
@@ -177,7 +177,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
                   </View>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.profile.presetAvatar")}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.profile.presetAvatar")}</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                     {AVATAR_PRESETS.map((p) => {
                       const on = form.avatarUrl === p.uri;

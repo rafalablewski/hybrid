@@ -193,7 +193,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <Chip color={u.isToday ? C.lime : C.ash}>{t("histview.planned")}</Chip>
           </View>
           <View style={{ borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, ALPHA.rim) }}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
             {u.blockNames.length > 0 && (
               <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
                 {u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}
@@ -248,7 +248,7 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
            passed. Everything else was the kit's, written out. */
         <ACard key={w.startKey} style={w.isCurrent ? { borderColor: withAlpha(C.lime, ALPHA.line) } : undefined}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
             {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
           </View>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, height: 34, marginTop: 12, marginBottom: 4 }}>
@@ -372,7 +372,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
     /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
     <ACard style={{ flex: 1, padding: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: tracking(fs.heading), marginTop: 4, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.headline, letterSpacing: tracking(fs.headline), marginTop: 4, color: C.chalk }}>{value}</Text>
     </ACard>
   );
 

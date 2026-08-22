@@ -290,7 +290,7 @@ function PickerRow({ label, active, onPress }: { label: string; active: boolean;
       }}
     >
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: active ? C.chalk : C.ash }}>{label}</Text>
-      {active && <Text style={{ fontSize: fs.note, color: txt(C, C.lime) }}>✓</Text>}
+      {active && <Text style={{ fontSize: fs.bodyLg, color: txt(C, C.lime) }}>✓</Text>}
     </Pressable>
   );
 }

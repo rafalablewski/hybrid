@@ -486,7 +486,7 @@ export default function AuroraProfile() {
                       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{t("w.account.profile.pr-metric")}</Text>
                     </View>
                   </View>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: lime }}>{fmtWeight(wt, prefs.units)}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: lime }}>{fmtWeight(wt, prefs.units)}</Text>
                 </View>
                 {/* relative-strength bar — each PR against your heaviest lift. */}
                 <View style={{ height: 4, borderRadius: 2, backgroundColor: C.line, marginTop: 12, overflow: "hidden" }}>
@@ -863,7 +863,7 @@ function HighlightGrid({
               return (
                 <Pressable key={key} onPress={() => onToggleHidden(key, false)} style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8, paddingLeft: 8, paddingRight: 12, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, backgroundColor: C.ink2 }}>
                   <View style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: C.lime, alignItems: "center", justifyContent: "center" }}>
-                    <Text style={{ fontFamily: F.black, fontSize: fs.note, lineHeight: leading(fs.note, "tight"), color: C.ink }}>+</Text>
+                    <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg, "tight"), color: C.ink }}>+</Text>
                   </View>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase" }}>{tile.k}</Text>
                 </Pressable>

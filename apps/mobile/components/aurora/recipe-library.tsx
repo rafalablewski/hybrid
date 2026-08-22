@@ -260,7 +260,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
         <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
           {stats.map((st) => (
             <View key={st.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 8 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.heading, lineHeight: leading(fs.heading, "tight"), letterSpacing: tracking(fs.heading), color: C.chalk, fontVariant: ["tabular-nums"] }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking(fs.headline), color: C.chalk, fontVariant: ["tabular-nums"] }}>
                 {st.value}
                 {!!st.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{st.unit}</Text>}
               </Text>

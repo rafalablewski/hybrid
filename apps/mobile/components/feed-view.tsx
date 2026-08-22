@@ -210,7 +210,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
               maxLength={500}
               placeholder={t("w.social.sharePlaceholder")}
               placeholderTextColor={C.ash}
-              style={{ color: C.chalk, fontSize: fs.heading, lineHeight: leading(fs.heading), fontFamily: F.reg, paddingTop: 7, paddingBottom: 2, paddingHorizontal: 0, textAlignVertical: "top" }}
+              style={{ color: C.chalk, fontSize: fs.headline, lineHeight: leading(fs.headline), fontFamily: F.reg, paddingTop: 7, paddingBottom: 2, paddingHorizontal: 0, textAlignVertical: "top" }}
             />
             {/* THE TOOLBAR ARRIVES WITH THE INTENT TO POST, not before it.
                 It used to be permanent: an accent glyph and a Share pill that

@@ -80,7 +80,7 @@ function Row({ cap, color }: { cap: Capability; color: string }) {
   return (
     <Card style={{ borderLeft: `3px solid ${color}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.ms }}>
-        <div style={{ ...disp, fontWeight: 700, fontSize: fs.note }}>{cap.title}</div>
+        <div style={{ ...disp, fontWeight: 700, fontSize: fs.bodyLg }}>{cap.title}</div>
         <Chip c={ASH}>{cap.area}</Chip>
       </div>
       <Mono

@@ -17,12 +17,10 @@ export type TypeRole =
   | "micro" //  11 — tiny secondary labels
   | "caption" // 12 — meta / secondary text
   | "body" //   13 — default reading text
-  | "bodyLg" // 14 — emphasised body / primary list line
-  | "note" //   15 — small lead
+  | "bodyLg" // 14 — emphasised body / primary list line, and the small lead
   | "subtitle" //16 — small headings
   | "title" //  18 — section titles
-  | "heading" //20 — screen sub-headings
-  | "headline" //22 — the head of a screen that owns no hero (see below)
+  | "headline" //22 — screen sub-headings, and the head of a screen with no hero
   | "display" //26 — screen headings
   | "hero" //   34 — mastheads / cover titles
   | "stat"; //  46 — the one hero figure on a screen (ring kcal, exercise 1RM)
@@ -56,16 +54,31 @@ export type TypeRole =
  *     they are art sized to a card, and snapping them to a type rung would be
  *     applying a reading ladder to a picture.
  */
+/**
+ * ── TWO RUNGS WERE RETIRED, Aug 2026, AND NEITHER WAS EVER CHOSEN ──────────
+ *
+ * `note` (15) sat between `body` (13) and `bodyLg` (14) — THREE reading sizes
+ * inside two dp. Nobody can see the difference between 14 and 15 and nobody
+ * decided it; it accumulated, which is the same way the app grew 29 lineHeights
+ * and 18 letterSpacings. Its 190 sites are `bodyLg`, which the ladder already
+ * describes as the emphasised body line, and a lead IS an emphasised body line.
+ *
+ * `heading` (20) and `headline` (22) were one job under two names, one rung
+ * apart, with nothing to say which a screen sub-heading should take — so the
+ * answer was whichever file you copied from. Its 63 sites are `headline`.
+ *
+ * THE GENERAL RULE this leaves behind: adjacent rungs are not hierarchy. A
+ * level needs two rungs of separation to read as a level, so a ladder whose
+ * neighbours differ by one dp is carrying a distinction the eye cannot collect.
+ */
 export const fs: Record<TypeRole, number> = {
   nano: 10,
   micro: 11,
   caption: 12,
   body: 13,
   bodyLg: 14,
-  note: 15,
   subtitle: 16,
   title: 18,
-  heading: 20,
   // `headline` was a MAGIC NUMBER before it was a token: 22 appeared 26 times in
   // apps/mobile with no name, and it is where a hand-rolled screen title lands —
   // bigger than a section heading, smaller than a display. Naming it does not

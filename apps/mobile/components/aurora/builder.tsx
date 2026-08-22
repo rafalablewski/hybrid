@@ -115,7 +115,7 @@ export default function AuroraBuilder() {
         onChangeText={b.setName}
         placeholder={t("w.train.logger.routineNamePh")}
         placeholderTextColor={C.ash}
-        style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12 }}
+        style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 12 }}
       />
 
       <SessionPulse items={b.items} units={prefs.units} C={C} bodyweightKg={bodyweightKg} />
@@ -207,7 +207,7 @@ export default function AuroraBuilder() {
           {b.routines.map((r, i) => (
             <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: i ? 12 : 10, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Pressable style={{ flex: 1 }} onPress={() => b.loadRoutine(r)}>
-                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{r.name}</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{r.name}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{r.blocks.length} {t("w.train.builder.blocks")} – {t("w.train.builder.tapToEdit")}</Text>
               </Pressable>
               <Pressable onPress={() => removeRoutine(r.id)} hitSlop={8} style={{ paddingHorizontal: 6 }}>
@@ -253,7 +253,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
           value={String(sig.minutes)}
           style={{ fontFamily: F.monoBold, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}
         />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, letterSpacing: tracking(fs.heading) }}> min</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.headline, color: C.ash, letterSpacing: tracking(fs.headline) }}> min</Text>
       </View>
       <View style={{ marginTop: 6 }}>
         <MetaLine
@@ -278,7 +278,7 @@ function Metric({ label, value, c, C }: { label: string; value: string; c?: stri
   return (
     <View style={{ marginRight: 16 }}>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
     </View>
   );
 }
@@ -331,9 +331,9 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
           style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, padding: 0 }}
         />
         <Pressable onPress={() => setOpen((v) => !v)} hitSlop={8} accessibilityRole="button" accessibilityLabel={open ? t("w.train.blocks.collapse") : t("w.train.blocks.expand")}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>▾</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash, transform: [{ rotate: open ? "180deg" : "0deg" }] }}>▾</Text>
         </Pressable>
-        <Pressable onPress={() => { animateListChange(reducedMotion); builder.removeItem(b.uid); }} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>✕</Text></Pressable>
+        <Pressable onPress={() => { animateListChange(reducedMotion); builder.removeItem(b.uid); }} hitSlop={8}><Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>✕</Text></Pressable>
       </View>
 
       {/* signal metric row — the COLLAPSED summary only: expanded, the editor
@@ -488,7 +488,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
                   onMove={setDrag.move}
                   onEnd={setDrag.end}
                   color={lifted ? txt(C, C.lime) : C.ash}
-                  size={fs.note}
+                  size={fs.bodyLg}
                 />
               </View>
             </View>
@@ -542,11 +542,11 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 12 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>
         <Pressable onPress={() => builder.bumpRest(b.uid, -15)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: C.ash, fontSize: fs.note }}>−</Text>
+          <Text style={{ color: C.ash, fontSize: fs.bodyLg }}>−</Text>
         </Pressable>
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk, minWidth: 48, textAlign: "center" }}>{b.restSec ?? DEFAULT_REST_SEC} s</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk, minWidth: 48, textAlign: "center" }}>{b.restSec ?? DEFAULT_REST_SEC} s</Text>
         <Pressable onPress={() => builder.bumpRest(b.uid, 15)} accessibilityRole="button" accessibilityLabel={t("common.increase")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ color: txt(C, C.lime), fontSize: fs.note }}>+</Text>
+          <Text style={{ color: txt(C, C.lime), fontSize: fs.bodyLg }}>+</Text>
         </Pressable>
       </View>
     </View>

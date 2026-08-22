@@ -200,7 +200,7 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: leading(fs.caption) }} numberOfLines={2}>{blurb}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink, borderRadius: RADIUS.field, paddingVertical: 16, marginTop: 16 }}>
         <AuroraIcon name="play" size={15} color={C.lime} />
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
       </View>
     </PressScale>
   );
@@ -236,7 +236,7 @@ function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSes
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("train.done")}</Text>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, marginTop: 5 }}>{session.title}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, marginTop: 5 }}>{session.title}</Text>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names || t("train.tapSummary")}</Text>
       </View>
       <Chevron C={C} />
@@ -270,7 +270,7 @@ function ListRow({
         <AuroraIcon name={icon} size={19} color={iconColor} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: tracking(fs.note) }}>{title}</Text>
+        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.bodyLg, color: C.chalk, letterSpacing: tracking(fs.bodyLg) }}>{title}</Text>
         {!!meta && <View style={{ marginTop: 4 }}><MetaLine text={meta} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }} /></View>}
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>

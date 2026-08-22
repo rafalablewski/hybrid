@@ -58,7 +58,7 @@ export function PlanDockPill({ state, idleLabel, busyLabel, doneLabel, onPress }
         elevation: 4,
       }}
     >
-      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: done ? txt(C, C.lime) : C.onAccent }}>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: done ? txt(C, C.lime) : C.onAccent }}>
         {state === "busy" ? busyLabel : done ? `✓ ${doneLabel}` : idleLabel}
       </Text>
     </Pressable>

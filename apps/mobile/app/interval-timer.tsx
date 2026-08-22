@@ -154,15 +154,15 @@ function Stepper({ label, value, onChange, suffix, step = 1 }: { label: string; 
   const { palette: C } = useTheme();
   const btn = (t: string, d: number) => (
     <Pressable onPress={() => onChange(d)} style={{ width: 44, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: txt(C, C.lime) }}>{t}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: txt(C, C.lime) }}>{t}</Text>
     </Pressable>
   );
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{label}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
         {btn("−", -1)}
-        <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, minWidth: 56, textAlign: "center" }}>{value}{suffix}{step > 1 ? "" : "×"}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, minWidth: 56, textAlign: "center" }}>{value}{suffix}{step > 1 ? "" : "×"}</Text>
         {btn("+", 1)}
       </View>
     </View>

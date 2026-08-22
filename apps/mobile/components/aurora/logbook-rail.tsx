@@ -203,10 +203,10 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
           </View>
         ) : selected ? (
           <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{day.dayOfMonth}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{day.dayOfMonth}</Text>
           </View>
         ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
         )}
       </View>
       {/* LOAD slot — the ✓'s pixels, spent on how much instead of whether. The

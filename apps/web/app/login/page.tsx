@@ -163,7 +163,7 @@ export default function LoginPage() {
               autoFocus
               aria-label="Authenticator code"
               placeholder="000000"
-              style={{ ...inputStyle, fontSize: fs.heading, letterSpacing: ".3em", textAlign: "center" }}
+              style={{ ...inputStyle, fontSize: fs.headline, letterSpacing: ".3em", textAlign: "center" }}
             />
             <div role="alert">
               {error && (
@@ -175,7 +175,7 @@ export default function LoginPage() {
             <button className="pressable"
               disabled={busy || !isValidTotpCode(mfaCode)}
               onClick={verifyMfa}
-              style={{ ...disp, fontWeight: 800, fontSize: fs.note, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? STATE_OPACITY.busy : 1, border: "none", background: LIME, color: ON_ACCENT }}
+              style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, width: "100%", padding: 14, borderRadius: 13, cursor: "pointer", opacity: busy || !isValidTotpCode(mfaCode) ? STATE_OPACITY.busy : 1, border: "none", background: LIME, color: ON_ACCENT }}
             >
               {busy ? "…" : "Verify →"}
             </button>
@@ -195,7 +195,7 @@ export default function LoginPage() {
             style={{
               ...disp,
               fontWeight: 700,
-              fontSize: fs.note,
+              fontSize: fs.bodyLg,
               padding: 15,
               width: "100%",
               borderRadius: 13,
@@ -253,7 +253,7 @@ export default function LoginPage() {
           style={{
             ...disp,
             fontWeight: 800,
-            fontSize: fs.note,
+            fontSize: fs.bodyLg,
             width: "100%",
             padding: 14,
             borderRadius: 13,

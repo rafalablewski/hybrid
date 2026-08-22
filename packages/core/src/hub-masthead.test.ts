@@ -109,11 +109,24 @@ describe("the hub head guard — no screen may draw its own", () => {
   it("leaves no hand-rolled title rung behind", () => {
     // The exact literals the three heads shipped, and the `headline` rung Feed
     // borrowed from the section-heading ladder.
+    //
+    // THE `headline` CHECK IS LINE-SCOPED NOW, and the reason is a lesson about
+    // what a rung-watching guard actually watches. When `fs.heading` (20) was
+    // retired its 59 sites moved onto `headline`, and one of them is Feed's
+    // COMPOSER — a TextInput, not a head. The guard was written to catch a
+    // screen drawing its own TITLE and would have failed on a text field,
+    // which is a false positive that teaches the next person to weaken the
+    // rule. A guard keyed to a token inherits every new member of that token,
+    // so it has to say what ELSE makes the line a title.
     for (const file of HUB_SCREENS) {
       const src = code(file);
       expect(src, file).not.toMatch(/fontSize:\s*(34|32)\b/);
-      expect(src, file).not.toMatch(/fontSize:\s*fs\.headline\b/);
       expect(src, file).not.toMatch(/letterSpacing:\s*-1\b/);
+      const titleish = src
+        .split("\n")
+        .filter((l) => /fontSize:\s*fs\.headline\b/.test(l))
+        .filter((l) => !/TextInput|textAlignVertical|placeholder/i.test(l));
+      expect(titleish, `${file} — a hub screen may not draw its own title`).toEqual([]);
     }
   });
 

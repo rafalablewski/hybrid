@@ -303,7 +303,7 @@ export default function AuroraSportPage() {
             <Text style={label()}>{primaryLabel}</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: space.ms }}>
               <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
-              {!!m.primary.unit && <Text style={{ ...mono(fs.note), marginBottom: 6 }}>{m.primary.unit}</Text>}
+              {!!m.primary.unit && <Text style={{ ...mono(fs.bodyLg), marginBottom: 6 }}>{m.primary.unit}</Text>}
             </View>
             {!!m.primary.delta && (
               <Text style={{ ...mono(fs.caption, m.primary.improving ? txt(C, C.lime) : C.ash), fontFamily: F.monoBold, marginTop: space.ms }}>{m.primary.delta}</Text>

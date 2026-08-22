@@ -92,7 +92,7 @@ export default function AdminGuidance() {
             <Card>
               <div style={{ display: "flex", alignItems: "center", gap: space.ms, marginBottom: s.summary ? 4 : 12 }}>
                 <span style={{ fontSize: fs.title, color: txt(LIME) }}>{s.icon}</span>
-                <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.heading, letterSpacing: "-.02em", color: CHALK, margin: 0 }}>
+                <h2 style={{ ...disp, fontWeight: 900, fontSize: fs.headline, letterSpacing: "-.02em", color: CHALK, margin: 0 }}>
                   {s.title}
                 </h2>
               </div>

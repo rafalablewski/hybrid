@@ -345,7 +345,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
           <View key={tg} style={{ flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(C.ash, ALPHA.fill), borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingLeft: 12, paddingRight: 8, paddingVertical: 5 }}>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{tg}</Text>
             <Pressable accessibilityLabel={`${t("w.teams.coach.removeTag")} ${tg}`} onPress={() => saveTags(tags.filter((x) => x !== tg))} hitSlop={6}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.ash, lineHeight: fs.note }}>×</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.ash, lineHeight: fs.bodyLg }}>×</Text>
             </Pressable>
           </View>
         ))}
@@ -446,7 +446,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             <ACard key={a.id} style={{ marginTop: 12 }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{a.name}</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{a.name}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{new Date(a.date).toLocaleDateString()}</Text>
                 </View>
                 <View style={{ backgroundColor: withAlpha(a.status === "completed" ? C.lime : a.status === "skipped" ? C.red : C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 5 }}>
@@ -464,7 +464,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             checkins.map((c) => (
               <ACard key={c.id} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{new Date(c.weekOf).toLocaleDateString()}</Text>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{new Date(c.weekOf).toLocaleDateString()}</Text>
                   {c.adherencePct != null && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{c.adherencePct}% {t("w.teams.coach.adherence")}</Text>}
                 </View>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
@@ -522,7 +522,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
             sessions.map((s) => (
               <ACard key={s.id} style={{ marginBottom: 12 }}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{s.title}</Text>
                   <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{new Date(s.startedAt).toLocaleDateString()}</Text>
                 </View>
                 <View style={{ flexDirection: "row", gap: space.sm, marginTop: 8 }}>
@@ -595,7 +595,7 @@ function Metric({ label, value, color }: { label: string; value: string; color: 
   const { palette: C } = useTheme();
   return (
     <View>
-      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.headline, color }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", marginTop: 2 }}>{label}</Text>
     </View>
   );

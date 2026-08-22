@@ -54,7 +54,7 @@ export default function AuroraEndurance() {
           case itself. */}
       {sessions.length === 0 && (
         <View style={{ alignItems: "center", paddingVertical: space.huge }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk }}>{t("endurance.emptyTitle")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk }}>{t("endurance.emptyTitle")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10, textAlign: "center", lineHeight: leading(fs.body) }}>
             {t("endurance.emptyBody")}
           </Text>

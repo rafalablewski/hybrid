@@ -172,7 +172,7 @@ export default function AuroraQuestionnaire() {
             </Text>
           </View>
           {/* Bare ＋/− with no ring: this GROWS in place, it does not leave. */}
-          <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash }}>{advanced ? "−" : "＋"}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.headline, color: C.ash }}>{advanced ? "−" : "＋"}</Text>
         </Pressable>
         <ADrawer open={advanced}>
           <TheModel C={C} t={t} prefs={prefs} resolved={resolved} baseline={baseline} />
@@ -215,7 +215,7 @@ function Standing({ C, t, score, answered, total, next }: {
           subject a person recognises ("Next — body mass"). The figure keeps
           its place beside the track it belongs to, at reading size, where it
           annotates progress instead of pronouncing on it. */}
-      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, lineHeight: leading(fs.heading, "snug") }}>
+      <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, lineHeight: leading(fs.headline, "snug") }}>
         {next ? t("w.quiz.leadNext").replace("{q}", t(next.labelKey)) : t("w.quiz.leadDone")}
       </Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash, marginTop: space.sm }}>
@@ -554,7 +554,7 @@ function Reading({ C, t, q, value }: { C: Palette; t: (k: string) => string; q: 
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={{ fontFamily: F.black, fontSize: fs.heading, color: n == null ? C.ash : txt(C, C.lime), lineHeight: leading(fs.heading, "flush"), letterSpacing: trackFigure(fs.heading) }}
+        style={{ fontFamily: F.black, fontSize: fs.headline, color: n == null ? C.ash : txt(C, C.lime), lineHeight: leading(fs.headline, "flush"), letterSpacing: trackFigure(fs.headline) }}
       >
         {n == null ? "—" : n.toFixed(dp)}
       </Text>
@@ -602,7 +602,7 @@ function Changed({ C, t, factors }: {
               </View>
               <Text
                 style={{
-                  fontFamily: F.monoBold, fontSize: fs.note,
+                  fontFamily: F.monoBold, fontSize: fs.bodyLg,
                   color: f.multiplier > 1 ? txt(C, C.lime) : C.chalk,
                 }}
               >

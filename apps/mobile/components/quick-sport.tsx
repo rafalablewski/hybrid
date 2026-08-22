@@ -122,7 +122,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
         >
           <DeviceMark provider="apple" form="mark" height={13} on="dark" label="" />
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("device.import.cardTitle")}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("device.import.cardTitle")}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{t("device.import.cardSub")}</Text>
           </View>
           <ArrowGlyph size={15} color={txt(C, C.lime)} />
@@ -149,7 +149,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
       {/* Other — a full-width tile that opens the searchable picker for any sport */}
       <Pressable onPress={() => setPickerOpen(true)} style={{ marginTop: 10, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 15 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>＋</Text>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t("w.home.quickSport.other")}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.home.quickSport.other")}</Text>
       </Pressable>
 
       {/* Searchable sport chooser → hands the pick to the log sheet */}

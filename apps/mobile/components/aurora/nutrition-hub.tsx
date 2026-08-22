@@ -102,7 +102,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
 
   const tile = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 } as const;
   const keyLabel = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase" as const, color: C.ash };
-  const nameLabel = { fontFamily: F.bold, fontSize: fs.note, color: C.chalk };
+  const nameLabel = { fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk };
 
   // The delta reads as a verdict, so it takes the app's existing colour
   // grammar: past the same +5% grace the hero ring uses it is a breach

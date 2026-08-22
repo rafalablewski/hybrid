@@ -229,7 +229,7 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
             therefore takes the discipline emoji OFF here instead of boxing it:
             a tile before a section label would have been the same violation,
             drawn more deliberately. The lane's own tiles carry the identity. */}
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t(lane.labelKey)}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t(lane.labelKey)}</Text>
         <Text
           numberOfLines={1}
           maxFontSizeMultiplier={MAX_FONT_SCALE}

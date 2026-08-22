@@ -39,7 +39,7 @@ export default function Messages() {
       <AHeading>{t("messages.title")}</AHeading>
       <View style={{ marginTop: 24, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 20 }}>
         <AuroraIcon name="mail" size={28} color={C.ash} />
-        <Text style={{ marginTop: 14, fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking(fs.heading), color: C.chalk }}>{t("messages.soonTitle")}</Text>
+        <Text style={{ marginTop: 14, fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking(fs.headline), color: C.chalk }}>{t("messages.soonTitle")}</Text>
         <Text style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{t("messages.soonBody")}</Text>
         <Text style={{ marginTop: 14, fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("messages.soonNote")}</Text>
       </View>

@@ -68,7 +68,7 @@ export default function AuroraLoggerSettings() {
             style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t(r.titleKey)}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t(r.titleKey)}</Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: leading(fs.caption, "snug") }}>{t(r.descKey)}</Text>
             </View>
             <GlassToggle

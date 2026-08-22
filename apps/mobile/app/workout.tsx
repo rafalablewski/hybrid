@@ -1558,7 +1558,7 @@ export default function Workout() {
                 );
               })()}
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={14}>
-                <Text style={{ color: C.ash, fontSize: fs.note }}>✕</Text>
+                <Text style={{ color: C.ash, fontSize: fs.bodyLg }}>✕</Text>
               </Pressable>
             </View>
 
@@ -3039,7 +3039,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "save-routine" }); router.push("/upgrade"); }}
           style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 12 }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.train.logger.routineUnlock")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{t("w.train.logger.routineUnlock")}</Text>
         </Pressable>
       </View>
     );
@@ -3050,7 +3050,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
         onPress={() => setOpen(true)}
         style={{ borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
       >
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
       </Pressable>
     );
 
@@ -3071,14 +3071,14 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
         onChangeText={setName}
         placeholder="Routine name"
         placeholderTextColor={C.ash}
-        style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 }}
+        style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 }}
       />
       <Pressable
         onPress={save}
         disabled={state === "saving"}
         style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 10, opacity: state === "saving" ? STATE_OPACITY.busy : 1 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
       </Pressable>
     </View>
   );
@@ -3117,10 +3117,10 @@ function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string |
         onSubmitEditing={commit}
         placeholder={t("workout.nameWorkout")}
         placeholderTextColor={C.ash}
-        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10, textAlign: "center" }}
+        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10, textAlign: "center" }}
       />
       <Pressable onPress={commit} style={{ backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 10, paddingHorizontal: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>✓</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>✓</Text>
       </Pressable>
     </View>
   );
@@ -3177,7 +3177,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
           const on = mood === m.value;
           return (
             <Pressable key={m.value} onPress={() => setMood(on ? null : m.value)} accessibilityLabel={t(m.labelKey)} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
-              <Mark mark={m.mark} size={fs.note + 3} color={on ? txt(C, C.lime) : C.ash} />
+              <Mark mark={m.mark} size={fs.bodyLg + 3} color={on ? txt(C, C.lime) : C.ash} />
             </Pressable>
           );
         })}
@@ -3194,7 +3194,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
         })}
       </View>
       <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center", opacity: saving ? STATE_OPACITY.busy : 1 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{t("common.save")}</Text>
       </Pressable>
     </View>
   );

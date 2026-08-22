@@ -73,7 +73,7 @@ function Block({ b }: { b: GuideBlock }) {
   if (b.t === "term") {
     return (
       <View style={{ paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: palette.line }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(palette, palette.lime), marginBottom: 3 }}>{b.term}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(palette, palette.lime), marginBottom: 3 }}>{b.term}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg), color: palette.chalk }}>{b.text}</Text>
       </View>
     );

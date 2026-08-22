@@ -63,14 +63,14 @@ export function MeasureLine({
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
         numberOfLines={1}
-        style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}
+        style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}
       >
         {name}
       </Text>
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
         numberOfLines={1}
-        style={{ fontFamily: F.monoBold, fontSize: fs.note, color: tone ?? C.chalk }}
+        style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: tone ?? C.chalk }}
       >
         {figure}
       </Text>

@@ -78,7 +78,7 @@ export default function AdminAnon() {
             ) : (
               sessions.map((s) => (
                 <ACard key={s.id} style={cardStack}>
-                  <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk }}>{s.title}</Text>
+                  <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: palette.chalk }}>{s.title}</Text>
                   <Mono color={palette.ash} style={{ marginTop: 2 }}>
                     {s.blocks.length} block{s.blocks.length === 1 ? "" : "s"}
                     {s.blocks.length

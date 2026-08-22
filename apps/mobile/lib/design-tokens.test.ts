@@ -786,7 +786,7 @@ describe("section headers", () => {
     // never a decorative marker on the left. It was then reimplemented eight
     // times — SHead, SecHead, SubHead, RailHead, SectionHead, SectionHeader,
     // SectionLabel ×2 — each agreeing on the shape and disagreeing on everything
-    // measurable: title 18 / fs.bodyLg / fs.title / fs.note, serif-swapped or
+    // measurable: title 18 / fs.bodyLg / fs.title / fs.bodyLg, serif-swapped or
     // not, meta at nano vs micro, tracking 0.9 vs 1.2, top margin 6/16/24/28.
     //
     // A standard that lives in prose gets re-derived. ASection is that standard

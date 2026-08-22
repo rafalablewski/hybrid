@@ -79,7 +79,7 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
               <TextInput
                 value={confirmText} onChangeText={setConfirmText} placeholder="DELETE" placeholderTextColor={C.ash}
                 autoCapitalize="characters" autoCorrect={false}
-                style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
+                style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
               />
             </View>
           )}

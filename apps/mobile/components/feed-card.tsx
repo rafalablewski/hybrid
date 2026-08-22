@@ -216,7 +216,7 @@ function PrLines({ records, units }: { records: CardRecords; units: WeightUnit }
         return (
           <View key={`${pr.lift}-${i}`} style={{ flexDirection: "row", alignItems: "baseline", gap: 8, paddingVertical: 3 }}>
             <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{pr.lift}</Text>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk }}>
               {fig.value}
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{` ${fig.unit}`}</Text>
             </Text>
@@ -461,7 +461,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={36} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
+          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
             {item.author.displayName || handle || t("w.social.you")}
           </Text>
           {/* The handle only earns its own slot when the name isn't already it. */}

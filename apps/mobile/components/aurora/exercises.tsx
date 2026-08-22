@@ -113,7 +113,7 @@ export default function AuroraExercises() {
           style={{ paddingVertical: 12, paddingLeft: 12, paddingRight: 2 }}
         >
           {/* Amber TEXT tone, not the fill — the accent-text channel. */}
-          <Text style={{ fontSize: fs.note, color: on ? txt(C, C.amber) : C.ash, opacity: locked ? 0.25 : on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+          <Text style={{ fontSize: fs.bodyLg, color: on ? txt(C, C.amber) : C.ash, opacity: locked ? 0.25 : on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
         </PressScale>
       </View>
     );

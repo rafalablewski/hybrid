@@ -73,7 +73,7 @@ export default function HelpCenter() {
                 {row.id === "tour" && tourArmed ? t("help.tourDone") : row.id === "contact" ? SUPPORT_EMAIL : t(row.bodyKey)}
               </Text>
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>›</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>›</Text>
           </Pressable>
         ))}
       </View>

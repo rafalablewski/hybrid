@@ -129,9 +129,9 @@ export default function AuroraUpgrade() {
       <View style={{ marginTop: 16 }}>
         {BENEFITS.map((b, i) => (
           <View key={b.t} style={{ flexDirection: "row", gap: 12, paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-            <Text style={{ fontSize: fs.note, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
+            <Text style={{ fontSize: fs.bodyLg, color: pa.text, marginTop: 1 }}>{paid ? "✓" : "✦"}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{b.t}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{b.t}</Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 1, lineHeight: leading(fs.body, "snug") }}>{b.d}</Text>
             </View>
           </View>

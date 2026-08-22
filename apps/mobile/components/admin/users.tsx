@@ -116,7 +116,7 @@ function AccountsTab() {
               <ACard style={cardStack}>
                 <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: space.ms }}>
                   <View style={{ flexShrink: 1 }}>
-                    <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: palette.chalk }}>{u.name || "—"}</Text>
+                    <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: palette.chalk }}>{u.name || "—"}</Text>
                     <Mono color={palette.ash} style={{ marginTop: 2 }}>{u.email}</Mono>
                   </View>
                   <Chip color={roleColor[u.role] ?? palette.chalk}>{u.role}</Chip>

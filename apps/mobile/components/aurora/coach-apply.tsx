@@ -110,7 +110,7 @@ export default function AuroraCoachApply() {
                 disabled={!canSubmit}
                 style={{ backgroundColor: canSubmit ? C.lime : withAlpha(C.lime, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
               >
-                {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.account.settings.coach-submit")}</Text>}
+                {busy ? <ActivityIndicator color={C.onAccent} /> : <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{t("w.account.settings.coach-submit")}</Text>}
               </Pressable>
             </ACard>
           )}

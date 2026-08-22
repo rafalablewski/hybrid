@@ -170,11 +170,11 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space.xs }}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: txt(C, C.amber) }}>{t("w.recovery.heat.clearWith")}</Text>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, C.amber) }}>{clearance.withHeat.index.toFixed(2)}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: txt(C, C.amber) }}>{clearance.withHeat.index.toFixed(2)}</Text>
           </View>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.recovery.heat.clearWithout")}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk }}>{clearance.withoutHeat.index.toFixed(2)}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk }}>{clearance.withoutHeat.index.toFixed(2)}</Text>
           </View>
           <View style={{ height: 1, backgroundColor: C.line, marginVertical: space.md }} />
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>

@@ -91,7 +91,7 @@ export default function ExerciseFavouritesSheet({
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
         {/* The pinned star rides the amber TEXT tone, not the fill (the
             accent-text channel). */}
-        <Text style={{ fontSize: fs.note, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+        <Text style={{ fontSize: fs.bodyLg, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
       </Pressable>
     );
   };
@@ -112,7 +112,7 @@ export default function ExerciseFavouritesSheet({
   return (
     <Sheet visible={visible} onClose={onClose} title={t("w.home.exw.addTitle")} sub={t("w.home.exw.addSub")}>
       {entries.length === 0 ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, paddingVertical: 12 }}>{t("w.home.exw.addEmpty")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, paddingVertical: 12 }}>{t("w.home.exw.addEmpty")}</Text>
       ) : (
         <>
           <ASearch value={query} onChange={(v: string) => refilter(() => setQuery(v))} placeholder={t("w.analyze.ex.search")} />

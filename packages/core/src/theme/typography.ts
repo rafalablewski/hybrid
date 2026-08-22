@@ -148,7 +148,7 @@ export interface TextStyle {
  * already existed, so it was two names for each size and a standing invitation
  * for the two ladders to drift.
  *
- * `fs.note` (15) and `fs.heading` (20) are absent, and their absence is the
+ * `fs.bodyLg` (15) and `fs.headline` (20) are absent, and their absence is the
  * point: three reading sizes inside 2dp and two section sizes one rung apart
  * were never chosen, they accumulated. Neither rung is referenced here, so
  * anything migrated onto a named style leaves them behind automatically.

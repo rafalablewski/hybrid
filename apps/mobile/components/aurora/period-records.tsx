@@ -87,7 +87,7 @@ const LEDGER_CAP = 4;
 function Path({ r, big = false }: { r: PrRecord; big?: boolean }) {
   const { palette: C } = useTheme();
   const from = big ? fs.micro : fs.nano;
-  const to = big ? fs.note : fs.body;
+  const to = big ? fs.bodyLg : fs.body;
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
       <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: from, color: C.ash }}>
@@ -219,7 +219,7 @@ export default function PeriodRecords({
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
           <Path r={quote!} big />
           {quoteDelta && (
-            <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.note, color: txt(C, C.lime) }}>{quoteDelta}</Text>
+            <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>{quoteDelta}</Text>
           )}
         </View>
       </Quoted>

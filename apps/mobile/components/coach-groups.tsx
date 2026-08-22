@@ -88,7 +88,7 @@ export default function CoachGroups({ clients }: { clients: { clientId: string; 
       {groups.map((g) => (
         <ACard key={g.id} style={[cardStack, { marginTop: 10 }]}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{g.name}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{g.name}</Text>
             <Pressable onPress={() => del(g.id)}><Mono color={C.ash} style={{ fontSize: fs.caption }}>Delete</Mono></Pressable>
           </View>
           <Mono style={{ marginTop: 2, fontSize: fs.micro }}>{g.clientIds.length} member{g.clientIds.length === 1 ? "" : "s"}</Mono>
