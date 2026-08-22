@@ -496,7 +496,7 @@ describe("named type styles", () => {
     // where the label is structure and the extra air is the division.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      172,
+      170,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
@@ -624,7 +624,7 @@ describe("geometry", () => {
     // the argument for why this rule is a ratchet with a human in it rather than
     // a codemod: the pattern can find a raw radius, it cannot tell you which of
     // five tokens the object wanted.
-    burnDown(hits(/borderRadius:\s*\d/g), 120, "2027-02-28", "raw borderRadius → RADIUS.*");
+    burnDown(hits(/borderRadius:\s*\d/g), 119, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -822,13 +822,16 @@ describe("touch targets", () => {
     //
     // That is not a cosmetic miscount: a ratchet whose floor is the number of
     // canonical components can NEVER reach zero, so it can never graduate to
-    // HARD, which is the entire point of the mechanism. 9 → 5, and the 5 are
+    // HARD, which is the entire point of the mechanism. 9 → 5, and they were
     // real: LaneOrderChip, DayChip (twice — the logbook rail and the week rail
-    // draw the same object separately), MetaPill, PlanDockPill.
+    // draw the same object separately), MetaPill, PlanDockPill. 5 → 4 when the
+    // endurance lanes became a pager: LaneOrderChip went with them, because a
+    // control that sorted three lanes has nothing to sort in a section whose
+    // pages are ordered by the volume in them.
     const SANCTIONED = /\b(?:DockChip|APill|AChip|ActionPill|GlassPillRow)\b/;
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    burnDown(decls, 5, "2026-10-31", "chip-shaped component → Chip, AChip or DockChip");
+    burnDown(decls, 4, "2026-10-31", "chip-shaped component → Chip, AChip or DockChip");
   });
 });
 

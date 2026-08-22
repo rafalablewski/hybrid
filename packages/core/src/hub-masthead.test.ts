@@ -192,12 +192,15 @@ describe("the hub head guard — no screen may draw its own", () => {
     // not, and must never be: that run opens the screen (see the guard above).
     // Every surviving w.home.group.* key must be rendered by something, so a
     // label can no longer outlive — or precede — the marker it was written for.
+    // `metaOf` was the last casualty: it was the Other-sports head's parentage
+    // quote ("1h 30min of 5h 24min this week"), and that block is gone — every
+    // sport is a page in the endurance pager now, so the share it computed is
+    // visible as the pager itself.
     const i18n = read("packages/core/src/i18n-web/home.ts");
     const keys = new Set([...i18n.matchAll(/"(w\.home\.group\.[a-zA-Z]+)"/g)].map((m) => m[1]!));
     const rendered = [
       ...HUB_SCREENS,
       "apps/mobile/components/aurora/exercise-widget.tsx",
-      "apps/mobile/components/aurora/other-sports.tsx",
     ]
       .map((f) => read(f))
       .join("\n");

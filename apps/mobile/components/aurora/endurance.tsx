@@ -1,13 +1,14 @@
+import { useMemo } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { sportForDiscipline, type CardioDiscipline } from "@hybrid/core";
+import { sportForDiscipline, sportPages, type SportPage } from "@hybrid/core";
 import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
 import { leading, fs, space, F } from "../../lib/ui";
 import { AuroraScreen } from "./kit";
-import AuroraEnduranceLanes from "./endurance-lanes";
+import AuroraSportPages from "./sport-pages";
 
 /**
  * AURORA Endurance — the COMPARISON.
@@ -29,30 +30,30 @@ export default function AuroraEndurance() {
   const { data: sessions = [], isFetching: refreshing, refetch } = useSessionsQuery();
   useRefreshOnFocus(refetch);
 
+  const pages = useMemo(() => sportPages(sessions), [sessions]);
+
+  /** A page opens the sport it is about. A discipline resolves to its catalog
+   *  sport; a ball sport already IS one. */
+  const open = (page: SportPage) => {
+    const name = page.sport ?? (page.discipline ? sportForDiscipline(page.discipline) : null);
+    if (name) router.push({ pathname: "/sport-page", params: { name } });
+  };
+
   return (
     <AuroraScreen hero={{ rank: "title", title: t("endurance.title") }} refreshing={refreshing} onRefresh={() => refetch()}>
       {/* NO INTRO PARAGRAPH. It read "Every endurance discipline you train, side
           by side. Open one for its own page." — one sentence describing a
           layout that is visible the instant the sentence is, and one narrating
-          an affordance the rails already carry: each ends in a ringed arrow,
+          an affordance the pages already carry: each ends in a ringed arrow,
           which is this codebase's own promise that the thing leaves. A caption
           explaining an arrow is a caption saying the arrow failed. The screen
-          opens on the lanes, which is what the screen is. Mirrors web. */}
-      <AuroraEnduranceLanes
-        sessions={sessions}
-        head={false}
-        cap={Infinity}
-        canOpen={(d: CardioDiscipline) => !!sportForDiscipline(d)}
-        onOpen={(d: CardioDiscipline) => {
-          const sport = sportForDiscipline(d);
-          if (sport) router.push({ pathname: "/sport-page", params: { name: sport } });
-        }}
-      />
+          opens on the sports, which is what the screen is. */}
+      <AuroraSportPages pages={pages} onOpen={open} />
 
-      {/* The lanes block renders nothing when no endurance is logged — a lane
-          exists because something is in it — so the screen states the empty
-          case itself. */}
-      {sessions.length === 0 && (
+      {/* The pager renders nothing when the window is empty — a page exists
+          because something is in it — so the screen states the empty case
+          itself. */}
+      {pages.length === 0 && (
         <View style={{ alignItems: "center", paddingVertical: space.huge }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk }}>{t("endurance.emptyTitle")}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, marginTop: 10, textAlign: "center", lineHeight: leading(fs.body) }}>
