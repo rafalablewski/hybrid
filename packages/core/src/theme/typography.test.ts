@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { fs, lh, tracking, trackFigure } from "../scale";
 import { fonts } from "./tokens";
 import { formatClock } from "../duration";
-import { cut, weight, text, resolveText, unitFor, UNIT_RATIO, TIMES, type TextToken } from "./typography";
+import { cut, weight, text, resolveText, unitFor, UNIT_RATIO, TIMES, type TextStyle, type TextToken } from "./typography";
 
 const TOKENS = Object.keys(text) as TextToken[];
 
@@ -12,7 +12,7 @@ describe("the named type styles", () => {
     // stops being an `fs` key or a leading stops being an `lh` ratio, the
     // ladder has been forked and a change to a rung no longer moves the app.
     for (const t of TOKENS) {
-      const s = text[t];
+      const s: TextStyle = text[t];
       expect(Object.keys(fs), `${t}.size`).toContain(s.size);
       expect(Object.keys(lh), `${t}.leading`).toContain(s.leading);
       // A style either names one of the two uppercase voices, names the figure
@@ -38,22 +38,22 @@ describe("the named type styles", () => {
   it("HARD — mono never goes above 600", () => {
     // Rule 03. A monospaced 700 closes its counters at exactly the sizes and the
     // distance this product is read at.
-    const bad = TOKENS.filter((t) => text[t].cut === "mono" && text[t].weight > weight.semibold);
+    const bad = TOKENS.filter((t) => (text[t] as TextStyle).cut === "mono" && (text[t] as TextStyle).weight > weight.semibold);
     expect(bad, `mono is capped at semibold:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — bold is display-only", () => {
     // Rule 02/20. 700 below `display` (26) is volume, not hierarchy.
-    const bad = TOKENS.filter((t) => text[t].weight === weight.bold && fs[text[t].size] < fs.display);
+    const bad = TOKENS.filter((t) => (text[t] as TextStyle).weight === weight.bold && fs[(text[t] as TextStyle).size] < fs.display);
     expect(bad, `700 is for 26dp and up:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — uppercase is mono only, and only at the two smallest rungs", () => {
     // Rule 14. Uppercase is a STRUCTURAL signal in this system; allowing it at
     // reading sizes is how an app grows shouting section titles.
-    for (const t of TOKENS.filter((t) => text[t].upper)) {
-      expect(text[t].cut, `${t} is uppercase`).toBe("mono");
-      expect(fs[text[t].size], `${t} is uppercase`).toBeLessThanOrEqual(fs.micro);
+    for (const t of TOKENS.filter((t) => (text[t] as TextStyle).upper)) {
+      expect((text[t] as TextStyle).cut, `${t} is uppercase`).toBe("mono");
+      expect(fs[(text[t] as TextStyle).size], `${t} is uppercase`).toBeLessThanOrEqual(fs.micro);
     }
   });
 
@@ -61,14 +61,15 @@ describe("the named type styles", () => {
     // Rule 05. The mono cut IS the measurement cut; a mono style that forgot
     // `tabular` is a column that will not line up and a roll that will jitter.
     for (const t of TOKENS) {
-      expect(text[t].tabular ?? false, `${t}`).toBe(text[t].cut === "mono" && !text[t].upper);
+      const st: TextStyle = text[t];
+      expect(st.tabular ?? false, `${t}`).toBe(st.cut === "mono" && !st.upper);
     }
   });
 
   it("HARD — the retired rungs are unreachable through a named style", () => {
     // `note` (15) and `heading` (20) were never chosen, they accumulated.
     // Anything migrated onto a named style leaves them behind automatically.
-    const sizes = new Set(TOKENS.map((t) => text[t].size));
+    const sizes = new Set(TOKENS.map((t) => (text[t] as TextStyle).size));
     expect([...sizes]).not.toContain("note");
     expect([...sizes]).not.toContain("heading");
   });
@@ -76,8 +77,8 @@ describe("the named type styles", () => {
   it("HARD — one ladder: no style invents a size the scale does not have", () => {
     // There is deliberately no parallel numeric scale. A figure and the heading
     // beside it are the same rung in a different cut.
-    const figureSizes = TOKENS.filter((t) => text[t].cut === "mono").map((t) => fs[text[t].size]);
-    const textSizes = TOKENS.filter((t) => text[t].cut === "sans").map((t) => fs[text[t].size]);
+    const figureSizes = TOKENS.filter((t) => (text[t] as TextStyle).cut === "mono").map((t) => fs[(text[t] as TextStyle).size]);
+    const textSizes = TOKENS.filter((t) => (text[t] as TextStyle).cut === "sans").map((t) => fs[(text[t] as TextStyle).size]);
     for (const f of figureSizes) expect(Object.values(fs)).toContain(f);
     for (const s of textSizes) expect(Object.values(fs)).toContain(s);
   });

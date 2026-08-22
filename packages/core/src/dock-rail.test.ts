@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { DOCK_RAIL, dockChipOn } from "./dock-rail";
-import { fs, space, track } from "./scale";
+import { fs, space } from "./scale";
 
 describe("the dock rail contract", () => {
   it("clears the 44dp hit-target floor", () => {
