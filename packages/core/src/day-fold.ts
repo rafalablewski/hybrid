@@ -11,11 +11,10 @@
  * bar in the day's colour, solid.
  *
  * ── THE NUMBERS LIVE HERE, NOT IN THE SCREEN ─────────────────────────────
- * Three things read this: the field's compression, the bar's latch, and the
- * band preview in the admin panel. When the thresholds lived in the screen the
- * bar could arrive before the field had finished leaving, which reads as two
- * headers on screen at once — so they are one exported object with the
- * arithmetic stated below.
+ * Two things read this: the field's compression and the bar's latch. When the
+ * thresholds lived in the screen the bar could arrive before the field had
+ * finished leaving, which reads as two headers on screen at once — so they are
+ * one exported object with the arithmetic stated below.
  *
  * ── WHY THE BAR IS NEVER GLASS ───────────────────────────────────────────
  * A blur is worth its cost over content worth blurring. Today is a near-black

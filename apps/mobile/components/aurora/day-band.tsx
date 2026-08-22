@@ -175,7 +175,7 @@ export default function AuroraDayBand({
    *  keep rendering the identical chrome on the page instead. */
   top?: ReactNode;
   /** 0 at rest, 1 folded — `foldProgress()` in core, published by the screen's
-   *  scroller. Absent (the admin preview) the field simply never folds. */
+   *  scroller. Absent — a host that does not scroll — the field never folds. */
   fold?: Animated.Value;
   /** Opens the readiness sheet — the same door the ring has always had. */
   onExplain: () => void;

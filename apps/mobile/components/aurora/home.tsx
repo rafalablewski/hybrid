@@ -605,8 +605,8 @@ export default function AuroraHome() {
   const band = deck[0]!;
   // ── THE FOLD ───────────────────────────────────────────────────────────
   // One signal, published by this screen's own scroller. The thresholds and the
-  // ramp live in @hybrid/core (day-fold.ts) so the field's compression, the
-  // bar's latch and the admin band preview cannot drift apart; the latch is
+  // ramp live in @hybrid/core (day-fold.ts) so the field's compression and the
+  // bar's latch cannot drift apart; the latch is
   // kept in a ref as well as state because the handler runs every frame and
   // must read the CURRENT value, not the one captured when it was created.
   const fold = useRef(new Animated.Value(0)).current;

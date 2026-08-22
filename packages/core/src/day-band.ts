@@ -12,8 +12,11 @@
  * athletes will ever read and it has to speak Polish and German too. `parts`
  * are slots filled with ANOTHER key (a discipline's verb, an energy system);
  * `values` are literals (a count, an exercise name). `bandText()` at the bottom
- * is the only renderer, shared by both clients, so a band on mobile and the
- * same band in the admin preview cannot compose the sentence differently.
+ * is the only renderer — the one place a band's line becomes a string, so a
+ * second surface cannot compose the same band differently. It has ONE caller
+ * today (the mobile field); that is a fact about how far the band has been
+ * built, not a reason to inline it, and the second caller is the operator
+ * preview recorded as `day-band-preview` in capabilities.ts.
  *
  * ── THE LADDER, AND WHY IT IS ORDERED THE WAY IT IS ───────────────────────
  * Checked top to bottom, first match wins:
