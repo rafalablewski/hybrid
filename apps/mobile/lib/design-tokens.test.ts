@@ -200,6 +200,56 @@ function hits(pattern: RegExp): string[] {
  * sentence on their screen, set in a utility style. If a third is ever added, it
  * is added HERE first, with the same argument written down.
  */
+/**
+ * PROSE IN THE MEASURING FACE.
+ *
+ * The face map of the shipped app found Söhne Mono carrying 193 of Today's 269
+ * faced text nodes and 75 of Nutrition's 110. The first read of that was "the
+ * labels are the wrong face", and the fix that suggested — move the 423 kicker
+ * and overline sites onto the sans — was WRONG. Strip mono from a tracked
+ * uppercase label and what is left is tracked uppercase grotesque, which is the
+ * house style of every sports brand since 2012 and the thing the type spec bans
+ * everywhere else.
+ *
+ * Classifying the nodes said something more useful. Of Today's 193, sixty-six
+ * are figures and eighty-seven are day names in the calendar band — both
+ * legitimate. What is not legitimate is the remainder: SENTENCES set in the
+ * measuring face. "Add your first food". "Both numbers are yours — nothing was
+ * changed for you." Empty states, provenance notes, hints.
+ *
+ * AND THE LEADING GIVES THEM AWAY, which is what makes this mechanical rather
+ * than a matter of taste. Every mono style in the token file takes `flush` or
+ * `snug`, because a figure and a label have no prose to lead. A hand-rolled
+ * `F.mono` carrying `normal` or `relaxed` leading is somebody setting a
+ * paragraph and reaching for the wrong face to do it — the author already knew
+ * it was prose, or they would not have opened up the line height.
+ *
+ * 31 at first measurement. The 12 on the Nutrition family went to
+ * `ty(C, "caption")` in the same change that shipped the serif, because those
+ * are the two screens whose rendering was verified. The rest is a sweep, not a
+ * question.
+ */
+describe("prose never wears the measuring face", () => {
+  const MONO_PROSE = /F\.mono(?:Med|Bold)?[^\n]*leading\([^)]*"(?:relaxed|normal)"\)/g;
+
+  it("BURN-DOWN — mono carrying a prose leading", () => {
+    burnDown(
+      hits(MONO_PROSE),
+      19,
+      "2027-02-28",
+      'prose in the measuring face → ty(C, "caption")',
+    );
+  });
+
+  it("HARD — the Nutrition family stays clean", () => {
+    // The two screens whose rendering was verified. A regression here is visible
+    // in the face map, so it is held at zero rather than counted down.
+    const bad = hits(MONO_PROSE).filter((h) =>
+      /nutrition\.tsx|target-sheet\.tsx/.test(h));
+    expect(bad, `prose in the measuring face:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
 describe("the editorial serif", () => {
   const SANCTIONED = [
     "components/aurora/week-verdict.tsx",

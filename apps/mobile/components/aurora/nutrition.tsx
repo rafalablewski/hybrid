@@ -2638,7 +2638,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           <>
             {foodTab === "meals" ? (
               meals.length === 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
+                <Text style={{ ...ty(C, "caption"), paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE }}>{t("w.recovery.nutrition.mealsEmptyPicker")}</Text>
               ) : meals.map((m) => (
                 <FoodRow
                   key={m.id} C={C}
@@ -2652,7 +2652,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                 />
               ))
             ) : foods.length === 0 ? (
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE, lineHeight: leading(fs.caption, "relaxed") }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
+              <Text style={{ ...ty(C, "caption"), paddingVertical: space.lg, paddingHorizontal: PICKER_EDGE }}>{t(foodTab === "personal" ? "w.recovery.nutrition.personalEmpty" : foodTab === "favorites" ? "w.recovery.nutrition.favoritesEmpty" : "w.recovery.nutrition.recentEmptyPicker")}</Text>
             ) : foodTab === "recent" && usuals.length ? (
               /* THE HOUR. The app knows the clock and the meal, so Recent
                  opens on what this athlete actually eats around now — and
@@ -2986,7 +2986,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <TextInput value={compQuery} onChangeText={setCompQuery} placeholder={t("w.recovery.nutrition.searchProducts")} placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.searchProducts")} style={{ flex: 1, fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, padding: 0 }} />
           </View>
           {products.length === 0 ? (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16, lineHeight: leading(fs.caption, "relaxed") }}>{t("w.recovery.nutrition.noProductsYet")}</Text>
+            <Text style={{ ...ty(C, "caption"), paddingVertical: 16 }}>{t("w.recovery.nutrition.noProductsYet")}</Text>
           ) : compList.length === 0 ? (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, paddingVertical: 16 }}>{t("w.recovery.nutrition.foodNoResults")}</Text>
           ) : compList.map((p) => {
@@ -3139,14 +3139,14 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <VerifiedMark C={C} size={15} />
             <View style={{ flex: 1 }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.verified")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 4, lineHeight: leading(fs.nano, "relaxed") }}>
+              <Text style={{ ...ty(C, "caption"), marginTop: 4 }}>
                 {t("w.recovery.nutrition.verifiedSub").replace("{source}", src?.name ?? "").replace("{date}", f.verifiedOn)}
               </Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8, lineHeight: leading(fs.nano, "relaxed") }}>{f.provenance}</Text>
+              <Text style={{ ...ty(C, "caption"), marginTop: 8 }}>{f.provenance}</Text>
               {/* A stale item KEEPS its tick — the numbers were true when we
                   checked. It says out loud that it is due another look. */}
               {fresh.stale ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.amber), marginTop: 8, lineHeight: leading(fs.nano, "relaxed") }}>{t("w.recovery.nutrition.verifiedStale")}</Text>
+                <Text style={{ ...ty(C, "caption", txt(C, C.amber)), marginTop: 8 }}>{t("w.recovery.nutrition.verifiedStale")}</Text>
               ) : null}
             </View>
           </View>
@@ -3285,11 +3285,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
           </Pressable>
         ))}
 
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 20, lineHeight: leading(fs.nano, "relaxed"), opacity: 0.85 }}>{src.trademark}</Text>
+        <Text style={{ ...ty(C, "caption"), marginTop: 20, opacity: 0.85 }}>{src.trademark}</Text>
         {/* Where the artwork came from — sourceMarkCredits() had no surface at
             all until now. */}
         {src.mark ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: leading(fs.nano, "relaxed"), opacity: 0.7, marginTop: 8, marginBottom: 20 }}>
+          <Text style={{ ...ty(C, "caption"), opacity: 0.7, marginTop: 8, marginBottom: 20 }}>
             {t("w.recovery.nutrition.markCredit")} {src.mark.credit}
           </Text>
         ) : <View style={{ marginBottom: 20 }} />}
@@ -4291,7 +4291,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                   </View>
                 ))}
             </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: leading(fs.nano, "relaxed") }}>
+            <Text style={{ ...ty(C, "caption"), marginTop: 12 }}>
               {t("w.recovery.nutrition.facts.dayPartial")} {t("w.recovery.nutrition.facts.referenceNote")}
             </Text>
           </View>
@@ -4328,7 +4328,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             </View>
           ) : null}
         </View>
-        {dayLogs.length === 0 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 12, lineHeight: leading(fs.nano, "relaxed") }}>{daySummary.kcal > 0 ? t("w.recovery.nutrition.diaryTotalsOnly") : t("w.recovery.nutrition.diaryEntriesHint")}</Text> : null}
+        {dayLogs.length === 0 ? <Text style={{ ...ty(C, "caption"), marginTop: 12 }}>{daySummary.kcal > 0 ? t("w.recovery.nutrition.diaryTotalsOnly") : t("w.recovery.nutrition.diaryEntriesHint")}</Text> : null}
       </ACard>
       </>
       ); })()}

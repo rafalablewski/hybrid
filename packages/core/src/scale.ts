@@ -72,6 +72,29 @@ export type TypeRole =
  * level needs two rungs of separation to read as a level, so a ladder whose
  * neighbours differ by one dp is carrying a distinction the eye cannot collect.
  */
+/**
+ * THE TWO x-HEIGHTS THE SERIF RUNG IS DERIVED FROM.
+ *
+ * Read off the shipped binaries with fontTools — the OUTLINE of `x`, not the
+ * OS/2 `sxHeight` field, because ITC Garamond's is wrong (it reports 451 on a
+ * 2048 upem head, i.e. 0.22 em, which is not a possible x-height and would put
+ * the serif at 71dp beside a 26dp sans).
+ *
+ * Two faces read as ONE size when their x-heights match, not when their point
+ * sizes do. That makes the ratio below the whole pairing, and it is the reason
+ * this product can mix a grotesque with a Garamond at all: ITC Garamond's
+ * famously large x-height needs 17.6 percent compensation where a true old-style
+ * Garamond (~0.40 em) would need 31 and still read as an older, smaller voice.
+ */
+export const X_HEIGHT_EM = { sans: 0.523, serif: 0.445 } as const;
+
+/** 1.1753. Derived, never typed — replace a binary and this moves with it. */
+export const SERIF_X_HEIGHT_RATIO = X_HEIGHT_EM.sans / X_HEIGHT_EM.serif;
+
+/** `display`, named so the serif rung can be derived from it rather than
+ *  hard-coded beside it. */
+const DISPLAY_PX = 26;
+
 export const fs: Record<TypeRole, number> = {
   nano: 10,
   micro: 11,
@@ -86,17 +109,17 @@ export const fs: Record<TypeRole, number> = {
   // bless hand-rolled heads (those should take a HeroRank); it stops the ones
   // that exist from being 22 in one file and 21 or 24 in the next.
   headline: 22,
-  display: 26,
+  display: DISPLAY_PX,
   hero: 34,
   stat: 46,
   /**
    * SERIF ONLY, and it is not a hole in the ladder — it is a second ladder with
    * one rung on it.
    *
-   * ITC Garamond Book has an x-height of 0.445 em against Söhne's 0.523 em,
-   * measured off the shipped binaries. Two faces read as ONE size when their
-   * x-heights match, not when their point sizes do, so the serif needs
-   * 1.176x — and 26 (`display`) x 1.176 is 30.6, rounded to even.
+   * DERIVED, NOT TYPED: `display` x SERIF_X_HEIGHT_RATIO, rounded to even.
+   * 26 x 1.1753 is 30.6, so 30. Move `display` and the serif follows it, which
+   * is the only way the pairing survives a change to the sans ladder — a
+   * hard-coded 30 would have silently stopped matching.
    *
    * PUTTING IT ON `display` INSTEAD WAS TRIED AND IS WRONG: at 26 the Garamond
    * sets an x-height of 11.6dp against the sans's 13.6, so the sentence reads
@@ -106,7 +129,7 @@ export const fs: Record<TypeRole, number> = {
    * holds that, because a 30dp sans heading would sit two dp off `display` for
    * no reason anybody could name — which is exactly how `heading.1` died.
    */
-  editorial: 30,
+  editorial: Math.round((DISPLAY_PX * SERIF_X_HEIGHT_RATIO) / 2) * 2,
 };
 
 export type SpaceToken =

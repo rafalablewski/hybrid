@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, SERIF_X_HEIGHT_RATIO, X_HEIGHT_EM } from "./scale";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
 
 /**
@@ -36,6 +36,21 @@ const SPACE_ORDER: SpaceToken[] = [
 describe("type scale", () => {
   it("names every rung exactly once", () => {
     expect(Object.keys(fs).sort()).toEqual([...ORDER, ...SERIF_ORDER].sort());
+  });
+
+  it("derives the serif rung rather than hard-coding it", () => {
+    // The rung is `display` x the ratio between the two measured x-heights. If
+    // `display` ever moves, the serif moves with it — a typed 30 would have gone
+    // on claiming a match it no longer had, and the failure is invisible: two
+    // faces at slightly different optical sizes just look faintly wrong.
+    expect(SERIF_X_HEIGHT_RATIO).toBeCloseTo(1.1753, 4);
+    expect(fs.editorial).toBe(Math.round((fs.display * SERIF_X_HEIGHT_RATIO) / 2) * 2);
+    expect(fs.editorial).toBe(30);
+    // The x-heights are the measurement the whole pairing rests on. They are
+    // read off the shipped binaries; changing one without re-measuring is how
+    // this quietly stops being true.
+    expect(X_HEIGHT_EM.sans).toBeCloseTo(0.523, 3);
+    expect(X_HEIGHT_EM.serif).toBeCloseTo(0.445, 3);
   });
 
   it("keeps the serif rung off the sans ladder", () => {
