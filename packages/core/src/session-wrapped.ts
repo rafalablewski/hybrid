@@ -22,7 +22,6 @@
  */
 import type { LoggedSession, SessionBlock, CardioBlock, CardioDiscipline } from "./engines/session";
 import { blockBestE1rm, e1rmSeries, cardioDiscipline, formatSportPace, isCardio } from "./engines/session";
-import { volumeByMuscle } from "./engines/records";
 import { bwAt, type BodyweightInput } from "./bodyweight";
 import { doneReceipt } from "./done-receipt";
 import { orderFigures } from "./figure-order";
@@ -43,6 +42,16 @@ export interface WrappedFact {
   labelKey: string;
   value: string;
   tone?: "up" | "down" | "neutral";
+  /**
+   * WHAT THE FIGURE IS ABOUT, when the label alone does not say. An e1RM and
+   * its trend belong to ONE lift, and `topLift` picks the lift with the highest
+   * estimated max — which is routinely NOT the lift the rest of the summary
+   * leads with. A pull-up session that opens on "75 kg — Pull-Up" then showed
+   * "EST. 1RM 98 kg / TREND −16 kg" with no name on either, and both figures
+   * were the trap-bar deadlift's. Unlabelled, a red −16 reads as this session
+   * going backwards. The name is plain text (an exercise, never translated).
+   */
+  qualifier?: string;
 }
 
 /**
@@ -237,8 +246,6 @@ function totalRounds(blocks: SessionBlock[]): number {
   return n;
 }
 
-const MUSCLE_LABEL_KEY = (m: string) => `muscle.${m}`;
-
 /**
  * Build the Wrapped model for a logged session. `all` is the full history (for
  * the e1RM trend); `bw` is the dated bodyweight lookup so tonnage/e1RM/calories
@@ -348,7 +355,7 @@ export function sessionWrapped(
   const facts: WrappedFact[] = [];
   const top = topLift(session, bwHereKg);
   if (top) {
-    facts.push({ labelKey: "session.wrapped.est1rm", value: fmtWeight(top.e1rm, units), tone: "neutral" });
+    facts.push({ labelKey: "session.wrapped.est1rm", value: fmtWeight(top.e1rm, units), tone: "neutral", qualifier: top.name });
     // e1RM trend for the headline lift: gain from first logged to this session.
     const series = e1rmSeries(all, top.name, bw);
     if (series.length > 1) {
@@ -358,6 +365,7 @@ export function sessionWrapped(
           labelKey: "session.wrapped.trend",
           value: `${delta > 0 ? "+" : "−"}${fmtWeight(Math.abs(delta), units)}`,
           tone: delta > 0 ? "up" : "down",
+          qualifier: top.name,
         });
     }
   }
@@ -373,13 +381,13 @@ export function sessionWrapped(
   // discipline (a matched lifting session has a heart rate too).
   if (session.device?.maxHr != null)
     facts.push({ labelKey: "session.device.maxHr", value: `${session.device.maxHr} bpm`, tone: "neutral" });
-  // Muscle split — the session's most-trained muscle and its tonnage
-  // (bodyweight-aware via this session's weight, so dips/pull-ups count).
-  const muscles = volumeByMuscle(session.blocks, false, bwHereKg);
-  if (muscles.length > 0) {
-    const m = muscles[0]!;
-    facts.push({ labelKey: MUSCLE_LABEL_KEY(m.muscle), value: fmtWeight(m.volume, units), tone: "neutral" });
-  }
+  // NO MUSCLE FACT HERE. This used to push the top of `volumeByMuscle` — the
+  // engine's SEVEN COARSE BUCKETS — which put "BACK 7,020 kg" two scrolls under
+  // a muscle ledger reading "LATS 3,229 / UPPER BACK 1,787" from the twenty-name
+  // anatomy model. Two vocabularies for one session's work, disagreeing about
+  // both the name and the number, is the defect the session muscle map was
+  // built to end; it was removed from the details section and left standing
+  // here. The muscle read has ONE home now, and it is the body section.
   // Readiness the athlete logged for the day, when present.
   if (typeof session.readiness === "number") {
     facts.push({ labelKey: "home.readiness", value: `${session.readiness}`, tone: "neutral" });

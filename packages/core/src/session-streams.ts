@@ -357,18 +357,169 @@ export function streamSummary(stream: SessionStream): StreamSummary {
 export function hrZoneSeconds(stream: SessionStream, maxHr: number): [number, number, number, number, number] {
   const out: [number, number, number, number, number] = [0, 0, 0, 0, 0];
   if (stream.kind !== "hr" || !(maxHr > 0)) return out;
-  const gaps: number[] = [];
-  for (let i = 1; i < stream.offsets.length; i++) gaps.push(stream.offsets[i]! - stream.offsets[i - 1]!);
-  if (gaps.length === 0) return out;
-  const sorted = [...gaps].sort((a, b) => a - b);
-  const tail = sorted[Math.floor(sorted.length / 2)]!;
+  const secs = sampleSeconds(stream);
+  if (secs.length === 0) return out;
   for (let i = 0; i < stream.values.length; i++) {
-    const dt = i < gaps.length ? gaps[i]! : tail;
+    const dt = secs[i]!;
     const pct = stream.values[i]! / maxHr;
     const z = pct >= 0.9 ? 5 : pct >= 0.8 ? 4 : pct >= 0.7 ? 3 : pct >= 0.6 ? 2 : pct >= 0.5 ? 1 : 0;
     if (z > 0) out[z - 1] = out[z - 1]! + dt;
   }
   return out.map((s) => Math.round(s)) as [number, number, number, number, number];
+}
+
+/**
+ * SAMPLE DURATIONS — each sample owns the gap to the NEXT one, and the last
+ * owns the median gap rather than nothing.
+ *
+ * Lifted out of `hrZoneSeconds` because three readings now need exactly this
+ * weighting, and an irregularly-sampled stream over-counts wherever the watch
+ * sampled densely if any of them counts samples instead of seconds.
+ */
+function sampleSeconds(stream: SessionStream): number[] {
+  const gaps: number[] = [];
+  for (let i = 1; i < stream.offsets.length; i++) gaps.push(stream.offsets[i]! - stream.offsets[i - 1]!);
+  if (gaps.length === 0) return [];
+  const sorted = [...gaps].sort((a, b) => a - b);
+  const tail = sorted[Math.floor(sorted.length / 2)]!;
+  return stream.values.map((_, i) => (i < gaps.length ? gaps[i]! : tail));
+}
+
+/**
+ * SECONDS SPENT ABOVE A HEART RATE — time-weighted, not sample-counted.
+ *
+ * The figure an athlete quotes about a hard session ("twenty minutes over
+ * 160"), and the one that separates a session with a spike from one that lived
+ * up there. Null when the stream is not a heart rate.
+ */
+export function secondsAbove(stream: SessionStream, bpm: number): number | null {
+  if (stream.kind !== "hr" || !(bpm > 0)) return null;
+  const secs = sampleSeconds(stream);
+  if (secs.length === 0) return null;
+  let out = 0;
+  for (let i = 0; i < stream.values.length; i++) if (stream.values[i]! > bpm) out += secs[i]!;
+  return Math.round(out);
+}
+
+/**
+ * CARDIAC DRIFT — how much higher the heart rate ran in the second half than
+ * the first, as a percentage.
+ *
+ * The honest version of "how much did this cost you" that a single average
+ * cannot express: the same mean can come from an even hour or from a first half
+ * at 130 and a second at 155, and only the second one is a session that took
+ * something out of you. Positive means it climbed.
+ *
+ * Split by TIME, not by sample index, so a stream that sampled densely at the
+ * start does not put its midpoint in the wrong place. Null when there is too
+ * little either side to compare.
+ */
+export function hrDriftPct(stream: SessionStream): number | null {
+  if (stream.kind !== "hr") return null;
+  const n = stream.values.length;
+  if (n < 4) return null;
+  const first = stream.offsets[0]!;
+  const mid = first + (stream.offsets[n - 1]! - first) / 2;
+  let a = 0;
+  let an = 0;
+  let b = 0;
+  let bn = 0;
+  for (let i = 0; i < n; i++) {
+    if (stream.offsets[i]! < mid) {
+      a += stream.values[i]!;
+      an++;
+    } else {
+      b += stream.values[i]!;
+      bn++;
+    }
+  }
+  if (an === 0 || bn === 0) return null;
+  const meanA = a / an;
+  if (!(meanA > 0)) return null;
+  return Math.round(((b / bn - meanA) / meanA) * 1000) / 10;
+}
+
+/**
+ * THE FALL IN THE LAST MINUTE — how far the heart rate came down over the
+ * closing sixty seconds of the recording.
+ *
+ * DELIBERATELY NOT CALLED "RECOVERY HEART RATE". The clinical figure is the
+ * drop measured one minute AFTER the effort stops, and a workout recording
+ * usually ends when the effort does — so the samples that figure needs are not
+ * in this data, and presenting this as that would be inventing a measurement.
+ * What this is, is what the recording can honestly say: the heart rate was here
+ * at the end, and a minute earlier it was there. On a session with a cool-down
+ * it is the same shape as the real thing; on one that stops dead it is small,
+ * which is also true.
+ *
+ * Null when the recording is shorter than the window it needs.
+ */
+export const HR_FALL_WINDOW_SEC = 60;
+
+export function hrFallLastMinute(stream: SessionStream): number | null {
+  if (stream.kind !== "hr") return null;
+  const n = stream.values.length;
+  if (n < 2) return null;
+  const end = stream.offsets[n - 1]!;
+  const from = end - HR_FALL_WINDOW_SEC;
+  if (from < stream.offsets[0]!) return null;
+  // The highest reading inside the window, against the last one — a fall is
+  // measured from where it actually was, not from whichever sample happens to
+  // sit exactly on the boundary.
+  let peak = -Infinity;
+  for (let i = 0; i < n; i++) if (stream.offsets[i]! >= from) peak = Math.max(peak, stream.values[i]!);
+  if (!Number.isFinite(peak)) return null;
+  const fall = Math.round(peak - stream.values[n - 1]!);
+  return fall > 0 ? fall : null;
+}
+
+/**
+ * THE ROUTE, NORMALISED — latitude/longitude reduced to points in a 0–1 box,
+ * ready for any client to scale into a plot.
+ *
+ * A TRACE, not a map: no tiles, no basemap, no attribution and no network. The
+ * SHAPE of where you went is the part that is recognisable at a glance and the
+ * part that is worth posting — the streets around it are somebody else's data
+ * and a licence.
+ *
+ * ASPECT IS PRESERVED and longitude is scaled by cos(latitude), without which
+ * every route drawn north of the tropics is stretched sideways — a 5 km square
+ * loop at 52° renders as a rectangle nearly twice as wide as it is tall. The
+ * shorter axis is centred in the box.
+ */
+export function routePoints(stream: SessionStream): { x: number; y: number }[] {
+  if (stream.kind !== "route" || !stream.valuesB) return [];
+  const lat = stream.values;
+  const lng = stream.valuesB;
+  const n = Math.min(lat.length, lng.length);
+  if (n < 2) return [];
+  let minLat = Infinity;
+  let maxLat = -Infinity;
+  let minLng = Infinity;
+  let maxLng = -Infinity;
+  for (let i = 0; i < n; i++) {
+    minLat = Math.min(minLat, lat[i]!);
+    maxLat = Math.max(maxLat, lat[i]!);
+    minLng = Math.min(minLng, lng[i]!);
+    maxLng = Math.max(maxLng, lng[i]!);
+  }
+  const midLat = (minLat + maxLat) / 2;
+  const kx = Math.cos((midLat * Math.PI) / 180) || 1;
+  const spanY = maxLat - minLat;
+  const spanX = (maxLng - minLng) * kx;
+  const span = Math.max(spanY, spanX) || 1;
+  // Centre the shorter axis so an out-and-back does not hug one edge.
+  const padX = (span - spanX) / 2;
+  const padY = (span - spanY) / 2;
+  const out: { x: number; y: number }[] = [];
+  for (let i = 0; i < n; i++) {
+    out.push({
+      x: (padX + (lng[i]! - minLng) * kx) / span,
+      // Latitude grows northward and a plot's y grows downward.
+      y: 1 - (padY + (lat[i]! - minLat)) / span,
+    });
+  }
+  return out;
 }
 
 /** Read a cumulative distance stream at an arbitrary second, linearly

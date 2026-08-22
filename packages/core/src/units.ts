@@ -33,11 +33,36 @@ export function storeLoad(input: string, u: WeightUnit): string {
   return String(Math.round(unitToKg(n, u) * 100) / 100);
 }
 
+/**
+ * THE GROUPING LOCALE. `toLocaleString()` with no argument resolves against the
+ * DEVICE, not against the app — so 3229 kg renders "3.229" on a Polish or
+ * German handset while the interface is in English, and an English reader
+ * parses that as three point two two nine. Beside `fmtTonnage`, which hard-codes
+ * a dot decimal, the same screen then spends "." on both meanings at once.
+ *
+ * This is the defect `feedStatText` was fixed for and pinned in
+ * feed-card.test.ts; it survived here, at the formatter forty-six call sites
+ * use. So the DEFAULT is deterministic rather than device-dependent — an
+ * English app on a German phone now reads the same as it does on an English
+ * one — and a caller that knows the interface language passes it, which is the
+ * only way a Polish UI groups Polish-ly. Left out, a figure is grouped the way
+ * the app's own default language groups it, never the handset's.
+ */
+const GROUPING_FALLBACK = "en-US";
+
+/** Group a figure for display, deterministically. See GROUPING_FALLBACK. */
+export function groupFigure(n: number, decimals: number, locale?: string): string {
+  return n.toLocaleString(locale ?? GROUPING_FALLBACK, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+}
+
 /** Format a kg number as a labelled weight, e.g. "102 kg" / "225 lb". */
-export function fmtWeight(kg: number, u: WeightUnit, decimals?: number): string {
+export function fmtWeight(kg: number, u: WeightUnit, decimals?: number, locale?: string): string {
   const v = kgToUnit(kg, u);
   const d = decimals ?? (u === "lb" ? 0 : v % 1 === 0 ? 0 : 1);
-  return `${Number(v.toFixed(d)).toLocaleString()} ${u}`;
+  return `${groupFigure(Number(v.toFixed(d)), d, locale)} ${u}`;
 }
 
 /**
@@ -53,9 +78,13 @@ export function splitFigure(s: string): [value: string, unit: string] {
 }
 
 /** Format big tonnage: metric tonnes in kg mode, total pounds in lb mode. */
-export function fmtTonnage(kg: number, u: WeightUnit): string {
-  if (u === "kg") return `${(kg / 1000).toFixed(1)} t`;
-  return `${Math.round(kgToUnit(kg, "lb")).toLocaleString()} lb`;
+export function fmtTonnage(kg: number, u: WeightUnit, locale?: string): string {
+  // The tonne figure carries a DECIMAL separator and the pound figure a GROUP
+  // separator, so the two must agree about which mark is which — see
+  // GROUPING_FALLBACK. A hard-coded `toFixed` beside a device-grouped weight is
+  // exactly how one screen came to spend "." on both meanings.
+  if (u === "kg") return `${groupFigure(Math.round((kg / 1000) * 10) / 10, 1, locale)} t`;
+  return `${groupFigure(Math.round(kgToUnit(kg, "lb")), 0, locale)} lb`;
 }
 
 // ── Height (cm ⇄ in) ─────────────────────────────────────────────────────────

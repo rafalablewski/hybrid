@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { View, Text, Image } from "react-native";
-import Svg, { Polygon, Circle } from "react-native-svg";
+import Svg, { Path, Circle, Defs, ClipPath, G, Line as SvgLine } from "react-native-svg";
 import {
   exerciseBodyMap,
+  bodyPath,
+  muscleFibres,
   type BodyFigure,
   type ExerciseBodyMap,
   type MuscleGlow,
@@ -12,12 +14,33 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { F, fs, tracking, ty} from "../../lib/ui";
 import { RADIUS } from "./kit";
 
-const poly = (pts: { x: number; y: number }[]) => pts.map((q) => `${q.x},${q.y}`).join(" ");
 
 // Untargeted muscles sit as faint definition; targeted ones glow from a visible
 // floor up to full at the top mover.
 const fillOpacity = (intensity: number): number =>
   intensity <= 0 ? 0.07 : 0.26 + 0.74 * intensity;
+
+/**
+ * THE FIGURE IS A TRACE — the instrument family's own form, applied to the one
+ * picture that was still a set of filled blobs.
+ *
+ * This is what closes the "commissioned anatomical illustration" case rather
+ * than buying it. What separates an anatomical drawing from a silhouette is not
+ * resolution: it is that the muscles are DRAWN — a contour, and fibres running
+ * the length of the belly. Both are geometry, and core already holds it
+ * (`bodyPath` for the contour, `muscleFibres` for the grain).
+ *
+ * So intensity is carried by INK rather than by paint: a worked muscle gets a
+ * firmer contour and darker fibres, an untouched one stays a hairline. The fill
+ * remains, faint, only so a muscle is a tappable area rather than a set of
+ * lines with gaps between them.
+ */
+/** The contour's weight — a hairline when untouched, drawn when worked. */
+const strokeWeight = (intensity: number): number => 0.45 + 0.75 * intensity;
+/** The grain's ink. Never zero: an untouched muscle is still anatomy. */
+const fibreOpacity = (intensity: number): number => 0.12 + 0.55 * intensity;
+/** A filled muscle would fight its own contour, so the fill is a whisper. */
+const areaOpacity = (intensity: number): number => (intensity <= 0 ? 0.03 : 0.05 + 0.22 * intensity);
 
 /**
  * The exercise BODY-MAP (mobile) — a front + back mannequin whose muscles glow
@@ -158,25 +181,59 @@ function Figure({
 }) {
   return (
     <Svg viewBox="0 0 100 100" width="100%" height="100%">
-      {/* faint silhouette so the mannequin reads even where nothing is targeted */}
+      <Defs>
+        {/* One clip per muscle shape, so its grain stops at its own edge. */}
+        {fig.regions.map((r) =>
+          r.shapes.map((shape, j) => (
+            <ClipPath key={`c-${r.muscle}-${j}`} id={`c-${fig.side}-${r.muscle}-${j}`}>
+              <Path d={bodyPath(shape)} />
+            </ClipPath>
+          )),
+        )}
+      </Defs>
+
+      {/* THE SILHOUETTE, DRAWN. Smoothed by core's `bodyPath`, which fits a
+          spline THROUGH the authored points — the anatomy stays where it was
+          placed and the segments between arrive curved. As straight polygons
+          the arms were literal rectangles and the figure read as a toy. */}
       {fig.outline.map((part, i) => (
-        <Polygon key={`o${i}`} points={poly(part)} fill={C.ash} fillOpacity={0.09} stroke={C.line} strokeWidth={0.5} />
+        <Path key={`o${i}`} d={bodyPath(part)} fill={C.ash} fillOpacity={0.05} stroke={C.ash} strokeOpacity={0.34} strokeWidth={0.5} />
       ))}
-      <Circle cx={fig.head.cx} cy={fig.head.cy} r={fig.head.r} fill={C.ash} fillOpacity={0.12} stroke={C.line} strokeWidth={0.5} />
-      {/* muscle regions, glowing by share of effort */}
+      <Circle cx={fig.head.cx} cy={fig.head.cy} r={fig.head.r} fill={C.ash} fillOpacity={0.05} stroke={C.ash} strokeOpacity={0.34} strokeWidth={0.5} />
+
+      {/* EVERY MUSCLE: a whisper of area so it is tappable, its own contour,
+          and the grain inside it. Intensity rides the INK. */}
       {fig.regions.map((r) => {
         const intensity = intensityOf[r.muscle] ?? 0;
         const isSel = selected === r.muscle;
+        const ink = isSel ? 1 : intensity;
         return r.shapes.map((shape, j) => (
-          <Polygon
-            key={`${r.muscle}-${j}`}
-            points={poly(shape)}
-            fill={C.lime}
-            fillOpacity={isSel ? 1 : fillOpacity(intensity)}
-            stroke={isSel ? C.lime : "none"}
-            strokeWidth={isSel ? 1 : 0}
-            onPress={() => onSelect(r.muscle)}
-          />
+          <G key={`${r.muscle}-${j}`} onPress={() => onSelect(r.muscle)}>
+            <Path d={bodyPath(shape)} fill={C.lime} fillOpacity={isSel ? 0.34 : areaOpacity(intensity)} />
+            <G clipPath={`url(#c-${fig.side}-${r.muscle}-${j})`}>
+              {muscleFibres(shape).map(([a, b], k) => (
+                <SvgLine
+                  key={k}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
+                  stroke={C.lime}
+                  strokeOpacity={fibreOpacity(ink)}
+                  strokeWidth={0.42}
+                  strokeLinecap="round"
+                />
+              ))}
+            </G>
+            <Path
+              d={bodyPath(shape)}
+              fill="none"
+              stroke={C.lime}
+              strokeOpacity={isSel ? 1 : 0.24 + 0.66 * intensity}
+              strokeWidth={strokeWeight(ink)}
+              strokeLinejoin="round"
+            />
+          </G>
         ));
       })}
     </Svg>
