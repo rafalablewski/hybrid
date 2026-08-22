@@ -415,10 +415,16 @@ describe("leading and tracking", () => {
     // fifth is the portion stepper's −, whose box was 26 on a size of 24: once
     // the size took a rung the pair read as a 1.0 ratio, which is nobody's
     // choice, it is two numbers that used to be different.)
+    // 38 → 35: `lh.flush` landed and three of these were figure boxes typed by
+    // eye — a 50 and a 44 beside a trackFigure(), and a `lineHeight: fs.stat`
+    // that was already flush and had no way to say so. A missing rung is one of
+    // the reasons an absolute survives: nobody types a number they have a name
+    // for. See the "a standalone figure sets its box flush" guard below.
+    //
     // 39 → 38: the You tab's profile-setup nudge, moved into the lead rail,
     // took its hand-tuned `lineHeight: 18` with it — on fs.body that is exactly
     // leading(fs.body), which is to say it was never a tuning.
-    burnDown(hits(/lineHeight:\s*\d/g), 38, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    burnDown(hits(/lineHeight:\s*\d/g), 35, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking derives from the size; a raw dp is never the answer", () => {
@@ -468,6 +474,37 @@ describe("leading and tracking", () => {
     const OWN_SCALE = ["lib/share.tsx", "components/aurora/login.tsx", "components/aurora/mfa-settings.tsx"];
     const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
     expect(raw, 'letterSpacing → tracking(size) / tracking(size, "label"|"caps"), or trackFigure(size) for a figure').toEqual([]);
+  });
+});
+
+describe("figures", () => {
+  it("HARD — a standalone figure sets its box flush", () => {
+    // THE DEFECT, and it is invisible until you put two tiles side by side: a
+    // figure has no second line and no descender past the cap band, so any
+    // ratio above 1.0 buys line box that nothing can occupy. At fs.stat that is
+    // seven dp, INSIDE the text node, which is why it survives every attempt to
+    // fix it with padding.
+    //
+    // Before `lh.flush` existed the app reached for it six ways — leading(...,
+    // "tight") at six sites, a hand-typed `lineHeight: fs.stat` at one (which
+    // IS flush, arrived at by eye), plus 50, 44, 35 and a local FIGURE_BOX —
+    // and seventeen more figure sites declared no box at all and took whatever
+    // the platform gave them. Six spellings and a default is not a decision.
+    //
+    // `trackFigure(` is the marker because it is definitionally the figure
+    // tightening: if a call site is big enough to need it, it is a figure.
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      text.split("\n").forEach((line, i) => {
+        if (!line.includes("trackFigure(")) return;
+        if (/^\s*(\/\/|\*|\/\*)/.test(line)) return; // a comment naming it is not a call site
+        if (!line.includes("lineHeight")) { bad.push(`${path}:${i + 1} — figure with no line box`); return; }
+        if (!/lineHeight:\s*(leading\([^)]*"flush"\)|FIGURE_BOX)/.test(line)) {
+          bad.push(`${path}:${i + 1} — figure box is not flush`);
+        }
+      });
+    }
+    expect(bad, `\na figure takes leading(size, "flush") — see lh.flush in scale.ts:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 });
 

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { fs, lh, tracking, trackFigure } from "../scale";
 import { fonts } from "./tokens";
 import { formatClock } from "../duration";
-import { cut, weight, text, resolveText, unitFor, FLUSH, UNIT_RATIO, TIMES, type TextToken } from "./typography";
+import { cut, weight, text, resolveText, unitFor, UNIT_RATIO, TIMES, type TextToken } from "./typography";
 
 const TOKENS = Object.keys(text) as TextToken[];
 
@@ -14,7 +14,7 @@ describe("the named type styles", () => {
     for (const t of TOKENS) {
       const s = text[t];
       expect(Object.keys(fs), `${t}.size`).toContain(s.size);
-      if (s.leading !== FLUSH) expect(Object.keys(lh), `${t}.leading`).toContain(s.leading);
+      expect(Object.keys(lh), `${t}.leading`).toContain(s.leading);
       // A style either names one of the two uppercase voices, names the figure
       // tightening, or names nothing — in which case the SIZE decides, which is
       // the whole point of the band table. Anything else is a forked ladder.
@@ -97,7 +97,7 @@ describe("resolveText", () => {
   it("sets a standalone figure solid", () => {
     const m = resolveText("metric");
     expect(m.fontSize).toBe(fs.stat);
-    expect(m.lineHeight).toBe(fs.stat); // FLUSH — no line box a figure cannot use
+    expect(m.lineHeight).toBe(fs.stat); // lh.flush — no line box a figure cannot use
     expect(m.fontFamily).toBe(cut.mono);
     expect(m.tabular).toBe(true);
   });

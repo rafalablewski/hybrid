@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { fs, space, F, TABULAR, trackFigure, PressScale as Pressable , tracking} from "../lib/ui";
+import { F, PressScale as Pressable, TABULAR, fs, leading, space, trackFigure, tracking} from "../lib/ui";
 import { AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
@@ -104,7 +104,7 @@ export default function IntervalTimer() {
         <View style={{ width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <View style={{ position: "absolute", width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: txt(C, kindColor), opacity: 0.25 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: tracking(fs.caption, "caps"), color: txt(C, kindColor) }}>{kindLabel}</Text>
-          <Text style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{formatClock(pos.remaining, true)}</Text>
+          <Text style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{formatClock(pos.remaining, true)}</Text>
           {!pos.done && phase && phase.round > 0 && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Round {phase.round}/{phase.totalRounds}</Text>
           )}

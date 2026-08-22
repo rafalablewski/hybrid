@@ -256,7 +256,7 @@ export default function AuroraVolume({ onOpenModel }: {
       ) : (
         <>
           <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: 50, letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(46, "flush"), letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
           </View>

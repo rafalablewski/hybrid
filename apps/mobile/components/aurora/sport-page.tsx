@@ -276,7 +276,7 @@ export default function AuroraSportPage() {
             <AuroraIcon name="info" size={12} color={C.ash} />
           </Pressable>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: space.ms, marginTop: space.ms }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{headline.time}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat) }}>{headline.time}</Text>
             {!!headline.delta && (
               <Text style={{ ...mono(fs.caption, txt(C, C.lime)), fontFamily: F.monoBold, marginBottom: 8 }}>{headline.delta}</Text>
             )}
@@ -302,7 +302,7 @@ export default function AuroraSportPage() {
           <View style={{ flex: 1 }}>
             <Text style={label()}>{primaryLabel}</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: space.ms }}>
-              <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
+              <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
               {!!m.primary.unit && <Text style={{ ...mono(fs.note), marginBottom: 6 }}>{m.primary.unit}</Text>}
             </View>
             {!!m.primary.delta && (

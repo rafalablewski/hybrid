@@ -307,7 +307,7 @@ const PROMOTED_LADDER = [fs.display, fs.headline, fs.heading] as const;
 /** ONE LINE BOX for every figure, sized to the tallest rung a cell can draw, so
  *  a promoted figure and a plain one share a baseline instead of sitting a few
  *  points apart. */
-const FIGURE_BOX = leading(PROMOTED_LADDER[0], "tight");
+const FIGURE_BOX = leading(PROMOTED_LADDER[0], "flush");
 
 /**
  * Render a "{m}"-templated sentence with the metric name in bold.

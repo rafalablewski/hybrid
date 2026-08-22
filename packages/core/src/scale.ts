@@ -146,13 +146,34 @@ export const sheetPadBottom = (insetBottom = 0) => Math.max(insetBottom, space.x
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type LeadingRole =
-  | "tight" //   1.15 — display/hero titles, stat figures
+  | "flush" //   1.00 — a STANDALONE FIGURE, which has no second line to leave room for
+  | "tight" //   1.15 — display/hero titles
   | "snug" //    1.30 — headings, list rows, anything one-to-two lines
   | "normal" //  1.50 — the default for reading text
   | "relaxed"; // 1.62 — long-form prose, empty-state bodies
 
-/** Line-height RATIOS. Multiply by the font size (see `leading`). */
+/**
+ * Line-height RATIOS. Multiply by the font size (see `leading`).
+ *
+ * ── `flush` IS THE RUNG THIS LADDER WAS MISSING ────────────────────────────
+ *
+ * `tight` used to be documented as covering "display/hero titles, stat figures"
+ * and it is wrong for the second half of that. A figure has no second line and
+ * no descender past the cap band, so 1.15 at fs.stat buys SEVEN dp of line box
+ * that nothing can ever occupy — and because the space is INSIDE the text node,
+ * a row of four stat tiles gains a visible band of nothing that no amount of
+ * padding adjustment explains. That is why it took a rung of its own rather
+ * than a tighter `tight`: a title genuinely needs 1.15, because a title wraps.
+ *
+ * THE APP HAD ALREADY REACHED FOR IT SIX DIFFERENT WAYS, which is the usual
+ * evidence that a rung is missing rather than unwanted: `leading(fs.stat,
+ * "tight")` at six sites, a hand-typed `lineHeight: fs.stat` at one (that IS
+ * flush, arrived at by eye), and 50, 44, 35 and a local `FIGURE_BOX` constant
+ * at the rest. Seventeen more figure sites set no lineHeight at all and took
+ * whatever the platform's default was.
+ */
 export const lh: Record<LeadingRole, number> = {
+  flush: 1.0,
   tight: 1.15,
   snug: 1.3,
   normal: 1.5,

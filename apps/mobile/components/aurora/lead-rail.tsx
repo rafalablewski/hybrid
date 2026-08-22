@@ -138,7 +138,7 @@ export function LeadCard({
                   which is what `tracking(fs.title)` is for) and both sat in a
                   1.5 reading line box, so the app's smallest hero figure was
                   the one place its figure rules did not reach. */}
-              <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: trackFigure(fs.title), lineHeight: leading(fs.title, "tight"), color: C.chalk, ...TABULAR }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: trackFigure(fs.title), lineHeight: leading(fs.title, "flush"), color: C.chalk, ...TABULAR }}>
                 {figure}
               </Text>
               {unit ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{unit}</Text> : null}

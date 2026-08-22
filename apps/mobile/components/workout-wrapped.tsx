@@ -698,7 +698,7 @@ export function WorkoutWrapped({
             {eyebrow(t("session.work.title"))}
             {spine.topSet && (
               <>
-                <Text style={{ fontFamily: F.black, fontSize: fs.hero, letterSpacing: trackFigure(fs.hero), color: C.chalk, marginTop: 12 }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk, marginTop: 12 }}>
                   {fmtWeight(spine.topSet.loadKg, units)}
                   {spine.topSet.reps ? <Text style={{ fontSize: fs.heading, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
                 </Text>

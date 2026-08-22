@@ -53,7 +53,7 @@ export default function WearableSheet({ explain, onClose }: {
         <View style={{ gap: 22 }}>
           {/* THE FIGURE — the same signed number the card prints. */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 44, letterSpacing: trackFigure(44), color: txt(C, roleColor(C, totalRole)) }}>
+            <Text style={{ fontFamily: F.black, fontSize: 44, lineHeight: leading(44, "flush"), letterSpacing: trackFigure(44), color: txt(C, roleColor(C, totalRole)) }}>
               {signed(e.total)}
             </Text>
             <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>

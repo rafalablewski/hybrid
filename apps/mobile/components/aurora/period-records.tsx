@@ -6,7 +6,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, TABULAR, tracking, trackFigure } from "../../lib/ui";
+import { F, PressScale as Pressable, TABULAR, fs, leading, trackFigure, tracking} from "../../lib/ui";
 
 /**
  * RECORDS — the Progress cluster's own block: ONE QUOTE, THEN A LEDGER.
@@ -209,7 +209,7 @@ export default function PeriodRecords({
             header note. The reps ride beside it as a multiplier, at reading
             size, because they are the second coordinate of the same fact. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-          <Text style={{ ...TABULAR, fontFamily: F.monoBold, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk }}>
+          <Text style={{ ...TABULAR, fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>
             {value}
             <Text style={{ fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle, "label"), color: C.ash }}> {unit}</Text>
           </Text>

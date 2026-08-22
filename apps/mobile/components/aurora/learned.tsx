@@ -88,7 +88,7 @@ export default function AuroraLearned() {
           visible. */}
       <View style={{ marginBottom: space.xl }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "tight"), color: C.chalk, ...TABULAR }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk, ...TABULAR }}>
             {`${Math.round(month.known * 100)}%`}
           </Text>
           <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: C.ash }}>
@@ -237,7 +237,7 @@ function Claim({ f, lead = false }: { f: LearnedFinding; lead?: boolean }) {
       ) : (
         <>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.xs, flexWrap: "wrap" }}>
-            <Text style={{ fontFamily: F.black, fontSize: figureSize, letterSpacing: trackFigure(figureSize), lineHeight: leading(figureSize, "tight"), color: C.chalk, ...TABULAR }}>
+            <Text style={{ fontFamily: F.black, fontSize: figureSize, letterSpacing: trackFigure(figureSize), lineHeight: leading(figureSize, "flush"), color: C.chalk, ...TABULAR }}>
               {figure}
             </Text>
             {/* The unit only. The muscle is already named — by the row's own

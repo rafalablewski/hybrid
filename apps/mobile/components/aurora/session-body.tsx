@@ -11,7 +11,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, deltaPaint } from "../../lib/theme";
-import { fs, space, tracking, trackFigure, F, PressScale as Pressable, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, space, trackFigure, tracking } from "../../lib/ui";
 import { BodyFigures } from "./body-map";
 
 /**
@@ -80,7 +80,7 @@ export default function SessionBody({
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.md }}>
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: fs.hero, letterSpacing: trackFigure(fs.hero), color: C.chalk }}
+          style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }}
         >
           {shown.pct}
           <Text style={{ fontSize: fs.heading, color: C.ash }}>%</Text>

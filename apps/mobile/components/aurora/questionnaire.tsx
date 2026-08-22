@@ -554,7 +554,7 @@ function Reading({ C, t, q, value }: { C: Palette; t: (k: string) => string; q: 
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={{ fontFamily: F.black, fontSize: fs.heading, color: n == null ? C.ash : txt(C, C.lime), letterSpacing: trackFigure(fs.heading) }}
+        style={{ fontFamily: F.black, fontSize: fs.heading, color: n == null ? C.ash : txt(C, C.lime), lineHeight: leading(fs.heading, "flush"), letterSpacing: trackFigure(fs.heading) }}
       >
         {n == null ? "—" : n.toFixed(dp)}
       </Text>

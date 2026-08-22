@@ -113,22 +113,6 @@ export const weight = {
 
 export type WeightRole = keyof typeof weight;
 
-/**
- * A STANDALONE FIGURE SETS SOLID — the leading rung `lh` was missing.
- *
- * `lh.tight` (1.15) is the smallest ratio the scale offers, and on a figure it
- * still buys 7dp of line box at `fs.stat` that nothing will ever occupy: a
- * figure has no second line, and its digits carry neither ascender nor
- * descender beyond the cap band. Across a row of four stat tiles that is a
- * visible band of nothing which no amount of padding adjustment explains,
- * because the space is INSIDE the text node.
- *
- * Additive on purpose. `lh` keeps its four rungs and every existing caller is
- * untouched; this is the fifth, and it is only ever correct on a figure that
- * cannot wrap. Text takes a ratio from `lh`.
- */
-export const FLUSH = 1.0;
-
 /** The ink a style asks for, resolved by the renderer against the live palette
  *  (`chalk` / `ash` in `ThemePalette`). Kept as a ROLE because a style is used
  *  on the page ground and on a card, and neither owns the other's ink. */
@@ -139,8 +123,8 @@ export interface TextStyle {
   weight: number;
   /** A rung in `fs` — never a raw number. */
   size: TypeRole;
-  /** A ratio in `lh`, or `FLUSH` for a figure that cannot wrap. */
-  leading: LeadingRole | typeof FLUSH;
+  /** A ratio in `lh`. A figure that cannot wrap takes `"flush"`. */
+  leading: LeadingRole;
   /** `"text"` (the default) derives the tracking from the SIZE via scale.ts's
    *  band table; `"label"` / `"caps"` are the uppercase trackings, which a size
    *  cannot report; `"figure"` is the proportional big-figure tightening
@@ -172,11 +156,11 @@ export interface TextStyle {
 export const text = {
   // ── FIGURES — the mono cut ────────────────────────────────────────────────
   /** THE one hero figure on a screen. A second means neither is the answer. */
-  metric: { cut: "mono", weight: weight.semibold, size: "stat", leading: FLUSH, tracking: "figure", ink: "primary", tabular: true },
+  metric: { cut: "mono", weight: weight.semibold, size: "stat", leading: "flush", tracking: "figure", ink: "primary", tabular: true },
   /** A card's KPI. */
-  figureLg: { cut: "mono", weight: weight.semibold, size: "display", leading: FLUSH, tracking: "figure", ink: "primary", tabular: true },
+  figureLg: { cut: "mono", weight: weight.semibold, size: "display", leading: "flush", tracking: "figure", ink: "primary", tabular: true },
   /** A tile figure, a ranking. */
-  figure: { cut: "mono", weight: weight.semibold, size: "headline", leading: FLUSH, tracking: "figure", ink: "primary", tabular: true },
+  figure: { cut: "mono", weight: weight.semibold, size: "headline", leading: "flush", tracking: "figure", ink: "primary", tabular: true },
   /** A figure in a row or a table cell. */
   figureSm: { cut: "mono", weight: weight.semibold, size: "bodyLg", leading: "snug", ink: "primary", tabular: true },
   /**
@@ -186,7 +170,7 @@ export const text = {
    * a PR, an index are `figure`. It means a screen full of numbers still has a
    * subject.
    */
-  readout: { cut: "mono", weight: weight.medium, size: "headline", leading: FLUSH, tracking: "figure", ink: "primary", tabular: true },
+  readout: { cut: "mono", weight: weight.medium, size: "headline", leading: "flush", tracking: "figure", ink: "primary", tabular: true },
   /** A quiet figure — a logged set, a chart axis, a row's secondary number. */
   datum: { cut: "mono", weight: weight.regular, size: "body", leading: "snug", ink: "secondary", tabular: true },
 
@@ -239,7 +223,7 @@ export interface ResolvedText {
 export function resolveText(token: TextToken, scaleFactor = 1): ResolvedText {
   const s = text[token] as TextStyle;
   const size = Math.round(fs[s.size] * scaleFactor);
-  const ratio = s.leading === FLUSH ? FLUSH : lh[s.leading];
+  const ratio = lh[s.leading];
   return {
     fontFamily: cut[s.cut],
     fontWeight: s.weight,

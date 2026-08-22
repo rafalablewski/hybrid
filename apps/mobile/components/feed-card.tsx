@@ -278,7 +278,7 @@ function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
       ) : null}
       {fig ? (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{fig.value}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{fig.value}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: C.ash }}>{fig.unit}</Text>
           {/* THE ONE QUALIFIER, at the far edge of the figure's own line. The
               tier chip used to hold this slot and has gone to the footer:
