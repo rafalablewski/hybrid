@@ -275,6 +275,21 @@ export type ColorToken = keyof typeof colors;
 export const fonts = {
   display: "Söhne", // headings + body + figures
   mono: "Söhne Mono", // numbers / kickers
+  /**
+   * THE EDITORIAL VOICE, and it is the one face here with a usage cap.
+   *
+   * ITC Garamond Book carries the single interpretive sentence on a screen —
+   * the week verdict's lead, the nutrition nudge — and nothing else. It is
+   * never a figure, a control, a label or a state, and never below 24dp.
+   * See `text.editorial` in theme/typography.ts for the full rule.
+   *
+   * IT PAIRS ON A MEASUREMENT, not on taste: x-height is 0.523 em in Söhne and
+   * 0.445 em in ITC Garamond Book, so the serif needs 1.176x the size to sit on
+   * the same x-height line. That is why `fs.editorial` (30) exists beside
+   * `fs.display` (26) instead of reusing it — a shared rung would put the two
+   * faces at visibly different optical sizes.
+   */
+  serif: "ITC Garamond Std", // the one editorial sentence per screen
 } as const;
 
 /** Google Fonts @import string (used by the web prototype + web app). Mirror

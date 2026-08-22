@@ -8,7 +8,7 @@ import {
   type TargetField,
   type TargetOverride,
 } from "@hybrid/core";
-import { fs, space, tracking, F, leading, PressScale, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, fs, leading, MAX_FONT_SCALE, PressScale, space, tracking, ty } from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { APill, RADIUS } from "./kit";
@@ -153,10 +153,10 @@ export function TargetMismatchLine({ macroKcal, deltaKcal }: { macroKcal: number
   const key = deltaKcal > 0 ? "w.recovery.nutrition.tg.mismatchOver" : "w.recovery.nutrition.tg.mismatchUnder";
   return (
     <View style={{ marginTop: space.sm, paddingHorizontal: 2 }}>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.amber), lineHeight: leading(fs.nano, "relaxed") }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "caption", txt(C, C.amber)) }}>
         {t(key).replace("{n}", String(macroKcal)).replace("{d}", `${Math.abs(deltaKcal)} kcal`)}
       </Text>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, lineHeight: leading(fs.nano, "relaxed") }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "caption") }}>
         {t("w.recovery.nutrition.tg.mismatchNote")}
       </Text>
     </View>
