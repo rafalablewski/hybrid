@@ -1,7 +1,8 @@
-<title>The Session Line</title>
+<title>Eight Screens, Twice</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <style>
+
 /* ── APP TOKENS — fixed in both themes. The app IS dark; a mockup of it
       must not invert, or it stops being a mockup. Values are verbatim from
       packages/core/src/theme/palette.ts ── */
@@ -155,398 +156,8 @@ section.blk:first-of-type{border-top:0}
 .btn.pri{background:var(--accTx);border-color:var(--accTx);color:var(--bg);font-weight:700}
 :focus-visible{outline:2px solid var(--accTx);outline-offset:3px;border-radius:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition-duration:.001s!important}}
-</style>
 
-<div class="wrap">
-<header class="mast">
-  <div class="eyebrow"><span>HYBRID</span><span>Interface mockups</span><span>August 2026</span><b>Live — press the buttons</b></div>
-  <h1>The Session Line</h1>
-  <p class="deck">Six screens for the ambient interface, drawn on <b>HYBRID's own kit</b> — Archivo and JetBrains Mono, the real <code>fs</code> rungs, the 12dp gutter, chartreuse reserved for "go". Nothing here needs a camera. Every number shown comes from an engine that already ships.</p>
-</header>
 
-<!-- ════════ 1 ════════ -->
-<section class="blk">
-  <div class="shead">
-    <h2>Today is a claim, not a menu</h2>
-    <div class="meta">Screen 01<br>Replaces the Home tab</div>
-  </div>
-  <div class="pair">
-    <div>
-      <div class="phone"><div class="scr">
-        <div class="sbar"><span>9:41</span><span class="rt">◐ ▮▮▮</span></div>
-        <div class="today">
-          <div>
-            <div class="kick" style="margin-bottom:14px">Tuesday — Week 3 of 8</div>
-            <div class="instr">Squat, and go lighter than the plan.</div>
-          </div>
-          <div class="presc">
-            <span class="was">100</span>
-            <span class="now">92.5<span style="font-size:18px;font-weight:600"> kg</span></span>
-            <span class="sets">5 × 3</span>
-          </div>
-          <div>
-            <button class="why" aria-expanded="false" id="whyBtn"><span class="pm">＋</span><span>Because you slept 5 h 12 and your resting HR is 7 bpm above baseline.</span></button>
-            <div class="whybody"><div>
-              <div class="drv"><span>Sleep debt</span><span class="src m">measured</span><span class="v">−2 h 48</span></div>
-              <div class="drv"><span>Resting HR vs baseline</span><span class="src m">measured</span><span class="v">+7 bpm</span></div>
-              <div class="drv"><span>Quad load, 7 days</span><span class="src">observed</span><span class="v">92% MRV</span></div>
-              <div class="drv"><span>Your clearance rate</span><span class="src">profile</span><span class="v">0.85×</span></div>
-            </div></div>
-          </div>
-          <button class="cta">Start</button>
-          <div class="weekstrip">
-            <div class="done">M</div><div class="now">T</div><div>W</div>
-            <div>T</div><div>F</div><div>S</div><div>S</div>
-          </div>
-        </div>
-      </div></div>
-      <div class="ctl"><button class="btn pri" id="whyToggle">Expand the reasoning</button></div>
-    </div>
-    <div class="notes">
-      <h3>What changed</h3>
-      <p>The old Home tab showed a Performance State card, a week rail, an exercise widget and a plan strip, and asked the athlete to synthesise them. This screen <strong>commits to a position</strong> — one instruction, one adjusted number, one action — and puts the synthesis behind a plus.</p>
-      <p>The struck-through <code>100</code> matters more than the <code>92.5</code>. It says <em>the plan said one thing and I overruled it</em>, which is the single behaviour that separates a coach from a calendar.</p>
-      <h3>Every driver carries its provenance</h3>
-      <p>The four rows under the fold reuse the four-layer vocabulary <code>learned.ts</code> already speaks — population, profile, observed, measured. An athlete who wants to argue with the number can see exactly which layer it came from, and <strong>"measured" outranking "observed" is just the device-truth rule surfaced.</strong></p>
-      <div class="spec">
-        instruction <b>fs.display 26 / 800 / -0.026em</b><br>
-        load figure <b>fs.hero 34 / 800 / TRACK_FIGURE_EM</b><br>
-        gutter <b>GUTTER 12</b> — no card chrome anywhere<br>
-        expander <b>bare ＋, ash, no ring</b> — it grows, it does not go<br>
-        drivers <b>whitespace + hairline, no marker before the label</b>
-      </div>
-      <div class="spec kill">
-        killed <b>the tab bar</b> — Home, Workout, Nutrition, Progress, Profile<br>
-        killed <b>every chart without a verdict sentence attached</b>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════ 2 ════════ -->
-<section class="blk">
-  <div class="shead">
-    <h2>The set, without the phone</h2>
-    <div class="meta">Screen 02 — live<br>Replaces the Workout tab</div>
-  </div>
-  <div class="pair">
-    <div>
-      <div class="phone"><div class="scr" id="slScr">
-        <div class="sbar"><span>9:58</span><span class="rt" id="slEar"><span class="earpill"><span class="dot"></span>AirPods</span></span></div>
-        <div class="sl">
-          <div class="slhead">
-            <div class="kick">Back Squat</div>
-            <div class="kick" id="slSet">Set 3 of 5</div>
-          </div>
-          <div class="slbody">
-            <div class="slex" id="slState">Ready when you are</div>
-            <div class="slnum" id="slNum">92.5</div>
-            <div class="slsub" id="slSub">kilograms — 3 reps</div>
-          </div>
-          <div class="slsay" id="slSay">
-            <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-            <div class="heard t-note ash" id="slHeard">Say nothing and I will log it as prescribed.</div>
-            <div class="chips" id="slChips"></div>
-          </div>
-          <div class="slfoot">
-            <span id="slFootL">Phone down to begin</span>
-            <span class="rest" id="slRest">—</span>
-          </div>
-        </div>
-        <div class="stagecap" id="slCap"><b>STAGE 1 — SILENT.</b> The prescription is on screen. Nothing is listening yet, nothing has been asked.</div>
-      </div></div>
-      <div class="ctl">
-        <button class="btn pri" id="slPlay">Play the set</button>
-        <button class="btn" id="slStep">Step</button>
-        <button class="btn" id="slReset">Reset</button>
-      </div>
-    </div>
-    <div class="notes">
-      <h3>The escalation ladder, on one screen</h3>
-      <p>Each rung is used only when the one above fails. <strong>Most sets end at rung one or two</strong> — that is the entire product idea, and the reason this can ship without a camera or a microphone breakthrough.</p>
-      <p><strong>1 Silence.</strong> The prescription was right, the IMU saw the bar rack and the movement stop, the rest timer started itself. Logged.<br>
-      <strong>2 A gesture.</strong> "Same as last week?" — nod. AirPods head gesture, Watch double-tap.<br>
-      <strong>3 A word.</strong> "eight" — "two left" — "add five".<br>
-      <strong>4 A sentence.</strong> "my shoulder's cranky, give me something else".<br>
-      <strong>5 The screen.</strong> Always available, never required.</p>
-      <h3>Why the numbers are this big</h3>
-      <p>Because the phone is on a bench four feet away and the athlete is upside down under a bar. 72px is not a style choice, it is a legibility requirement — and it is the one place this design deliberately leaves the type scale, the way <code>scale.ts</code> already permits for art rather than reading.</p>
-      <h3>The honest limit</h3>
-      <p><strong>Voice is never the only path.</strong> A large minority of people will not talk to their phone in a public gym, and gyms are loud. Every utterance here has a one-tap equivalent on the screen behind it, permanently.</p>
-      <div class="spec">
-        set boundary <b>phone IMU — motion stop, no CV</b><br>
-        rest timer <b>starts itself, never asked for</b><br>
-        speech <b>on-device, closed grammar, LLM only on a miss</b><br>
-        during the set <b>the coach says nothing. Not once.</b>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════ 3 ════════ -->
-<section class="blk">
-  <div class="shead">
-    <h2>Eight utterances cover a session</h2>
-    <div class="meta">The grammar<br>Tap one to parse it</div>
-  </div>
-  <div class="gram">
-    <div class="gramlist" id="gramList"></div>
-    <div class="gramout">
-      <div class="kick" style="margin-bottom:14px">Parsed to</div>
-      <pre id="gramOut">Pick an utterance.</pre>
-      <p class="notes" style="margin-top:18px"><strong>This is not an open-ended chatbot.</strong> It is a small closed grammar with a model behind it for the tail — and that distinction is the difference between a reliable product and a demo. The closed grammar runs on-device, costs nothing, and cannot hallucinate a set you did not do.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ════════ 4 ════════ -->
-<section class="blk">
-  <div class="shead">
-    <h2>The verdict, with its evidence</h2>
-    <div class="meta">Screen 03<br>The sheet, on request</div>
-  </div>
-  <div class="pair">
-    <div>
-      <div class="phone"><div class="scr" style="justify-content:flex-end">
-        <div class="sbar" style="position:absolute;top:0;left:0;right:0"><span>10:14</span><span class="rt">◐ ▮▮▮</span></div>
-        <div class="dim-bg"></div>
-        <div class="sheet">
-          <div class="grab"></div>
-          <div class="askrow">
-            <span class="kick">You asked</span>
-            <span class="t-title" style="font-weight:700;letter-spacing:-.015em">"Should I do another set?"</span>
-          </div>
-          <div class="ans">I'd stop. That's about as much as you've historically recovered from in a day and a half, and you squat again Thursday.</div>
-          <div class="kick" style="margin:26px 0 4px">Because — ranked</div>
-          <div class="drv"><span>Quad volume today vs your ceiling</span><span class="src m">measured</span><span class="v">92%</span></div>
-          <div class="drv"><span>Your clearance rate vs population</span><span class="src">profile</span><span class="v">0.85×</span></div>
-          <div class="drv"><span>Next quad session</span><span class="src">observed</span><span class="v">36 h</span></div>
-          <div class="drv"><span>Ceiling estimate settled?</span><span class="src m">measured</span><span class="v">yes, n=23</span></div>
-          <div class="sheetfoot">
-            <button class="ghost">Do one anyway</button>
-            <button class="solid">Call it</button>
-          </div>
-        </div>
-      </div></div>
-    </div>
-    <div class="notes">
-      <h3>The one interaction a general model cannot copy</h3>
-      <p>Ask any frontier model whether to do another set and it will give a competent, generic answer. It cannot say <strong>0.85×</strong>, because that number is four months of this athlete's own recovery measured against a population curve — and it cannot know that the ceiling estimate has converged over 23 observations.</p>
-      <p>This is the entire product thesis in one sheet. Not "we have an AI coach". <strong>"We have four months of you."</strong></p>
-      <h3>It says when it does not know</h3>
-      <p>If the landmark replay reports the ceiling has not settled, the fourth row reads <code>not yet, n=6</code> and the verdict softens to a suggestion. <strong>An engine that admits its own uncertainty earns more trust than one that is confidently wrong once.</strong></p>
-      <div class="spec">
-        engines <b>recovery-pairs.ts — landmark-replay.ts — readiness.ts</b><br>
-        all four rows <b>already ship. This is a voice and a prompt away.</b><br>
-        sheet pad <b>sheetPadBottom(insets.bottom) = max(inset, 24)</b><br>
-        nothing inside the sheet <b>trails a pad of its own</b>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════ 5 ════════ -->
-<section class="blk">
-  <div class="shead">
-    <h2>The Sunday film</h2>
-    <div class="meta">Screen 04 — live<br>Press play</div>
-  </div>
-  <div class="pair">
-    <div>
-      <div class="phone"><div class="scr" id="filmScr">
-        <div class="sbar"><span>19:20</span><span class="rt">◐ ▮▮▮</span></div>
-        <div class="prog" id="filmProg"></div>
-        <div class="film" id="film">
-          <div class="fs on" data-s="0">
-            <div class="kick">Your week — 12 to 18 August</div>
-            <div class="fbig"><span class="fig" id="cTon">0</span><span class="funit">tonnes moved</span></div>
-          </div>
-          <div class="fs" data-s="1">
-            <div class="kick">Where it went</div>
-            <div class="bars" id="fBars">
-              <div><i style="--h:38%"></i><span>M</span></div><div><i style="--h:74%"></i><span>T</span></div>
-              <div><i style="--h:0"></i><span>W</span></div><div><i style="--h:100%" class="hi"></i><span>T</span></div>
-              <div><i style="--h:52%"></i><span>F</span></div><div><i style="--h:22%"></i><span>S</span></div>
-              <div><i style="--h:0"></i><span>S</span></div>
-            </div>
-            <div class="fcap">Thursday was the week.</div>
-          </div>
-          <div class="fs" data-s="2">
-            <div class="kick">The thing that mattered</div>
-            <div class="vcmp">
-              <div><span class="vlab">6 weeks ago — 100 kg</span><i style="--w:62%"></i><span class="vval">0.61 m/s</span></div>
-              <div><span class="vlab">Thursday — 105 kg</span><i style="--w:88%" class="hi"></i><span class="vval">0.68 m/s</span></div>
-            </div>
-            <div class="fcap">More weight, moving faster.</div>
-          </div>
-          <div class="fs" data-s="3">
-            <div class="kick">What that means</div>
-            <div class="fmid">That is the first hard evidence your strength is up rather than your effort.</div>
-          </div>
-          <div class="fs" data-s="4">
-            <div class="kick">One thing for next week</div>
-            <div class="fmid acc">You haven't touched a hinge in nine days.</div>
-            <div class="fcap">I've put a deadlift on Tuesday.</div>
-          </div>
-        </div>
-        <div class="narr" id="filmNarr">You lifted fourteen point two tonnes this week.</div>
-        <div class="filmfoot">
-          <button class="ghost" id="filmBtn">▶ Play</button>
-          <span class="kick" id="filmT">0:00 / 0:20</span>
-        </div>
-      </div></div>
-    </div>
-    <div class="notes">
-      <h3>This is the "video out", and it is not generative</h3>
-      <p>Every frame above is <strong>deterministic motion graphics driven by real engine output</strong>, with a synthesised voice over the top. It renders server-side for cents, it cannot hallucinate, and <code>recap.ts</code> and <code>learned.ts</code> already compute every number in it.</p>
-      <p>Compare that with generating photoreal video of the athlete: expensive, slow, uncanny, and one clip showing a rep they never did ends the brand. <strong>There is no version of that worth the risk.</strong></p>
-      <h3>Why this is a new content category</h3>
-      <p>It is the first fitness media that is <em>about you and true</em>. Not a filtered highlight reel — a film of your own physiology, narrated in the second person, that you could not have made yourself and cannot get anywhere else.</p>
-      <p><strong>It is also the most shareable object the company can produce</strong>, which makes it the retention loop and the acquisition loop at the same time.</p>
-      <div class="spec">
-        source <b>recap.ts + learned.ts — both shipped</b><br>
-        missing <b>a renderer and a voice. That is the whole build.</b><br>
-        ends on <b>an instruction, never a compliment</b><br>
-        cost <b>cents — rendering, not generation</b>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════ 6 ════════ -->
-<section class="blk">
-  <div class="shead">
-    <h2>The record, and what it took to earn it</h2>
-    <div class="meta">Screen 05<br>The moat, drawn</div>
-  </div>
-  <div class="pair">
-    <div>
-      <div class="phone"><div class="scr">
-        <div class="sbar"><span>18:02</span><span class="rt">◐ ▮▮▮</span></div>
-        <div class="pad" style="flex:1;display:flex;flex-direction:column;gap:22px;padding-top:16px">
-          <div>
-            <div class="kick" style="margin-bottom:12px">Back Squat — best</div>
-            <div style="display:flex;align-items:baseline;gap:10px">
-              <span class="fig" style="font-size:64px;line-height:.9">142.5</span>
-              <span class="t-heading ash" style="font-weight:600">kg</span>
-            </div>
-            <div class="t-body ash" style="margin-top:8px">14 August — 1 rep — +5 kg on May</div>
-          </div>
-          <div class="tierbox">
-            <div class="kick" style="margin-bottom:2px">Evidence — tier 3 of 5</div>
-            <div class="ladder" id="ladder"></div>
-            <div class="tierwhat" id="tierWhat">Recorded — the lift is on video with the plates countable, and the rep completed.</div>
-          </div>
-          <div class="cosign">
-            <div class="t-bodyLg" style="font-weight:700">Co-signed by 2</div>
-            <div class="t-body ash" style="margin-top:3px">M. Kowalska and one other were in the room.</div>
-          </div>
-          <div style="margin-top:auto;padding-bottom:20px">
-            <div class="doorrow"><span class="t-note" style="font-weight:600">All 34 verified lifts</span><span class="ring">→</span></div>
-          </div>
-        </div>
-      </div></div>
-      <div class="ctl"><span class="btn" style="cursor:default;border-style:dashed">Tap a tier on the ladder</span></div>
-    </div>
-    <div class="notes">
-      <h3>The only camera bet worth taking</h3>
-      <p>Not form coaching — <strong>attestation</strong>. <code>packages/core/src/attestation.ts</code> already declares this six-tier ladder and tiers 0 to 2 have shipped. Tier 3 is a narrow, bounded camera problem: one declared attempt, framing the athlete <em>wants</em> to get right, and a single question — how many plates, and did the rep complete.</p>
-      <p>The failure mode is benign. <strong>"Couldn't verify, try again" costs nothing. "Your knee is caving" costs trust and invites liability.</strong></p>
-      <h3>Why this is the moat and the film is not</h3>
-      <p>Every strength number on the internet is self-reported and therefore worth nothing. There is no strength equivalent of a verified marathon time. A credential is worth what its recognition is worth — which makes it a <strong>graph</strong>, and graphs are the only thing on the moat list with real network effects.</p>
-      <p>The film is the most magical screen here. This is the most valuable one. Build it fourth.</p>
-      <div class="spec">
-        shipped <b>tiers 0 claimed — 1 sensed — 2 witnessed</b><br>
-        the bet <b>tier 3 recorded — plate count, not form score</b><br>
-        exit <b>ringed arrow — it leaves. Never a bordered box.</b>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════ 7 ════════ -->
-<section class="blk">
-  <div class="shead">
-    <h2>One message a day, and it has to earn it</h2>
-    <div class="meta">Screen 06<br>The interruption budget</div>
-  </div>
-  <div class="pair">
-    <div>
-      <div class="phone"><div class="scr lock">
-        <div class="sbar"><span>6:48</span><span class="rt">◐ ▮▮▮</span></div>
-        <div class="lockt"><span class="fig">6:48</span><span class="kick" style="margin-top:6px;display:block">Tuesday 18 August</span></div>
-        <div class="pad" style="padding-bottom:24px">
-          <div class="notif">
-            <div class="notifhead"><span class="kick acc">HYBRID</span><span class="kick">now</span></div>
-            <div class="t-note" style="font-weight:700;margin-top:7px;line-height:1.35">Today's squat is 92.5, not 100.</div>
-            <div class="t-body ash" style="margin-top:5px;line-height:1.45">You slept 5 h 12 and your resting HR is up 7. Same sets, lighter bar.</div>
-          </div>
-          <div class="rejected">
-            <div class="kick" style="margin-bottom:11px;color:var(--red)">Not sent today</div>
-            <div class="rej"><span>"Bench velocity +11% over six weeks"</span><span>→ weekly film</span></div>
-            <div class="rej"><span>"You hit a PR!"</span><span>→ in-app only</span></div>
-            <div class="rej"><span>"Time to work out!"</span><span>→ never</span></div>
-            <div class="rej"><span>"Great job yesterday!"</span><span>→ never</span></div>
-          </div>
-        </div>
-      </div></div>
-    </div>
-    <div class="notes">
-      <h3>Three tests, all three must pass</h3>
-      <p><strong>Decision-changing</strong> — it alters what the athlete does in the next 24 hours. <strong>Non-obvious</strong> — they would not have worked it out themselves. <strong>Defensible</strong> — the evidence fits on one line.</p>
-      <p>The message above passes all three and is the single highest-value sentence the product can say. The four below it fail, and three of them are what every competitor sends.</p>
-      <h3>Structural guards, not a settings screen</h3>
-      <p><strong>Hard cap: one proactive message a day.</strong> If the athlete ignores three of a type, that type stops permanently — no re-prompting, no "are you sure". And it arrives when they wake, not when it was computed at 3 a.m.</p>
-      <p>If the day is unremarkable, say nothing. <strong>A coach who is quiet when there is nothing to say is a coach you believe when they speak.</strong></p>
-      <div class="spec kill">
-        the failure mode <b>every fitness app has died of notifications</b><br>
-        this is <b>a survival constraint, not a preference</b>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ════════ 8 ════════ -->
-<section class="blk">
-  <div class="shead">
-    <h2>What the navigation becomes</h2>
-    <div class="meta">Architecture<br>Before and after</div>
-  </div>
-  <div class="ba">
-    <div class="bacol">
-      <div class="kick" style="color:var(--red);margin-bottom:16px">Today — five tabs, sixty routes</div>
-      <div class="tabs old">
-        <span>Home</span><span>Log</span><span>Nutrition</span><span>Messages</span><span>You</span>
-      </div>
-      <ul class="balist">
-        <li>The athlete navigates to find what the system already knows.</li>
-        <li>Dashboards present evidence and ask for interpretation.</li>
-        <li>Per-set manual entry is the default path.</li>
-        <li>Sixty routes, and the good ones are three taps deep.</li>
-      </ul>
-    </div>
-    <div class="bacol">
-      <div class="kick" style="color:var(--accTx);margin-bottom:16px">After — one surface, one voice, one archive</div>
-      <div class="tabs new">
-        <span class="on">Now</span><span>Record</span><span class="mic">◉ hold to speak</span>
-      </div>
-      <ul class="balist">
-        <li><b>Now</b> — the claim, the session line, the receipt.</li>
-        <li><b>Record</b> — verified lifts, the films, the archive. The trophy cabinet.</li>
-        <li><b>Voice</b> — everything else. Authoring screens are reached by asking.</li>
-        <li>Plan editing, exercise browsing and food logging keep full traditional UI, unapologetically. <b>Authoring is a screen job.</b></li>
-      </ul>
-    </div>
-  </div>
-  <p class="notes" style="margin-top:30px;max-width:74ch"><strong>The honest caveat.</strong> This is the most speculative screen here. Navigation is not only wayfinding — it is browsing, discovery and accountability, and a product that hides its own data reads as unaccountable the first time it tells you something you disagree with. <strong>The AI decides the default; the screen exists so the athlete can inspect and override it.</strong> Ship the Today card first and watch whether anyone misses the tabs before deleting them.</p>
-</section>
-
-<div class="foot">
-  <span>HYBRID</span><span>reference/session-line-mockups.html</span><span>Companion to The Ambient Interface</span><span>Branch claude/zen-turing-bcy1tp</span>
-</div>
-</div>
-
-<style>
 /* ── grammar ── */
 .gram{display:grid;gap:34px;grid-template-columns:1fr}
 @media (min-width:900px){.gram{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px}}
@@ -662,9 +273,839 @@ p.notes strong{color:var(--tx);font-weight:700}
   padding:1.5px 5px;border-radius:2px;color:var(--tx)}
 .foot{margin-top:70px;padding-top:26px;border-top:1px solid var(--rule);font-family:var(--mono);
   font-size:11px;letter-spacing:.08em;color:var(--dim);display:flex;flex-wrap:wrap;gap:6px 22px}
-</style>
 
+/* ── before / after comparison ── */
+.cmp{display:grid;gap:34px;grid-template-columns:1fr;justify-items:center}
+@media (min-width:900px){.cmp{grid-template-columns:390px 390px;gap:48px;justify-content:center}}
+.col{width:390px;max-width:100%}
+.collab{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  padding-bottom:11px;border-bottom:1px solid var(--rule);margin-bottom:16px}
+.collab b{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
+.collab span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--dim);text-align:right;line-height:1.4}
+.col.b .collab b{color:var(--red)}
+.col.a .collab b{color:var(--accTx)}
+.col.b .phone{opacity:.88}
+.notes2{display:grid;gap:0 48px;grid-template-columns:1fr;margin-top:40px}
+@media (min-width:900px){.notes2{grid-template-columns:1fr 1fr}}
+.tally{display:flex;flex-wrap:wrap;gap:0 26px;margin:14px 0 0;padding:14px 0 0;border-top:1px solid var(--rule)}
+.tally div{display:flex;flex-direction:column;gap:2px}
+.tally .n{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--tx);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.tally .n.down{color:var(--accTx)}
+.tally .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+
+/* ── generic "before" app furniture ── */
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:10px 12px 0}
+.hdr .logo{font-family:var(--disp);font-weight:900;font-size:15px;letter-spacing:-.02em}
+.hdr .ic{display:flex;gap:14px;color:var(--ash);font-size:13px}
+.htabs{display:flex;gap:18px;padding:14px 12px 0;border-bottom:1px solid var(--line)}
+.htabs span{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ash);padding-bottom:10px}
+.htabs .on{color:var(--chalk);box-shadow:inset 0 -2px 0 var(--acc)}
+.mastb{padding:16px 12px 4px}
+.mastb .e{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+.mastb .t{font-family:var(--disp);font-weight:900;font-size:22px;letter-spacing:-.025em;margin-top:5px}
+.card{background:var(--ink2);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:9px}
+.cardt{font-family:var(--disp);font-weight:900;font-size:20px;letter-spacing:-.02em}
+.pbar{height:2px;background:var(--line);border-radius:2px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--acc)}
+.lrow{display:flex;justify-content:space-between;gap:10px;padding-top:6px;margin-top:6px;
+  border-top:1px solid var(--line);font-size:13px}
+.lrow:first-of-type{border-top:0;margin-top:0}
+.lrow b{font-weight:700;color:var(--chalk)}
+.lrow span{font-family:var(--mono);font-size:11px;color:var(--ash);flex:none}
+.showall{align-self:center;border:1px solid rgba(195,211,99,.4);background:rgba(195,211,99,.12);
+  color:var(--acc);border-radius:999px;padding:5px 12px;font-family:var(--mono);font-size:11px;font-weight:700}
+.startb{background:var(--acc);color:var(--onAcc);border-radius:999px;padding:12px;text-align:center;
+  font-family:var(--disp);font-weight:800;font-size:14px;margin-top:4px}
+.railrow{display:flex;gap:8px;overflow:hidden;padding:0 12px}
+.rcard{flex:none;width:132px;background:var(--ink2);border-radius:10px;padding:12px;display:flex;
+  flex-direction:column;gap:6px}
+.rcard .g{font-size:16px}
+.rcard .t{font-family:var(--disp);font-weight:800;font-size:13px;line-height:1.25}
+.rcard .s{font-family:var(--mono);font-size:9.5px;color:var(--ash);line-height:1.35}
+.rcard .c{font-family:var(--mono);font-size:9.5px;font-weight:700;margin-top:2px}
+.secrow{display:flex;justify-content:space-between;align-items:flex-end;padding:20px 12px 10px}
+.secrow b{font-family:var(--disp);font-weight:900;font-size:18px;letter-spacing:-.02em}
+.secrow span{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--ash)}
+.tabbar{display:flex;border-top:1px solid var(--line);padding:9px 0 20px;margin-top:auto}
+.tabbar div{flex:1;text-align:center;display:flex;flex-direction:column;gap:4px;align-items:center;
+  font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash)}
+.tabbar .g{font-size:15px;line-height:1}
+.tabbar .on{color:var(--acc)}
+.scroll{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:14px;padding-bottom:8px}
+.fade{position:absolute;left:0;right:0;bottom:58px;height:52px;pointer-events:none;
+  background:linear-gradient(transparent,var(--ink))}
+
+/* ── nutrition (before) ── */
+.mealtiles{display:flex;gap:8px}
+.mealtiles div{flex:1;border:1px solid var(--line);border-radius:8px;padding:9px 3px;text-align:center;
+  font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--chalk);
+  display:flex;flex-direction:column;gap:5px;align-items:center}
+.mealtiles div.on{background:var(--acc);color:var(--onAcc);border-color:var(--acc)}
+.mealtiles .g{font-size:15px;line-height:1}
+.recents{display:flex;gap:8px;overflow:hidden}
+.recents span{flex:none;display:flex;align-items:center;gap:7px;border:1px solid var(--line);
+  border-radius:999px;padding:7px 13px 7px 9px;font-size:11.5px;font-weight:700;color:var(--chalk)}
+.recents i{width:19px;height:19px;border-radius:50%;border:1.4px solid var(--acc);color:var(--acc);
+  display:grid;place-items:center;font-size:10px;font-style:normal;flex:none}
+.recents em{font-family:var(--mono);font-size:9.5px;color:var(--ash);font-style:normal}
+.cdiv{display:flex;align-items:center;gap:10px;margin-top:2px}
+.cdiv i{flex:1;height:1px;background:var(--line)}
+.cdiv span{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ash)}
+.cdiv b{font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink);background:var(--ash);border-radius:3px;padding:2px 5px}
+.quads{display:flex;flex-wrap:wrap;gap:8px}
+.quad{flex:1 1 calc(50% - 4px);border:1px solid var(--line);border-radius:10px;padding:11px 12px;
+  display:flex;flex-direction:column;gap:3px}
+.quad .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+.quad .v{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--chalk);font-variant-numeric:tabular-nums}
+.quad .u{font-family:var(--mono);font-size:9px;color:var(--ash)}
+.twobtn{display:flex;gap:10px}
+.twobtn .p{flex:1;background:var(--acc);color:var(--onAcc);border-radius:999px;padding:13px;text-align:center;
+  font-family:var(--disp);font-weight:800;font-size:13px}
+.twobtn .s{flex:1;border:1px solid var(--line);border-radius:999px;padding:13px;text-align:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;color:var(--chalk)}
+.locked{display:flex;flex-wrap:wrap;gap:8px}
+.locked div{flex:1 1 calc(50% - 4px);border:1px solid var(--line);border-radius:10px;padding:10px;
+  display:flex;align-items:center;gap:8px;opacity:.55}
+.locked .t{font-size:11.5px;font-weight:700;color:var(--chalk)}
+.locked .k{font-family:var(--mono);font-size:9px;color:var(--ash)}
+
+/* ── nutrition (after) ── */
+.short{display:flex;align-items:baseline;gap:9px}
+.short .n{font-size:60px;font-weight:900;letter-spacing:-.05em;line-height:.9;color:var(--acc);
+  font-variant-numeric:tabular-nums}
+.short .u{font-size:19px;font-weight:700;color:var(--ash)}
+.fuelline{font-size:23px;font-weight:800;line-height:1.2;letter-spacing:-.025em;text-wrap:balance}
+.fix{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+.fixrow{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);
+  cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;
+  color:var(--chalk);font-family:var(--disp)}
+.fixrow.on{opacity:.42}
+.fixrow .tick{width:20px;height:20px;border-radius:50%;border:1.4px solid var(--line);flex:none;
+  display:grid;place-items:center;font-size:10px;color:var(--ink)}
+.fixrow.on .tick{background:var(--acc);border-color:var(--acc)}
+.fixrow .nm{flex:1;font-size:14.5px;font-weight:700;line-height:1.3}
+.fixrow .nm em{display:block;font-style:normal;font-family:var(--mono);font-size:10px;color:var(--ash);
+  margin-top:3px;letter-spacing:.02em}
+.fixrow .g{font-family:var(--mono);font-size:12px;color:var(--acc);flex:none;font-variant-numeric:tabular-nums}
+
+/* ── endurance (before) ── */
+.lane{display:flex;flex-direction:column;gap:8px;padding:14px 0;border-bottom:1px solid var(--line)}
+.lanehead{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.lanehead b{font-family:var(--disp);font-weight:800;font-size:15px}
+.lanehead span{font-family:var(--mono);font-size:11px;color:var(--ash);font-variant-numeric:tabular-nums}
+.spark{display:flex;gap:3px;align-items:flex-end;height:34px}
+.spark i{flex:1;background:var(--line);border-radius:1px;display:block}
+.spark i.hi{background:var(--acc)}
+.lanefoot{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9.5px;color:var(--ash);
+  letter-spacing:.06em;text-transform:uppercase}
+
+/* ── endurance (after) ── */
+.runbig{display:flex;align-items:baseline;gap:8px}
+.runbig .n{font-size:66px;font-weight:900;letter-spacing:-.05em;line-height:.9;font-variant-numeric:tabular-nums}
+.runbig .u{font-size:20px;font-weight:700;color:var(--ash)}
+.runline{font-size:22px;font-weight:800;line-height:1.22;letter-spacing:-.024em;text-wrap:balance}
+.runline.acc{color:var(--acc)}
+.zone{display:flex;gap:3px;height:8px;border-radius:2px;overflow:hidden}
+.zone i{display:block;background:var(--line);flex:1;border-radius:1px}
+.zone i.on{background:var(--acc)}
+.zone i.over{background:var(--red)}
+.costrow{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0;
+  border-bottom:1px solid var(--line);font-size:13.5px;color:var(--ash)}
+.costrow b{color:var(--chalk);font-family:var(--mono);font-size:13px;font-weight:700;
+  font-variant-numeric:tabular-nums}
+.costrow b.warn{color:var(--red)}
+.eartag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--acc);border:1px solid rgba(195,211,99,.35);
+  border-radius:999px;padding:5px 11px;align-self:flex-start}
+
+/* ── recap card (before, film section) ── */
+.recap{background:var(--ink2);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.recapgrid{display:flex;flex-wrap:wrap;gap:14px 0}
+.recapgrid div{flex:1 1 50%;display:flex;flex-direction:column;gap:2px}
+.recapgrid .n{font-family:var(--mono);font-size:21px;font-weight:700;color:var(--chalk);
+  font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.recapgrid .l{font-family:var(--mono);font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--ash)}
+.recapgrid .d{font-family:var(--mono);font-size:9.5px;color:var(--acc)}
+.sharebtn{border:1px solid var(--line);border-radius:999px;padding:11px;text-align:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;color:var(--chalk);letter-spacing:.06em}
+</style>
+<div class="wrap">
+<header class="mast">
+  <div class="eyebrow"><span>HYBRID</span><span>Interface mockups</span><span>August 2026</span><b>Live — press the buttons</b></div>
+  <h1>Before and After</h1>
+  <p class="deck">Eight screens the ambient thesis would change, each drawn twice — <b>today's actual screen beside the proposal</b>. Both sides use the app's own kit: Archivo and JetBrains Mono, the real <code>fs</code> rungs, the 12dp gutter, chartreuse reserved for "go". The befores are read off the components that ship, not invented as strawmen.</p>
+</header>
+
+<!-- ══════════ 01 TODAY ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>Today</h2><div class="meta">Screen 01<br>components/aurora/home.tsx</div></div>
+  <div class="cmp">
+
+    <div class="col b">
+      <div class="collab"><b>Before</b><span>2,111 lines<br>~9 blocks, 4 destinations</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>9:41</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="hdr"><span class="logo">HYBRID</span><span class="ic">◎ ✦ ⚙</span></div>
+        <div class="htabs"><span class="on">Dashboard</span><span>Performance</span><span>Feed</span></div>
+        <div class="scroll">
+          <div class="mastb"><div class="e">Tuesday 18 August</div><div class="t">Good morning, Rafał</div></div>
+          <div class="pad"><div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span class="kick">Today's plan</span><span class="kick">Push A</span></div>
+            <div class="cardt">Hybrid Base — Block 2</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-family:var(--mono);font-size:11px;color:var(--ash)">Day 17 / 56</span>
+              <span class="pbar" style="flex:1"><i style="width:30%"></i></span>
+            </div>
+            <div>
+              <div class="lrow"><b>Back Squat</b><span>5 × 3 @ 100</span></div>
+              <div class="lrow"><b>Romanian Deadlift</b><span>3 × 8</span></div>
+              <div class="lrow"><b>Walking Lunge</b><span>3 × 20</span></div>
+            </div>
+            <span class="showall">Show all 8 lifts →</span>
+            <div class="startb">Start</div>
+          </div></div>
+          <div class="secrow"><b>Your week</b><span>Mon – Sun</span></div>
+          <div class="railrow">
+            <div class="rcard"><span class="g">◔</span><span class="t">Mon</span><span class="s">Push A — done</span></div>
+            <div class="rcard"><span class="g">◑</span><span class="t">Tue</span><span class="s">Pull A — today</span></div>
+            <div class="rcard"><span class="g">○</span><span class="t">Wed</span><span class="s">Easy 8 km</span></div>
+          </div>
+          <div class="secrow"><b>Train your way</b><span>Optional</span></div>
+          <div class="railrow">
+            <div class="rcard"><span class="g acc">▤</span><span class="t">Follow a plan</span><span class="s">Structured weeks</span><span class="c acc">Browse plans</span></div>
+            <div class="rcard"><span class="g" style="color:var(--blue)">⌗</span><span class="t">Build your own</span><span class="s">Your split</span><span class="c" style="color:var(--blue)">Open builder</span></div>
+            <div class="rcard"><span class="g" style="color:var(--amber)">↯</span><span class="t">Just log it</span><span class="s">Freestyle</span><span class="c" style="color:var(--amber)">Start empty</span></div>
+          </div>
+        </div>
+        <div class="fade"></div>
+        <div class="tabbar"><div class="on"><span class="g">◉</span>Today</div><div><span class="g">▤</span>Log</div><div><span class="g">◍</span>Nutrition</div><div><span class="g">✉</span>Messages</div><div><span class="g">◔</span>You</div></div>
+      </div></div>
+    </div>
+
+    <div class="col a">
+      <div class="collab"><b>After</b><span>One claim, one action<br>the reasoning behind a ＋</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>9:41</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="today">
+          <div>
+            <div class="kick" style="margin-bottom:14px">Tuesday — Week 3 of 8</div>
+            <div class="instr">Squat, and go lighter than the plan.</div>
+          </div>
+          <div class="presc">
+            <span class="was">100</span>
+            <span class="now">92.5<span style="font-size:18px;font-weight:600"> kg</span></span>
+            <span class="sets">5 × 3</span>
+          </div>
+          <div>
+            <button class="why" aria-expanded="false" id="whyBtn"><span class="pm">＋</span><span>Because you slept 5 h 12 and your resting HR is 7 bpm above baseline.</span></button>
+            <div class="whybody"><div>
+              <div class="drv"><span>Sleep debt</span><span class="src m">measured</span><span class="v">−2 h 48</span></div>
+              <div class="drv"><span>Resting HR vs baseline</span><span class="src m">measured</span><span class="v">+7 bpm</span></div>
+              <div class="drv"><span>Quad load, 7 days</span><span class="src">observed</span><span class="v">92% MRV</span></div>
+              <div class="drv"><span>Your clearance rate</span><span class="src">profile</span><span class="v">0.85×</span></div>
+            </div></div>
+          </div>
+          <button class="cta">Start</button>
+          <div class="weekstrip"><div class="done">M</div><div class="now">T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div></div>
+        </div>
+      </div></div>
+      <div class="ctl"><button class="btn pri" id="whyToggle">Expand the reasoning</button></div>
+    </div>
+  </div>
+
+  <div class="notes2">
+    <div class="notes">
+      <h3>What the before is actually doing</h3>
+      <p>It is <strong>offering</strong>. Three tabs, a greeting, a plan card, a week rail, four ways to start training, and a five-tab bar — every one of them a valid choice, none of them a recommendation. The screen knows the athlete slept 5 hours and it shows them a plan that assumes they slept 8.</p>
+      <p><strong>"Train your way" is the tell.</strong> Four cards asking the athlete to pick a methodology is a question the app is better placed to answer than they are — and it is the block that gets scrolled past every day after the first week.</p>
+    </div>
+    <div class="notes">
+      <h3>What the after gives up</h3>
+      <p>Discoverability, and that is a real cost. The plan, the builder and the freestyle logger are all still there — they are reached by asking, or from Record — but a new user no longer trips over them. <strong>That is a genuine risk and it is why this is the screen to ship first and measure, not the one to ship last.</strong></p>
+      <p>The struck-through <code>100</code> is the whole design. It says <em>the plan said one thing and I overruled it</em>, which is the only behaviour that separates a coach from a calendar.</p>
+      <div class="tally">
+        <div><span class="n">9 → 3</span><span class="l">blocks</span></div>
+        <div><span class="n down">4 → 1</span><span class="l">calls to action</span></div>
+        <div><span class="n down">0 → 4</span><span class="l">stated reasons</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 02 THE SET ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>The set</h2><div class="meta">Screen 02 — live<br>components/aurora/workout.tsx</div></div>
+  <div class="cmp">
+
+    <div class="col b">
+      <div class="collab"><b>Before</b><span>~14 taps per exercise<br>eyes and both hands</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>9:58</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="hdr"><span class="logo">← Back Squat</span><span class="ic">⋯</span></div>
+        <div class="scroll" style="padding-top:14px">
+          <div class="pad"><div class="card" style="gap:12px">
+            <div style="display:flex;justify-content:space-between"><span class="kick">Set 1</span><span class="kick acc">Done</span></div>
+            <div style="display:flex;gap:8px">
+              <div class="quad" style="flex:1"><span class="l ash">Weight</span><span class="v">100</span><span class="u">kg</span></div>
+              <div class="quad" style="flex:1"><span class="l ash">Reps</span><span class="v">3</span><span class="u">reps</span></div>
+              <div class="quad" style="flex:1"><span class="l ash">RPE</span><span class="v">—</span><span class="u">1–10</span></div>
+            </div>
+          </div></div>
+          <div class="pad"><div class="card" style="gap:12px">
+            <div style="display:flex;justify-content:space-between"><span class="kick">Set 2</span><span class="kick acc">Done</span></div>
+            <div style="display:flex;gap:8px">
+              <div class="quad" style="flex:1"><span class="l ash">Weight</span><span class="v">100</span><span class="u">kg</span></div>
+              <div class="quad" style="flex:1"><span class="l ash">Reps</span><span class="v">3</span><span class="u">reps</span></div>
+              <div class="quad" style="flex:1"><span class="l ash">RPE</span><span class="v">—</span><span class="u">1–10</span></div>
+            </div>
+          </div></div>
+          <div class="pad"><div class="card" style="gap:12px;border:1px solid var(--acc)">
+            <div style="display:flex;justify-content:space-between"><span class="kick">Set 3</span><span class="kick">Entering</span></div>
+            <div style="display:flex;gap:8px">
+              <div class="quad" style="flex:1"><span class="l acc">Weight</span><span class="v">100</span><span class="u">kg</span></div>
+              <div class="quad" style="flex:1"><span class="l acc">Reps</span><span class="v">_</span><span class="u">reps</span></div>
+              <div class="quad" style="flex:1"><span class="l acc">RPE</span><span class="v">—</span><span class="u">1–10</span></div>
+            </div>
+            <div class="twobtn"><span class="p">Save set</span><span class="s">＋ Add set</span></div>
+          </div></div>
+          <div class="pad" style="display:flex;justify-content:space-between;align-items:center">
+            <span class="kick">Rest timer</span>
+            <span style="font-family:var(--mono);font-size:15px;font-weight:700">＋ Start 2:00</span>
+          </div>
+        </div>
+        <div class="fade"></div>
+        <div class="tabbar"><div><span class="g">◉</span>Today</div><div class="on"><span class="g">▤</span>Log</div><div><span class="g">◍</span>Nutrition</div><div><span class="g">✉</span>Messages</div><div><span class="g">◔</span>You</div></div>
+      </div></div>
+    </div>
+
+    <div class="col a">
+      <div class="collab"><b>After</b><span>Zero taps<br>press play to watch it</span></div>
+      <div class="phone"><div class="scr" id="slScr">
+        <div class="sbar"><span>9:58</span><span class="rt" id="slEar"><span class="earpill"><span class="dot"></span>AirPods</span></span></div>
+        <div class="sl">
+          <div class="slhead"><div class="kick">Back Squat</div><div class="kick" id="slSet">Set 3 of 5</div></div>
+          <div class="slbody">
+            <div class="slex" id="slState">Ready when you are</div>
+            <div class="slnum" id="slNum">92.5</div>
+            <div class="slsub" id="slSub">kilograms — 3 reps</div>
+          </div>
+          <div class="slsay" id="slSay">
+            <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="heard t-note ash" id="slHeard">Say nothing and I will log it as prescribed.</div>
+            <div class="chips" id="slChips"></div>
+          </div>
+          <div class="slfoot"><span id="slFootL">Phone down to begin</span><span class="rest" id="slRest">—</span></div>
+        </div>
+        <div class="stagecap" id="slCap"><b>STAGE 1 — SILENT.</b> The prescription is on screen. Nothing is listening yet, nothing has been asked.</div>
+      </div></div>
+      <div class="ctl">
+        <button class="btn pri" id="slPlay">Play the set</button>
+        <button class="btn" id="slStep">Step</button>
+        <button class="btn" id="slReset">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes2">
+    <div class="notes">
+      <h3>The before is not bad — it is just expensive</h3>
+      <p>Three numeric fields per set, a Save, an Add set, and a rest timer that must be started by hand. On a 20-set session that is <strong>sixty to a hundred deliberate taps</strong>, every one of them requiring the phone in a hand and eyes on a screen.</p>
+      <p>And look at what the RPE column does: it sits empty. <strong>The single most valuable field on the screen is the one nobody fills in</strong>, because typing a number about how you feel while out of breath is the highest-friction thing the app asks for. <code>effort.ts</code> is starved by a form.</p>
+    </div>
+    <div class="notes">
+      <h3>What actually removes the taps</h3>
+      <p>Not the microphone. <strong>The prescription.</strong> The system already knows the exercise, the set index and the load it told you to use — so the only new information in the whole set is what differed, and most sets differ in nothing. Confirm-by-exception is how a coach with a clipboard has always worked.</p>
+      <p>The three spoken words in stage 4 are not there to save taps. They are there to capture the RPE the form never got.</p>
+      <div class="tally">
+        <div><span class="n down">~14 → 0</span><span class="l">taps per exercise</span></div>
+        <div><span class="n down">3 → 0</span><span class="l">fields to fill</span></div>
+        <div><span class="n">manual → auto</span><span class="l">rest timer</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ THE GRAMMAR ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>Eight utterances cover a session</h2><div class="meta">The grammar<br>Tap one to parse it</div></div>
+  <div class="gram">
+    <div class="gramlist" id="gramList"></div>
+    <div class="gramout">
+      <div class="kick" style="margin-bottom:14px">Parsed to</div>
+      <pre id="gramOut">Pick an utterance.</pre>
+      <p class="notes" style="margin-top:18px"><strong>This is not an open-ended chatbot.</strong> It is a small closed grammar with a model behind it for the tail — and that distinction is the difference between a reliable product and a demo. The closed grammar runs on-device, costs nothing, and cannot hallucinate a set you did not do.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 03 NUTRITION ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>Nutrition</h2><div class="meta">Screen 03<br>components/aurora/nutrition.tsx</div></div>
+  <div class="cmp">
+
+    <div class="col b">
+      <div class="collab"><b>Before</b><span>4,463 lines<br>four numbers, typed, per meal</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>16:20</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="mastb"><div class="e">2,140 / 2,850 kcal today</div><div class="t">Add a meal</div></div>
+        <div class="scroll" style="padding:14px 12px 0;gap:16px">
+          <div class="mealtiles">
+            <div><span class="g">◔</span>Breakfast</div><div class="on"><span class="g">◑</span>Lunch</div>
+            <div><span class="g">◕</span>Dinner</div><div><span class="g">○</span>Snack</div>
+          </div>
+          <div>
+            <div class="kick" style="margin-bottom:9px">Recent</div>
+            <div class="recents">
+              <span><i>＋</i>Skyr 170 g<em>104</em></span><span><i>＋</i>Chicken thigh<em>212</em></span><span><i>＋</i>Oats</span>
+            </div>
+          </div>
+          <div class="cdiv"><span>Log manually</span><i></i><b>Free</b></div>
+          <div class="quads">
+            <div class="quad"><span class="l acc">Calories</span><span class="v">_</span><span class="u">kcal</span></div>
+            <div class="quad"><span class="l" style="color:var(--blue)">Protein</span><span class="v">_</span><span class="u">g</span></div>
+            <div class="quad"><span class="l" style="color:var(--amber)">Carbs</span><span class="v">_</span><span class="u">g</span></div>
+            <div class="quad"><span class="l" style="color:var(--red)">Fat</span><span class="v">_</span><span class="u">g</span></div>
+          </div>
+          <div class="twobtn"><span class="p">Add meal</span><span class="s">◫ Scan barcode</span></div>
+          <div class="cdiv"><span>Premade meals</span><i></i><b>Full ✦</b></div>
+          <div class="locked">
+            <div><span class="g">◍</span><span><span class="t">Chicken and rice</span><br><span class="k">640 kcal</span></span></div>
+            <div><span class="g">◔</span><span><span class="t">Protein oats</span><br><span class="k">420 kcal</span></span></div>
+          </div>
+        </div>
+        <div class="fade"></div>
+        <div class="tabbar"><div><span class="g">◉</span>Today</div><div><span class="g">▤</span>Log</div><div class="on"><span class="g">◍</span>Nutrition</div><div><span class="g">✉</span>Messages</div><div><span class="g">◔</span>You</div></div>
+      </div></div>
+    </div>
+
+    <div class="col a">
+      <div class="collab"><b>After</b><span>One number, one decision<br>tap the fixes</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>16:20</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="pad" style="flex:1;display:flex;flex-direction:column;gap:22px;padding-top:18px">
+          <div>
+            <div class="kick" style="margin-bottom:13px">Tuesday — you squatted heavy</div>
+            <div class="short"><span class="n">38</span><span class="u">g of protein short</span></div>
+          </div>
+          <div class="fuelline">Everything else is on target. This one is not, on the worst day to miss it.</div>
+          <div>
+            <div class="kick" style="margin-bottom:10px">From what you already have</div>
+            <div class="fix" id="fixList">
+              <button class="fixrow" type="button"><span class="tick">✓</span><span class="nm">Skyr, 170 g<em>In your pantry — you log it most days</em></span><span class="g">+18 g</span></button>
+              <button class="fixrow" type="button"><span class="tick">✓</span><span class="nm">Whey, one scoop<em>14 servings left</em></span><span class="g">+24 g</span></button>
+              <button class="fixrow" type="button"><span class="tick">✓</span><span class="nm">Chicken thigh, 120 g<em>Your usual Tuesday dinner</em></span><span class="g">+26 g</span></button>
+            </div>
+          </div>
+          <div style="margin-top:auto;padding-bottom:22px;display:flex;flex-direction:column;gap:14px">
+            <div class="t-body ash" style="line-height:1.5">Breakfast, lunch and the 4 pm banana are already logged from your pattern. <span style="color:var(--chalk)">Two corrections so far this week.</span></div>
+            <div class="earpill" style="align-self:flex-start;border:1px solid rgba(195,211,99,.35);border-radius:999px;padding:9px 15px"><span class="dot"></span>Hold to say what changed</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="ctl"><span class="btn" style="cursor:default;border-style:dashed">Tap a fix to take it</span></div>
+    </div>
+  </div>
+
+  <div class="notes2">
+    <div class="notes">
+      <h3>The same trick, in a different discipline</h3>
+      <p>People eat roughly twenty meals on repeat. So the prediction is as good here as it is for a prescribed set: <strong>fill the day in from the athlete's own pattern and ask them to correct the deviations.</strong> Breakfast was logged before they woke up.</p>
+      <p>And the question changed. The before asks <em>what did you eat</em> — an accounting question. The after asks <strong>are you fuelled for the training you just did</strong>, which is the only reason a hybrid athlete tracks food at all. One number, on the day it matters, with the fix attached.</p>
+      <p>The fixes come from <code>pantry.ts</code> and the athlete's own logged foods, so the advice is <strong>something they can actually eat tonight</strong> rather than a macro target to go solve.</p>
+    </div>
+    <div class="notes">
+      <h3>The camera is wrong here too, and for the same reason</h3>
+      <p>Photo calorie estimation is the nutrition equivalent of camera form coaching: a beautiful demo, and unreliable at the one thing that matters. <strong>Portion mass cannot be recovered from a photograph</strong> — and unlike a missed rep, a silently wrong 200 g corrupts the fuel model without anyone noticing.</p>
+      <p><strong>Barcode scanning is the opposite and it already ships.</strong> Deterministic, exact, and the camera is doing arithmetic rather than guessing. Keep it, extend it, and let voice cover the food that has no barcode.</p>
+      <div class="tally">
+        <div><span class="n down">4 → 0</span><span class="l">numbers typed</span></div>
+        <div><span class="n down">2 → 1</span><span class="l">figures shown</span></div>
+        <div><span class="n">0 → 3</span><span class="l">actions offered</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 04 ENDURANCE ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>Endurance</h2><div class="meta">Screen 04 — live<br>components/aurora/endurance-lanes.tsx</div></div>
+  <div class="cmp">
+
+    <div class="col b">
+      <div class="collab"><b>Before</b><span>Four lanes, eight weeks each<br>a comparison, not a verdict</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>19:04</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="mastb"><div class="t">Endurance</div></div>
+        <div class="scroll" style="padding:10px 12px 0">
+          <div style="display:flex;justify-content:flex-end"><span class="kick">Most trained ▸</span></div>
+          <div class="lane"><div class="lanehead"><b>Running</b><span>128 km</span></div>
+            <div class="spark"><i style="height:40%"></i><i style="height:62%"></i><i style="height:34%"></i><i style="height:78%"></i><i style="height:55%"></i><i style="height:88%"></i><i style="height:47%"></i><i class="hi" style="height:70%"></i></div>
+            <div class="lanefoot"><span>8 weeks</span><span>5:38 /km avg</span></div></div>
+          <div class="lane"><div class="lanehead"><b>Cycling</b><span>212 km</span></div>
+            <div class="spark"><i style="height:20%"></i><i style="height:0"></i><i style="height:52%"></i><i style="height:31%"></i><i style="height:66%"></i><i style="height:12%"></i><i style="height:44%"></i><i class="hi" style="height:28%"></i></div>
+            <div class="lanefoot"><span>8 weeks</span><span>27.4 km/h avg</span></div></div>
+          <div class="lane"><div class="lanehead"><b>Rowing</b><span>18 km</span></div>
+            <div class="spark"><i style="height:0"></i><i style="height:30%"></i><i style="height:0"></i><i style="height:0"></i><i style="height:48%"></i><i style="height:22%"></i><i style="height:0"></i><i class="hi" style="height:16%"></i></div>
+            <div class="lanefoot"><span>8 weeks</span><span>2:08 /500 m avg</span></div></div>
+          <div class="lane" style="border-bottom:0"><div class="lanehead"><b>Swimming</b><span>4.2 km</span></div>
+            <div class="spark"><i style="height:0"></i><i style="height:0"></i><i style="height:26%"></i><i style="height:0"></i><i style="height:0"></i><i style="height:38%"></i><i style="height:0"></i><i class="hi" style="height:12%"></i></div>
+            <div class="lanefoot"><span>8 weeks</span><span>2:14 /100 m avg</span></div></div>
+        </div>
+        <div class="tabbar"><div><span class="g">◉</span>Today</div><div class="on"><span class="g">▤</span>Log</div><div><span class="g">◍</span>Nutrition</div><div><span class="g">✉</span>Messages</div><div><span class="g">◔</span>You</div></div>
+      </div></div>
+    </div>
+
+    <div class="col a">
+      <div class="collab"><b>After</b><span>Before, during and after the run<br>press play</span></div>
+      <div class="phone"><div class="scr" id="enScr">
+        <div class="sbar"><span id="enTime">18:41</span><span class="rt" id="enEar"><span class="earpill" style="border:0;padding:0"><span class="dot"></span>AirPods</span></span></div>
+        <div class="pad" style="flex:1;display:flex;flex-direction:column;gap:20px;padding-top:16px">
+          <div><div class="kick" id="enKick">Tonight — before you go</div></div>
+          <div class="runbig"><span class="n" id="enBig">8</span><span class="u" id="enUnit">km easy</span></div>
+          <div class="zone" id="enZone" style="display:none"><i></i><i></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div>
+          <div class="runline" id="enLine">Keep it under 5:40. You squat heavy tomorrow.</div>
+          <div class="eartag" id="enTag">Spoken, not shown</div>
+          <div id="enCost" style="display:none">
+            <div class="kick" style="margin:4px 0 6px">What it cost you</div>
+            <div class="costrow"><span>Quad freshness, tomorrow</span><b class="warn">−9%</b></div>
+            <div class="costrow"><span>Tomorrow's squat</span><b>100 → 95</b></div>
+            <div class="costrow"><span>Easy-to-hard balance</span><b>82 : 18</b></div>
+            <div class="costrow" style="border-bottom:0"><span>Acute-to-chronic load</span><b>1.12</b></div>
+          </div>
+          <div style="margin-top:auto;padding-bottom:22px" class="t-body ash" id="enFoot">The watch will record it. Nothing to start, nothing to log.</div>
+        </div>
+        <div class="stagecap" id="enCap"><b>BEFORE.</b> The only endurance instruction that matters is a ceiling, and it exists because of a barbell session tomorrow.</div>
+      </div></div>
+      <div class="ctl">
+        <button class="btn pri" id="enPlay">Play the run</button>
+        <button class="btn" id="enStep">Step</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="notes2">
+    <div class="notes">
+      <h3>Endurance is already zero-logging — and that is the point</h3>
+      <p>The watch records the run. <code>device-truth.ts</code> already rules that the measured figures outrank the typed ones everywhere. So there is <strong>no capture problem left to solve here</strong>, which makes endurance the cleanest test of the whole thesis: with logging removed entirely, what is the app for?</p>
+      <p>The before answers "a comparison". Four lanes, eight weeks, four averages, and a control that cycles the sort order. It is a well-built chart that hands the athlete a question.</p>
+      <h3>The one place real-time voice belongs</h3>
+      <p>You cannot listen to coaching under a loaded bar. <strong>You can listen for forty minutes while running</strong> — which makes endurance the only discipline where "chat out" works <em>during</em> the effort, not after it. Everything spoken here is a ceiling or a correction, never a statistic.</p>
+    </div>
+    <div class="notes">
+      <h3>The last screen is the company</h3>
+      <p>"That run cost you 9% off tomorrow's squat" is the sentence no competitor can say. Strava has no strength model. Hevy has no endurance model. Garmin treats lifting as a rounding error. WHOOP measures the recovery and refuses to prescribe.</p>
+      <p><strong>The cross-modal reconciliation is the moat</strong>, and it is the one thing here that is already built — the fatigue, readiness, effort and HPI engines reconcile both sides today. It has simply never been said out loud to the athlete in one sentence.</p>
+      <p>If only one screen in this whole document gets built, <strong>make it this one</strong>. It needs no camera, no microphone and no new science — only a voice and permission to state a conclusion.</p>
+      <div class="tally">
+        <div><span class="n down">4 → 1</span><span class="l">figures on screen</span></div>
+        <div><span class="n">0 → 3</span><span class="l">spoken moments</span></div>
+        <div><span class="n down">chart → verdict</span><span class="l">what it returns</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 05 THE WEEK ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>The week</h2><div class="meta">Screen 05 — live<br>engines/recap.ts</div></div>
+  <div class="cmp">
+
+    <div class="col b">
+      <div class="collab"><b>Before</b><span>Shipped — "Your week" card<br>six figures, no conclusion</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>19:20</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="mastb"><div class="e">12 – 18 August</div><div class="t">Your week</div></div>
+        <div class="pad" style="padding-top:8px"><div class="recap">
+          <div class="recapgrid">
+            <div><span class="n">6</span><span class="l">Sessions</span></div>
+            <div><span class="n">14.2 t</span><span class="l">Tonnage</span><span class="d">+8% on last</span></div>
+            <div><span class="n">412</span><span class="l">Minutes</span></div>
+            <div><span class="n">31 km</span><span class="l">Distance</span><span class="d">+4 km</span></div>
+            <div><span class="n">86</span><span class="l">Sets</span></div>
+            <div><span class="n">5</span><span class="l">Active days</span></div>
+          </div>
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <span class="chip set">PR — Back Squat 142.5</span><span class="chip">Top muscle — Quads</span>
+          </div>
+          <div class="sharebtn">Share your week</div>
+        </div></div>
+        <div class="secrow"><b>Trends</b><span>See all</span></div>
+        <div class="railrow">
+          <div class="rcard"><span class="s">Tonnage</span><span class="t">14.2 t</span></div>
+          <div class="rcard"><span class="s">Pace</span><span class="t">5:38</span></div>
+          <div class="rcard"><span class="s">Readiness</span><span class="t">71</span></div>
+        </div>
+        <div class="fade"></div>
+        <div class="tabbar"><div class="on"><span class="g">◉</span>Today</div><div><span class="g">▤</span>Log</div><div><span class="g">◍</span>Nutrition</div><div><span class="g">✉</span>Messages</div><div><span class="g">◔</span>You</div></div>
+      </div></div>
+    </div>
+
+    <div class="col a">
+      <div class="collab"><b>After</b><span>Forty seconds, narrated<br>press play</span></div>
+      <div class="phone"><div class="scr" id="filmScr">
+        <div class="sbar"><span>19:20</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="prog" id="filmProg"></div>
+        <div class="film" id="film">
+          <div class="fs on" data-s="0">
+            <div class="kick">Your week — 12 to 18 August</div>
+            <div class="fbig"><span class="fig" id="cTon">0</span><span class="funit">tonnes moved</span></div>
+          </div>
+          <div class="fs" data-s="1">
+            <div class="kick">Where it went</div>
+            <div class="bars" id="fBars">
+              <div><i style="--h:38%"></i><span>M</span></div><div><i style="--h:74%"></i><span>T</span></div>
+              <div><i style="--h:0"></i><span>W</span></div><div><i style="--h:100%" class="hi"></i><span>T</span></div>
+              <div><i style="--h:52%"></i><span>F</span></div><div><i style="--h:22%"></i><span>S</span></div>
+              <div><i style="--h:0"></i><span>S</span></div>
+            </div>
+            <div class="fcap">Thursday was the week.</div>
+          </div>
+          <div class="fs" data-s="2">
+            <div class="kick">The thing that mattered</div>
+            <div class="vcmp">
+              <div><span class="vlab">6 weeks ago — 100 kg</span><i style="--w:62%"></i><span class="vval">0.61 m/s</span></div>
+              <div><span class="vlab">Thursday — 105 kg</span><i style="--w:88%" class="hi"></i><span class="vval">0.68 m/s</span></div>
+            </div>
+            <div class="fcap">More weight, moving faster.</div>
+          </div>
+          <div class="fs" data-s="3">
+            <div class="kick">What that means</div>
+            <div class="fmid">That is the first hard evidence your strength is up rather than your effort.</div>
+          </div>
+          <div class="fs" data-s="4">
+            <div class="kick">One thing for next week</div>
+            <div class="fmid acc">You haven't touched a hinge in nine days.</div>
+            <div class="fcap">I've put a deadlift on Tuesday.</div>
+          </div>
+        </div>
+        <div class="narr" id="filmNarr">You lifted fourteen point two tonnes this week.</div>
+        <div class="filmfoot">
+          <button class="ghost" id="filmBtn">▶ Play</button>
+          <span class="kick" id="filmT">0:00 / 0:20</span>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="notes2">
+    <div class="notes">
+      <h3>The before already has every number</h3>
+      <p>That is what makes this the cheapest change in the document. <code>recap.ts</code> computes the tonnage, the distance, the PRs and the deltas today, and the card renders them honestly. <strong>What it never does is reach a conclusion.</strong> Six figures and two chips, and the athlete is left to work out whether the week was good.</p>
+      <p>"+8% on last" is the closest it gets, and a percentage is not a conclusion — it is another number to interpret.</p>
+    </div>
+    <div class="notes">
+      <h3>Not generative video. Rendering.</h3>
+      <p>Every frame is <strong>deterministic motion graphics over real engine output</strong> with a synthesised voice. It renders server-side for cents and it cannot hallucinate. Generating photoreal video of the athlete is the opposite on all three counts, and one clip showing a rep they never did ends the brand.</p>
+      <p>It is also the most shareable object the company can make: <strong>the first fitness media that is about you and true.</strong> Retention loop and acquisition loop in the same 40 seconds.</p>
+      <div class="tally">
+        <div><span class="n">6 → 1</span><span class="l">things to read</span></div>
+        <div><span class="n down">0 → 1</span><span class="l">conclusion</span></div>
+        <div><span class="n">card → film</span><span class="l">shareable object</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 06 THE RECORD ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>The record</h2><div class="meta">Screen 06 — live<br>core/attestation.ts</div></div>
+  <div class="cmp">
+
+    <div class="col b">
+      <div class="collab"><b>Before</b><span>A number, and a claim<br>tiers 0 – 2 ship today</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>18:02</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="mastb"><div class="t">Personal records</div></div>
+        <div class="scroll" style="padding:8px 12px 0;gap:0">
+          <div class="lrow" style="padding:15px 0;border-top:0;border-bottom:1px solid var(--line);align-items:baseline">
+            <b style="font-size:15px">Back Squat</b><span style="font-size:15px;color:var(--chalk);font-weight:700">142.5 kg</span></div>
+          <div class="lrow" style="padding:15px 0;border-top:0;border-bottom:1px solid var(--line);align-items:baseline">
+            <b style="font-size:15px">Deadlift</b><span style="font-size:15px;color:var(--chalk);font-weight:700">180 kg</span></div>
+          <div class="lrow" style="padding:15px 0;border-top:0;border-bottom:1px solid var(--line);align-items:baseline">
+            <b style="font-size:15px">Bench Press</b><span style="font-size:15px;color:var(--chalk);font-weight:700">102.5 kg</span></div>
+          <div class="lrow" style="padding:15px 0;border-top:0;border-bottom:1px solid var(--line);align-items:baseline">
+            <b style="font-size:15px">Overhead Press</b><span style="font-size:15px;color:var(--chalk);font-weight:700">65 kg</span></div>
+          <div style="padding-top:18px"><span class="chip">Tier 1 — sensed</span></div>
+          <p class="t-body ash" style="margin-top:12px;line-height:1.5">Your watch corroborated the session these were logged in. The barbell load is still what you typed.</p>
+        </div>
+        <div class="tabbar"><div><span class="g">◉</span>Today</div><div><span class="g">▤</span>Log</div><div><span class="g">◍</span>Nutrition</div><div><span class="g">✉</span>Messages</div><div class="on"><span class="g">◔</span>You</div></div>
+      </div></div>
+    </div>
+
+    <div class="col a">
+      <div class="collab"><b>After</b><span>The number, and what earned it<br>tap the ladder</span></div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>18:02</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="pad" style="flex:1;display:flex;flex-direction:column;gap:22px;padding-top:16px">
+          <div>
+            <div class="kick" style="margin-bottom:12px">Back Squat — best</div>
+            <div style="display:flex;align-items:baseline;gap:10px">
+              <span class="fig" style="font-size:64px;line-height:.9">142.5</span>
+              <span class="t-heading ash" style="font-weight:600">kg</span>
+            </div>
+            <div class="t-body ash" style="margin-top:8px">14 August — 1 rep — +5 kg on May</div>
+          </div>
+          <div class="tierbox">
+            <div class="kick" style="margin-bottom:2px">Evidence — tier 3 of 5</div>
+            <div class="ladder" id="ladder"></div>
+            <div class="tierwhat" id="tierWhat">Recorded — the lift is on video with the plates countable, and the rep completed.</div>
+          </div>
+          <div class="cosign">
+            <div class="t-bodyLg" style="font-weight:700">Co-signed by 2</div>
+            <div class="t-body ash" style="margin-top:3px">M. Kowalska and one other were in the room.</div>
+          </div>
+          <div style="margin-top:auto;padding-bottom:20px">
+            <div class="doorrow"><span class="t-note" style="font-weight:600">All 34 verified lifts</span><span class="ring">→</span></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="ctl"><span class="btn" style="cursor:default;border-style:dashed">Tap a tier on the ladder</span></div>
+    </div>
+  </div>
+
+  <div class="notes2">
+    <div class="notes">
+      <h3>The before is honest, and that is unusual</h3>
+      <p>It already says the quiet part: the watch corroborated the <em>session</em>, not the <em>barbell</em>. Almost nobody in this industry admits that. <strong>Tiers 0 to 2 ship today</strong> — claimed, sensed, witnessed — and the co-signing flow works.</p>
+      <p>What it lacks is the shape of the thing. A single chip cannot show an athlete that there is a ladder, that they are on it, or that there is a rung above worth climbing.</p>
+    </div>
+    <div class="notes">
+      <h3>The only camera bet worth taking</h3>
+      <p>Not form coaching — <strong>attestation</strong>. Tier 3 is a narrow bounded problem: one declared attempt, framing the athlete <em>wants</em> to get right, one question — how many plates, and did the rep complete.</p>
+      <p>The failure mode is benign. <strong>"Couldn't verify, try again" costs nothing. "Your knee is caving" costs trust and invites liability.</strong></p>
+      <p>And it is the only screen here with network effects. A credential is worth what its recognition is worth, which makes it a graph. The film is the most magical screen in this document; <strong>this is the most valuable one.</strong> Build it fourth.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 07 THE NOTIFICATION ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>The notification</h2><div class="meta">Screen 07<br>The interruption budget</div></div>
+  <div class="cmp">
+
+    <div class="col b">
+      <div class="collab"><b>Before</b><span>What every fitness app sends<br>and why they get deleted</span></div>
+      <div class="phone"><div class="scr lock">
+        <div class="sbar"><span>6:48</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="lockt"><span class="fig">6:48</span><span class="kick" style="margin-top:6px;display:block">Tuesday 18 August</span></div>
+        <div class="pad" style="padding-bottom:24px;display:flex;flex-direction:column;gap:9px">
+          <div class="notif">
+            <div class="notifhead"><span class="kick acc">HYBRID</span><span class="kick">now</span></div>
+            <div class="t-note" style="font-weight:700;margin-top:7px">Time to work out! 💪</div>
+            <div class="t-body ash" style="margin-top:4px">Your Tuesday session is waiting.</div>
+          </div>
+          <div class="notif">
+            <div class="notifhead"><span class="kick acc">HYBRID</span><span class="kick">7h ago</span></div>
+            <div class="t-note" style="font-weight:700;margin-top:7px">Great job yesterday! 🔥</div>
+            <div class="t-body ash" style="margin-top:4px">You're on a 4-day streak. Keep it going!</div>
+          </div>
+          <div class="notif">
+            <div class="notifhead"><span class="kick acc">HYBRID</span><span class="kick">yesterday</span></div>
+            <div class="t-note" style="font-weight:700;margin-top:7px">Your bench velocity is up 11%</div>
+            <div class="t-body ash" style="margin-top:4px">Over the last six weeks. Tap to see the trend.</div>
+          </div>
+          <div class="notif" style="opacity:.5">
+            <div class="notifhead"><span class="kick acc">HYBRID</span><span class="kick">yesterday</span></div>
+            <div class="t-note" style="font-weight:700;margin-top:7px">Don't lose your streak!</div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+
+    <div class="col a">
+      <div class="collab"><b>After</b><span>One a day, hard cap<br>and it changes today</span></div>
+      <div class="phone"><div class="scr lock">
+        <div class="sbar"><span>6:48</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="lockt"><span class="fig">6:48</span><span class="kick" style="margin-top:6px;display:block">Tuesday 18 August</span></div>
+        <div class="pad" style="padding-bottom:24px">
+          <div class="notif">
+            <div class="notifhead"><span class="kick acc">HYBRID</span><span class="kick">now</span></div>
+            <div class="t-note" style="font-weight:700;margin-top:7px;line-height:1.35">Today's squat is 92.5, not 100.</div>
+            <div class="t-body ash" style="margin-top:5px;line-height:1.45">You slept 5 h 12 and your resting HR is up 7. Same sets, lighter bar.</div>
+          </div>
+          <div class="rejected">
+            <div class="kick" style="margin-bottom:11px;color:var(--red)">Held back today</div>
+            <div class="rej"><span>"Bench velocity +11% over six weeks"</span><span>→ weekly film</span></div>
+            <div class="rej"><span>"You hit a PR!"</span><span>→ in-app only</span></div>
+            <div class="rej"><span>"Time to work out!"</span><span>→ never</span></div>
+            <div class="rej"><span>"Great job yesterday!"</span><span>→ never</span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+
+  <div class="notes2">
+    <div class="notes">
+      <h3>Three tests, all three must pass</h3>
+      <p><strong>Decision-changing</strong> — it alters what the athlete does in the next 24 hours. <strong>Non-obvious</strong> — they would not have worked it out themselves. <strong>Defensible</strong> — the evidence fits on one line.</p>
+      <p>The velocity message is the interesting failure. It is <em>true</em>, it is <em>flattering</em>, and it changes nothing today — so it goes in the Sunday film where it belongs, and the athlete gets it with context instead of at 7 a.m. with none.</p>
+    </div>
+    <div class="notes">
+      <h3>Structural guards, not a settings screen</h3>
+      <p><strong>Hard cap: one proactive message a day.</strong> If the athlete ignores three of a type, that type stops permanently — no re-prompting, no "are you sure". It arrives when they wake, not when it was computed at 3 a.m.</p>
+      <p>And if the day is unremarkable, say nothing. <strong>A coach who is quiet when there is nothing to say is a coach you believe when they speak.</strong></p>
+      <div class="tally">
+        <div><span class="n down">4 → 1</span><span class="l">pushes per day</span></div>
+        <div><span class="n">0 → 3</span><span class="l">tests to pass</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ 08 NAVIGATION ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>The navigation</h2><div class="meta">Screen 08<br>The most speculative one</div></div>
+  <div class="ba">
+    <div class="bacol">
+      <div class="kick" style="color:var(--red);margin-bottom:16px">Before — five tabs, sixty routes</div>
+      <div class="tabs old"><span>Today</span><span>Log</span><span>Nutrition</span><span>Messages</span><span>You</span></div>
+      <ul class="balist">
+        <li>The athlete navigates to find what the system already knows.</li>
+        <li>Dashboards present evidence and ask for interpretation.</li>
+        <li>Per-set manual entry is the default path.</li>
+        <li>Sixty routes, and the good ones are three taps deep.</li>
+      </ul>
+    </div>
+    <div class="bacol">
+      <div class="kick" style="color:var(--accTx);margin-bottom:16px">After — one surface, one voice, one archive</div>
+      <div class="tabs new"><span class="on">Now</span><span>Record</span><span class="mic">◉ hold to speak</span></div>
+      <ul class="balist">
+        <li><b>Now</b> — the claim, the session line, the receipt.</li>
+        <li><b>Record</b> — verified lifts, the films, the archive. The trophy cabinet.</li>
+        <li><b>Voice</b> — everything else. Authoring screens are reached by asking.</li>
+        <li>Plan editing, exercise browsing and food logging keep full traditional UI, unapologetically. <b>Authoring is a screen job.</b></li>
+      </ul>
+    </div>
+  </div>
+  <p class="notes" style="margin-top:32px;max-width:76ch"><strong>The honest caveat.</strong> This is the most speculative screen here, and unlike the other seven it is not backed by an engine that already ships. Navigation is not only wayfinding — it is browsing, discovery and accountability, and a product that hides its own data reads as unaccountable the first time it tells you something you disagree with. <strong>The AI decides the default; the screen exists so the athlete can inspect and override it.</strong> Ship the Today card first and watch whether anyone misses the tabs before deleting them.</p>
+</section>
+
+<!-- ══════════ ORDER ══════════ -->
+<section class="blk">
+  <div class="shead"><h2>If you build four of these</h2><div class="meta">Order<br>By impact over effort</div></div>
+  <div class="tw"><table>
+    <thead><tr><th>Order</th><th>Screen</th><th>Why this one</th><th>Needs</th><th>New tech</th></tr></thead>
+    <tbody>
+      <tr><th>1</th><td><strong>Endurance — what it cost</strong></td><td>The only sentence no competitor can say. The engines that produce it already ship.</td><td>A voice</td><td>None</td></tr>
+      <tr><th>2</th><td><strong>The week, as a film</strong></td><td>Highest wow per line of code, and it is a retention and acquisition loop at once.</td><td>A renderer and a voice</td><td>None</td></tr>
+      <tr><th>3</th><td><strong>Today as a claim</strong></td><td>Changes the product's posture from offering to deciding. Also the riskiest — measure it.</td><td>A prescription object</td><td>None</td></tr>
+      <tr><th>4</th><td><strong>The record's ladder</strong></td><td>The only screen with network effects behind it. Tier 3 is the one camera bet.</td><td>Plate counting</td><td>Bounded CV</td></tr>
+      <tr><th>—</th><td>Session line, nutrition</td><td>Bigger builds, and both depend on the prescription object from 3 existing first.</td><td>Speech, pantry priors</td><td>On-device ASR</td></tr>
+    </tbody>
+  </table></div>
+  <p class="notes" style="margin-top:22px;max-width:76ch">Three of the first four need <strong>no computer vision, no microphone and no new science</strong> — only a voice, a renderer, and permission to state a conclusion. That is the actual finding of this exercise: the ambient interface is mostly a writing and rendering problem sitting on top of engines that were finished months ago.</p>
+</section>
+
+<div class="foot">
+  <span>HYBRID</span><span>reference/session-line-mockups.html</span><span>Companion to The Ambient Interface</span><span>Branch claude/zen-turing-bcy1tp</span>
+</div>
+</div>
 <script>
+
 (function(){
 "use strict";
 var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -845,5 +1286,76 @@ TIERS.forEach(function(t, i){
   });
   lad.appendChild(b);
 });
+})();
+
+/* ---- 6. Nutrition: taking a fix ---- */
+(function(){
+  var list = document.getElementById("fixList");
+  if(!list) return;
+  [].forEach.call(list.children, function(row){
+    row.addEventListener("click", function(){ row.classList.toggle("on"); });
+  });
+})();
+
+/* ---- 7. Endurance: before, during, after ---- */
+(function(){
+  var E = {
+    time:document.getElementById("enTime"), kick:document.getElementById("enKick"),
+    big:document.getElementById("enBig"), unit:document.getElementById("enUnit"),
+    zone:document.getElementById("enZone"), line:document.getElementById("enLine"),
+    tag:document.getElementById("enTag"), cost:document.getElementById("enCost"),
+    foot:document.getElementById("enFoot"), cap:document.getElementById("enCap"),
+    scr:document.getElementById("enScr")
+  };
+  if(!E.big) return;
+  var RM2 = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var ST = [
+    { time:"18:41", kick:"Tonight — before you go", big:"8", unit:"km easy", zone:null,
+      line:"Keep it under 5:40. You squat heavy tomorrow.", acc:false,
+      tag:"Spoken, not shown", cost:false,
+      foot:"The watch will record it. Nothing to start, nothing to log.",
+      cap:"<b>BEFORE.</b> The only endurance instruction that matters is a ceiling, and it exists because of a barbell session tomorrow." },
+    { time:"19:03", kick:"3.2 km in", big:"5:12", unit:"per kilometre", zone:"over",
+      line:"You're 28 seconds quick. Ease off.", acc:false,
+      tag:"Spoken at 3.2 km — the screen stayed dark", cost:false,
+      foot:"The phone is in a pocket. It has not lit up once.",
+      cap:"<b>DURING.</b> The one discipline where real-time voice works. You can listen for forty minutes while running; you cannot under a loaded bar." },
+    { time:"19:44", kick:"8.1 km done — 5:47 average", big:"−9", unit:"% quad freshness", zone:"ok",
+      line:"That run cost you 9% off tomorrow's squat. Priced in — the bar drops to 95.", acc:true,
+      tag:"The reconciliation", cost:true,
+      foot:"Nothing was logged by hand. The watch had it all.",
+      cap:"<b>AFTER.</b> The sentence no competitor can say. Strava has no strength model, Hevy has no endurance model, WHOOP will not prescribe." }
+  ];
+  var ei = 0, et = null;
+  function drawEn(){
+    var s = ST[ei];
+    E.time.textContent = s.time; E.kick.textContent = s.kick;
+    E.big.textContent = s.big; E.unit.textContent = s.unit;
+    E.line.textContent = s.line;
+    E.line.className = "runline" + (s.acc ? " acc" : "");
+    E.tag.textContent = s.tag;
+    E.cost.style.display = s.cost ? "block" : "none";
+    E.foot.textContent = s.foot; E.cap.innerHTML = s.cap;
+    E.zone.style.display = s.zone ? "flex" : "none";
+    if(s.zone){
+      [].forEach.call(E.zone.children, function(b, i){
+        b.className = s.zone === "over" ? (i >= 5 ? "over" : (i >= 2 ? "on" : "")) : (i <= 5 ? "on" : "");
+      });
+    }
+  }
+  function stopEn(){ if(et){ clearInterval(et); et = null; }
+    document.getElementById("enPlay").textContent = "Play the run"; }
+  document.getElementById("enPlay").addEventListener("click", function(){
+    if(et){ stopEn(); return; }
+    ei = 0; drawEn(); this.textContent = "Pause";
+    et = setInterval(function(){
+      if(ei === ST.length - 1){ stopEn(); return; }
+      ei++; drawEn();
+    }, RM2 ? 900 : 3000);
+  });
+  document.getElementById("enStep").addEventListener("click", function(){
+    stopEn(); ei = (ei + 1) % ST.length; drawEn();
+  });
+  drawEn();
 })();
 </script>
