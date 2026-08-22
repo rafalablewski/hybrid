@@ -86,7 +86,13 @@ export function NutritionNudgeLine({ nudge }: { nudge: NutritionNudgeShape }) {
       {nudge.kind === "on-track"
         ? <AuroraIcon name="check" size={17} color={accent} style={{ marginTop: 1 }} />
         : <View style={{ marginTop: 1 }}><Glyph name="spark" size={17} color={accent} /></View>}
-      <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{text}</Text>
+      {/* THE NUDGE IS A CONCLUSION, and it was set in the style help text uses.
+          `F.reg` at `fs.body` put the only interpretive sentence on the screen
+          at the same rank as a form hint, under a 46dp ring. `editorial` is the
+          serif cut — see `text.editorial` in core for the one-per-screen rule.
+          The glyph and its accent stay: that signal is semantic (on-track, over,
+          short) and a type change has no business removing it. */}
+      <Text style={{ flex: 1, ...ty(C, "editorial") }}>{text}</Text>
     </View>
   );
 }

@@ -18,21 +18,34 @@ describe("the named type styles", () => {
       // A style either names one of the two uppercase voices, names the figure
       // tightening, or names nothing — in which case the SIZE decides, which is
       // the whole point of the band table. Anything else is a forked ladder.
-      if (s.tracking !== undefined) expect(["text", "label", "caps", "figure"], `${t}.tracking`).toContain(s.tracking);
+      if (s.tracking !== undefined) expect(["text", "label", "caps", "figure", "serif"], `${t}.tracking`).toContain(s.tracking);
       expect(Object.values(weight), `${t}.weight`).toContain(s.weight);
     }
   });
 
   it("HARD — the cut set matches the faces the app actually loads", () => {
-    // TWO cuts, because two faces are loaded. The spec's third (Söhne Schmal,
-    // takeover titles at 34 and above) is deliberately absent until the face
-    // ships — see the note on `cut`. This guard is not decoration: `condensed`
-    // was deleted from tokens.ts once for existing as a name with no binary
-    // behind it, and the failure mode was invisible (the phone drew one face,
-    // the admin panel another). If you are adding the third cut, you are also
-    // loading it, and this number moves in the same change.
-    expect(Object.keys(cut).sort()).toEqual(["mono", "sans"]);
+    // THREE cuts, because three faces are loaded — Söhne, Söhne Mono and ITC
+    // Garamond Book. Söhne Schmal (takeover titles at 34 and above) is still
+    // deliberately absent until the face ships — see the note on `cut`. This
+    // guard is not decoration: `condensed` was deleted from tokens.ts once for
+    // existing as a name with no binary behind it, and the failure mode was
+    // invisible (the phone drew one face, the admin panel another). If you are
+    // adding a cut, you are also loading it, and this list moves in the same
+    // change.
+    expect(Object.keys(cut).sort()).toEqual(["mono", "sans", "serif"]);
     for (const c of Object.values(cut)) expect(Object.values(fonts)).toContain(c);
+  });
+
+  it("HARD — the editorial rung belongs to the serif and nothing else", () => {
+    // `fs.editorial` (30) exists ONLY because ITC Garamond needs 1.176x Söhne to
+    // land on the same x-height. A sans or mono style taking it would be a 30dp
+    // rung sitting two dp off `display` for a reason nobody could name, which is
+    // exactly how `heading.1` accumulated before it was deleted.
+    const bad = TOKENS.filter((t) => (text[t] as TextStyle).size === "editorial" && (text[t] as TextStyle).cut !== "serif");
+    expect(bad, `fs.editorial is serif-only:\n  ${bad.join("\n  ")}`).toEqual([]);
+    // …and the serif never reaches for a rung below the 24dp floor.
+    const thin = TOKENS.filter((t) => (text[t] as TextStyle).cut === "serif" && fs[(text[t] as TextStyle).size] < 24);
+    expect(thin, `the serif floor is 24dp:\n  ${thin.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — mono never goes above 600", () => {

@@ -915,7 +915,7 @@ export function WorkoutWrapped({
                         <WorkRow label={t("session.intensity.fall")} value={`−${fall} bpm`} C={C} last />
                       )}
                     </View>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "relaxed"), color: C.ash, marginTop: space.sm }}>
+                    <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption, "relaxed"), color: C.ash, marginTop: space.sm }}>
                       {/* Said out loud, because zones presented without their
                           denominator read as physiology rather than as a ratio
                           against one measured figure. */}
@@ -1092,7 +1092,7 @@ export function WorkoutWrapped({
                     />
                   </View>
                 )}
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "relaxed"), color: C.ash, marginTop: space.md }}>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption, "relaxed"), color: C.ash, marginTop: space.md }}>
                   {t(imported ? "session.device.truthImported" : "session.device.truth")}
                 </Text>
                 <View style={{ flexDirection: "row", gap: space.lg, marginTop: space.lg }}>
