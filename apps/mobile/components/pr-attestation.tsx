@@ -40,7 +40,7 @@ export function CosignInbox({ units }: { units: WeightUnit }) {
     // A top margin here would sit the whole feed 16 lower than web's, since RN
     // does not collapse margins and CSS does.
     <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.lime, borderRadius: RADIUS.field, padding: 16, marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>Co-sign requests</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, C.lime) }}>Co-sign requests</Text>
       {inbox.map((i) => (
         <View key={i.id} style={{ marginTop: 10 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>
@@ -107,7 +107,7 @@ export default function PrAttestationPanel({ sessionId, lifts, hasDevice, units 
 
   return (
     <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>Verified record</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash }}>Verified record</Text>
       {lifts.map(({ lift, topLoad }) => {
         const forLift = (atts ?? []).filter((a) => a.lift === lift);
         const tier = prTier({ session: { device: hasDevice ? ({} as never) : null }, attestations: forLift });

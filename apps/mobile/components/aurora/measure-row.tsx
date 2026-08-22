@@ -63,14 +63,14 @@ export function MeasureLine({
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
         numberOfLines={1}
-        style={{ flex: 1, fontFamily: F.semi, fontSize: fs.note, color: C.chalk }}
+        style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}
       >
         {name}
       </Text>
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
         numberOfLines={1}
-        style={{ fontFamily: F.monoBold, fontSize: fs.note, color: tone ?? C.chalk }}
+        style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: tone ?? C.chalk }}
       >
         {figure}
       </Text>
@@ -135,7 +135,7 @@ export function MeasureScale({ cells, tone = null }: { cells: MeasureCell[]; ton
           <Text
             maxFontSizeMultiplier={MAX_FONT_SCALE}
             numberOfLines={1}
-            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: c.selected ? (tone ?? C.chalk) : C.ash }}
+            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: c.selected ? (tone ?? C.chalk) : C.ash }}
           >
             {c.label} <Text style={{ fontSize: fs.micro, color: C.chalk }}>{c.value}</Text>
           </Text>

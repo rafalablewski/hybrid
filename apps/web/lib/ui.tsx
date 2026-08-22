@@ -171,9 +171,14 @@ export function GlassField() {
   );
 }
 
-export const disp: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
-export const mono: CSSProperties = { fontFamily: "'JetBrains Mono', monospace" };
-export const body: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
+/** The three faces read the CSS custom properties rather than naming a family.
+ *  They used to spell "'Archivo', sans-serif" here and in thirteen SVG <text>
+ *  elements across the admin charts, so a face swap was a fifteen-file edit and
+ *  the charts drew the old face beside the new one for however long it took
+ *  somebody to notice. globals.css owns the family; this owns the role. */
+export const disp: CSSProperties = { fontFamily: "var(--font-display)" };
+export const mono: CSSProperties = { fontFamily: "var(--font-mono)" };
+export const body: CSSProperties = { fontFamily: "var(--font-display)" };
 
 /**
  * A FIGURE'S NUMERALS — spread into any style that draws a number sitting in a
@@ -316,7 +321,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
 }
 
 /** Pill button — mirrors mobile lib/ui Button (fill | outline): same face
- *  (Archivo bold), same size (fs.note), same ~44px height, so the two clients
+ *  (Archivo bold), same size (fs.bodyLg), same ~44px height, so the two clients
  *  share one button. Fill paints the brand accent (or an explicit `color`) with
  *  onAccent ink; outline is a transparent ghost with a hairline border, `color`
  *  tinting the label + border (muted ash/line when omitted) — e.g. destructive
@@ -349,7 +354,7 @@ export function Button({
       className="pressable"
       style={{
         ...disp,
-        fontSize: compact ? fs.body : fs.note,
+        fontSize: compact ? fs.body : fs.bodyLg,
         fontWeight: 700,
         color: outline ? txt(color ?? ASH) : ON_ACCENT,
         background: outline ? "none" : color ?? LIME,

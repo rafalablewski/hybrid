@@ -93,9 +93,9 @@ export default function AuroraTrends({ top, unified = false }: {
 
   const divider = { borderBottomWidth: 1, borderBottomColor: C.line } as const;
   const bandLabel = { fontFamily: F.semi, fontSize: fs.caption, color: C.ash } as const;
-  const figure = { fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking.display } as const;
+  const figure = { fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display) } as const;
   const meta = { fontFamily: F.mono, fontSize: fs.micro, color: C.ash } as const;
-  const colHead = { fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label } as const;
+  const colHead = { fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label") } as const;
 
   /** A measure band: label, the week's figure, its eight-week average, and the
    *  eight-week line — drawn on a TRUE zero baseline, so a week with nothing

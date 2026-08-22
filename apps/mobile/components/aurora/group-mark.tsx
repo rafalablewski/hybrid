@@ -42,7 +42,7 @@ export default function GroupMark({ label, mt = 36, right }: { label: string; mt
   const heading = (
     <Text
       accessibilityRole="header"
-      style={{ fontFamily: F.black, fontSize: 23, letterSpacing: tracking.display, lineHeight: leading(23, "tight"), color: C.chalk }}
+      style={{ fontFamily: F.black, fontSize: 23, letterSpacing: tracking(23), lineHeight: leading(23, "tight"), color: C.chalk }}
     >
       {label}
     </Text>

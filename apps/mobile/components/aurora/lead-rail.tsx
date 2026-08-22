@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { View, Text, ScrollView, useWindowDimensions } from "react-native";
 import { ALPHA } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, leading, tracking, trackFigure, F, TABULAR } from "../../lib/ui";
+import { F, TABULAR, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { GUTTER, APressCard } from "./kit";
 import { ArrowGlyph } from "./cta-label";
 import { withAlpha } from "./field";
@@ -117,7 +117,7 @@ export function LeadCard({
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
+          <Text style={ty(C, "overline")}>
             {kicker}
           </Text>
           {/* THE CLAIM'S OWN SHAPE, KEPT: subject on one line, figure on the
@@ -135,10 +135,10 @@ export function LeadCard({
               {/* Tracked and line-boxed by the SIZE, like every other figure in
                   the app — `trackFigure` and a tight leading. The lead figures
                   had neither: one took the house TITLE tightening (a flat -0.5,
-                  which is what `tracking.display` is for) and both sat in a
+                  which is what `tracking(fs.title)` is for) and both sat in a
                   1.5 reading line box, so the app's smallest hero figure was
                   the one place its figure rules did not reach. */}
-              <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: trackFigure(fs.title), lineHeight: leading(fs.title, "tight"), color: C.chalk, ...TABULAR }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: trackFigure(fs.title), lineHeight: leading(fs.title, "flush"), color: C.chalk, ...TABULAR }}>
                 {figure}
               </Text>
               {unit ? <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{unit}</Text> : null}
@@ -153,7 +153,7 @@ export function LeadCard({
             </Text>
           ) : null}
           {meta ? (
-            <Text style={{ marginTop: space.xxs, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>
+            <Text style={{ marginTop: space.xxs, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
               {meta}
             </Text>
           ) : null}

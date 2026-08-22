@@ -7,7 +7,7 @@ import {
   type LoggedSession, type WeightUnit, type FitnessLevelEstimate, STATE_OPACITY } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F, tracking, leading } from "../../lib/ui";
+import { F, leading, tracking, ty} from "../../lib/ui";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useFitnessLevel, type FitnessLevelRead } from "../../lib/use-fitness-level";
 import { ACard, CardFoot } from "./kit";
@@ -94,7 +94,7 @@ export default function LevelCard({ sessions, read }: {
 
   return (
     <ACard solid style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+      <Text style={ty(C, "kicker")}>
         {t("w.analyze.vol.levelCardTitle")}
       </Text>
 
@@ -136,7 +136,7 @@ export default function LevelCard({ sessions, read }: {
         ))}
       </View>
       {level && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 8 }}>
+        <Text style={{ ...ty(C, "kicker"), marginTop: 8  }}>
           {t("w.analyze.vol.levelTier").replace("{n}", String(index + 1))}
         </Text>
       )}
@@ -149,7 +149,7 @@ export default function LevelCard({ sessions, read }: {
       {/* BEAT 4 — the ratios that actually drive the engine, held back for the
           second read, in the `× bodyweight` notation the Volume screen ships. */}
       {level && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, opacity: 0.75, marginTop: 12 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, opacity: 0.75, marginTop: 12 }}>
           {estimate.evidence
             .slice(0, 2)
             .map((e) => (e.kind === "strength"
@@ -230,7 +230,7 @@ function Working({ estimate, reach, figure, units }: {
       {/* THE THRESHOLD — the same numbers the sentence above quotes, so the two
           can never round apart. */}
       {reach?.next ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, lineHeight: leading(fs.nano, "relaxed"), marginTop: 12 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, lineHeight: leading(fs.nano, "relaxed"), marginTop: 12 }}>
           {t(reach.kind === "strength" ? "w.analyze.vol.levelNextLift" : "w.analyze.vol.levelNextRun")
             .replace("{tier}", t(LEVEL_KEY[reach.next]))
             .replace("{target}", fmt(reach.target))

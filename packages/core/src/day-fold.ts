@@ -140,8 +140,8 @@ export const DAY_BAR = {
   gap: space.ms,
   /** A rung under the header's 19 — still unmistakably the wordmark. */
   wordmark: { size: fs.bodyLg, tracking: APP_HEADER.wordmark.tracking },
-  streak: { top: 1, size: fs.nano, tracking: tracking.label },
-  /** The initials in the avatar tile. A rung under the header's `fs.note`. */
+  streak: { top: 1, size: fs.nano, tracking: tracking(fs.nano, "label") },
+  /** The initials in the avatar tile. A rung under the header's `fs.bodyLg`. */
   initials: fs.body,
   /** The bell. Two under the header's 20, to sit inside a 30dp tile. */
   icon: 18,

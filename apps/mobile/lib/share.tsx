@@ -42,7 +42,7 @@ export const WorkoutShareCard = forwardRef<View, { stats: ShareStats; t: (k: str
       style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), borderRadius: 18, padding: 20 }}
     >
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, letterSpacing: -1 }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, letterSpacing: -1 }}>
           {brand.name}
           <Text style={{ color: C.lime }}>.</Text>
         </Text>
@@ -452,7 +452,7 @@ export const RecapShareCard = forwardRef<View, { recap: WeeklyRecap; t: (k: stri
         style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: withAlpha(C.lime, 0.333), borderRadius: 18, padding: 20 }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, letterSpacing: -1 }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, letterSpacing: -1 }}>
             {brand.name}
             <Text style={{ color: C.lime }}>.</Text>
           </Text>

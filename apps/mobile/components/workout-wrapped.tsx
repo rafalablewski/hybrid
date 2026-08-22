@@ -68,7 +68,7 @@ import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
 import { shareCardImage, heroFigure, type ShareBest } from "../lib/share";
-import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, trackFigure , tracking} from "../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, TABULAR, fs, leading, trackFigure, tracking, ty} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint, type Palette } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
@@ -92,7 +92,7 @@ const CONFETTI = Array.from({ length: 16 }, (_, i) => {
 function WorkRow({ label, value, note, C, last }: { label: string; value: string; note?: string; C: Palette; last?: boolean }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={ty(C, "kicker")}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{value}</Text>
         {note ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{note}</Text> : null}
@@ -402,7 +402,7 @@ export function WorkoutWrapped({
   // carrying the ✦ premium signifier. It is an EYEBROW, not a third invention.
   const eyebrow = (label: string) => <HeroEyebrow label={label} tone="tint" accent={GOLD} mark="✦" />;
   const scrollHint = (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textAlign: "center", marginTop: 16 }}>{t("session.wrapped.scroll")} ↑</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textAlign: "center", marginTop: 16 }}>{t("session.wrapped.scroll")} ↑</Text>
   );
   // The takeover is rank `cover`, mode `takeover`: no collapse track, but the
   // rail sits at the system's y and the panels clear the same bar height every
@@ -425,8 +425,8 @@ export function WorkoutWrapped({
       {children}
       {capturing && (
         <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: C.line, paddingTop: 9, marginTop: 14 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.caption, letterSpacing: tracking.label, color: C.chalk }}>{brand.name.toUpperCase()}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>{captureStamp}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "label"), color: C.chalk }}>{brand.name.toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{captureStamp}</Text>
         </View>
       )}
     </View>
@@ -450,7 +450,7 @@ export function WorkoutWrapped({
                 <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", top: -20, width: 7, height: 7, borderRadius: 2, backgroundColor: [C.lime, GOLD, C.blue, C.red][c.ci], opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) }, { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) }] }} />
               ))}
               <Animated.View style={{ transform: [{ scale }] }}><AuroraIcon name="trophy" size={84} color={GOLD} /></Animated.View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.caps, color: GOLD, textTransform: "uppercase", marginTop: 24 }}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "caps"), color: GOLD, textTransform: "uppercase", marginTop: 24 }}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Text>
               <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size, marginTop: 12 }} />
               <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 6, textAlign: "center" }}>{heroSub}</Text>
             </View>
@@ -480,7 +480,7 @@ export function WorkoutWrapped({
               spacer is the fallback, never the layout. */}
           {hasSpine ? (
             <View style={{ flex: 1, justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+              <Text style={ty(C, "kicker")}>
                 {t("session.work.tonnageThrough")}
               </Text>
               <View style={{ marginTop: 10 }}>
@@ -498,7 +498,7 @@ export function WorkoutWrapped({
                 {/* A modelled figure wears a "~" — it is never presented as a
                     measurement (see core/energy.ts). */}
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ fontFamily: F.black, fontSize: fs.headline * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), color: C.chalk }}>{b.estimate ? "~" : ""}{b.value}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{t(b.labelKey)}</Text>
               </View>
             ))}
           </View>
@@ -510,11 +510,11 @@ export function WorkoutWrapped({
                tinted, and a white logo next to lime text would read as two
                claims at once. See core/device-marks.ts. */
             <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.chalk }}>{t("session.device.measuredOn")}</Text>
               {deviceMark ? (
                 <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
               ) : (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
               )}
             </Pressable>
           ) : canMatch ? (
@@ -574,7 +574,7 @@ export function WorkoutWrapped({
             }}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>
                 {t(loggedHeat ? "w.recovery.heat.afterSessionDone" : "w.recovery.heat.afterSession")}
               </Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>
@@ -597,7 +597,7 @@ export function WorkoutWrapped({
             <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, marginTop: 8, marginBottom: 20 }}>{t("session.wrapped.premiumLead")}</Text>
             {wrapped.facts.map((f) => (
               <View key={f.labelKey + f.value} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
                 <Text style={{ fontFamily: F.black, fontSize: fs.display, color: f.labelKey === "session.wrapped.est1rm" ? txt(C, C.lime) : deltaPaint(C, !f.tone || f.tone === "neutral" ? "flat" : f.tone) }}>{f.value}</Text>
               </View>
             ))}
@@ -605,7 +605,7 @@ export function WorkoutWrapped({
               <APill
                 label={t("session.wrapped.unlock")}
                 color={premium.fill}
-                glyph={(c) => <Text style={{ fontFamily: F.black, fontSize: fs.note, color: c }}>✦</Text>}
+                glyph={(c) => <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: c }}>✦</Text>}
                 onPress={() => { onBack(); router.push("/upgrade"); }}
                 style={{ marginTop: 24, alignSelf: "flex-start" }}
               />
@@ -617,14 +617,14 @@ export function WorkoutWrapped({
         {device && (
           <Panel index={at("device")} center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.device.panelTitle"))}
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: leading(28, "tight"), marginTop: 12 }}>{device.activityLabel}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking(28), lineHeight: leading(28, "tight"), marginTop: 12 }}>{device.activityLabel}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
             <View style={{ marginTop: 20, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED }}>
                 <View style={{ flex: 1.1 }} />
                 {/* An imported session has no logged column — the recording IS the log. */}
                 {!imported && (
-                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
+                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
                 )}
                 {/* The lockup heads the measured column instead of the device's
                     name, and the column's figures below are chalk with it — the
@@ -634,12 +634,12 @@ export function WorkoutWrapped({
                     <DeviceMark provider={device.provider} height={15} on="dark" label={deviceName ?? undefined} />
                   </View>
                 ) : (
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
                 )}
               </View>
               {comparison.map((r) => (
                 <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED, borderTopWidth: 1, borderTopColor: C.line }}>
-                  <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
+                  <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
                   {/* A modelled figure wears a "~" — never presented as a measurement. */}
                   {!imported && (
                     <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, textAlign: "right" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</Text>
@@ -664,7 +664,7 @@ export function WorkoutWrapped({
         {showDeviceAd && (
           <Panel index={at("device")} center glows={<Glow size={panelH * 0.45} color={withAlpha(C.blue, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
             {eyebrow(t("session.wrapped.device.title"))}
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: leading(28, "tight"), marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking(28), lineHeight: leading(28, "tight"), marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
             <View style={{ marginTop: 24, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
               {([
                 ["heart", C.red, "session.wrapped.device.hr"],
@@ -698,9 +698,9 @@ export function WorkoutWrapped({
             {eyebrow(t("session.work.title"))}
             {spine.topSet && (
               <>
-                <Text style={{ fontFamily: F.black, fontSize: fs.hero, letterSpacing: trackFigure(fs.hero), color: C.chalk, marginTop: 12 }}>
+                <Text style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk, marginTop: 12 }}>
                   {fmtWeight(spine.topSet.loadKg, units)}
-                  {spine.topSet.reps ? <Text style={{ fontSize: fs.heading, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
+                  {spine.topSet.reps ? <Text style={{ fontSize: fs.headline, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
                 </Text>
                 <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: txt(C, C.lime), marginTop: 2 }}>
                   {t("session.work.topSet")} – {spine.topSet.exercise}
@@ -708,7 +708,7 @@ export function WorkoutWrapped({
               </>
             )}
             <View style={{ marginTop: 22 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+              <Text style={ty(C, "kicker")}>
                 {t("session.work.loadPerSet")}
               </Text>
               <View style={{ marginTop: 10 }}>

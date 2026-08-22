@@ -34,7 +34,7 @@ import {
 import { fetchSessionBests, fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { AEffortBar, APanel, APill, ASection, AuroraScreen, RADIUS, Spark } from "./kit";
 import { DeviceMark } from "./device-mark";
@@ -150,7 +150,7 @@ export default function AuroraSportPage() {
   };
 
   const mono = (size: number, color = C.ash) => ({ fontFamily: F.mono, fontSize: size, color });
-  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: tracking.caps });
+  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: tracking(fs.micro, "caps") });
   const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
   const u = durationUnits(t);
@@ -276,7 +276,7 @@ export default function AuroraSportPage() {
             <AuroraIcon name="info" size={12} color={C.ash} />
           </Pressable>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: space.ms, marginTop: space.ms }}>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{headline.time}</Text>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat) }}>{headline.time}</Text>
             {!!headline.delta && (
               <Text style={{ ...mono(fs.caption, txt(C, C.lime)), fontFamily: F.monoBold, marginBottom: 8 }}>{headline.delta}</Text>
             )}
@@ -302,8 +302,8 @@ export default function AuroraSportPage() {
           <View style={{ flex: 1 }}>
             <Text style={label()}>{primaryLabel}</Text>
             <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 6, marginTop: space.ms }}>
-              <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
-              {!!m.primary.unit && <Text style={{ ...mono(fs.note), marginBottom: 6 }}>{m.primary.unit}</Text>}
+              <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, color: C.chalk, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat) }}>{m.primary.value}</Text>
+              {!!m.primary.unit && <Text style={{ ...mono(fs.bodyLg), marginBottom: 6 }}>{m.primary.unit}</Text>}
             </View>
             {!!m.primary.delta && (
               <Text style={{ ...mono(fs.caption, m.primary.improving ? txt(C, C.lime) : C.ash), fontFamily: F.monoBold, marginTop: space.ms }}>{m.primary.delta}</Text>
@@ -706,7 +706,7 @@ function EffortLegend({ split, labels }: {
         {shown.map((b, i) => (
           <View key={b.k} style={{ flexBasis: `${b.v}%`, flexGrow: 0, flexShrink: 1, minWidth: 58, alignItems: i === shown.length - 1 ? "flex-end" : "flex-start" }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{b.v}%</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label, marginTop: 4 }}>{b.k}</Text>
+            <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{b.k}</Text>
           </View>
         ))}
       </View>

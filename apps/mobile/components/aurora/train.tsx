@@ -99,7 +99,7 @@ export default function AuroraTrain() {
       {draft && (
         <ACard style={{ marginTop: 16 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("train.resume")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash }}>{t("train.resume")}</Text>
             <PressScale onPress={discard} hitSlop={8}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("train.discard")}</Text>
             </PressScale>
@@ -120,7 +120,7 @@ export default function AuroraTrain() {
       )}
 
       {/* MINIMAL LIST — the other ways to start. Thin accents, hairline rows. */}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginTop: 24, marginBottom: 4, marginHorizontal: 4 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: C.ash, marginTop: 24, marginBottom: 4, marginHorizontal: 4 }}>
         {prescribedDone ? t("train.trainAgain") : t("train.moreWays")}
       </Text>
       <View style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: C.line }}>
@@ -193,14 +193,14 @@ function PrescribedHero({ C, rx, hasHistory, onPress, t }: { C: Palette; rx: Ret
   const blurb = hasHistory ? rx.why : t("train.aiEmptyBlurb");
   return (
     <PressScale onPress={onPress} style={{ backgroundColor: C.lime, borderRadius: RADIUS.card, padding: 20, marginTop: 16 }}>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: C.onAccent, opacity: 0.62 }} numberOfLines={1}>
         {t("home.readiness")} {rx.readiness}/100
       </Text>
-      <Text style={{ fontFamily: F.black, fontSize: 25, lineHeight: 28, color: C.onAccent, marginTop: 10, letterSpacing: tracking.display }}>{title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 25, lineHeight: 28, color: C.onAccent, marginTop: 10, letterSpacing: tracking(25) }}>{title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.onAccent, opacity: 0.68, marginTop: 8, lineHeight: leading(fs.caption) }} numberOfLines={2}>{blurb}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: C.ink, borderRadius: RADIUS.field, paddingVertical: 16, marginTop: 16 }}>
         <AuroraIcon name="play" size={15} color={C.lime} />
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>{t("train.startSession")}</Text>
       </View>
     </PressScale>
   );
@@ -213,7 +213,7 @@ function PremiumHero({ C, onPress, t }: { C: Palette; onPress: () => void; t: T 
     <PressScale onPress={onPress} style={{ marginTop: 16 }}>
       <ACard style={{ borderColor: withAlpha(pa.fill, ALPHA.edge) }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: pa.text }}>{t("train.aiCoach")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: pa.text }}>{t("train.aiCoach")}</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: pa.text }}>{t("w.home.today.unlockFullBtn")}</Text>
         </View>
         <Text style={{ fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), color: C.chalk, marginTop: 8 }}>{t("train.aiLockedTitle")}</Text>
@@ -235,8 +235,8 @@ function DoneMarker({ C, session, onPress, t }: { C: Palette; session: LoggedSes
         <AuroraIcon name="check" size={24} color={C.onAccent} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("train.done")}</Text>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk, marginTop: 5 }}>{session.title}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("train.done")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, marginTop: 5 }}>{session.title}</Text>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }} numberOfLines={1}>{names || t("train.tapSummary")}</Text>
       </View>
       <Chevron C={C} />
@@ -270,13 +270,13 @@ function ListRow({
         <AuroraIcon name={icon} size={19} color={iconColor} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.note, color: C.chalk, letterSpacing: tracking.display }}>{title}</Text>
+        <Text style={{ fontFamily: bold ? F.black : F.bold, fontSize: fs.bodyLg, color: C.chalk, letterSpacing: tracking(fs.bodyLg) }}>{title}</Text>
         {!!meta && <View style={{ marginTop: 4 }}><MetaLine text={meta} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }} /></View>}
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
         {premium && (
           <View style={{ borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.line), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: pa.text }}>{t("train.premium")}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: pa.text }}>{t("train.premium")}</Text>
           </View>
         )}
         {right}

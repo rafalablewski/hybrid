@@ -189,7 +189,7 @@ export function UserRecipeShelf({
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash } as const;
+  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash } as const;
 
   return (
     <View style={[{ marginTop: space.xl }, style]}>
@@ -312,7 +312,7 @@ export function UserRecipeEditor({
   const totals = useMemo(() => recipeTotals(recipe), [recipe]);
   const stale = useMemo(() => staleIngredients(recipe, products), [recipe, products]);
 
-  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash } as const;
+  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash } as const;
   const field = {
     backgroundColor: C.ink, color: C.chalk, borderWidth: 1, borderColor: C.line,
     borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12,
@@ -435,7 +435,7 @@ export function UserRecipeEditor({
                   // would be rather than printing a zero in their place.
                   <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: 3 }}>
                     <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{ing.servingLabel}</Text>
-                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.amber) }}>
+                    <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: txt(C, C.amber) }}>
                       {t("w.recovery.nutrition.recipeUnstatedRow")}
                     </Text>
                   </View>
@@ -456,7 +456,7 @@ export function UserRecipeEditor({
                   hitSlop={HIT_SLOP}
                   style={{ borderWidth: 1, borderColor: withAlpha(C.amber, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 7, paddingHorizontal: 12 }}
                 >
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.amber) }}>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: txt(C, C.amber) }}>
                     {t("w.recovery.nutrition.recipeLinkFood")}
                   </Text>
                 </PressScale>

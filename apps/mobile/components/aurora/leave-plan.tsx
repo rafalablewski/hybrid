@@ -68,7 +68,7 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
 
   return (
     <ACard style={{ marginTop: 20 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.red) }}>{t("w.train.plans.leavePlan")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, C.red) }}>{t("w.train.plans.leavePlan")}</Text>
       <View style={{ marginTop: 10 }}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk, lineHeight: leading(fs.body) }}>{t("w.train.plans.leaveExplain")}</Text>
           {option(!wipe, C.lime, t("w.train.plans.leaveKeep"), t("w.train.plans.leaveKeepSub"), () => setWipe(false))}
@@ -79,7 +79,7 @@ export function LeavePlanSection({ enrolled, onLeft }: { enrolled: EnrolledSeaso
               <TextInput
                 value={confirmText} onChangeText={setConfirmText} placeholder="DELETE" placeholderTextColor={C.ash}
                 autoCapitalize="characters" autoCorrect={false}
-                style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
+                style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
               />
             </View>
           )}

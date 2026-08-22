@@ -96,7 +96,7 @@ export default function AuroraEnduranceSummary({
   const dirColor = (d: VerdictDirection) => deltaPaint(C, d);
   const tone = dirColor(enduranceDirection(w, "minutes"));
 
-  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const };
+  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase" as const };
 
   /* AN EMPTY PERIOD KEEPS ITS PLACE AND DROPS ITS CHROME.
    *

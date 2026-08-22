@@ -17,12 +17,10 @@ export type TypeRole =
   | "micro" //  11 — tiny secondary labels
   | "caption" // 12 — meta / secondary text
   | "body" //   13 — default reading text
-  | "bodyLg" // 14 — emphasised body / primary list line
-  | "note" //   15 — small lead
+  | "bodyLg" // 14 — emphasised body / primary list line, and the small lead
   | "subtitle" //16 — small headings
   | "title" //  18 — section titles
-  | "heading" //20 — screen sub-headings
-  | "headline" //22 — the head of a screen that owns no hero (see below)
+  | "headline" //22 — screen sub-headings, and the head of a screen with no hero
   | "display" //26 — screen headings
   | "hero" //   34 — mastheads / cover titles
   | "stat"; //  46 — the one hero figure on a screen (ring kcal, exercise 1RM)
@@ -56,16 +54,31 @@ export type TypeRole =
  *     they are art sized to a card, and snapping them to a type rung would be
  *     applying a reading ladder to a picture.
  */
+/**
+ * ── TWO RUNGS WERE RETIRED, Aug 2026, AND NEITHER WAS EVER CHOSEN ──────────
+ *
+ * `note` (15) sat between `body` (13) and `bodyLg` (14) — THREE reading sizes
+ * inside two dp. Nobody can see the difference between 14 and 15 and nobody
+ * decided it; it accumulated, which is the same way the app grew 29 lineHeights
+ * and 18 letterSpacings. Its 190 sites are `bodyLg`, which the ladder already
+ * describes as the emphasised body line, and a lead IS an emphasised body line.
+ *
+ * `heading` (20) and `headline` (22) were one job under two names, one rung
+ * apart, with nothing to say which a screen sub-heading should take — so the
+ * answer was whichever file you copied from. Its 63 sites are `headline`.
+ *
+ * THE GENERAL RULE this leaves behind: adjacent rungs are not hierarchy. A
+ * level needs two rungs of separation to read as a level, so a ladder whose
+ * neighbours differ by one dp is carrying a distinction the eye cannot collect.
+ */
 export const fs: Record<TypeRole, number> = {
   nano: 10,
   micro: 11,
   caption: 12,
   body: 13,
   bodyLg: 14,
-  note: 15,
   subtitle: 16,
   title: 18,
-  heading: 20,
   // `headline` was a MAGIC NUMBER before it was a token: 22 appeared 26 times in
   // apps/mobile with no name, and it is where a hand-rolled screen title lands —
   // bigger than a section heading, smaller than a display. Naming it does not
@@ -146,13 +159,34 @@ export const sheetPadBottom = (insetBottom = 0) => Math.max(insetBottom, space.x
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type LeadingRole =
-  | "tight" //   1.15 — display/hero titles, stat figures
+  | "flush" //   1.00 — a STANDALONE FIGURE, which has no second line to leave room for
+  | "tight" //   1.15 — display/hero titles
   | "snug" //    1.30 — headings, list rows, anything one-to-two lines
   | "normal" //  1.50 — the default for reading text
   | "relaxed"; // 1.62 — long-form prose, empty-state bodies
 
-/** Line-height RATIOS. Multiply by the font size (see `leading`). */
+/**
+ * Line-height RATIOS. Multiply by the font size (see `leading`).
+ *
+ * ── `flush` IS THE RUNG THIS LADDER WAS MISSING ────────────────────────────
+ *
+ * `tight` used to be documented as covering "display/hero titles, stat figures"
+ * and it is wrong for the second half of that. A figure has no second line and
+ * no descender past the cap band, so 1.15 at fs.stat buys SEVEN dp of line box
+ * that nothing can ever occupy — and because the space is INSIDE the text node,
+ * a row of four stat tiles gains a visible band of nothing that no amount of
+ * padding adjustment explains. That is why it took a rung of its own rather
+ * than a tighter `tight`: a title genuinely needs 1.15, because a title wraps.
+ *
+ * THE APP HAD ALREADY REACHED FOR IT SIX DIFFERENT WAYS, which is the usual
+ * evidence that a rung is missing rather than unwanted: `leading(fs.stat,
+ * "tight")` at six sites, a hand-typed `lineHeight: fs.stat` at one (that IS
+ * flush, arrived at by eye), and 50, 44, 35 and a local `FIGURE_BOX` constant
+ * at the rest. Seventeen more figure sites set no lineHeight at all and took
+ * whatever the platform's default was.
+ */
 export const lh: Record<LeadingRole, number> = {
+  flush: 1.0,
   tight: 1.15,
   snug: 1.3,
   normal: 1.5,
@@ -170,36 +204,91 @@ export const leading = (size: number, role: LeadingRole = "normal"): number =>
   Math.round(size * lh[role]);
 
 export type TrackingRole =
-  | "display" // -0.5 — large titles; big type needs the air taken out
-  | "normal" //   0   — body text is drawn on its natural sidebearings
-  | "label" //    0.9 — uppercase mono kickers (the app's dominant eyebrow)
-  | "caps"; //    1.2 — the widest tracked caps: section labels, nav eyebrows
+  | "text" //  derived from the SIZE — see the band table below
+  | "label" // 0.085em — uppercase mono kickers (the app's dominant eyebrow)
+  | "caps"; // 0.115em — the widest tracked caps: section labels, nav eyebrows
 
 /**
- * Letter spacing in dp, matching React Native's `letterSpacing` unit.
+ * TRACKING IS AN EM VALUE AND `track()` RESOLVES IT — the dp map is gone.
  *
- * `label` (0.9) and `caps` (1.2) codify the two eyebrow trackings that were
- * already in use — 216 and 137 sites respectively — which had drifted apart
- * with nothing to say which was correct. `label` is the default for a kicker;
- * `caps` is for the wider, more architectural section labels.
+ * THE DEFECT THE dp MAP HAD is the one `trackFigure` was written to fix one
+ * axis over: an absolute letterSpacing is a PERCENTAGE that silently changes
+ * meaning at every size it touches. The old `display: -0.5` was -0.033em on a
+ * 15dp lead and -0.011em on a 46dp figure — a threefold swing in optical intent
+ * out of one constant, doing far too much at the bottom of its range and almost
+ * nothing at the top.
+ *
+ * ── THE TEXT BANDS, AND WHY THE ROLE NAME WENT AWAY FOR THEM ───────────────
+ *
+ * For TEXT the correct tracking is a function of optical size, not of what the
+ * caller thinks the text is for: large type carries too much air at its natural
+ * sidebearings (those were drawn for reading sizes) and small type loses counter
+ * definition. So there is no display / headline / title role to pick — pass the
+ * size and the band decides:
+ *
+ *     >= 26   -0.020em   display and hero
+ *     >= 18   -0.015em   the headline band
+ *     >= 16   -0.010em   the last size where tightening is felt but not seen
+ *     >= 13    0         the face is fitted for text at these sizes
+ *      < 13   +0.005em   a trace of air back into small copy
+ *
+ * That is not a simplification, it is the removal of a way to be wrong: a
+ * caller can no longer apply display tracking to a 13dp row, which three did.
+ *
+ * ── THE TWO THAT ARE NOT DERIVABLE ────────────────────────────────────────
+ *
+ * `label` and `caps` are UPPERCASE trackings, and case is a choice the size
+ * cannot report. Capitals were never drawn to sit beside one another, so they
+ * need air ADDED rather than removed, and how much is a decision. These are the
+ * two eyebrow voices the app already had; they keep their names and their
+ * meanings, now stated as the proportions they always were.
+ *
+ * ── THIS CONVERSION IS VERIFIED, NOT ASSERTED ─────────────────────────────
+ *
+ * The em figures were chosen so the DOMINANT call sites do not move at all:
+ * `label` at fs.nano still resolves to 0.9dp (201 sites) and at fs.micro to
+ * 0.9dp (48), `caps` at fs.nano to 1.2dp (72), text at fs.display to -0.5dp
+ * (19). 340 of the 461 sized sites render byte-identically, the largest move
+ * anywhere is 0.5dp, and every move is in the direction the band table says was
+ * always intended. `scale.test.ts` holds those figures so the claim stays true.
  */
-export const tracking: Record<TrackingRole, number> = {
-  display: -0.5,
-  normal: 0,
-  label: 0.9,
-  caps: 1.2,
+export const TRACKING_EM: Record<Exclude<TrackingRole, "text">, number> = {
+  label: 0.085,
+  caps: 0.115,
 };
+
+/** The text bands, largest first. Read as: at this size and above, this em. */
+const TEXT_BANDS: ReadonlyArray<readonly [number, number]> = [
+  [26, -0.02],
+  [18, -0.015],
+  [16, -0.01],
+  [13, 0],
+];
+
+/**
+ * Tracking in dp for a size — `tracking(fs.nano, "label")` → 0.9.
+ *
+ * Rounded to 0.1dp, the precision `trackFigure` already uses: RN takes
+ * fractional letterSpacing and at eyebrow sizes the tenth is visible across a
+ * tracked string. Pass the size you are ACTUALLY rendering, including a
+ * computed one — `tracking(compact ? 18 : 21)` is correct, and being able to say
+ * that is why this is a function rather than a second map.
+ */
+export function tracking(size: number, role: TrackingRole = "text"): number {
+  const em = role === "text" ? (TEXT_BANDS.find(([min]) => size >= min)?.[1] ?? 0.005) : TRACKING_EM[role];
+  return Math.round(size * em * 10) / 10;
+}
 
 /**
  * THE BIG-FIGURE TIGHTENING, proportional — `trackFigure(fs.stat)` → -1.6.
  *
- * `tracking.display` is the house TITLE tightening and stays exactly that: it
- * is the token, it holds 51 call sites plus two core contracts (the app-header
- * wordmark at 19, the hub masthead's title at fs.hero), and hub-masthead chose
- * it deliberately over the `-1` that shipped before it. Titles are 13–34dp, a
- * narrow enough band that one absolute dp works across it.
+ * `tracking(size)` handles TITLES, and its bands are the house tightening. This is
+ * its twin for FIGURES, and the two are separate because a figure is not a
+ * title: it is set in the mono cut, whose advances are generous by construction,
+ * and it runs to 46dp where a title stops at 34. One constant across that range
+ * is right for neither.
  *
- * THE BIG FIGURES ARE NOT TITLES AND THE ABSOLUTE BREAKS ON THEM. The kcal
+ * THE BIG FIGURES ARE NOT TITLES AND AN ABSOLUTE BREAKS ON THEM. The kcal
  * readouts, the weight entries, the volume totals run 30–68dp — a 2.3× span —
  * and -0.5 across that is -0.017em at 30 and -0.007em at 68: at the top of the
  * range it is doing nothing at all. Which is why every one of these figures had

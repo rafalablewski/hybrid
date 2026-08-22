@@ -41,7 +41,7 @@ export default function AuroraLoggerSettings() {
   // A section label — an uppercase header above its own card (the app-wide
   // Settings grouping treatment).
   const SLabel = ({ children }: { children: string }) => (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginLeft: 4, marginTop: 16, marginBottom: 10 }}>{children}</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash, marginLeft: 4, marginTop: 16, marginBottom: 10 }}>{children}</Text>
   );
 
   // A labelled section of segmented pills (units / rest / increment / start view).
@@ -68,7 +68,7 @@ export default function AuroraLoggerSettings() {
             style={{ flexDirection: "row", alignItems: "center", paddingVertical: 12, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}
           >
             <View style={{ flex: 1, paddingRight: 12 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{t(r.titleKey)}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t(r.titleKey)}</Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2, lineHeight: leading(fs.caption, "snug") }}>{t(r.descKey)}</Text>
             </View>
             <GlassToggle

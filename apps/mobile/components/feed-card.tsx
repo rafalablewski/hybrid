@@ -112,7 +112,7 @@ export function Chip({ children, tone }: { children: ReactNode; tone?: string })
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5, borderWidth: 1, borderColor: tone ? col : C.line, borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 4, alignSelf: "flex-start" }}>
       {typeof children === "string" ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: col }}>{children.toUpperCase()}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: col }}>{children.toUpperCase()}</Text>
       ) : (
         children
       )}
@@ -156,7 +156,7 @@ function FooterLine({ stats, tier, units }: { stats: FeedStat[]; tier?: FeedDeta
             {p.device ? <WatchGlyph color={C.ash} /> : null}
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: C.chalk }}>
               {p.value}
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>
                 {` ${(p.unit ?? t(p.unitKey!)).toUpperCase()}`}
               </Text>
             </Text>
@@ -182,7 +182,7 @@ function Qualifier({ of }: { of: { deltaPct?: number; firstEver?: boolean } }) {
   const q = cardQualifier(of);
   if (!q) return null;
   return (
-    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: q.kind === "first" ? tracking.caps : undefined, color: q.kind === "delta" ? txt(C, colors.lime) : C.ash }}>
+    <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: q.kind === "first" ? tracking(fs.micro, "caps") : undefined, color: q.kind === "delta" ? txt(C, colors.lime) : C.ash }}>
       {q.kind === "delta" ? q.text : t(q.labelKey).toUpperCase()}
     </Text>
   );
@@ -216,7 +216,7 @@ function PrLines({ records, units }: { records: CardRecords; units: WeightUnit }
         return (
           <View key={`${pr.lift}-${i}`} style={{ flexDirection: "row", alignItems: "baseline", gap: 8, paddingVertical: 3 }}>
             <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{pr.lift}</Text>
-            <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk }}>
+            <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk }}>
               {fig.value}
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{` ${fig.unit}`}</Text>
             </Text>
@@ -272,13 +272,13 @@ function Figure({ lead, units }: { lead: CardLead; units: WeightUnit }) {
           A shared-PR post's headline already says it and passes label: null —
           the same lift twice in one card is the noise this whole pass removes. */}
       {lead.label ? (
-        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash, marginTop: 9 }}>
+        <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginTop: 9 }}>
           {lead.label.toUpperCase()}
         </Text>
       ) : null}
       {fig ? (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: lead.label ? 3 : 4 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "tight"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{fig.value}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{fig.value}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: C.ash }}>{fig.unit}</Text>
           {/* THE ONE QUALIFIER, at the far edge of the figure's own line. The
               tier chip used to hold this slot and has gone to the footer:
@@ -424,7 +424,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   // some future archetype that leads with words — still gets the big rung.
   const headlineStyle: TextStyle =
     moment === "p0" && !lead
-      ? { fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking.display }
+      ? { fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "tight"), letterSpacing: tracking(fs.headline) }
       : { fontFamily: F.bold, fontSize: fs.title, lineHeight: leading(fs.title, "snug") };
 
   // "Why you're seeing this" — a ranked card from someone the viewer doesn't
@@ -461,7 +461,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
           <Avatar url={item.author.avatarUrl} name={item.author.displayName} handle={item.author.handle} size={36} />
         </Pressable>
         <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
+          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
             {item.author.displayName || handle || t("w.social.you")}
           </Text>
           {/* The handle only earns its own slot when the name isn't already it. */}

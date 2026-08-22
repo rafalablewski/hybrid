@@ -120,7 +120,7 @@ function Mini({ icon, label, value, color }: { icon: Parameters<typeof AuroraIco
     <View style={{ flex: 1, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card, padding: 16 }}>
       <AuroraIcon name={icon} size={22} color={txt(C, color)} />
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 8 }}>{label}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, marginTop: 2 }}>{value}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );
 }

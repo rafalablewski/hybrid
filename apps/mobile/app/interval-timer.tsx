@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { fs, space, F, TABULAR, trackFigure, PressScale as Pressable , tracking} from "../lib/ui";
+import { F, PressScale as Pressable, TABULAR, fs, leading, space, trackFigure, tracking} from "../lib/ui";
 import { AuroraScreen, APill, RADIUS } from "../components/aurora/kit";
 import { AuroraIcon } from "../components/aurora/icons";
 
@@ -103,8 +103,8 @@ export default function IntervalTimer() {
       <View style={{ alignItems: "center", marginTop: 8 }}>
         <View style={{ width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <View style={{ position: "absolute", width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: txt(C, kindColor), opacity: 0.25 }} />
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, kindColor) }}>{kindLabel}</Text>
-          <Text style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{formatClock(pos.remaining)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: tracking(fs.caption, "caps"), color: txt(C, kindColor) }}>{kindLabel}</Text>
+          <Text style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{formatClock(pos.remaining, true)}</Text>
           {!pos.done && phase && phase.round > 0 && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Round {phase.round}/{phase.totalRounds}</Text>
           )}
@@ -154,15 +154,15 @@ function Stepper({ label, value, onChange, suffix, step = 1 }: { label: string; 
   const { palette: C } = useTheme();
   const btn = (t: string, d: number) => (
     <Pressable onPress={() => onChange(d)} style={{ width: 44, height: 44, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, alignItems: "center", justifyContent: "center" }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: txt(C, C.lime) }}>{t}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: txt(C, C.lime) }}>{t}</Text>
     </Pressable>
   );
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{label}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
         {btn("−", -1)}
-        <Text style={{ fontFamily: F.black, fontSize: fs.heading, color: C.chalk, minWidth: 56, textAlign: "center" }}>{value}{suffix}{step > 1 ? "" : "×"}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, minWidth: 56, textAlign: "center" }}>{value}{suffix}{step > 1 ? "" : "×"}</Text>
         {btn("+", 1)}
       </View>
     </View>

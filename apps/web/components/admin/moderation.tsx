@@ -84,7 +84,7 @@ export default function AdminModeration() {
               <Chip c={RED}>{r.reason}</Chip>
               <Chip c={ASH}>{r.targetType}</Chip>
             </div>
-            <div style={{ ...disp, fontWeight: 800, fontSize: fs.note }}>
+            <div style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg }}>
               {r.targetType}:{r.targetId.slice(0, 8)}
             </div>
             {r.detail && <Mono s={{ fontSize: fs.body, display: "block", marginTop: 4, lineHeight: 1.5 }} c={CHALK}>“{r.detail}”</Mono>}

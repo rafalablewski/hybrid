@@ -61,3 +61,46 @@ export function formatDuration(totalMinutes: number, u: DurationUnits = DURATION
   if (minutes === 0) return `${hours}${u.h}`;
   return `${hours}${u.h} ${minutes}${u.min}`;
 }
+
+/**
+ * A CLOCK — `01:42:18`, and it is NOT `formatDuration` under another name.
+ *
+ * The two formats answer different questions and the difference is not
+ * cosmetic. `formatDuration` prints a SPAN as prose (`1h 17min`) — how long a
+ * session took, read once, in a sentence or a column. This prints a CLOCK: a
+ * running timer, an elapsed readout, a split. It is colon-separated and
+ * second-accurate because a clock is watched rather than read, and because the
+ * device's own recording is second-accurate (`device-truth.ts` `cardioSeconds`)
+ * — printing a measured 7:52 as "8min" contradicts the device panel beside it.
+ *
+ * Hence SECONDS in, where `formatDuration` takes canonical minutes. A clock
+ * that rounded to the minute would tick once a minute, which is not a clock.
+ *
+ * ── WHY `live` EXISTS, and it is the whole reason this is one function ──────
+ *
+ * A LIVE clock is zero-padded and never changes width. A FINISHED one is not.
+ * That is the same argument as `TABULAR_NUMS` (scale.ts), one level up: a
+ * running timer that drops its leading zero shifts every digit beside it at the
+ * hour boundary, so the figure twitches for a reason that has nothing to do
+ * with the value. A summary is being READ rather than watched, so `1:42:18` is
+ * correct there — `01:42:18` in a finished session reads like a stopwatch
+ * somebody forgot to stop.
+ *
+ * Two spellings of one intent is exactly how the app grew five scrims and
+ * twelve figure trackings, so both live here with the distinction named.
+ *
+ * Consolidated from `interval.ts`, which owned an mm:ss-only cut of this that
+ * could not print an hour: `>59 min` overflowed the minutes field, so a
+ * 1h 42m session read "102:18".
+ */
+export function formatClock(totalSeconds: number, live = false): string {
+  // ROUND, not floor — this is the behaviour the interval timer shipped with,
+  // and a countdown that floors shows 0:00 for a whole second before it ends.
+  const t = Math.max(0, Math.round(totalSeconds || 0));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = t % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (h > 0) return `${live ? pad(h) : h}:${pad(m)}:${pad(s)}`;
+  return `${live ? pad(m) : m}:${pad(s)}`;
+}

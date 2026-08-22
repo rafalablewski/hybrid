@@ -171,7 +171,7 @@ export default function AuroraDayBand({
             flex: 1,
             fontFamily: F.black,
             fontSize: fs.hero,
-            letterSpacing: tracking.display,
+            letterSpacing: tracking(fs.hero),
             color: quiet ? C.ash : ink,
           }}
         >
@@ -197,7 +197,7 @@ export default function AuroraDayBand({
           fontFamily: F.black,
           fontSize: headSize,
           lineHeight: leading(headSize),
-          letterSpacing: tracking.display,
+          letterSpacing: tracking(headSize),
           color: ink,
           marginTop: 10,
         }}
@@ -241,7 +241,7 @@ export default function AuroraDayBand({
               fontFamily: F.mono,
               fontSize: fs.nano,
               textTransform: "uppercase",
-              letterSpacing: tracking.label,
+              letterSpacing: tracking(fs.nano, "label"),
               color: quiet ? C.accentText.lime : ink,
             }}
           >
@@ -266,7 +266,7 @@ export default function AuroraDayBand({
               fontFamily: F.mono,
               fontSize: fs.nano,
               textTransform: "uppercase",
-              letterSpacing: tracking.label,
+              letterSpacing: tracking(fs.nano, "label"),
               color: soft,
               opacity: quiet ? 1 : 0.72,
             }}

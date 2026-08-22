@@ -77,19 +77,19 @@ export default function AuroraVelocity() {
       </View>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.analyze.vel.est1rm")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, C.lime) }}>{t("w.analyze.vel.est1rm")}</Text>
         <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, marginTop: 6 }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<Text style={{ fontSize: fs.title, color: C.ash }}> kg</Text></Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{resolved ? `${t("w.analyze.vel.mvtPrefix")} ${mvt} m/s – v₀ ${profile.v0.toFixed(2)} – r² ${profile.r2.toFixed(2)} – ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</Text>
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.analyze.vel.profile")} – {active}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, C.lime) }}>{t("w.analyze.vel.profile")} – {active}</Text>
         <View style={{ marginTop: 10 }}><Plot points={points} profile={profile} /></View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}><Text style={{ color: txt(C, C.lime) }}>●</Text> {t("w.analyze.vel.measured")} – <Text style={{ color: C.ash }}>—</Text> {t("w.analyze.vel.fit")}</Text>
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.analyze.vel.aiLoad")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash }}>{t("w.analyze.vel.aiLoad")}</Text>
         <View style={{ alignItems: "center", marginVertical: 12 }}>
           <AStepper
             tone="hero"
@@ -113,7 +113,7 @@ export default function AuroraVelocity() {
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.analyze.vel.zones")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash }}>{t("w.analyze.vel.zones")}</Text>
         <View style={{ marginTop: 8 }}>
           {VELOCITY_ZONES.slice().reverse().map((z) => (
             <View key={z.id} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line }}>
@@ -129,7 +129,7 @@ export default function AuroraVelocity() {
       </ACard>
 
       <ACard style={{ marginTop: 16 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.analyze.vel.recentSets")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, C.lime) }}>{t("w.analyze.vel.recentSets")}</Text>
         <View style={{ marginTop: 8 }}>
           {recentSets.length === 0 ? <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash }}>{t("w.analyze.vel.noVelSetsPre")} {active} {t("w.analyze.vel.noVelSetsTail")}</Text> : recentSets.map((r, i) => {
             const z = velocityZone(r.vel);

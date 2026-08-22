@@ -30,7 +30,7 @@ import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
+import { Chip, F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
 import { ACard, APressCard, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
@@ -86,9 +86,9 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
        neither role nor label, so VoiceOver read the whole card's text as one
        run and never announced it as a button. */
     <APressCard onPress={() => ctx.onOpen(s.id)} a11yLabel={sessionTitleText(s.title, t)}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>
         {h.value}
-        <Text style={{ fontSize: fs.bodyLg, letterSpacing: tracking.normal, color: C.ash }}> {unitOf(h, t)}</Text>
+        <Text style={{ fontSize: fs.bodyLg, letterSpacing: tracking(fs.bodyLg), color: C.ash }}> {unitOf(h, t)}</Text>
       </Text>
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6 }}>
         {[sessionTitleText(s.title, t), ...headlineMeta(h, t)].join(" – ")}
@@ -104,14 +104,14 @@ function SessionCard({ C, s, ctx }: { C: Palette; s: LoggedSession; ctx: ViewCtx
 }
 
 function DayLabel({ C, text, today }: { C: Palette; text: string; today?: boolean }) {
-  return <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: today ? (txt(C, C.lime) as string) : C.ash }}>{text}</Text>;
+  return <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: today ? (txt(C, C.lime) as string) : C.ash }}>{text}</Text>;
 }
 
 function RestGapRow({ C, days }: { C: Palette; days: number }) {
   const { t } = useLang();
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 2 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: withAlpha(C.ash, 0.7) }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: withAlpha(C.ash, 0.7) }}>
         {days} {days === 1 ? t("histview.restDay") : t("histview.restDays")}
       </Text>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
@@ -193,7 +193,7 @@ export function AgendaView({ ctx }: { ctx: ViewCtx }) {
             <Chip color={u.isToday ? C.lime : C.ash}>{t("histview.planned")}</Chip>
           </View>
           <View style={{ borderRadius: RADIUS.card, padding: CARD_PAD, borderWidth: 1.5, borderStyle: "dashed", borderColor: withAlpha(u.isToday ? C.lime : C.ash, ALPHA.rim) }}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: u.isToday ? C.chalk : C.ash }}>{u.planName} – {u.week != null ? `${t("histview.weekLbl")} ${u.week}, ${u.title}` : u.title}</Text>
             {u.blockNames.length > 0 && (
               <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 6 }}>
                 {u.blockNames.slice(0, 3).join(" – ")}{u.blockNames.length > 3 ? ` +${u.blockNames.length - 3}` : ""}
@@ -248,8 +248,8 @@ export function WeeksView({ ctx }: { ctx: ViewCtx }) {
            passed. Everything else was the kit's, written out. */
         <ACard key={w.startKey} style={w.isCurrent ? { borderColor: withAlpha(C.lime, ALPHA.line) } : undefined}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
-            {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: tracking.caps, textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
+            <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{fmtDayShort(w.startKey)} – {fmtDayShort(w.endKey)}</Text>
+            {w.isCurrent && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: lime, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase" }}>{t("histview.thisWeek")}</Text>}
           </View>
           <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 5, height: 34, marginTop: 12, marginBottom: 4 }}>
             {w.days.map((d) => {
@@ -320,7 +320,7 @@ export function TimelineView({ ctx }: { ctx: ViewCtx }) {
       {stream.map((item, i) =>
         item.kind === "gap" ? (
           <View key={`g${i}`} style={{ height: 34, marginBottom: 6, justifyContent: "center" }}>
-            <Text style={{ position: "absolute", left: 0, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: withAlpha(C.ash, 0.55) }}>
+            <Text style={{ position: "absolute", left: 0, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: withAlpha(C.ash, 0.55) }}>
               {item.days} {item.days === 1 ? t("histview.restDay") : t("histview.restDays")}
             </Text>
           </View>
@@ -371,8 +371,8 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const Mini = ({ label, value }: { label: string; value: string }) => (
     /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
     <ACard style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.heading, letterSpacing: tracking.display, marginTop: 4, color: C.chalk }}>{value}</Text>
+      <Text style={ty(C, "kicker")}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.headline, letterSpacing: tracking(fs.headline), marginTop: 4, color: C.chalk }}>{value}</Text>
     </ACard>
   );
 
@@ -389,7 +389,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
               accessibilityState={{ selected: on }}
               style={{ flex: 1, paddingVertical: 8, borderRadius: RADIUS.pill, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
             >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
                 {t(rg.key)}
               </Text>
             </Pressable>

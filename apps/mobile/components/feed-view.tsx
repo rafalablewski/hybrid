@@ -210,7 +210,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
               maxLength={500}
               placeholder={t("w.social.sharePlaceholder")}
               placeholderTextColor={C.ash}
-              style={{ color: C.chalk, fontSize: fs.heading, lineHeight: leading(fs.heading), fontFamily: F.reg, paddingTop: 7, paddingBottom: 2, paddingHorizontal: 0, textAlignVertical: "top" }}
+              style={{ color: C.chalk, fontSize: fs.headline, lineHeight: leading(fs.headline), fontFamily: F.reg, paddingTop: 7, paddingBottom: 2, paddingHorizontal: 0, textAlignVertical: "top" }}
             />
             {/* THE TOOLBAR ARRIVES WITH THE INTENT TO POST, not before it.
                 It used to be permanent: an accent glyph and a Share pill that
@@ -285,7 +285,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const footer =
     items.length === 0 ? null : (
       <Animated.View style={[fade, { alignItems: "center", paddingTop: 14, paddingBottom: 8 }]}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>{t("feed.caughtUp").toUpperCase()}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>{t("feed.caughtUp").toUpperCase()}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 6, marginBottom: 10, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
         <APill label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>

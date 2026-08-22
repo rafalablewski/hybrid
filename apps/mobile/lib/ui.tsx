@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, trackFigure, TABULAR_NUMS, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, trackFigure, TABULAR_NUMS, resolveText, type TextToken, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -27,8 +27,12 @@ import { useNavScrollProps } from "./nav-scroll";
 // `leading` and `tracking` are the two axes that had no token until the design
 // audit: every lineHeight in the app was an absolute dp (29 of them) and every
 // letterSpacing a fresh guess (18 of them). Use leading(fs.body) rather than a
-// number — an absolute line box is also why Dynamic Type could not work.
+// number — an absolute line box is also why Dynamic Type could not work — and
+// tracking(size) rather than a dp, because a letterSpacing is a proportion of the
+// size it sits on and an absolute one means something different at every rung.
 export { fs, space, lh, leading, tracking, trackFigure };
+import type { ThemePalette as Palette } from "@hybrid/core";
+import { faceFor } from "./faces";
 import { auroraScrollClearance } from "./layout";
 import { useReducedMotion } from "./use-reduced-motion";
 import { RADIUS } from "../components/aurora/kit";
@@ -292,13 +296,45 @@ export const C = colors;
 
 // Loaded in app/_layout.tsx
 export const F = {
-  reg: "Archivo_400Regular",
-  semi: "Archivo_600SemiBold",
-  bold: "Archivo_700Bold",
-  black: "Archivo_900Black",
-  mono: "JetBrainsMono_400Regular",
-  monoBold: "JetBrainsMono_700Bold",
+  reg: "Sohne_400Buch",
+  semi: "Sohne_500Kraftig",
+  bold: "Sohne_600Halbfett",
+  black: "Sohne_700Dreiviertelfett",
+  mono: "SohneMono_400Buch",
+  monoMed: "SohneMono_500Kraftig",
+  monoBold: "SohneMono_600Halbfett",
 } as const;
+
+/**
+ * THE NAMED TYPE STYLES, RESOLVED FOR REACT NATIVE — `ty(C, "kicker")`.
+ *
+ * `@hybrid/core` theme/typography.ts holds the styles as DATA: a cut, a weight,
+ * a size rung, a leading role, a tracking role and an ink role. This turns one
+ * into a real RN TextStyle against the live palette, which is the last mile the
+ * core cannot do — RN has no weight axis for a custom face, and ink is a theme
+ * concern that changes per surface.
+ *
+ * The (family, weight) → binary map lives in `./faces.ts`, which is pure data
+ * so the design-token guard can import it without pulling React Native in. It
+ * is lossy today and deliberately so — see the note there.
+ */
+
+/**
+ * A named style as an RN TextStyle. `color` overrides the token's ink ROLE —
+ * pass it for an accent, leave it for the role the style declares.
+ */
+export function ty(palette: Palette, token: TextToken, color?: string): TextStyle {
+  const r = resolveText(token);
+  return {
+    fontFamily: faceFor(r.fontFamily, r.fontWeight) ?? F.reg,
+    fontSize: r.fontSize,
+    lineHeight: r.lineHeight,
+    letterSpacing: r.letterSpacing,
+    color: color ?? (r.ink === "primary" ? palette.chalk : palette.ash),
+    ...(r.tabular ? { fontVariant: [TABULAR_NUMS] as TextStyle["fontVariant"] } : null),
+    ...(r.upper ? { textTransform: "uppercase" as const } : null),
+  };
+}
 
 /**
  * A FIGURE'S NUMERALS — spread this into any text style that draws a number
@@ -334,18 +370,25 @@ export const TABULAR: TextStyle = { fontVariant: [TABULAR_NUMS] };
  * the screenshots kept showing the wrong face, and nothing in the codebase
  * disagreed, because the failure is a silent fallback three layers down.
  *
- * These are the `name` table's ID-6 (PostScript) entries of the very .ttf files
- * `@expo-google-fonts` ships, which is what `CTFontManagerRegisterFontsForURL`
- * registers them under. `native-face.test.ts` parses those files and fails if
- * any entry here stops matching — the map is not allowed to be a guess.
+ * These are the `name` table's ID-6 (PostScript) entries of the .otf files in
+ * `assets/fonts`, which is what `CTFontManagerRegisterFontsForURL` registers
+ * them under. `native-face.test.ts` parses those files and fails if any entry
+ * here stops matching — the map is not allowed to be a guess.
+ *
+ * THEY SAY `TestSohne` BECAUSE THAT IS WHAT THE BINARIES SAY. The evaluation
+ * cuts carry that PostScript name; the retail files will carry `Sohne-*`, and
+ * swapping them means editing these seven strings and nothing else. The guard
+ * reads the name out of the file, so getting it wrong fails the build rather
+ * than drawing San Francisco on a native leaf.
  */
 export const F_POSTSCRIPT: Record<string, string> = {
-  [F.reg]: "Archivo-Regular",
-  [F.semi]: "Archivo-SemiBold",
-  [F.bold]: "Archivo-Bold",
-  [F.black]: "Archivo-Black",
-  [F.mono]: "JetBrainsMono-Regular",
-  [F.monoBold]: "JetBrainsMono-Bold",
+  [F.reg]: "TestSohne-Buch",
+  [F.semi]: "TestSohne-Kraftig",
+  [F.bold]: "TestSohne-Halbfett",
+  [F.black]: "TestSohne-Dreiviertelfett",
+  [F.mono]: "TestSohneMono-Buch",
+  [F.monoMed]: "TestSohneMono-Kraftig",
+  [F.monoBold]: "TestSohneMono-Halbfett",
 };
 
 /**
@@ -710,11 +753,11 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
         fontSize: fs.micro,
         lineHeight: leading(fs.micro, "snug"),
         textTransform: "uppercase",
-        // tracking.caps — the wider of the two eyebrow trackings, which is what
-        // this primitive has always emitted. The narrower `tracking.label` (0.9)
+        // tracking(fs.micro, "caps") — the wider of the two eyebrow trackings, which is what
+        // this primitive has always emitted. The narrower `tracking(fs.micro, "label")` (0.9)
         // is the one 216 inline kickers use; both are now named, so the choice
         // between them is a decision rather than a coin toss.
-        letterSpacing: tracking.caps,
+        letterSpacing: tracking(fs.micro, "caps"),
         color: color ? txt(palette, color) : palette.ash,
       }}
     >
@@ -794,7 +837,7 @@ export function Chip({
           lineHeight: leading(fs.micro, "snug"),
           color: txt(palette, key),
           textTransform: "uppercase",
-          letterSpacing: tracking.label,
+          letterSpacing: tracking(fs.micro, "label"),
         }}
       >
         {children}

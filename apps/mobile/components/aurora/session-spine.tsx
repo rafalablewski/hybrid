@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import Svg, { Path, Rect, Line, Circle } from "react-native-svg";
 import type { SessionSpine } from "@hybrid/core";
 import { useTheme, type Palette } from "../../lib/theme";
-import { fs, tracking, F } from "../../lib/ui";
+import { F, fs, tracking, ty} from "../../lib/ui";
 
 /**
  * THE SESSION'S TWO INSTRUMENTS, drawn from core's one spine model
@@ -122,7 +122,7 @@ function GroupLabels({ C, spine, slot }: { C: Palette; spine: SessionSpine; slot
         <View key={`${g.exercise}-${i}`} style={{ width: g.count * slot + (i ? GROUP_GAP : 0), paddingRight: 4 }}>
           <Text
             numberOfLines={1}
-            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}
+            style={ty(C, "kicker")}
           >
             {g.exercise}
           </Text>

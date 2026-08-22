@@ -67,7 +67,7 @@ export default function AuroraSport() {
         </Text>
       </View>
       {e.hasTransfer && showTransfer && (
-        <Text style={{ ...mono(fs.nano, txt(C, C.lime)), textTransform: "uppercase", letterSpacing: tracking.label }}>{t("w.train.sportPage.transfer")}</Text>
+        <Text style={{ ...mono(fs.nano, txt(C, C.lime)), textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label") }}>{t("w.train.sportPage.transfer")}</Text>
       )}
       <Text style={mono(fs.body)}>→</Text>
     </Pressable>
@@ -78,7 +78,7 @@ export default function AuroraSport() {
       <View style={{ marginTop: space.xxl }}>
         <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md, marginBottom: space.xs }}>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
-          {!!meta && <Text style={{ ...mono(fs.micro), textTransform: "uppercase", letterSpacing: tracking.caps }}>{meta}</Text>}
+          {!!meta && <Text style={{ ...mono(fs.micro), textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps") }}>{meta}</Text>}
         </View>
         {list.map((e, i) => <Row key={e.name} e={e} last={i === list.length - 1} showTransfer={showTransfer} />)}
       </View>

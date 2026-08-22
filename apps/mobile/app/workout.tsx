@@ -148,7 +148,7 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking, trackFigure, useRowEntrance} from "../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, Mono, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty, useRowEntrance} from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon, Glyph } from "../components/aurora/icons";
@@ -1320,7 +1320,7 @@ export default function Workout() {
           {cursorName ? (
             <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk, maxWidth: 160 }}>{cursorName}</Text>
           ) : null}
-          <Text style={{ fontFamily: F.mono, fontSize: cursorName ? fs.micro : fs.body, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: tracking.caps }}>
+          <Text style={{ fontFamily: F.mono, fontSize: cursorName ? fs.micro : fs.body, color: paused ? txt(C, C.amber) : C.ash, letterSpacing: tracking(cursorName ? fs.micro : fs.body, "caps") }}>
             {mmss(elapsed)}{paused ? ` – ${t("workout.paused").toUpperCase()}` : ""}
           </Text>
         </View>
@@ -1379,7 +1379,7 @@ export default function Workout() {
                 accessibilityLabel={t("workout.sessionOptions")}
                 style={{ height: 28, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", borderRadius: RADIUS.pill }}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: tracking.label }}>⋯</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, letterSpacing: tracking(fs.subtitle, "label") }}>⋯</Text>
               </Pressable>
             </View>
           )}
@@ -1558,7 +1558,7 @@ export default function Workout() {
                 );
               })()}
               <Pressable onPress={() => removeExercise(x.uid)} hitSlop={14}>
-                <Text style={{ color: C.ash, fontSize: fs.note }}>✕</Text>
+                <Text style={{ color: C.ash, fontSize: fs.bodyLg }}>✕</Text>
               </Pressable>
             </View>
 
@@ -1614,7 +1614,7 @@ export default function Workout() {
                             {/* Label row — kicker, planned-rest hint, then the
                                 type badge on the right. */}
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
+                              <Text style={ty(C, "overline")}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
                               </Text>
                               <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -1641,7 +1641,7 @@ export default function Workout() {
                                       hitSlop={6}
                                       style={{ flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 8, paddingVertical: 4, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: set ? withAlpha(C.amber, 0.5) : C.line, backgroundColor: set ? withAlpha(C.amber, ALPHA.fill) : "transparent" }}
                                     >
-                                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: set ? txt(C, C.amber) : C.ash }}>{prefs.rpeAsRir ? "RIR" : "RPE"}</Text>
+                                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: set ? txt(C, C.amber) : C.ash }}>{prefs.rpeAsRir ? "RIR" : "RPE"}</Text>
                                       <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: set ? txt(C, C.amber) : C.ash }}>{rpeShown || "–"}</Text>
                                     </Pressable>
                                   );
@@ -1701,7 +1701,7 @@ export default function Workout() {
                                   keyboardType="numeric"
                                   placeholder="0"
                                   placeholderTextColor={C.ash}
-                                  style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                  style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                 />
                                 <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{bw ? measureLabel : unitLabel}</Text>
                               </Pressable>
@@ -1716,7 +1716,7 @@ export default function Workout() {
                                       keyboardType="numeric"
                                       placeholder="0"
                                       placeholderTextColor={C.ash}
-                                      style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
+                                      style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0, textAlign: "center", minWidth: 44 }}
                                     />
                                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 5 }}>{measureLabel}</Text>
                                   </Pressable>
@@ -1738,7 +1738,7 @@ export default function Workout() {
                               // request is declined.
                               <RpeScaleRow>
                                 <Pressable onPress={() => setLoggerPref("rpeAsRir", !prefs.rpeAsRir)} hitSlop={6} accessibilityRole="button" accessibilityLabel={`${prefs.rpeAsRir ? "RIR" : "RPE"} — ${t("rpe.rir")}`}>
-                                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
+                                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label") }}>{`${prefs.rpeAsRir ? "RIR" : "RPE"} ⇄`}</Text>
                                 </Pressable>
                                 {[...RPE_SCALE].reverse().map((step) => {
                                   const val = String(step.rpe);
@@ -2068,7 +2068,7 @@ export default function Workout() {
             </Pressable>
             {routines.length > 0 && (
               <View style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 12 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginBottom: 8 }}>{t("train.routines")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"), color: C.ash, marginBottom: 8 }}>{t("train.routines")}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs }}>
                   {routines.map((r) => (
                     <Pressable key={r.id} onPress={() => loadRoutine(r)} style={{ borderWidth: 1, borderColor: C.line, backgroundColor: C.ink2, borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
@@ -2146,7 +2146,7 @@ export default function Workout() {
                satellite doesn't carry: the label lives in the moment it is
                read rather than taxing the primary's width all session. */
             <View accessibilityLiveRegion="polite">
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
                 {queued === 0 ? t("workout.setsWord") : queued === 1 ? t("workout.oneSetQueued") : `${queued} ${t("workout.setsQueued")}`}
               </Text>
               <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
@@ -2172,14 +2172,14 @@ export default function Workout() {
                   so a countdown costs a LINE rather than a banner that shoves
                   the layout down every time you finish a set. */}
               <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginBottom: 10 }}>
-                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: restSince != null ? txt(C, C.blue) : C.ash }}>
+                <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: restSince != null ? txt(C, C.blue) : C.ash }}>
                   {restSince != null
                     ? `${restLeft != null && restLeft <= 0 ? t("workout.restDone") : t("workout.resting")} – ${restReadout}`
                     : cursor
                       ? `${t("workout.setWord")} ${cursor.setIndex + 1}${cursorTotal > 1 ? ` ${t("workout.ofWord")} ${cursorTotal}` : ""}`
                       : t("workout.setsWord")}
                 </Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
+                <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: C.ash }}>
                   {prefs.restTimer ? `${t("w.train.blocks.rest")} ${mmss(prefs.restSeconds)}` : t("workout.noRestTimer")}
                 </Text>
               </View>
@@ -2271,7 +2271,7 @@ export default function Workout() {
           under the status bar the way a takeover should. */}
       {countdown != null && (
         <View style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: C.ink, alignItems: "center", justifyContent: "center" }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, letterSpacing: tracking.caps, marginBottom: 12 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash, letterSpacing: tracking(fs.body, "caps"), marginBottom: 12 }}>
             {t("workout.getReady").toUpperCase()}
           </Text>
           <Text style={{ fontFamily: F.black, fontSize: countdown > 0 ? 132 : 96, color: txt(C, C.lime) }}>
@@ -2346,18 +2346,18 @@ function ExerciseSheet({
             {/* Flat totals — big number over a small mono label, no boxes. */}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
               <View>
-                <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t("workout.totalVolume")}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: 3  }}>{t("workout.totalVolume")}</Text>
               </View>
               <View>
-                <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{setLine}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
+                <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{setLine}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: 3  }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
               </View>
             </View>
 
             {/* ONE velocity module — the unit is named once, with the mean. */}
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 24, marginBottom: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{`${t("workout.barSpeed")} (m/s)`}</Text>
+              <Text style={ty(C, "kicker")}>{`${t("workout.barSpeed")} (m/s)`}</Text>
               {ls.meanVel != null && (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</Text>
               )}
@@ -2431,8 +2431,8 @@ function ExerciseSheet({
     ? (
       <View style={{ marginTop: 28 }}>
         <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 6 }}>
-          <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{t("workout.orderTitle")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{all.length}</Text>
+          <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk }}>{t("workout.orderTitle")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{all.length}</Text>
         </View>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, lineHeight: leading(fs.micro, "snug"), marginBottom: 10 }}>{t("workout.orderHint")}</Text>
         {all.map((e, i) => {
@@ -2469,7 +2469,7 @@ function ExerciseSheet({
               <AuroraExerciseAvatar name={e.name} size={28} />
               <Text numberOfLines={1} style={{ flex: 1, fontFamily: here ? F.bold : F.reg, fontSize: fs.bodyLg, color: here ? C.chalk : C.ash }}>{e.name}</Text>
               {e.kind === "strength" && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+                <Text style={ty(C, "kicker")}>
                   {`${e.sets.length} ${t("workout.setsWord")}`}
                 </Text>
               )}
@@ -2556,7 +2556,7 @@ function BankedSetRow({ badge, badgeColor, summary, summaryColor, effortLabel, e
       <Pressable style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: space.sm }} onPress={onReopen}>
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.body, color: summaryColor }}>{summary}</Text>
         {effortLabel ? (
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: effortColor }}>{effortLabel}</Text>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: effortColor }}>{effortLabel}</Text>
         ) : null}
       </Pressable>
       <Text style={{ fontFamily: F.black, fontSize: fs.body, color: done ? txt(C, C.lime) : C.ash }}>{done ? "✓" : "○"}</Text>
@@ -2571,9 +2571,9 @@ function RpeHelpModal({ visible, onClose, t }: { visible: boolean; onClose: () =
     <Sheet visible={visible} onClose={onClose} title={t("w.train.blocks.rpeHelpTitle")}>
           <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, lineHeight: leading(fs.body), marginBottom: 16 }}>{RPE_INTRO}</Text>
           <View style={{ flexDirection: "row", marginBottom: 6 }}>
-            <Text style={{ width: 40, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>RPE</Text>
-            <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{t("rpe.rir")}</Text>
-            <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{t("rpe.feels")}</Text>
+            <Text style={{ width: 40, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label") }}>RPE</Text>
+            <Text style={{ width: 56, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label") }}>{t("rpe.rir")}</Text>
+            <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label") }}>{t("rpe.feels")}</Text>
           </View>
           {RPE_SCALE.map((step) => (
             <View key={step.rpe} style={{ flexDirection: "row", alignItems: "flex-start", paddingVertical: 5, borderTopWidth: 1, borderTopColor: C.line }}>
@@ -2820,7 +2820,7 @@ function Summary({
         </View>
 
         {/* One whisper of a hint — the current look + how to change it. */}
-        <Mono color={C.ash} style={{ textAlign: "center", marginTop: 10, fontSize: fs.nano, letterSpacing: tracking.caps }}>
+        <Mono color={C.ash} style={{ textAlign: "center", marginTop: 10, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps") }}>
           {`${t(st.nameKey)} — ${t("summary.cardHint")}`.toUpperCase()}
         </Mono>
 
@@ -3033,13 +3033,13 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
   if (!allowed || state === "upsell")
     return (
       <View style={{ borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
-        <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: tracking.label }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Mono>
+        <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label") }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Mono>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
         <Pressable
           onPress={() => { track(FUNNEL.upgradeEntryClick, { client: "mobile", source: "save-routine" }); router.push("/upgrade"); }}
           style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 12 }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("w.train.logger.routineUnlock")}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{t("w.train.logger.routineUnlock")}</Text>
         </Pressable>
       </View>
     );
@@ -3050,7 +3050,7 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
         onPress={() => setOpen(true)}
         style={{ borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.pill, paddingVertical: 16, alignItems: "center", marginTop: 16 }}
       >
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>★ {t("summary.saveRoutine")}</Text>
       </Pressable>
     );
 
@@ -3065,20 +3065,20 @@ function SaveRoutine({ title, blocks, t, startOpen }: { title: string; blocks: S
 
   return (
     <View style={{ borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.line), backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.field, padding: 16, marginTop: 16 }}>
-      <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: tracking.label }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
+      <Mono color={C.lime} style={{ fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label") }}>{t("summary.saveRoutine").toUpperCase()}</Mono>
       <TextInput
         value={name}
         onChangeText={setName}
         placeholder="Routine name"
         placeholderTextColor={C.ash}
-        style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 }}
+        style={{ marginTop: 8, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10 }}
       />
       <Pressable
         onPress={save}
         disabled={state === "saving"}
         style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, alignItems: "center", marginTop: 10, opacity: state === "saving" ? STATE_OPACITY.busy : 1 }}
       >
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{state === "saving" ? "…" : t("summary.saveRoutine")}</Text>
       </Pressable>
     </View>
   );
@@ -3117,10 +3117,10 @@ function SummaryRename({ sessionId, value, onRenamed, t }: { sessionId: string |
         onSubmitEditing={commit}
         placeholder={t("workout.nameWorkout")}
         placeholderTextColor={C.ash}
-        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10, textAlign: "center" }}
+        style={{ flex: 1, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 12, paddingVertical: 10, textAlign: "center" }}
       />
       <Pressable onPress={commit} style={{ backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 10, paddingHorizontal: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>✓</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>✓</Text>
       </Pressable>
     </View>
   );
@@ -3177,7 +3177,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
           const on = mood === m.value;
           return (
             <Pressable key={m.value} onPress={() => setMood(on ? null : m.value)} accessibilityLabel={t(m.labelKey)} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", backgroundColor: on ? withAlpha(C.lime, ALPHA.fill) : C.ink, borderWidth: 1, borderColor: on ? C.lime : C.line }}>
-              <Mark mark={m.mark} size={fs.note + 3} color={on ? txt(C, C.lime) : C.ash} />
+              <Mark mark={m.mark} size={fs.bodyLg + 3} color={on ? txt(C, C.lime) : C.ash} />
             </Pressable>
           );
         })}
@@ -3194,7 +3194,7 @@ function SummaryNote({ sessionId, t }: { sessionId: string | null; t: (k: string
         })}
       </View>
       <Pressable onPress={commit} disabled={saving} style={{ marginTop: 12, backgroundColor: C.lime, borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center", opacity: saving ? STATE_OPACITY.busy : 1 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.onAccent }}>{t("common.save")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.onAccent }}>{t("common.save")}</Text>
       </Pressable>
     </View>
   );
@@ -3269,7 +3269,7 @@ function LiveStat({
         {mark ? <AuroraIcon name={mark} size={fs.subtitle + 2} color={accent ?? C.chalk} /> : null}
         <RollingNumber value={value} align="center" style={{ fontFamily: F.black, fontSize: fs.subtitle, color: accent ?? C.chalk }} />
       </View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: accent ?? C.ash, letterSpacing: tracking.label, marginTop: 2 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: accent ?? C.ash, letterSpacing: tracking(fs.nano, "label"), marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -3350,7 +3350,7 @@ function Cell({ value, onChange, done, active, keyboard = "numeric" }: { value: 
 function ColHead({ children, w }: { children: React.ReactNode; w?: number }) {
   const C = useTheme().palette;
   return (
-    <Text style={{ flex: w ? undefined : 1, width: w, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>
+    <Text style={{ flex: w ? undefined : 1, width: w, textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label") }}>
       {children}
     </Text>
   );

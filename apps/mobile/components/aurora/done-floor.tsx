@@ -191,7 +191,7 @@ export default function DoneFloor({
           accessibilityLabel={countLabel}
           style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 2 }}
         >
-          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
+          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
           <ArrowGlyph size={14} color={quiet} />
         </Pressable>
       ) : showCaption ? (
@@ -228,14 +228,14 @@ export default function DoneFloor({
                   <Mark mark={sessionMark(s)} size={fs.title} color={onPlanRow ? txt(C, C.lime) as string : txt(C, C.blue) as string} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{s.title}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{s.title}</Text>
                   {/* NO CLOCK TIME HERE — see the web twin. The trailing "21:33" was
                       the record's save time masquerading as the workout's time; the
                       row states what was done, nothing else. */}
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
                 </View>
                 {onPlanRow ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
                 ) : null}
               </Pressable>
               {ask ? (
@@ -247,7 +247,7 @@ export default function DoneFloor({
                   accessibilityHint={t("session.feel.rateUnrated")}
                   style={{ paddingVertical: 8, paddingLeft: 4 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
                 </Pressable>
               ) : null}
             </View>

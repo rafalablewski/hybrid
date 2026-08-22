@@ -19,7 +19,7 @@ import { useSessionsQuery } from "../../lib/queries";
 import { useRefreshOnFocus } from "../../lib/query";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { fs, F, leading, space, tracking, trackFigure, TABULAR } from "../../lib/ui";
+import { F, TABULAR, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { useLearnedMonth } from "../../lib/use-learned";
 import { AuroraScreen, ACard, ASection, AMeter, RADIUS, Empty } from "./kit";
 import { DoorRow } from "./week-verdict";
@@ -88,10 +88,10 @@ export default function AuroraLearned() {
           visible. */}
       <View style={{ marginBottom: space.xl }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.ms }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "tight"), color: C.chalk, ...TABULAR }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk, ...TABULAR }}>
             {`${Math.round(month.known * 100)}%`}
           </Text>
-          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: C.ash }}>
             {t("w.learned.known")}
           </Text>
         </View>
@@ -107,7 +107,7 @@ export default function AuroraLearned() {
           Performance masthead): it says nothing the chapter does not also say. */}
       {month.headline && (
         <ACard solid style={{ marginBottom: space.lg }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
+          <Text style={{ ...ty(C, "overline"), marginBottom: space.ms  }}>
             {t("w.learned.moved")}
           </Text>
           <Claim f={month.headline} lead />
@@ -211,7 +211,7 @@ function Claim({ f, lead = false }: { f: LearnedFinding; lead?: boolean }) {
           {t(f.titleKey)}
         </Text>
         {f.labelKey ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          <Text style={ty(C, "kicker")}>
             {t(f.labelKey)}
           </Text>
         ) : null}
@@ -223,7 +223,7 @@ function Claim({ f, lead = false }: { f: LearnedFinding; lead?: boolean }) {
               it sits in a wash so the row cannot be misread as a measurement
               that happens to be missing its number. */}
           <View style={{ marginTop: space.sm, paddingHorizontal: space.md, paddingVertical: space.sm, borderRadius: RADIUS.inner, backgroundColor: withAlpha(C.ash, ALPHA.wash) }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+            <Text style={ty(C, "kicker")}>
               {t("w.learned.waitingLabel")}
               {f.evidence > 0 ? `  ${t(f.evidenceKey).replace("{n}", String(f.evidence))}` : ""}
             </Text>
@@ -237,7 +237,7 @@ function Claim({ f, lead = false }: { f: LearnedFinding; lead?: boolean }) {
       ) : (
         <>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.xs, flexWrap: "wrap" }}>
-            <Text style={{ fontFamily: F.black, fontSize: figureSize, letterSpacing: trackFigure(figureSize), lineHeight: leading(figureSize, "tight"), color: C.chalk, ...TABULAR }}>
+            <Text style={{ fontFamily: F.black, fontSize: figureSize, letterSpacing: trackFigure(figureSize), lineHeight: leading(figureSize, "flush"), color: C.chalk, ...TABULAR }}>
               {figure}
             </Text>
             {/* The unit only. The muscle is already named — by the row's own
@@ -251,7 +251,7 @@ function Claim({ f, lead = false }: { f: LearnedFinding; lead?: boolean }) {
             {delta ? (
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: deltaInk, ...TABULAR }}>{delta}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+                <Text style={ty(C, "kicker")}>
                   {t("w.learned.since")}
                 </Text>
               </View>
@@ -269,17 +269,17 @@ function Claim({ f, lead = false }: { f: LearnedFinding; lead?: boolean }) {
           ladder carries, on one line, because here they qualify a single claim
           rather than the whole model. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.sm }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: f.source === "observed" || f.source === "manual" ? txt(C, C.lime) : C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: f.source === "observed" || f.source === "manual" ? txt(C, C.lime) : C.ash }}>
           {t(sourceLabelKey(f.source))}
         </Text>
         {f.confidence > 0 ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, ...TABULAR }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, ...TABULAR }}>
             {`${Math.round(f.confidence * 100)}% ${t("w.learned.confidence")}`}
           </Text>
         ) : null}
         <View style={{ flex: 1 }} />
         {!waiting && f.evidence > 0 ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
             {t(f.evidenceKey).replace("{n}", String(f.evidence))}
           </Text>
         ) : null}

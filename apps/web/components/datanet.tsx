@@ -275,10 +275,10 @@ function ReliabilityChart({ buckets }: { buckets: ReliabilityBucket[] }) {
         {[0, max / 2, max].map((v) => (
           <g key={v}>
             <line x1={P.l} x2={W - P.r} y1={y(v)} y2={y(v)} stroke={LINE_HEX} strokeWidth={1} />
-            <text x={P.l - 5} y={y(v) + 3} textAnchor="end" fontSize={9} fill={ASH} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <text x={P.l - 5} y={y(v) + 3} textAnchor="end" fontSize={9} fill={ASH} style={{ fontFamily: "var(--font-mono)" }}>
               {Math.round(v * 100)}%
             </text>
-            <text x={x(v)} y={H - 16} textAnchor="middle" fontSize={9} fill={ASH} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <text x={x(v)} y={H - 16} textAnchor="middle" fontSize={9} fill={ASH} style={{ fontFamily: "var(--font-mono)" }}>
               {Math.round(v * 100)}%
             </text>
           </g>
@@ -290,7 +290,7 @@ function ReliabilityChart({ buckets }: { buckets: ReliabilityBucket[] }) {
             <title>{`predicted ${(b.meanPredicted * 100).toFixed(1)}% – observed ${(b.observedRate * 100).toFixed(1)}% – n=${b.n}`}</title>
           </circle>
         ))}
-        <text x={(W + P.l - P.r) / 2} y={H - 3} textAnchor="middle" fontSize={9} fill={ASH} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <text x={(W + P.l - P.r) / 2} y={H - 3} textAnchor="middle" fontSize={9} fill={ASH} style={{ fontFamily: "var(--font-mono)" }}>
           predicted p(injury)
         </text>
       </svg>

@@ -2,7 +2,18 @@
    Narrow was dropped in Aug 2026 (core theme/tokens.ts `fonts` writes down why:
    the mobile app, which is the product, never loaded it). Keep this in step
    with core `fontImportUrl`. */
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+/* SÖHNE, SELF-HOSTED. A licensed face cannot come from a public font host, so
+   the binaries live in `public/fonts` and are declared here rather than
+   @import-ed. `fontImportUrl` in @hybrid/core is now an empty string with a
+   note saying why — an @import reappearing there would quietly pull Archivo
+   back alongside these and the two would fight over the same tokens. */
+@font-face{font-family:"Söhne";font-weight:400;font-style:normal;font-display:swap;src:url("/fonts/Sohne-Buch.woff2") format("woff2")}
+@font-face{font-family:"Söhne";font-weight:500;font-style:normal;font-display:swap;src:url("/fonts/Sohne-Kraftig.woff2") format("woff2")}
+@font-face{font-family:"Söhne";font-weight:600;font-style:normal;font-display:swap;src:url("/fonts/Sohne-Halbfett.woff2") format("woff2")}
+@font-face{font-family:"Söhne";font-weight:700;font-style:normal;font-display:swap;src:url("/fonts/Sohne-Dreiviertelfett.woff2") format("woff2")}
+@font-face{font-family:"Söhne Mono";font-weight:400;font-style:normal;font-display:swap;src:url("/fonts/SohneMono-Buch.woff2") format("woff2")}
+@font-face{font-family:"Söhne Mono";font-weight:500;font-style:normal;font-display:swap;src:url("/fonts/SohneMono-Kraftig.woff2") format("woff2")}
+@font-face{font-family:"Söhne Mono";font-weight:600;font-style:normal;font-display:swap;src:url("/fonts/SohneMono-Halbfett.woff2") format("woff2")}
 @import "tailwindcss";
 
 /* HYBRID design tokens — mirror packages/core/src/theme/tokens.ts.
@@ -26,10 +37,10 @@
   --color-amber: #daa51d;
   --color-red: #ec935e;
 
-  --font-display: "Archivo", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Söhne", system-ui, sans-serif;
+  --font-mono: "Söhne Mono", ui-monospace, monospace;
   /* Heading face — Archivo (the display sans, at heading weights). */
-  --font-heading: "Archivo", system-ui, sans-serif;
+  --font-heading: "Söhne", system-ui, sans-serif;
 }
 
 /* Screen-header BACK button surface — AURORA is a transparent outlined square.

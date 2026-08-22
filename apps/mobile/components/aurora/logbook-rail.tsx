@@ -15,7 +15,7 @@ import {
   ALPHA,} from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import AEmptyDay from "./empty-day";
 import { Glyph } from "./icons";
@@ -144,7 +144,7 @@ export default function AuroraLogbookRail({
           History that briefly replaced it went with the card's exit entirely —
           this screen has one door into the log, and it is not up here. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: tracking.display, color: C.chalk }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.black, fontSize: 21, letterSpacing: tracking(21), color: C.chalk }}>
           {t("w.home.logbook.title")}
         </Text>
       </View>
@@ -220,7 +220,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${a11yLoad}`}
       style={{ width: DAY_W, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      <Text style={ty(C, "kicker")}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
           hairline disc (preview cue); otherwise a bare tonal number (chalk when
           the day holds training, ash when it doesn't). */}
@@ -231,10 +231,10 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
           </View>
         ) : selected ? (
           <View style={{ width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), alignItems: "center", justifyContent: "center" }}>
-            <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{day.dayOfMonth}</Text>
+            <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{day.dayOfMonth}</Text>
           </View>
         ) : (
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: day.logged ? C.chalk : C.ash }}>{day.dayOfMonth}</Text>
         )}
       </View>
       {/* LOAD slot — the ✓'s pixels, spent on how much instead of whether. The
@@ -420,7 +420,7 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
         <Glyph name="moon" size={30} color={C.ash} />
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk, textAlign: "center" }}
+          style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), color: C.chalk, textAlign: "center" }}
         >
           {t("w.home.rail.restDay")}
         </Text>

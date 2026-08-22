@@ -37,7 +37,7 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt, accentColor } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../lib/ui";
 import { ACard, cardStack, withAlpha, ASection, DockRail, DockChip } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill, COVER_GUTTER } from "./plan-hero";
@@ -151,7 +151,7 @@ export default function PercentProgram({
                     accessibilityLabel={inp.label}
                     value={val}
                     onChangeText={(v) => (inp.kind === "number" ? onMaxChange(inp.key, v) : setVals((m) => ({ ...m, [inp.key]: v })))}
-                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.note, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, ALPHA.edge), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
+                    style={{ fontFamily: F.mono, minWidth: inp.kind === "number" ? 64 : 104, marginLeft: echo ? 0 : "auto", textAlign: "right", fontSize: fs.bodyLg, color: C.chalk, borderBottomWidth: 1.5, borderBottomColor: withAlpha(C.chalk, ALPHA.edge), paddingVertical: 2, fontVariant: ["tabular-nums"] }}
                   />
                 </View>
               );
@@ -184,7 +184,7 @@ export default function PercentProgram({
           tokens (RADIUS.card, cardStack), and neither copy could ever mount
           the glass. See card-surface.test.ts. */}
       <ACard style={cardStack}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash }}>How it progresses</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk, marginTop: 6, lineHeight: leading(fs.body) }}>{view.progression}</Text>
       </ACard>
 
@@ -320,7 +320,7 @@ function ProgramDays({ days, week, peakNote, C }: { days: ProgramDayView[]; week
 function WeekHeader({ title, right, C }: { title: string; right: string | null; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 12, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk, flexShrink: 1 }}>{title}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), color: C.chalk, flexShrink: 1 }}>{title}</Text>
       {!!right && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{right}</Text>}
     </View>
   );
@@ -392,7 +392,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
         style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}
       >
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), color: C.chalk }} numberOfLines={1}>
             {day.title}
             {!!day.kindLabel && <Text style={{ color: C.ash }}> — {day.kindLabel}</Text>}
           </Text>
@@ -429,7 +429,7 @@ function DayCard({ day, open, onToggle, onLift, C }: { day: ProgramDayView; open
 function SessionRule({ marker, volume, top, C }: { marker: string; volume: string | null; top: boolean; C: Palette }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10, paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: hair(C), borderTopWidth: top ? 1 : 0, borderTopColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.chalk }}>{marker}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.chalk }}>{marker}</Text>
       {!!volume && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{volume}</Text>}
     </View>
   );
@@ -476,7 +476,7 @@ function SessionBlock({ s, si, count, day, C, onLift }: { s: ProgramSessionView;
 function GroupRule({ label, C }: { label: string; C: Palette }) {
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={ty(C, "kicker")}>{label}</Text>
     </View>
   );
 }
@@ -518,7 +518,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
         <View style={{ width: MX_NAME }}>
           <View style={{ height: HDR_H, justifyContent: "center", paddingLeft: 16, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
             {!!label && (
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={ty(C, "kicker")} numberOfLines={1}>
                 {label}
               </Text>
             )}
@@ -606,13 +606,13 @@ function AccessoryRows({ lifts, label, C, onPress }: { lifts: ProgramLiftView[];
     <View>
       {(label || hasRpe) && (
         <View style={{ flexDirection: "row", alignItems: "baseline", paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
             {label ?? ""}
           </Text>
           {hasRpe && (
             <>
-              <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: tracking.label }}>Sets×Reps</Text>
-              <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: tracking.label }}>RPE</Text>
+              <Text style={{ width: 70, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label") }}>Sets×Reps</Text>
+              <Text style={{ width: 54, fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textAlign: "right", textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label") }}>RPE</Text>
             </>
           )}
         </View>
@@ -712,41 +712,41 @@ function ExerciseSheet({ sel, onClose, C }: { sel: SheetSel | null; onClose: () 
         {!!lift.note && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption), marginBottom: 10 }}>{lift.note}</Text>}
         {steps.map((st, i) => (
           <View key={i} style={{ ...row, borderTopWidth: i > 0 ? 1 : 0 }}>
-            <Text style={{ width: 48, fontFamily: F.monoBold, fontSize: fs.note, color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
-            <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{st.kg ?? ""}</Text>
+            <Text style={{ width: 48, fontFamily: F.monoBold, fontSize: fs.bodyLg, color: txt(C, loadHex(C, st.color)) }}>{st.load}</Text>
+            <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, fontVariant: ["tabular-nums"] }}>{st.kg ?? ""}</Text>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>{stepWords(st)}</Text>
           </View>
         ))}
         {!!lift.oneRm && (
           <View style={{ ...row, borderTopColor: withAlpha(C.chalk, ALPHA.fill) }}>
-            <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>1RM</Text>
-            <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.oneRm}</Text>
+            <Text style={{ width: 48, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>1RM</Text>
+            <Text style={{ width: 68, fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.oneRm}</Text>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "right" }}>from your maxes</Text>
           </View>
         )}
         {steps.length === 0 && !!lift.setsReps && (
           <View style={{ ...row, borderTopWidth: 0 }}>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Sets × reps</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.setsReps}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.setsReps}</Text>
           </View>
         )}
         {steps.length === 0 && lift.weight != null && !!lift.weight && (
           <View style={row}>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Working weight</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.weight}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, fontVariant: ["tabular-nums"] }}>{lift.weight}</Text>
           </View>
         )}
         {lift.rpe != null && (
           <View style={row}>
             <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Effort</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: txt(C, loadHex(C, rpeColor(lift.rpe))) }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: txt(C, loadHex(C, rpeColor(lift.rpe))) }}>
               @{lift.rpe}
               <Text style={{ color: C.ash }}> — {rpeMeaning(lift.rpe)}</Text>
             </Text>
           </View>
         )}
         {steps.length === 0 && lift.setsReps == null && !!lift.prescription && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, lineHeight: leading(fs.note, "snug") }}>{lift.prescription}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg, "snug") }}>{lift.prescription}</Text>
         )}
       </View>
     </Sheet>
