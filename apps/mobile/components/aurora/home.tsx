@@ -75,6 +75,7 @@ import {
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
 import { bandHue, barLatched, foldProgress } from "@hybrid/core";
+import { seasonAdjust } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { recoveryReadAnswered } from "../../lib/recovery-reminder";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -196,6 +197,14 @@ export default function AuroraHome() {
   // designed for a powerlifter and the one designed for a triathlete were the
   // same session. Null when not enrolled, which prescribes exactly as before.
   const goal = macroRead.data?.macro.goalOrSport ?? null;
+  // WHERE THEY ARE IN THE SEASON. The periodization engine has written a
+  // per-week intensity and volume onto every enrolment since it was built, and
+  // until Aug 2026 nothing read it — so a scheduled deload week prescribed
+  // exactly what the loading week before it did. Null when not enrolled.
+  const season = useMemo(
+    () => seasonAdjust(macroRead.data?.macro ?? null, macroRead.data?.currentWeek ?? 1),
+    [macroRead.data],
+  );
   // THE HUB — which of Today's three top-level views is showing (see
   // @hybrid/core today-tabs.ts). Deliberately NOT persisted: Today is the app's
   // home and its job is "what do I do today?", so every visit opens on the
@@ -408,8 +417,8 @@ export default function AuroraHome() {
   const fuel = useMemo(() => fuelAdjustment(nutritionSignals), [nutritionSignals, today]);
   const fuelAdj = fuel.points;
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj, fuelAdj, goal }),
-    [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj, fuelAdj, goal],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj, fuelAdj, goal, season }),
+    [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj, fuelAdj, goal, season],
   );
   // ── THE DAY OBJECT ────────────────────────────────────────────────────────
   // Today's readiness, split into what it kept and what each cause took. ONE
@@ -1046,6 +1055,26 @@ export default function AuroraHome() {
           </View>
         ) : useRail ? (
           <View>
+            {/* WHICH BLOCK THIS WEEK IS, and it is the first time the season has
+                been able to say so anywhere but /periodize. The periodization
+                engine writes a per-week intensity and volume onto every
+                enrolment; until Aug 2026 nothing read it, so a scheduled deload
+                looked exactly like the loading week before it. Now the load
+                actually comes off (engines/season-load.ts) — and a change to
+                the work that is not stated is indistinguishable from the app
+                being inconsistent, so the week names itself. Amber on a deload:
+                the caution channel, not the accent, because a deload is not a
+                destination to go to. */}
+            {season && (
+              <Text style={{
+                fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"),
+                textTransform: "uppercase", marginBottom: 8,
+                color: season.deload ? txt(C, C.amber) : C.ash,
+              }}>
+                {`${season.blockLabel} – ${t("w.home.cockpit.week")} ${season.weekInBlock} ${t("w.home.cockpit.of")} ${season.blockWeeks}`}
+                {season.deload ? ` – ${t("w.home.recweek.deload")}` : ""}
+              </Text>
+            )}
             <AuroraWeekRail
               planId={planId!}
               planStartedAt={planStartedAt!}

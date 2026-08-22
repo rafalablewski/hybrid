@@ -12,6 +12,7 @@ import { progressionSignal } from "./progression";
 import { velocityAtLoad, type LoadVelocityProfile } from "./velocity";
 import { readinessLoadFactor, type ReadinessFeeling } from "../readiness-feeling";
 import { goalProfile, type GoalPrescriptionBias } from "../goal-profile";
+import { seasonBlockLabel, type SeasonAdjust } from "./season-load";
 import { goalLabel } from "../goal-id";
 
 export interface RunTarget {
@@ -130,6 +131,16 @@ export interface PrescribeOptions {
    * goal shapes it. Absent → exactly what this engine prescribed before.
    */
   goal?: string | null;
+  /**
+   * WHERE THE ATHLETE IS IN THEIR SEASON (engines/season-load.ts).
+   *
+   * `buildMacrocycle` has produced a per-week intensity and volume for every
+   * microcycle since it was written, stored it on every enrolment, and nothing
+   * read it — so an athlete in a scheduled recovery week was prescribed exactly
+   * what they got in the loading week before it, and the deload existed only as
+   * a drawing on /periodize. Absent → prescribes as before.
+   */
+  season?: SeasonAdjust | null;
 }
 
 /** No goal supplied: what every athlete got before the goal reached here. */
@@ -164,6 +175,10 @@ export function prescribeSession(
   // The goal's shaping of the session (goal-profile.ts). Neutral when absent,
   // so an un-wired caller prescribes exactly what it prescribed before.
   const bias = opts?.goal ? goalProfile(opts.goal).bias : NEUTRAL_BIAS;
+  // The season's own instruction for this week. A deload here is a REAL
+  // deload — it takes load off the bar and sheds a set — because that is
+  // what the block the athlete enrolled in actually says to do.
+  const season = opts?.season ?? null;
   // Bodyweight tier has no external load — the strength block is rep/RPE-driven.
   const bodyweight = equipment === "minimal";
 
@@ -206,7 +221,7 @@ export function prescribeSession(
   const expRepAdj = experience === "beginner" ? 2 : 0;
   // The goal moves the bar in the same direction its emphasis implies, inside
   // the same clamp the experience tier is held to.
-  const pct = clampN(basePct + expPctAdj + bias.pctAdj, 0.55, 0.9);
+  const pct = clampN(basePct + expPctAdj + bias.pctAdj + (season?.pctAdj ?? 0), 0.55, 0.9);
 
   // VBT autoregulation (loaded tiers only): anchor the load to the velocity-
   // estimated 1RM when a fitted profile exists. Bodyweight has no external load.
@@ -223,7 +238,7 @@ export function prescribeSession(
   const readinessSetAdj = opts?.subjectiveReadiness === "wrecked" ? -1 : 0;
   const baseSets =
     primary.sig.action === "progress" ? 5 : primary.sig.action === "deload" ? 3 : 4;
-  const sets = clampN(baseSets + expSetAdj + readinessSetAdj + bias.setAdj, 2, 6);
+  const sets = clampN(baseSets + expSetAdj + readinessSetAdj + bias.setAdj + (season?.setAdj ?? 0), 2, 6);
   // Bodyweight is rep-driven (no kg); loaded tiers keep the heavy 3–5 scheme.
   const reps =
     (bodyweight ? (primary.sig.action === "deload" ? 8 : 12) : primary.sig.action === "deload" ? 3 : 5) +
@@ -326,7 +341,11 @@ export function prescribeSession(
   const setupNote =
     ` Dialed for ${experience} level${
       equipment !== "full" ? ` and ${equipment === "home" ? "home (dumbbell)" : "minimal (bodyweight)"} equipment` : ""
-    }${opts?.goal ? `, aimed at ${goalLabel(opts.goal)}` : ""}.`;
+    }${opts?.goal ? `, aimed at ${goalLabel(opts.goal)}` : ""}.${
+      season
+        ? ` You're in ${seasonBlockLabel(season)}${season.deload ? " — a scheduled deload, so load and a set come off" : ""}.`
+        : ""
+    }`;
 
   const why =
     `Readiness ${readiness}/100. ` +
