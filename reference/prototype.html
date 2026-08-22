@@ -2,9 +2,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
 <style>
+/* APP TOKENS — verbatim from packages/core/src/theme/palette.ts */
 :root{
   --ink:#0c0d0c;--ink2:#212126;--line:#2f2f36;--chalk:#f7f6f3;--ash:#8a9691;
   --acc:#c3d363;--onAcc:#0c0d0c;--blue:#6bb4d4;--amber:#daa51d;--red:#ec935e;
+  /* RADIUS — geometry.ts: mark 3, inner 12, field 16, card 28, pill 999 */
+  --rMark:3px;--rInner:12px;--rField:16px;--rCard:28px;--rPill:999px;
+  --gut:12px;            /* GUTTER */
   --disp:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
   --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --bg:#141516;--tx:#f7f6f3;--mut:#8a9691;--dim:#5f6a66;--rule:#26272a;--accTx:#c3d363;
@@ -25,65 +29,78 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
   margin:16px 0 0;max-width:16ch;text-wrap:balance}
 .deck{max-width:62ch;color:var(--mut);font-size:clamp(16px,1.8vw,18.5px);line-height:1.55;margin:18px 0 0}
 .deck b{color:var(--tx);font-weight:600}
-.deck code{font-family:var(--mono);font-size:.85em;background:var(--rule);padding:1.5px 5px;border-radius:2px;color:var(--tx)}
-
+.deck code,.rail code{font-family:var(--mono);font-size:.85em;background:var(--rule);padding:1.5px 5px;
+  border-radius:var(--rMark);color:var(--tx)}
 .stage{display:grid;gap:44px;grid-template-columns:1fr;justify-items:center}
 @media (min-width:1000px){.stage{grid-template-columns:390px minmax(0,1fr);gap:64px;justify-items:start}}
 
 /* ── device ── */
-.phone{width:390px;max-width:100%;border:1px solid var(--line);border-radius:40px;background:var(--ink);
+.phone{width:390px;max-width:100%;border:1px solid var(--line);border-radius:44px;background:var(--ink);
   overflow:hidden;box-shadow:0 34px 70px -34px rgba(0,0,0,.75);flex:none;
-  position:sticky;top:24px;align-self:start;height:814px}
-@media (max-width:440px){.phone{transform-origin:top left;transform:scale(.88);margin-bottom:-96px;position:relative}}
-.scr{height:812px;display:flex;flex-direction:column;color:var(--chalk);position:relative;overflow:hidden}
-.sbar{display:flex;justify-content:space-between;align-items:center;padding:15px 24px 4px;
+  position:sticky;top:24px;align-self:start;height:816px}
+@media (max-width:440px){.phone{transform-origin:top left;transform:scale(.88);margin-bottom:-98px;position:relative}}
+.scr{height:814px;display:flex;flex-direction:column;color:var(--chalk);position:relative;overflow:hidden}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:14px 24px 2px;
   font-family:var(--mono);font-size:11px;color:var(--ash);flex:none}
 #view{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
 #view::-webkit-scrollbar{display:none}
-.pad{padding:0 12px}
+.gut{padding-left:var(--gut);padding-right:var(--gut)}
 
-/* ── type rungs (scale.ts) ── */
-.kick{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;
+/* ── glyphs ── */
+svg.g{display:block;fill:none;stroke:currentColor;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── APP HEADER (core/app-header.ts): 44 tile / centred lockup / 44 tile ── */
+.ahdr{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:2px var(--gut) 0;flex:none}
+.tile{width:44px;height:44px;border-radius:var(--rInner);border:1px solid var(--line);display:grid;
+  place-items:center;color:var(--ash);background:none;cursor:pointer;position:relative}
+.tile.av{font-family:var(--mono);font-size:13px;color:var(--chalk);background:var(--ink2)}
+.lockup{display:flex;flex-direction:column;align-items:center;justify-content:center;height:44px}
+.wordmark{font-weight:900;font-size:19px;letter-spacing:-0.5px;line-height:19px}
+.streak{display:flex;align-items:center;gap:4px;margin-top:3px;color:var(--red);
+  font-family:var(--mono);font-size:9.5px;letter-spacing:1.2px;text-transform:uppercase;line-height:11px}
+.badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;border-radius:999px;
+  background:var(--acc);color:var(--onAcc);border:2px solid var(--ink);font-family:var(--mono);
+  font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+
+/* ── HUB PILLS (today-tabs.ts) — glyphs, neutral selection ── */
+.hubpills{display:flex;gap:3px;margin:16px var(--gut) 0;padding:3px;border-radius:var(--rPill);
+  background:rgba(247,246,243,.055);flex:none}
+.hubpills button{flex:1;height:38px;border:0;border-radius:var(--rPill);background:none;color:var(--ash);
+  display:grid;place-items:center;cursor:pointer}
+.hubpills button.on{background:var(--line);color:var(--chalk)}
+
+/* ── HUB MASTHEAD (core/hub-masthead.ts) ── */
+.mhead{padding:16px var(--gut) 0}
+.mmeta{height:15px;display:flex;justify-content:space-between;align-items:center;
+  font-family:var(--mono);font-size:11px;letter-spacing:.9px;text-transform:uppercase;color:var(--ash)}
+.mtitle{margin-top:4px;font-weight:900;font-size:34px;line-height:36px;letter-spacing:-0.5px}
+.mbelow{height:16px}
+
+/* ── type rungs (core/scale.ts) ── */
+.kick{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.9px;
   text-transform:uppercase;color:var(--ash)}
 .fig{font-variant-numeric:tabular-nums;letter-spacing:-.035em;font-weight:800}
-.ash{color:var(--ash)}.acc{color:var(--acc)}.red{color:var(--red)}.blue{color:var(--blue)}
+.ash{color:var(--ash)}.acc{color:var(--acc)}.red{color:var(--red)}
 .t-nano{font-size:10px}.t-micro{font-size:11px}.t-caption{font-size:12px}.t-body{font-size:13px}
 .t-bodyLg{font-size:14px}.t-note{font-size:15px}.t-subtitle{font-size:16px}.t-title{font-size:18px}
 .t-heading{font-size:20px}.t-headline{font-size:22px}.t-display{font-size:26px}
 
-/* ── chrome ── */
-.apphdr{display:flex;justify-content:space-between;align-items:center;padding:6px 12px 0;flex:none}
-.apphdr .logo{font-weight:900;font-size:15px;letter-spacing:-.02em}
-.subtabs{display:flex;gap:20px;padding:14px 12px 0;border-bottom:1px solid var(--line);flex:none}
-.subtabs button{background:none;border:0;padding:0 0 11px;font-family:var(--mono);font-size:11px;
-  letter-spacing:.1em;text-transform:uppercase;color:var(--ash);cursor:pointer}
-.subtabs button.on{color:var(--chalk);box-shadow:inset 0 -2px 0 var(--acc)}
-.tabbar{display:flex;align-items:center;border-top:1px solid var(--line);padding:9px 6px 22px;flex:none;
-  background:var(--ink)}
-.tabbar button{flex:1;background:none;border:0;display:flex;flex-direction:column;gap:5px;align-items:center;
-  font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash);
-  cursor:pointer;padding:2px 0}
-.tabbar .g{font-size:16px;line-height:1}
-.tabbar button.on{color:var(--acc)}
-.micbtn{flex:0 0 60px!important;color:var(--onAcc)!important}
-.micbtn .g{width:42px;height:42px;border-radius:50%;background:var(--acc);display:grid;place-items:center;
-  font-size:15px;color:var(--onAcc)}
-.micbtn.live .g{animation:mpulse 1.3s ease-in-out infinite}
-@keyframes mpulse{0%,100%{box-shadow:0 0 0 0 rgba(195,211,99,.5)}50%{box-shadow:0 0 0 9px rgba(195,211,99,0)}}
-
-/* ── primitives ── */
+/* ── ACard (kit.tsx): ink2, hairline, r28, pad 20 ── */
+.card{background:var(--ink2);border:1px solid var(--line);border-radius:var(--rCard);padding:20px;
+  box-shadow:0 6px 18px -12px rgba(0,0,0,.8)}
 .stack{display:flex;flex-direction:column}
-.card{background:var(--ink2);border-radius:14px;padding:15px}
-.hr{height:1px;background:var(--line)}
-.pill{background:var(--acc);color:var(--onAcc);border:0;border-radius:999px;padding:16px;
-  font-family:var(--disp);font-weight:800;font-size:16px;letter-spacing:-.01em;cursor:pointer;width:100%}
-.pillg{background:none;border:1px solid var(--line);color:var(--chalk);border-radius:999px;padding:14px;
-  font-family:var(--disp);font-weight:600;font-size:14px;cursor:pointer;width:100%}
-.chip{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--ash);
-  border:1px solid var(--line);border-radius:3px;padding:3px 7px;display:inline-block}
-.chip.on{color:var(--acc);border-color:var(--acc)}
-.ring{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;
-  color:var(--ash);font-size:14px;flex:none}
+
+/* ── APill ── */
+.pill{background:var(--acc);color:var(--onAcc);border:0;border-radius:var(--rPill);padding:15px;
+  font-family:var(--disp);font-weight:800;font-size:16px;letter-spacing:-.01em;cursor:pointer;width:100%;
+  min-height:44px}
+.pillo{background:none;border:1px solid var(--line);color:var(--chalk);border-radius:var(--rPill);
+  padding:14px;font-family:var(--disp);font-weight:600;font-size:15px;cursor:pointer;width:100%;min-height:44px}
+.chip{font-family:var(--mono);font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:var(--ash);
+  border:1px solid var(--line);border-radius:var(--rMark);padding:4px 8px;display:inline-block}
+.chip.on{color:var(--acc);border-color:rgba(195,211,99,.45)}
+.ring{width:32px;height:32px;border-radius:999px;border:1px solid var(--line);display:grid;place-items:center;
+  color:var(--ash);flex:none}
 .doorrow{display:flex;align-items:center;justify-content:space-between;gap:14px;border-top:1px solid var(--line);
   padding-top:16px;background:none;width:100%;border-left:0;border-right:0;border-bottom:0;cursor:pointer;
   color:var(--chalk);font-family:var(--disp);font-size:15px;font-weight:600;text-align:left}
@@ -92,18 +109,28 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
 .row b{color:var(--chalk);font-family:var(--mono);font-size:12.5px;font-weight:700;
   font-variant-numeric:tabular-nums;flex:none}
 .row b.warn{color:var(--red)}.row b.good{color:var(--acc)}
-.src{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash);flex:none}
+.src{font-family:var(--mono);font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--ash);flex:none}
 .src.m{color:var(--chalk);font-weight:700}
-.delta{font-family:var(--mono);font-size:10px;color:var(--acc);margin-left:6px}
-.delta.dn{color:var(--red)}
-.flash{animation:fl 1.1s ease-out}
-@keyframes fl{0%{background:rgba(195,211,99,.22)}100%{background:transparent}}
+.delta{font-family:var(--mono);font-size:10px;color:var(--acc)}
+
+/* ── SPLIT BOTTOM NAV (core/nav-bar.ts): capsule of four + detached verb ── */
+.navwrap{display:flex;align-items:center;gap:10px;padding:6px var(--gut) 20px;flex:none}
+.capsule{flex:1;display:flex;background:rgba(247,246,243,.055);border:1px solid var(--line);
+  border-radius:var(--rPill);padding:5px}
+.capsule button{flex:1;height:48px;border:0;background:none;border-radius:var(--rPill);color:var(--ash);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;
+  font-family:var(--mono);font-size:8px;letter-spacing:.9px;text-transform:uppercase}
+.capsule button.on{color:var(--chalk);background:var(--line)}
+.verb{width:58px;height:58px;border-radius:999px;background:var(--acc);color:var(--onAcc);border:0;
+  display:grid;place-items:center;cursor:pointer;flex:none;box-shadow:0 8px 20px -10px rgba(195,211,99,.6)}
+.verb.live{animation:vp 1.4s ease-in-out infinite}
+@keyframes vp{0%,100%{box-shadow:0 0 0 0 rgba(195,211,99,.45)}50%{box-shadow:0 0 0 10px rgba(195,211,99,0)}}
 
 /* ── today ── */
-.instr{font-weight:800;font-size:26px;line-height:1.15;letter-spacing:-.026em;text-wrap:balance}
+.instr{font-weight:800;font-size:26px;line-height:1.16;letter-spacing:-.026em;text-wrap:balance}
 .presc{display:flex;align-items:baseline;gap:10px}
 .presc .was{font-size:22px;font-weight:600;color:var(--ash);text-decoration:line-through;letter-spacing:-.03em}
-.presc .now{font-size:34px;font-weight:800;letter-spacing:-.035em;color:var(--acc);font-variant-numeric:tabular-nums}
+.presc .now{font-size:34px;font-weight:800;letter-spacing:-1.2px;color:var(--acc);font-variant-numeric:tabular-nums}
 .presc .sets{font-family:var(--mono);font-size:13px;color:var(--ash);margin-left:auto}
 .why{border:0;background:none;color:var(--ash);font-family:var(--disp);font-size:14px;text-align:left;
   padding:0;cursor:pointer;display:flex;gap:9px;align-items:baseline;width:100%;line-height:1.45}
@@ -116,33 +143,41 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
 
 /* ── performance ── */
 .hpi{display:flex;align-items:baseline;gap:12px}
-.hpi .n{font-size:76px;font-weight:900;letter-spacing:-.05em;line-height:.86;font-variant-numeric:tabular-nums}
+.hpi .n{font-size:72px;font-weight:900;letter-spacing:-2.5px;line-height:.86;font-variant-numeric:tabular-nums}
 .pillar{display:flex;flex-direction:column;gap:6px;padding:11px 0;border-bottom:1px solid var(--line)}
 .pillarhead{display:flex;justify-content:space-between;align-items:baseline}
 .pillarhead b{font-weight:700;font-size:14px}
 .pillarhead span{font-family:var(--mono);font-size:12px;color:var(--ash);font-variant-numeric:tabular-nums}
-.bar{height:4px;background:var(--line);border-radius:2px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--acc);border-radius:2px;transition:width .6s cubic-bezier(.2,.7,.3,1)}
+.bar{height:4px;background:var(--line);border-radius:var(--rMark);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:var(--rMark);
+  transition:width .6s cubic-bezier(.2,.7,.3,1)}
 .bar i.lim{background:var(--red)}
 .traj{display:flex;gap:3px;align-items:flex-end;height:64px}
-.traj i{flex:1;background:var(--line);border-radius:1px;display:block;transition:height .5s ease}
+.traj i{flex:1;background:var(--line);border-radius:var(--rMark);display:block;transition:height .5s ease}
 .traj i.hi{background:var(--acc)}
 
 /* ── feed ── */
 .post{display:flex;flex-direction:column;gap:9px;padding:16px 0;border-bottom:1px solid var(--line)}
-.posthead{display:flex;align-items:center;gap:9px}
-.av{width:30px;height:30px;border-radius:50%;background:var(--ink2);display:grid;place-items:center;
-  font-family:var(--mono);font-size:11px;color:var(--ash);flex:none}
+.posthead{display:flex;align-items:center;gap:10px}
+.av{width:34px;height:34px;border-radius:999px;background:var(--ink2);border:1px solid var(--line);
+  display:grid;place-items:center;font-family:var(--mono);font-size:11px;color:var(--ash);flex:none}
 .posthead b{font-size:13.5px;font-weight:700}
 .posthead span{font-family:var(--mono);font-size:10px;color:var(--ash);margin-left:auto}
 .postbody{font-size:14.5px;line-height:1.45}
 .postbody em{font-style:normal;font-weight:800}
 
-/* ── set ── */
-.slbody{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;text-align:center}
-.slnum{font-size:74px;font-weight:900;letter-spacing:-.045em;line-height:.9;font-variant-numeric:tabular-nums}
+/* ── session / run full screens ── */
+.full{position:absolute;top:30px;left:0;right:0;bottom:0;background:var(--ink);z-index:25;
+  display:flex;flex-direction:column}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.fbar{display:flex;justify-content:space-between;align-items:center;padding:16px var(--gut) 0;flex:none}
+.iconbtn{background:none;border:0;color:var(--ash);cursor:pointer;display:flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:11px;letter-spacing:.9px;text-transform:uppercase;padding:0}
+.slbody{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;text-align:center;
+  padding:0 var(--gut)}
+.slnum{font-size:74px;font-weight:900;letter-spacing:-2.6px;line-height:.9;font-variant-numeric:tabular-nums}
 .setdots{display:flex;gap:5px;justify-content:center}
-.setdots i{width:22px;height:3px;border-radius:2px;background:var(--line);display:block}
+.setdots i{width:22px;height:3px;border-radius:var(--rMark);background:var(--line);display:block}
 .setdots i.done{background:var(--acc)}
 .setdots i.now{background:var(--chalk)}
 .rest{font-family:var(--mono);font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--chalk)}
@@ -153,75 +188,78 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
 .wave i:nth-child(6){animation-delay:.45s}.wave i:nth-child(7){animation-delay:.54s}
 @keyframes w{0%,100%{height:3px}50%{height:17px}}
 
-/* ── fuel ── */
-.short{display:flex;align-items:baseline;gap:9px}
-.short .n{font-size:62px;font-weight:900;letter-spacing:-.05em;line-height:.9;color:var(--acc);
-  font-variant-numeric:tabular-nums}
-.short .n.ok{color:var(--chalk)}
-.short .u{font-size:18px;font-weight:700;color:var(--ash)}
-.fixrow{display:flex;align-items:center;gap:12px;padding:13px 0;border:0;border-bottom:1px solid var(--line);
-  cursor:pointer;background:none;width:100%;text-align:left;color:var(--chalk);font-family:var(--disp)}
-.fixrow.on{opacity:.42}
-.tick{width:20px;height:20px;border-radius:50%;border:1.4px solid var(--line);flex:none;display:grid;
-  place-items:center;font-size:10px;color:var(--ink)}
-.fixrow.on .tick{background:var(--acc);border-color:var(--acc)}
-.nm{flex:1;font-size:14.5px;font-weight:700;line-height:1.3}
-.nm em{display:block;font-style:normal;font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:3px}
-.gm{font-family:var(--mono);font-size:12px;color:var(--acc);flex:none;font-variant-numeric:tabular-nums}
-.macro{display:flex;gap:8px}
-.macro div{flex:1;display:flex;flex-direction:column;gap:5px}
-.macro .l{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--ash)}
-.macro .v{font-family:var(--mono);font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
-
-/* ── sport ── */
+/* ── run ── */
+.runbig{display:flex;align-items:baseline;gap:9px;justify-content:center}
+.runbig .n{font-size:80px;font-weight:900;letter-spacing:-2.8px;line-height:.88;font-variant-numeric:tabular-nums}
+.runbig .u{font-size:19px;font-weight:700;color:var(--ash)}
+.runstats{display:flex;gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.runstats div{flex:1;padding:14px 0;display:flex;flex-direction:column;gap:4px;align-items:center}
+.runstats div+div{border-left:1px solid var(--line)}
+.runstats .v{font-family:var(--mono);font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.runline{font-size:21px;font-weight:800;line-height:1.24;letter-spacing:-.024em;text-wrap:balance}
+.runline.acc{color:var(--acc)}
+.zone{display:flex;gap:3px;height:8px}
+.zone i{display:block;background:var(--line);flex:1;border-radius:var(--rMark)}
+.zone i.on{background:var(--acc)}.zone i.over{background:var(--red)}
+.eartag{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:9.5px;
+  letter-spacing:1.2px;text-transform:uppercase;color:var(--acc);border:1px solid rgba(195,211,99,.35);
+  border-radius:var(--rPill);padding:6px 12px;align-self:center}
+.eartag .dot{width:5px;height:5px;border-radius:50%;background:var(--acc);animation:vp 1.4s ease-in-out infinite}
+.earline{background:var(--ink2);border:1px solid var(--line);border-radius:var(--rInner);padding:13px 15px;
+  font-size:15px;line-height:1.4;animation:up .3s cubic-bezier(.2,.75,.3,1);display:flex;gap:11px;align-items:flex-start}
+.earline .kv{color:var(--acc);flex:none;margin-top:2px}
 .lane{display:flex;flex-direction:column;gap:8px;padding:14px 0;border-bottom:1px solid var(--line);
   background:none;border-left:0;border-right:0;border-top:0;width:100%;cursor:pointer;text-align:left}
 .lanehead{display:flex;justify-content:space-between;align-items:baseline}
 .lanehead b{font-weight:800;font-size:15px;color:var(--chalk);font-family:var(--disp)}
 .lanehead span{font-family:var(--mono);font-size:11px;color:var(--ash);font-variant-numeric:tabular-nums}
 .spark{display:flex;gap:3px;align-items:flex-end;height:32px}
-.spark i{flex:1;background:var(--line);border-radius:1px;display:block}
+.spark i{flex:1;background:var(--line);border-radius:var(--rMark);display:block}
 .spark i.hi{background:var(--acc)}
-.runbig{display:flex;align-items:baseline;gap:8px}
-.runbig .n{font-size:64px;font-weight:900;letter-spacing:-.05em;line-height:.9;font-variant-numeric:tabular-nums}
-.runbig .u{font-size:19px;font-weight:700;color:var(--ash)}
-.runline{font-size:21px;font-weight:800;line-height:1.24;letter-spacing:-.024em;text-wrap:balance}
-.zone{display:flex;gap:3px;height:8px}
-.zone i{display:block;background:var(--line);flex:1;border-radius:1px}
-.zone i.on{background:var(--acc)}.zone i.over{background:var(--red)}
-.eartag{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9.5px;
-  letter-spacing:.13em;text-transform:uppercase;color:var(--acc);border:1px solid rgba(195,211,99,.35);
-  border-radius:999px;padding:5px 11px;align-self:flex-start}
-.eartag .dot{width:5px;height:5px;border-radius:50%;background:var(--acc)}
+
+/* ── film ── */
+.filmseg{display:flex;gap:4px;padding:0 var(--gut) 20px}
+.filmseg i{flex:1;height:2px;border-radius:2px;background:var(--line);overflow:hidden;display:block}
+.filmseg i b{display:block;height:100%;width:0;background:var(--acc)}
+.fstage{flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;padding:0 var(--gut)}
+.fbig{font-size:84px;font-weight:900;letter-spacing:-3px;line-height:.86;font-variant-numeric:tabular-nums}
+.fmid{font-size:27px;font-weight:800;line-height:1.2;letter-spacing:-.028em;text-wrap:balance}
+.fbars{display:flex;gap:8px;align-items:flex-end;height:180px}
+.fbars>div{flex:1;display:flex;flex-direction:column;gap:8px;justify-content:flex-end;height:100%}
+.fbars i{display:block;background:var(--line);border-radius:var(--rMark);height:0;
+  transition:height .7s cubic-bezier(.2,.7,.3,1)}
+.fbars i.hi{background:var(--acc)}
+.fbars span{font-family:var(--mono);font-size:10px;color:var(--ash);text-align:center}
+.vrow{display:flex;flex-direction:column;gap:7px}
+.vrow i{display:block;height:10px;width:0;background:var(--line);border-radius:var(--rMark);
+  transition:width .8s cubic-bezier(.2,.7,.3,1)}
+.vrow i.hi{background:var(--acc)}
+.narr{padding:14px var(--gut);border-top:1px solid var(--line);font-size:14px;line-height:1.4;
+  color:var(--ash);min-height:66px;display:flex;align-items:center}
 
 /* ── overlays ── */
 .ovl{position:absolute;inset:0;background:rgba(12,13,12,.74);display:flex;flex-direction:column;
   justify-content:flex-end;z-index:30;animation:fade .2s ease}
-@keyframes fade{from{opacity:0}to{opacity:1}}
-.sheet{background:var(--ink2);border-top:1px solid var(--line);border-radius:20px 20px 0 0;
-  padding:10px 12px 24px;animation:up .28s cubic-bezier(.2,.75,.3,1);max-height:82%;overflow-y:auto}
+.sheet{background:var(--ink2);border-top:1px solid var(--line);border-radius:var(--rCard) var(--rCard) 0 0;
+  padding:10px var(--gut) 24px;animation:up .28s cubic-bezier(.2,.75,.3,1);max-height:82%;overflow-y:auto}
 @keyframes up{from{transform:translateY(24px)}to{transform:none}}
 .grab{width:34px;height:3px;border-radius:2px;background:var(--line);margin:0 auto 16px}
-.full{position:absolute;inset:0;background:var(--ink);z-index:25;display:flex;flex-direction:column;
-  animation:fade .22s ease}
-.toast{position:absolute;left:12px;right:12px;bottom:88px;background:var(--ink2);border:1px solid var(--line);
-  border-radius:10px;padding:12px 14px;font-size:13.5px;line-height:1.4;z-index:40;
-  animation:up .25s cubic-bezier(.2,.75,.3,1)}
-.toast b{color:var(--acc);font-weight:700}
-#ovl > .full ~ .toast{bottom:auto;top:58px}
 .utt{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;background:none;
-  border:0;border-bottom:1px solid var(--line);padding:13px 2px;cursor:pointer;text-align:left;
-  color:var(--chalk);font-family:var(--disp);font-size:15px;font-weight:600}
-.utt span{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);
+  border:0;border-bottom:1px solid var(--line);padding:14px 2px;cursor:pointer;text-align:left;
+  color:var(--chalk);font-family:var(--disp);font-size:15px;font-weight:600;min-height:44px}
+.utt span{font-family:var(--mono);font-size:10px;letter-spacing:.9px;text-transform:uppercase;color:var(--ash);
   flex:none;text-align:right}
+.toast{position:absolute;left:var(--gut);right:var(--gut);bottom:96px;background:var(--ink2);
+  border:1px solid var(--line);border-radius:var(--rInner);padding:12px 14px;font-size:13.5px;line-height:1.4;
+  z-index:40;animation:up .25s cubic-bezier(.2,.75,.3,1)}
+.toast b{color:var(--acc);font-weight:700}
+#ovl > .full ~ .toast{bottom:auto;top:62px}
 
 /* ── side rail ── */
 .rail{max-width:62ch}
 .rail h3{font-size:15px;font-weight:700;margin:0 0 10px}
-.rail h3+p{margin-top:0}
 .rail p{color:var(--mut);font-size:15.5px;line-height:1.62;margin:0 0 13px}
 .rail p strong{color:var(--tx);font-weight:700}
-.rail code{font-family:var(--mono);font-size:.85em;background:var(--rule);padding:1.5px 5px;border-radius:2px;color:var(--tx)}
 .blkr{border-top:1px solid var(--rule);padding-top:26px;margin-top:26px}
 .try{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:8px;overflow:hidden}
 .try button{background:var(--bg);border:0;padding:14px 16px;text-align:left;cursor:pointer;color:var(--tx);
@@ -234,8 +272,6 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
 .sbtn{font-family:var(--mono);font-size:11px;letter-spacing:.09em;text-transform:uppercase;background:none;
   color:var(--mut);border:1px solid var(--rule);border-radius:999px;padding:9px 16px;cursor:pointer}
 .sbtn.on{background:var(--accTx);border-color:var(--accTx);color:var(--bg);font-weight:700}
-.sbtn:hover{color:var(--tx)}
-.sbtn.on:hover{color:var(--bg)}
 :focus-visible{outline:2px solid var(--accTx);outline-offset:2px;border-radius:2px}
 @media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition-duration:.001s!important}}
 .foot{margin-top:66px;padding-top:24px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:11px;
@@ -243,9 +279,9 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
 </style>
 <div class="page">
 <header class="mast">
-  <div class="eyebrow"><span>HYBRID</span><span>Working prototype</span><span>August 2026</span><b>The engines actually run</b></div>
+  <div class="eyebrow"><span>HYBRID</span><span>Working prototype</span><span>August 2026</span><b>On the real kit</b></div>
   <h1>HYBRID Prototype</h1>
-  <p class="deck">The ambient interface as a <b>working app</b> — Today and its three tabs, Sport, Fuel and the live set. Nothing here is a picture. Log a set and watch readiness fall, tomorrow's bar drop, your protein target rise and HPI's limiter change, <b>because the same simplified engines feed all four screens</b>. That interconnection is the product; the screens are just where it surfaces.</p>
+  <p class="deck">The ambient interface wearing <b>the app's actual chrome</b> — the three-column AppHeader, the Today hub's glyph pills, the split bottom nav with its detached verb circle, <code>RADIUS</code>'s five rungs and the 72×72 monoline glyphs, all read off <code>core/app-header.ts</code>, <code>today-tabs.ts</code>, <code>nav-bar.ts</code>, <code>geometry.ts</code> and <code>theme/icons.ts</code>. Only the content and the flows are new. Log a set and watch readiness, freshness, tomorrow's bar and your protein target move together.</p>
 </header>
 
 <div class="stage">
@@ -253,13 +289,13 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
     <div class="sbar"><span id="clock">9:41</span><span>◐ ▮▮▮</span></div>
     <div id="chrome"></div>
     <div id="view"></div>
-    <div id="tabs"></div>
+    <div id="nav"></div>
     <div id="ovl"></div>
   </div></div>
 
   <div class="rail">
     <h3>Try this, in order</h3>
-    <p>Each step changes numbers on the other three screens. The point is not the screen you are on — it is what moves everywhere else.</p>
+    <p>Each step changes numbers on the other screens. The point is not the screen you are on — it is what moves everywhere else.</p>
     <div class="try" id="tryList"></div>
 
     <div class="blkr">
@@ -273,14 +309,19 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
     </div>
 
     <div class="blkr">
+      <h3>What is your kit, unchanged</h3>
+      <p>The <strong>AppHeader's</strong> 44dp tiles with the wordmark centred by construction and the streak on its second line. The <strong>hub pills</strong> carrying glyphs rather than three words of unequal length, with a neutral selection — not the brand chartreuse. The <strong>masthead's</strong> fixed 15dp meta row holding the title's y steady across all three tabs. The <strong>split nav</strong>: four places in the capsule, the verb detached beside it in the accent, morphing per surface exactly as <code>auroraNavAction</code> specifies — Train on Today, Add post on Feed, Say on Nutrition. Radii come from the five rungs and nowhere else.</p>
+    </div>
+
+    <div class="blkr">
       <h3>What is actually simulated</h3>
-      <p><strong>Readiness</strong> falls out of sleep debt, resting-HR delta and accumulated muscle cost. <strong>The prescription</strong> is that morning readiness mapped to a load factor and rounded to the plate. <strong>Freshness</strong> decays per working set and takes a 9-point hit from a run. <strong>The protein target</strong> scales with the tonnage you actually move, so finishing your session raises it while you stand there. <strong>HPI</strong> is the three pillars weighted, which is why a hard session pushes strength up and recovery down and the headline barely moves — an honest result, and one a rings-and-streaks app would never show you.</p>
-      <p>Real HYBRID does all of this properly in <code>readiness.ts</code>, <code>effort.ts</code>, <code>recovery-pairs.ts</code>, <code>landmark-adapt.ts</code> and <code>hpi.ts</code>. These are toy versions with the same shape.</p>
+      <p><strong>Readiness</strong> falls out of sleep debt, resting-HR delta and accumulated muscle cost. <strong>The prescription</strong> is that readiness mapped to a load factor and rounded to the plate. <strong>Freshness</strong> decays per working set and takes a 9-point hit from the run. <strong>The protein target</strong> scales with tonnage actually moved, so finishing your session raises it while you stand there. <strong>HPI</strong> is the three pillars weighted, which is why a hard session pushes strength up and recovery down and the headline barely moves.</p>
+      <p>Real HYBRID does this properly in <code>readiness.ts</code>, <code>effort.ts</code>, <code>recovery-pairs.ts</code>, <code>landmark-adapt.ts</code> and <code>hpi.ts</code>. These are toy versions with the same shape.</p>
     </div>
 
     <div class="blkr">
       <h3>What is faked, honestly</h3>
-      <p>Voice is a menu, not a microphone — tap the ⏺ button and pick an utterance. The run is a three-second animation rather than 46 minutes. The film is real motion graphics but the narration is text, not audio. <strong>Nothing here needs a camera</strong>, which is the finding rather than a limitation.</p>
+      <p>Voice is a menu, not a microphone — press the accent circle and pick an utterance. The run is fourteen seconds rather than forty-six minutes. The film is real motion graphics but the narration is text, not audio. <strong>Nothing here needs a camera</strong>, which is the finding rather than a limitation.</p>
     </div>
   </div>
 </div>
@@ -293,512 +334,556 @@ h1{font-weight:900;letter-spacing:-.032em;line-height:.95;font-size:clamp(38px,6
 var $ = function(id){ return document.getElementById(id); };
 var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
 var r25 = function(v){ return Math.round(v/2.5)*2.5; };
-var fmtKg = function(v){ return (v % 1 ? v.toFixed(1) : v); };
+var kg = function(v){ return (v % 1 ? v.toFixed(1) : v); };
 var fmtH = function(v){ var h = Math.floor(v); return h + " h " + ("0" + Math.round((v-h)*60)).slice(-2); };
+var mmss = function(s){ return Math.floor(s/60) + ":" + ("0" + Math.round(s%60)).slice(-2); };
+
+/* ══════════ GLYPHS — packages/core/src/theme/icons.ts, 72×72, stroke ══════════ */
+var G = {
+  village:["M27 59.9999L42 59.9997V29.485C42 27.8937 41.3679 26.3676 40.2426 25.2424L31.2426 16.2424C28.8995 13.8992 25.1005 13.8992 22.7574 16.2424L13.7574 25.2424C12.6321 26.3676 12 27.8937 12 29.485V53.9998C12 57.3135 14.6863 60 18 60M42 60H54C57.3137 60 60 57.3137 60 54V33C60 29.6863 57.3137 27 54 27H42"],
+  "fork-knife":["M13.5 9V30C13.5 36.6274 18.8726 42 25.5 42C32.1274 42 37.5 36.6274 37.5 30V9","M25.5 9V63","M52.5 9C48 13.5 46.5 21 46.5 30C46.5 39 48 42 52.5 42C57 42 58.5 39 58.5 30C58.5 21 57 13.5 52.5 9Z","M52.5 42V63"],
+  mail:["M9 24L32.6718 39.7812C34.6872 41.1248 37.3128 41.1248 39.3282 39.7812L63 24M15 57H57C60.3137 57 63 54.3137 63 51V21C63 17.6863 60.3137 15 57 15H15C11.6863 15 9 17.6863 9 21V51C9 54.3137 11.6863 57 15 57Z"],
+  "user-circle":["M54 56.125C52.4497 49.125 46.607 45 36.0004 45C25.3938 45 19.5503 49.125 18 56.125M36 63C50.9117 63 63 50.9117 63 36C63 21.0883 50.9117 9 36 9C21.0883 9 9 21.0883 9 36C9 50.9117 21.0883 63 36 63ZM36 36C40 36 42 33 42 28C42 23 40 21 36 21C32 21 30 23 30 28C30 33 32 36 36 36Z"],
+  train:["M12 27v18M21 21v30M51 21v30M60 27v18M21 36h30"],
+  mic:["M27 12 a9 9 0 0 1 18 0 L45 34 a9 9 0 0 1 -18 0 Z","M18 33 a18 18 0 0 0 36 0","M36 51 L36 62","M27 62 L45 62"],
+  "list-add":["M51 57V33M9 33H39M9 21H39M9 45H27M39 45H63"],
+  flame:["M36 9C42 18 51 26 51 41C51 53 44.2843 63 36 63C27.7157 63 21 53 21 41C21 32 24.75 26.25 28.5 22.5C28.5 28.5 31.5 32 35 32C33 26 33 17 36 9Z"],
+  bell:["M36 63a5 5 0 0 0 5-5H31a5 5 0 0 0 5 5Z","M18 51c3-4 3-7 3-14 0-9 6-19 15-19s15 10 15 19c0 7 0 10 3 14Z"],
+  back:["M33 54L15 36L33 18M15 36H57"],
+  chevron:["M28 20 L44 36 L28 52"],
+  check:["M13.5 39L28.5 54L58.5 19.5"],
+  close:["M20 20L52 52M52 20L20 52"],
+  dashboard:["M12 16a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v40a4 4 0 0 1-4 4H16a4 4 0 0 1-4-4z","M42 16a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H46a4 4 0 0 1-4-4z","M42 46a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H46a4 4 0 0 1-4-4z"],
+  performance:["M12 58H60","M23 58V40","M36 58V28","M49 58V14"],
+  feed:["M50 31a7 7 0 1 0 0-14 7 7 0 0 0 0 14Z","M46 40c8 0 14 5 14 14","M30 35a9.5 9.5 0 1 0 0-19 9.5 9.5 0 0 0 0 19Z","M13 59c0-10 7.5-16 17-16s17 6 17 16"]
+};
+/* auroraIconStroke(size) — the one size→stroke rule, both clients */
+function stroke(size){ return size <= 14 ? 5.5 : size <= 18 ? 4.5 : size <= 24 ? 3.5 : 3; }
+function ico(name, size, sw){
+  size = size || 22;
+  return '<svg class="g" width="' + size + '" height="' + size + '" viewBox="0 0 72 72" stroke-width="'
+    + (sw || stroke(size)) + '" aria-hidden="true">'
+    + (G[name] || []).map(function(d){ return '<path d="' + d + '"/>'; }).join("") + '</svg>';
+}
 
 /* ══════════ THE PLAN ══════════ */
 var PLAN = [
-  { name:"Back Squat",          sets:5, reps:3,  base:100, m:"quad", cost:2.2 },
-  { name:"Romanian Deadlift",   sets:3, reps:8,  base:80,  m:"ham",  cost:0.9 },
-  { name:"Walking Lunge",       sets:3, reps:20, base:20,  m:"quad", cost:1.4 }
+  { name:"Back Squat",        sets:5, reps:3,  base:100, cost:2.2 },
+  { name:"Romanian Deadlift", sets:3, reps:8,  base:80,  cost:0.9 },
+  { name:"Walking Lunge",     sets:3, reps:20, base:20,  cost:1.4 }
 ];
 var FIX = [
-  { n:"Skyr, 170 g",         s:"In your pantry — you log it most days", g:18 },
-  { n:"Whey, one scoop",     s:"14 servings left",                      g:24 },
-  { n:"Chicken thigh, 120 g",s:"Your usual Tuesday dinner",             g:26 }
+  { n:"Skyr, 170 g",          s:"In your pantry — you log it most days", g:18 },
+  { n:"Whey, one scoop",      s:"14 servings left",                      g:24 },
+  { n:"Chicken thigh, 120 g", s:"Your usual Tuesday dinner",             g:26 }
+];
+var EAR = [
+  { at:0.4, t:"Settle in. Nothing to look at for the next forty minutes." },
+  { at:3.2, t:"You're 28 seconds quick. Ease off." },
+  { at:6.0, t:"Better. Hold this to the end." }
 ];
 
 /* ══════════ STATE ══════════ */
 var S;
 function reset(keepScen){
   var sc = keepScen && S ? S.scen : "poor";
-  S = { scen:sc, tab:"today", sub:"dash", why:false, ex:0, set:0, logged:[],
+  S = { scen:sc, tab:"today", sub:"dashboard", why:false, ex:0, set:0, logged:[],
         session:false, done:false, rest:0, restTick:null, nextRpe:null, bump:0,
-        run:false, runStage:-1, fix:[false,false,false], extraP:0,
-        ovl:null, sport:"lanes", toast:null, toastT:null, film:0, filmT:null };
+        run:false, push:null, km:0, runTick:null, ears:[], zone:"ok",
+        fix:[false,false,false], extraP:0, ovl:null, toast:null, toastT:null,
+        film:0, filmT:null, filmP:0 };
 }
 reset();
 
-/* ══════════ ENGINES (toy versions of the real ones) ══════════ */
+/* ══════════ ENGINES ══════════ */
 var E = {
-  sleep:      function(){ return S.scen === "poor" ? 5.2 : 7.8; },
-  rhr:        function(){ return S.scen === "poor" ? 7 : 1; },
-  sleepDebt:  function(){ return Math.max(0, 8 - E.sleep()); },
-  /* cost accumulated TODAY, from sets logged and any run */
-  spent: function(){
-    var c = 0;
-    S.logged.forEach(function(l){ c += PLAN[l.ex].cost; });
-    return c + (S.run ? 9 : 0);
-  },
-  /* the morning read — what the prescription is computed from */
-  morning: function(){
-    return Math.round(clamp(100 - E.sleepDebt()*5 - E.rhr()*1.5 - 7, 20, 99));
-  },
-  /* the live read — the morning, minus what today has already cost */
-  now: function(){ return Math.round(clamp(E.morning() - E.spent()*0.55, 5, 99)); },
-  factor:  function(){ return clamp((E.morning() - 85)/200, -0.10, 0.05); },
-  presc:   function(i){ return r25(PLAN[i].base * (1 + E.factor())) + (i === 0 ? S.bump : 0); },
-  tonnage: function(){ var t=0; S.logged.forEach(function(l){ t += l.load*l.reps; }); return t; },
-  fresh:   function(){ return Math.round(clamp(100 - E.spent(), 0, 100)); },
-  pTarget: function(){ return Math.round(82 * (1.6 + 0.5 * Math.min(1, E.tonnage()/4200))); },
-  pLogged: function(){
-    var p = 126 + S.extraP;
-    S.fix.forEach(function(t,i){ if(t) p += FIX[i].g; });
-    return p;
-  },
-  pShort:  function(){ return Math.max(0, E.pTarget() - E.pLogged()); },
+  sleep:function(){ return S.scen === "poor" ? 5.2 : 7.8; },
+  rhr:function(){ return S.scen === "poor" ? 7 : 1; },
+  debt:function(){ return Math.max(0, 8 - E.sleep()); },
+  spent:function(){ var c = 0; S.logged.forEach(function(l){ c += PLAN[l.ex].cost; }); return c + (S.run ? 9 : 0); },
+  morning:function(){ return Math.round(clamp(100 - E.debt()*5 - E.rhr()*1.5 - 7, 20, 99)); },
+  now:function(){ return Math.round(clamp(E.morning() - E.spent()*0.55, 5, 99)); },
+  factor:function(){ return clamp((E.morning() - 85)/200, -0.10, 0.05); },
+  presc:function(i){ return r25(PLAN[i].base * (1 + E.factor())) + (i === 0 ? S.bump : 0); },
+  tonnage:function(){ var t = 0; S.logged.forEach(function(l){ t += l.load*l.reps; }); return t; },
+  fresh:function(){ return Math.round(clamp(100 - E.spent(), 0, 100)); },
+  pTarget:function(){ return Math.round(82 * (1.6 + 0.5 * Math.min(1, E.tonnage()/4200))); },
+  pLogged:function(){ var p = 126 + S.extraP; S.fix.forEach(function(t,i){ if(t) p += FIX[i].g; }); return p; },
+  pShort:function(){ return Math.max(0, E.pTarget() - E.pLogged()); },
   tomorrow:function(){ return r25(100 * (1 - (100 - E.fresh())/100 * 0.55)); },
   strength:function(){ return Math.round(clamp(52 + E.tonnage()/240, 52, 82)); },
-  endur:   function(){ return S.run ? 71 : 66; },
-  hpi:     function(){ return Math.round(E.strength()*0.4 + E.endur()*0.3 + E.now()*0.3); },
-  limiter: function(){
+  endur:function(){ return S.run ? 71 : 66; },
+  hpi:function(){ return Math.round(E.strength()*0.4 + E.endur()*0.3 + E.now()*0.3); },
+  limiter:function(){
     var p = [["Strength",E.strength()],["Endurance",E.endur()],["Recovery",E.now()]];
     p.sort(function(a,b){ return a[1]-b[1]; }); return p[0][0];
   },
-  rpeAvg: function(){
+  rpeAvg:function(){
     var r = S.logged.filter(function(l){ return l.rpe; });
-    if(!r.length) return null;
-    return (r.reduce(function(a,l){ return a+l.rpe; },0)/r.length).toFixed(1);
+    return r.length ? (r.reduce(function(a,l){ return a+l.rpe; },0)/r.length).toFixed(1) : null;
   },
-  setsLeft: function(){
-    var n = 0;
-    for(var i=0;i<PLAN.length;i++) n += PLAN[i].sets;
-    return n - S.logged.length;
-  }
+  left:function(){ var n = 0; PLAN.forEach(function(p){ n += p.sets; }); return n - S.logged.length; }
 };
 
-/* ══════════ HELPERS ══════════ */
-function toast(msg){
-  clearTimeout(S.toastT); S.toast = msg;
-  S.toastT = setTimeout(function(){ S.toast = null; paint(); }, 4200);
+/* ══════════ CHROME ══════════ */
+function appHeader(){
+  return '<div class="ahdr">'
+    + '<button class="tile av" data-act="noop">RA</button>'
+    + '<div class="lockup"><div class="wordmark">HYBRID</div>'
+    + '<div class="streak">' + ico("flame", 11, 6) + '17d</div></div>'
+    + '<button class="tile" data-act="noop">' + ico("bell", 21, 3.5)
+    + '<span class="badge">1</span></button></div>';
 }
-function delta(before, after, unit, invert){
-  if(before === after) return "";
-  var up = after > before;
-  var good = invert ? !up : up;
-  return ' <span class="delta' + (good ? "" : " dn") + '">' + fmtKg(before) + " → " + fmtKg(after) + (unit||"") + "</span>";
+function hubPills(){
+  return '<div class="hubpills">' + ["dashboard","performance","feed"].map(function(id){
+    return '<button data-act="sub:' + id + '" class="' + (S.sub === id ? "on" : "") + '" aria-label="' + id + '">'
+      + ico(id, 21, 3.5) + '</button>';
+  }).join("") + '</div>';
 }
-function bars(vals, hiLast){
-  return vals.map(function(v,i){
-    return '<i class="' + (hiLast && i === vals.length-1 ? "hi" : "") + '" style="height:' + v + '%"></i>';
-  }).join("");
+function masthead(eyebrow, meta, title){
+  return '<div class="mhead"><div class="mmeta"><span>' + eyebrow + '</span><span>' + (meta||"") + '</span></div>'
+    + '<div class="mtitle">' + title + '</div></div><div class="mbelow"></div>';
+}
+var NAV = [["today","village","Today"],["nutrition","fork-knife","Nutrition"],
+           ["messages","mail","Messages"],["profile","user-circle","Profile"]];
+function verbFor(){
+  if(S.tab === "today" && S.sub === "feed") return { g:"list-add", a:"post", l:"Add post" };
+  if(S.tab === "nutrition") return { g:"mic", a:"ovl:voice", l:"Say" };
+  if(S.tab === "messages") return { g:"list-add", a:"noop", l:"New" };
+  return { g:"train", a:"start", l:"Train" };
+}
+function navBar(){
+  var v = verbFor();
+  return '<div class="navwrap"><div class="capsule">' + NAV.map(function(t){
+      return '<button data-act="tab:' + t[0] + '" class="' + (S.tab === t[0] ? "on" : "") + '">'
+        + ico(t[1], 22) + t[2] + '</button>';
+    }).join("") + '</div>'
+    + '<button class="verb' + (S.ovl === "voice" ? " live" : "") + '" data-act="' + v.a
+    + '" aria-label="' + v.l + '">' + ico(v.g, 26, 3) + '</button></div>';
 }
 
 /* ══════════ SCREENS ══════════ */
-function todayDash(){
-  var m = E.morning(), load = E.presc(0), changed = load !== PLAN[0].base;
-  var verb = load < PLAN[0].base ? "go lighter than the plan" : "there's room to go up";
-  return '<div class="pad stack" style="gap:24px;padding-top:20px;padding-bottom:24px">'
-    + '<div><div class="kick" style="margin-bottom:14px">Tuesday — Week 3 of 8</div>'
-    + '<div class="instr">' + (S.done
-      ? "Squat done. Now it is about what you eat and how you sleep."
-      : changed ? "Squat, and " + verb + "." : "Squat, exactly as written.") + '</div></div>'
-    + '<div class="presc">'
-    + (changed ? '<span class="was">' + PLAN[0].base + '</span>' : "")
-    + '<span class="now">' + fmtKg(load) + '<span style="font-size:18px;font-weight:600"> kg</span></span>'
+function drv(l, src, v, m){
+  return '<div class="row"><span>' + l + '</span><span class="src' + (m?" m":"") + '">' + src + '</span><b>' + v + '</b></div>';
+}
+function dashboard(){
+  var load = E.presc(0), changed = load !== PLAN[0].base;
+  return '<div class="gut stack" style="gap:24px;padding-bottom:24px">'
+    + '<div class="instr">' + (S.done ? "Squat done. Now it is about what you eat and how you sleep."
+        : changed ? (load < PLAN[0].base ? "Squat, and go lighter than the plan." : "Squat, and there is room to go up.")
+        : "Squat, exactly as written.") + '</div>'
+    + '<div class="presc">' + (changed ? '<span class="was">' + PLAN[0].base + '</span>' : "")
+    + '<span class="now">' + kg(load) + '<span style="font-size:18px;font-weight:600"> kg</span></span>'
     + '<span class="sets">5 × 3</span></div>'
     + '<div><button class="why" data-act="why"><span class="pm">' + (S.why ? "−" : "＋") + '</span>'
-    + '<span>Because you slept ' + fmtH(E.sleep()) + ' and your resting HR is '
-    + E.rhr() + ' bpm above baseline.</span></button>'
+    + '<span>Because you slept ' + fmtH(E.sleep()) + ' and your resting HR is ' + E.rhr() + ' bpm above baseline.</span></button>'
     + (S.why ? '<div style="margin-top:12px">'
-        + drv("Sleep debt", "measured", "−" + E.sleepDebt().toFixed(1) + " h", 1)
-        + drv("Resting HR vs baseline", "measured", "+" + E.rhr() + " bpm", 1)
-        + drv("Morning readiness", "observed", m + " / 100")
-        + drv("Your clearance rate", "profile", "0.85×")
-        + '</div>' : "")
-    + '</div>'
+        + drv("Sleep debt","measured","−" + E.debt().toFixed(1) + " h",1)
+        + drv("Resting HR vs baseline","measured","+" + E.rhr() + " bpm",1)
+        + drv("Morning readiness","observed",E.morning() + " / 100")
+        + drv("Your clearance rate","profile","0.85×") + '</div>' : "") + '</div>'
     + (S.done
         ? '<div class="card stack" style="gap:9px"><span class="kick acc">Session done</span>'
           + '<div style="font-size:19px;font-weight:800;letter-spacing:-.02em;line-height:1.25">'
           + (E.tonnage()/1000).toFixed(1) + ' tonnes moved. Freshness ' + E.fresh() + '%.</div>'
-          + '<div class="t-body ash" style="line-height:1.45">Tomorrow\'s squat is ' + fmtKg(E.tomorrow())
+          + '<div class="t-body ash" style="line-height:1.45">Tomorrow\'s squat is ' + kg(E.tomorrow())
           + ' kg, and your protein target moved to ' + E.pTarget() + ' g.</div></div>'
         : '<button class="pill" data-act="start">' + (S.logged.length ? "Resume the session" : "Start") + '</button>')
     + '<div class="weekstrip"><div class="done">M</div><div class="now">T</div><div>W</div><div>T</div><div>F</div><div>S</div><div>S</div></div>'
-    + '<button class="doorrow" data-act="tab:sport"><span>Easy 8 km is on tomorrow</span><span class="ring">→</span></button>'
-    + '</div>';
+    + '<button class="doorrow" data-act="push:sport"><span>' + (S.run ? "Endurance — today\'s 8 km is in" : "Endurance — easy 8 km tomorrow")
+    + '</span><span class="ring">' + ico("chevron",14,5.5) + '</span></button></div>';
 }
-function drv(label, src, val, m){
-  return '<div class="row"><span>' + label + '</span><span class="src' + (m ? " m" : "") + '">' + src
-    + '</span><b>' + val + '</b></div>';
+function pillar(n, v, lim){
+  return '<div class="pillar"><div class="pillarhead"><b>' + n + '</b><span>' + v + '</span></div>'
+    + '<div class="bar"><i class="' + (lim?"lim":"") + '" style="width:' + v + '%"></i></div></div>';
 }
-function todayPerf(){
+function performance(){
   var hp = E.hpi(), lim = E.limiter();
-  var traj = [58,61,59,64,62,66,65,63,68,67,64,69,68,Math.round(hp)];
-  return '<div class="pad stack" style="gap:26px;padding-top:20px;padding-bottom:24px">'
-    + '<div><div class="kick" style="margin-bottom:10px">Performance State</div>'
+  var traj = [58,61,59,64,62,66,65,63,68,67,64,69,68,hp];
+  return '<div class="gut stack" style="gap:26px;padding-bottom:24px">'
     + '<div class="hpi"><span class="n fig">' + hp + '</span><span class="t-heading ash" style="font-weight:600">HPI</span></div>'
-    + '<div class="t-body ash" style="margin-top:8px">Limited by <span style="color:var(--chalk);font-weight:700">'
-    + lim.toLowerCase() + '</span>' + (S.logged.length ? ' — ' + S.logged.length + ' sets logged today' : '') + '</div></div>'
-    + '<div>' + pillar("Strength", E.strength(), lim === "Strength")
-              + pillar("Endurance", E.endur(), lim === "Endurance")
-              + pillar("Recovery", E.now(), lim === "Recovery") + '</div>'
-    + '<div><div class="kick" style="margin-bottom:12px">14 days</div>'
-    + '<div class="traj">' + bars(traj.map(function(v){ return Math.round(v/85*100); }), true) + '</div></div>'
+    + '<div class="t-body ash" style="margin-top:-16px">Limited by <span style="color:var(--chalk);font-weight:700">'
+    + lim.toLowerCase() + '</span>' + (S.logged.length ? " — " + S.logged.length + " sets logged today" : "") + '</div>'
+    + '<div>' + pillar("Strength",E.strength(),lim==="Strength") + pillar("Endurance",E.endur(),lim==="Endurance")
+    + pillar("Recovery",E.now(),lim==="Recovery") + '</div>'
+    + '<div><div class="kick" style="margin-bottom:12px">14 days</div><div class="traj">'
+    + traj.map(function(v,i){ return '<i class="' + (i===13?"hi":"") + '" style="height:' + Math.round(v/85*100) + '%"></i>'; }).join("")
+    + '</div></div>'
     + '<div><div class="kick" style="margin-bottom:4px">Tissue load</div>'
-    + '<div class="row"><span>Quadriceps</span><b class="' + (E.fresh() < 80 ? "warn" : "") + '">'
-      + E.fresh() + '% fresh</b></div>'
+    + '<div class="row"><span>Quadriceps</span><b class="' + (E.fresh()<80?"warn":"") + '">' + E.fresh() + '% fresh</b></div>'
     + '<div class="row"><span>Hamstrings</span><b>94% fresh</b></div>'
     + '<div class="row"><span>Acute : chronic load</span><b>' + (1.02 + E.spent()/90).toFixed(2) + '</b></div>'
-    + '<div class="row" style="border-bottom:0"><span>Tomorrow\'s squat</span><b class="good">'
-      + fmtKg(E.tomorrow()) + ' kg</b></div></div>'
+    + '<div class="row" style="border-bottom:0"><span>Tomorrow\'s squat</span><b class="good">' + kg(E.tomorrow()) + ' kg</b></div></div>'
     + '<div class="t-body ash" style="line-height:1.5">A hard session pushes strength up and recovery down, so the headline barely moves. '
-    + 'That is the honest read, and it is why one number on its own is never the answer.</div>'
-    + '</div>';
-}
-function pillar(name, val, isLim){
-  return '<div class="pillar"><div class="pillarhead"><b>' + name + '</b><span>' + val + '</span></div>'
-    + '<div class="bar"><i class="' + (isLim ? "lim" : "") + '" style="width:' + val + '%"></i></div></div>';
-}
-function todayFeed(){
-  var mine = S.done
-    ? post("RA", "You", "just now", "<em>" + (E.tonnage()/1000).toFixed(1) + " t</em> across " + S.logged.length
-        + " sets. Squat held " + fmtKg(E.presc(0)) + " kg on a five-hour night.", "Tier 1 — sensed")
-    : "";
-  return '<div class="pad stack" style="padding-top:6px;padding-bottom:24px">' + mine
-    + post("MK", "M. Kowalska", "2 h", "Back Squat <em>120 kg</em> — new best. Co-signed by two people in the room.", "Tier 2 — witnessed")
-    + post("JT", "J. Tran", "5 h", "Hyrox sim in <em>1:14:06</em>. Sled push is still the leak.", null)
-    + post("PN", "P. Nowak", "Yesterday", "Deadlift <em>210 kg</em> at the Warsaw meet.", "Tier 5 — sanctioned")
-    + post("AS", "A. Silva", "Yesterday", "18 km easy, then squats four hours later. My legs disagree with this plan.", null)
-    + '<p class="t-body ash" style="line-height:1.5;margin-top:20px">Every claim carries the evidence that backs it. '
-    + 'A number with no tier is a number somebody typed — and the feed says so rather than pretending otherwise.</p></div>';
+    + 'That is the honest read, and it is why one number on its own is never the answer.</div></div>';
 }
 function post(av, who, when, body, tier){
-  return '<div class="post"><div class="posthead"><span class="av">' + av + '</span><b>' + who + '</b>'
-    + '<span>' + when + '</span></div><div class="postbody">' + body + '</div>'
-    + (tier ? '<div><span class="chip' + (tier.indexOf("Tier 0") === 0 ? "" : " on") + '">' + tier + '</span></div>' : "") + '</div>';
+  return '<div class="post"><div class="posthead"><span class="av">' + av + '</span><b>' + who + '</b><span>' + when + '</span></div>'
+    + '<div class="postbody">' + body + '</div>'
+    + (tier ? '<div><span class="chip on">' + tier + '</span></div>' : "") + '</div>';
 }
-
-/* ── FUEL ── */
-function fuel(){
-  var short = E.pShort(), tgt = E.pTarget();
-  return '<div class="pad stack" style="gap:22px;padding-top:20px;padding-bottom:24px">'
-    + '<div><div class="kick" style="margin-bottom:13px">Tuesday — '
-      + (S.done ? "you squatted heavy" : S.logged.length ? "mid-session" : "before you train") + '</div>'
-    + '<div class="short"><span class="n' + (short ? "" : " ok") + ' fig">' + (short || "0")
-      + '</span><span class="u">g of protein ' + (short ? "short" : "clear") + '</span></div></div>'
+function feed(){
+  return '<div class="gut stack" style="padding-bottom:24px">'
+    + (S.done ? post("RA","You","just now","<em>" + (E.tonnage()/1000).toFixed(1) + " t</em> across " + S.logged.length
+        + " sets. Squat held " + kg(E.presc(0)) + " kg on a five-hour night.","Tier 1 — sensed") : "")
+    + post("MK","M. Kowalska","2 h","Back Squat <em>120 kg</em> — new best. Co-signed by two people in the room.","Tier 2 — witnessed")
+    + post("JT","J. Tran","5 h","Hyrox sim in <em>1:14:06</em>. Sled push is still the leak.",null)
+    + post("PN","P. Nowak","Yesterday","Deadlift <em>210 kg</em> at the Warsaw meet.","Tier 5 — sanctioned")
+    + '<p class="t-body ash" style="line-height:1.5;margin-top:18px">Every claim carries the evidence behind it. '
+    + 'A number with no tier is a number somebody typed, and the feed says so.</p></div>';
+}
+function macro(l,v){ return '<div class="stack" style="flex:1;gap:5px"><span class="kick">' + l + '</span>'
+  + '<span class="rest">' + v + '</span></div>'; }
+function nutrition(){
+  var short = E.pShort();
+  return '<div class="gut stack" style="gap:22px;padding-bottom:24px">'
+    + '<div style="display:flex;align-items:baseline;gap:9px">'
+    + '<span class="fig' + (short?" acc":"") + '" style="font-size:62px;line-height:.9;letter-spacing:-2.2px">'
+    + (short || "0") + '</span><span class="t-title ash" style="font-weight:700">g of protein '
+    + (short ? "short" : "clear") + '</span></div>'
     + '<div style="font-size:22px;font-weight:800;line-height:1.22;letter-spacing:-.024em">'
-    + (short
-        ? "Everything else is on target. This one is not, on the worst day to miss it."
-        : "You are covered. Nothing else needs a decision today.") + '</div>'
-    + '<div class="macro">'
-      + macro("Protein", E.pLogged() + " / " + tgt + " g")
-      + macro("Calories", (2140 + S.extraP*4 + taken()*40) + " / 2850")
-      + macro("Carbs", "228 / 310 g") + '</div>'
-    + (short ? '<div><div class="kick" style="margin-bottom:10px">From what you already have</div><div>'
+    + (short ? "Everything else is on target. This one is not, on the worst day to miss it."
+             : "You are covered. Nothing else needs a decision today.") + '</div>'
+    + '<div style="display:flex;gap:8px">' + macro("Protein", E.pLogged() + " / " + E.pTarget() + " g")
+    + macro("Calories", (2140 + S.extraP*4) + " / 2850") + macro("Carbs","228 / 310") + '</div>'
+    + (short ? '<div><div class="kick" style="margin-bottom:8px">From what you already have</div>'
         + FIX.map(function(f,i){
-            return '<button class="fixrow' + (S.fix[i] ? " on" : "") + '" data-act="fix:' + i + '">'
-              + '<span class="tick">✓</span><span class="nm">' + f.n + '<em>' + f.s + '</em></span>'
-              + '<span class="gm">+' + f.g + ' g</span></button>';
-          }).join("") + '</div></div>' : "")
-    + '<div class="t-body ash" style="line-height:1.5;margin-top:4px">Breakfast, lunch and the 4 pm banana are already logged from your pattern. '
+            return '<button class="row" data-act="fix:' + i + '" style="width:100%;background:none;border-left:0;'
+              + 'border-right:0;border-top:0;cursor:pointer;text-align:left;align-items:center;'
+              + (S.fix[i] ? "opacity:.42;" : "") + '">'
+              + '<span style="width:20px;height:20px;border-radius:999px;border:1.4px solid '
+              + (S.fix[i] ? "var(--acc);background:var(--acc)" : "var(--line)")
+              + ';display:grid;place-items:center;flex:none;color:var(--ink)">'
+              + (S.fix[i] ? ico("check",11,7) : "") + '</span>'
+              + '<span style="flex:1;color:var(--chalk);font-size:14.5px;font-weight:700;line-height:1.3">' + f.n
+              + '<em style="display:block;font-style:normal;font-family:var(--mono);font-size:10px;color:var(--ash);margin-top:3px">'
+              + f.s + '</em></span><b class="good">+' + f.g + ' g</b></button>';
+          }).join("") + '</div>' : "")
+    + '<div class="t-body ash" style="line-height:1.5">Breakfast, lunch and the 4 pm banana are already logged from your pattern. '
     + '<span style="color:var(--chalk)">Two corrections so far this week.</span></div>'
-    + (S.done ? '<div class="card t-body" style="line-height:1.45"><span class="kick acc">Why it moved</span><br>'
-        + 'Your target rose from 131 g to ' + tgt + ' g while you were training. '
-        + 'It scales with the tonnage you actually moved, not with the day of the week.</div>' : "")
+    + (S.done ? '<div class="card t-body" style="line-height:1.5"><span class="kick acc">Why it moved</span><br>'
+        + 'Your target rose from 131 g to ' + E.pTarget() + ' g while you were training. It scales with the tonnage you actually moved.</div>' : "")
     + '</div>';
 }
-function taken(){ var n=0; S.fix.forEach(function(t){ if(t) n++; }); return n; }
-function macro(l, v){ return '<div><span class="l">' + l + '</span><span class="v">' + v + '</span></div>'; }
+function messages(){
+  return '<div class="gut stack" style="gap:18px;padding-bottom:24px">'
+    + '<div class="card stack" style="gap:10px"><span class="kick acc">Your coach</span>'
+    + '<div class="t-note" style="line-height:1.45">“Saw the five-hour night. I have left the bar where the app put it — '
+    + kg(E.presc(0)) + ' is right. Do not chase the plan number on Thursday either.”</div>'
+    + '<span class="kick">M. Kowalska — 20 min ago</span></div>'
+    + '<p class="t-body ash" style="line-height:1.5">Direct messages are a held slot in the real bar, and the placeholder there '
+    + 'does not fake the feature. This one card is the honest version: the coach sees the same numbers you do.</p></div>';
+}
+function profile(){
+  return '<div class="gut stack" style="gap:22px;padding-bottom:24px">'
+    + '<div><div class="kick" style="margin-bottom:12px">Back Squat — best</div>'
+    + '<div style="display:flex;align-items:baseline;gap:10px">'
+    + '<span class="fig" style="font-size:64px;line-height:.9;letter-spacing:-2.2px">142.5</span>'
+    + '<span class="t-heading ash" style="font-weight:600">kg</span></div>'
+    + '<div class="t-body ash" style="margin-top:8px">14 August — 1 rep — +5 kg on May</div></div>'
+    + '<div style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0">'
+    + '<div class="kick" style="margin-bottom:12px">Evidence — tier 3 of 5</div>'
+    + '<div style="display:flex;gap:5px;margin-bottom:12px">'
+    + ["claimed","sensed","witnessed","recorded","instrumented","sanctioned"].map(function(t,i){
+        return '<div style="flex:1"><div style="height:4px;border-radius:var(--rMark);background:'
+          + (i<=3 ? "var(--acc)" : "var(--line)") + (i===3 ? ";outline:1px solid var(--chalk);outline-offset:2px" : "")
+          + '"></div><div class="kick" style="font-size:8.5px;margin-top:8px;letter-spacing:1.2px">' + t + '</div></div>';
+      }).join("") + '</div>'
+    + '<div class="t-body ash" style="line-height:1.5">Recorded — the lift is on video with the plates countable, and the rep completed. '
+    + 'The only camera bet worth taking.</div></div>'
+    + '<button class="pill" data-act="push:film">Play your week</button>'
+    + '<button class="doorrow" data-act="push:sport"><span>Endurance</span>'
+    + '<span class="ring">' + ico("chevron",14,5.5) + '</span></button></div>';
+}
 
-/* ── SPORT ── */
-function sport(){
-  if(S.sport === "run") return runScreen();
-  var lanes = [
-    ["Running", "128 km", "5:38 /km", [40,62,34,78,55,88,47,70], true],
-    ["Cycling", "212 km", "27.4 km/h", [20,0,52,31,66,12,44,28], false],
-    ["Rowing", "18 km", "2:08 /500 m", [0,30,0,0,48,22,0,16], false],
-    ["Swimming", "4.2 km", "2:14 /100 m", [0,0,26,0,0,38,0,12], false]
-  ];
-  return '<div class="pad stack" style="padding-top:16px;padding-bottom:24px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:baseline;padding-bottom:10px">'
-    + '<span style="font-weight:900;font-size:22px;letter-spacing:-.025em">Sport</span>'
-    + '<span class="kick">Most trained</span></div>'
+/* ══════════ PUSHED: SPORT LANES ══════════ */
+function heroRail(title, back){
+  return '<div class="fbar"><button class="iconbtn" data-act="' + (back || "pop") + '">' + ico("back",20,4)
+    + '</button><span class="kick">' + title + '</span><span style="width:20px"></span></div>';
+}
+function sportLanes(){
+  var lanes = [["Running","128 km","5:38 /km",[40,62,34,78,55,88,47,70],1],
+               ["Cycling","212 km","27.4 km/h",[20,4,52,31,66,12,44,28],0],
+               ["Rowing","18 km","2:08 /500 m",[4,30,4,4,48,22,4,16],0],
+               ["Swimming","4.2 km","2:14 /100 m",[4,4,26,4,4,38,4,12],0]];
+  return '<div class="full">' + heroRail("Endurance")
+    + '<div class="gut" style="flex:1;overflow-y:auto">'
+    + '<div class="mtitle" style="margin:10px 0 6px">Sport</div>'
     + lanes.map(function(l){
-        return '<button class="lane" ' + (l[4] ? 'data-act="sport:run"' : "") + '>'
+        return '<button class="lane"' + (l[4] ? ' data-act="push:runBrief"' : "") + '>'
           + '<div class="lanehead"><b>' + l[0] + '</b><span>' + l[1] + '</span></div>'
-          + '<div class="spark">' + bars(l[3], true) + '</div>'
+          + '<div class="spark">' + l[3].map(function(v,i){
+              return '<i class="' + (i===7?"hi":"") + '" style="height:' + v + '%"></i>'; }).join("") + '</div>'
           + '<div style="display:flex;justify-content:space-between"><span class="kick">8 weeks</span>'
           + '<span class="kick">' + l[2] + '</span></div></button>';
       }).join("")
-    + '<p class="t-body ash" style="line-height:1.5;margin-top:20px">Four lanes and four averages is a comparison, not a verdict. '
-    + 'Open Running to see what the ambient version says instead.</p></div>';
-}
-function runScreen(){
-  var st = S.runStage;
-  if(S.run && st < 0) st = 2;
-  var body;
-  if(st < 0){
-    body = '<div class="kick">Tomorrow — before you go</div>'
-      + '<div class="runbig"><span class="n fig">8</span><span class="u">km easy</span></div>'
-      + '<div class="runline">Keep it under 5:40. You squat ' + fmtKg(E.tomorrow()) + ' the day after.</div>'
-      + '<span class="eartag"><span class="dot"></span>Spoken, not shown</span>'
-      + '<div class="t-body ash" style="margin-top:6px;line-height:1.5">The watch will record it. Nothing to start, nothing to log.</div>'
-      + '<button class="pill" style="margin-top:14px" data-act="run">Run it (simulated)</button>';
-  } else if(st === 0){
-    body = '<div class="kick">Starting</div>'
-      + '<div class="runbig"><span class="n fig">0.4</span><span class="u">km</span></div>'
-      + '<div class="runline">Settle in. Nothing to look at.</div>'
-      + '<span class="eartag"><span class="dot"></span>In your ear</span>';
-  } else if(st === 1){
-    body = '<div class="kick">3.2 km in</div>'
-      + '<div class="runbig"><span class="n fig">5:12</span><span class="u">per km</span></div>'
-      + '<div class="zone"><i></i><i></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="over"></i><i class="over"></i><i></i></div>'
-      + '<div class="runline">You are 28 seconds quick. Ease off.</div>'
-      + '<span class="eartag"><span class="dot"></span>Spoken at 3.2 km — screen stayed dark</span>';
-  } else {
-    body = '<div class="kick">8.1 km done — 5:47 average</div>'
-      + '<div class="runbig"><span class="n fig">−9</span><span class="u">% quad freshness</span></div>'
-      + '<div class="runline acc">That run cost you 9% off tomorrow\'s squat. Priced in — the bar drops to '
-        + fmtKg(E.tomorrow()) + '.</div>'
-      + '<div style="margin-top:8px"><div class="kick" style="margin-bottom:4px">What it cost</div>'
-      + '<div class="row"><span>Quad freshness</span><b class="warn">' + E.fresh() + '%</b></div>'
-      + '<div class="row"><span>Tomorrow\'s squat</span><b>' + fmtKg(E.tomorrow()) + ' kg</b></div>'
-      + '<div class="row"><span>Easy-to-hard balance</span><b>82 : 18</b></div>'
-      + '<div class="row" style="border-bottom:0"><span>Acute : chronic</span><b>'
-        + (1.02 + E.spent()/90).toFixed(2) + '</b></div></div>'
-      + '<div class="t-body ash" style="line-height:1.5">Strava has no strength model. Hevy has no endurance model. '
-      + 'This sentence is the only thing here that no competitor can say.</div>';
-  }
-  return '<div class="pad stack" style="gap:16px;padding-top:16px;padding-bottom:24px">'
-    + '<button class="why" data-act="sport:lanes" style="color:var(--ash)"><span class="pm">←</span><span>Sport</span></button>'
-    + body + '</div>';
+    + '<p class="t-body ash" style="line-height:1.5;margin:20px 0 24px">Four lanes and four averages is a comparison, not a verdict. '
+    + 'Open Running.</p></div></div>';
 }
 
-/* ── THE SET (full screen) ── */
+/* ══════════ PUSHED: THE RUN ══════════ */
+function runBrief(){
+  return '<div class="full">' + heroRail("Running", "push:sport")
+    + '<div class="slbody">'
+    + '<div class="kick">' + (S.run ? "Done today" : "Tomorrow — before you go") + '</div>'
+    + '<div class="runbig"><span class="n fig">8</span><span class="u">km easy</span></div>'
+    + '<div class="runline">Keep it under 5:40. You squat ' + kg(E.tomorrow()) + ' the day after.</div>'
+    + '<span class="eartag"><span class="dot"></span>Spoken, not shown</span>'
+    + '<div class="t-body ash" style="line-height:1.5;max-width:30ch;margin:0 auto">The watch records it. '
+    + 'Nothing to start, nothing to log — this button only exists because you are not actually running.</div></div>'
+    + '<div class="gut stack" style="gap:10px;padding-bottom:22px">'
+    + '<button class="pill" data-act="runGo">' + (S.run ? "See what it cost" : "Run it (14 s, simulated)") + '</button>'
+    + '</div></div>';
+}
+function runLive(){
+  var pace = S.zone === "over" ? "5:12" : S.km < 0.6 ? "6:04" : "5:44";
+  var hr = Math.round(138 + (S.zone === "over" ? 12 : 0) + Math.min(8, S.km));
+  return '<div class="full">'
+    + '<div class="fbar"><span class="kick acc">Recording — Apple Watch</span><span class="kick" id="rClock">'
+    + mmss(S.km * 347) + '</span></div>'
+    + '<div class="slbody" style="gap:22px">'
+    + '<div class="runbig"><span class="n fig" id="rKm">' + S.km.toFixed(1) + '</span><span class="u">km</span></div>'
+    + '<div class="zone" id="rZone">' + [0,1,2,3,4,5,6,7].map(function(i){
+        var on = i < (S.zone === "over" ? 7 : 5) && i >= 2;
+        var over = S.zone === "over" && i >= 5;
+        return '<i class="' + (over ? "over" : on ? "on" : "") + '"></i>';
+      }).join("") + '</div>'
+    + '<div class="runstats"><div><span class="kick">Pace</span><span class="v" id="rPace">' + pace + '</span></div>'
+    + '<div><span class="kick">Heart</span><span class="v" id="rHr">' + hr + '</span></div>'
+    + '<div><span class="kick">Ceiling</span><span class="v">5:40</span></div></div>'
+    + '<div class="stack" style="gap:9px" id="rEars">' + S.ears.slice(-2).map(function(t){
+        return '<div class="earline"><span class="kv">' + ico("mic",15,5) + '</span><span>' + t + '</span></div>';
+      }).join("") + '</div>'
+    + '<span class="eartag"><span class="dot"></span>Screen is dark in your pocket</span></div>'
+    + '<div class="gut" style="padding-bottom:22px"><button class="pillo" data-act="runEnd">End the run</button></div></div>';
+}
+function runDone(){
+  return '<div class="full">' + heroRail("Running", "push:sport")
+    + '<div class="gut stack" style="flex:1;gap:20px;overflow-y:auto">'
+    + '<div class="kick" style="margin-top:8px">8.1 km — 46:52 — 5:47 average</div>'
+    + '<div style="display:flex;align-items:baseline;gap:9px">'
+    + '<span class="fig red" style="font-size:66px;line-height:.9;letter-spacing:-2.3px">−9</span>'
+    + '<span class="t-title ash" style="font-weight:700">% quad freshness</span></div>'
+    + '<div class="runline acc">That run cost you 9% off tomorrow\'s squat. Priced in — the bar drops to '
+    + kg(E.tomorrow()) + '.</div>'
+    + '<div><div class="kick" style="margin-bottom:4px">What it cost</div>'
+    + '<div class="row"><span>Quad freshness</span><b class="warn">' + E.fresh() + '%</b></div>'
+    + '<div class="row"><span>Tomorrow\'s squat</span><b>' + kg(E.tomorrow()) + ' kg</b></div>'
+    + '<div class="row"><span>Easy-to-hard balance</span><b>82 : 18</b></div>'
+    + '<div class="row"><span>Acute : chronic</span><b>' + (1.02 + E.spent()/90).toFixed(2) + '</b></div>'
+    + '<div class="row" style="border-bottom:0"><span>Endurance pillar</span><b class="good">66 → 71</b></div></div>'
+    + '<div><div class="kick" style="margin-bottom:8px">What was said, and when</div>'
+    + EAR.map(function(e){ return '<div class="row"><span>' + e.t + '</span><b>' + e.at.toFixed(1) + ' km</b></div>'; }).join("")
+    + '</div>'
+    + '<div class="t-body ash" style="line-height:1.5;padding-bottom:24px">Nothing was logged by hand. '
+    + 'Strava has no strength model, Hevy has no endurance model, and WHOOP will not prescribe — '
+    + 'that first sentence is the only thing here no competitor can say.</div></div></div>';
+}
+
+/* ══════════ PUSHED: THE FILM ══════════ */
+var SCENES = [
+  { d:4200, n:function(){ return "You lifted " + (11.8 + E.tonnage()/1000).toFixed(1) + " tonnes this week."; } },
+  { d:4000, n:"Six sessions. Thursday was the week." },
+  { d:4400, n:"Thursday's squat moved faster at 105 than it did at 100 six weeks ago." },
+  { d:3800, n:"That is the first hard evidence your strength is up rather than your effort." },
+  { d:4000, n:"One thing for next week — you have not touched a hinge in nine days." }
+];
+function filmScreen(){
+  var i = S.film, tot = (11.8 + E.tonnage()/1000).toFixed(1), inner;
+  if(i === 0) inner = '<div class="kick">Your week — 12 to 18 August</div>'
+    + '<div class="stack" style="gap:4px"><span class="fbig">' + tot + '</span>'
+    + '<span style="font-size:18px;font-weight:600;color:var(--ash)">tonnes moved</span></div>';
+  else if(i === 1) inner = '<div class="kick">Where it went</div>'
+    + '<div class="fbars">' + [["M",38],["T",74],["W",3],["T",100],["F",52],["S",22],["S",3]].map(function(d){
+        return '<div><i class="' + (d[1]===100?"hi":"") + '" style="height:' + d[1] + '%"></i><span>' + d[0] + '</span></div>';
+      }).join("") + '</div><div class="kick">Thursday was the week.</div>';
+  else if(i === 2) inner = '<div class="kick">The thing that mattered</div>'
+    + '<div class="stack" style="gap:22px">'
+    + '<div class="vrow"><span class="kick">6 weeks ago — 100 kg</span><i style="width:62%"></i><span class="rest">0.61 m/s</span></div>'
+    + '<div class="vrow"><span class="kick">Thursday — 105 kg</span><i class="hi" style="width:88%"></i><span class="rest">0.68 m/s</span></div></div>'
+    + '<div class="kick">More weight, moving faster.</div>';
+  else if(i === 3) inner = '<div class="kick">What that means</div>'
+    + '<div class="fmid">That is the first hard evidence your strength is up rather than your effort.</div>';
+  else inner = '<div class="kick">One thing for next week</div>'
+    + '<div class="fmid acc">You have not touched a hinge in nine days.</div>'
+    + '<div class="kick">I have put a deadlift on Tuesday.</div>';
+  return '<div class="full">'
+    + '<div class="fbar"><button class="iconbtn" data-act="pop">' + ico("close",18,4.5) + '</button>'
+    + '<span class="kick">' + (i+1) + ' / ' + SCENES.length + '</span><span style="width:18px"></span></div>'
+    + '<div class="filmseg" style="padding-top:16px">' + SCENES.map(function(_,k){
+        return '<i><b style="width:' + (k < i ? 100 : k === i ? S.filmP : 0) + '%"></b></i>'; }).join("") + '</div>'
+    + '<div class="fstage">' + inner + '</div>'
+    + '<div class="narr">' + (typeof SCENES[i].n === "function" ? SCENES[i].n() : SCENES[i].n) + '</div>'
+    + '<div class="gut" style="padding-bottom:22px"><button class="pillo" data-act="' + (S.filmT ? "filmPause" : "filmPlay") + '">'
+    + (S.filmT ? "Pause" : S.film === SCENES.length-1 ? "Replay" : "Play") + '</button></div></div>';
+}
+
+/* ══════════ THE SET ══════════ */
 function setScreen(){
   if(S.done) return receipt();
-  var ex = PLAN[S.ex], load = E.presc(S.ex), left = E.setsLeft();
-  var resting = S.rest > 0;
-  return '<div class="full"><div class="stack" style="flex:1;padding:0 12px">'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0 0">'
-    + '<button class="why" data-act="quit" style="width:auto;color:var(--ash)"><span class="pm">×</span><span class="kick">End</span></button>'
-    + '<span class="kick">' + left + ' sets left</span></div>'
+  var ex = PLAN[S.ex], load = E.presc(S.ex);
+  return '<div class="full">'
+    + '<div class="fbar"><button class="iconbtn" data-act="quit">' + ico("close",18,4.5) + ' End</button>'
+    + '<span class="kick">' + E.left() + ' sets left</span></div>'
     + '<div class="slbody">'
     + '<div style="font-weight:800;font-size:20px;letter-spacing:-.02em">' + ex.name + '</div>'
-    + '<div class="slnum fig">' + fmtKg(load) + '</div>'
+    + '<div class="slnum">' + kg(load) + '</div>'
     + '<div class="kick">kilograms — ' + ex.reps + ' reps</div>'
-    + '<div class="setdots">' + Array.apply(null, Array(ex.sets)).map(function(_, i){
-        return '<i class="' + (i < S.set ? "done" : i === S.set ? "now" : "") + '"></i>';
-      }).join("") + '</div>'
-    + (S.nextRpe ? '<div class="t-body acc">Heard — RPE ' + S.nextRpe + ' on the next one</div>' : "")
-    + '</div>'
-    + '<div class="stack" style="gap:10px;padding-bottom:22px">'
-    + (resting
-        ? '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px 8px">'
-          + '<span class="kick">Resting — started itself</span><span class="rest">'
-          + Math.floor(S.rest/60) + ":" + ("0" + (S.rest%60)).slice(-2) + '</span></div>'
-        : '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px 8px">'
-          + '<span class="kick">Ready</span><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>')
+    + '<div class="setdots">' + Array.apply(null, Array(ex.sets)).map(function(_,i){
+        return '<i class="' + (i < S.set ? "done" : i === S.set ? "now" : "") + '"></i>'; }).join("") + '</div>'
+    + (S.nextRpe ? '<div class="t-body acc">Heard — RPE ' + S.nextRpe + '</div>' : "") + '</div>'
+    + '<div class="gut stack" style="gap:10px;padding-bottom:22px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 2px 8px">'
+    + (S.rest > 0 ? '<span class="kick">Resting — started itself</span><span class="rest">' + mmss(S.rest) + '</span>'
+                  : '<span class="kick">Ready</span><div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>') + '</div>'
     + '<button class="pill" data-act="log">Log as prescribed</button>'
-    + '<button class="pillg" data-act="ovl:voice">Say something instead</button>'
-    + '</div></div></div>';
+    + '<button class="pillo" data-act="ovl:voice">Say something instead</button></div></div>';
 }
 function receipt(){
-  return '<div class="full"><div class="stack" style="flex:1;padding:0 12px;gap:22px">'
-    + '<div style="padding-top:26px"><div class="kick" style="margin-bottom:12px">Session done</div>'
+  return '<div class="full"><div class="gut stack" style="flex:1;gap:20px;overflow-y:auto">'
+    + '<div style="padding-top:24px"><div class="kick" style="margin-bottom:12px">Session done</div>'
     + '<div style="display:flex;align-items:baseline;gap:10px">'
-    + '<span class="fig" style="font-size:64px;line-height:.9">' + (E.tonnage()/1000).toFixed(1) + '</span>'
+    + '<span class="fig" style="font-size:64px;line-height:.9;letter-spacing:-2.2px">' + (E.tonnage()/1000).toFixed(1) + '</span>'
     + '<span class="t-heading ash" style="font-weight:600">tonnes</span></div></div>'
     + '<div style="font-size:22px;font-weight:800;line-height:1.24;letter-spacing:-.024em">'
-    + (E.rpeAvg() ? "Held " + fmtKg(E.presc(0)) + " kg at RPE " + E.rpeAvg() + " on a five-hour night."
-                  : "Held " + fmtKg(E.presc(0)) + " kg on a five-hour night.") + '</div>'
+    + (E.rpeAvg() ? "Held " + kg(E.presc(0)) + " kg at RPE " + E.rpeAvg() + " on a five-hour night."
+                  : "Held " + kg(E.presc(0)) + " kg on a five-hour night.") + '</div>'
     + '<div><div class="kick" style="margin-bottom:4px">What moved</div>'
     + '<div class="row"><span>Quad freshness</span><b class="warn">100 → ' + E.fresh() + '%</b></div>'
     + '<div class="row"><span>Readiness</span><b class="warn">' + E.morning() + ' → ' + E.now() + '</b></div>'
     + '<div class="row"><span>Protein target</span><b class="good">131 → ' + E.pTarget() + ' g</b></div>'
-    + '<div class="row" style="border-bottom:0"><span>Tomorrow\'s squat</span><b>' + fmtKg(E.tomorrow()) + ' kg</b></div></div>'
-    + '<div class="card t-body" style="line-height:1.5"><span class="kick acc">One thing</span><br>'
-    + 'You are ' + E.pShort() + ' g of protein short and it just got harder. Open Fuel — the fix is already in your kitchen.</div>'
+    + '<div class="row" style="border-bottom:0"><span>Tomorrow\'s squat</span><b>' + kg(E.tomorrow()) + ' kg</b></div></div>'
+    + '<div class="card t-body" style="line-height:1.5"><span class="kick acc">One thing</span><br>You are '
+    + E.pShort() + ' g of protein short and it just got harder. The fix is already in your kitchen.</div>'
     + '<div class="stack" style="gap:10px;margin-top:auto;padding-bottom:22px">'
-    + '<button class="pill" data-act="goFuel">Take me to Fuel</button>'
-    + '<button class="pillg" data-act="quit">Back to Today</button></div>'
-    + '</div></div>';
+    + '<button class="pill" data-act="goFuel">Take me to Nutrition</button>'
+    + '<button class="pillo" data-act="quit">Back to Today</button></div></div></div>';
 }
 
-/* ── OVERLAYS ── */
+/* ══════════ OVERLAYS ══════════ */
 function voiceSheet(){
   var opts = S.session
     ? [["Two left","sets the RPE"],["Eight reps","reps differ"],["Add five","next set up 5 kg"],
        ["Last set","close the exercise"],["How was that?","ask for a verdict"]]
-    : S.tab === "fuel"
-      ? [["I had chicken and rice","+42 g protein"],["How am I doing?","ask for a verdict"],["What should I do today?","go to Today"]]
-      : [["How am I doing?","ask for a verdict"],["What should I do today?","go to Today"],["Show me my week","play the film"]];
+    : S.tab === "nutrition"
+      ? [["I had chicken and rice","+42 g protein"],["How am I doing?","ask for a verdict"],["Show me my week","play the film"]]
+      : [["How am I doing?","ask for a verdict"],["Show me my week","play the film"],["What should I do today?","go to Today"]];
   return '<div class="ovl" data-act="close"><div class="sheet" data-stop="1"><div class="grab"></div>'
-    + '<div style="display:flex;align-items:center;gap:10px;padding-bottom:14px">'
+    + '<div style="display:flex;align-items:center;gap:11px;padding-bottom:14px">'
     + '<div class="wave"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>'
     + '<span class="kick">Listening — pick what you would have said</span></div>'
     + opts.map(function(o,i){ return '<button class="utt" data-act="say:' + i + '">“' + o[0] + '”<span>' + o[1] + '</span></button>'; }).join("")
     + '<p class="t-body ash" style="line-height:1.5;margin-top:16px">Eight utterances cover a whole session. '
-    + 'This is a closed grammar running on-device, not an open chatbot — which is why it cannot invent a set you did not do.</p>'
-    + '</div></div>';
+    + 'A closed grammar on-device, not an open chatbot — which is why it cannot invent a set you did not do.</p></div></div>';
 }
 function verdictSheet(){
   var pct = Math.round(clamp(E.spent()/12*100, 4, 99));
   var stop = pct > 70 || E.now() < 60;
   return '<div class="ovl" data-act="close"><div class="sheet" data-stop="1"><div class="grab"></div>'
     + '<div class="kick">You asked</div>'
-    + '<div class="t-title" style="font-weight:700;letter-spacing:-.015em;margin-top:6px;padding-bottom:14px;border-bottom:1px solid var(--line)">'
+    + '<div class="t-title" style="font-weight:700;letter-spacing:-.5px;margin-top:6px;padding-bottom:14px;border-bottom:1px solid var(--line)">'
     + (S.session ? "“Should I do another set?”" : "“How am I doing?”") + '</div>'
     + '<div style="font-size:19px;font-weight:700;line-height:1.35;letter-spacing:-.02em;margin-top:16px">'
-    + (stop
-        ? "I'd stop. That is about as much as you have historically recovered from in a day and a half, and you squat again Thursday."
-        : "Keep going. You are well inside what you clear overnight, and the bar is moving at the speed it should.") + '</div>'
+    + (stop ? "I'd stop. That is about as much as you have historically recovered from in a day and a half, and you squat again Thursday."
+            : "Keep going. You are well inside what you clear overnight, and the bar is moving at the speed it should.") + '</div>'
     + '<div class="kick" style="margin:22px 0 2px">Because — ranked</div>'
-    + drv("Quad volume today vs your ceiling", "measured", pct + "%", 1)
-    + drv("Your clearance rate vs population", "profile", "0.85×")
-    + drv("Live readiness", "measured", E.now() + " / 100", 1)
-    + drv("Ceiling estimate settled?", "measured", "yes, n=23", 1)
+    + drv("Quad volume today vs your ceiling","measured",pct + "%",1)
+    + drv("Your clearance rate vs population","profile","0.85×")
+    + drv("Live readiness","measured",E.now() + " / 100",1)
+    + drv("Ceiling estimate settled?","measured","yes, n=23",1)
     + '<p class="t-body ash" style="line-height:1.5;margin-top:16px">Ask any general model this and it gives a competent, generic answer. '
-    + 'It cannot say 0.85× — that is four months of your own recovery measured against a population curve.</p>'
-    + '</div></div>';
-}
-var SCENES = [
-  { d:4200, n:"You lifted this much this week." },
-  { d:4000, n:"Six sessions. Thursday was the week." },
-  { d:4400, n:"Thursday's squat moved faster at 105 than at 100 six weeks ago." },
-  { d:3800, n:"That is the first hard evidence your strength is up rather than your effort." },
-  { d:4000, n:"One thing for next week — you have not touched a hinge in nine days." }
-];
-function filmOvl(){
-  var i = S.film, tot = (11.8 + E.tonnage()/1000).toFixed(1);
-  var inner;
-  if(i === 0) inner = '<div class="kick">Your week</div><div style="display:flex;flex-direction:column;gap:4px">'
-      + '<span class="fig" style="font-size:80px;line-height:.86">' + tot + '</span>'
-      + '<span style="font-size:18px;font-weight:600;color:var(--ash)">tonnes moved</span></div>';
-  else if(i === 1) inner = '<div class="kick">Where it went</div><div class="traj" style="height:170px">'
-      + bars([38,74,4,100,52,22,4], false).replace('style="height:100%"', 'class="hi" style="height:100%"') + '</div>';
-  else if(i === 2) inner = '<div class="kick">The thing that mattered</div>'
-      + '<div class="stack" style="gap:20px"><div class="stack" style="gap:6px"><span class="kick">6 weeks ago — 100 kg</span>'
-      + '<div class="bar" style="height:10px"><i style="width:62%"></i></div><span class="rest">0.61 m/s</span></div>'
-      + '<div class="stack" style="gap:6px"><span class="kick">Thursday — 105 kg</span>'
-      + '<div class="bar" style="height:10px"><i style="width:88%"></i></div><span class="rest">0.68 m/s</span></div></div>';
-  else if(i === 3) inner = '<div class="kick">What that means</div>'
-      + '<div style="font-size:27px;font-weight:800;line-height:1.2;letter-spacing:-.028em">That is the first hard evidence your strength is up rather than your effort.</div>';
-  else inner = '<div class="kick">One thing for next week</div>'
-      + '<div class="acc" style="font-size:27px;font-weight:800;line-height:1.2;letter-spacing:-.028em">You have not touched a hinge in nine days.</div>'
-      + '<div class="kick">I have put a deadlift on Tuesday.</div>';
-  return '<div class="full"><div class="stack" style="flex:1;padding:14px 12px 0">'
-    + '<div style="display:flex;gap:4px;padding-bottom:20px">' + SCENES.map(function(_, k){
-        return '<i style="flex:1;height:2px;border-radius:2px;background:' + (k <= i ? "var(--acc)" : "var(--line)") + '"></i>';
-      }).join("") + '</div>'
-    + '<div class="stack" style="flex:1;justify-content:center;gap:20px">' + inner + '</div>'
-    + '<div class="t-bodyLg ash" style="border-top:1px solid var(--line);padding:14px 0;line-height:1.4">'
-    + SCENES[i].n + '</div>'
-    + '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:22px">'
-    + '<button class="pillg" style="width:auto;padding:11px 22px" data-act="close">Close</button>'
-    + '<span class="kick">' + (i+1) + ' / ' + SCENES.length + '</span></div></div></div>';
+    + 'It cannot say 0.85× — that is four months of your own recovery against a population curve.</p></div></div>';
 }
 
 /* ══════════ PAINT ══════════ */
-var TABS = [["today","◉","Today"],["sport","◍","Sport"],["mic","⏺",""],["fuel","◔","Fuel"],["you","▤","You"]];
-function youScreen(){
-  return '<div class="pad stack" style="gap:22px;padding-top:20px;padding-bottom:24px">'
-    + '<div><div class="kick" style="margin-bottom:12px">Back Squat — best</div>'
-    + '<div style="display:flex;align-items:baseline;gap:10px">'
-    + '<span class="fig" style="font-size:64px;line-height:.9">142.5</span>'
-    + '<span class="t-heading ash" style="font-weight:600">kg</span></div>'
-    + '<div class="t-body ash" style="margin-top:8px">14 August — 1 rep — +5 kg on May</div></div>'
-    + '<div style="border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0">'
-    + '<div class="kick" style="margin-bottom:10px">Evidence — tier 3 of 5</div>'
-    + '<div style="display:flex;gap:5px;margin-bottom:10px">'
-    + ["claimed","sensed","witnessed","recorded","instrumented","sanctioned"].map(function(t,i){
-        return '<div style="flex:1"><div style="height:4px;border-radius:2px;background:'
-          + (i <= 3 ? "var(--acc)" : "var(--line)") + (i === 3 ? ";outline:1px solid var(--chalk);outline-offset:2px" : "") + '"></div>'
-          + '<div class="kick" style="font-size:8.5px;margin-top:7px">' + t + '</div></div>';
-      }).join("") + '</div>'
-    + '<div class="t-body ash" style="line-height:1.5">Recorded — the lift is on video with the plates countable, and the rep completed. '
-    + 'The only camera bet worth taking.</div></div>'
-    + '<button class="pill" data-act="film">Play your week</button>'
-    + '<div class="t-body ash" style="line-height:1.5">Forty seconds of deterministic motion graphics over real engine output. '
-    + 'It renders for cents and it cannot hallucinate.</div></div>';
-}
 function paint(){
   var v = $("view"), keep = v ? v.scrollTop : 0;
-  /* chrome */
-  var chrome = "";
-  if(!S.session && !S.ovl){
-    chrome = '<div class="apphdr"><span class="logo">HYBRID</span><span class="kick">'
-      + (S.tab === "today" ? E.morning() + " ready" : S.tab === "fuel" ? E.pLogged() + " g" : "") + '</span></div>';
-    if(S.tab === "today"){
-      chrome += '<div class="subtabs">'
-        + [["dash","Dashboard"],["perf","Performance"],["feed","Feed"]].map(function(t){
-            return '<button data-act="sub:' + t[0] + '" class="' + (S.sub === t[0] ? "on" : "") + '">' + t[1] + '</button>';
-          }).join("") + '</div>';
-    }
-  }
-  $("chrome").innerHTML = chrome;
+  var pushed = !!S.push, hideChrome = S.session || pushed;
+  var eyebrow = "Tuesday 18 August", meta = "", title = "Today";
+  if(S.tab === "today"){
+    meta = S.sub === "dashboard" ? E.morning() + " ready" : S.sub === "performance" ? "HPI " + E.hpi() : "4 friends";
+    title = S.sub === "dashboard" ? "Today" : S.sub === "performance" ? "Performance" : "Feed";
+  } else if(S.tab === "nutrition"){ meta = E.pLogged() + " / " + E.pTarget() + " g"; title = "Nutrition"; }
+  else if(S.tab === "messages"){ meta = "1 unread"; title = "Messages"; }
+  else { meta = "34 verified"; title = "Profile"; }
+
+  $("chrome").innerHTML = hideChrome ? "" :
+    appHeader() + (S.tab === "today" ? hubPills() : "") + masthead(eyebrow, meta, title);
 
   var view = "";
-  if(S.tab === "today") view = S.sub === "dash" ? todayDash() : S.sub === "perf" ? todayPerf() : todayFeed();
-  else if(S.tab === "sport") view = sport();
-  else if(S.tab === "fuel") view = fuel();
-  else view = youScreen();
-  $("view").innerHTML = view;
+  if(S.tab === "today") view = S.sub === "dashboard" ? dashboard() : S.sub === "performance" ? performance() : feed();
+  else if(S.tab === "nutrition") view = nutrition();
+  else if(S.tab === "messages") view = messages();
+  else view = profile();
+  $("view").innerHTML = hideChrome ? "" : view;
   $("view").scrollTop = keep;
-
-  $("tabs").innerHTML = '<div class="tabbar">' + TABS.map(function(t){
-      if(t[0] === "mic") return '<button class="micbtn' + (S.ovl === "voice" ? " live" : "") + '" data-act="ovl:voice">'
-        + '<span class="g">' + t[1] + '</span></button>';
-      return '<button data-act="tab:' + t[0] + '" class="' + (S.tab === t[0] ? "on" : "") + '">'
-        + '<span class="g">' + t[1] + '</span>' + t[2] + '</button>';
-    }).join("") + '</div>';
+  $("nav").innerHTML = hideChrome ? "" : navBar();
 
   var o = "";
   if(S.session) o += setScreen();
+  if(S.push === "sport") o += sportLanes();
+  if(S.push === "runBrief") o += runBrief();
+  if(S.push === "runLive") o += runLive();
+  if(S.push === "runDone") o += runDone();
+  if(S.push === "film") o += filmScreen();
   if(S.ovl === "voice") o += voiceSheet();
   if(S.ovl === "verdict") o += verdictSheet();
-  if(S.ovl === "film") o += filmOvl();
   if(S.toast) o += '<div class="toast">' + S.toast + '</div>';
   $("ovl").innerHTML = o;
 
   document.querySelectorAll(".sbtn").forEach(function(b){
-    var a = b.getAttribute("data-act");
-    b.classList.toggle("on", a === "scen:" + S.scen);
+    b.classList.toggle("on", b.getAttribute("data-act") === "scen:" + S.scen);
   });
+}
+function toast(m){
+  clearTimeout(S.toastT); S.toast = m;
+  S.toastT = setTimeout(function(){ S.toast = null; paint(); }, 4400);
 }
 
 /* ══════════ ACTIONS ══════════ */
 function act(a){
   var p = a.split(":"), k = p[0], v = p[1];
-  if(k === "tab"){ S.tab = v; S.ovl = null; if(v === "sport") S.sport = "lanes"; }
+  if(k === "noop") return;
+  else if(k === "tab"){ S.tab = v; S.ovl = null; S.push = null; }
   else if(k === "sub") S.sub = v;
   else if(k === "why") S.why = !S.why;
-  else if(k === "sport") S.sport = v;
   else if(k === "ovl") S.ovl = v;
-  else if(k === "close"){ S.ovl = null; clearInterval(S.filmT); S.filmT = null; }
+  else if(k === "close"){ S.ovl = null; }
+  else if(k === "push"){ S.push = v; S.ovl = null; if(v === "film"){ S.film = 0; S.filmP = 0; filmPlay(); } }
+  else if(k === "pop"){ stopFilm(); S.push = null; }
   else if(k === "scen"){ var was = E.morning(); S.scen = v; reset(true);
-    toast("Morning re-read. Readiness <b>" + was + " → " + E.morning() + "</b>, and today's squat is now <b>"
-      + fmtKg(E.presc(0)) + " kg</b>."); }
-  else if(k === "reset"){ reset(true); toast("Day reset."); }
-  else if(k === "start"){ S.session = true; S.ovl = null; }
-  else if(k === "quit"){ S.session = false; S.tab = "today"; S.sub = "dash"; }
-  else if(k === "goFuel"){ S.session = false; S.tab = "fuel"; }
-  else if(k === "log") logSet();
-  else if(k === "fix"){ var i = +v, before = E.pShort();
-    S.fix[i] = !S.fix[i];
-    toast(S.fix[i] ? "Logged " + FIX[i].n + ". Short <b>" + before + " → " + E.pShort() + " g</b>."
-                   : "Removed. Short <b>" + before + " → " + E.pShort() + " g</b>."); }
-  else if(k === "run") doRun();
-  else if(k === "film"){ S.ovl = "film"; S.film = 0; playFilm(); }
+    toast("Morning re-read. Readiness <b>" + was + " → " + E.morning() + "</b>, today's squat <b>" + kg(E.presc(0)) + " kg</b>."); }
+  else if(k === "reset"){ stopFilm(); reset(true); toast("Day reset."); }
+  else if(k === "start"){ S.session = true; S.ovl = null; S.push = null; }
+  else if(k === "quit"){ S.session = false; S.tab = "today"; S.sub = "dashboard"; }
+  else if(k === "goFuel"){ S.session = false; S.tab = "nutrition"; }
+  else if(k === "log") logSet(null, null);
+  else if(k === "fix"){ var i = +v, b0 = E.pShort(); S.fix[i] = !S.fix[i];
+    toast((S.fix[i] ? "Logged " + FIX[i].n + "." : "Removed.") + " Short <b>" + b0 + " → " + E.pShort() + " g</b>."); }
+  else if(k === "runGo") runGo();
+  else if(k === "runEnd") runEnd();
+  else if(k === "filmPlay") filmPlay();
+  else if(k === "filmPause") stopFilm();
   else if(k === "say") say(+v);
+  else if(k === "post"){ S.tab = "today"; S.sub = "feed";
+    toast("The composer is the one thing here that is still a form — and it should be. <b>Authoring is a screen job.</b>"); }
 }
-function logSet(){
+
+/* ── the set ── */
+function logSet(reps, rpe){
   var ex = PLAN[S.ex], f0 = E.fresh(), p0 = E.pTarget();
-  S.logged.push({ ex:S.ex, set:S.set, load:E.presc(S.ex), reps:ex.reps, rpe:S.nextRpe });
-  S.nextRpe = null;
-  S.set++;
+  S.logged.push({ ex:S.ex, set:S.set, load:E.presc(S.ex), reps: reps || ex.reps, rpe: rpe || S.nextRpe });
+  S.nextRpe = null; S.set++;
   if(S.set >= ex.sets){ S.set = 0; S.ex++; }
   if(S.ex >= PLAN.length){
     S.done = true; startRest(0);
-    toast("Session on record. Open <b>Performance</b> and <b>Fuel</b> — both moved.");
+    toast("Session on record. <b>Performance</b> and <b>Nutrition</b> both moved.");
   } else {
-    startRest(ex === PLAN[S.ex] ? 90 : 120);
+    startRest(90);
     var f1 = E.fresh(), p1 = E.pTarget();
     toast("Set logged. Freshness <b>" + f0 + " → " + f1 + "%</b>"
       + (p1 !== p0 ? ", protein target <b>" + p0 + " → " + p1 + " g</b>" : "") + ".");
   }
-  paint();
 }
 function startRest(sec){
   clearInterval(S.restTick); S.rest = sec;
@@ -813,90 +898,115 @@ function say(i){
   var inSess = S.session;
   S.ovl = null;
   if(inSess){
-    if(i === 0){ S.nextRpe = 8; toast("Heard — <b>RPE 8</b> on the set you just did. That is the field the form never got."); logSetRpe(); }
-    else if(i === 1){ toast("Heard — <b>eight reps</b> instead of " + PLAN[S.ex].reps + ". Logged as spoken."); logSetReps(8); }
-    else if(i === 2){ S.bump += 5; toast("Next set is <b>" + fmtKg(E.presc(0)) + " kg</b>."); }
+    if(i === 0){ toast("Heard — <b>RPE 8</b>. That is the field the form never got."); logSet(null, 8); }
+    else if(i === 1){ toast("Heard — <b>eight reps</b>, not " + PLAN[S.ex].reps + "."); logSet(8, null); }
+    else if(i === 2){ S.bump += 5; toast("Next set is <b>" + kg(E.presc(0)) + " kg</b>."); }
     else if(i === 3){ var ex = PLAN[S.ex]; S.set = 0; S.ex++;
       if(S.ex >= PLAN.length) S.done = true;
       toast("Closed <b>" + ex.name + "</b>."); }
     else S.ovl = "verdict";
+  } else if(S.tab === "nutrition"){
+    if(i === 0){ var b = E.pShort(); S.extraP += 42;
+      toast("Chicken and rice — <b>+42 g</b>. Short " + b + " → " + E.pShort() + " g."); }
+    else if(i === 1) S.ovl = "verdict";
+    else { S.push = "film"; S.film = 0; S.filmP = 0; filmPlay(); }
   } else {
-    if(S.tab === "fuel" && i === 0){ var b = E.pShort(); S.extraP += 42;
-      toast("Chicken and rice — <b>+42 g protein</b>. Short " + b + " → " + E.pShort() + " g."); }
-    else if(i === 1 || (S.tab !== "fuel" && i === 0)) S.ovl = "verdict";
-    else if(i === 2 && S.tab !== "fuel"){ S.ovl = "film"; S.film = 0; playFilm(); }
-    else { S.tab = "today"; S.sub = "dash"; }
+    if(i === 0) S.ovl = "verdict";
+    else if(i === 1){ S.push = "film"; S.film = 0; S.filmP = 0; filmPlay(); }
+    else { S.tab = "today"; S.sub = "dashboard"; }
   }
+}
+
+/* ── the run ── */
+function runGo(){
+  if(S.run){ S.push = "runDone"; return; }
+  S.push = "runLive"; S.km = 0; S.ears = []; S.zone = "ok";
+  clearInterval(S.runTick);
+  S.runTick = setInterval(function(){
+    S.km = Math.min(8.1, S.km + 0.062);
+    S.zone = (S.km > 2.6 && S.km < 5.4) ? "over" : "ok";
+    EAR.forEach(function(e){
+      if(S.km >= e.at && S.ears.indexOf(e.t) < 0) S.ears.push(e.t);
+    });
+    if(S.km >= 8.1){ runEnd(); return; }
+    updateRun();
+  }, 105);
+}
+/* mutate in place — a full repaint at 10 Hz would remount the screen every tick */
+function updateRun(){
+  var km = $("rKm"); if(!km){ paint(); return; }
+  km.textContent = S.km.toFixed(1);
+  $("rClock").textContent = mmss(S.km * 347);
+  $("rPace").textContent = S.zone === "over" ? "5:12" : S.km < 0.6 ? "6:04" : "5:44";
+  $("rHr").textContent = Math.round(138 + (S.zone === "over" ? 12 : 0) + Math.min(8, S.km));
+  var z = $("rZone");
+  [].forEach.call(z.children, function(b, i){
+    var on = i >= 2 && i < (S.zone === "over" ? 7 : 5);
+    b.className = (S.zone === "over" && i >= 5) ? "over" : on ? "on" : "";
+  });
+  var ears = $("rEars"), want = S.ears.slice(-2);
+  if(ears.children.length !== want.length || ears.lastChild && ears.lastChild.textContent.indexOf(want[want.length-1].slice(0,18)) < 0){
+    ears.innerHTML = want.map(function(t){
+      return '<div class="earline"><span class="kv">' + ico("mic",15,5) + '</span><span>' + t + '</span></div>';
+    }).join("");
+  }
+}
+function runEnd(){
+  clearInterval(S.runTick); S.runTick = null;
+  var f0 = E.fresh();
+  S.run = true; S.push = "runDone";
+  toast("Run on record from the watch. Freshness <b>" + f0 + " → " + E.fresh() + "%</b>, endurance pillar 66 → 71.");
   paint();
 }
-function logSetRpe(){
-  var ex = PLAN[S.ex];
-  S.logged.push({ ex:S.ex, set:S.set, load:E.presc(S.ex), reps:ex.reps, rpe:8 });
-  S.nextRpe = null; S.set++;
-  if(S.set >= ex.sets){ S.set = 0; S.ex++; }
-  if(S.ex >= PLAN.length){ S.done = true; startRest(0); }
-  else startRest(90);
-}
-function logSetReps(n){
-  var ex = PLAN[S.ex];
-  S.logged.push({ ex:S.ex, set:S.set, load:E.presc(S.ex), reps:n, rpe:null });
-  S.set++;
-  if(S.set >= ex.sets){ S.set = 0; S.ex++; }
-  if(S.ex >= PLAN.length){ S.done = true; startRest(0); }
-  else startRest(90);
-}
-function doRun(){
-  var f0 = E.fresh();
-  S.runStage = 0; paint();
-  setTimeout(function(){ S.runStage = 1; paint(); }, 1400);
-  setTimeout(function(){
-    S.run = true; S.runStage = 2; paint();
-    toast("Run on record from the watch. Freshness <b>" + f0 + " → " + E.fresh() + "%</b>, endurance pillar up.");
-  }, 3000);
-}
-function playFilm(){
-  clearInterval(S.filmT);
+
+/* ── the film ── */
+function stopFilm(){ clearInterval(S.filmT); S.filmT = null; }
+function filmPlay(){
+  stopFilm();
+  if(S.film >= SCENES.length - 1 && S.filmP >= 100){ S.film = 0; S.filmP = 0; }
+  var step = 90;
   S.filmT = setInterval(function(){
-    if(S.ovl !== "film"){ clearInterval(S.filmT); return; }
-    S.film++;
-    if(S.film >= SCENES.length){ S.film = SCENES.length - 1; clearInterval(S.filmT); S.filmT = null; }
+    if(S.push !== "film"){ stopFilm(); return; }
+    S.filmP += step / SCENES[S.film].d * 100;
+    if(S.filmP >= 100){
+      if(S.film >= SCENES.length - 1){ S.filmP = 100; stopFilm(); }
+      else { S.film++; S.filmP = 0; }
+    }
     paint();
-  }, 3400);
+  }, step);
 }
 
 /* ══════════ WIRING ══════════ */
 document.addEventListener("click", function(e){
-  var stop = e.target.closest("[data-stop]");
   var el = e.target.closest("[data-act]");
   if(!el) return;
-  if(el.getAttribute("data-act") === "close" && stop && el.contains(stop) && stop !== el) return;
+  if(el.getAttribute("data-act") === "close"){
+    var stop = e.target.closest("[data-stop]");
+    if(stop && el.contains(stop)) return;
+  }
   e.preventDefault();
   act(el.getAttribute("data-act"));
   paint();
 });
 
 var TRY = [
-  ["Read the claim, then open it", "Today opens on one instruction and the struck-through plan number. Tap ＋ for the four drivers behind it.", "tab:today"],
-  ["Log the whole session", "Start, then Log as prescribed. Watch the toast after every set — freshness and your protein target move while you stand there.", "start"],
-  ["Say it instead of tapping", "Mid-set, hit ⏺ and pick “Two left”. That is the RPE the form never captured.", "ovl:voice"],
-  ["Ask whether to keep going", "⏺ then “How was that?”. The answer is derived from your own numbers, and it names them.", "ovl:verdict"],
-  ["See what it cost", "Performance — strength up, recovery down, HPI barely moving. The honest read.", "sub:perf"],
-  ["Go and eat", "Fuel. The shortfall grew because you trained. The fixes are things already in your kitchen.", "tab:fuel"],
-  ["Run tomorrow's 8 km", "Sport, open Running, run it. The last screen is the sentence no competitor can say.", "tab:sport"],
-  ["Watch your week", "You, then Play your week. Motion graphics over real output — not generated video.", "tab:you"]
+  ["Read the claim, then open it","Today opens on one instruction and the struck-through plan number. Tap ＋ for the four drivers.","tab:today"],
+  ["Log the whole session","The accent circle is Train. Then Log as prescribed — watch the toast after every set.","start"],
+  ["Say it instead of tapping","Mid-set, Say something instead → “Two left”. That is the RPE the form never captured.","ovl:voice"],
+  ["Ask whether to keep going","“How was that?” — the answer is derived from your own numbers and names them.","ovl:verdict"],
+  ["See what it cost","Performance — strength up, recovery down, HPI barely moving. The honest read.","sub:performance"],
+  ["Run the 8 km","Today → Endurance → Running → Run it. Fourteen seconds, with the coaching arriving in your ear.","push:runBrief"],
+  ["Read the reconciliation","The last run screen is the sentence no competitor can say.","push:runDone"],
+  ["Go and eat","Nutrition. The shortfall grew because you trained, and the circle became Say.","tab:nutrition"],
+  ["Watch your week","Profile → Play your week. Motion graphics over real output, not generated video.","push:film"]
 ];
-$("tryList").innerHTML = TRY.map(function(t, i){
-  return '<button data-act="' + t[2] + '"><span class="n">' + (i+1) + '</span>'
-    + '<span class="t">' + t[0] + '<em>' + t[1] + '</em></span></button>';
+$("tryList").innerHTML = TRY.map(function(t,i){
+  return '<button data-act="' + t[2] + '"><span class="n">' + (i+1) + '</span><span class="t">' + t[0]
+    + '<em>' + t[1] + '</em></span></button>';
 }).join("");
 
-setInterval(function(){
-  var d = new Date(), h = d.getHours(), m = d.getMinutes();
-  $("clock").textContent = h + ":" + ("0" + m).slice(-2);
-}, 20000);
-var d0 = new Date();
-$("clock").textContent = d0.getHours() + ":" + ("0" + d0.getMinutes()).slice(-2);
-
+function tick(){ var d = new Date(); $("clock").textContent = d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2); }
+tick(); setInterval(tick, 20000);
 paint();
 })();
 </script>
