@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, trackFigure, TABULAR_NUMS, resolveText, type TextToken, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, trackFigure, TABULAR_NUMS, resolveText, weightOnGround, type Ground, type TextToken, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -299,7 +299,48 @@ export const F = {
   reg: "Sohne_400Buch",
   semi: "Sohne_500Kraftig",
   bold: "Sohne_600Halbfett",
-  black: "Sohne_700Dreiviertelfett",
+  /**
+   * `black` IS HALBFETT NOW — the same binary `bold` resolves to, and the
+   * collapse is the correction rather than an accident of mapping.
+   *
+   * It was Dreiviertelfett (700, a 0.16em stem) across 298 call sites, which
+   * made the heaviest cut in the family the app's DEFAULT: more sites than the
+   * regular (258) and the medium (81) combined, with 62 of them at `fs.body` or
+   * below. On a near-black ground light strokes irradiate — they bleed outward
+   * and every weight reads heavier than it measures — so that is a 2.2dp stroke
+   * at reading size with the counters of `a`, `e` and `s` closing up. Heavy type
+   * at reading size is not emphasis, it is mud.
+   *
+   * The type system's rule is now explicit (`weight` in core theme/typography.ts):
+   * ON THIS GROUND THE LADDER STOPS AT 600, both cuts. An alias resolving above
+   * it would be 298 call sites quietly contradicting the system they belong to.
+   *
+   * THE COLLAPSE IS THE POINT, not a cost being absorbed. `bold` and `black`
+   * pointing at one binary says exactly what the rule says: on `ink` there is no
+   * weight above Halbfett. A site that was leaning on the step between them was
+   * leaning on a distinction the system no longer has — and the honest fix for
+   * those is a named style (`ty(C, "hero")`, `ty(C, "title")`), not a heavier
+   * face. That migration is tracked as `weight-ladder-migration` in
+   * capabilities.ts, with the counts.
+   *
+   * DREIVIERTELFETT IS STILL LOADED AND STILL REACHABLE — through `weight.bold`,
+   * whose one consumer is `ty(C, "takeover")`, the Wrapped's full-bleed cover
+   * title. Irradiation runs the other way on a lit surface, so 700 is correct
+   * there and only there.
+   */
+  black: "Sohne_600Halbfett",
+  /**
+   * THE ONE 700 ON THE PHONE — Söhne Dreiviertelfett, and it exists as its own
+   * alias precisely so that `black` could stop being it.
+   *
+   * Legal on a LIT surface only: the Wrapped's full-bleed cover panels, where
+   * dark ink on a bright ground loses apparent weight and 700 is the correct
+   * answer. Reach for `ty(C, "takeover")`, which is its only sanctioned caller;
+   * naming the alias here rather than deleting the face is what keeps the
+   * binary's registration honest (an alias with no PostScript entry is how a
+   * native leaf silently draws San Francisco).
+   */
+  takeover: "Sohne_700Dreiviertelfett",
   mono: "SohneMono_400Buch",
   monoMed: "SohneMono_500Kraftig",
   monoBold: "SohneMono_600Halbfett",
@@ -332,10 +373,17 @@ export const F = {
  * A named style as an RN TextStyle. `color` overrides the token's ink ROLE —
  * pass it for an accent, leave it for the role the style declares.
  */
-export function ty(palette: Palette, token: TextToken, color?: string): TextStyle {
+export function ty(palette: Palette, token: TextToken, color?: string, ground: Ground = "dark"): TextStyle {
   const r = resolveText(token);
+  // THE GROUND IS AN OPTICAL ARGUMENT, NOT A THEME ONE. Dark ink on a lit
+  // surface — a chartreuse pill, a Wrapped cover — loses apparent weight exactly
+  // as light ink on `ink` gains it, so a style that reads correct on the page
+  // reads thin inside a filled control. `weightOnGround` steps the SAME ladder
+  // one rung rather than forking a second one. Leave it unset for every normal
+  // surface; the app's ground is dark and that is the identity.
+  const w = weightOnGround(r.fontWeight, ground);
   return {
-    fontFamily: faceFor(r.fontFamily, r.fontWeight) ?? F.reg,
+    fontFamily: faceFor(r.fontFamily, w) ?? faceFor(r.fontFamily, r.fontWeight) ?? F.reg,
     fontSize: r.fontSize,
     lineHeight: r.lineHeight,
     letterSpacing: r.letterSpacing,
@@ -394,7 +442,7 @@ export const F_POSTSCRIPT: Record<string, string> = {
   [F.reg]: "TestSohne-Buch",
   [F.semi]: "TestSohne-Kraftig",
   [F.bold]: "TestSohne-Halbfett",
-  [F.black]: "TestSohne-Dreiviertelfett",
+  [F.takeover]: "TestSohne-Dreiviertelfett",
   [F.mono]: "TestSohneMono-Buch",
   [F.monoMed]: "TestSohneMono-Kraftig",
   [F.monoBold]: "TestSohneMono-Halbfett",

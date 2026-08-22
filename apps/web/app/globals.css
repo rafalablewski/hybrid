@@ -311,7 +311,10 @@ html {
   .adm-tbl tr td:last-child { border-bottom: none !important; }
   .adm-tbl td::before {
     content: attr(data-label); flex: 0 0 auto; text-align: left;
-    font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+    /* fs.nano + the `label` eyebrow voice (core scale.ts). This was 9px at
+       .08em — below the system's own 10px legibility floor, and the only text
+       on either client that sat under it. */
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .094em;
     text-transform: uppercase; color: var(--color-ash);
   }
   .adm-tbl td[data-label=""]::before,

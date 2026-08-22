@@ -39,7 +39,8 @@
  * choices, so only those are named.
  */
 
-import { fs, lh, tracking, trackFigure, type LeadingRole, type TrackingRole, type TypeRole } from "../scale";
+import { fs, lh, measure, promote, STEP, tracking, trackFigure, type LeadingRole, type TrackingRole, type TypeRole } from "../scale";
+import { SOHNE } from "./face-metrics";
 import { fonts } from "./tokens";
 
 /**
@@ -98,31 +99,95 @@ export const cut = {
 export type Cut = keyof typeof cut;
 
 /**
- * FOUR WEIGHTS, AND MONO STOPS AT 600.
+ * FOUR WEIGHTS, AND ON THIS GROUND THE LADDER STOPS AT 600 — BOTH CUTS.
  *
  * The names are the product's, not the foundry's, so a face swap does not
- * rename every call site: `semibold` is Archivo SemiBold today and Söhne
- * Halbfett after the migration.
+ * rename every call site: `semibold` is Söhne Halbfett, `bold` is
+ * Dreiviertelfett.
  *
- * WHY `bold` IS BANNED IN MONO. Every glyph in a monospaced face already sits
- * on the same advance, so weight is the only axis left to close a counter with.
- * At `fs.metric` a mono 700's 8, 9, 6 and 0 converge at arm's length — which is
- * the exact distance and the exact figures this product is read at. 600 is the
- * ceiling and the digits are more legible for it.
+ * ── THE STEMS, MEASURED, BECAUSE THIS IS AN ARGUMENT ABOUT INK ─────────────
  *
- * NOTE THE MAPPING IS NOT IDENTITY. The app's display face runs to 900 (294
- * call sites of `F.black`) and Söhne's equivalent display weight is 700; Söhne's
- * Kräftig sits heavier than Archivo's SemiBold, so 600 → 500 and 700 → 600 when
- * the face changes. Those are FACE-RELATIVE corrections and belong to the swap,
- * not to this table — which is the point of naming the weights by role.
+ * Söhne draws all four cuts on ONE skeleton — x-height 0.523-0.527, cap-height
+ * 0.718 flat (theme/face-metrics.ts) — so a weight IS its stem and nothing else:
+ *
+ *     Buch             0.090em    regular
+ *     Kräftig          0.120em    medium      +33%
+ *     Halbfett         0.140em    semibold    +56%
+ *     Dreiviertelfett  0.160em    bold        +78%
+ *
+ * ── WHY `bold` IS BANNED IN MONO ───────────────────────────────────────────
+ *
+ * Every glyph in a monospaced face already sits on the same 0.600em advance, so
+ * weight is the only axis left to close a counter with. At `fs.stat` a mono
+ * 700's 8, 9, 6 and 0 converge at arm's length — which is the exact distance and
+ * the exact figures this product is read at. 600 is the ceiling and the digits
+ * are more legible for it. (The face ships no mono 700 at all, so the rule is
+ * also simply the truth about what is loadable.)
+ *
+ * ── AND WHY, ON THE APP'S GROUND, THE SANS STOPS THERE TOO ─────────────────
+ *
+ * New in Aug 2026, and the largest single correction in the type rebuild.
+ *
+ * HYBRID paints near-black (`colors.ink`, L* 3.5) and sets light type on it.
+ * Light-on-dark IRRADIATES: the lit strokes bleed outward into the dark ground,
+ * so every weight reads heavier than the same weight would on paper. The
+ * standard response — the one every careful dark interface makes — is to set one
+ * step LIGHTER than you otherwise would.
+ *
+ * The app did the opposite. `F.black`, the heaviest cut, carried 298 call sites
+ * against 258 for the regular and 81 for the medium: the weight distribution was
+ * INVERTED, with the heaviest cut as the default and the text weights as the
+ * exceptions. Worse, 62 of those sites sat at `fs.body` or below, where a 0.16em
+ * stem is a 2.2dp stroke and the counters of `a`, `e` and `s` close up. Heavy
+ * type at reading size is not emphasis, it is mud — and it is most of the answer
+ * to why a Söhne/Garamond pairing that should read expensive read cheap.
+ *
+ * So: NO NAMED STYLE ON THE DARK GROUND TAKES `bold`, and typography.test.ts
+ * holds it. `hero` — the masthead, the one place a 700 had a real argument — is
+ * `semibold` now, because at 35dp on near-black Halbfett is already emphatic and
+ * Dreiviertelfett is a slab.
+ *
+ * `bold` IS NOT DEAD, and that is what makes this a rule rather than a deletion:
+ * irradiation runs the OTHER WAY on a light or accent-filled surface, where dark
+ * ink on a lit ground reads lighter than it measures. There the ladder steps up,
+ * `bold` becomes correct, and `text.takeover` — the Wrapped's full-bleed cover
+ * title, the app's only such surface — is its one consumer. `weightOnGround`
+ * below is the mechanism, stated once.
  */
 export const weight = {
   regular: 400,
   medium: 500,
   semibold: 600,
-  /** Display only — 26dp and up, and never in `mono`. */
+  /** LIGHT / ACCENT GROUNDS ONLY — see `weightOnGround`. Never on `ink`. */
   bold: 700,
 } as const;
+
+/** The measured stems, so the ladder's argument can be checked rather than read. */
+export const WEIGHT_STEM_EM: Record<number, number> = {
+  400: SOHNE.buch.stem,
+  500: SOHNE.kraftig.stem,
+  600: SOHNE.halbfett.stem,
+  700: SOHNE.dreiviertelfett.stem,
+};
+
+/** What a surface does to apparent weight. `dark` is the app's ground. */
+export type Ground = "dark" | "light";
+
+/**
+ * ONE STEP UP ON A LIGHT GROUND, and nothing else, ever.
+ *
+ * Dark ink on a lit surface loses apparent weight exactly as light ink on a dark
+ * one gains it, so a style that reads correct on `ink` reads thin inside a
+ * chartreuse pill or on a Wrapped cover. Rather than a second weight ladder —
+ * which would drift from the first the week after it was written — the light
+ * ground takes the SAME ladder shifted one rung. That is the whole of the
+ * correction, and it is reversible by construction.
+ *
+ * It stops at `bold`: there is no rung above, so a style already there is as
+ * heavy as this system goes.
+ */
+export const weightOnGround = (w: number, ground: Ground = "dark"): number =>
+  ground === "light" ? Math.min(weight.bold, w + 100) : w;
 
 export type WeightRole = keyof typeof weight;
 
@@ -188,12 +253,34 @@ export const text = {
   datum: { cut: "mono", weight: weight.regular, size: "body", leading: "snug", ink: "secondary", tabular: true },
 
   // ── LANGUAGE — the sans cut ───────────────────────────────────────────────
-  hero: { cut: "sans", weight: weight.bold, size: "hero", leading: "tight", ink: "primary" },
+  /**
+   * THE MASTHEAD. `semibold`, not `bold`, and the drop is deliberate — see the
+   * irradiation note on `weight`. At 35dp on near-black, Halbfett is already
+   * emphatic; Dreiviertelfett is a slab with the counters filling in.
+   */
+  hero: { cut: "sans", weight: weight.semibold, size: "hero", leading: "tight", ink: "primary" },
+  /**
+   * THE TAKEOVER TITLE — the ONE style that takes `bold`, and the only one that
+   * may, because it is the only one that never touches the app's dark ground.
+   *
+   * It sets the Wrapped's cover titles, which are full-bleed accent or
+   * photographic panels: dark ink on a lit surface, where the irradiation that
+   * makes `bold` a slab on `ink` runs the other way and takes weight OFF. It is
+   * `hero`'s size at `hero`'s leading, one weight up, and a call site reaching
+   * for it on a normal screen is making the mistake this pair exists to name.
+   */
+  takeover: { cut: "sans", weight: weight.bold, size: "hero", leading: "tight", ink: "primary" },
   display: { cut: "sans", weight: weight.semibold, size: "display", leading: "tight", ink: "primary" },
   headline: { cut: "sans", weight: weight.semibold, size: "headline", leading: "snug", ink: "primary" },
   /** Section titles — the house standard (the Explore tab's SectionHead). */
   title: { cut: "sans", weight: weight.semibold, size: "title", leading: "snug", ink: "primary" },
-  subtitle: { cut: "sans", weight: weight.semibold, size: "subtitle", leading: "snug", ink: "primary" },
+  /**
+   * `medium`, where the three rungs above it are `semibold` — so the heading
+   * band carries a WEIGHT step as well as a size one. Four consecutive heading
+   * rungs all at one weight was hierarchy by size alone, which is a third of the
+   * available signal being left unused.
+   */
+  subtitle: { cut: "sans", weight: weight.medium, size: "subtitle", leading: "snug", ink: "primary" },
   /** Primary list line, emphasised body. */
   bodyLg: { cut: "sans", weight: weight.medium, size: "bodyLg", leading: "snug", ink: "primary" },
   /** Default reading text. The floor for prose. */
@@ -205,6 +292,23 @@ export const text = {
   caption: { cut: "sans", weight: weight.regular, size: "caption", leading: "normal", ink: "secondary" },
   /** A small label inside a dense row. */
   labelSm: { cut: "sans", weight: weight.medium, size: "micro", leading: "snug", ink: "secondary" },
+
+  // ── CONTROLS — the sans cut, and they are NOT body text ──────────────────
+  /**
+   * A BUTTON LABEL, and the reason it is its own token rather than `bodyLg` in
+   * a pill is that a control's label has no measure and never wraps.
+   *
+   * `medium`, because a control is already marked out by its container — a
+   * filled pill, a ring, a 44dp target — and setting its label `semibold` on top
+   * of that is the same mistake as the app's inverted weight distribution, one
+   * component down. The chrome carries the emphasis; the label carries the word.
+   *
+   * Ink is PRIMARY: a control the athlete is meant to press cannot be set in the
+   * colour the system uses for things that are merely true.
+   */
+  button: { cut: "sans", weight: weight.medium, size: "bodyLg", leading: "snug", ink: "primary" },
+  /** A chip, a segmented-control segment, a dense row's inline action. */
+  buttonSm: { cut: "sans", weight: weight.medium, size: "caption", leading: "snug", ink: "primary" },
   /**
    * THE EYEBROW, AND THERE ARE TWO OF THEM — this is the app's dominant label
    * voice and the pair is not a redundancy.
@@ -248,7 +352,21 @@ export const text = {
    * `tabular` is absent on purpose: the guard below requires it to track the
    * mono cut, and a sentence has no column to line up with.
    */
-  editorial: { cut: "serif", weight: weight.regular, size: "editorial", leading: "snug", tracking: "serif", ink: "primary" },
+  editorial: { cut: "serif", weight: weight.regular, size: "editorial", leading: "editorial", tracking: "serif", ink: "primary" },
+  /**
+   * THE ATTRIBUTION under a quote, and it is SANS on purpose.
+   *
+   * "Never mix the two faces in the same line" is the pairing's governing rule,
+   * and an attribution is where it is most often broken — a serif quote with a
+   * serif source line reads as one continuous piece of typesetting, so the
+   * source competes with the sentence instead of receding from it. The face
+   * change IS the demotion: sans, secondary ink, small, on its own line.
+   *
+   * It is not `caption`, which is metadata; this is a named human, and it sits
+   * in a fixed relationship to `editorial` that a general-purpose token would
+   * not carry.
+   */
+  attribution: { cut: "sans", weight: weight.medium, size: "caption", leading: "snug", ink: "secondary" },
 } as const satisfies Record<string, TextStyle>;
 
 export type TextToken = keyof typeof text;
@@ -267,6 +385,40 @@ export interface ResolvedText {
 }
 
 /**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * THE DESKTOP SCALE IS THIS SCALE, PROMOTED BY ONE STEP — `resolveText(t, STEP)`
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * A desktop is read at roughly 60cm against a phone's 35cm, on a canvas with an
+ * order of magnitude more room, so the same rung set at the same px reads small
+ * and lost. The usual answer is a second ladder, and a second ladder is how the
+ * admin console drifted a pixel under the consumer app in the first place — the
+ * defect scale.ts was written to end.
+ *
+ * There is no second ladder. Resolve with `steps: DESKTOP_PROMOTION` and every
+ * rung lands EXACTLY on the next rung up, because the ladder is generated by
+ * that ratio and the promotion walks it in INDICES rather than multiplying a
+ * rounded px value (`fs.micro × STEP` is 12; the next rung is 13 — see
+ * `promote` in scale.ts):
+ *
+ *     mobile   10  11  13  14  16  18  20  22  28  35  49
+ *     desktop  11  13  14  16  18  20  22  25  31  39  55
+ *
+ * That is not an approximation that happens to be close. It is an identity, and
+ * `typography.test.ts` asserts it rung by rung — which is the property a
+ * modular scale buys you and an accumulated list cannot.
+ *
+ * Leading follows automatically (it is a ratio), and so does tracking (the
+ * optical curve is a function of the rendered size, so a promoted rung gets the
+ * correction its NEW size deserves rather than carrying the old one up).
+ *
+ * `scaleFactor` IS A DIFFERENT AXIS and the two compose: it serves iOS Dynamic
+ * Type, which scales continuously and off-ladder because the OS says so, where a
+ * promotion moves between rungs the system chose.
+ */
+export const DESKTOP_PROMOTION = 1;
+
+/**
  * Resolve a named style to absolute values.
  *
  * `scaleFactor` carries Dynamic Type / a desktop rung promotion: the SIZE moves
@@ -275,9 +427,32 @@ export interface ResolvedText {
  * Tracking follows too, for text and figures alike: both are em-derived now, so
  * a scaled style keeps its proportions rather than its dp.
  */
-export function resolveText(token: TextToken, scaleFactor = 1): ResolvedText {
+/**
+ * THE COLUMN WIDTH A STYLE WANTS, in characters rather than in pixels.
+ *
+ * `measure()` (scale.ts) turns a character count into a width using Söhne's own
+ * average advance, so this answers the brief's "recommended max-width" per rung
+ * without anyone typing a 640. 66 characters is the classic centre of the
+ * 45-75 band; pass 45 for a deliberately narrow column, 75 where a long line is
+ * acceptable.
+ *
+ * On a phone every reading rung answers wider than the screen, and that IS the
+ * answer: it says the mobile reading sizes need no cap, and the surfaces that
+ * do need one — a tablet `prose` block, the admin panel's copy on a desktop —
+ * take their number from the same place rather than from a fresh guess.
+ */
+export function measureFor(token: TextToken, chars?: number): number {
+  return measure(fs[(text[token] as TextStyle).size], chars);
+}
+
+export function resolveText(token: TextToken, scaleFactor = 1, steps = 0): ResolvedText {
   const s = text[token] as TextStyle;
-  const size = Math.round(fs[s.size] * scaleFactor);
+  // `steps` walks the LADDER (see `promote` in scale.ts); `scaleFactor` scales
+  // whatever that lands on. They are different operations and conflating them is
+  // the bug this signature exists to prevent: `fs.micro × STEP` is 12 while the
+  // next rung is 13, because rounding a rung and then multiplying loses the half
+  // dp the exact ladder carries. A promotion has to land ON a rung.
+  const size = Math.round(promote(s.size, steps) * scaleFactor);
   const ratio = lh[s.leading];
   return {
     fontFamily: cut[s.cut],
