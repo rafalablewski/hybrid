@@ -900,7 +900,15 @@ export function dayBandDeck(input: DayBandInput): DayBand[] {
   const spent: TrainingKind[] = [...first.kinds];
 
   while (deck.length < BAND_DECK_MAX) {
-    const next = nextDueKind(rot, spent);
+    // DUE, not merely confident. `nextDueKind` returns the next CONFIDENT kind
+    // — which is right for the correction it was written for ("not swimming
+    // today, give me something else") and wrong here: a candidate page is a
+    // whole band, and rung 8's head is the flat assertion "A ride is due."
+    // Offered off `nextDueKind` it said exactly that about a ride taken
+    // yesterday on a seven-day cadence. A deck page has to clear the same bar
+    // the first page cleared, or the band is asserting something it knows to
+    // be false in the one place this design exists to prevent that.
+    const next = rot.kinds.find((k) => k.confident && k.ratio >= DUE_RATIO && !spent.includes(k.kind))?.kind;
     if (!next) break;
     // The same ladder, with everything already offered taken out of the
     // rotation — so a page is not a re-labelled copy of the one before it, it
@@ -989,11 +997,19 @@ export const BAND_SAY_MAX = 130;
  */
 export function pinRotation(rot: Rotation, pinned: readonly TrainingKind[]): Rotation {
   if (!pinned.length || !rot.due.length) return rot;
+  // QUALIFYING, not `due` — and the difference is the whole reach of the pin.
+  // `due` is already sliced to MAX_DUE, so looking there meant a pinned kind
+  // that had slipped to third could not be promoted back: with three kinds
+  // equally overdue the band pinned one, a later read re-ranked it out of the
+  // top two, and the answer changed underneath the athlete — which is the
+  // exact thing the pin exists to stop. The bar for promotion is the same bar
+  // `due` itself is drawn against, so the pin still cannot invent an answer.
+  const qualifies = rot.kinds.filter((k) => k.confident && k.ratio >= DUE_RATIO);
   const held = pinned
-    .map((k) => rot.due.find((d) => d.kind === k))
+    .map((k) => qualifies.find((d) => d.kind === k))
     .filter((d): d is KindRotation => !!d);
   if (!held.length) return rot;
-  const rest = rot.due.filter((d) => !held.includes(d));
+  const rest = qualifies.filter((d) => !held.includes(d));
   return { ...rot, due: [...held, ...rest].slice(0, MAX_DUE) };
 }
 

@@ -3,7 +3,7 @@ import { makeT } from "./i18n";
 import {
   BAND_HEAD_MAX, BAND_SAY_MAX, CADENCE_SPREAD_MAX, REST_STREAK_DAYS, ROTATION_STALE_DAYS,
   FIXTURE_LOOKBACK_WEEKS, FIXTURE_MIN_WEEKS, FIXTURE_STALE_DAYS,
-  BAND_DECK_MAX, TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, dayBandDeck, doneToday,
+  BAND_DECK_MAX, DUE_RATIO, MAX_DUE, TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, dayBandDeck, doneToday,
   fixtureTomorrow, nextDueKind, pinRotation, rotation, sessionKind, trainingStreak, weeklyFixture,
   type DayBand, type DayBandInput, type TrainingKind,
 } from "./day-band";
@@ -541,6 +541,21 @@ describe("pinRotation — today's answer stays today's answer", () => {
     expect(pinRotation(trained, ["swimming"]).due).toEqual(trained.due);
   });
 
+  it("reaches a pinned kind the MAX_DUE slice had dropped", () => {
+    // Three kinds equally overdue: `due` keeps two, and a pin on the third has
+    // to be able to bring it back — otherwise a later read re-ranks the day
+    // under the athlete, which is the one thing the pin exists to stop.
+    const three = rotation(
+      [...habit("swimming", 3, 6, 4), ...habit("running", 3, 6, 4), ...habit("cycling", 3, 6, 3)],
+      NOW,
+    );
+    const qualifying = three.kinds.filter((k) => k.confident && k.ratio >= DUE_RATIO).map((k) => k.kind);
+    expect(qualifying.length).toBeGreaterThan(MAX_DUE);
+    const dropped = qualifying[MAX_DUE]!;
+    expect(three.due.some((d) => d.kind === dropped)).toBe(false);
+    expect(pinRotation(three, [dropped]).due[0]!.kind).toBe(dropped);
+  });
+
   it("never grows the day past what the band will order", () => {
     const base = rot();
     const pinned = pinRotation(base, base.kinds.map((k) => k.kind));
@@ -604,6 +619,21 @@ describe("the deck", () => {
     });
     expect(planned).toHaveLength(1);
     expect(planned[0]!.rung).toBe("single");
+  });
+
+  it("never offers a candidate that is not itself due", () => {
+    // A deck page is a whole band, and rung 8's head is the flat assertion
+    // "A ride is due." Drawn off the next merely-CONFIDENT kind, page 2 said
+    // exactly that about a ride taken yesterday on a seven-day cadence.
+    const sessions = [...habit("swimming", 3, 6, 3), ...habit("cycling", 7, 6, 1)];
+    const rot = rotation(sessions, NOW);
+    const cycling = rot.kinds.find((k) => k.kind === "cycling")!;
+    expect(cycling.confident).toBe(true);
+    expect(cycling.ratio).toBeLessThan(DUE_RATIO);
+    // ...so it is a candidate the deck must not print.
+    const deck = dayBandDeck({ deficit: deficit(64), sessions, now: NOW });
+    expect(deck).toHaveLength(1);
+    expect(deck.flatMap((b) => b.kinds)).not.toContain("cycling");
   });
 
   it("draws no deck when the rotation has nothing else to offer", () => {
