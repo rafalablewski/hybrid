@@ -840,7 +840,16 @@ export default function AuroraHome() {
   // Hoisted so the other two tabs render the SAME header without a second copy
   // of it — they hand it to their screen through AuroraScreen's `top` slot, so
   // the pills sit in exactly the same place on all three tabs.
-  const hubHeader = (ground?: string) => (
+  // NO `ground` IS THREADED THROUGH THE CHROME, and that is a deletion rather
+  // than an omission. AppHeader and HubMasthead both still take one — they are
+  // shared components and another surface may stand them on a bright ground —
+  // but Today no longer has one to hand them. The field used to be a solid
+  // accent on its acting rungs, so the header row and the masthead had to be
+  // told which ground they were on and swap their tones for it. The band is one
+  // material at one strength since Aug 2026 — a tint OF the page, never a slab
+  // on it — so there is no bright ground left to warn them about, on any rung.
+  // See aurora/day-band.tsx.
+  const hubHeader = () => (
     <>
       {/* THE APP HEADER — profile, the HYBRID LOCKUP, bell. The SHARED row
           (aurora/app-header.tsx), the same component the Nutrition tab root
@@ -849,25 +858,25 @@ export default function AuroraHome() {
           its own name, streak and unread count. This screen passes only the
           one thing that is TODAY'S: the hub the drawer switches in place.
           Mirrors web home/today.tsx. */}
-      <AppHeader hub={{ value: tab, onChange: selectTab }} ground={ground} />
+      <AppHeader hub={{ value: tab, onChange: selectTab }} />
 
       {/* THE HUB PILLS — Dashboard / Performance / Feed, directly under the
           profile row and above the calendar. Today is the athlete's home, and
           these three are what a home holds: the day's plan, the numbers behind
           it, and the people around it. Registry shared with web
           (@hybrid/core today-tabs.ts). */}
-      <TodayTabs value={tab} onChange={selectTab} ground={ground} />
+      <TodayTabs value={tab} onChange={selectTab} />
     </>
   );
 
   // THE WHOLE TOP OF THE SCREEN, as one slot: the app row, the pills and the
   // masthead. Dashboard hands it to the day field, which draws it on the day's
-  // colour; Performance and Feed render the same components on the page. The
-  // masthead is still the shared component with its own numbers — this only
-  // tells it which ground it is standing on.
-  const topChrome = (ground?: string, masthead = true) => (
+  // tint; Performance and Feed render the same components on the page. Nothing
+  // in it is authored here — every one is the shared component with its own
+  // numbers, and this passes only what is TODAY'S.
+  const topChrome = (masthead = true) => (
     <>
-      {hubHeader(ground)}
+      {hubHeader()}
       {/* THE MASTHEAD — the SHARED hub head (aurora/hub-masthead.tsx), the same
           component Performance and Feed render, so the three tabs of one hub
           cannot present three different heads. Everything measurable about it
@@ -877,7 +886,7 @@ export default function AuroraHome() {
           the weekday name beyond — a static "Today" over Friday's session would
           lie in the largest type on screen. */}
       {masthead ? (
-        <HubMasthead eyebrow={mastCaption} meta={mastTag} metaTone="accent" title={mastTitle} ground={ground} />
+        <HubMasthead eyebrow={mastCaption} meta={mastTag} metaTone="accent" title={mastTitle} />
       ) : null}
     </>
   );
@@ -947,15 +956,6 @@ export default function AuroraHome() {
       .then((pin) => setPrefs((p) => ({ ...p, pin })))
       .catch(() => {});
   }, [fieldOn, pinnable, prefs.pin.length, bandKinds]);
-  // THE GROUND, only when the field is FILLED. A quiet field is a 16% wash on
-  // near-black, where the chrome's own tones are already the legible ones —
-  // handing those rows a hue to measure against would swap them for no reason.
-  // THE CHROME ALWAYS STANDS ON A DARK GROUND NOW. The field used to be a solid
-  // accent on its acting rungs, so the header row and the masthead had to be
-  // told which ground they were on and swap their tones for it. The band is one
-  // material at one strength since Aug 2026 — a tint of the page — so there is
-  // no bright ground left to warn them about. See aurora/day-band.tsx.
-  const fieldGround: string | undefined = undefined;
   // The BAR's colour, and it is solid whatever the rung — the field dilutes the
   // hue on a reporting day, the bar never does (day-fold.ts says why).
   const dayHue = bandHue(band);
@@ -1074,7 +1074,7 @@ export default function AuroraHome() {
             <AuroraDayBand
               deck={deck}
               fold={fold}
-              top={topChrome(fieldGround, fieldMasthead)}
+              top={topChrome(fieldMasthead)}
               onExplain={() => setDayOpen(true)}
               // The band's ask needs a session to open the sheet on, and it is
               // TODAY's unrated one — not the viewed day's, which the rail may

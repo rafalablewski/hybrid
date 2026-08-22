@@ -104,7 +104,7 @@ import { AuroraIcon, Glyph, SportMark } from "./icons";
  * SHORTENED, once the field stopped being a slab. A coloured panel has to earn
  * its height by being a colour; a tint does not, so every gap came down one
  * rung of the scale — about 24dp off the top of the screen, which is 24dp the
- * day\u2019s first card gets back.
+ * day’s first card gets back.
  */
 const PAD = {
   x: GUTTER + 3,
