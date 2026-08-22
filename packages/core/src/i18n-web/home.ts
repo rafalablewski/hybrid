@@ -6,7 +6,7 @@
 export const web_home = {
   en: {
     // today
-    "w.home.quickSport.title": "Log a sport",
+    "w.home.quickSport.title": "Sport",
     "w.home.quickSport.sub": "A run, a swim, a match — it still counts",
     "w.home.quickSport.other": "Other",
     "w.home.quickSport.search": "Search 100+ sports…",
@@ -1417,7 +1417,7 @@ export const web_home = {
     "w.home.today.chooserBuildTitle": "Build your own",
     "w.home.today.chooserBuildSub": "Compose a custom program from any discipline.",
     "w.home.today.chooserBuildCta": "Compose",
-    "w.home.today.chooserLogTitle": "Log a session",
+    "w.home.today.chooserLogTitle": "Gym",
     "w.home.today.chooserLogSub": "One session, right now — no plan needed.",
     "w.home.today.chooserLogCta": "Log",
     "w.home.today.chooserQuickTitle": "Quick start",
@@ -1491,7 +1491,7 @@ export const web_home = {
   } as Record<string, string>,
   pl: {
     // today
-    "w.home.quickSport.title": "Zapisz sport",
+    "w.home.quickSport.title": "Sport",
     "w.home.quickSport.sub": "Bieg, pływanie, mecz — to też się liczy",
     "w.home.quickSport.other": "Inne",
     "w.home.quickSport.search": "Szukaj wśród 100+ sportów…",
@@ -2711,7 +2711,7 @@ export const web_home = {
     "w.home.today.chooserBuildTitle": "Zbuduj własny",
     "w.home.today.chooserBuildSub": "Ułóż własny program z dowolnej dyscypliny.",
     "w.home.today.chooserBuildCta": "Twórz",
-    "w.home.today.chooserLogTitle": "Zapisz trening",
+    "w.home.today.chooserLogTitle": "Siłownia",
     "w.home.today.chooserLogSub": "Jeden trening, teraz — bez planu.",
     "w.home.today.chooserLogCta": "Zapisz",
     "w.home.today.chooserQuickTitle": "Szybki start",
@@ -2782,7 +2782,7 @@ export const web_home = {
   } as Record<string, string>,
   de: {
     // today
-    "w.home.quickSport.title": "Sport loggen",
+    "w.home.quickSport.title": "Sport",
     "w.home.quickSport.sub": "Ein Lauf, ein Schwimmen, ein Match — es zählt trotzdem",
     "w.home.quickSport.other": "Andere",
     "w.home.quickSport.search": "Über 100 Sportarten suchen…",
@@ -4000,7 +4000,7 @@ export const web_home = {
     "w.home.today.chooserBuildTitle": "Erstelle deinen eigenen",
     "w.home.today.chooserBuildSub": "Stelle ein eigenes Programm aus jeder Disziplin zusammen.",
     "w.home.today.chooserBuildCta": "Erstellen",
-    "w.home.today.chooserLogTitle": "Training loggen",
+    "w.home.today.chooserLogTitle": "Gym",
     "w.home.today.chooserLogSub": "Ein Training, jetzt — kein Plan nötig.",
     "w.home.today.chooserLogCta": "Loggen",
     "w.home.today.chooserQuickTitle": "Schnellstart",

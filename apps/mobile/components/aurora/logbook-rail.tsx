@@ -383,11 +383,38 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
   // athlete had no way to say it.
   //
   // It takes the PLAN rail's own rest drawing (moon, "Rest day") so one fact
-  // has one shape on both rails, and it keeps ONE action — the retraction —
-  // because a day the athlete has just called a rest day should not still be
-  // asking them to train. Logging anyway is not blocked: a session that lands
-  // here moves the card to the receipt branch, which never reads `resting`.
+  // has one shape on both rails, and it carries NO ACTION PAIR — the only day
+  // state that doesn't. Two reasons, and the first is the whole point of the
+  // state: a day the athlete has just called a rest day must not still be
+  // asking them to train, and a card whose one control undoes the thing it
+  // just announced is a card arguing with itself.
+  //
+  // THE RETRACTION IS THE BLOCK. A rest day still has to be reversible — a
+  // mis-tap that traps the day until midnight is worse than the button was —
+  // so the block itself takes the tap, with the undo spoken in its
+  // accessibility label rather than drawn as a control. It shipped for one
+  // release as an explicit "Not a rest day" pill and was cut on review: it was
+  // the only thing on the card at full button weight, which made the loudest
+  // element on a settled day the offer to unsettle it.
+  //
+  // A DECLARATION IS NEVER A LOCK either way. Logging anyway is not blocked:
+  // a session that lands here moves the card to the receipt branch, which
+  // never reads `resting`.
   if (resting) {
+    const block = (
+      <View style={{ alignItems: "center", gap: 7, paddingTop: 14, paddingBottom: 2, paddingHorizontal: 6 }}>
+        <Glyph name="moon" size={30} color={C.ash} />
+        <Text
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
+          style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk, textAlign: "center" }}
+        >
+          {t("w.home.rail.restDay")}
+        </Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption, "relaxed"), color: C.ash, textAlign: "center", maxWidth: 260 }}>
+          {t("w.home.logbook.restBody")}
+        </Text>
+      </View>
+    );
     return (
       <View>
         {!!stamp && (
@@ -395,20 +422,17 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>
           </View>
         )}
-        <View style={{ alignItems: "center", gap: 7, paddingTop: 14, paddingBottom: 2, paddingHorizontal: 6 }}>
-          <Glyph name="moon" size={30} color={C.ash} />
-          <Text
-            maxFontSizeMultiplier={MAX_FONT_SCALE}
-            style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk, textAlign: "center" }}
+        {onDeclareRest ? (
+          <Pressable
+            onPress={() => onDeclareRest(day, false)}
+            accessibilityRole="button"
+            accessibilityLabel={t("w.home.rail.restDay")}
+            accessibilityHint={t("w.home.logbook.restUndo")}
           >
-            {t("w.home.rail.restDay")}
-          </Text>
-          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption, "relaxed"), color: C.ash, textAlign: "center", maxWidth: 260 }}>
-            {t("w.home.logbook.restBody")}
-          </Text>
-        </View>
+            {block}
+          </Pressable>
+        ) : block}
         {doneFloor}
-        <AActionPair actions={onDeclareRest ? [{ label: t("w.home.logbook.restUndo"), onPress: () => onDeclareRest(day, false) }] : []} />
       </View>
     );
   }

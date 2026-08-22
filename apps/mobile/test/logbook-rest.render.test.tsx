@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import type { LoggedSession } from "@hybrid/core";
 import { renderScreen } from "./render";
 import AuroraLogbookRail from "../components/aurora/logbook-rail";
@@ -24,7 +24,11 @@ import AuroraLogbookRail from "../components/aurora/logbook-rail";
  *   render either way and only their sequence carries the mistake.
  *
  *   THE RETRACTION. A rest day that cannot be taken back is a tap that traps
- *   the day, and this card's only other actions are gone in that state.
+ *   the day until midnight, and this card's other actions are gone in that
+ *   state. It is no longer a pill — that shipped for one release and was cut
+ *   as the loudest thing on a settled day — so the reversibility now rests
+ *   entirely on the BLOCK being a button, which is exactly the kind of
+ *   affordance that disappears in a refactor without a test on it.
  */
 
 vi.mock("../lib/api", () => ({
@@ -87,22 +91,34 @@ describe("the logbook day — declaring rest", () => {
     expect(screen.queryByText("Sport")).toBeNull();
   });
 
-  it("can always be taken back", () => {
-    renderScreen(rail({ resting: true }));
-    expect(screen.getByText("Not a rest day")).toBeTruthy();
+  it("can always be taken back — the block itself is the undo", () => {
+    const onDeclareRest = vi.fn();
+    renderScreen(rail({ resting: true, onDeclareRest }));
+    // No pill: the retraction is not a control of its own any more.
+    expect(screen.queryByText("Not a rest day")).toBeNull();
+    const block = screen.getByRole("button", { name: "Rest day" });
+    fireEvent.click(block);
+    expect(onDeclareRest).toHaveBeenCalledWith(expect.objectContaining({ isToday: true }), false);
   });
 
-  it("puts the day's own record ABOVE the actions, in both states", () => {
+  it("puts the day's own record ABOVE the actions on an open day", () => {
     // DOM order, not presence: the floor and the pair both render either way,
     // and the bug is only ever which one comes first.
-    for (const resting of [false, true]) {
-      const { container, unmount } = renderScreen(rail({ resting }));
-      const floor = container.querySelector('[data-testid="floor"]')!;
-      const action = screen.getByText(resting ? "Not a rest day" : "Rest");
-      expect(floor).toBeTruthy();
-      // Node.compareDocumentPosition: 4 = the argument FOLLOWS the reference.
-      expect(floor.compareDocumentPosition(action) & 4).toBeTruthy();
-      unmount();
-    }
+    const { container } = renderScreen(rail());
+    const floor = container.querySelector('[data-testid="floor"]')!;
+    expect(floor).toBeTruthy();
+    // Node.compareDocumentPosition: 4 = the argument FOLLOWS the reference.
+    expect(floor.compareDocumentPosition(screen.getByText("Rest")) & 4).toBeTruthy();
+    expect(floor.compareDocumentPosition(screen.getByText("Gym")) & 4).toBeTruthy();
+  });
+
+  it("still ends on the record when the day is declared rest", () => {
+    // Nothing to be above here — that state has no actions at all now. What
+    // has to hold is the other half of the same rule: the floor is the LAST
+    // thing on the card, under the day's own statement, never buried above it.
+    const { container } = renderScreen(rail({ resting: true }));
+    const floor = container.querySelector('[data-testid="floor"]')!;
+    const block = screen.getByRole("button", { name: "Rest day" });
+    expect(block.compareDocumentPosition(floor) & 4).toBeTruthy();
   });
 });
