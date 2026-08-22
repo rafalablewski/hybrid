@@ -191,6 +191,11 @@ export default function AuroraHome() {
   const sessionsError = sessionsRead.failed;
   const planId = macroRead.data?.planId ?? null;
   const planStartedAt = macroRead.data?.planStartedAt ?? null;
+  // WHAT THIS ATHLETE IS TRAINING FOR, from the enrolled season. It reaches the
+  // prescription engine below — until Aug 2026 nothing did, so the session
+  // designed for a powerlifter and the one designed for a triathlete were the
+  // same session. Null when not enrolled, which prescribes exactly as before.
+  const goal = macroRead.data?.macro.goalOrSport ?? null;
   // THE HUB — which of Today's three top-level views is showing (see
   // @hybrid/core today-tabs.ts). Deliberately NOT persisted: Today is the app's
   // home and its job is "what do I do today?", so every visit opens on the
@@ -403,8 +408,8 @@ export default function AuroraHome() {
   const fuel = useMemo(() => fuelAdjustment(nutritionSignals), [nutritionSignals, today]);
   const fuelAdj = fuel.points;
   const rx = useMemo(
-    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj, fuelAdj }),
-    [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj, fuelAdj],
+    () => prescribeSession(log, bio, { profiles: velocityProfiles(sessions), experience: prefExp, equipment: prefEquip, subjectiveReadiness: todayFeeling ?? undefined, heatAdj, fuelAdj, goal }),
+    [log, sessions, bio, prefExp, prefEquip, todayFeeling, heatAdj, fuelAdj, goal],
   );
   // ── THE DAY OBJECT ────────────────────────────────────────────────────────
   // Today's readiness, split into what it kept and what each cause took. ONE

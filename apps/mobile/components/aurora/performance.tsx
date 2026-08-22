@@ -32,7 +32,7 @@ import {
   freshnessExplain, wearableExplain, wearableSourcePhrase,
   type CapabilityMovement, type FreshnessPillar,
   type WearableExplain,
-  goalLabel,
+  goalLabel, hpiWeightsFor,
 } from "@hybrid/core";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -157,13 +157,19 @@ function Full({ top }: { top?: ReactNode }) {
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
   // ONE velocityProfiles pass, read by the exits.
   const profiles = useMemo(() => velocityProfiles(sessions), [sessions]);
-  const state = useMemo(() => computePerformanceState(log, bio), [log, bio]);
+  // THE FRESHNESS WEIGHTING IS THIS ATHLETE'S, from their goal. The two
+  // specialised weightings have existed in engines/hpi.ts since it was written
+  // and nothing outside the admin Engine Room simulator ever passed either, so
+  // a marathoner and a powerlifter were scored on the same 0.55/0.45 blend. No
+  // season enrolled → the hybrid blend, which is what everyone got before.
+  const weights = useMemo(() => hpiWeightsFor(macro?.goalOrSport ?? null), [macro]);
+  const state = useMemo(() => computePerformanceState(log, bio, weights), [log, bio, weights]);
   // WHICH FRESHNESS COLUMN IS OPEN, and the explanation behind it — computed
   // only while the sheet is up, from the SAME engine the columns print.
   const [freshOpen, setFreshOpen] = useState<FreshnessPillar | null>(null);
   const freshExplain = useMemo(
-    () => (freshOpen ? freshnessExplain(freshOpen, log, bio) : null),
-    [freshOpen, log, bio],
+    () => (freshOpen ? freshnessExplain(freshOpen, log, bio, weights) : null),
+    [freshOpen, log, bio, weights],
   );
   // THE ±15's provenance. Computed whenever there IS a reading, because the
   // card's own line needs the source name — not only the sheet.
@@ -178,7 +184,7 @@ function Full({ top }: { top?: ReactNode }) {
   // ONE trajectory pass, WITH the wearable, so the plot's last point is the
   // figure printed above it. It used to be computed twice and the copy feeding
   // the sparkline omitted `bio` — two numbers for the same day in one card.
-  const traj = useMemo(() => performanceTrajectory(log, 14, bio), [log, bio]);
+  const traj = useMemo(() => performanceTrajectory(log, 14, bio, 0, 0, weights), [log, bio, weights]);
   const trained = useMemo(() => sessionDaysAgo(sessions.map((s) => s.startedAt), Date.now()), [sessions]);
   const plot = useMemo(() => trajectoryPlot(traj, trained, PLOT), [traj, trained]);
   const verdict = useMemo(() => stateVerdict(state.hpi, risk), [state.hpi, risk]);
