@@ -29,7 +29,7 @@
 
 import type { DayBand } from "./day-band";
 import { ROLE_COLOR, type AccentKey } from "./semantic";
-import { easedRamp, smoothstep } from "./contrast";
+import { smoothstep } from "./contrast";
 import { fs, space, tracking } from "./scale";
 import { APP_HEADER } from "./app-header";
 
@@ -165,43 +165,30 @@ export const BAND_WASH: readonly { at: number; alpha: number }[] = Array.from(
 );
 
 /**
- * THE FOOT — the distance a FILLED band takes to become the page, and it is the
- * band's whole bottom pad rather than an extra strip beneath it.
+ * A BAND ENDS THE WAY ITS GROUND ALLOWS — and the two states do not allow the
+ * same thing, which is the symmetry that had to go.
  *
- * A quiet band dissolves across its full height (`BAND_WASH`), which it can
- * afford: it is a wash, and the journey from a 20% tint to nothing is short and
- * stays dark the whole way. A filled band cannot — it is a FIELD, and a field
- * that faded under its own instruction could not carry one. So it holds its
- * colour through the content and resolves below it.
+ * A QUIET band DISSOLVES. `BAND_WASH` ramps a 20% tint to nothing, and you
+ * cannot see it go: the whole journey is #352b0f → #0c0d0c, a few levels per
+ * channel spread over the band's full height.
  *
- * IT WAS 26 AND IT READ AS A SMUDGE. The journey a filled band has to make is
- * enormous — Wild Lime to near-black is most of the lightness range — and
- * compressed into 26dp it came out as a stripe of dark olive with a visible
- * crease above it, rather than as a field meeting a page. The distance came
- * free: the band already carried 20dp of ordinary bottom pad ABOVE the old
- * foot, doing nothing at all. Folding the two gives the ramp 46dp at exactly
- * the same band height, and states a better rule than "pad, then a strip" —
- * THE BAND'S BOTTOM PAD IS WHERE IT BECOMES THE PAGE. Nothing is drawn in it
- * either way, which is what makes the fold safe.
+ * A FILLED band STOPS. It cannot dissolve, and this was tried twice before it
+ * was measured properly. Wild Lime to the page ground is most of the lightness
+ * range, and the midpoint of that journey is a dark olive in EVERY colour
+ * space — there is no route from a saturated yellow-green to near-black that
+ * avoids it. So a foot does not soften the edge, it replaces a clean one with a
+ * visible stripe of mud: at 26dp it read as a smudge with a crease above it,
+ * and easing it to 46dp in OKLab made it a better-shaped smudge.
+ *
+ * A COLOURED FIELD ENDING AT AN EDGE IS NOT A SEAM. The thing that was wrong at
+ * the start of all this was a HAIRLINE — a rule drawn across the join, which
+ * claims to separate two surfaces that both continue when in fact one of them
+ * stops. An edge makes no such claim. It is what the top of every coloured
+ * header in the world does, and it is crisp rather than dirty.
+ *
+ * So the rule is not "every band fades", it is: NEITHER STATE ENDS AT A RULE.
+ * One dissolves because it can. The other stops because it must.
  */
-export const BAND_FOOT = 46;
-
-/**
- * THE FOOT'S STOPS — a filled band's accent arriving at the page ground.
- *
- * Opaque colours mixed in OKLab, NOT a near-black scrim faded in over the
- * accent: compositing black over a saturated colour is sRGB-linear
- * interpolation by another name, and it takes the muddiest route available.
- * OKLab drops the chroma faster on the way down.
- *
- * It does not REMOVE the olive — half of Wild Lime and half of near-black is a
- * dark olive in every colour space, and no route avoids it — which is why the
- * ease matters more than the space. The middle is crossed quickly and the ends
- * are approached slowly, so the mud is transited rather than displayed.
- */
-export function bandFootStops(accent: string, ground: string): { at: number; color: string }[] {
-  return easedRamp(accent, ground, BAND_RAMP_STOPS);
-}
 
 /**
  * THE HOLD-BACK LADDER for a band's secondary lines — the steps `inkHold()`

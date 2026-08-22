@@ -3,8 +3,8 @@ import { Animated, ScrollView, StyleSheet, Text, View, type NativeSyntheticEvent
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  BAND_FOOT, BAND_HOLD, BAND_WASH, DISCIPLINE_META, FOLD, FOLD_RISE, bandFootStops, bandHue,
-  bandText, blendOver, fs, inkHold, inkOn, leading, space, tracking,
+  BAND_HOLD, BAND_WASH, DISCIPLINE_META, FOLD, FOLD_RISE, bandHue, bandText,
+  blendOver, fs, inkHold, inkOn, leading, space, tracking,
   type DayBand, type SemanticRole, type TrainingKind,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -32,14 +32,21 @@ import { AuroraIcon, Glyph, SportMark } from "./icons";
  * a clock has no label, and the sentence under the instruction has to add a
  * fact the instruction does not carry — the engine's own copy test holds that.
  *
- * ── THE BAND ENDS BECAUSE THE COLOUR ENDS ────────────────────────────────
- * There is no border anywhere on this field, in either state. A quiet band is a
- * RAMP (`BAND_WASH`) whose last stop is fully transparent, so it resolves to
- * whatever the screen's own ground is; a filled band is solid through its
- * content and resolves inside a FOOT (`BAND_FOOT`) below it. It used to be a
- * flat wash with a 1px rule across the bottom, and both halves were wrong — a
- * hairline separates two surfaces that BOTH continue, and here the surface
- * stops. See day-fold.ts, which carries the argument and the stops.
+ * ── NEITHER STATE ENDS AT A RULE ─────────────────────────────────────────
+ * There is no border anywhere on this field. It used to be a flat wash with a
+ * 1px rule across the bottom, and a hairline separates two surfaces that BOTH
+ * continue — here one of them stops, so the rule had nothing on its far side to
+ * belong to and read as a rendering fault.
+ *
+ * What replaces it differs by state, because the two grounds do not allow the
+ * same thing. A QUIET band DISSOLVES: `BAND_WASH` ramps its tint to a fully
+ * transparent last stop, so it resolves to whatever the screen's own ground is,
+ * and you cannot see it go — the whole journey is a few levels per channel. A
+ * FILLED band STOPS. A fade was tried twice and measured on the third attempt:
+ * Wild Lime to the page ground is most of the lightness range and its midpoint
+ * is a dark olive in every colour space, so a foot does not soften the edge, it
+ * replaces a clean one with a visible stripe of mud. A coloured field ending at
+ * an edge is not a seam. See day-fold.ts, which carries the argument.
  *
  * ── ONE INK, HELD BACK BY MEASUREMENT ────────────────────────────────────
  * `inkOn` picks WHICH ink; `inkHold` picks how far it may be held back on this
@@ -84,11 +91,8 @@ const PAD = {
   x: GUTTER + 3,
   /** Above the chrome, under the status inset. */
   top: space.lg,
-  /** Under the last row. It IS the foot on a filled band (BAND_FOOT), which is
-   *  why there is no separate `bottom`: the pad and the ramp were two numbers
-   *  doing one job, and keeping them apart is what left the ramp too short to
-   *  resolve in. Nothing is ever drawn in it. */
-  bottom: BAND_FOOT,
+  /** Under the last row. */
+  bottom: space.xl,
   /** Between the mark and the numeral. */
   markGap: space.sm,
   /** Numeral → instruction. */
@@ -243,8 +247,6 @@ export default function AuroraDayBand({
   // the same ladder gives 0.54 on a dark ramp and 1 (no hold at all) on Lyons
   // Blue, which cannot afford one. See inkHold() in core.
   const hold = inkHold(ink, ground, BAND_HOLD);
-  // The filled band's own arrival at the page, computed once per render.
-  const foot = quiet ? [] : bandFootStops(fill, C.ink);
 
   const head = bandText(t, shown.head ?? band.head);
   const say = shown.say.map((l) => bandText(t, l)).join(" ");
@@ -350,17 +352,16 @@ export default function AuroraDayBand({
         marginTop: -insets.top,
         marginBottom: fold ? at(0, 1, [0, -pull]) : 0,
         paddingTop: insets.top + PAD.top,
-        // The foot IS the pad: nothing is ever drawn on the part of the ground
-        // that is busy becoming the page.
         paddingBottom: PAD.bottom,
         backgroundColor: fill,
       }}
     >
-      {/* THE GROUND. A quiet band ramps across its whole height and ends fully
-          transparent, so it resolves to the screen's own ground rather than to
-          a hardcoded copy of it. A filled band holds its colour through the
-          content and resolves in the foot alone — it is a FIELD, and a field
-          that faded under its own instruction could not carry one. */}
+      {/* THE GROUND. A quiet band is a RAMP whose last stop is fully
+          transparent, so it resolves to whatever the screen's own ground is
+          rather than to a hardcoded copy of it — and you cannot see it go,
+          because the whole journey is a few levels per channel. A FILLED band
+          takes no ramp at all: it is a field, and a field STOPS. See
+          day-fold.ts, which carries the argument. Neither ends at a rule. */}
       {quiet ? (
         <LinearGradient
           colors={BAND_WASH.map((s) => withAlpha(accent, s.alpha)) as unknown as readonly [string, string, ...string[]]}
@@ -368,18 +369,7 @@ export default function AuroraDayBand({
           style={StyleSheet.absoluteFill}
           pointerEvents="none"
         />
-      ) : (
-        <LinearGradient
-          // Opaque stops, not a scrim of ink faded in over the accent — see
-          // bandFootStops(). Fading black over a saturated colour is
-          // sRGB-linear interpolation by another name, and it takes the
-          // muddiest route from the accent to the ground.
-          colors={foot.map((s) => s.color) as unknown as readonly [string, string, ...string[]]}
-          locations={foot.map((s) => s.at) as unknown as readonly [number, number, ...number[]]}
-          style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: BAND_FOOT }}
-          pointerEvents="none"
-        />
-      )}
+      ) : null}
 
       {/* THE CHROME leaves first and travels furthest — the field's own head is
           the part the bar is about to take over, so peeling it off before the

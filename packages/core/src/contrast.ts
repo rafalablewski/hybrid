@@ -39,31 +39,17 @@ export function meetsContrast(a: string, b: string, level: number = WCAG.AA): bo
   return contrastRatio(a, b) >= level;
 }
 
-/* ── PERCEPTUAL MIXING ─────────────────────────────────────────────────────
+/* ── THE S-CURVE ───────────────────────────────────────────────────────────
  *
- * `contrastRatio` answers "can this be read on that" and `deltaE2000` answers
- * "can these be told apart". Neither answers the third question a ramp asks:
- * what is HALFWAY between two colours — and the obvious answer, interpolating
- * the sRGB bytes, is wrong in a way you can see.
+ * The one piece of ramp maths that survived. It shapes the day band's quiet
+ * WASH, which holds its tint where the content is and then dissolves — a linear
+ * ramp drops from the first pixel, and the eye finds the corner.
  *
- * IT SHIPPED WRONG ON THE DAY BAND'S FOOT. A filled band resolves into the page
- * ground over its bottom pad, and drawn as a plain two-stop gradient it came out
- * with a visible CREASE where the solid left off and a muddy olive stripe
- * through the middle. Two different faults, and only one of them is the colour
- * space:
- *
- *  - THE CREASE is the curve. A linear ramp has a discontinuous first
- *    derivative at both ends, so the eye finds the corner where the field stops
- *    being solid. `smoothstep` leaves and arrives tangentially, which is what
- *    makes a scrim read as shade rather than as a shape.
- *
- *  - THE MUD is the path, and it is only PARTLY fixable. Half of Wild Lime and
- *    half of near-black is a dark olive in any colour space — there is no route
- *    from a saturated yellow-green to the page ground that does not pass
- *    through it. OKLab drops the chroma faster on the way (0.070 against 0.080
- *    at the midpoint), and the ease is what matters more: it crosses the middle
- *    QUICKLY and lingers at the ends, so the olive is transited rather than
- *    displayed.
+ * A matching set of OKLab mixing helpers was written here to soften the FILLED
+ * band's edge into the page, and then deleted with the thing it was for: no
+ * interpolation makes that transition invisible, because half of Wild Lime and
+ * half of near-black is a dark olive in every colour space. A field ends at an
+ * edge. See day-fold.ts.
  */
 
 /** The classic S-curve, 0→1 with zero slope at both ends. */
@@ -80,53 +66,6 @@ const linearToSrgb = (v: number): number => {
   const c = v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055;
   return Math.round(Math.min(255, Math.max(0, c * 255)));
 };
-
-/** sRGB hex → OKLab, the space a ramp should be interpolated in. */
-export function oklabOf(hex: string): [number, number, number] {
-  const [r, g, b] = parseHex(hex).map(srgbToLinear) as [number, number, number];
-  const cbrt = (v: number) => (v > 0 ? Math.cbrt(v) : 0);
-  const l = cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
-  const m = cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
-  const s = cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
-  return [
-    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
-    1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s,
-    0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s,
-  ];
-}
-
-/** OKLab → sRGB hex, clamped into gamut. */
-export function oklabHex([L, A, B]: [number, number, number]): string {
-  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
-  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
-  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
-  const rgb = [
-    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
-  ].map((v) => linearToSrgb(Math.min(1, Math.max(0, v))));
-  return `#${rgb.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
-}
-
-/** `t` of the way from `a` to `b`, mixed perceptually. */
-export function mixOklab(a: string, b: string, t: number): string {
-  const A = oklabOf(a);
-  const B = oklabOf(b);
-  return oklabHex([0, 1, 2].map((i) => A[i]! + (B[i]! - A[i]!) * t) as [number, number, number]);
-}
-
-/**
- * A ramp from `from` to `to` with no crease at either end: `steps` stops at
- * even POSITIONS, coloured at eased WEIGHTS. The endpoints are exact — a stop
- * table that does not start where the surface starts is a crease of its own.
- */
-export function easedRamp(from: string, to: string, steps: number): { at: number; color: string }[] {
-  const n = Math.max(2, Math.round(steps));
-  return Array.from({ length: n }, (_, i) => {
-    const at = i / (n - 1);
-    return { at, color: i === 0 ? from : i === n - 1 ? to : mixOklab(from, to, smoothstep(at)) };
-  });
-}
 
 /* ── PERCEPTUAL DISTANCE ───────────────────────────────────────────────────
  *
