@@ -132,16 +132,34 @@ const HIT = 44;
  *  drift apart. */
 const DOT = RADIUS.mark * 2;
 
+/**
+ * THE MARK'S SLOT — a fixed box, drawn or not.
+ *
+ * The discipline mark is the one thing on the reading row that CHANGES with the
+ * rung and with the deck's page: a swim on page one, a barbell on page two,
+ * nothing at all on the rungs that name no discipline. Laid out as an ordinary
+ * flex child it took its own glyph's width each time, so the numeral beside it
+ * shifted — the day's reading, the most fixed fact on the screen, moving a few
+ * points sideways every time the athlete swiped.
+ *
+ * So the slot is reserved whether or not anything is in it, and the glyph is
+ * centred inside it. The number never moves.
+ */
+const MARK = { size: 18, slot: 22 } as const;
+
 /** A discipline's own drawing, at the head of the band. Resolved through the
  *  endurance hub's `DISCIPLINE_META` so the mark on the band and the mark on
  *  that sport's lane are the same object. Gym has no discipline mark. */
-function KindMark({ kind, color }: { kind: TrainingKind; color: string }) {
-  if (kind === "gym") return <Glyph name="barbell" size={18} color={color} />;
-  const mark = DISCIPLINE_META[kind]?.mark;
-  if (!mark) return null;
-  return mark.kind === "sport"
-    ? <SportMark sport={mark.sport} size={18} color={color} />
-    : <Glyph name={mark.name} size={18} color={color} />;
+function KindMark({ kind, color }: { kind: TrainingKind | null; color: string }) {
+  const mark = kind && kind !== "gym" ? DISCIPLINE_META[kind]?.mark : null;
+  return (
+    <View style={{ width: MARK.slot, height: MARK.slot, alignItems: "center", justifyContent: "center" }}>
+      {kind === "gym" ? <Glyph name="barbell" size={MARK.size} color={color} />
+        : !mark ? null
+        : mark.kind === "sport" ? <SportMark sport={mark.sport} size={MARK.size} color={color} />
+        : <Glyph name={mark.name} size={MARK.size} color={color} />}
+    </View>
+  );
 }
 
 /** A bare mono control — the grammar every word-in-a-field in this app uses
@@ -370,7 +388,7 @@ export default function AuroraDayBand({
   return (
     <Animated.View
       accessible={pages.length === 1}
-      accessibilityLabel={[String(band.figure), head, say].filter(Boolean).join(" – ")}
+      accessibilityLabel={[t("w.home.band.scale").replace("{n}", String(band.figure)), head, say].filter(Boolean).join(" – ")}
       onLayout={(e) => setSize({ h: e.nativeEvent.layout.height, w: e.nativeEvent.layout.width })}
       style={{
         marginHorizontal: -GUTTER,
@@ -417,7 +435,10 @@ export default function AuroraDayBand({
             fact about the body; the pages are candidates for the day. Only the
             MARK moves, because that names the discipline being offered. */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: PAD.markGap, paddingHorizontal: PAD.x }}>
-          {shown.mark ? <KindMark kind={shown.mark} color={lit ?? ink} /> : null}
+          {/* The slot is reserved whether or not there is a mark for it — see
+              MARK. A reading that slides sideways as the deck is swiped is a
+              reading that looks less like a fact than it is. */}
+          <KindMark kind={shown.mark} color={lit ?? ink} />
           <Text
             style={{
               flex: 1,
@@ -431,6 +452,23 @@ export default function AuroraDayBand({
             }}
           >
             {band.figure}
+            {/* THE SCALE, and it is why the numeral can stay unlabelled. "69"
+                alone is a figure whose range the reader has to already know;
+                "69/100" is a reading. It is NESTED so it takes the numeral's
+                own baseline rather than a second row's guess at one, and it is
+                held back to the band's measured ink — the accent belongs to the
+                figure, and a lit denominator would divide the one signal in
+                two. Notation, not copy: /100 is the same in every locale. */}
+            <Text
+              style={{
+                fontFamily: F.mono,
+                fontSize: fs.title,
+                letterSpacing: tracking.normal,
+                color: withAlpha(ink, hold),
+              }}
+            >
+              /100
+            </Text>
           </Text>
           {/* The ⓘ, and it stays the affordance: what this opens is an
               EXPLANATION of the figure beside it, which is the same grammar the

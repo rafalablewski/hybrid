@@ -940,6 +940,10 @@ export const web_home = {
     // THE DECK'S ONE COMMIT. Swiping is free — the whole ranking can be read
     // and left alone — so a page other than the first carries the single tap
     // that changes the day. It says what happens, not what it is.
+    // Spoken form of the reading. The band DRAWS "69/100" — notation, the
+    // same in every locale — but a screen reader saying "sixty-nine slash one
+    // hundred" is not what the numeral means.
+    "w.home.band.scale": "{n} out of 100",
     "w.home.band.trainThis": "Train this instead",
     "w.home.band.deckPage": "Option {n} of {total}",
     "w.home.band.notToday": "Not today?",
@@ -2301,6 +2305,7 @@ export const web_home = {
     "w.home.band.sayDoseFlat": "Meldunek na płasko: sztanga schodzi do {pct}%.",
     "w.home.band.sayDoseWrecked": "Meldunek na wykończeniu: {pct}% i seria mniej.",
     "w.home.band.sayDoseBodyweight": "Meldunek zdjął serię — nie ma sztangi do zejścia.",
+    "w.home.band.scale": "{n} na 100",
     "w.home.band.trainThis": "Zamiast tego",
     "w.home.band.deckPage": "Opcja {n} z {total}",
     "w.home.band.notToday": "Nie dziś?",
@@ -3611,6 +3616,7 @@ export const web_home = {
     "w.home.band.sayDoseFlat": "Check-in flach: die Hantel geht auf {pct}%.",
     "w.home.band.sayDoseWrecked": "Check-in platt: {pct}% und ein Satz weniger.",
     "w.home.band.sayDoseBodyweight": "Der Check-in hat einen Satz gestrichen — es gibt keine Hantel zu senken.",
+    "w.home.band.scale": "{n} von 100",
     "w.home.band.trainThis": "Stattdessen das",
     "w.home.band.deckPage": "Option {n} von {total}",
     "w.home.band.notToday": "Heute nicht?",
