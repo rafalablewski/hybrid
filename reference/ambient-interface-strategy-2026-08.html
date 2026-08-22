@@ -1,0 +1,597 @@
+<title>The Ambient Interface</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#0c0d0c; --panel:#131414; --raised:#1b1c1f; --line:#2f2f36; --line2:#232329;
+  --tx:#f7f6f3; --mut:#8a9691; --dim:#616b67;
+  --acc:#c3d363; --accTx:#c3d363; --accDim:#5d6631;
+  --ok:#c3d363; --warn:#daa51d; --bad:#ec935e; --info:#6bb4d4;
+  --disp:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --measure:69ch;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f2f1ec; --panel:#f8f7f4; --raised:#eceae3; --line:#dbd8cf; --line2:#e5e2da;
+    --tx:#14150f; --mut:#5f6863; --dim:#7c847f;
+    --acc:#a8bb43; --accTx:#4a5a12; --accDim:#c9d19c;
+    --ok:#4a5a12; --warn:#8a6a0d; --bad:#b1552a; --info:#2f7893;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f2f1ec; --panel:#f8f7f4; --raised:#eceae3; --line:#dbd8cf; --line2:#e5e2da;
+  --tx:#14150f; --mut:#5f6863; --dim:#7c847f;
+  --acc:#a8bb43; --accTx:#4a5a12; --accDim:#c9d19c;
+  --ok:#4a5a12; --warn:#8a6a0d; --bad:#b1552a; --info:#2f7893;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:var(--disp); font-size:16.5px; line-height:1.68;
+  -webkit-font-smoothing:antialiased; margin:0;
+}
+.wrap{max-width:1200px; margin:0 auto; padding:0 26px 120px;
+  display:grid; grid-template-columns:1fr; gap:0;}
+@media (min-width:1080px){
+  .wrap{grid-template-columns:212px minmax(0,1fr); column-gap:56px; padding-right:40px}
+}
+
+/* ---------- masthead ---------- */
+.mast{grid-column:1/-1; padding:78px 0 0; border-bottom:1px solid var(--line); margin-bottom:54px}
+.eyebrow{font-family:var(--mono); font-size:11px; font-weight:500; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--mut); display:flex; flex-wrap:wrap; gap:0 14px}
+.eyebrow b{color:var(--accTx); font-weight:700}
+h1{font-family:var(--disp); font-weight:900; letter-spacing:-.03em; text-wrap:balance;
+  font-size:clamp(40px,7.2vw,76px); line-height:.96; margin:18px 0 0; max-width:15ch}
+.deck{max-width:var(--measure); color:var(--mut); font-size:clamp(17px,2vw,20px);
+  line-height:1.55; margin:22px 0 0; font-weight:400}
+.deck b{color:var(--tx); font-weight:600}
+
+.strip{display:grid; gap:1px; background:var(--line); border-top:1px solid var(--line);
+  margin:46px 0 0; grid-template-columns:1fr}
+@media (min-width:720px){.strip{grid-template-columns:repeat(3,1fr)}}
+.strip div{background:var(--bg); padding:20px 22px 24px}
+.strip .k{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--mut); display:block; margin-bottom:9px}
+.strip p{margin:0; font-size:15.5px; line-height:1.5; color:var(--tx)}
+.strip .yes .k{color:var(--ok)} .strip .no .k{color:var(--bad)} .strip .part .k{color:var(--warn)}
+
+/* ---------- contents ---------- */
+nav.toc{display:none}
+@media (min-width:1080px){
+  nav.toc{display:block; grid-column:1; align-self:start; position:sticky; top:26px; padding-bottom:60px}
+  nav.toc .lab{font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--dim); display:block; margin-bottom:14px}
+  nav.toc a{display:grid; grid-template-columns:22px 1fr; gap:8px; text-decoration:none;
+    padding:3.5px 0; color:var(--mut); font-size:13px; line-height:1.35; border:0}
+  nav.toc a:hover{color:var(--tx)}
+  nav.toc a.on{color:var(--accTx)}
+  nav.toc .tn{font-family:var(--mono); font-size:10.5px; color:var(--dim); padding-top:2px}
+  nav.toc a.on .tn{color:var(--accTx)}
+}
+details.mtoc{margin:0 0 44px; border-top:1px solid var(--line); border-bottom:1px solid var(--line)}
+@media (min-width:1080px){details.mtoc{display:none}}
+details.mtoc summary{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--mut); padding:15px 0; cursor:pointer; list-style:none}
+details.mtoc summary::-webkit-details-marker{display:none}
+details.mtoc summary::after{content:"+"; float:right; color:var(--accTx)}
+details.mtoc[open] summary::after{content:"–"}
+details.mtoc nav{padding:0 0 20px; display:grid; gap:2px}
+details.mtoc a{color:var(--mut); text-decoration:none; font-size:14px; display:grid;
+  grid-template-columns:24px 1fr; gap:8px}
+details.mtoc .tn{font-family:var(--mono); font-size:11px; color:var(--dim)}
+
+/* ---------- article ---------- */
+article{grid-column:1/-1; min-width:0}
+@media (min-width:1080px){article{grid-column:2}}
+.sec{padding:0 0 8px; margin:0 0 52px}
+.sec + .sec{border-top:1px solid var(--line2); padding-top:52px}
+h2{display:flex; align-items:baseline; justify-content:space-between; gap:24px;
+  font-family:var(--disp); font-weight:800; letter-spacing:-.021em; text-wrap:balance;
+  font-size:clamp(25px,3.3vw,33px); line-height:1.12; margin:0 0 26px;
+  padding-bottom:14px; border-bottom:1px solid var(--line)}
+h2 .h2t{max-width:22ch}
+h2 .h2n{font-family:var(--mono); font-weight:400; font-size:12px; letter-spacing:.1em;
+  color:var(--dim); flex:none; align-self:flex-start; padding-top:6px}
+h3{font-family:var(--disp); font-weight:700; font-size:17.5px; letter-spacing:-.006em;
+  line-height:1.35; margin:38px 0 12px; color:var(--tx); max-width:var(--measure); text-wrap:balance}
+h3 strong{font-weight:700}
+p{max-width:var(--measure); margin:0 0 15px}
+p strong,li strong{font-weight:700; color:var(--tx)}
+em{font-style:italic; color:var(--mut)}
+ul,ol{max-width:var(--measure); margin:0 0 18px; padding-left:20px}
+li{margin:0 0 8px; padding-left:3px}
+li::marker{color:var(--dim); font-family:var(--mono); font-size:.86em}
+a{color:var(--accTx)}
+code{font-family:var(--mono); font-size:.855em; background:var(--raised);
+  padding:1.5px 5px; border-radius:2px; color:var(--tx); word-break:break-word}
+.dash{color:var(--dim)}
+
+blockquote.verdict{margin:26px 0 26px; padding:2px 0 2px 22px; border-left:2px solid var(--acc);
+  max-width:var(--measure); font-size:clamp(17px,2.1vw,19.5px); line-height:1.5;
+  font-weight:600; letter-spacing:-.012em; color:var(--tx)}
+blockquote.verdict strong{font-weight:800}
+blockquote.verdict em{color:var(--mut)}
+blockquote.verdict code{font-size:.8em}
+
+.tw{overflow-x:auto; margin:22px 0 26px; border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line); -webkit-overflow-scrolling:touch}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:14.5px;
+  font-variant-numeric:tabular-nums; line-height:1.5}
+th,td{text-align:left; vertical-align:top; padding:11px 20px 11px 0}
+thead th{font-family:var(--mono); font-size:10px; font-weight:500; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--mut); padding-top:13px; padding-bottom:11px;
+  border-bottom:1px solid var(--line); white-space:nowrap}
+tbody tr + tr th,tbody tr + tr td{border-top:1px solid var(--line2)}
+tbody th{font-weight:700; color:var(--tx); padding-right:26px; max-width:26ch}
+tbody td{color:var(--mut)}
+tbody td strong{color:var(--tx)}
+tbody td:first-child{color:var(--tx)}
+th:last-child,td:last-child{padding-right:2px}
+
+pre{margin:0; padding:20px 22px; background:var(--panel); border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line); overflow-x:auto}
+.tw:has(pre){border:0; margin:24px 0 28px}
+pre code{background:none; padding:0; font-size:12.6px; line-height:1.62; color:var(--mut);
+  white-space:pre; display:block}
+
+.mk{font-size:.72em; line-height:1; vertical-align:.14em; margin-right:5px; letter-spacing:0}
+.mk.ok{color:var(--ok)} .mk.warn{color:var(--warn)} .mk.bad{color:var(--bad)}
+
+:focus-visible{outline:2px solid var(--acc); outline-offset:3px; border-radius:1px}
+@media (prefers-reduced-motion:no-preference){
+  .mast,article{animation:rise .5s cubic-bezier(.2,.7,.3,1) both}
+  article{animation-delay:.06s}
+  @keyframes rise{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
+}
+.foot{grid-column:1/-1; margin-top:12px; padding-top:26px; border-top:1px solid var(--line);
+  font-family:var(--mono); font-size:11px; letter-spacing:.08em; color:var(--dim);
+  display:flex; flex-wrap:wrap; gap:6px 22px}
+</style>
+
+<div class="wrap">
+
+  <header class="mast">
+    <div class="eyebrow"><span>HYBRID</span><span>Strategy review</span><span>August 2026</span><b>Challenge, not validation</b></div>
+    <h1>The Ambient Interface</h1>
+    <p class="deck">A first-principles review of the thesis that <b>all UI becomes chat and gestures in, chat and video out</b> — tested against a fitness product that has already built, shipped and deleted the most exciting idea in the brief.</p>
+    <div class="strip">
+      <div class="yes"><span class="k">Right</span><p>Chat in. Input entropy has collapsed; every field-per-fact form is now a legacy artifact.</p></div>
+      <div class="part"><span class="k">Half right</span><p>Video out — as a Sunday film you watch on a sofa, never as an interface you use mid-set.</p></div>
+      <div class="no"><span class="k">Wrong</span><p>The camera as the interface. This company retired markerless motion analysis in August 2026 and the reasoning still holds.</p></div>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="Contents">
+    <span class="lab">Contents</span>
+    <a href="#s1"><span class="tn">0</span><span class="tt">The verdict, before the argument</span></a><a href="#s2"><span class="tn">1</span><span class="tt">What the thesis gets right, and where it breaks</span></a><a href="#s3"><span class="tn">2</span><span class="tt">The actual bottleneck (this is the part that reframes everything)</span></a><a href="#s4"><span class="tn">3</span><span class="tt">The interaction model</span></a><a href="#s5"><span class="tn">4</span><span class="tt">Chat + gestures in</span></a><a href="#s6"><span class="tn">5</span><span class="tt">Video out</span></a><a href="#s7"><span class="tn">6</span><span class="tt">The AI coach</span></a><a href="#s8"><span class="tn">7</span><span class="tt">Zero-logging</span></a><a href="#s9"><span class="tn">8</span><span class="tt">The camera</span></a><a href="#s10"><span class="tn">9</span><span class="tt">Gestures</span></a><a href="#s11"><span class="tn">10</span><span class="tt">The screen after the screen</span></a><a href="#s12"><span class="tn">11</span><span class="tt">Proactive AI</span></a><a href="#s13"><span class="tn">12</span><span class="tt">The Athlete Model</span></a><a href="#s14"><span class="tn">13</span><span class="tt">The moat</span></a><a href="#s15"><span class="tn">14</span><span class="tt">Business model</span></a><a href="#s16"><span class="tn">15</span><span class="tt">The 2030 board</span></a><a href="#s17"><span class="tn">16</span><span class="tt">NOW / NEXT / FUTURE / SCI-FI</span></a><a href="#s18"><span class="tn">17</span><span class="tt">The MVP</span></a><a href="#s19"><span class="tn">18</span><span class="tt">Three magic moments</span></a><a href="#s20"><span class="tn">19</span><span class="tt">Red team</span></a><a href="#s21"><span class="tn">20</span><span class="tt">The vision</span></a><a href="#s22"><span class="tn">→</span><span class="tt">Appendix</span></a>
+  </nav>
+
+  <details class="mtoc">
+    <summary>Contents</summary>
+    <nav aria-label="Contents"><a href="#s1"><span class="tn">0</span><span class="tt">The verdict, before the argument</span></a><a href="#s2"><span class="tn">1</span><span class="tt">What the thesis gets right, and where it breaks</span></a><a href="#s3"><span class="tn">2</span><span class="tt">The actual bottleneck (this is the part that reframes everything)</span></a><a href="#s4"><span class="tn">3</span><span class="tt">The interaction model</span></a><a href="#s5"><span class="tn">4</span><span class="tt">Chat + gestures in</span></a><a href="#s6"><span class="tn">5</span><span class="tt">Video out</span></a><a href="#s7"><span class="tn">6</span><span class="tt">The AI coach</span></a><a href="#s8"><span class="tn">7</span><span class="tt">Zero-logging</span></a><a href="#s9"><span class="tn">8</span><span class="tt">The camera</span></a><a href="#s10"><span class="tn">9</span><span class="tt">Gestures</span></a><a href="#s11"><span class="tn">10</span><span class="tt">The screen after the screen</span></a><a href="#s12"><span class="tn">11</span><span class="tt">Proactive AI</span></a><a href="#s13"><span class="tn">12</span><span class="tt">The Athlete Model</span></a><a href="#s14"><span class="tn">13</span><span class="tt">The moat</span></a><a href="#s15"><span class="tn">14</span><span class="tt">Business model</span></a><a href="#s16"><span class="tn">15</span><span class="tt">The 2030 board</span></a><a href="#s17"><span class="tn">16</span><span class="tt">NOW / NEXT / FUTURE / SCI-FI</span></a><a href="#s18"><span class="tn">17</span><span class="tt">The MVP</span></a><a href="#s19"><span class="tn">18</span><span class="tt">Three magic moments</span></a><a href="#s20"><span class="tn">19</span><span class="tt">Red team</span></a><a href="#s21"><span class="tn">20</span><span class="tt">The vision</span></a><a href="#s22"><span class="tn">→</span><span class="tt">Appendix</span></a></nav>
+  </details>
+
+  <article><section id="s1" class="sec"><h2><span class="h2t">The verdict, before the argument</span><span class="h2n">0</span></h2>
+
+<p>Naval's thesis is <strong>half right, and the right half is not the half that is exciting.</strong></p>
+<ul>
+<li><strong>"Chat in" is real, near, and cheap.</strong> It ships in 2026.</li>
+<li><strong>"Gestures in" is real but tiny.</strong> Gestures answer questions. They do not issue commands. Anyone designing a mid-air hand-gesture vocabulary for a person holding a loaded barbell is designing for a demo reel.</li>
+<li><strong>"Video out" is right for <em>review</em> and wrong for <em>training</em>.</strong> You cannot watch a video mid-set. The 20-second technique film is a post-hoc artifact, not an interface.</li>
+<li><strong>"Camera as the interface" is the most seductive and most fatal idea in the brief.</strong> HYBRID already built markerless motion analysis, shipped ten unit tests for it, and deleted it in August 2026. The reasoning recorded in <code>packages/core/src/capabilities.ts</code> under <code>video-intel</code> is still correct: <em>"Real ML cost, real accuracy risk, and the credible players are hardware-adjacent. Buy or integrate, never build. The one form of CV worth revisiting is plate-counting for ATTESTATION <span class="dash">—</span> not form coaching, which is a graveyard."</em></li>
+</ul>
+<p>And the harder verdict, which is the actual point of this document:</p>
+<blockquote class="verdict"><strong>The 10x product hidden in this shift is not a new input method. It is a new output posture.</strong></blockquote>
+<p>HYBRID's problem is not that logging costs too many taps. Hevy solved logging at roughly four taps a set and has tens of millions of users; nobody churns out of a lifting app because the number pad was tedious. HYBRID's problem is that it <strong>already knows more about the athlete than the athlete does, and it currently expresses that knowledge as sixty screens the athlete has to go and find.</strong></p>
+<p>The repo contains an effort model that scores itself leave-one-out against an unpersonalised baseline. It contains per-athlete recovery clearance rates measured against a population curve. It contains an adaptive MRV estimator that reports whether its own ceiling estimate has settled. It contains tissue-level injury risk and return-to-play rails. That is a genuinely rare asset <span class="dash">—</span> and its current user interface is a tab bar.</p>
+<p>The change worth making is this:</p>
+<p><strong>Chat is the command line. The screen is the receipt. Voice is the channel. The engine is the product.</strong></p>
+<p>Stop publishing dashboards. Start issuing one defensible instruction at a time, with the evidence one tap away.</p>
+<section id="s2" class="sec"><h2><span class="h2t">What the thesis gets right, and where it breaks</span><span class="h2n">1</span></h2>
+</section>
+<h3>Right: input entropy is collapsing</h3>
+<p>Forms exist because software could not parse intent. That constraint is gone. <code>"third set, hundred for eight, two left in the tank"</code> carries exercise, set index, load, reps and RPE in one breath, and a 2026 model parses it into a <code>StrengthBlock</code> with high reliability. Every field-per-fact form in the app is now a legacy artifact of a solved problem.</p>
+<h3>Right: the coach relationship is conversational</h3>
+<p>Training is not data entry, it is a sequence of <em>decisions</em> <span class="dash">—</span> go heavier, stop here, swap this, sleep instead. Decisions are natural language. A dashboard makes the athlete derive the decision from the evidence. A coach states the decision and holds the evidence in reserve. The second is strictly better and it is what a conversational surface is actually for.</p>
+<h3>Wrong: video as an output channel during training</h3>
+<p>Video is <strong>linear and non-addressable</strong>. Its weaknesses are exactly the strengths a training interface needs:</p>
+<div class="tw"><table><thead><tr><th>Need</th><th>Screen/chart</th><th>Video</th></tr></thead><tbody><tr><th>Glanceable in 200 ms between sets</th><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td></tr><tr><th>Scrub, sort, compare</th><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td></tr><tr><th>Consumable with a barbell in your hands</th><td><span class="mk warn" role="img" aria-label="partial" title="partial">◐</span> (audio only)</td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td></tr><tr><th>Show a movement over time</th><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td></tr><tr><th>Show <em>change</em> in a movement</th><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td></tr></tbody></table></div>
+<p>Video wins in exactly one category <span class="dash">—</span> <strong>communicating movement and its change</strong> <span class="dash">—</span> and that category is real and valuable. It is just not an interface. It is a <em>deliverable</em>, produced after the fact, watched on a sofa.</p>
+<h3>Wrong: the screen going away</h3>
+<p>Navigation is not only wayfinding. It is <strong>browsing, discovery, and accountability</strong>. A pure conversational home has the blank-page problem (the user does not know what to ask) and the accountability problem (an AI that only speaks cannot be audited). The moment your app tells someone to drop 5 kg off their squat, they will want to see why <span class="dash">—</span> and "trust me" is not an answer you can build a subscription on.</p>
+<p>The synthesis is not "screen disappears." It is:</p>
+<blockquote class="verdict"><strong>The AI decides the default. The screen exists so the athlete can inspect and override it.</strong></blockquote>
+<section id="s3" class="sec"><h2><span class="h2t">The actual bottleneck (this is the part that reframes everything)</span><span class="h2n">2</span></h2>
+</section>
+<p>Rank the friction in a serious lifter's week, honestly:</p>
+<ol>
+<li><strong>Not knowing what to do today</strong> given yesterday's 18 km, a bad night's sleep and a race in six weeks. <span class="dash">—</span> <em>Enormous, unsolved, and the reason people pay coaches £150/month.</em></li>
+<li><strong>Not knowing whether the last set was enough.</strong> <span class="dash">—</span> <em>Large, unsolved, the reason RPE was invented and the reason it doesn't work.</em></li>
+<li><strong>Not knowing whether anything is working over months.</strong> <span class="dash">—</span> <em>Large, badly served by every app; charts are not answers.</em></li>
+<li><strong>Logging the sets.</strong> <span class="dash">—</span> <em>Small. Solved. Four taps.</em></li>
+</ol>
+<p>The industry has spent a decade optimising #4 because it is the only one that is a UI problem. #1–#3 are <em>modelling</em> problems, and HYBRID has spent a year building the models. The thesis in this brief points at #4 with a camera. <strong>That is aiming an extraordinarily expensive technology at the cheapest problem on the list.</strong></p>
+<p>Reframe the whole exercise:</p>
+<blockquote class="verdict"><strong>We are not trying to remove taps. We are trying to remove the need for the athlete to be their own analyst.</strong></blockquote>
+<p>Everything below is judged against that.</p>
+<section id="s4" class="sec"><h2><span class="h2t">The interaction model <span class="dash">—</span> inputs ranked by honesty</span><span class="h2n">3</span></h2>
+</section>
+<p>Every input from the brief, graded on <strong>signal value × reliability × willingness to use</strong>.</p>
+<h3>Tier 1 <span class="dash">—</span> build on these (high value, works today, people will actually do it)</h3>
+<div class="tw"><table><thead><tr><th>Input</th><th>Why it earns its place</th></tr></thead><tbody><tr><td><strong>Voice via earbuds</strong></td><td>Hands chalked, eyes on the bar, phone in a pocket. Short utterances, push-to-talk. The only conversational channel that survives a gym.</td></tr><tr><td><strong>The plan itself</strong></td><td>The single highest-bandwidth "input" is what we already prescribed. See §7 <span class="dash">—</span> this is the whole trick.</td></tr><tr><td><strong>Wearable passive stream</strong> (HR, HRV, resting HR, sleep, workouts)</td><td>Zero user effort, high physiological signal, and it is <em>already</em> the input to <code>readiness.ts</code>, <code>effort.ts</code> and the injury engine. Currently <strong>blocked</strong> on one TestFlight verification (<code>apple-healthkit</code>).</td></tr><tr><td><strong>Phone/watch IMU for session structure</strong></td><td>Rest periods, set boundaries, superset grouping, session start/stop. Nearly free, nobody does it well, and it removes the most annoying real friction (the rest timer you forgot to start).</td></tr><tr><td><strong>Text</strong></td><td>The fallback for everyone who will not talk in a gym <span class="dash">—</span> which is a large minority, see §19.</td></tr><tr><td><strong>Confirmation gestures</strong> (AirPods nod/shake, Watch double-tap)</td><td>Shipping Apple APIs. Answer yes/no with no hands and no screen. Genuinely magical, genuinely cheap.</td></tr></tbody></table></div>
+<h3>Tier 2 <span class="dash">—</span> real, but buy or integrate, never build</h3>
+<div class="tw"><table><thead><tr><th>Input</th><th>Verdict</th></tr></thead><tbody><tr><td><strong>Barbell velocity sensors</strong> (Enode, Vitruve, RepOne, Perch, Output)</td><td>The data is excellent and <code>engines/velocity.ts</code> is <em>already written to consume it</em>, capture-agnostic. Integrate. Do not manufacture.</td></tr><tr><td><strong>Connected equipment / gym machines</strong></td><td>Valuable in commercial-gym partnerships, irrelevant to the consumer wedge. Later.</td></tr><tr><td><strong>Camera for attestation only</strong> (plate counting on a declared PR)</td><td>The one CV bet worth taking. See §8.</td></tr></tbody></table></div>
+<h3>Tier 3 <span class="dash">—</span> gimmicks; say no now and save a year</h3>
+<div class="tw"><table><thead><tr><th>Input</th><th>Why it dies</th></tr></thead><tbody><tr><td><strong>Camera for form coaching</strong></td><td>Already retired here once. Occlusion, propping, monocular depth error, gym filming bans, liability. §19.</td></tr><tr><td><strong>Mid-air hand gestures</strong></td><td>Your hands are holding the thing. A camera that can see your hand can see your bar; use the bar.</td></tr><tr><td><strong>Continuous ambient camera in a gym</strong></td><td>Illegal-adjacent in many venues, socially unacceptable, thermally impossible, and it films strangers.</td></tr><tr><td><strong>AR glasses UX</strong></td><td>No installed base among lifters before 2030. Designing for it now is cosplay.</td></tr><tr><td><strong>"Movement digital twin" 3D avatar</strong></td><td>Beautiful in a pitch deck. Answers no question an athlete asks.</td></tr></tbody></table></div>
+<p><strong>The rule that falls out of this table:</strong></p>
+<blockquote class="verdict"><strong>Voice commands. Gestures answer. Sensors observe. The screen shows the receipt.</strong></blockquote>
+<p>Four channels, four jobs, no overlap. Every interaction in the product should be assignable to exactly one.</p>
+<section id="s5" class="sec"><h2><span class="h2t">"Chat + gestures in" <span class="dash">—</span> what it actually looks like in a gym</span><span class="h2n">4</span></h2>
+</section>
+<p>Forget the walk-up-to-the-squat-rack fantasy for a moment. Here is the real physical situation: loud room, hands occupied or chalked, phone in a pocket or on the floor, forty seconds of usable attention between sets, other people around, and a strong social cost to looking like you are filming.</p>
+<p>The interaction that survives that environment is <strong>audio-first, screen-optional, and pre-filled</strong>.</p>
+<h3>The Session Line</h3>
+<p>Replace the workout screen's grid of exercises and sets with <strong>one line at a time</strong>, the way a coach standing next to you works.</p>
+<div class="tw"><pre><code>IN EAR:   "Squat. Hundred, five reps. Go when you're ready."
+          [athlete lifts]
+          [IMU detects bar racked + movement stops → rest timer auto-starts]
+IN EAR:   "Got it. Two ten."
+ATHLETE:  "That was heavy — two left."
+IN EAR:   "Noted. Next set same weight, then we'll decide."</code></pre></div>
+<p>Zero taps. Zero screen. The athlete said one thing, and it was the <em>only</em> thing the system could not have predicted.</p>
+<h3>The escalation ladder</h3>
+<p>Each rung is used only when the one above fails:</p>
+<ol>
+<li><strong>Silence</strong> <span class="dash">—</span> the prescription was right, the athlete did it, the IMU saw the rest gap. Logged.</li>
+<li><strong>A gesture</strong> <span class="dash">—</span> "Same as last week?" → nod. (AirPods head gesture, Watch double-tap.)</li>
+<li><strong>A word</strong> <span class="dash">—</span> "eight" / "two left" / "skip" / "add five."</li>
+<li><strong>A sentence</strong> <span class="dash">—</span> "my shoulder's cranky, give me something else."</li>
+<li><strong>The screen</strong> <span class="dash">—</span> the athlete wants to see the numbers, change the plan, browse.</li>
+</ol>
+<p>Most sets terminate at rung 1 or 2. That is the entire product idea.</p>
+<h3>What the athlete says, ranked by frequency (design the grammar for these)</h3>
+<div class="tw"><pre><code>"done"                        → accept the prescription verbatim
+"eight" / "eight reps"        → rep delta only
+"two left" / "RPE eight"      → effort only
+"hundred for eight"           → load + reps
+"add five" / "drop ten"       → load delta, next set
+"last set"                    → close the exercise
+"skip" / "swap this"          → structural change
+"how was that?"               → request a verdict (§6)</code></pre></div>
+<p>Eight utterances cover ~95% of a strength session. This is not an open-ended chatbot; it is a <strong>small, closed grammar with an LLM fallback for the tail</strong>. That distinction is the difference between a reliable product and a demo.</p>
+<h3>Why not "the camera recognises you walking to the squat rack"</h3>
+<p>Because the plan already said you were squatting. Environment recognition solves a problem that scheduling solved for free. This is the recurring error in the brief: <strong>using perception to recover information we already have.</strong></p>
+<section id="s6" class="sec"><h2><span class="h2t">"Video out" <span class="dash">—</span> what to actually generate</span><span class="h2n">5</span></h2>
+</section>
+<p>Ask the correct question: <em>what is fundamentally better communicated through motion than through text or a chart?</em></p>
+<p>Honest list:</p>
+<ol>
+<li><strong>Change in a movement over time</strong> <span class="dash">—</span> your squat in January vs your squat now, aligned and superimposed.</li>
+<li><strong>A moment of failure</strong> <span class="dash">—</span> the exact frame the bar drifted forward, held for a beat.</li>
+<li><strong>A drill you have never done</strong> <span class="dash">—</span> a coach's demonstration, which is a <em>content</em> problem, not a generation problem.</li>
+<li><strong>The shape of a season</strong> <span class="dash">—</span> twelve weeks of load, fatigue and form as a curve that moves.</li>
+</ol>
+<p>Notice that only #1 and #2 need <em>your</em> footage, and neither needs <em>generated</em> footage. They need <strong>your real video, aligned, annotated, and cut</strong>. That is editing, not generative AI, and it is a hundred times cheaper and infinitely more trustworthy.</p>
+<h3>The killer distinction, and it is a trust argument</h3>
+<p><strong>Never generate video of the athlete doing something the athlete did not do.</strong> A photoreal clip of "you, but with better depth" is:</p>
+<ul>
+<li>unverifiable,</li>
+<li>uncanny,</li>
+<li>and if the model is wrong about what good looks like for <em>this</em> body, actively harmful.</li>
+</ul>
+<p>One hallucinated rep destroys the credibility of every number in the app. There is no upside that justifies it.</p>
+<h3>What to build instead: <strong>the app rendering its own reasoning as motion</strong></h3>
+<p>The high-value "video out" is not footage of a human. It is a <strong>narrated data film</strong> <span class="dash">—</span> deterministic motion graphics driven by real engine output, with a synthesised voice, rendered server-side.</p>
+<p>Four products, in order of value:</p>
+<div class="tw"><table><thead><tr><th>Cadence</th><th>Artifact</th><th>Length</th><th>Content</th></tr></thead><tbody><tr><th><strong>Weekly</strong></th><td><em>The Ledger</em></td><td>40 s</td><td>What you did, what it cost, what changed in the model of you, one instruction for next week.</td></tr><tr><th><strong>Post-session</strong></th><td><em>The Receipt</em></td><td>15 s</td><td>Tonnage, the PR, the one set that mattered, tomorrow's implication.</td></tr><tr><th><strong>Monthly</strong></th><td><em>What We Learned About You</em></td><td>60 s</td><td><code>engines/learned.ts</code> already computes exactly this, with provenance and confidence intervals, and currently renders it as cards.</td></tr><tr><th><strong>On demand</strong></th><td><em>The Comparison</em></td><td>20 s</td><td>Your lift now vs your own best rep of the same lift, aligned, with the divergence marked.</td></tr></tbody></table></div>
+<p>Three of those four require <strong>no computer vision at all</strong>, and <code>recap.ts</code>, <code>session-wrapped.ts</code> and <code>learned.ts</code> already produce the content. The missing piece is a renderer and a voice <span class="dash">—</span> a weekend of work compared to a year of pose estimation.</p>
+<p><strong>And this is a genuinely new content category</strong>, because it is the first fitness media that is <em>about you and true</em>. Not a highlight reel with a filter. A film of your own physiology, narrated in the second person, that you could not have made yourself and cannot get anywhere else. That is shareable, and it is the retention loop.</p>
+<h3>The one place real video earns its cost: your best rep as the reference</h3>
+<p>When you do compare footage, <strong>compare the athlete to their own best rep, not to an ideal.</strong></p>
+<p>This single design choice:</p>
+<ul>
+<li>dodges the entire "what is correct form" liability surface,</li>
+<li>is robust where classification is fragile (difference detection is far easier than absolute judgement),</li>
+<li>is more useful, because <em>your</em> good rep is achievable and a model's ideal is not,</li>
+<li>and it is honest, which is this company's stated posture everywhere else in the codebase.</li>
+</ul>
+<blockquote class="verdict"><strong>We never tell you what correct looks like. We show you what changed.</strong></blockquote>
+<section id="s7" class="sec"><h2><span class="h2t">The AI coach <span class="dash">—</span> memory, perception, agency, and a speech budget</span><span class="h2n">6</span></h2>
+</section>
+<p>A ChatGPT wrapper answers questions. A coach <strong>holds state, forms opinions between conversations, and takes positions you did not ask for.</strong> The difference is four things: memory, perception, decision rights, and restraint.</p>
+<h3>What the coach knows (and HYBRID mostly already has)</h3>
+<div class="tw"><table><thead><tr><th>Layer</th><th>Contents</th><th>Status in repo</th></tr></thead><tbody><tr><th><strong>Capacity</strong></th><td>e1RM per lift with confidence, load–velocity profile, endurance thresholds, HPI + its limiting pillar</td><td><code>hpi.ts</code>, <code>velocity.ts</code>, <code>fitness-level.ts</code> <span class="dash">—</span> shipped</td></tr><tr><th><strong>State</strong></th><td>Acute:chronic load, per-muscle fatigue, readiness, personal clearance rate, adaptive MRV</td><td><code>fatigue.ts</code>, <code>readiness.ts</code>, <code>recovery-pairs.ts</code>, <code>landmark-*.ts</code> <span class="dash">—</span> shipped</td></tr><tr><th><strong>Bias</strong></th><td>This athlete's own effort residual <span class="dash">—</span> what a given session actually costs <em>them</em></td><td><code>engines/effort.ts</code> <span class="dash">—</span> shipped, leave-one-out validated</td></tr><tr><th><strong>Constraint</strong></th><td>Injuries, RTP stage, equipment, schedule, environment</td><td><code>injury.ts</code>, <code>rtp.ts</code> <span class="dash">—</span> shipped</td></tr><tr><th><strong>Intent</strong></th><td>Goals, sport, event dates, preferences, tone</td><td>Partial</td></tr><tr><th><strong>Technique</strong></th><td>Per-lift movement fingerprint</td><td>Not built. Needs sensors. Lowest priority.</td></tr></tbody></table></div>
+<p>The uncomfortable observation: <strong>the coach's knowledge layer is ~80% built and ~20% expressed.</strong> No new intelligence is needed to make the coach feel dramatically smarter. It needs a voice and a schedule.</p>
+<h3>What it observes</h3>
+<p>Passively, without asking: sleep and HRV overnight, session start and end, rest intervals, load-velocity drift within a set (when a sensor exists), compliance (did the prescribed session happen), and the gap between what it prescribed and what occurred. <strong>That last one is the most underrated signal in the product</strong> <span class="dash">—</span> the delta between prescription and reality is a direct measurement of whether the model of this athlete is any good.</p>
+<h3>Decision rights <span class="dash">—</span> draw this line explicitly</h3>
+<div class="tw"><table><thead><tr><th>The coach decides</th><th>The athlete decides</th></tr></thead><tbody><tr><td>Load within a prescribed band (±10%)</td><td>Goals, events, priorities</td></tr><tr><td>Set/rep adjustments inside a session</td><td>Whether to train at all today</td></tr><tr><td>Calling a set or an exercise done</td><td>Pushing through pain</td></tr><tr><td>Exercise substitution for available equipment</td><td>Anything with medical implications</td></tr><tr><td>When to deload</td><td>Body composition targets</td></tr><tr><td>What to say and when to stay quiet</td><td>Overriding any of the left column</td></tr></tbody></table></div>
+<p><strong>The left column must be reversible and inspectable.</strong> Every autonomous decision carries a one-line "why" and an undo. That is what makes agency tolerable instead of creepy.</p>
+<h3>When it speaks <span class="dash">—</span> the speech budget</h3>
+<p>This is a design constraint, not a guideline. An AI that comments on everything is uninstalled within a fortnight.</p>
+<div class="tw"><pre><code>DURING A SET          never. not once. no exceptions.
+BETWEEN SETS          ≤ 1 line, and only if it changes the NEXT set.
+END OF SESSION        1 line + the receipt.
+DAILY                 ≤ 1 proactive message, and only if it changes TODAY.
+WEEKLY                1 recap.
+EVERYTHING ELSE       available on request, silent by default.</code></pre></div>
+<p><strong>The test every proactive utterance must pass:</strong> <em>does this change a decision the athlete makes in the next 24 hours?</em> "You haven't trained posterior chain in nine days" passes <span class="dash">—</span> it changes today. "Your bench velocity is up 11% over six weeks" fails as a notification and belongs in the weekly film. "Your squat is down today, drop 5%" passes and is the single highest-value sentence the product can say.</p>
+<h3>When it stays silent</h3>
+<ul>
+<li>When the athlete is mid-effort.</li>
+<li>When the observation is interesting but not actionable.</li>
+<li>When it has said something similar in the last 48 hours.</li>
+<li>When its confidence is low <span class="dash">—</span> <strong>and it should say so rather than hedge</strong>. <code>learned.ts</code> already carries provenance and intervals on every claim; the coach must inherit that discipline. "I don't have enough data on your deadlift yet" builds more trust than a confident guess.</li>
+</ul>
+<section id="s8" class="sec"><h2><span class="h2t">Zero-logging <span class="dash">—</span> and the cheap trick everyone misses</span><span class="h2n">7</span></h2>
+</section>
+<p>The brief asks whether sensing can determine exercise, sets, reps, weight, tempo, rest, ROM, velocity, technique, RPE, failure and superset structure.</p>
+<p>Answer, field by field, in 2026:</p>
+<div class="tw"><table><thead><tr><th>Field</th><th>Best available method</th><th>Reliability today</th></tr></thead><tbody><tr><th>Session start/end</th><td>Watch + IMU + HR</td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span> high</td></tr><tr><th>Rest periods</th><td>IMU + HR recovery</td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span> high</td></tr><tr><th>Superset structure</th><td>Timing inference</td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span> high</td></tr><tr><th>Exercise identity</th><td><strong>The plan</strong></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span> high</td></tr><tr><th>Weight</th><td><strong>The plan</strong>, or the athlete</td><td><span class="mk warn" role="img" aria-label="partial" title="partial">◐</span> nothing else works</td></tr><tr><th>Reps</th><td>Wrist IMU / bar sensor / camera</td><td><span class="mk warn" role="img" aria-label="partial" title="partial">◐</span> 80–95%, exercise-dependent</td></tr><tr><th>Velocity, ROM</th><td>Bar sensor (excellent), camera (fair)</td><td><span class="mk warn" role="img" aria-label="partial" title="partial">◐</span> sensor-gated</td></tr><tr><th>RPE / effort</th><td>Reported, then <em>corrected by</em> <code>effort.ts</code></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span> (this is a modelling win, not a sensing one)</td></tr><tr><th>Failure</th><td>Velocity drop-off</td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span> with a sensor</td></tr><tr><th>Technique</th><td><span class="dash">—</span></td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span> do not attempt</td></tr></tbody></table></div>
+<p>Two things jump out.</p>
+<p><strong>First: weight is unsolvable by perception.</strong> Iron plates are unlabelled, sleeves are occluded by the athlete's own body, dumbbells sit in racks with worn stickers, and a 2.5 kg change is invisible and physiologically significant. Any roadmap that assumes automatic load detection is fiction.</p>
+<p><strong>Second, and this is the whole insight: the highest-accuracy sensor for every hard field is the prescription we already made.</strong></p>
+<blockquote class="verdict">Zero-logging is not a perception problem. It is a prediction problem. <strong>Prescribe the session. Assume it happened. Capture only the delta.</strong></blockquote>
+<p>The system already knows you are squatting, that it is set three, and that it told you to use 100 kg. The only genuinely new information in the entire set is <em>what differed</em> <span class="dash">—</span> and most sets differ in nothing. This is <strong>confirm-by-exception</strong>, and it is how a human coach with a clipboard has always worked.</p>
+<p>The arithmetic, on a 5-exercise / 20-set session:</p>
+<div class="tw"><table><thead><tr><th>Model</th><th>Interactions</th></tr></thead><tbody><tr><td>Today (Hevy-class manual logging)</td><td>60–100 taps</td></tr><tr><td>HYBRID today</td><td>~40–60 taps (already better; see <code>tap-budget.ts</code>)</td></tr><tr><td><strong>Prescribe + confirm-by-exception</strong></td><td><strong>~5 taps, or 3 spoken words, or one nod per exercise</strong></td></tr></tbody></table></div>
+<p>That is a 10x on interaction cost using <strong>zero new sensors, zero computer vision and zero hardware.</strong> It is available this quarter. Every camera-based path to the same outcome is more expensive, less accurate, and years away.</p>
+<p>Perception then becomes what it should always have been: <strong>not the primary capture path, but the corroboration layer.</strong> The watch confirms the session happened. The bar sensor confirms the reps were real. That is exactly the ladder <code>attestation.ts</code> already defines.</p>
+<h3>The roadmap</h3>
+<div class="tw"><table><thead><tr><th>Horizon</th><th>What becomes real</th><th>Confidence</th></tr></thead><tbody><tr><th><strong>NOW <span class="dash">—</span> 2026</strong></th><td>Voice capture with a closed grammar; prescribe + confirm-by-exception; passive HR/HRV/sleep; auto rest timers and session boundaries from IMU; superset inference; narrated data films; integrations with existing bar sensors; nod/shake confirmation.</td><td>High. All of it is engineering, not research.</td></tr><tr><th><strong>NEXT <span class="dash">—</span> 2027–28</strong></th><td>On-device rep counting from the wrist at useful accuracy for a <em>subset</em> of lifts; monocular bar-path and velocity within ~8% of a linear encoder for camera-friendly barbell lifts with a propped phone; on-device VLM naming the exercise from a still; reliable auto-alignment of two clips of the same lift for the comparison film.</td><td>Medium. Demos exist; products do not.</td></tr><tr><th><strong>FUTURE <span class="dash">—</span> 2029–32</strong></th><td>Egocentric capture from glasses removing the phone-propping problem entirely <span class="dash">—</span> <em>this is the unlock that makes the camera thesis actually work</em>; continuous fatigue estimation from movement signature; trustworthy generated instructional video.</td><td>Low-medium, and gated on hardware adoption we do not control.</td></tr><tr><th><strong>SCI-FI <span class="dash">—</span> beyond 2032</strong></th><td>Continuous non-invasive biochemistry (glucose, lactate, cortisol); muscle-level load attribution without electrodes; closed-loop nutrition and training.</td><td>Speculative. Do not plan around it.</td></tr></tbody></table></div>
+<p><strong>The line to hold:</strong> a demo of pose estimation is not a product. A product is a thing that works in a badly lit gym, at an arbitrary angle, with a stranger walking through frame, on a phone that is also playing music, without draining the battery, every single time <span class="dash">—</span> because the first time it is confidently wrong about a number the athlete cares about, they stop believing all the other numbers too.</p>
+<section id="s9" class="sec"><h2><span class="h2t">The camera <span class="dash">—</span> take exactly one bet</span><span class="h2n">8</span></h2>
+</section>
+<p>Not form coaching. <strong>Attestation.</strong></p>
+<p><code>packages/core/src/attestation.ts</code> already declares a six-tier evidence ladder for a strength claim: <em>0 claimed → 1 sensed → 2 witnessed → 3 recorded → 4 instrumented → 5 sanctioned.</em> Tiers 0–2 have shipped. Tier 3 is a camera problem <span class="dash">—</span> and it is a <strong>narrow, bounded, verifiable</strong> camera problem:</p>
+<blockquote class="verdict">A single declared PR attempt. Fixed framing, because the athlete <em>wants</em> it framed well. One question: <strong>how many plates are on the bar, and did the rep complete?</strong> Not "was it good." Just "did it happen."</blockquote>
+<p>Why this is the right bet where form coaching was the wrong one:</p>
+<ul>
+<li><strong>The failure mode is benign.</strong> "Couldn't verify, try again" costs nothing. "Your knee is caving" costs trust and invites liability.</li>
+<li><strong>The athlete is cooperating.</strong> They set the phone up deliberately, once, for a lift that matters. This is the only moment in training when the propping problem disappears.</li>
+<li><strong>It is verifiable.</strong> A plate count is either right or wrong; a technique score is an opinion nobody can grade.</li>
+<li><strong>It creates something scarce.</strong> Every strength number on the internet is self-reported and therefore worth nothing. There is no strength equivalent of a verified marathon time. Whoever creates one owns a credential.</li>
+<li><strong>It is the only camera feature with network effects.</strong> A verified record is only valuable if others recognise it <span class="dash">—</span> which means co-signers, leaderboards, and comparison. That is a graph, and graphs are moats. A form score is a feature, and features are copied.</li>
+</ul>
+<p>Everything else the camera could do should be answered with: <em>no, and here is the retired capability entry explaining why we already know that.</em></p>
+<section id="s10" class="sec"><h2><span class="h2t">Gestures <span class="dash">—</span> small, and that is fine</span><span class="h2n">9</span></h2>
+</section>
+<p>The useful gesture vocabulary is about four items long, and it ships today on hardware the target athlete already owns:</p>
+<div class="tw"><table><thead><tr><th>Gesture</th><th>Hardware</th><th>Meaning</th></tr></thead><tbody><tr><th><strong>Nod</strong></th><td>AirPods (iOS 17+ head gestures)</td><td>yes / accept the prescription</td></tr><tr><th><strong>Shake</strong></th><td>AirPods</td><td>no / not that</td></tr><tr><th><strong>Double-tap</strong></th><td>Apple Watch Series 9+</td><td>confirm / advance</td></tr><tr><th><strong>Put the phone down</strong></th><td>Phone IMU</td><td>the set is starting; go quiet</td></tr><tr><th><strong>Pick the phone up</strong></th><td>Phone IMU + raise-to-wake</td><td>show me the current state</td></tr></tbody></table></div>
+<p>The last two are the interesting ones because they are <strong>gestures nobody thinks of as gestures.</strong> Setting the phone on the bench is already a universal, unconscious signal that a set is about to happen. Reading it costs an accelerometer callback and it makes the app feel like it is paying attention.</p>
+<p>The principle:</p>
+<blockquote class="verdict"><strong>Gestures are a one-bit channel. Use them to answer, never to command.</strong></blockquote>
+<p>You cannot compose an instruction with your head. You can say yes. Design the conversation so that the overwhelming majority of turns are yes/no questions the athlete can answer without hands, and the gesture vocabulary is sufficient forever.</p>
+<p>Kill: mid-air hand signals, "draw a shape to start a set", camera-read thumbs-up, any gesture requiring the phone to be watching you.</p>
+<section id="s11" class="sec"><h2><span class="h2t">The screen after the screen</span><span class="h2n">10</span></h2>
+</section>
+<h3>What survives</h3>
+<ol>
+<li><strong>Now</strong> <span class="dash">—</span> the live session line. One exercise, one set, one number, one action. Big enough to read from four feet away on a bench.</li>
+<li><strong>The receipt</strong> <span class="dash">—</span> what the coach just decided, and why, one tap from the evidence.</li>
+<li><strong>The films</strong> <span class="dash">—</span> weekly and monthly, the review surface.</li>
+<li><strong>The record</strong> <span class="dash">—</span> the athlete's verified lifts and their trajectory. This is the trophy cabinet, and it is the emotional core of a strength product.</li>
+<li><strong>The override</strong> <span class="dash">—</span> plan editing, exercise browsing, food logging. Full traditional UI, unapologetically, because these are <em>authoring</em> tasks and authoring is a screen job.</li>
+</ol>
+<h3>What dies</h3>
+<ul>
+<li>The tab bar as the primary organising metaphor.</li>
+<li>Dashboards you must interpret. Every chart must carry its own verdict sentence or it does not ship.</li>
+<li>Any screen that exists to <em>display state the coach should have told you about</em>.</li>
+<li>Manual per-set entry as the default path <span class="dash">—</span> it stays as a fallback, not the road.</li>
+<li>Anything reachable only by navigation. If it matters, the coach raises it.</li>
+</ul>
+<h3>The home screen</h3>
+<p>Not "What are we doing today?" <span class="dash">—</span> that is an open question to a user who came to be told. And not a blank page.</p>
+<p><strong>One card, one instruction, one action, with the reasoning collapsed underneath:</strong></p>
+<div class="tw"><pre><code>┌─────────────────────────────────────────┐
+│  TUESDAY                                │
+│                                         │
+│  Squat, and go lighter than the plan.   │
+│                                         │
+│  100 → 92.5 kg  –  5 × 3                │
+│                                         │
+│  ⌄ Because you slept 5h12 and your      │
+│    resting HR is 7 bpm above baseline.  │
+│                                         │
+│           [ Start ]                     │
+└─────────────────────────────────────────┘</code></pre></div>
+<p>Below it: the week strip, and nothing else above the fold. Everything else is reached by asking, or by pulling.</p>
+<p>The subtle part: <strong>the home screen is a claim, not a menu.</strong> It commits to a position and shows its working. That is what makes it feel like a coach rather than a database, and it is entirely achievable with engines that already exist in this repo.</p>
+<section id="s12" class="sec"><h2><span class="h2t">Proactive AI <span class="dash">—</span> the interruption budget</span><span class="h2n">11</span></h2>
+</section>
+<p>Proactivity is where AI products die. The failure is never "it wasn't smart enough." It is "it would not shut up."</p>
+<h3>The three-part test <span class="dash">—</span> a proactive message must pass all three</h3>
+<ol>
+<li><strong>Decision-changing</strong> <span class="dash">—</span> it alters what the athlete does in the next 24 hours.</li>
+<li><strong>Non-obvious</strong> <span class="dash">—</span> the athlete would not have concluded it themselves.</li>
+<li><strong>Defensible</strong> <span class="dash">—</span> we can show the evidence in one line.</li>
+</ol>
+<p>Apply it:</p>
+<div class="tw"><table><thead><tr><th>Candidate message</th><th>1</th><th>2</th><th>3</th><th>Verdict</th></tr></thead><tbody><tr><th>"Slept poorly, RHR elevated <span class="dash">—</span> I've cut today's load 5%."</th><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><strong>Send.</strong> The flagship.</td></tr><tr><th>"You haven't trained posterior chain in 9 days."</th><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><strong>Send.</strong></td></tr><tr><th>"Your squat is trending down over 3 sessions <span class="dash">—</span> deload week?"</th><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><strong>Send.</strong></td></tr><tr><th>"Bench velocity +11% over six weeks."</th><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td><span class="mk ok" role="img" aria-label="yes" title="yes">●</span></td><td>Weekly film, not a push.</td></tr><tr><th>"You hit a PR!"</th><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="dash">—</span></td><td>In-app celebration, never a notification.</td></tr><tr><th>"Time to work out!"</th><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><strong>Never.</strong> This is what everyone else sends.</td></tr><tr><th>"Great job yesterday!"</th><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><span class="mk bad" role="img" aria-label="no" title="no">○</span></td><td><strong>Never.</strong> Flattery from software is worthless.</td></tr></tbody></table></div>
+<h3>Structural guards</h3>
+<ul>
+<li><strong>Hard cap: one proactive message per day, one per week for the recap.</strong> No exceptions, no settings screen full of toggles to fix a problem we should not create.</li>
+<li><strong>Escalation earns silence.</strong> If the athlete ignores three consecutive proactive messages of a type, that type stops. Permanently. No re-prompting.</li>
+<li><strong>Time it to the decision.</strong> The load adjustment arrives when they wake, not when we compute it at 3 a.m.</li>
+<li><strong>Never invent a reason to speak.</strong> If the day is unremarkable, say nothing. A coach who is quiet when there is nothing to say is a coach you believe when they speak.</li>
+</ul>
+<section id="s13" class="sec"><h2><span class="h2t">The Athlete Model <span class="dash">—</span> what it must be to be an asset</span><span class="h2n">12</span></h2>
+</section>
+<p>HYBRID calls it the Athlete Twin, surfaced as Performance State. It exists. To become the company's core asset it needs three properties it does not fully have yet.</p>
+<h3>1. It must be an estimator, not a record</h3>
+<p>Every quantity carries a <strong>value, a confidence interval, and a provenance tier.</strong> <code>learned.ts</code> already does this with a four-layer vocabulary (population → profile → observed → measured), and <code>attestation.ts</code> does it for claims. Generalise that everywhere. The model should be able to say <em>"your deadlift e1RM is 182 kg ± 14, inferred from volume work, never tested"</em> <span class="dash">—</span> and behave differently from a tested max.</p>
+<p>This is also just the codebase's own device-truth rule taken to its conclusion: <strong>measured outranks typed, everywhere.</strong> The Athlete Model is that principle made into a data structure.</p>
+<h3>2. It must be outcome-closed</h3>
+<p>This is the part that turns data into a moat, and it is the part almost nobody does.</p>
+<p>A model that records what you did is a diary. A model that can answer <strong>"for athletes like you, in this state, did prescription A produce more adaptation than prescription B?"</strong> is an asset. That requires:</p>
+<ul>
+<li>prescriptions stored as first-class objects (what we told them, not just what they did),</li>
+<li>outcomes attached to prescriptions (what happened over the following four weeks),</li>
+<li>and the willingness to <strong>deliberately vary</strong> prescriptions and measure the difference.</li>
+</ul>
+<p>The repo already has the intellectual habit <span class="dash">—</span> <code>effort.ts</code> refits leave-one-out and <em>reports when personalisation does not help</em>. That is a rare and valuable instinct. Point it at prescriptions and you have a compounding learning system rather than a large table.</p>
+<h3>3. It must be portable and inspectable</h3>
+<p>Counter-intuitive but correct: <strong>let the athlete export the whole model.</strong> Two reasons. It is the strongest possible trust signal in a category built on hoarding. And in practice nobody leaves, because the value is not the file <span class="dash">—</span> it is the years of continuous updating and the engines that read it. Exportability costs nothing and buys the right to be believed.</p>
+<h3>Why this becomes the proprietary asset</h3>
+<p>Not because the data is secret. Because it is <strong>longitudinal, cross-modal, and labelled with outcomes</strong>. Anyone can buy a fitness dataset. Nobody can buy four years of one athlete's strength, endurance, sleep, effort bias, injuries and responses to specific prescriptions, reconciled into a single state object that updates every night. That takes calendar time, and calendar time is the only input a competitor cannot purchase.</p>
+<section id="s14" class="sec"><h2><span class="h2t">The moat <span class="dash">—</span> separating the real from the flattering</span><span class="h2n">13</span></h2>
+</section>
+<p>If Claude, GPT, Gemini, Apple and Meta all ship competent AI coaches <span class="dash">—</span> and they will, several already have <span class="dash">—</span> why does HYBRID exist?</p>
+<h3>Fake moats (do not build a strategy on these)</h3>
+<div class="tw"><table><thead><tr><th>Claim</th><th>Why it fails</th></tr></thead><tbody><tr><td>"Our exercise database"</td><td>Commodity. Free datasets, and a frontier model knows more exercises than any database.</td></tr><tr><td>"Our AI coach / our prompts"</td><td>A prompt is not an asset. It is a text file that a competitor can approximate in an afternoon.</td></tr><tr><td>"Our video content library"</td><td>YouTube exists and is free and better.</td></tr><tr><td>"Fine-tuned on fitness content"</td><td>Content is not scarce. Frontier general models already out-reason a fitness-tuned small model.</td></tr><tr><td>"We have a lot of data"</td><td>Unlabelled longitudinal data is a storage cost, not a moat. Data without outcomes teaches nothing.</td></tr><tr><td>"Beautiful UX"</td><td>Real advantage, ~18 months of lead, zero defensibility.</td></tr><tr><td>"Community"</td><td>Everyone says this. Almost nobody has one. Fitness communities live on Instagram and Reddit and will not move.</td></tr></tbody></table></div>
+<h3>Real, defensible advantages, ranked</h3>
+<p><strong>1. Cross-modal load reconciliation (12–36 month lead, and it is the wedge).</strong> The hybrid athlete's actual unanswerable question is: <em>"I ran 18 km yesterday, I'm squatting today, I race in six weeks <span class="dash">—</span> what do I do right now?"</em> No general model can answer it, because the answer requires continuous physiological state, not reasoning. And no incumbent will: Strava has no strength model, Hevy has no endurance model, WHOOP measures recovery but refuses to prescribe, Garmin does endurance load and treats lifting as a rounding error. HYBRID's fatigue, readiness, effort and HPI engines already reconcile both sides. <strong>This is the sharpest thing the company owns and it should be the entire marketing message.</strong></p>
+<p><strong>2. The verified strength record (network effects <span class="dash">—</span> the only true one on this list).</strong> See §8. A credential is worth exactly what its recognition is worth, which makes it a graph, which makes it defensible in a way no feature is. It also happens to be the only asset here that gets <em>more</em> valuable as competitors grow.</p>
+<p><strong>3. Outcome-closed personalisation (3–5 years, compounding, hardest to copy).</strong> Per-athlete effort bias, measured clearance rates, adaptive MRV that reports its own convergence. This is real proprietary technology and it is unusual. It becomes a moat only when it is closed on outcomes (§12.2). Until then it is excellent engineering with an unproven commercial edge.</p>
+<p><strong>4. Coach-mediated distribution (economic, not technical).</strong> A coach with 40 athletes is 40 users acquired at once, with retention underwritten by a human relationship. This is a distribution moat, which is the kind that actually survives.</p>
+<h3>The honest summary</h3>
+<blockquote class="verdict"><strong>The model layer is defensible for a few years. The credential layer is defensible indefinitely. The interface layer is defensible for about eighteen months.</strong></blockquote>
+<p>Which means: <strong>do not spend the company's next year on the interface.</strong> Spend it on the two layers that hold.</p>
+<section id="s15" class="sec"><h2><span class="h2t">Business model</span><span class="h2n">14</span></h2>
+</section>
+<p>Start with the fact that outranks every strategic opinion in this document:</p>
+<blockquote class="verdict"><strong><code>full-billing</code> is <code>blocked</code>. 538 shipped capabilities and no way to take money.</strong></blockquote>
+<p>The code is complete <span class="dash">—</span> Stripe checkout, portal, webhooks, entitlement mirroring, IAP <span class="dash">—</span> and it is blocked on external credentials and one SQL script. Nothing in this memo matters more than unblocking that. A product with no price has no market feedback, and every roadmap written without revenue data is fiction.</p>
+<h3>The options, graded</h3>
+<div class="tw"><table><thead><tr><th>Model</th><th>Verdict</th></tr></thead><tbody><tr><td><strong>Consumer subscription (£10–15/mo)</strong></td><td>The base. Necessary, and a mediocre standalone business at achievable scale.</td></tr><tr><td><strong>Performance tier (£25–30/mo)</strong></td><td><strong>The right primary bet.</strong> Gates the expensive, differentiated layer: the coach's voice, the films, verified records, sensor integrations. Hybrid athletes already spend £150/mo on coaching and £250 on race entries. Price is not their objection.</td></tr><tr><td><strong>Coach seats (£8–12 per athlete/mo, coach pays)</strong></td><td><strong>The growth engine.</strong> Buys distribution and retention simultaneously. <code>coach-verification</code> has shipped; the flow exists.</td></tr><tr><td><strong>Gyms</strong></td><td>Low ARPU, high support, weak intent. Later, or never.</td></tr><tr><td><strong>Teams / universities / pro sport</strong></td><td>Beautiful logos, 9–18 month sales cycles, bespoke demands, ~0.1% of TAM. <strong>This company has already learned this lesson once</strong> <span class="dash">—</span> <code>competition-intel</code> was retired as <em>"beautiful engineering, no market."</em> Do not relearn it.</td></tr><tr><td><strong>Hardware / sensors</strong></td><td>No. Capital, inventory, support, margin compression, and a two-year detour from software. Integrate Enode/Vitruve/Perch <span class="dash">—</span> <code>velocity.ts</code> is already capture-agnostic.</td></tr><tr><td><strong>API / B2B performance intelligence</strong></td><td>Real, but it is a 2029 business. It requires the outcome-closed model to exist first.</td></tr></tbody></table></div>
+<h3>The recommendation</h3>
+<p><strong>Consumer subscription with a Performance tier, sold to the hybrid athlete, distributed through verified coaches.</strong> One number to watch: percentage of Performance subscribers who follow a coach-adjusted prescription in a given week. That single metric tells you whether you are a coach or a dashboard.</p>
+<section id="s16" class="sec"><h2><span class="h2t">The 2030 board</span><span class="h2n">15</span></h2>
+</section>
+<div class="tw"><table><thead><tr><th>Who</th><th>What they build</th><th>What stops them</th></tr></thead><tbody><tr><th><strong>Apple</strong></th><td>The most likely to build the ambient layer. Watch + AirPods + on-device models + Health as the system of record, and Workout Buddy already exists.</td><td>They build for the median user, not the athlete. They will not prescribe a load progression <span class="dash">—</span> liability and brand. No barbell model, no coach marketplace, no interest in a strength credential. <strong>They will own ambient sensing and leave prescription on the table.</strong></td></tr><tr><th><strong>WHOOP / Oura</strong></th><td>Recovery-side coaching on excellent proprietary sensor data.</td><td>Hardware margin businesses. No strength perception, no prescription authority, and their AI coach is a chat layer over their own metrics. They tell you how you slept, not what to squat.</td></tr><tr><th><strong>Strava</strong></th><td>Social graph + endurance, already shipping AI summaries.</td><td>Strength is a foreign language. Their identity is the feed, and feeds resist becoming coaches.</td></tr><tr><th><strong>Hevy / Strong</strong></th><td>The best strength logging UX, huge user bases, and they will bolt an LLM on.</td><td>No physiological engine, no endurance side, no recovery model. Their coach will be a summariser of what you typed.</td></tr><tr><th><strong>Tonal / Tempo / Peloton</strong></th><td>Genuine sensing, because they own the load cell.</td><td>Hardware-bound and capital-starved; the installed base is a ceiling, not a launchpad.</td></tr><tr><th><strong>Future / coaching marketplaces</strong></th><td>Actual human coaching, actually effective.</td><td>Labour-bound. £150–200/mo, does not scale, and AI compresses their pricing from below.</td></tr><tr><th><strong>OpenAI / Google / Meta</strong></th><td>A very good general coach in a chat box, free.</td><td>No continuous physiological state, no device pipeline, no write-access to a training log, no accountability. <strong>They will make generic coaching worthless <span class="dash">—</span> which is a gift, because it prices out every competitor whose only asset was generic coaching.</strong></td></tr></tbody></table></div>
+<p><strong>Who most likely builds this?</strong> Apple builds the sensing layer. Nobody builds the whole thing, because the whole thing requires caring about barbells <em>and</em> running <em>and</em> recovery <em>and</em> prescription <span class="dash">—</span> a combination that is a rounding error to every platform and a religion to the hybrid athlete.</p>
+<p><strong>Where a startup builds $1B+:</strong> own the hybrid athlete completely. Hyrox and hybrid racing are the fastest-growing mass-participation category in fitness; the participants are high-intent, high-spend, tribal, and structurally underserved because their sport sits in the gap between two incumbent categories. Be the system of record for that gap, own the strength credential, and distribute through their coaches. That is a defensible billion-dollar wedge. "An AI fitness app" is not.</p>
+<section id="s17" class="sec"><h2><span class="h2t">NOW / NEXT / FUTURE / SCI-FI</span><span class="h2n">16</span></h2>
+</section>
+<p><strong>NOW <span class="dash">—</span> 2026 (ship this year, all engineering, no research)</strong> Voice capture with a closed grammar and LLM fallback – prescribe + confirm-by-exception – auto rest timer and session boundaries from the IMU – superset inference – HealthKit passive stream <em>(currently blocked on one TestFlight verification)</em> – Watch glance app <em>(built, blocked on one workflow run)</em> – AirPods nod/shake confirmation – narrated data films from <code>recap.ts</code> / <code>learned.ts</code> – bar-sensor integrations – the coach's daily single utterance.</p>
+<p><strong>NEXT <span class="dash">—</span> 2027–28 (plan for, do not depend on)</strong> Wrist-IMU rep counting for a subset of lifts – monocular bar path and velocity for camera-friendly lifts with a propped phone – plate counting for attestation tier 3 – on-device VLM exercise identification from a still – automatic alignment of two clips of the same lift.</p>
+<p><strong>FUTURE <span class="dash">—</span> 2029–32 (watch, do not build)</strong> Egocentric capture from glasses <span class="dash">—</span> <em>the only development that makes the camera thesis genuinely work, because it removes phone propping</em> – continuous fatigue from movement signature – trustworthy generated instructional video.</p>
+<p><strong>SCI-FI <span class="dash">—</span> beyond 2032</strong> Continuous non-invasive biochemistry – muscle-level load attribution without electrodes – fully closed-loop training and nutrition.</p>
+<p><strong>The discipline:</strong> a demo is one clip in good light. A product is every rep, in a bad gym, on a hot phone, with a stranger walking through frame. Almost everything exciting in this space is currently the former.</p>
+<section id="s18" class="sec"><h2><span class="h2t">The MVP <span class="dash">—</span> "the first glimpse of the future," buildable now</span><span class="h2n">17</span></h2>
+</section>
+<p><strong>Name it what it is: the Session Line.</strong></p>
+<p><strong>Interaction.</strong> The athlete opens the app to one card carrying today's instruction and its reason. They tap Start. From then on the phone can go in a pocket. Prescribed sets are announced in one ear. After each set the athlete says nothing (accepted), says a word ("eight", "two left"), or nods. The rest timer starts itself when movement stops. At the end: "Done <span class="dash">—</span> that's your best squat tonnage in seven weeks. Tomorrow's easy." The screen is available at every moment and required at none.</p>
+<p><strong>AI.</strong> Server-side, grounded in the existing Twin: HPI and its limiting pillar, readiness with its ranked drivers, the athlete's own effort bias, adaptive MRV, tissue risk, and today's prescription. It answers "should I do another set?" and "how am I doing?" from <em>this athlete's</em> measured history, and says so explicitly when it does not know. The endpoint already exists at <code>/api/ai-coach</code>.</p>
+<p><strong>Computer vision.</strong> <strong>None.</strong> Not in the MVP. This is the most important line in the section.</p>
+<p><strong>Video out.</strong> One artifact: the weekly Ledger. 40 seconds, rendered server-side from <code>recap.ts</code> and <code>learned.ts</code>, narrated by a synthetic voice, ending on one instruction. Shareable.</p>
+<p><strong>UI that survives.</strong> Now (the session line) – the receipt – the record – the films – full authoring screens for plans, exercises and nutrition.</p>
+<p><strong>Architecture.</strong></p>
+<div class="tw"><pre><code>Phone ── on-device speech ──► closed grammar parser ──► delta
+   │                                │ (miss)
+   │                                └──► LLM parse (server, cheap model)
+   │
+   ├── IMU: phone-down / motion-stop  ──► set + rest boundaries
+   ├── AirPods: nod / shake           ──► confirm
+   ├── HealthKit: HR, HRV, sleep      ──► Signal rows (exists)
+   │
+   └──► /api ──► @hybrid/core engines (exist) ──► prescription + verdict
+                        │
+                        ├──► TTS ──► one ear
+                        └──► renderer ──► the weekly film</code></pre></div>
+<p>Every box marked <em>exists</em> is roughly two-thirds of the diagram.</p>
+<p><strong>Data model.</strong> Two additions to what is already there: <strong>Prescription</strong> as a first-class object (what we told you, when, and why <span class="dash">—</span> the precondition for §12.2), and <strong>Utterance</strong> (what was said, what it parsed to, whether it was corrected <span class="dash">—</span> the training data for the grammar).</p>
+<p><strong>Hardware.</strong> None. Optional bar-sensor integration for the Performance tier.</p>
+<p><strong>Honest scope check.</strong> The blockers in the way are not technological: HealthKit needs a TestFlight verification, the Watch app needs one workflow run, and billing needs three credentials and a SQL script. <strong>Three unblocks and a voice layer stand between this repo and the MVP described above.</strong></p>
+<section id="s19" class="sec"><h2><span class="h2t">Three magic moments</span><span class="h2n">18</span></h2>
+</section>
+<h3>① "Two left."</h3>
+<ol>
+<li><strong>Situation</strong> <span class="dash">—</span> Set three of squats, 100 kg, chalk on hands, phone in pocket, AirPods in.</li>
+<li><strong>Input</strong> <span class="dash">—</span> The athlete racks the bar, breathes, and says two words: <em>"two left."</em></li>
+<li><strong>Perceives</strong> <span class="dash">—</span> Motion stopped (IMU). Speech captured on-device. Plan context: exercise, set index, prescribed load.</li>
+<li><strong>Understands</strong> <span class="dash">—</span> Set 3 completed at the prescribed load and reps, RPE ~8. Rest starts now. Given this athlete's measured clearance rate, set 4 at the same load is appropriate.</li>
+<li><strong>Action</strong> <span class="dash">—</span> Logs the set. Starts the rest timer. Prepares set 4.</li>
+<li><strong>Output</strong> <span class="dash">—</span> One ear: <em>"Got it. Two ten. Same weight next."</em> Nothing on screen unless asked.</li>
+<li><strong>Why it lands</strong> <span class="dash">—</span> The athlete never took the phone out, and the set is on record with an effort rating they would normally never have entered. The feeling is not "the app is clever." It is <em>"someone is holding my clipboard."</em></li>
+<li><strong>Tech</strong> <span class="dash">—</span> On-device speech, a closed grammar, existing engines, TTS, IMU. <strong>All 2026. No CV.</strong></li>
+</ol>
+<h3>② The Verdict</h3>
+<ol>
+<li><strong>Situation</strong> <span class="dash">—</span> Four hard sets done. The athlete genuinely does not know whether to do a fifth.</li>
+<li><strong>Input</strong> <span class="dash">—</span> <em>"Should I do another set?"</em></li>
+<li><strong>Perceives</strong> <span class="dash">—</span> Today's completed volume, this muscle group's 7-day load, last night's sleep and HRV, the athlete's own measured recovery rate, their adaptive MRV and whether that estimate has converged.</li>
+<li><strong>Understands</strong> <span class="dash">—</span> This athlete clears quadriceps volume ~15% slower than the population curve, and today's sets already sit at 92% of their measured ceiling with a session in 36 hours.</li>
+<li><strong>Action</strong> <span class="dash">—</span> Recommends stopping, and writes the reasoning to the receipt.</li>
+<li><strong>Output</strong> <span class="dash">—</span> In-ear: <em>"I'd stop. That's about as much as you've historically recovered from in a day and a half, and you squat again Thursday."</em> Screen, if pulled: the three drivers, ranked, with provenance.</li>
+<li><strong>Why it lands</strong> <span class="dash">—</span> <strong>Every rival gives a generic answer. This one is derived from four months of the athlete's own measurements, and it names them.</strong> This is the single interaction a general-purpose model structurally cannot reproduce, and it is the entire product thesis in one sentence.</li>
+<li><strong>Tech</strong> <span class="dash">—</span> <code>recovery-pairs.ts</code>, <code>landmark-*.ts</code>, <code>readiness.ts</code>, <code>effort.ts</code>. <strong>All shipped.</strong> This is a voice and a prompt away.</li>
+</ol>
+<h3>③ The Sunday Film</h3>
+<ol>
+<li><strong>Situation</strong> <span class="dash">—</span> Sunday evening, sofa, phone.</li>
+<li><strong>Input</strong> <span class="dash">—</span> A notification: <em>"Your week."</em> One tap.</li>
+<li><strong>Perceives</strong> <span class="dash">—</span> Seven days of sessions, load, PRs, sleep, compliance, and the deltas in the model of this athlete.</li>
+<li><strong>Understands</strong> <span class="dash">—</span> Which of the week's facts are <em>narratively</em> significant: the PR, the missed session, the fact that the confidence interval on their deadlift ceiling narrowed enough to change next week's prescription.</li>
+<li><strong>Action</strong> <span class="dash">—</span> Renders a 40-second film, server-side, deterministic motion graphics over real numbers, second-person narration.</li>
+<li><strong>Output</strong> <span class="dash">—</span> <em>"You lifted 14 tonnes this week. Thursday's squat moved faster at 105 than it did at 100 six weeks ago <span class="dash">—</span> that's the first hard evidence your strength is up rather than your effort. One thing for next week: you haven't touched a hinge in nine days."</em></li>
+<li><strong>Why it lands</strong> <span class="dash">—</span> It is the first piece of fitness media that is <strong>about you and true</strong>. Not a filtered highlight reel <span class="dash">—</span> a film of your own physiology that you could not have made and cannot get anywhere else. It is also the most shareable object the company can produce.</li>
+<li><strong>Tech</strong> <span class="dash">—</span> <code>recap.ts</code> and <code>learned.ts</code> (both shipped) + a server-side renderer + TTS. <strong>No CV, no generative video, no new science.</strong></li>
+</ol>
+<p><strong>Honourable mention <span class="dash">—</span> the moat moment: The Verified Lift.</strong> The athlete props the phone for a declared PR. The app counts the plates, confirms lockout, and stamps the record at tier 3 <span class="dash">—</span> <em>recorded</em>. It joins a ladder where a co-signed lift is tier 2 and a sanctioned meet is tier 5. This is not the most magical moment; it is the most valuable one, because it is the only one with a network behind it. Build it after the first three.</p>
+<section id="s20" class="sec"><h2><span class="h2t">Red team <span class="dash">—</span> killing the bad ideas, including the popular ones</span><span class="h2n">19</span></h2>
+</section>
+<p><strong>This document's own biggest risk.</strong> <code>reference/</code> already contains <code>north-star-strategy.md</code>, <code>performance-platform-master-strategy.md</code> and <code>a16z-investment-memo.md</code>. Layer 6 of the north star was <em>Video Intelligence</em> <span class="dash">—</span> it was built, shipped with ten unit tests, and deleted eleven months later having never analysed a single real recording. <strong>The failure mode of this company is not a shortage of vision. It is building vision documents into code before validating demand.</strong> If this memo becomes north-star #4, it has done harm.</p>
+<p><strong>538 shipped capabilities, zero revenue mechanism.</strong> That is the actual crisis, and no interface thesis addresses it.</p>
+<p><strong>Camera-based form coaching will fail, specifically:</strong></p>
+<ul>
+<li><em>Phone propping.</em> There is nowhere to put a phone in a squat rack. This alone kills the feature for most users on most days, and no model improvement fixes it.</li>
+<li><em>Gym policy.</em> A growing number of commercial gyms ban filming outright. Others make it socially radioactive.</li>
+<li><em>Bystanders.</em> You are recording strangers who did not consent, in a changing-adjacent space. This is a genuine legal and PR exposure, not a hypothetical.</li>
+<li><em>Occlusion and mirrors.</em> Racks, benches, plates, other people, and mirrored walls that pose models happily detect as a second person.</li>
+<li><em>Monocular depth.</em> Joint angle error from a single camera is meaningfully larger than the differences you would be coaching on. You would be confidently reporting noise.</li>
+<li><em>Trust asymmetry.</em> One wrong "your depth is fine" before an injury and you have both a liability claim and a dead brand.</li>
+</ul>
+<p><strong>Voice will not work for everyone.</strong> Loud music, and a substantial minority of people will simply never talk to their phone in a public gym. <strong>Voice must never be the only path to anything.</strong> Every voice interaction needs a one-tap equivalent, permanently.</p>
+<p><strong>Generative video of the athlete: kill it now.</strong> Expensive, slow, uncanny, and a clip showing a rep that never happened is a category-ending trust failure. There is no version of this worth the risk.</p>
+<p><strong>Proactive AI is how you get uninstalled.</strong> Every fitness app has died of notifications. The interruption budget in §11 is not a preference; it is a survival constraint.</p>
+<p><strong>Privacy and legal, concretely.</strong> Body video is biometric data: GDPR special-category, Illinois BIPA (statutory per-violation damages, and it has killed products), Texas CUBI. Minors. Body-composition photos. Nutrition tracking with an eating-disorder exposure that most fitness companies simply ignore. If perception ever ships, <strong>it processes on-device or it does not ship.</strong></p>
+<p><strong>Liability language.</strong> "Reduce your load 5% today" is coaching. "Your knee valgus indicates ACL risk" is a medical claim. The RTP rails already in the repo make this boundary sharper, not blurrier <span class="dash">—</span> a return-to-play protocol <em>looks</em> clinical, and that is precisely when the wording has to be most careful.</p>
+<p><strong>Cost.</strong> Continuous VLM inference on video is not free and will not be free by 2028 at the fidelity being imagined. A £12/month subscription does not fund per-user-hour video understanding. Generated video is worse. The narrated-data-film approach costs cents because it is deterministic rendering, not generation <span class="dash">—</span> that is not a compromise, it is the correct architecture.</p>
+<p><strong>Things that sound futuristic and have no user value <span class="dash">—</span> say no permanently:</strong> AR glasses interfaces – 3D avatar digital twins – mid-air hand gestures – metaverse gyms – "here is an AI-generated ideal version of you" – continuous ambient gym cameras – a form score out of 100 (a number nobody can act on, derived from a measurement nobody can verify) – environment recognition to infer an exercise the plan already named.</p>
+<p><strong>The single most likely way this fails:</strong> the team builds a beautiful voice interface, ships it, and discovers that logging friction was never why people churned. <strong>Validate the pain before building the cure.</strong> Ten athletes, two weeks, a human on the other end of a text thread doing by hand what the AI would do. If they will not use a <em>human</em> coach in their pocket, they will not use a synthetic one.</p>
+<section id="s21" class="sec"><h2><span class="h2t">The vision</span><span class="h2n">20</span></h2>
+</section>
+<p><strong>Today</strong> <span class="dash">—</span> <em>We are building the system of record for the hybrid athlete: the only log that reconciles what the barbell and the road each cost you.</em></p>
+<p><strong>2028</strong> <span class="dash">—</span> <em>We become the coach <span class="dash">—</span> an instruction, not a dashboard. The app stops showing you charts and starts telling you what to do, and it is right often enough that you stop checking.</em></p>
+<p><strong>2030</strong> <span class="dash">—</span> <em>We become the credential <span class="dash">—</span> the verified record of what a human body can actually do, recognised because everyone's is here.</em></p>
+<p><strong>2035</strong> <span class="dash">—</span> <em>If the thesis is correct, fitness becomes a continuous negotiation between an athlete and a model that understands their body better than any coach could, where the interface is a voice that mostly stays quiet.</em></p>
+<h3>One sentence</h3>
+<blockquote class="verdict"><strong>HYBRID is a coach with perception and memory: it prescribes your next set, hears you finish it, and keeps the only verified record of what your body can actually do.</strong></blockquote>
+<section id="s22" class="sec"><h2><span class="h2t">Appendix <span class="dash">—</span> what to do on Monday</span><span class="h2n">→</span></h2>
+</section>
+<p>Ordered by ratio of impact to effort. Nothing here needs computer vision.</p>
+<ol>
+<li><strong>Unblock billing.</strong> Three credentials and one SQL script. Everything else is unmeasurable until this is done.</li>
+<li><strong>Unblock HealthKit and the Watch glance app.</strong> One TestFlight verification and one workflow run. The passive sensing layer is <em>built</em> and switched off.</li>
+<li><strong>Validate the pain with ten athletes and a human coach on a text thread.</strong> Two weeks. Before writing any voice code.</li>
+<li><strong>Ship the Sunday Film.</strong> The engines exist; it needs a renderer and a voice. Highest wow-per-line-of-code in the repo, and it is a retention loop, not a demo.</li>
+<li><strong>Give the coach one daily sentence.</strong> The load-adjustment message. One utterance a day, under the interruption budget.</li>
+<li><strong>Prescribe + confirm-by-exception.</strong> The 10x on interaction cost, with no new sensors.</li>
+<li><strong>Then, and only then, voice.</strong> Closed grammar first, LLM as the fallback.</li>
+<li><strong>Attestation tier 3</strong> as the one camera bet, once 1–7 have shipped and been paid for.</li>
+</ol></section></article>
+
+  <div class="foot"><span>HYBRID</span><span>reference/ambient-interface-strategy-2026-08.md</span><span>Written against branch claude/zen-turing-bcy1tp</span></div>
+</div>
+
+<script>
+(function(){
+  var links=[].slice.call(document.querySelectorAll('nav.toc a'));
+  if(!links.length||!('IntersectionObserver' in window))return;
+  var map={};links.forEach(function(a){map[a.getAttribute('href').slice(1)]=a});
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(a){a.classList.remove('on')});
+        var a=map[e.target.id]; if(a){a.classList.add('on')}
+      }
+    });
+  },{rootMargin:'-10% 0px -80% 0px',threshold:0});
+  document.querySelectorAll('section.sec').forEach(function(s){io.observe(s)});
+})();
+</script>
