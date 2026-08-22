@@ -8,16 +8,18 @@ import DoneFloor from "../components/aurora/done-floor";
  * A SAUNA ON A DAY NOBODY TRAINED.
  *
  * REPORTED AS: "sauna should be displayed even if there was no workouts." It
- * was not. The done floor read a day with no sessions as an EMPTY day and drew
- * the invitation ("a match, a run, a swim — it lands here") in place of the
- * list, and the logbook rail — whose `logged` flag counts sessions and only
- * sessions — did not mount the floor on such a day at all. So a rest-day
- * sitting, the most ordinary sauna there is, appeared on no surface that names
- * the day, while the engines had already scored it into readiness and MRV.
+ * was not. The logbook rail — whose `logged` flag counts sessions and only
+ * sessions — sent an unlogged day down its empty branch and did not mount the
+ * floor there at all, so a rest-day sitting, the most ordinary sauna there is,
+ * appeared on no surface that names the day while the engines had already
+ * scored it into readiness and MRV.
  *
- * Core was never the problem: `heatDayRows([], signals, …)` has always returned
- * the standalone sitting (engines/heat.test.ts). The floor is what dropped it,
- * which is why this gate mounts the floor rather than the function.
+ * Neither core nor this list ever dropped it — `heatDayRows([], signals, …)`
+ * returns the standalone sitting and `entries` has always rendered it. Two
+ * things had to change and both are checked here: the floor no longer speaks
+ * the empty day's invitation over a line saying something landed, and it
+ * renders NOTHING (not a seam, not a gap) where its host already said it, which
+ * is what lets the rail mount it on that branch unconditionally.
  */
 
 vi.mock("../lib/api", () => ({

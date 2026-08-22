@@ -55,10 +55,14 @@ import HeatAccent from "./heat-accent";
 // workout.
 //
 // AND IT SURVIVES A DAY WITH NO WORKOUT AT ALL. A rest-day sauna is the most
-// ordinary sitting there is, and it used to be the one the app dropped: the
-// floor rendered its empty caption and the logbook rail did not render the
-// floor at all on a day it considered unlogged, so twenty minutes of heat the
-// engines had already scored appeared on no surface that names the day.
+// ordinary sitting there is, and it used to be the one the app dropped —
+// though not here. THIS list always drew it: `entries` has never needed a
+// session to hold a sitting. It was the HOSTS that read "no sessions" as "empty
+// day": the logbook rail sent an unlogged day down its empty branch and never
+// mounted the floor at all, so twenty minutes of heat the engines had already
+// scored appeared on no surface that names the day. What was wrong on this side
+// was quieter and is the `heatOnly` branch below — the sitting rendered under an
+// invitation saying nothing had landed here yet.
 //
 // This file is the standard. It once had a web twin it mirrored exactly; the
 // web client was retired in Aug 2026 and took it with it.
@@ -155,10 +159,10 @@ export default function DoneFloor({
    *
    * The seam's count counts SESSIONS (see `entries` above), so a day whose only
    * entry is a sitting has no number to show — and until this branch existed
-   * that dropped it straight into the empty state, which then spoke the
-   * invitation ("a match, a run, a swim — it lands here") directly above the
-   * sauna line saying something already had. The invitation is for a day
-   * holding NOTHING; a sitting speaks for itself and needs no seam over it.
+   * that fell straight through to the empty state, which spoke the invitation
+   * ("a match, a run, a swim — it lands here") directly above the sauna line
+   * saying something already had. The invitation is for a day holding NOTHING;
+   * a sitting speaks for itself and needs no seam over it.
    */
   const heatOnly = rows.length === 0 && entries.length > 0;
   const showCaption = rows.length === 0 && entries.length === 0 && emptyCaption;
