@@ -1,4 +1,5 @@
 import type { Macrocycle, MacroBlock, Phase, Microcycle } from "./types";
+import { goalLabel } from "../goal-id";
 
 /**
  * Periodization engine. A macrocycle (season) is built from mesocycles (phase
@@ -44,7 +45,26 @@ export const MODEL_FOR: Record<string, "endurance" | "strength"> = {
 };
 
 export function modelFor(goalOrSport: string): { name: string; phases: Phase[] } {
-  return PHASE_MODELS[MODEL_FOR[goalOrSport] ?? "strength"]!;
+  return PHASE_MODELS[modelKeyFor(goalOrSport)]!;
+}
+
+/**
+ * Which phase model a goal resolves to, by NAME or by id.
+ *
+ * `Macrocycle.goal` holds a goal id now (see goal-id.ts) while rows written
+ * before that change hold the display name, so this has to answer for both or
+ * the seven goals that currently match would stop matching the moment ids
+ * started being stored. `goalLabel` maps either representation onto the one
+ * name this table is keyed by; anything the library does not know (a coach's
+ * free-text goal) falls through to the default exactly as it always did.
+ *
+ * The table itself is still keyed by display name, and still misses twelve of
+ * the nineteen goals — including `Hybrid Athlete`, which it calls `Hybrid`.
+ * That is a separate defect with a separate fix; this function only makes sure
+ * moving to ids does not make it worse.
+ */
+export function modelKeyFor(goalOrSport: string): "endurance" | "strength" {
+  return MODEL_FOR[goalOrSport] ?? MODEL_FOR[goalLabel(goalOrSport)] ?? "strength";
 }
 
 /**

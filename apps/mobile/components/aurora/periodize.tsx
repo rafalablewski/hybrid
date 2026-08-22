@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { currentPhase, type Macrocycle , ALPHA} from "@hybrid/core";
+import { currentPhase, goalLabel, type Macrocycle , ALPHA} from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { leading, fs, space, F } from "../../lib/ui";
@@ -28,7 +28,7 @@ export default function AuroraPeriodize() {
       .then((m) => {
         setMacro(m?.macro ?? null);
         setWeek(m?.currentWeek ?? 1);
-        setSeason(m ? { macroId: m.macroId, planId: m.planId, goal: m.macro.goalOrSport, startedAt: m.planStartedAt } : null);
+        setSeason(m ? { macroId: m.macroId, planId: m.planId, goal: goalLabel(m.macro.goalOrSport), startedAt: m.planStartedAt } : null);
       })
       .finally(() => { setLoaded(true); setRefreshing(false); });
   };

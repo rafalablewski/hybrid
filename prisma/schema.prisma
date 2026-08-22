@@ -1265,6 +1265,14 @@ model Macrocycle {
   id        String    @id @default(cuid())
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
+  // The GOAL_TREE id (e.g. "hybrid", "power"), NOT the display name — see
+  // packages/core/src/goal-id.ts. It held the display name until Aug 2026,
+  // which meant a rename or a translation silently re-routed the periodization
+  // model and split the column into two values for one goal. Every write path
+  // normalises through `goalIdToStore`, so an older client sending a name still
+  // lands an id. Rows written before that hold names and are read through
+  // `goalLabel` (reference/sql-macrocycle-goal-id.sql normalises them when the
+  // operator chooses to). A COACH-AUTHORED goal is free text and stays verbatim.
   goal      String
   // The enrolled NAMED plan id (e.g. "bb-fb4"), when the athlete picked a real
   // plan from the library — drives "Your plan today". Null for a goal-only

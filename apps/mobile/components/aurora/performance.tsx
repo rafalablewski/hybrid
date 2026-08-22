@@ -32,6 +32,7 @@ import {
   freshnessExplain, wearableExplain, wearableSourcePhrase,
   type CapabilityMovement, type FreshnessPillar,
   type WearableExplain,
+  goalLabel,
 } from "@hybrid/core";
 import { useSessionsRead, useSignalsRead, useMacrocycleRead, useRecoverySignalsQuery, useRecoverySignalsRead, combineReads } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
@@ -191,7 +192,7 @@ function Full({ top }: { top?: ReactNode }) {
   const phaseBlock = macro?.blocks.find((b) => currentWeek >= b.startWeek && currentWeek <= b.endWeek) ?? macro?.blocks[0];
   const seasonPct = macro && macro.totalWeeks > 0 ? Math.min(100, Math.round((currentWeek / macro.totalWeeks) * 100)) : 0;
 
-  const season = macro ? `${macro.goalOrSport} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : "";
+  const season = macro ? `${goalLabel(macro.goalOrSport)} – ${t("w.home.cockpit.week")} ${currentWeek} ${t("w.home.cockpit.of")} ${macro.totalWeeks}` : "";
   // The verdict sentence: freshness, then the tissue worth watching. It says
   // nothing the two cards below don't also say in full — the only licence a
   // summary above the fold ever has.
@@ -406,7 +407,7 @@ function Full({ top }: { top?: ReactNode }) {
           the week once instead of restating it as a percentage. */}
       <ACard solid style={{ marginTop: 16 }}>
         <ASection
-          title={!macroRead.settled ? " " : macro ? macro.goalOrSport : t("w.home.cockpit.setUp")}
+          title={!macroRead.settled ? " " : macro ? goalLabel(macro.goalOrSport) : t("w.home.cockpit.setUp")}
           meta={macro && phaseBlock ? phaseBlock.label : undefined}
         />
         {macro ? (

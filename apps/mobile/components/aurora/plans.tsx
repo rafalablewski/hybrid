@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Animated, View, Text, ScrollView, StyleSheet, type LayoutChangeEvent } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors, ALPHA, FEEDBACK } from "@hybrid/core";
+import { GOAL_TREE, GOAL_CATEGORIES, SHARED_ELEMENTS, goalLabel, goalShelves, libraryCoverView, planDetail, srSingleReps, programFor, goalCoverView, planHeroView, type GoalGroup, type GoalNode, type GoalPlan , colors, ALPHA, FEEDBACK } from "@hybrid/core";
 import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
@@ -54,7 +54,7 @@ export default function AuroraPlans({ openGoal, openPlan }: {
   // the browse root, and the leave section on the enrolled plan's detail page.
   const [enrolled, setEnrolled] = useState<EnrolledSeason | null>(null);
   const loadEnrolled = useCallback(() => {
-    fetchMacrocycle().then((m) => setEnrolled(m ? { macroId: m.macroId, planId: m.planId, goal: m.macro.goalOrSport, startedAt: m.planStartedAt } : null));
+    fetchMacrocycle().then((m) => setEnrolled(m ? { macroId: m.macroId, planId: m.planId, goal: goalLabel(m.macro.goalOrSport), startedAt: m.planStartedAt } : null));
   }, []);
   // Re-fetched on tab focus AND on detail open/close, so enrolling on a detail
   // page (this screen stays mounted in the tab stack) is reflected right away.
@@ -361,7 +361,7 @@ function Detail({ goal, plan, back, alreadyEnrolled, onEnrolled, leaveSection }:
   const revalidate = useRevalidate();
   const enroll = async () => {
     setEnrolled("busy");
-    const ok = await enrollPlan(goal.name, plan.id);
+    const ok = await enrollPlan(goal.id, plan.id);
     setEnrolled(ok ? "done" : "error");
     // Enrolling changed the season — drop the cached macrocycle so Today and
     // Performance don't keep rendering "No season yet" off a pre-enrol read.

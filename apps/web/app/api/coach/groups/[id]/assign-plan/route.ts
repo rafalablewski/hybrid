@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildMacrocycle } from "@hybrid/core";
+import { buildMacrocycle, goalIdToStore } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -23,7 +23,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (error) return error;
   if (typeof b.goal !== "string" || !b.goal.trim())
     return NextResponse.json({ error: "goal is required" }, { status: 400 });
-  const goal = b.goal.trim();
+  // A goal id when the library knows it, the coach's own words when it does not.
+  const goal = goalIdToStore(b.goal);
   const planId = typeof b.planId === "string" && b.planId.trim() ? b.planId.trim() : null;
 
   try {

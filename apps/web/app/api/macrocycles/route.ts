@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildMacrocycle } from "@hybrid/core";
+import { buildMacrocycle, goalIdToStore } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -31,7 +31,12 @@ export async function POST(request: Request) {
   }
 
   const eventInWeeks = typeof b.eventInWeeks === "number" ? b.eventInWeeks : null;
-  const macro = buildMacrocycle(b.goal.trim(), eventInWeeks);
+  // STORE THE GOAL AS AN ID. Normalising here rather than trusting the client
+  // is what lets an older build, which still sends the display name, land a
+  // joinable row without shipping a new binary. A goal the library does not
+  // know (a coach's free text) passes through unchanged — see core goal-id.ts.
+  const goal = goalIdToStore(b.goal);
+  const macro = buildMacrocycle(goal, eventInWeeks);
   // The enrolled named plan (when the athlete picked a real plan) — drives
   // "Your plan today". Best-effort: tolerate the column not being migrated yet.
   const planId = typeof b.planId === "string" && b.planId.trim() ? b.planId.trim().slice(0, 64) : null;
@@ -41,7 +46,7 @@ export async function POST(request: Request) {
     macrocycle = await prisma.macrocycle.create({
       data: {
         userId: user.id,
-        goal: b.goal.trim(),
+        goal,
         planId,
         eventDate: null,
         blocks: macro.blocks as object,
@@ -51,7 +56,7 @@ export async function POST(request: Request) {
     // planId column not migrated yet (run reference/sql-macrocycle-planid.sql) —
     // still enroll, just without the named-plan link.
     macrocycle = await prisma.macrocycle.create({
-      data: { userId: user.id, goal: b.goal.trim(), eventDate: null, blocks: macro.blocks as object },
+      data: { userId: user.id, goal, eventDate: null, blocks: macro.blocks as object },
     });
   }
 

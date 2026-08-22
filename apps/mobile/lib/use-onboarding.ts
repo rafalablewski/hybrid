@@ -133,7 +133,7 @@ export async function finishOnboarding(
     await AsyncStorage.setItem("hybrid.equipment", extractEngineAnswers(questions, answers).equipment);
   } catch { /* ignore */ }
 
-  const ok = await apiSubmit(answers as Record<string, unknown>, plan ? { goalLabel: plan.goalLabel, planId: plan.planId } : null);
+  const ok = await apiSubmit(answers as Record<string, unknown>, plan ? { goalId: plan.goalId, planId: plan.planId } : null);
   try { await AsyncStorage.setItem("hybrid.onboarded", "1"); } catch { /* ignore */ }
   return ok;
 }

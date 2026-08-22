@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildMacrocycle } from "@hybrid/core";
+import { buildMacrocycle, goalIdToStore } from "@hybrid/core";
 import { getOrCreateDbUser } from "@/lib/server-auth";
 import { readJsonLimited } from "@/lib/guard";
 import { prisma } from "@/lib/db";
@@ -37,7 +37,9 @@ export async function POST(request: Request) {
 
   // 2) Enroll the chosen plan, if any (mirrors POST /api/macrocycles).
   let macrocycle = null;
-  const goal = typeof b.goal === "string" && b.goal.trim() ? b.goal.trim() : null;
+  // A GOAL_TREE id (see core goal-id.ts). Normalised rather than trusted, so a
+  // client still sending the display name stores the id anyway.
+  const goal = typeof b.goal === "string" && b.goal.trim() ? goalIdToStore(b.goal) : null;
   if (goal) {
     const macro = buildMacrocycle(goal, null);
     const planId = typeof b.planId === "string" && b.planId.trim() ? b.planId.trim().slice(0, 64) : null;

@@ -115,7 +115,7 @@ export default function PercentProgram({
   const revalidate = useRevalidate();
   const enroll = async () => {
     setState("busy");
-    const ok = await enrollPlan(goal.name, plan.id);
+    const ok = await enrollPlan(goal.id, plan.id);
     setState(ok ? "done" : "error");
     // Enrolling changed the season — drop the cached macrocycle so Today and
     // Performance don't keep rendering "No season yet" off a pre-enrol read.
