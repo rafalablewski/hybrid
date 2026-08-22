@@ -1,0 +1,1358 @@
+<title>Söhne for HYBRID</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,opsz,wght@0,14..32,400..700;1,14..32,400..600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root{
+  --sans:'Söhne','Soehne','Instrument Sans',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;
+  --mono:'Söhne Mono','Soehne Mono','JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+
+  /* Page — light. The app itself is dark-only; this theme is derived for reading the spec. */
+  --ground:#f4f2ec; --surface:#fffefb; --sunk:#eae7de;
+  --rule:#ded9cd; --rule-soft:#e9e5da;
+  --text:#14161a; --text2:#5d6863; --text3:#8b938e;
+  --accent:#59671c; --accent-soft:#eef1dc;
+
+  /* Product palette — these are HYBRID's real tokens and do not change with the page theme. */
+  --ink:#0c0d0c; --ink2:#212126; --line:#2f2f36;
+  --chalk:#f7f6f3; --ash:#8a9691; --lime:#c3d363;
+
+  --maxw:1180px; --col:660px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --ground:#0c0d0c; --surface:#17181b; --sunk:#131417;
+    --rule:#2b2c31; --rule-soft:#212227;
+    --text:#f7f6f3; --text2:#8a9691; --text3:#666f6b;
+    --accent:#c3d363; --accent-soft:#1b1f14;
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#0c0d0c; --surface:#17181b; --sunk:#131417;
+  --rule:#2b2c31; --rule-soft:#212227;
+  --text:#f7f6f3; --text2:#8a9691; --text3:#666f6b;
+  --accent:#c3d363; --accent-soft:#1b1f14;
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--ground); color:var(--text);
+  font-family:var(--sans); font-size:16px; line-height:1.6;
+  font-weight:400; -webkit-font-smoothing:antialiased;
+}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:2px}
+
+/* ── shell ───────────────────────────────────────────────────────────── */
+.shell{max-width:var(--maxw); margin:0 auto; padding:0 28px 140px;
+  display:grid; grid-template-columns:1fr; gap:0}
+@media (min-width:1080px){
+  .shell{grid-template-columns:186px minmax(0,1fr); gap:64px; padding-right:40px}
+}
+.index{display:none}
+@media (min-width:1080px){
+  .index{display:block; position:sticky; top:0; align-self:start;
+    padding-top:96px; max-height:100vh; overflow-y:auto; padding-bottom:60px}
+}
+.index ol{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:1px}
+.index a{display:flex; gap:9px; text-decoration:none; padding:4px 0;
+  font-family:var(--mono); font-size:11px; line-height:1.35; letter-spacing:.02em;
+  color:var(--text3)}
+.index a:hover{color:var(--accent)}
+.index .n{color:var(--text3); opacity:.6; flex:none}
+.index .lede{font-family:var(--mono); font-size:10px; letter-spacing:.115em;
+  text-transform:uppercase; color:var(--text3); margin:0 0 14px}
+
+main{min-width:0; padding-top:0}
+
+/* ── masthead ────────────────────────────────────────────────────────── */
+.mast{padding:112px 0 0; max-width:var(--col)}
+.mast .eyebrow{font-family:var(--mono); font-size:10px; font-weight:500;
+  letter-spacing:.115em; text-transform:uppercase; color:var(--text2); margin:0 0 26px}
+.mast h1{font-size:clamp(46px,8.4vw,82px); line-height:.98; letter-spacing:-.028em;
+  font-weight:700; margin:0; text-wrap:balance}
+.mast h1 em{font-style:normal; color:var(--text3)}
+.mast .sub{font-size:19px; line-height:1.5; color:var(--text2); margin:26px 0 0;
+  max-width:52ch; letter-spacing:-.005em}
+.mast .meta{margin:40px 0 0; display:flex; flex-wrap:wrap; gap:0;
+  border-top:1px solid var(--rule)}
+.mast .meta div{flex:1 1 150px; padding:14px 18px 14px 0; border-right:1px solid var(--rule-soft)}
+.mast .meta div:last-child{border-right:0}
+.mast .meta dt{font-family:var(--mono); font-size:10px; letter-spacing:.115em;
+  text-transform:uppercase; color:var(--text3); margin:0 0 5px}
+.mast .meta dd{margin:0; font-size:13px; font-weight:500; color:var(--text)}
+
+/* ── sections ────────────────────────────────────────────────────────── */
+section{padding-top:92px; scroll-margin-top:24px}
+.head{display:flex; align-items:baseline; gap:16px; border-bottom:1px solid var(--rule);
+  padding-bottom:11px; margin-bottom:34px}
+.head .num{font-family:var(--mono); font-size:11px; font-weight:500; color:var(--text3);
+  letter-spacing:.06em; flex:none}
+.head h2{font-size:26px; font-weight:700; letter-spacing:-.021em; margin:0; line-height:1.2}
+.head .tag{margin-left:auto; font-family:var(--mono); font-size:10px; letter-spacing:.115em;
+  text-transform:uppercase; color:var(--text3); flex:none}
+
+h3{font-size:18px; font-weight:600; letter-spacing:-.012em; margin:44px 0 12px; line-height:1.3}
+h3:first-child{margin-top:0}
+h4{font-family:var(--mono); font-size:10px; font-weight:500; letter-spacing:.115em;
+  text-transform:uppercase; color:var(--text2); margin:32px 0 12px}
+p{margin:0 0 15px; max-width:var(--col); letter-spacing:-.003em}
+p.wide{max-width:none}
+.lead{font-size:18px; line-height:1.55; color:var(--text2); max-width:56ch; letter-spacing:-.006em}
+strong{font-weight:600}
+code,.m{font-family:var(--mono); font-size:.88em; letter-spacing:0}
+p code,li code,td code{background:var(--sunk); padding:1px 5px; border-radius:3px;
+  border:1px solid var(--rule-soft)}
+ul,ol.body{max-width:var(--col); padding-left:19px; margin:0 0 15px}
+li{margin-bottom:7px}
+
+.note{border-left:2px solid var(--accent); padding:2px 0 2px 18px; margin:26px 0;
+  max-width:var(--col); color:var(--text2); font-size:15px}
+.note b{color:var(--text); font-weight:600}
+
+/* ── tables ──────────────────────────────────────────────────────────── */
+.tw{overflow-x:auto; margin:0 0 22px; border-top:1px solid var(--rule)}
+table{border-collapse:collapse; width:100%; min-width:560px; font-size:13px}
+th{text-align:left; font-family:var(--mono); font-size:10px; font-weight:500;
+  letter-spacing:.115em; text-transform:uppercase; color:var(--text3);
+  padding:11px 14px 11px 0; border-bottom:1px solid var(--rule); white-space:nowrap;
+  vertical-align:bottom}
+td{padding:10px 14px 10px 0; border-bottom:1px solid var(--rule-soft);
+  vertical-align:top; color:var(--text2)}
+td:first-child{color:var(--text); font-weight:500}
+td.n,th.n{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
+td.tok{font-family:var(--mono); font-size:12px; color:var(--accent); white-space:nowrap}
+tr.gone td{opacity:.45}
+tr.gone td:first-child{text-decoration:line-through}
+
+/* ── specimen rows ───────────────────────────────────────────────────── */
+.specs{border-top:1px solid var(--rule); margin-bottom:26px}
+.spec{display:grid; grid-template-columns:1fr; gap:6px;
+  padding:20px 0; border-bottom:1px solid var(--rule-soft); align-items:baseline}
+@media (min-width:760px){
+  .spec{grid-template-columns:minmax(0,1fr) 250px; gap:28px}
+}
+.spec .sample{min-width:0; overflow:hidden}
+.spec .facts{font-family:var(--mono); font-size:10.5px; line-height:1.6; color:var(--text3);
+  letter-spacing:.01em; font-variant-numeric:tabular-nums}
+.spec .facts b{display:block; color:var(--accent); font-weight:500; letter-spacing:.05em;
+  text-transform:uppercase; font-size:10px; margin-bottom:3px}
+
+/* ── the app ground — product surfaces, fixed in both themes ─────────── */
+.screen{background:var(--ink); border:1px solid var(--line); border-radius:14px;
+  padding:22px; color:var(--chalk); font-family:var(--sans); margin:0 0 20px}
+.screen.tight{padding:18px}
+.card{background:var(--ink2); border-radius:12px; padding:16px}
+.screen .k{font-family:var(--mono); font-size:10px; font-weight:500; letter-spacing:.115em;
+  text-transform:uppercase; color:var(--ash); margin:0}
+.screen .hr{height:1px; background:var(--line); margin:16px 0; border:0}
+.grid2{display:grid; gap:14px; grid-template-columns:1fr}
+@media (min-width:620px){.grid2{grid-template-columns:1fr 1fr}}
+.grid3{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+
+/* figure + unit — the system's own rule, rendered */
+.fig{font-family:var(--mono); font-variant-numeric:tabular-nums;
+  display:inline-flex; align-items:baseline; gap:.25em; line-height:1}
+.fig .v{font-weight:600; letter-spacing:-.035em; color:var(--chalk)}
+.fig .u{font-family:var(--sans); font-weight:500; color:var(--ash);
+  letter-spacing:-.004em}
+.fig.bind{gap:0}
+.fig .u.caps{text-transform:uppercase; letter-spacing:.06em}
+.fig.q .v{font-weight:500}
+.op{font-family:var(--sans); font-weight:400; color:var(--ash); padding:0 .2em}
+
+/* ── directions ──────────────────────────────────────────────────────── */
+.dirs{display:grid; gap:18px; grid-template-columns:1fr; margin:0 0 8px}
+@media (min-width:900px){.dirs{grid-template-columns:repeat(3,1fr)}}
+.dir{border:1px solid var(--rule); border-radius:12px; padding:20px; background:var(--surface);
+  display:flex; flex-direction:column; gap:12px}
+.dir.win{border-color:var(--accent); background:var(--accent-soft)}
+.dir .letter{font-family:var(--mono); font-size:10px; letter-spacing:.115em;
+  text-transform:uppercase; color:var(--text3)}
+.dir.win .letter{color:var(--accent)}
+.dir h3{margin:0; font-size:20px; letter-spacing:-.018em; font-weight:700}
+.dir .demo{border-top:1px solid var(--rule-soft); border-bottom:1px solid var(--rule-soft);
+  padding:16px 0; margin:2px 0}
+.dir p{font-size:13.5px; line-height:1.5; margin:0; color:var(--text2)}
+.dir .pro,.dir .con{font-size:12.5px; line-height:1.5; margin:0; color:var(--text2);
+  padding-left:16px; position:relative}
+.dir .pro:before{content:'+'; position:absolute; left:0; color:var(--accent); font-weight:600}
+.dir .con:before{content:'–'; position:absolute; left:2px; color:var(--text3); font-weight:600}
+
+/* ── verdict / cuts ──────────────────────────────────────────────────── */
+.cuts{border-top:1px solid var(--rule); margin:0 0 20px}
+.cut{display:grid; grid-template-columns:1fr; gap:4px; padding:16px 0;
+  border-bottom:1px solid var(--rule-soft)}
+@media (min-width:700px){.cut{grid-template-columns:230px minmax(0,1fr); gap:26px}}
+.cut .what{font-weight:600; font-size:14px; color:var(--text)}
+.cut .why{font-size:14px; color:var(--text2); margin:0}
+.cut .what s{color:var(--text3); font-weight:400}
+
+/* ── rules ───────────────────────────────────────────────────────────── */
+.rules{counter-reset:r; list-style:none; padding:0; margin:0; border-top:1px solid var(--rule)}
+.rules li{counter-increment:r; display:grid; grid-template-columns:34px minmax(0,1fr);
+  gap:14px; padding:13px 0; margin:0; border-bottom:1px solid var(--rule-soft);
+  font-size:14.5px; line-height:1.5; max-width:var(--col)}
+.rules li:before{content:counter(r,decimal-leading-zero); font-family:var(--mono);
+  font-size:11px; color:var(--text3); padding-top:3px; letter-spacing:.04em}
+.rules b{font-weight:600}
+.rules .m{color:var(--accent)}
+
+/* ── code ────────────────────────────────────────────────────────────── */
+pre{background:var(--sunk); border:1px solid var(--rule-soft); border-radius:10px;
+  padding:18px 20px; overflow-x:auto; margin:0 0 20px;
+  font-family:var(--mono); font-size:12px; line-height:1.65; color:var(--text2);
+  -moz-tab-size:2; tab-size:2}
+pre b{color:var(--text); font-weight:500}
+pre i{color:var(--text3); font-style:normal}
+pre u{color:var(--accent); text-decoration:none}
+
+.foot{margin-top:96px; padding-top:22px; border-top:1px solid var(--rule);
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.05em; color:var(--text3);
+  display:flex; flex-wrap:wrap; gap:6px 26px}
+</style>
+
+<div class="shell">
+
+<nav class="index" aria-label="Contents">
+  <p class="lede">Contents</p>
+  <ol>
+    <li><a href="#s1"><span class="n">01</span> Thesis</a></li>
+    <li><a href="#s2"><span class="n">02</span> The family</a></li>
+    <li><a href="#s3"><span class="n">03</span> Three directions</a></li>
+    <li><a href="#s4"><span class="n">04</span> The ladder</a></li>
+    <li><a href="#s5"><span class="n">05</span> Weight</a></li>
+    <li><a href="#s6"><span class="n">06</span> Leading</a></li>
+    <li><a href="#s7"><span class="n">07</span> Tracking</a></li>
+    <li><a href="#s8"><span class="n">08</span> Numerals</a></li>
+    <li><a href="#s9"><span class="n">09</span> Hierarchy</a></li>
+    <li><a href="#s10"><span class="n">10</span> Components</a></li>
+    <li><a href="#s11"><span class="n">11</span> The lift screen</a></li>
+    <li><a href="#s12"><span class="n">12</span> Editorial</a></li>
+    <li><a href="#s13"><span class="n">13</span> Dark and light</a></li>
+    <li><a href="#s14"><span class="n">14</span> Across devices</a></li>
+    <li><a href="#s15"><span class="n">15</span> Accessibility</a></li>
+    <li><a href="#s16"><span class="n">16</span> Screens</a></li>
+    <li><a href="#s17"><span class="n">17</span> Tokens</a></li>
+    <li><a href="#s18"><span class="n">18</span> The 25 rules</a></li>
+    <li><a href="#s19"><span class="n">19</span> The review</a></li>
+    <li><a href="#s20"><span class="n">20</span> Migration</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="mast">
+  <p class="eyebrow">HYBRID — Typography specification</p>
+  <h1>Söhne, and<br>the instrument<br><em>beside it.</em></h1>
+  <p class="sub">One family, two cuts, four weights, eleven sizes. Söhne carries
+  every word a person wrote. Söhne Mono carries every number a machine measured.
+  Nothing in this product is set in anything else.</p>
+  <dl class="meta">
+    <div><dt>Direction</dt><dd>A — Precision</dd></div>
+    <div><dt>Faces</dt><dd>Söhne, Söhne Mono</dd></div>
+    <div><dt>Weights</dt><dd>400 / 500 / 600 / 700</dd></div>
+    <div><dt>Sizes</dt><dd>11 rungs, 10–46</dd></div>
+  </dl>
+  <div class="note" style="margin-top:34px">
+    <b>Rendering note.</b> Söhne is a Klim Type Foundry licence and cannot be
+    served from a public font host. This page declares <span class="m">Söhne</span>
+    and <span class="m">Söhne Mono</span> first in every stack, so a machine with the
+    licence installed renders the real faces. Everyone else sees Instrument Sans and
+    JetBrains Mono, which hold the same proportions closely enough to judge the
+    system by. Every size, weight, leading and tracking figure on this page is the
+    specification, not the proxy.
+  </div>
+</header>
+
+<!-- 01 ───────────────────────────────────────────────────────────────── -->
+<section id="s1">
+  <div class="head"><span class="num">01</span><h2>Thesis</h2><span class="tag">Philosophy</span></div>
+
+  <p class="lead">An athlete does not read this interface. They check it — mid-set,
+  breathing hard, at arm's length, in bad gym light. Typography that has to be read
+  has already failed. The whole system is built on one distinction, and everything
+  else follows from it.</p>
+
+  <h3>Language and measurement are different materials</h3>
+  <p>A sentence is written by a person and is meant to be read. A number is produced
+  by a barbell, a watch, a scale or a clock, and is meant to be recognised. These
+  are not two sizes of the same thing. They want different rhythm, different
+  alignment, different failure modes.</p>
+  <p>So they get different cuts of the same family. <strong>Söhne sets everything
+  a human wrote. Söhne Mono sets everything a machine measured.</strong> That single
+  rule decides the face at every call site in the product, and it means an athlete
+  learns — without being told — that monospaced texture means <em>this is a
+  reading from the world</em>. The interface stops needing labels to say what kind
+  of thing something is.</p>
+
+  <div class="note">
+    <b>Why one family and not two.</b> Söhne Mono is Söhne — same skeleton, same
+    weight axis, same warmth, redrawn on a fixed advance. Pairing an unrelated mono
+    with a grotesque is a compromise nobody notices until the two disagree about
+    what a <span class="m">1</span> looks like. Here the figure and its label are
+    cut by the same hand.
+  </div>
+
+  <h3>What it should feel like</h3>
+  <p style="font-size:20px;line-height:1.45;letter-spacing:-.014em;color:var(--text);max-width:24ch;font-weight:500">
+  Measured. Quiet. Structural. Confident. Unhurried. Exact. Physical. Durable.</p>
+  <p>Like a good instrument: the dial is legible before you focus on it, and it does
+  not editorialise about the reading.</p>
+
+  <h3>What it must never feel like</h3>
+  <p>Loud. Motivational. Futuristic. Gamified. Wide-tracked. Gradient-filled.
+  Congratulatory. A dashboard that is proud of being a dashboard. The product should
+  never appear to be excited on the athlete's behalf — an athlete who put 120 kg on
+  their back does not need the interface to be impressed.</p>
+</section>
+
+<!-- 02 ───────────────────────────────────────────────────────────────── -->
+<section id="s2">
+  <div class="head"><span class="num">02</span><h2>The family</h2><span class="tag">Cuts and weights</span></div>
+
+  <p>Söhne ships in four cuts and nine weights. We licence and load a fraction of
+  that, and the discipline is the point: every weight loaded is a weight somebody
+  will eventually use for the wrong reason.</p>
+
+  <h3>Cuts</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Cut</th><th>Verdict</th><th>Job</th></tr></thead>
+    <tbody>
+      <tr><td>Söhne</td><td class="tok">SHIPPED</td><td>Every word. Headings, body, labels, buttons, prose, units.</td></tr>
+      <tr><td>Söhne Mono</td><td class="tok">SHIPPED</td><td>Every measured value, and the uppercase eyebrow that names one.</td></tr>
+      <tr class="gone"><td>Söhne Schmal</td><td>NOT LICENSED</td><td>Condensed. We deleted a condensed face once already for having no job that the mono eyebrow was not doing better. Re-proposing it starts by naming that job.</td></tr>
+      <tr class="gone"><td>Söhne Breit</td><td>NOT LICENSED</td><td>Extended. Reads as a wordmark treatment. HYBRID's wordmark is set in Söhne proper, tracked tight.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Weights</h3>
+  <p>Four values, and they are the same four values in both cuts — except that mono
+  stops at 600, because a monospaced face at 700 stops being a figure and becomes a
+  slab. Every glyph is already the same width; adding that much weight closes the
+  counters and the digits start to blur into one another at exactly the sizes where
+  legibility matters most.</p>
+
+  <div class="specs">
+    <div class="spec">
+      <div class="sample" style="font-weight:400;font-size:30px;letter-spacing:-.022em;line-height:1.15">Buch — the reading weight</div>
+      <div class="facts"><b>400 – Buch</b>Body, long-form, secondary text,<br>disabled states, the × operator.</div>
+    </div>
+    <div class="spec">
+      <div class="sample" style="font-weight:500;font-size:30px;letter-spacing:-.022em;line-height:1.15">Kräftig — the interface weight</div>
+      <div class="facts"><b>500 – Kräftig</b>The product's default. Row titles,<br>labels, buttons, units, most figures.</div>
+    </div>
+    <div class="spec">
+      <div class="sample" style="font-weight:600;font-size:30px;letter-spacing:-.022em;line-height:1.15">Halbfett — the emphasis weight</div>
+      <div class="facts"><b>600 – Halbfett</b>Headings, section titles, primary<br>figures, the accented word in a row.</div>
+    </div>
+    <div class="spec">
+      <div class="sample" style="font-weight:700;font-size:30px;letter-spacing:-.028em;line-height:1.15">Dreiviertelfett — display only</div>
+      <div class="facts"><b>700 – Dreiviertelfett</b>Mastheads, hero figures, the wordmark.<br>Nothing below 26 px may use it.</div>
+    </div>
+  </div>
+
+  <h4>Not licensed, and why</h4>
+  <div class="tw"><table>
+    <thead><tr><th>Weight</th><th>Reason</th></tr></thead>
+    <tbody>
+      <tr><td>Extraleicht 200 – Leicht 300</td><td>On a near-black ground a light grotesque disappears at UI sizes. It reads as elegance in a specimen and as a rendering fault on a phone.</td></tr>
+      <tr><td>Fett 800 – Extrafett 900 – Nextrafett 950</td><td>This is where fitness apps go to shout. 700 already carries a masthead; anything above it is volume, not hierarchy. The outgoing Archivo Black 900 is the single largest change in the migration.</td></tr>
+      <tr><td>Kursiv (italic), all weights</td><td>One exception only — see rule 04. A grotesque italic in a data interface reads as an error state.</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><strong>Loaded total: seven files.</strong> Söhne 400 / 500 / 600 / 700, Söhne Mono
+  400 / 500 / 600. Plus one Söhne Kursiv 400 for the single italic exception — eight.</p>
+</section>
+
+<!-- 03 ───────────────────────────────────────────────────────────────── -->
+<section id="s3">
+  <div class="head"><span class="num">03</span><h2>Three directions</h2><span class="tag">And the choice</span></div>
+
+  <p>Three complete systems, all in Söhne, all internally consistent. They are not
+  variations on a theme — they disagree about what the product is.</p>
+
+  <div class="dirs">
+    <div class="dir win">
+      <span class="letter">A — Chosen</span>
+      <h3>Precision</h3>
+      <div class="demo">
+        <p class="k" style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.115em;text-transform:uppercase;color:var(--text3);margin:0 0 8px">Back squat</p>
+        <div class="fig" style="font-size:38px"><span class="v" style="color:var(--text)">120</span><span class="u" style="font-size:16px;color:var(--text2)">kg</span><span class="op" style="font-size:19px">×</span><span class="v" style="color:var(--text)">5</span></div>
+      </div>
+      <p>Mono carries every measurement and every label that names one. Söhne carries
+      only language. Tight display tracking, SI unit casing, uppercase mono eyebrows.
+      Swiss, instrumented, cold on purpose.</p>
+      <p class="pro">Face alone tells you what kind of value you are looking at.</p>
+      <p class="pro">Columns align without effort; a rolling digit never jitters.</p>
+      <p class="pro">Scales to lab-grade analytics without a second system.</p>
+      <p class="con">Reads clinical if mono is allowed to escape into prose.</p>
+    </div>
+
+    <div class="dir">
+      <span class="letter">B</span>
+      <h3>Human Performance</h3>
+      <div class="demo">
+        <p style="font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);margin:0 0 8px">Back Squat</p>
+        <div style="font-size:38px;font-weight:700;letter-spacing:-.03em;line-height:1;color:var(--text);font-variant-numeric:tabular-nums">120<span style="font-size:20px;font-weight:600;color:var(--text2)"> KG</span> <span style="font-weight:400;color:var(--text3)">×</span> 5</div>
+      </div>
+      <p>No mono at all. Söhne's own tabular figures do the numbers, Fett 800 does
+      display, size jumps are large and dramatic, Kursiv carries insight copy.
+      Editorial, athletic, warm.</p>
+      <p class="pro">Feels like a brand rather than a readout. Strong marketing carry-over.</p>
+      <p class="pro">One cut, fewer files, simpler licence.</p>
+      <p class="con">Every number now looks like a headline. Nothing recedes.</p>
+      <p class="con">Uppercase units are typographically wrong and cost width in the one place width is scarce.</p>
+      <p class="con">This is the look every fitness app already has.</p>
+    </div>
+
+    <div class="dir">
+      <span class="letter">C</span>
+      <h3>Future Classic</h3>
+      <div class="demo">
+        <p style="font-size:13px;font-weight:400;color:var(--text2);margin:0 0 8px">Back squat</p>
+        <div style="font-size:34px;font-weight:500;letter-spacing:-.02em;line-height:1;color:var(--text);font-variant-numeric:tabular-nums">120 kg × 5</div>
+      </div>
+      <p>Three weights. No uppercase anywhere. No mono. Sentence case throughout, an
+      eight-rung scale, generous leading, everything set in Söhne Buch and Kräftig.
+      Extremely restrained.</p>
+      <p class="pro">Ages beautifully. Nothing here dates.</p>
+      <p class="pro">The most legible long-form reading of the three.</p>
+      <p class="con">Sentence-case labels cannot hold a dense data screen — with no case or face contrast, a label and a value look identical.</p>
+      <p class="con">Söhne's proportional figures do not column. A table of loads misaligns.</p>
+      <p class="con">Restraint at this level reads as absence in a product about numbers.</p>
+    </div>
+  </div>
+
+  <h3>Why A</h3>
+  <p>Because this product is an instrument, and B and C both resolve the same
+  question the wrong way.</p>
+  <p><strong>B loses the distinction.</strong> When the load, the label and the
+  heading are all Söhne at different weights, the athlete has to read the screen to
+  parse it. Direction A lets them recognise it — mono texture means measurement, and
+  that is legible from further away than any word.</p>
+  <p><strong>C loses the column.</strong> Söhne's proportional figures are correct in
+  a sentence and wrong in a table, and this product is mostly tables: sets, splits,
+  macros, weeks. A system that cannot align a column of loads is not a candidate for
+  a training app, however handsome the specimen sheet.</p>
+  <p><strong>A is also the only one already true.</strong> HYBRID today has 1,220
+  monospaced call sites against 915 in the display face — the product has been a
+  Direction A system for a year without anybody writing it down. A and B are not
+  equally expensive: A is a face swap, B and C are rewrites of every screen that
+  shows a number.</p>
+  <p>A's one real weakness — that it reads clinical — is not managed by borrowing
+  warmth from B. It is managed by a hard boundary: <strong>mono never sets a
+  sentence.</strong> Every word the product says to a person is Söhne, at reading
+  weight, at reading leading. The cold is confined to the instruments, which is where
+  cold belongs.</p>
+</section>
+
+<!-- 04 ───────────────────────────────────────────────────────────────── -->
+<section id="s4">
+  <div class="head"><span class="num">04</span><h2>The ladder</h2><span class="tag">11 rungs</span></div>
+
+  <p>One ladder. There is no separate display scale and no separate numeric scale —
+  a figure and a heading at the same rung are the same size, they simply use
+  different cuts. That single decision removes two thirds of the tokens a system
+  like this usually carries.</p>
+
+  <div class="specs">
+    <div class="spec"><div class="sample"><div class="fig" style="font-size:46px"><span class="v" style="color:var(--text)">32,840</span></div></div>
+      <div class="facts"><b>text.metric – 46</b>The one hero figure on a screen.<br>Mono 600 – flush 1.00 – −0.035em</div></div>
+    <div class="spec"><div class="sample" style="font-size:34px;font-weight:700;letter-spacing:-.028em;line-height:1.15">Your strongest week</div>
+      <div class="facts"><b>text.hero – 34</b>Mastheads, cover titles, takeovers.<br>Söhne 700 – tight 1.15 – −0.02em</div></div>
+    <div class="spec"><div class="sample" style="font-size:26px;font-weight:600;letter-spacing:-.021em;line-height:1.15">Training</div>
+      <div class="facts"><b>text.display – 26</b>Screen headings.<br>Söhne 600 – tight 1.15 – −0.02em</div></div>
+    <div class="spec"><div class="sample" style="font-size:22px;font-weight:600;letter-spacing:-.016em;line-height:1.3">Wednesday, lower body</div>
+      <div class="facts"><b>text.headline – 22</b>Head of a screen that owns no hero.<br>Söhne 600 – snug 1.30 – −0.015em</div></div>
+    <div class="spec"><div class="sample" style="font-size:18px;font-weight:600;letter-spacing:-.012em;line-height:1.3">Follow a coach</div>
+      <div class="facts"><b>text.title – 18</b>Section titles. The house standard.<br>Söhne 600 – snug 1.30 – −0.012em</div></div>
+    <div class="spec"><div class="sample" style="font-size:16px;font-weight:600;letter-spacing:-.008em;line-height:1.3">Romanian deadlift</div>
+      <div class="facts"><b>text.subtitle – 16</b>Small headings, card titles, exercise names.<br>Söhne 600 – snug 1.30 – −0.008em</div></div>
+    <div class="spec"><div class="sample" style="font-size:14px;font-weight:500;line-height:1.3">Set 3 of 4 — last week 115 kg</div>
+      <div class="facts"><b>text.bodyLg – 14</b>Primary list line, emphasised body.<br>Söhne 500 – snug 1.30 – 0</div></div>
+    <div class="spec"><div class="sample" style="font-size:13px;font-weight:400;line-height:1.5">Your recovery between high-volume sessions has improved for three consecutive weeks.</div>
+      <div class="facts"><b>text.body – 13</b>Default reading text. The floor for prose.<br>Söhne 400 – normal 1.50 – 0</div></div>
+    <div class="spec"><div class="sample" style="font-size:12px;font-weight:400;color:var(--text2);line-height:1.5">Logged 08:42 — Apple Watch Ultra</div>
+      <div class="facts"><b>text.caption – 12</b>Metadata, timestamps, provenance.<br>Söhne 400 – normal 1.50 – +0.005em</div></div>
+    <div class="spec"><div class="sample" style="font-size:11px;font-weight:500;color:var(--text2);line-height:1.3">4 sets</div>
+      <div class="facts"><b>text.labelSm – 11</b>Small labels inside dense rows.<br>Söhne 500 – snug 1.30 – +0.005em</div></div>
+    <div class="spec"><div class="sample" style="font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.115em;text-transform:uppercase;color:var(--text2)">Performance index</div>
+      <div class="facts"><b>text.overline – 10</b>The eyebrow. Mono, caps, tracked.<br>Mono 500 – snug 1.30 – +0.115em</div></div>
+  </div>
+
+  <div class="note">
+    <b>The ladder ends at 46.</b> A figure larger than <span class="m">text.metric</span>
+    is a design smell, not a missing token — with one exception, the takeover figure
+    (76) used by the annual Wrapped, which is not an element on a page: it is the
+    panel. It stays a single named constant with the argument written beside it,
+    which is the opposite of a hand-typed 68.
+  </div>
+
+  <h4>Two rungs were removed before this shipped</h4>
+  <div class="tw"><table>
+    <thead><tr><th>Removed</th><th class="n">Was</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr class="gone"><td>note</td><td class="n">15</td><td>Three reading sizes inside 2 px — 13, 14, 15 — is drift wearing the costume of hierarchy. Nobody can see the difference between 14 and 15 and nobody chose it. Its 169 sites go to 14.</td></tr>
+      <tr class="gone"><td>heading</td><td class="n">20</td><td>20 and 22 were the same job under two names, one rung apart. Its 41 sites go to 22.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 05 ───────────────────────────────────────────────────────────────── -->
+<section id="s5">
+  <div class="head"><span class="num">05</span><h2>Weight</h2><span class="tag">Four values</span></div>
+
+  <p>Weight is the primary hierarchy instrument in this system, above size and well
+  above colour. The reason is practical: an athlete at arm's length in bad light
+  loses colour discrimination before they lose weight discrimination, and a 13 px
+  and a 14 px are indistinguishable at that distance while a 400 and a 600 are not.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Weight</th><th class="n">Value</th><th>Söhne</th><th>Söhne Mono</th></tr></thead>
+    <tbody>
+      <tr><td>Buch</td><td class="n">400</td><td>Body, long-form, secondary text, the × operator, disabled labels</td><td>Quiet figures: a table cell, a chart axis, a row's secondary number</td></tr>
+      <tr><td>Kräftig</td><td class="n">500</td><td>UI default. Row titles, buttons, form labels, units, tab labels</td><td>Standard figures, the uppercase eyebrow, clocks and timers</td></tr>
+      <tr><td>Halbfett</td><td class="n">600</td><td>All headings 16–26, the emphasised word in a row</td><td>Primary figures — the value the screen exists to show</td></tr>
+      <tr><td>Dreiviertelfett</td><td class="n">700</td><td>Hero 34 and above only. The wordmark.</td><td class="tok">FORBIDDEN</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <b>A clock is 500, a personal record is 600.</b> This is the whole weight
+    philosophy in one line. Weight encodes whether a figure is an <em>achievement</em>
+    or a <em>readout</em>. A running duration, a heart rate, a timestamp are the
+    world reporting itself and take Kräftig. A load, a total, a PR, an index are
+    the athlete's result and take Halbfett. Two weights, one semantic distinction,
+    applied consistently across every screen — and it means a screen full of numbers
+    still has a subject.
+  </div>
+
+  <p><strong>Never more than two weights in one component.</strong> A card with a
+  600 title, a 500 value and a 400 caption is already at the edge; adding a 700
+  anywhere inside it means the card is competing with the screen it sits on.</p>
+</section>
+
+<!-- 06 ───────────────────────────────────────────────────────────────── -->
+<section id="s6">
+  <div class="head"><span class="num">06</span><h2>Leading</h2><span class="tag">Ratios, never absolutes</span></div>
+
+  <p>Line height is a <strong>ratio</strong>, computed from the size at render.
+  Absolute line heights are the single most common way a type system breaks
+  accessibility: the OS scales the glyphs, the fixed line box stays where it was,
+  and the text collides with itself before it clips. A ratio carries its leading up
+  with it.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Token</th><th class="n">Ratio</th><th>Applies to</th><th class="n">At size</th></tr></thead>
+    <tbody>
+      <tr><td>flush</td><td class="n">1.00</td><td>A standalone figure in a tile or a hero. The figure <em>is</em> the box.</td><td class="n">46 → 46</td></tr>
+      <tr><td>tight</td><td class="n">1.15</td><td>Display and hero titles, 26 and above. Multi-line mastheads.</td><td class="n">34 → 39</td></tr>
+      <tr><td>snug</td><td class="n">1.30</td><td>Headings, list rows, table rows, labels, anything one to two lines.</td><td class="n">18 → 23</td></tr>
+      <tr><td>normal</td><td class="n">1.50</td><td>Reading text. The default for body and caption.</td><td class="n">13 → 20</td></tr>
+      <tr><td>relaxed</td><td class="n">1.62</td><td>Long-form prose, empty-state bodies, AI insight paragraphs.</td><td class="n">13 → 21</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <b><span class="m">flush</span> is the new rung, and it is the one that fixes tiles.</b>
+    A 46 px figure at 1.15 carries 7 px of empty line box it will never use — no
+    ascender, no descender, no second line. Multiply that across a four-tile row and
+    the grid gains a visible band of nothing that no amount of padding adjustment
+    explains. Figures set solid; everything else breathes.
+  </div>
+
+  <h4>Density without cramping</h4>
+  <p>The rule that keeps dense screens readable is that <strong>leading tightens
+  before size shrinks</strong>. A set list that needs to fit more rows moves from
+  <span class="m">normal</span> to <span class="m">snug</span>; it does not move from
+  14 to 13. Size is information, leading is only air, and giving up air costs the
+  reader far less than giving up glyph.</p>
+</section>
+
+<!-- 07 ───────────────────────────────────────────────────────────────── -->
+<section id="s7">
+  <div class="head"><span class="num">07</span><h2>Tracking</h2><span class="tag">Relative, always</span></div>
+
+  <p>Tracking is specified in <strong>em</strong>, never in points or dp. This is
+  not a preference. An absolute tracking value is a percentage that silently changes
+  meaning with every size it touches: <span class="m">−0.5</span> is −1.7% at 30 px
+  and −0.7% at 68 px, which is why a single title tracking token, applied honestly
+  across the range, does nothing at all at the top of it. Every optical intent in
+  this system is stated as the proportion it actually is.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Token</th><th class="n">Value</th><th>Applies to</th><th>Logic</th></tr></thead>
+    <tbody>
+      <tr><td>display</td><td class="n">−0.020em</td><td>26 and above</td><td>Large type has too much air between glyphs at its natural sidebearings, which were drawn for text sizes. Take it out.</td></tr>
+      <tr><td>headline</td><td class="n">−0.015em</td><td>18–22</td><td>The transition band. Half the display correction, because half the problem.</td></tr>
+      <tr><td>title</td><td class="n">−0.010em</td><td>16–18</td><td>The last size where tightening is visible without being felt.</td></tr>
+      <tr><td>normal</td><td class="n">0</td><td>13–15</td><td>Söhne is fitted for text at these sizes. Anything you do here you are doing against the punchcutter.</td></tr>
+      <tr><td>caption</td><td class="n">+0.005em</td><td>11–12</td><td>Small type loses counter definition. A trace of air back.</td></tr>
+      <tr><td>label</td><td class="n">+0.085em</td><td>Uppercase mono, 10–11</td><td>Capitals were never designed to sit next to each other. This is the standard eyebrow.</td></tr>
+      <tr><td>caps</td><td class="n">+0.115em</td><td>Architectural uppercase</td><td>Section labels and nav eyebrows, where the label is structure rather than content.</td></tr>
+      <tr><td>figure</td><td class="n">−0.035em</td><td>Any mono figure ≥ 22</td><td>Monospaced advances are generous by construction. A large figure needs the slack removed or the digits drift apart.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="specs" style="margin-top:26px">
+    <div class="spec"><div class="sample" style="font-size:32px;font-weight:700;letter-spacing:0;line-height:1.1;color:var(--text3)">Strongest week</div>
+      <div class="facts">0 — untracked.<br>Loose, unresolved, drifts apart.</div></div>
+    <div class="spec"><div class="sample" style="font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1">Strongest week</div>
+      <div class="facts"><b>−0.020em</b>The specification. Set as one word-shape.</div></div>
+    <div class="spec"><div class="sample" style="font-size:32px;font-weight:700;letter-spacing:-.045em;line-height:1.1;color:var(--text3)">Strongest week</div>
+      <div class="facts">−0.045em — overtracked.<br>Collisions on <span class="m">st</span>, <span class="m">ee</span>. Fashion, not typography.</div></div>
+  </div>
+
+  <p><strong>Positive tracking is never applied above 12 px.</strong> Letterspaced
+  lowercase at reading size destroys word shape, which is the thing a fast reader
+  actually recognises. If a label needs more presence, it becomes uppercase mono at
+  10 and gets tracking honestly.</p>
+</section>
+
+<!-- 08 ───────────────────────────────────────────────────────────────── -->
+<section id="s8">
+  <div class="head"><span class="num">08</span><h2>Numerals</h2><span class="tag">The core system</span></div>
+
+  <p class="lead">This is the part of the system that matters most, because it is
+  where a training app is actually used. Everything below follows from one law.</p>
+
+  <div class="note" style="border-left-width:3px">
+    <b>The figure is mono. The unit is not.</b> A measured value is set in Söhne
+    Mono. The unit beside it is set in Söhne, at roughly two fifths the size, one
+    weight down, in secondary ink, on the same baseline. The value is the subject;
+    the unit is a caption attached to it. They must never be the same colour, the
+    same face or the same weight, because at a glance the athlete needs to see a
+    number, not a string.
+  </div>
+
+  <h3>Anatomy</h3>
+  <div class="screen">
+    <p class="k">Bodyweight</p>
+    <div style="margin:14px 0 0"><span class="fig" style="font-size:46px"><span class="v">92.4</span><span class="u" style="font-size:16px">kg</span></span></div>
+    <hr class="hr">
+    <div style="display:grid;gap:6px;font-family:var(--mono);font-size:11px;color:var(--ash);line-height:1.7">
+      <div>figure&nbsp;&nbsp; Söhne Mono 600 – 46 – flush 1.00 – −0.035em – tabular</div>
+      <div>unit&nbsp;&nbsp;&nbsp;&nbsp; Söhne 500 – 16 (0.42× clamped) – ash – baseline-aligned</div>
+      <div>gap&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 0.25em, from the figure's size</div>
+      <div>label&nbsp;&nbsp;&nbsp; Söhne Mono 500 – 10 – caps – +0.115em – ash</div>
+    </div>
+  </div>
+
+  <h3>Every format in the product</h3>
+  <p>These are the specifications, typeset. Each row is the correct answer, not an
+  illustration of one.</p>
+
+  <div class="screen">
+    <div class="grid2" style="gap:24px">
+      <div>
+        <p class="k">Load</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:34px"><span class="v">92.4</span><span class="u" style="font-size:15px">kg</span></span></div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ash);margin:8px 0 0;line-height:1.6">Mono 600. One decimal, never two.<br>Lowercase <span style="color:var(--chalk)">kg</span> — it is an SI symbol, not a word.</p>
+      </div>
+      <div>
+        <p class="k">Pace</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:34px"><span class="v">5:12</span><span class="u" style="font-size:15px">/km</span></span></div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ash);margin:8px 0 0;line-height:1.6">The colon is inside the value.<br>The slash belongs to the unit.</p>
+      </div>
+      <div>
+        <p class="k">Heart rate</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:34px"><span class="v" style="font-weight:500">182</span><span class="u caps" style="font-size:15px">bpm</span></span></div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ash);margin:8px 0 0;line-height:1.6">Mono 500 — a readout, not an achievement.<br>An initialism, so caps, with +0.06em.</p>
+      </div>
+      <div>
+        <p class="k">Training volume</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:34px"><span class="v">12,840</span><span class="u" style="font-size:15px">kg</span></span></div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ash);margin:8px 0 0;line-height:1.6">Grouped by <span style="color:var(--chalk)">Intl.NumberFormat</span>, never by hand.<br>In <span style="color:var(--chalk)">pl</span> this is 12 840. In <span style="color:var(--chalk)">de</span>, 12.840.</p>
+      </div>
+      <div>
+        <p class="k">Elapsed — running</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:34px"><span class="v" style="font-weight:500">01:42:18</span></span></div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ash);margin:8px 0 0;line-height:1.6">Zero-padded and fixed width.<br>A live clock never changes width.</p>
+      </div>
+      <div>
+        <p class="k">Duration — finished</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:34px"><span class="v">54:08</span></span></div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ash);margin:8px 0 0;line-height:1.6">No leading zero. It is being read,<br>not watched, so it reads as prose.</p>
+      </div>
+      <div>
+        <p class="k">Percentage</p>
+        <div style="margin:10px 0 0"><span class="fig bind" style="font-size:34px"><span class="v">87</span><span class="u" style="font-size:15px">%</span></span></div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ash);margin:8px 0 0;line-height:1.6">Zero gap. <span style="color:var(--chalk)">%</span> <span style="color:var(--chalk)">°</span> <span style="color:var(--chalk)">′</span> <span style="color:var(--chalk)">″</span> bind tight to the figure.<br>Every other unit takes 0.25em.</p>
+      </div>
+      <div>
+        <p class="k">Dimension</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:34px"><span class="v">24</span><span class="op" style="font-size:17px">×</span><span class="v">8</span></span></div>
+        <p style="font-family:var(--mono);font-size:10px;color:var(--ash);margin:8px 0 0;line-height:1.6">U+00D7, Söhne 400, ash. Never <span style="color:var(--chalk)">x</span>.<br>The operator recedes so the pair reads as one.</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>The eight numeral laws</h3>
+  <ol class="body">
+    <li><strong>Tabular by construction.</strong> Söhne Mono is monospaced, so every figure columns automatically. Where a figure must appear in Söhne proper — inside a sentence — it takes <span class="m">font-variant-numeric: tabular-nums</span> only if it sits in a column; a number in prose stays proportional, because that is what proportional figures are for.</li>
+    <li><strong>One decimal place. Ever.</strong> 92.4, not 92.43. The second decimal is precision the athlete cannot act on and width the layout cannot afford. Analytical exports may carry more; the interface may not.</li>
+    <li><strong>Units follow SI case.</strong> Lowercase for symbols — <span class="m">kg km m s min h kcal</span>. Uppercase for symbols from proper names — <span class="m">W N Hz</span>. Uppercase for non-SI initialisms — <span class="m">BPM RPE TSS 1RM</span>. <span class="m">KG</span> is not a unit, it is shouting.</li>
+    <li><strong>Baseline, never superscript.</strong> A raised unit turns a measurement into a footnote and breaks the optical baseline of a row of tiles.</li>
+    <li><strong>Formatting is <span class="m">Intl</span>'s job.</strong> Grouping separators, decimal marks and unit position are locale properties. A hand-written comma is a bug in Poland and Germany, both of which are on the roadmap.</li>
+    <li><strong>Sign is in the figure, and is never colour's job alone.</strong> <span class="m">+8.4%</span> carries its plus. Colour reinforces it; colour does not replace it.</li>
+    <li><strong>Decimal alignment comes free.</strong> Right-align a mono column and the decimal separators stack. No decimal-tab machinery is needed anywhere in this product.</li>
+    <li><strong>A figure never uses the accent.</strong> Chartreuse is the "go" colour and belongs to actions. A number is not a thing you can press.</li>
+  </ol>
+</section>
+
+<!-- 09 ───────────────────────────────────────────────────────────────── -->
+<section id="s9">
+  <div class="head"><span class="num">09</span><h2>Hierarchy</h2><span class="tag">The order of instruments</span></div>
+
+  <p>Hierarchy is built in a fixed order, and each instrument is only reached for
+  when the one above it has been exhausted. Reaching straight for colour is how a
+  system loses its structure.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th class="n">Order</th><th>Instrument</th><th>How it is used</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Face</td><td>Mono or Söhne. Decides <em>what kind of thing</em> this is before anything else is read.</td></tr>
+      <tr><td class="n">2</td><td>Weight</td><td>400 / 500 / 600 / 700. Survives distance, bad light and motion better than any other axis.</td></tr>
+      <tr><td class="n">3</td><td>Size</td><td>The 11 rungs. Adjacent rungs are not hierarchy — a level needs at least two rungs of separation to read.</td></tr>
+      <tr><td class="n">4</td><td>Case</td><td>Uppercase mono marks a label as structure. Available only at 10 and 11.</td></tr>
+      <tr><td class="n">5</td><td>Colour</td><td>chalk or ash. Two inks. Reinforces a level that size and weight already established.</td></tr>
+      <tr><td class="n">6</td><td>Space</td><td>The last instrument, and the strongest one for grouping. A rule or a divider is what you draw when you have run out of space to give.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>The five levels</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Level</th><th>Construction</th><th>Example</th></tr></thead>
+    <tbody>
+      <tr><td>Primary</td><td>Mono 600 at metric or hero, or Söhne 600 at display, chalk</td><td>The figure the screen exists to show</td></tr>
+      <tr><td>Secondary</td><td>Söhne 600 at 16–18, or Mono 500 at 14–22, chalk</td><td>An exercise name, a set's load</td></tr>
+      <tr><td>Metadata</td><td>Söhne 400 at 12, ash</td><td>A timestamp, a device name, a source</td></tr>
+      <tr><td>Units</td><td>Söhne 500 at 0.42× the figure, ash, capped at 16</td><td>kg, /km, BPM</td></tr>
+      <tr><td>Context</td><td>Söhne 400 at 13, relaxed leading, ash</td><td>The sentence explaining what the number means</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <b>There is no tertiary ink, and there will not be one.</b> The palette has two
+    text colours: chalk and ash. A third grey would have to sit between them, which
+    puts it below AA on the card, and a level nobody can read is not a level. Tertiary
+    information is made by dropping to a smaller rung at Buch 400 in ash — that is,
+    by <em>type</em>, which is what type is for. The only legitimate text opacity in
+    the product is <span class="m">disabled</span> at 0.5, and disabled is a state,
+    not a level.
+  </div>
+</section>
+
+<!-- 10 ───────────────────────────────────────────────────────────────── -->
+<section id="s10">
+  <div class="head"><span class="num">10</span><h2>Components</h2><span class="tag">Every surface</span></div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Component</th><th>Face</th><th class="n">Wt</th><th class="n">Size</th><th>Leading</th><th>Tracking</th><th>Case</th></tr></thead>
+    <tbody>
+      <tr><td colspan="7" style="padding-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.115em;text-transform:uppercase;color:var(--accent);border-bottom:0">Navigation</td></tr>
+      <tr><td>Tab bar label</td><td>Söhne</td><td class="n">500</td><td class="n">10</td><td>snug</td><td>+0.005em</td><td>Sentence</td></tr>
+      <tr><td>Section title</td><td>Söhne</td><td class="n">600</td><td class="n">18</td><td>snug</td><td>−0.012em</td><td>Sentence</td></tr>
+      <tr><td>Section meta (right slot)</td><td>Mono</td><td class="n">500</td><td class="n">10</td><td>snug</td><td>+0.115em</td><td>UPPER</td></tr>
+      <tr><td>Screen title (nav bar)</td><td>Söhne</td><td class="n">600</td><td class="n">18</td><td>snug</td><td>−0.012em</td><td>Sentence</td></tr>
+      <tr><td>Masthead</td><td>Söhne</td><td class="n">700</td><td class="n">34</td><td>tight</td><td>−0.020em</td><td>Sentence</td></tr>
+
+      <tr><td colspan="7" style="padding-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.115em;text-transform:uppercase;color:var(--accent);border-bottom:0">Buttons</td></tr>
+      <tr><td>Primary (accent fill)</td><td>Söhne</td><td class="n">600</td><td class="n">14</td><td>snug</td><td>0</td><td>Sentence</td></tr>
+      <tr><td>Secondary (outline)</td><td>Söhne</td><td class="n">500</td><td class="n">14</td><td>snug</td><td>0</td><td>Sentence</td></tr>
+      <tr><td>Tertiary (bare)</td><td>Söhne</td><td class="n">500</td><td class="n">13</td><td>snug</td><td>0</td><td>Sentence</td></tr>
+      <tr><td>Destructive</td><td>Söhne</td><td class="n">600</td><td class="n">14</td><td>snug</td><td>0</td><td>Sentence</td></tr>
+
+      <tr><td colspan="7" style="padding-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.115em;text-transform:uppercase;color:var(--accent);border-bottom:0">Forms</td></tr>
+      <tr><td>Field label</td><td>Mono</td><td class="n">500</td><td class="n">10</td><td>snug</td><td>+0.115em</td><td>UPPER</td></tr>
+      <tr><td>Input — text</td><td>Söhne</td><td class="n">400</td><td class="n">16</td><td>snug</td><td>0</td><td>Sentence</td></tr>
+      <tr><td>Input — numeric</td><td>Mono</td><td class="n">500</td><td class="n">16</td><td>snug</td><td>0</td><td>—</td></tr>
+      <tr><td>Placeholder — instructional</td><td>Söhne</td><td class="n">400</td><td class="n">16</td><td>snug</td><td>0</td><td>Sentence</td></tr>
+      <tr><td>Placeholder — ghost value</td><td>Mono</td><td class="n">400</td><td class="n">16</td><td>snug</td><td>0</td><td>Kursiv</td></tr>
+      <tr><td>Helper text</td><td>Söhne</td><td class="n">400</td><td class="n">12</td><td>normal</td><td>+0.005em</td><td>Sentence</td></tr>
+      <tr><td>Validation error</td><td>Söhne</td><td class="n">500</td><td class="n">12</td><td>normal</td><td>+0.005em</td><td>Sentence</td></tr>
+
+      <tr><td colspan="7" style="padding-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.115em;text-transform:uppercase;color:var(--accent);border-bottom:0">Cards</td></tr>
+      <tr><td>Card overline</td><td>Mono</td><td class="n">500</td><td class="n">10</td><td>snug</td><td>+0.115em</td><td>UPPER</td></tr>
+      <tr><td>Card title</td><td>Söhne</td><td class="n">600</td><td class="n">16</td><td>snug</td><td>−0.008em</td><td>Sentence</td></tr>
+      <tr><td>Card subtitle</td><td>Söhne</td><td class="n">400</td><td class="n">13</td><td>normal</td><td>0</td><td>Sentence</td></tr>
+      <tr><td>Card KPI</td><td>Mono</td><td class="n">600</td><td class="n">26</td><td>flush</td><td>−0.035em</td><td>—</td></tr>
+      <tr><td>Card supporting figure</td><td>Mono</td><td class="n">500</td><td class="n">13</td><td>snug</td><td>0</td><td>—</td></tr>
+
+      <tr><td colspan="7" style="padding-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.115em;text-transform:uppercase;color:var(--accent);border-bottom:0">Tables</td></tr>
+      <tr><td>Column heading</td><td>Mono</td><td class="n">500</td><td class="n">10</td><td>snug</td><td>+0.115em</td><td>UPPER</td></tr>
+      <tr><td>Row title</td><td>Söhne</td><td class="n">500</td><td class="n">14</td><td>snug</td><td>0</td><td>Sentence</td></tr>
+      <tr><td>Data cell — primary</td><td>Mono</td><td class="n">600</td><td class="n">14</td><td>snug</td><td>0</td><td>—</td></tr>
+      <tr><td>Data cell — secondary</td><td>Mono</td><td class="n">400</td><td class="n">13</td><td>snug</td><td>0</td><td>—</td></tr>
+      <tr><td>Table footer / total</td><td>Mono</td><td class="n">600</td><td class="n">14</td><td>snug</td><td>0</td><td>—</td></tr>
+
+      <tr><td colspan="7" style="padding-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.115em;text-transform:uppercase;color:var(--accent);border-bottom:0">Charts</td></tr>
+      <tr><td>Chart title</td><td>Söhne</td><td class="n">600</td><td class="n">16</td><td>snug</td><td>−0.008em</td><td>Sentence</td></tr>
+      <tr><td>Axis tick</td><td>Mono</td><td class="n">400</td><td class="n">10</td><td>snug</td><td>+0.02em</td><td>—</td></tr>
+      <tr><td>Axis title</td><td>Mono</td><td class="n">500</td><td class="n">10</td><td>snug</td><td>+0.115em</td><td>UPPER</td></tr>
+      <tr><td>Legend</td><td>Söhne</td><td class="n">500</td><td class="n">11</td><td>snug</td><td>+0.005em</td><td>Sentence</td></tr>
+      <tr><td>Tooltip figure</td><td>Mono</td><td class="n">600</td><td class="n">18</td><td>flush</td><td>0</td><td>—</td></tr>
+      <tr><td>Tooltip label</td><td>Söhne</td><td class="n">400</td><td class="n">12</td><td>snug</td><td>+0.005em</td><td>Sentence</td></tr>
+      <tr><td>Data label (on mark)</td><td>Mono</td><td class="n">500</td><td class="n">10</td><td>flush</td><td>0</td><td>—</td></tr>
+
+      <tr><td colspan="7" style="padding-top:20px;font-family:var(--mono);font-size:10px;letter-spacing:.115em;text-transform:uppercase;color:var(--accent);border-bottom:0">Athlete profile</td></tr>
+      <tr><td>Athlete name</td><td>Söhne</td><td class="n">700</td><td class="n">34</td><td>tight</td><td>−0.020em</td><td>Sentence</td></tr>
+      <tr><td>Sport / discipline</td><td>Mono</td><td class="n">500</td><td class="n">10</td><td>snug</td><td>+0.115em</td><td>UPPER</td></tr>
+      <tr><td>Level / grade</td><td>Söhne</td><td class="n">500</td><td class="n">13</td><td>snug</td><td>0</td><td>Sentence</td></tr>
+      <tr><td>Performance index</td><td>Mono</td><td class="n">600</td><td class="n">46</td><td>flush</td><td>−0.035em</td><td>—</td></tr>
+      <tr><td>Ranking</td><td>Mono</td><td class="n">600</td><td class="n">22</td><td>flush</td><td>−0.035em</td><td>—</td></tr>
+      <tr><td>Metric tile figure</td><td>Mono</td><td class="n">600</td><td class="n">26</td><td>flush</td><td>−0.035em</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 11 ───────────────────────────────────────────────────────────────── -->
+<section id="s11">
+  <div class="head"><span class="num">11</span><h2>The lift screen</h2><span class="tag">Recognition over reading</span></div>
+
+  <p class="lead">This is the screen the product is judged on. The athlete is
+  between sets, holding a phone at arm's length, heart rate at 150. They need three
+  facts in under a second: what lift, what load, how many left.</p>
+
+  <div class="screen">
+    <p class="k">Session 3 — lower body</p>
+    <div style="margin:18px 0 0;font-size:26px;font-weight:600;letter-spacing:-.021em;line-height:1.15">Back squat</div>
+    <div style="margin:14px 0 0"><span class="fig" style="font-size:46px"><span class="v">120</span><span class="u" style="font-size:16px">kg</span><span class="op" style="font-size:24px">×</span><span class="v">5</span></span></div>
+    <div style="margin:16px 0 0;display:flex;gap:26px;align-items:baseline;flex-wrap:wrap">
+      <span style="font-family:var(--mono);font-size:14px;font-weight:500;color:var(--chalk);font-variant-numeric:tabular-nums">3<span style="font-family:var(--sans);font-weight:500;color:var(--ash)"> of </span>4<span style="font-family:var(--sans);font-size:11px;font-weight:500;color:var(--ash);letter-spacing:.115em;text-transform:uppercase">&nbsp;&nbsp;sets</span></span>
+      <span class="fig" style="font-size:14px"><span class="v" style="font-weight:500">8</span><span class="u caps" style="font-size:11px">rpe</span></span>
+      <span class="fig" style="font-size:14px"><span class="v" style="font-weight:500">2:00</span><span class="u" style="font-size:11px">rest</span></span>
+      <span class="fig" style="font-size:14px"><span class="v" style="font-weight:500">3-1-1-0</span><span class="u" style="font-size:11px">tempo</span></span>
+    </div>
+    <hr class="hr">
+    <p style="font-size:13px;line-height:1.5;color:var(--ash);margin:0">Last week you moved 115 kg for the same set. Add 2.5 kg if the third rep still feels like an eight.</p>
+  </div>
+
+  <h3>How it is constructed</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Element</th><th>Set as</th><th>Because</th></tr></thead>
+    <tbody>
+      <tr><td>Back squat</td><td>Söhne 600 – 26 – tight – −0.021em</td><td>It is a name, so it is language. Display size because the athlete has to confirm they are on the right lift before anything else.</td></tr>
+      <tr><td>120 kg × 5</td><td>Mono 600 – 46 – flush – −0.035em, unit Söhne 500 – 16 ash, operator Söhne 400 – 24 ash</td><td>The one thing the screen exists to say. It gets the only metric rung on the screen, and the two figures are pushed forward by making the operator and the unit recede.</td></tr>
+      <tr><td>3 of 4 sets</td><td>Mono 500 – 14 for the figures, Söhne for "of", uppercase mono 11 for "sets"</td><td>Progress, not achievement — 500, not 600. The word "of" is language and drops to Söhne so the two counts read as counts.</td></tr>
+      <tr><td>RPE 8 – rest – tempo</td><td>Mono 500 – 14 with units at 11</td><td>Parameters, not results. One rung and one weight below the load, so they are available without competing.</td></tr>
+      <tr><td>The coaching line</td><td>Söhne 400 – 13 – normal – ash</td><td>A sentence a person wrote. Full reading treatment, quietest ink, below the fold of the glance.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <b>The glance test.</b> Squint at the panel above until the small text goes.
+    What survives is <em>Back squat</em> and <em>120 × 5</em> — which is exactly
+    the information an athlete needs mid-session. If a new element survives the
+    squint, it has taken weight it did not earn. That is the acceptance test for
+    every training surface in the product.
+  </div>
+
+  <h3>Tempo, RPE and the notations that are not measurements</h3>
+  <p>A tempo — <span class="m">3-1-1-0</span> — is a prescription, not a reading, but
+  it is set in mono anyway. The test is not "did a machine produce it", it is
+  <strong>"is this a value with a fixed format that a person parses positionally"</strong>.
+  Tempo, RPE, rep schemes and set counts all pass. A coach's note does not.</p>
+</section>
+
+<!-- 12 ───────────────────────────────────────────────────────────────── -->
+<section id="s12">
+  <div class="head"><span class="num">12</span><h2>Editorial</h2><span class="tag">Where the system relaxes</span></div>
+
+  <p>Four surfaces are allowed a more expressive setting, and the licence is
+  narrow: <strong>they may use more size, and only more size.</strong> No new
+  weights, no new faces, no new tracking, no italic. Expressiveness here is
+  scale and space, which is why these screens feel different without looking
+  like a different product.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Surface</th><th>Licence</th></tr></thead>
+    <tbody>
+      <tr><td>Weekly report</td><td>Hero 34 headline over a metric 46 figure, with the whole panel on relaxed leading and double the usual vertical space.</td></tr>
+      <tr><td>Personal records and milestones</td><td>Metric 46 promoted to the takeover figure (76), one per screen, set flush, with the achievement named in hero 34 beneath it.</td></tr>
+      <tr><td>Annual Wrapped</td><td>Takeover figure with a count-up. The only place in the product where a figure animates its own value.</td></tr>
+      <tr><td>Onboarding</td><td>Hero 34 at relaxed leading with a single 13 px body paragraph. Nothing else on the screen.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="screen">
+    <p class="k">Week 34 — your strongest week</p>
+    <div style="margin:22px 0 0;font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.15;max-width:14ch">You moved more than you ever have.</div>
+    <div style="margin:26px 0 0;display:flex;gap:34px;align-items:baseline;flex-wrap:wrap">
+      <span class="fig" style="font-size:46px"><span class="v">32,840</span><span class="u" style="font-size:16px">kg</span></span>
+      <span class="fig" style="font-size:22px"><span class="v" style="color:var(--lime)">+8.4</span><span class="u bind" style="font-size:14px;color:var(--lime)">%</span></span>
+    </div>
+    <p style="font-size:13px;line-height:1.62;color:var(--ash);margin:20px 0 0;max-width:46ch">Total tonnage across eleven sessions. The previous best was 30,300 kg in week 19, when you trained twelve times.</p>
+  </div>
+
+  <h3>The one italic in the product</h3>
+  <p>Söhne Kursiv 400 appears in exactly one place: the <strong>ghost placeholder</strong>
+  — the greyed suggestion inside an empty numeric field. It exists to make a hint
+  unmistakably not a value the athlete typed, and it is paired with a deliberately
+  sub-AA ink because a suggestion the eye skips is the correct outcome. Every other
+  italic in the product is a bug.</p>
+
+  <h3>AI insight copy</h3>
+  <p>An insight is a sentence a system wrote for a person, so it is set as language:
+  <strong>Söhne 400 at 13 or 14, relaxed leading, chalk not ash</strong> — full
+  primary ink, because an insight that the athlete has to hunt for is not an
+  insight. It carries no overline, no icon and no card chrome. It is a paragraph,
+  and its confidence comes from being set as one.</p>
+
+  <div class="screen tight">
+    <p style="font-size:14px;line-height:1.62;color:var(--chalk);margin:0;max-width:48ch">You're recovering faster between high-volume sessions. Your readiness is back above baseline within 36 hours, down from 52 in June.</p>
+  </div>
+  <p>Any figure inside an insight sentence stays in <strong>Söhne, proportional</strong>
+  — <em>"back above baseline within 36 hours"</em>. It is part of a sentence, so it
+  is language. Setting it in mono would break the line's rhythm to make a point the
+  sentence is already making.</p>
+</section>
+
+<!-- 13 ───────────────────────────────────────────────────────────────── -->
+<section id="s13">
+  <div class="head"><span class="num">13</span><h2>Dark and light</h2><span class="tag">Dark is the product</span></div>
+
+  <p>HYBRID is a dark product. That is not a theme preference — the app is used in
+  gyms, on trails and at 5 a.m., and the ground is <span class="m">#0c0d0c</span>.
+  A light theme is a future obligation, not a current surface, and the system is
+  specified so it can arrive without a redraw.</p>
+
+  <h3>The inks</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Role</th><th>Dark</th><th>Light</th><th>Made by</th></tr></thead>
+    <tbody>
+      <tr><td>Primary</td><td class="n">chalk #f7f6f3</td><td class="n">#14161a</td><td>Colour</td></tr>
+      <tr><td>Secondary</td><td class="n">ash #8a9691</td><td class="n">#5d6863</td><td>Colour</td></tr>
+      <tr><td>Tertiary</td><td colspan="2">ash, one rung smaller, Buch 400</td><td>Type — never a third grey</td></tr>
+      <tr><td>Disabled</td><td colspan="2">the level's own ink at 0.5</td><td>Opacity — the only legitimate use</td></tr>
+      <tr><td>Action</td><td class="n">lime #c3d363</td><td class="n">#59671c</td><td>Colour, actions only</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Optical weight compensation</h3>
+  <p>This is the part that a naive light theme gets wrong. <strong>Light type on a
+  dark ground blooms</strong> — the bright glyph spreads optically into the dark
+  around it, so the same weight reads roughly half a step heavier in dark than in
+  light. A system that ships one weight per style will always look correct in one
+  theme and slightly wrong in the other.</p>
+
+  <p>So the display weight is a <strong>token with two values</strong>, and it is the
+  only token in the system that varies by theme:</p>
+  <pre><b>weight.display</b>  <i>dark</i>  600   <i>Halbfett — bloom does the rest</i>
+                <i>light</i> 700   <i>Dreiviertelfett — no bloom to borrow</i></pre>
+
+  <p>Below 26 px the effect is under the threshold of perception and every other
+  weight token is single-valued. At the hero rung and above, the size is large
+  enough that bloom stops mattering and 700 holds in both themes.</p>
+
+  <div class="note">
+    <b>Hierarchy never rests on colour, in either theme.</b> Every level in §09 is
+    established by face, weight and size before an ink is chosen, which is what makes
+    the light theme a recolouring rather than a redesign. Test it by rendering any
+    screen entirely in <span class="m">chalk</span>: the hierarchy must still hold.
+    If a level disappears, that level was never designed — it was tinted.
+  </div>
+</section>
+
+<!-- 14 ───────────────────────────────────────────────────────────────── -->
+<section id="s14">
+  <div class="head"><span class="num">14</span><h2>Across devices</h2><span class="tag">What scales, what does not</span></div>
+
+  <p>The instinct to scale a type ramp with the viewport is wrong for this product.
+  A larger screen is not held further away — an iPad is held at roughly the same
+  distance as a phone, and a desktop display is further but far larger. Optical
+  size is nearly constant across the range. What actually changes is <strong>how
+  much information fits</strong>, and that is a layout problem, not a type problem.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Rung</th><th>iPhone</th><th>iPad</th><th>Desktop</th><th>Large display</th></tr></thead>
+    <tbody>
+      <tr><td>overline → bodyLg (10–14)</td><td class="n">fixed</td><td class="n">fixed</td><td class="n">fixed</td><td class="n">fixed</td></tr>
+      <tr><td>subtitle, title (16–18)</td><td class="n">fixed</td><td class="n">fixed</td><td class="n">fixed</td><td class="n">fixed</td></tr>
+      <tr><td>headline (22)</td><td class="n">22</td><td class="n">22</td><td class="n">26</td><td class="n">26</td></tr>
+      <tr><td>display (26)</td><td class="n">26</td><td class="n">26</td><td class="n">34</td><td class="n">34</td></tr>
+      <tr><td>hero (34)</td><td class="n">34</td><td class="n">40</td><td class="n">46</td><td class="n">56</td></tr>
+      <tr><td>metric (46)</td><td class="n">46</td><td class="n">46</td><td class="n">56</td><td class="n">64</td></tr>
+    </tbody>
+  </table></div>
+
+  <p><strong>Everything at 18 and below is fixed at every breakpoint.</strong> A
+  13 px body is 13 px on a 6.1-inch phone and on a 32-inch monitor, because it is
+  sized for the eye, not the panel. Scaling it up on desktop makes a paragraph read
+  as a pull quote and pushes the line length past comfort.</p>
+
+  <p><strong>Only display and metric rungs scale</strong>, because their job is
+  proportion — a masthead has to relate to the width it sits on. And they scale by
+  moving <em>up the existing ladder</em>, never by multiplication: hero on desktop
+  is 46, which is <span class="m">text.metric</span>, a rung that already exists.
+  There are no intermediate sizes and no <span class="m">clamp()</span> ramps
+  anywhere in the product.</p>
+
+  <div class="note">
+    <b>Density is the real responsive axis.</b> An iPad shows more rows, not larger
+    ones; a desktop shows more columns. Line length is the constraint that governs
+    both: reading text is capped at <strong>68 characters</strong> at every
+    breakpoint, and a wider viewport spends its width on a second column rather than
+    a longer line.
+  </div>
+</section>
+
+<!-- 15 ───────────────────────────────────────────────────────────────── -->
+<section id="s15">
+  <div class="head"><span class="num">15</span><h2>Accessibility</h2><span class="tag">And where not to compromise</span></div>
+
+  <div class="tw"><table>
+    <thead><tr><th>Requirement</th><th>Specification</th></tr></thead>
+    <tbody>
+      <tr><td>Reading floor</td><td>Body prose never below 13. Labels never below 11.</td></tr>
+      <tr><td>The 10 px exception</td><td>10 exists only for uppercase mono eyebrows: short, tracked, high-contrast, and never carrying information unavailable elsewhere on the screen. An eyebrow is a heading, not content.</td></tr>
+      <tr><td>Dynamic Type</td><td>Honoured everywhere. Ceiling 1.4 by default; the 1.15 clamp is permitted only inside chrome with a declared hard height, and every use has to justify itself.</td></tr>
+      <tr><td>Contrast</td><td>chalk on ink 16.9:1. ash on the card 5.23:1. Units in ash at 11 clear AA on every surface they appear on. Accent text clears AA on both grounds.</td></tr>
+      <tr><td>Uppercase limit</td><td>No uppercase string over 24 characters. Screen readers spell out long capitals, and sighted readers lose word shape.</td></tr>
+      <tr><td>Localisation</td><td>No fixed-width label slot anywhere. German compounds run 40% longer than English; a label that cannot wrap will clip. Any label that can wrap has a leading floor of snug 1.30 so Polish diacritics have descender room.</td></tr>
+      <tr><td>Reduced transparency</td><td>Text is never set over an image or a blur without an opaque backing. There is no legible-over-anything ink.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Three places where the answer is no</h3>
+  <ul>
+    <li><strong>The figure never shrinks to fit.</strong> If a value overflows its
+    tile, the tile grows or the value reformats — 12,840 becomes 12.8 t before it
+    becomes smaller type. Autoshrinking a metric is how a system quietly abandons
+    the one number the athlete came for.</li>
+    <li><strong>Tabular figures are not optional.</strong> They cost a little width
+    and they are the reason a column is a column. No screen may turn them off for
+    space.</li>
+    <li><strong>The 11 px floor holds under pressure.</strong> When a dense row will
+    not fit, the row loses a field. It does not go to 10.</li>
+  </ul>
+</section>
+
+<!-- 16 ───────────────────────────────────────────────────────────────── -->
+<section id="s16">
+  <div class="head"><span class="num">16</span><h2>Screens</h2><span class="tag">The system, assembled</span></div>
+
+  <h4>Dashboard — today</h4>
+  <div class="screen">
+    <p class="k">Today</p>
+    <div style="margin:16px 0 0;font-size:26px;font-weight:600;letter-spacing:-.021em;line-height:1.15">Strength</div>
+    <div class="grid3" style="margin-top:18px">
+      <div class="card">
+        <p class="k">Performance index</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:26px"><span class="v">92</span></span></div>
+      </div>
+      <div class="card">
+        <p class="k">Readiness</p>
+        <div style="margin:10px 0 0"><span class="fig bind" style="font-size:26px"><span class="v">87</span><span class="u" style="font-size:12px">%</span></span></div>
+      </div>
+      <div class="card">
+        <p class="k">Week volume</p>
+        <div style="margin:10px 0 0"><span class="fig" style="font-size:26px"><span class="v">18,420</span><span class="u" style="font-size:12px">kg</span></span></div>
+      </div>
+    </div>
+    <hr class="hr">
+    <p style="font-size:13px;line-height:1.5;color:var(--ash);margin:0">Lower body at 17:30. Four lifts, about 55 minutes.</p>
+  </div>
+
+  <h4>Running — session summary</h4>
+  <div class="screen">
+    <p class="k">Threshold run — Apple Watch Ultra</p>
+    <div style="margin:18px 0 0;display:flex;gap:32px;flex-wrap:wrap;align-items:baseline">
+      <span class="fig" style="font-size:46px"><span class="v">5:12</span><span class="u" style="font-size:16px">/km</span></span>
+    </div>
+    <div style="margin:20px 0 0;display:flex;gap:32px;flex-wrap:wrap;align-items:baseline">
+      <span class="fig" style="font-size:22px"><span class="v">10.4</span><span class="u" style="font-size:13px">km</span></span>
+      <span class="fig" style="font-size:22px"><span class="v" style="font-weight:500">54:08</span></span>
+      <span class="fig" style="font-size:22px"><span class="v" style="font-weight:500">164</span><span class="u caps" style="font-size:13px">bpm</span></span>
+      <span class="fig" style="font-size:22px"><span class="v" style="font-weight:500">612</span><span class="u" style="font-size:13px">kcal</span></span>
+    </div>
+    <hr class="hr">
+    <p style="font-size:12px;line-height:1.5;color:var(--ash);margin:0">Recorded 06:14 — figures from the watch, not the plan.</p>
+  </div>
+
+  <h4>Athlete profile</h4>
+  <div class="screen">
+    <div style="font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1.15">Rafał</div>
+    <p class="k" style="margin-top:8px">Hybrid — strength and endurance</p>
+    <hr class="hr">
+    <p class="k">Performance index</p>
+    <div style="margin:12px 0 0;display:flex;align-items:baseline;gap:24px;flex-wrap:wrap">
+      <span class="fig" style="font-size:46px"><span class="v">87</span></span>
+      <span class="fig" style="font-size:18px"><span class="v" style="color:var(--lime)">+3</span><span class="u" style="font-size:11px;color:var(--lime)">this month</span></span>
+    </div>
+    <hr class="hr">
+    <div class="grid3">
+      <div><p class="k">Squat 1RM</p><div style="margin-top:8px"><span class="fig" style="font-size:22px"><span class="v">160</span><span class="u" style="font-size:13px">kg</span></span></div></div>
+      <div><p class="k">5 km</p><div style="margin-top:8px"><span class="fig" style="font-size:22px"><span class="v" style="font-weight:500">21:04</span></span></div></div>
+      <div><p class="k">Bodyweight</p><div style="margin-top:8px"><span class="fig" style="font-size:22px"><span class="v">92.4</span><span class="u" style="font-size:13px">kg</span></span></div></div>
+    </div>
+  </div>
+
+  <h4>A set table</h4>
+  <div class="screen">
+    <p class="k">Back squat — 4 sets</p>
+    <div style="margin-top:14px;font-family:var(--mono);font-variant-numeric:tabular-nums">
+      <div style="display:grid;grid-template-columns:34px 1fr 1fr 1fr;gap:12px;font-size:10px;font-weight:500;letter-spacing:.115em;text-transform:uppercase;color:var(--ash);padding-bottom:9px;border-bottom:1px solid var(--line)">
+        <span>Set</span><span>Load</span><span>Reps</span><span>RPE</span>
+      </div>
+      <div style="display:grid;grid-template-columns:34px 1fr 1fr 1fr;gap:12px;font-size:14px;padding:10px 0;border-bottom:1px solid var(--line);color:var(--chalk)">
+        <span style="font-weight:400;color:var(--ash)">1</span><span style="font-weight:400;color:var(--ash)">100</span><span style="font-weight:400;color:var(--ash)">5</span><span style="font-weight:400;color:var(--ash)">6</span>
+      </div>
+      <div style="display:grid;grid-template-columns:34px 1fr 1fr 1fr;gap:12px;font-size:14px;padding:10px 0;border-bottom:1px solid var(--line);color:var(--chalk)">
+        <span style="font-weight:400;color:var(--ash)">2</span><span style="font-weight:400;color:var(--ash)">110</span><span style="font-weight:400;color:var(--ash)">5</span><span style="font-weight:400;color:var(--ash)">7</span>
+      </div>
+      <div style="display:grid;grid-template-columns:34px 1fr 1fr 1fr;gap:12px;font-size:14px;padding:10px 0;border-bottom:1px solid var(--line);color:var(--chalk)">
+        <span style="font-weight:400;color:var(--ash)">3</span><span style="font-weight:600">120</span><span style="font-weight:600">5</span><span style="font-weight:600">8</span>
+      </div>
+      <div style="display:grid;grid-template-columns:34px 1fr 1fr 1fr;gap:12px;font-size:14px;padding:10px 0;color:var(--ash)">
+        <span style="font-weight:400">4</span><span style="font-weight:400">120</span><span style="font-weight:400">—</span><span style="font-weight:400">—</span>
+      </div>
+    </div>
+    <p style="font-family:var(--sans);font-size:12px;line-height:1.5;color:var(--ash);margin:14px 0 0">Set 3 is the working set — Halbfett 600 in chalk. Everything logged is Buch 400 in ash, everything pending is the same but dashed. One weight change carries the entire state of the table.</p>
+  </div>
+</section>
+
+<!-- 17 ───────────────────────────────────────────────────────────────── -->
+<section id="s17">
+  <div class="head"><span class="num">17</span><h2>Tokens</h2><span class="tag">Production</span></div>
+
+  <p>Semantic names throughout. The primitives compose into named styles, and call
+  sites use the names — the whole class of bug this replaces is 591 places each
+  reassembling "caption" from scratch and drifting.</p>
+
+  <pre><i>// packages/core/src/theme/typography.ts</i>
+
+<b>export const family</b> = {
+  sans: "Söhne",      <i>// every word a person wrote</i>
+  mono: "Söhne Mono", <i>// every value a machine measured</i>
+}
+
+<b>export const weight</b> = {
+  regular:  400,  <i>// Buch</i>
+  medium:   500,  <i>// Kräftig</i>
+  semibold: 600,  <i>// Halbfett</i>
+  bold:     700,  <i>// Dreiviertelfett — 26+ only, sans only</i>
+}
+
+<b>export const size</b> = {
+  overline: 10, labelSm: 11, caption: 12, body:     13, bodyLg: 14,
+  subtitle: 16, title:   18, headline: 22, display:  26, hero:   34,
+  metric:   46,
+}
+
+<b>export const leading</b> = { flush: 1.0, tight: 1.15, snug: 1.3, normal: 1.5, relaxed: 1.62 }
+
+<b>export const tracking</b> = {   <i>// em, always</i>
+  display: -0.02, headline: -0.015, title: -0.01, normal: 0,
+  caption:  0.005, label:    0.085, caps:   0.115, figure: -0.035,
+}
+
+<i>/* ── the named styles — this is what call sites use ────────────── */</i>
+
+<b>export const text</b> = {
+  <u>metric</u>:   { family: mono, weight: 600, size: 46, leading: flush,  tracking: figure,  tabular: true },
+  <u>hero</u>:     { family: sans, weight: 700, size: 34, leading: tight,  tracking: display },
+  <u>display</u>:  { family: sans, weight: 600, size: 26, leading: tight,  tracking: display },
+  <u>headline</u>: { family: sans, weight: 600, size: 22, leading: snug,   tracking: headline },
+  <u>title</u>:    { family: sans, weight: 600, size: 18, leading: snug,   tracking: title },
+  <u>subtitle</u>: { family: sans, weight: 600, size: 16, leading: snug,   tracking: title },
+  <u>bodyLg</u>:   { family: sans, weight: 500, size: 14, leading: snug,   tracking: normal },
+  <u>body</u>:     { family: sans, weight: 400, size: 13, leading: normal, tracking: normal },
+  <u>prose</u>:    { family: sans, weight: 400, size: 13, leading: relaxed,tracking: normal },
+  <u>caption</u>:  { family: sans, weight: 400, size: 12, leading: normal, tracking: caption },
+  <u>labelSm</u>:  { family: sans, weight: 500, size: 11, leading: snug,   tracking: caption },
+  <u>overline</u>: { family: mono, weight: 500, size: 10, leading: snug,   tracking: caps, upper: true },
+
+  <i>// figures — same ladder, mono cut</i>
+  <u>figureLg</u>: { family: mono, weight: 600, size: 26, leading: flush, tracking: figure, tabular: true },
+  <u>figure</u>:   { family: mono, weight: 600, size: 22, leading: flush, tracking: figure, tabular: true },
+  <u>figureSm</u>: { family: mono, weight: 600, size: 14, leading: snug,  tracking: normal, tabular: true },
+  <u>readout</u>:  { family: mono, weight: 500, size: 22, leading: flush, tracking: figure, tabular: true },
+  <u>datum</u>:    { family: mono, weight: 400, size: 13, leading: snug,  tracking: normal, tabular: true },
+}
+
+<i>/* A unit is derived from its figure, never declared independently. */</i>
+<b>export const unitFor</b> = (figureSize) =&gt; ({
+  family: sans, weight: 500, ink: "ash",
+  size: clamp(round(figureSize * <u>0.42</u>), 11, 16), <i>// binds at both ends</i>
+  gap:  0.25,  <i>// em — 0 for % ° ′ ″ ×</i>
+})</pre>
+
+  <h4>Platform mapping</h4>
+  <div class="tw"><table>
+    <thead><tr><th>Axis</th><th>CSS</th><th>React Native</th><th>SwiftUI</th></tr></thead>
+    <tbody>
+      <tr><td>Size</td><td class="tok">font-size: 13px</td><td class="tok">fontSize: 13</td><td class="tok">.custom(_, size: 13)</td></tr>
+      <tr><td>Leading</td><td class="tok">line-height: 1.5</td><td class="tok">lineHeight: round(13 * 1.5)</td><td class="tok">.lineSpacing(size * 0.5)</td></tr>
+      <tr><td>Tracking</td><td class="tok">letter-spacing: -0.02em</td><td class="tok">letterSpacing: size * -0.02</td><td class="tok">.tracking(size * -0.02)</td></tr>
+      <tr><td>Tabular</td><td class="tok">font-variant-numeric</td><td class="tok">fontVariant: ["tabular-nums"]</td><td class="tok">.monospacedDigit()</td></tr>
+      <tr><td>Weight</td><td class="tok">font-weight: 600</td><td class="tok">fontFamily: "Söhne-Halbfett"</td><td class="tok">PostScript name</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">
+    <b>React Native has no weight axis for custom faces.</b> Each weight is a
+    separate registered family, and the alias a font loader registers is not the
+    PostScript name the platform's own text stack resolves — an unresolvable name
+    does not throw, it silently renders the system font. Every Söhne weight needs
+    its PostScript name recorded and tested against the shipped binary, or the
+    product renders San Francisco next to Söhne on the same screen and nothing
+    complains.
+  </div>
+</section>
+
+<!-- 18 ───────────────────────────────────────────────────────────────── -->
+<section id="s18">
+  <div class="head"><span class="num">18</span><h2>The 25 rules</h2><span class="tag">Enforceable</span></div>
+
+  <p>Each of these is written so a test can check it. A rule that lives only in a
+  document is a rule with a maturity date.</p>
+
+  <ol class="rules">
+    <li><b>Two cuts, one family.</b> Söhne for language, Söhne Mono for measurement. A third face requires deleting one of these first.</li>
+    <li><b>Four weights.</b> 400, 500, 600, 700. Nothing else is licensed or loaded.</li>
+    <li><b>Söhne Mono never exceeds 600.</b> A monospaced 700 closes its counters at exactly the sizes where digits must stay distinct.</li>
+    <li><b>One italic.</b> Söhne Kursiv 400, in the ghost placeholder, nowhere else.</li>
+    <li><b>A measured value is always mono and always tabular.</b> A number inside a sentence is not a measured value and stays in Söhne, proportional.</li>
+    <li><b>A unit is never mono</b>, never above 500, never larger than <span class="m">0.42×</span> its figure, never above 16 — the clamp binds at both ends, so the ratio is a target and not an identity — and never the same ink as its figure.</li>
+    <li><b>Unit case follows SI.</b> <span class="m">kg</span> not <span class="m">KG</span>; <span class="m">BPM</span> not <span class="m">bpm</span>.</li>
+    <li><b>One decimal place.</b> Anywhere in the interface, without exception.</li>
+    <li><b>Numbers are formatted by <span class="m">Intl</span>.</b> A hand-written separator is a localisation bug that ships silently.</li>
+    <li><b>Multiplication is U+00D7.</b> Never <span class="m">x</span>, never <span class="m">*</span>.</li>
+    <li><b>Never more than two weights in one component.</b></li>
+    <li><b>Never more than three sizes in one component.</b></li>
+    <li><b>Adjacent rungs are not hierarchy.</b> A level needs two rungs of separation or it is not a level.</li>
+    <li><b>Uppercase is only ever mono</b>, only at 10 or 11, only tracked at or above <span class="m">+0.085em</span>, and only up to 24 characters.</li>
+    <li><b>Positive tracking never appears above 12.</b> Letterspaced lowercase at reading size destroys word shape.</li>
+    <li><b>Leading is a ratio.</b> An absolute line height is how Dynamic Type breaks.</li>
+    <li><b>Tracking is em.</b> An absolute tracking value means something different at every size it touches.</li>
+    <li><b>Body prose never goes below 13.</b> Labels never below 11. 10 is uppercase mono only.</li>
+    <li><b>One <span class="m">text.metric</span> per screen.</b> A second one means neither is the answer.</li>
+    <li><b>Nothing exceeds 46</b> except the takeover figure, which is a panel rather than an element and is a single named constant.</li>
+    <li><b>Hierarchy is face, then weight, then size.</b> Colour reinforces a level; it never creates one.</li>
+    <li><b>Opacity never makes a text level.</b> The only legitimate text opacity is <span class="m">disabled</span>.</li>
+    <li><b>Chartreuse is the "go" colour.</b> It never sets a heading, an emphasis, or a figure that is not an action.</li>
+    <li><b>A figure and its unit share one baseline.</b> Never superscript, never centred.</li>
+    <li><b>A running clock never changes width.</b> Zero-padded and fixed while live; unpadded once finished.</li>
+  </ol>
+</section>
+
+<!-- 19 ───────────────────────────────────────────────────────────────── -->
+<section id="s19">
+  <div class="head"><span class="num">19</span><h2>The review</h2><span class="tag">What came out</span></div>
+
+  <p class="lead">The first version of this system had eight heading rungs, thirteen
+  sizes, a parallel numeric scale, five weights and three text inks. Every one of
+  those was defensible on its own. Together they were a system that would have been
+  impossible to hold in a designer's head, which means it would have been abandoned
+  within a year and the product would have drifted straight back to hand-typed
+  numbers.</p>
+
+  <h3>The questions, answered honestly</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Question</th><th>Answer</th></tr></thead>
+    <tbody>
+      <tr><td>Is it too complicated?</td><td>It was. Eleven sizes and four weights is now near the floor for a product with this much data density. It is memorisable.</td></tr>
+      <tr><td>Are there too many sizes?</td><td>Eleven is defensible, but <span class="m">labelSm</span> at 11 is the weakest. See the deletion test below.</td></tr>
+      <tr><td>Are there too many weights?</td><td>No. Four, and 700 is confined to two rungs.</td></tr>
+      <tr><td>Does Söhne feel distinctive?</td><td>Söhne alone, no. Set at these weights against Söhne Mono, on this ground, at these trackings — yes, and distinctively. The identity is the pairing, not the face.</td></tr>
+      <tr><td>Does it disappear into the product?</td><td>Yes, and this is the strongest thing about it. Nothing here is a typographic gesture. Every choice is doing a legibility job.</td></tr>
+      <tr><td>Can an athlete understand it instantly?</td><td>The glance test in §11 is the acceptance criterion, and it is met.</td></tr>
+      <tr><td>Does it feel premium and timeless?</td><td>It is a neo-grotesque and a matched mono at four weights. That configuration has looked correct for sixty years.</td></tr>
+      <tr><td>Would a professional sports organisation take it seriously?</td><td>The SI unit casing, tabular figures and single-decimal discipline are the details a performance director notices. Yes.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Removed</h3>
+  <div class="cuts">
+    <div class="cut"><div class="what"><s>Display XL / L / M / S</s> and <s>H1 – H4</s></div>
+      <p class="why">Eight rungs for one job. Display and Headline were the same ladder wearing two names, and every system that carries both eventually has a designer choosing between Display S and H2 on feel. Collapsed to five heading rungs: hero, display, headline, title, subtitle. <strong>This was the largest single cut.</strong></p></div>
+    <div class="cut"><div class="what"><s>A separate Data scale</s></div>
+      <p class="why">The brief asked for a dedicated numeric hierarchy and it was drawn: five figure sizes of its own. Then it turned out every one of them landed on a rung that already existed. Figures use the same ladder in a different cut — which is a better answer, because it means a figure and the heading beside it are optically related by construction rather than by somebody checking.</p></div>
+    <div class="cut"><div class="what"><s>note</s> (15) and <s>heading</s> (20)</div>
+      <p class="why">Three reading sizes inside two pixels, and two section sizes one rung apart. Neither was chosen; both accumulated. 210 call sites move to the neighbouring rung and no screen changes visibly.</p></div>
+    <div class="cut"><div class="what"><s>A tertiary text ink</s></div>
+      <p class="why">Deleted before it shipped. Any grey between chalk and ash falls below AA on the card, so it would have been a level nobody could read. Tertiary is made by type — a smaller rung at Buch 400 — which is stronger, and it is why this system passes the chalk-only test in §13.</p></div>
+    <div class="cut"><div class="what"><s>Weights 800 and 900</s></div>
+      <p class="why">The outgoing face's 900 has 294 call sites, so this is the most visible change in the migration. 700 carries a masthead completely. Everything above it is volume pretending to be hierarchy, and it is the single clearest tell of a consumer fitness app.</p></div>
+    <div class="cut"><div class="what"><s>Mono 700</s></div>
+      <p class="why">Drawn for hero figures, then tested at 46 and rejected: the counters close and 8, 9, 6 and 0 start to converge at arm's length. 600 is the ceiling and the figures are more legible for it.</p></div>
+    <div class="cut"><div class="what"><s>Positive tracking above 12</s></div>
+      <p class="why">Proposed for button labels. It is a decoration, and it costs the word shape a fast reader is actually matching against.</p></div>
+    <div class="cut"><div class="what"><s>Responsive <span class="m">clamp()</span> ramps</s></div>
+      <p class="why">Replaced by rung promotion. Fluid type produces sizes nobody specified and cannot be checked against a token file, which is the same failure as a hand-typed number with better manners.</p></div>
+  </div>
+
+  <h3>The next thing to delete, and the test that decides it</h3>
+  <p><span class="m">text.labelSm</span> at 11 sits between caption (12) and overline
+  (10) and is the one rung in the ladder without a job only it can do. It survives
+  this round because it holds 400 call sites and cutting it blind is how a system
+  gets a reputation for churn.</p>
+  <p><strong>The test:</strong> take the twenty densest rows in the product and set
+  every <span class="m">labelSm</span> to <span class="m">caption</span>. If nothing
+  reflows and nothing loses a level, the rung is drift and it goes — ten sizes,
+  four weights, two cuts. That is a system a designer can hold entirely in their
+  head, which is the only kind that survives contact with a growing team.</p>
+
+  <div class="note">
+    <b>The one thing this system still gets wrong.</b> An athlete wearing gloves,
+    in a squat rack, at 5 a.m., is not looking at a 13 px coaching sentence — and
+    §11's panel still spends a third of its height on one. The next revision should
+    test a session mode where everything below <span class="m">bodyLg</span> is
+    simply absent, rather than present and quiet. That is a product decision this
+    document cannot make, but the type system should stop pretending the question is
+    settled.
+  </div>
+</section>
+
+<!-- 20 ───────────────────────────────────────────────────────────────── -->
+<section id="s20">
+  <div class="head"><span class="num">20</span><h2>Migration</h2><span class="tag">From Archivo</span></div>
+
+  <p>HYBRID ships Archivo and JetBrains Mono today. The good news is that the
+  product is already a Direction A system — mono outnumbers the display face by
+  1,220 call sites to 915 — so this is a face swap and a weight correction, not a
+  redesign.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Today</th><th>Becomes</th><th class="n">Sites</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td>Archivo 400 Regular</td><td>Söhne Buch 400</td><td class="n">251</td><td>Direct.</td></tr>
+      <tr><td>Archivo 600 SemiBold</td><td>Söhne Kräftig 500</td><td class="n">82</td><td>Söhne's Kräftig sits heavier than Archivo's SemiBold. One step down.</td></tr>
+      <tr><td>Archivo 700 Bold</td><td>Söhne Halbfett 600</td><td class="n">288</td><td>Same reason.</td></tr>
+      <tr><td>Archivo 900 Black</td><td>Söhne Dreiviertelfett 700</td><td class="n">294</td><td><strong>The visible one.</strong> Everything below 26 also drops to Halbfett — 900 was carrying section titles that never needed it.</td></tr>
+      <tr><td>JetBrains Mono 400</td><td>Söhne Mono Buch 400</td><td class="n">1,220</td><td>Söhne Mono is narrower. Every fixed-width figure slot needs re-measuring.</td></tr>
+      <tr><td>JetBrains Mono 700</td><td>Söhne Mono Halbfett 600</td><td class="n">139</td><td>Rule 03.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>Order of work</h4>
+  <ol class="body">
+    <li><strong>Licence and self-host.</strong> Söhne cannot come from a public font host. Web self-hosts woff2; the app bundles the ttf and registers each weight's PostScript name explicitly.</li>
+    <li><strong>Convert tracking from dp to em</strong> before the face changes. This is a no-op refactor against the current values — the existing dp trackings convert to almost exactly the em figures in §07 at the sizes they are used — so it can ship and be verified independently.</li>
+    <li><strong>Add <span class="m">leading.flush</span></strong> and move standalone figures onto it. Visible improvement, zero risk, no font dependency.</li>
+    <li><strong>Retire <span class="m">note</span> and <span class="m">heading</span>.</strong> Mechanical, and it shrinks the surface the face swap has to cross.</li>
+    <li><strong>Introduce the named <span class="m">text.*</span> styles</strong> and migrate call sites onto them. This is the step that makes the face swap a one-line change.</li>
+    <li><strong>Swap the face.</strong> With everything above done, it is one edit to two constants.</li>
+    <li><strong>Re-measure fixed-width slots.</strong> Söhne Mono's advance differs from JetBrains Mono's, and any layout that computed a width from a character count has to be recalculated.</li>
+  </ol>
+
+  <div class="note">
+    <b>Steps 2 to 5 are worth doing whether or not Söhne is ever licensed.</b> They
+    are the difference between a product with type tokens and a product with a type
+    system, and every one of them is verifiable by a test rather than by an opinion.
+  </div>
+</section>
+
+<div class="foot">
+  <span>HYBRID — Typography specification</span>
+  <span>Direction A — Precision</span>
+  <span>Söhne + Söhne Mono</span>
+  <span>4 weights – 11 rungs – 25 rules</span>
+</div>
+
+</main>
+</div>

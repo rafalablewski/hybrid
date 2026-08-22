@@ -104,7 +104,7 @@ export default function IntervalTimer() {
         <View style={{ width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <View style={{ position: "absolute", width: 230, height: 230, borderRadius: 115, borderWidth: 12, borderColor: txt(C, kindColor), opacity: 0.25 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, kindColor) }}>{kindLabel}</Text>
-          <Text style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{formatClock(pos.remaining)}</Text>
+          <Text style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{formatClock(pos.remaining, true)}</Text>
           {!pos.done && phase && phase.round > 0 && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>Round {phase.round}/{phase.totalRounds}</Text>
           )}

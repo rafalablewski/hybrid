@@ -22,3 +22,4 @@ export * from "./feedback";
 export * from "./icons";
 export * from "./sport-marks";
 export * from "./mark";
+export * from "./typography";
