@@ -169,7 +169,7 @@ export default function AdminMedia() {
                   </View>
                 ) : (
                   <>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>{a.title}</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>{a.title}</Text>
                     {a.tags.length > 0 ? (
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 6 }}>
                         {a.tags.map((t) => <Chip key={t} color={palette.ash}>{t}</Chip>)}
@@ -221,7 +221,7 @@ function SketchCoverage() {
 
   return (
     <ACard style={cardStack}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>Exercise demo sketches</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>Exercise demo sketches</Text>
       <Mono color={palette.ash} style={{ marginTop: 6, lineHeight: 18 }}>
         {cov.drawn} of {cov.total} lifts drawn{cov.pattern > 0 ? `, ${cov.pattern} on a pattern stand-in` : ""} – {cov.pct}% covered.
         Every undrawn lift shows the procedural stick-figure demo until its sketch lands.

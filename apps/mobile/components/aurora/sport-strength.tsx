@@ -125,7 +125,7 @@ export default function AuroraSportStrength() {
   };
 
   const mono = (size: number, color = C.ash) => ({ fontFamily: F.mono, fontSize: size, color });
-  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: tracking.caps });
+  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: tracking(fs.micro, "caps") });
   const dividerTop = { borderTopWidth: 1, borderTopColor: C.line } as const;
 
   const SectionHead = ({ title, meta }: { title: string; meta?: string }) => (
@@ -166,7 +166,7 @@ export default function AuroraSportStrength() {
               accessibilityState={{ selected: on }}
               style={{ flex: 1, alignItems: "center", paddingVertical: 10, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: on ? C.lime : C.line, backgroundColor: on ? C.lime : C.ink2 }}
             >
-              <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: tracking.label, color: on ? C.onAccent : C.ash }}>{l.toUpperCase()}</Text>
+              <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: on ? C.onAccent : C.ash }}>{l.toUpperCase()}</Text>
             </Pressable>
           );
         })}

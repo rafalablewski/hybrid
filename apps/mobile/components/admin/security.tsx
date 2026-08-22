@@ -59,7 +59,7 @@ export default function AdminSecurity() {
               <Kicker>Posture score</Kicker>
               <Text style={{ fontFamily: F.black, fontSize: 40, color: txt(palette, scoreColor), lineHeight: 44, marginTop: 4 }}>
                 {d.posture.score}
-                <Text style={{ fontFamily: F.bold, fontSize: fs.heading, color: palette.ash }}>/100</Text>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.headline, color: palette.ash }}>/100</Text>
               </Text>
               <Mono color={palette.ash} style={{ fontSize: fs.micro, marginTop: 2 }}>{d.posture.pass}/{d.posture.total} controls green</Mono>
             </ACard>
@@ -106,7 +106,7 @@ export default function AdminSecurity() {
                       <ACard key={c.id} accent={statusColor(c.status)} style={cardStack}>
                         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, flexWrap: "wrap", marginBottom: 6 }}>
                           <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: statusColor(c.status) }} />
-                          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, flex: 1 }}>{c.title}</Text>
+                          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk, flex: 1 }}>{c.title}</Text>
                           <Chip color={sevColor[c.severity]}>{c.severity}</Chip>
                           <Chip color={statusColor(c.status)}>{statusLabel(c.status)}</Chip>
                         </View>

@@ -35,7 +35,7 @@ function Stat({ C, value, label, first, star }: { C: Palette; value: string; lab
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>
         {star ? <Text style={{ color: C.amber }}>★ </Text> : null}{value}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: withAlpha(C.ash, 0.702), marginTop: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: withAlpha(C.ash, 0.702), marginTop: 4 }}>{label}</Text>
     </View>
   );
 }
@@ -114,7 +114,7 @@ export default function CoachRail({ onOpen, headerless = false, bleed = false }:
                     <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ color: C.chalk, fontFamily: F.black, fontSize: fs.subtitle, flexShrink: 1 }}>{c.name}</Text>
                     {c.verified ? <Text style={{ color: accentText, fontSize: fs.caption, marginLeft: 4 }}>✓</Text> : null}
                   </View>
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ marginTop: 5, fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
+                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ marginTop: 5, fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{c.specialties.slice(0, 2).join(" – ")}</Text>
                 </View>
               </View>
 

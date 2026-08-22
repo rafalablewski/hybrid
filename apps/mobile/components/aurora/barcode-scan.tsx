@@ -57,7 +57,7 @@ export default function BarcodeScanSheet({
     if (visible) { seen.current = false; setScanned(false); }
   }, [visible]);
 
-  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash } as const;
+  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash } as const;
 
   const body = () => {
     // Permission not asked yet.

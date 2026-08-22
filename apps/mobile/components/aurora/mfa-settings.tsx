@@ -101,14 +101,14 @@ export default function MfaSettings() {
 
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
         Two-factor authentication
       </Text>
       <ACard style={{ borderLeftWidth: 3, borderLeftColor: accent }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Authenticator app (TOTP)</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>Authenticator app (TOTP)</Text>
           <View style={{ backgroundColor: withAlpha(verified.length ? C.lime : C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: tracking.label }}>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label") }}>
               {verified.length ? "on" : "off"}
             </Text>
           </View>
@@ -168,7 +168,7 @@ export default function MfaSettings() {
                     style={{ flex: 1, fontFamily: F.mono, fontSize: fs.subtitle, letterSpacing: 3, color: C.chalk, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12 }}
                   />
                   <Pressable onPress={confirm} disabled={busy || !isValidTotpCode(code)} accessibilityRole="button" style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 20, paddingVertical: 12, alignItems: "center", opacity: busy || !isValidTotpCode(code) ? STATE_OPACITY.busy : 1 }}>
-                    <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.onAccent }}>Confirm</Text>
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.onAccent }}>Confirm</Text>
                   </Pressable>
                 </View>
                 <Pressable onPress={() => { setEnroll(null); setCode(""); }} accessibilityRole="button" style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.inner, paddingHorizontal: 12, paddingVertical: 6, marginTop: 10, alignSelf: "flex-start" }}>

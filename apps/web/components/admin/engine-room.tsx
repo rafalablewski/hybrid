@@ -1936,13 +1936,13 @@ function TrajectoryChart({ trace }: { trace: EngineTrace }) {
         {[0, 50, 100].map((v) => (
           <g key={v}>
             <line x1={PAD.l} x2={CHART_W - PAD.r} y1={y(v)} y2={y(v)} stroke={LINE_HEX} strokeWidth={1} />
-            <text x={PAD.l - 6} y={y(v) + 3} textAnchor="end" fontSize={9} fill={ASH} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <text x={PAD.l - 6} y={y(v) + 3} textAnchor="end" fontSize={9} fill={ASH} style={{ fontFamily: "var(--font-mono)" }}>
               {v}
             </text>
           </g>
         ))}
         {[0, 7, 13].map((i) => (
-          <text key={i} x={x(i)} y={CHART_H - 6} textAnchor="middle" fontSize={9} fill={ASH} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <text key={i} x={x(i)} y={CHART_H - 6} textAnchor="middle" fontSize={9} fill={ASH} style={{ fontFamily: "var(--font-mono)" }}>
             {pts[i] ? (pts[i]!.daysAgo === 0 ? "today" : `−${pts[i]!.daysAgo}d`) : ""}
           </text>
         ))}
@@ -1952,11 +1952,11 @@ function TrajectoryChart({ trace }: { trace: EngineTrace }) {
         {pts.length > 0 && (
           <>
             <circle cx={x(n - 1)} cy={y(pts[n - 1]!.hpi)} r={4} fill={LIME_HEX} stroke={LINE_HEX} strokeWidth={2} />
-            <text x={x(n - 1) + 8} y={y(pts[n - 1]!.hpi) + 3} fontSize={9} fill={SVG_CHALK} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <text x={x(n - 1) + 8} y={y(pts[n - 1]!.hpi) + 3} fontSize={9} fill={SVG_CHALK} style={{ fontFamily: "var(--font-mono)" }}>
               HPI {pts[n - 1]!.hpi}
             </text>
             <circle cx={x(n - 1)} cy={y(pts[n - 1]!.readiness)} r={4} fill={BLUE} stroke={LINE_HEX} strokeWidth={2} />
-            <text x={x(n - 1) + 8} y={y(pts[n - 1]!.readiness) + 3} fontSize={9} fill={ASH} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <text x={x(n - 1) + 8} y={y(pts[n - 1]!.readiness) + 3} fontSize={9} fill={ASH} style={{ fontFamily: "var(--font-mono)" }}>
               Rdy {pts[n - 1]!.readiness}
             </text>
           </>
@@ -2028,13 +2028,13 @@ function LogisticChart({ coeffs, score, p }: { coeffs: CalibrationCoeffs; score:
         {[0, pMax / 2, pMax].map((v) => (
           <g key={v}>
             <line x1={PAD.l} x2={CHART_W - PAD.r} y1={y(v)} y2={y(v)} stroke={LINE_HEX} strokeWidth={1} />
-            <text x={PAD.l - 6} y={y(v) + 3} textAnchor="end" fontSize={9} fill={ASH} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+            <text x={PAD.l - 6} y={y(v) + 3} textAnchor="end" fontSize={9} fill={ASH} style={{ fontFamily: "var(--font-mono)" }}>
               {Math.round(v * 100)}%
             </text>
           </g>
         ))}
         {[0, 50, 100].map((s) => (
-          <text key={s} x={x(s)} y={CHART_H - 6} textAnchor="middle" fontSize={9} fill={ASH} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+          <text key={s} x={x(s)} y={CHART_H - 6} textAnchor="middle" fontSize={9} fill={ASH} style={{ fontFamily: "var(--font-mono)" }}>
             {s}
           </text>
         ))}
@@ -2043,7 +2043,7 @@ function LogisticChart({ coeffs, score, p }: { coeffs: CalibrationCoeffs; score:
         <line x1={x(score)} x2={x(score)} y1={y(p)} y2={CHART_H - PAD.b} stroke={ASH} strokeWidth={1} strokeDasharray="3 3" />
         <line x1={PAD.l} x2={x(score)} y1={y(p)} y2={y(p)} stroke={ASH} strokeWidth={1} strokeDasharray="3 3" />
         <circle cx={x(score)} cy={y(p)} r={5} fill={LIME_HEX} stroke={SVG_INK} strokeWidth={2} />
-        <text x={Math.min(x(score) + 9, CHART_W - PAD.r + 2)} y={y(p) - 8} fontSize={9} fill={SVG_CHALK} style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+        <text x={Math.min(x(score) + 9, CHART_W - PAD.r + 2)} y={y(p) - 8} fontSize={9} fill={SVG_CHALK} style={{ fontFamily: "var(--font-mono)" }}>
           score {score} → {(p * 100).toFixed(1)}%
         </text>
         {hover != null && (

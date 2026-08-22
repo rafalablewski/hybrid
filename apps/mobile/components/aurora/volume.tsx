@@ -21,7 +21,7 @@ import { setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { ACard, ADrawer, ASection, CardFoot, RADIUS, withAlpha } from "./kit";
 import { MeasureLine, MeasureTrack, MeasureScale, MEASURE_ROW_PAD } from "./measure-row";
 import Sheet from "./sheet";
@@ -252,11 +252,11 @@ export default function AuroraVolume({ onOpenModel }: {
     <ACard solid>
       <ASection title={t("w.home.cockpit.weekVolume")} meta={t("w.home.cockpit.last7")} />
       {summary.empty ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.note, lineHeight: leading(fs.note), color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, lineHeight: leading(fs.bodyLg), color: C.ash }}>{t("w.analyze.vol.empty")}</Text>
       ) : (
         <>
           <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-            <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: 50, letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(46, "flush"), letterSpacing: trackFigure(46), color: C.chalk }}>{summary.inRange}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash, marginLeft: 3 }}>/{summary.total}</Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginLeft: 8 }}>{t("w.home.cockpit.inRange")}</Text>
           </View>
@@ -264,7 +264,7 @@ export default function AuroraVolume({ onOpenModel }: {
             {rows.map((r) => (
               <View key={r.muscle} style={{ flex: 1 }}>
                 <ShapeColumn s={r} color={zoneColor(r.zone)} dim={false} />
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textAlign: "center", marginTop: 8 }}>{ml(r.muscle).slice(0, 3).toUpperCase()}</Text>
               </View>
             ))}
           </View>
@@ -335,7 +335,7 @@ function ByMuscle({ rows, ml, zoneColor, targetFor, history, open, setOpen, zone
     <Panel >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
+        <Text style={ty(C, "overline")}>{t("w.analyze.vol.range7d")}</Text>
       </View>
 
       <View style={{ marginTop: 4 }}>
@@ -445,7 +445,7 @@ function Prescription({ title, why, items, color, ml, unit }: {
     <Panel >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{unit}</Text>
+        <Text style={ty(C, "overline")}>{unit}</Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
         {items.map((s) => (
@@ -511,7 +511,7 @@ function BlockCard({ lead, block, ramp, on }: {
                 <View style={{ width: "100%", height: 56, backgroundColor: C.ink, borderRadius: 7, overflow: "hidden" }}>
                   <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: pct(c.height), backgroundColor: c.kind === "deload" ? C.blue : C.lime, opacity: c.current ? 0.95 : 0.32, borderTopLeftRadius: 7, borderTopRightRadius: 7 }} />
                 </View>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: c.current ? C.chalk : C.ash }}>{c.week}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: c.current ? C.chalk : C.ash }}>{c.week}</Text>
               </View>
             ))}
           </View>
@@ -643,7 +643,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
           step we were making them take for no reason. */}
       <View style={{ marginTop: 18, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: C.chalk }}>{Math.round(done.score * 100)}%</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: C.chalk }}>{Math.round(done.score * 100)}%</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("w.analyze.vol.knownAbout")}</Text>
         </View>
         <View style={{ height: 3, borderRadius: RADIUS.pill, backgroundColor: C.ink, marginTop: 10, overflow: "hidden" }}>
@@ -662,7 +662,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
               accessibilityLabel={`${t("w.analyze.vol.nextUp")}: ${t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}`}
               style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14 }}
             >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.nextUp")}</Text>
+              <Text style={ty(C, "overline")}>{t("w.analyze.vol.nextUp")}</Text>
               <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
             </Pressable>
@@ -956,7 +956,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
   // element must not restyle it.
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 16 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
+      <Text style={{ ...ty(C, "kicker"), marginTop: 16  }}>{t("w.analyze.trends.weeklySets8w")}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
           <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: RADIUS.mark, backgroundColor: i === sets.length - 1 ? C.blue : withAlpha(C.blue, ALPHA.rim) }} />

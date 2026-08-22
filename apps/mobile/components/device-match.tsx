@@ -211,13 +211,13 @@ export function DeviceMatchSheet({
                       </View>
                       {best && (
                         <View style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 4, paddingHorizontal: 10, marginLeft: 8 }}>
-                          <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: tracking.label, color: C.onAccent, textTransform: "uppercase" }}>
+                          <Text style={{ fontFamily: F.black, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.onAccent, textTransform: "uppercase" }}>
                             ✓ {t("session.device.best")}
                           </Text>
                         </View>
                       )}
                       {!best && linked && (
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: txt(C, C.lime), textTransform: "uppercase" }}>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: txt(C, C.lime), textTransform: "uppercase" }}>
                           {t("session.device.matchedChip")}
                         </Text>
                       )}

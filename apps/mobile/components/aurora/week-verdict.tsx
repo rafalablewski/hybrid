@@ -19,7 +19,7 @@ import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, deltaPaint } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, TABULAR, tracking, trackFigure } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale, PressScale as Pressable, TABULAR, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { Mark } from "./mark";
 
 /**
@@ -170,7 +170,7 @@ import { Mark } from "./mark";
  *
  * THE ROW OF FOUR NEVER FITTED. Not at 17dp, not at 20 — the arithmetic is
  * written out at CELL_WIDTH, and it says a quarter-width column would need the
- * app's BODY size to hold "6h 52min". `figSize = wide ? 17 : fs.heading` was a
+ * app's BODY size to hold "6h 52min". `figSize = wide ? 17 : fs.headline` was a
  * layout apologising for itself: it spent a rung of legibility and wrapped
  * anyway. Two up, at the full 20dp, a figure needs 96dp of the cell's 155 —
  * enough spare for Dynamic Type at 1.4×, for German, and for any formatter that
@@ -276,7 +276,7 @@ const CELL_WIDTH = "50%";
  *  cell's type still lands on the card's own content column. */
 const CELL_INSET = space.sm;
 /** The figure size for a cell the sentence is NOT about. See CELL_WIDTH. */
-const FIGURE_SIZE = fs.heading;
+const FIGURE_SIZE = fs.headline;
 
 /**
  * THE NAMED METRIC'S CELL IS DRAWN LARGER — the card's one hero figure, and the
@@ -302,12 +302,12 @@ const FIGURE_SIZE = fs.heading;
  * steps down instead of running off the card. A hero figure that has to be
  * ellipsised was never a hero figure.
  */
-const PROMOTED_LADDER = [fs.display, fs.headline, fs.heading] as const;
+const PROMOTED_LADDER = [fs.display, fs.headline, fs.headline] as const;
 
 /** ONE LINE BOX for every figure, sized to the tallest rung a cell can draw, so
  *  a promoted figure and a plain one share a baseline instead of sitting a few
  *  points apart. */
-const FIGURE_BOX = leading(PROMOTED_LADDER[0], "tight");
+const FIGURE_BOX = leading(PROMOTED_LADDER[0], "flush");
 
 /**
  * Render a "{m}"-templated sentence with the metric name in bold.
@@ -379,7 +379,7 @@ export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{title}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 2 }}>{sub}</Text>
       </View>
-      <Text style={{ fontSize: fs.note, color: C.ash }}>›</Text>
+      <Text style={{ fontSize: fs.bodyLg, color: C.ash }}>›</Text>
     </PressScale>
   );
 }
@@ -932,7 +932,7 @@ export default function AuroraWeekVerdict({
             first swipe OR the first column opened, whichever comes first, under
             the key it always used. */}
         {!hinted && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
+          <Text style={{ ...ty(C, "kicker"), opacity: 0.75, textAlign: "center", marginTop: 10  }}>
             {t("w.home.cmp.hint")}
           </Text>
         )}
@@ -973,7 +973,7 @@ export default function AuroraWeekVerdict({
                 Not the sentence's: a fallen Hours column reads terracotta
                 whatever the week's headline was about. */}
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 30, letterSpacing: tracking.display, color: openTone }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 30, letterSpacing: tracking(30), color: openTone }}>
                 {fmt(detail.metric, detail.total)}
               </Text>
               {openWhy && (
@@ -1078,7 +1078,7 @@ function MetricDetail({
     return bits.join(" – ");
   };
 
-  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const };
+  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase" as const };
 
   return (
     <>

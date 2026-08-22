@@ -9,7 +9,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { accentColor, useTheme } from "../../lib/theme";
-import { F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, ty } from "../../lib/ui";
 import { withAlpha } from "./field";
 import { GUTTER, RADIUS } from "./geometry";
 import { AuroraIcon, Glyph, SportMark } from "./icons";
@@ -181,6 +181,7 @@ function BareControl({
   opacity?: number;
   hint?: string;
 }) {
+  const { palette: C } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -189,18 +190,12 @@ function BareControl({
       hitSlop={12}
       style={{ minHeight: HIT, justifyContent: "flex-end", alignSelf: "flex-start", marginTop: PAD.controlTop }}
     >
-      <Text
-        style={{
-          fontFamily: F.mono,
-          fontSize: fs.nano,
-          textTransform: "uppercase",
-          letterSpacing: tracking.label,
-          color,
-          opacity,
-        }}
-      >
-        {label}
-      </Text>
+      {/* The app's standard eyebrow, by name — `ty(C, "kicker")` rather than
+          the five properties it is assembled from. The one thing this control
+          does NOT take from the token is its INK: a bare control is lit in the
+          day's own hue on the rung that asks for something, which is exactly
+          what the token's colour override is for. */}
+      <Text style={{ ...ty(C, "kicker", color), opacity }}>{label}</Text>
     </Pressable>
   );
 }
@@ -355,7 +350,7 @@ export default function AuroraDayBand({
             fontFamily: F.black,
             fontSize: headSize,
             lineHeight: leading(headSize),
-            letterSpacing: tracking.display,
+            letterSpacing: tracking(headSize),
             color: ink,
             marginTop: PAD.headTop,
           }}
@@ -471,7 +466,7 @@ export default function AuroraDayBand({
               flex: 1,
               fontFamily: F.black,
               fontSize: fs.hero,
-              letterSpacing: tracking.display,
+              letterSpacing: tracking(fs.hero),
               // LIT when the rung is asking for something, held back when it is
               // reporting. The one signal, on the one object it is about.
               color: lit ?? ink,
@@ -490,7 +485,7 @@ export default function AuroraDayBand({
               style={{
                 fontFamily: F.mono,
                 fontSize: fs.title,
-                letterSpacing: tracking.normal,
+                letterSpacing: tracking(fs.title),
                 color: withAlpha(ink, hold),
               }}
             >

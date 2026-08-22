@@ -8,7 +8,7 @@ import {
   ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, F, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 import { withAlpha, RADIUS } from "./kit";
 import Sheet from "./sheet";
 
@@ -93,7 +93,7 @@ export default function LoadSheet({ load, focus, onClose }: {
               the card's own headline weight: a coloured paragraph would
               out-shout the figures it is supposed to be introducing. */}
           {verdict && (
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, lineHeight: leading(16), color: C.chalk }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), lineHeight: leading(16), color: C.chalk }}>
               {t(verdict.key)}
             </Text>
           )}
@@ -160,7 +160,7 @@ function Only({ C, t, explain }: { C: Palette; t: T; explain: LoadExplain }) {
             big figure at the head of an explainer sheet. freshness-sheet's
             twin still carries a grandfathered 44 and is 2dp shy; aligning it
             is its own change, not this one's to make. */}
-        <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: paintOf(C, explain) }}>{explain.value}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: paintOf(C, explain) }}>{explain.value}</Text>
         <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t(explain.unitKey)}</Text>
       </View>
 
@@ -208,8 +208,8 @@ function Block({ C, head, meta, children }: {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 11 }}>
-        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{head}</Text>
-        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{meta}</Text> : null}
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{head}</Text>
+        {meta ? <Text style={ty(C, "kicker")}>{meta}</Text> : null}
       </View>
       {children}
     </View>
@@ -229,7 +229,7 @@ function Reading({ C, t, explain }: { C: Palette; t: T; explain: LoadExplain }) 
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10 }}>
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.heading, color: paint }}>{explain.value}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.headline, color: paint }}>{explain.value}</Text>
         <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.caption, color: C.chalk }}>{t(explain.titleKey)}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: paint }}>{t(explain.readKey)}</Text>
       </View>
@@ -279,7 +279,7 @@ function Figure({ C, t, explain }: { C: Palette; t: T; explain: LoadExplain }) {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
-        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={ty(C, "kicker")}>
           {t(LOAD_METRIC_LABEL_KEY[explain.metric])}
         </Text>
         <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: F.monoBold, fontSize: fs.caption, color: paintOf(C, explain) }}>{explain.value}</Text>

@@ -34,8 +34,8 @@ import { fs, space, tracking } from "./scale";
  *    so it is sentence-case and untracked.
  */
 export const STREAK_MARK = {
-  hairline: { size: 9.5, icon: 11, gap: space.xxs, tracking: tracking.caps, caps: true },
-  inline: { size: fs.micro, icon: 12, gap: space.xxs, tracking: tracking.normal, caps: false },
+  hairline: { size: 9.5, icon: 11, gap: space.xxs, tracking: tracking(9.5, "caps"), caps: true },
+  inline: { size: fs.micro, icon: 12, gap: space.xxs, tracking: tracking(fs.micro), caps: false },
 } as const;
 
 export type StreakRung = keyof typeof STREAK_MARK;

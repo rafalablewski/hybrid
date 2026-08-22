@@ -59,7 +59,7 @@ export default function CopyDaySheet({
     [logs, from, to, parts],
   );
 
-  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash } as const;
+  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash } as const;
 
   const sourceLabel = (s: CopySource) =>
     s.daysAgo === 1
@@ -186,7 +186,7 @@ function Chip({ label, on, onPress }: { label: string; on: boolean; onPress: () 
     >
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? C.onAccent : C.ash }}
+        style={{ fontFamily: on ? F.monoBold : F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: on ? C.onAccent : C.ash }}
       >
         {label}
       </Text>

@@ -88,7 +88,7 @@ export default function RailTail({
       </View>
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
-        style={{ color, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", textAlign: "center", lineHeight: 15 }}
+        style={{ color, fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", textAlign: "center", lineHeight: 15 }}
       >
         {premium ? `✦ ${text}` : text}
       </Text>

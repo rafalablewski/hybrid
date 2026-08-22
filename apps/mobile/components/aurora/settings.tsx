@@ -268,12 +268,12 @@ export default function AuroraSettings({ landOn }: {
         const ModeCard = ({ on, title, tags, locked, onPress }: { on: boolean; title: string; tags: string; locked?: boolean; onPress: () => void }) => (
           <PressScale onPress={onPress} accessibilityRole="button" accessibilityLabel={title} accessibilityState={{ selected: on }} style={{ flex: 1, padding: 12, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? (txt(C, C.lime) as string) : C.line, backgroundColor: on ? withAlpha(C.lime, ALPHA.wash) : "transparent" }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-              <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{title}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: on ? (txt(C, C.lime) as string) : C.chalk }}>{title}</Text>
               {locked && (
                 <>
                   <AuroraIcon name="lock" size={fs.micro + 2} color={C.ash} />
                   <View style={{ borderWidth: 1, borderColor: txt(C, C.lime), backgroundColor: withAlpha(C.lime, ALPHA.fill), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: tracking.label }}>{t("w.account.settings.paid")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label") }}>{t("w.account.settings.paid")}</Text>
                   </View>
                 </>
               )}
@@ -331,7 +331,7 @@ export default function AuroraSettings({ landOn }: {
           <TextInput
             value={confirm} onChangeText={setConfirm} placeholder="RESET" placeholderTextColor={C.ash}
             autoCapitalize="characters" autoCorrect={false}
-            style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
+            style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
           />
           {!!error && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{error}</Text>}
           <APill
@@ -349,7 +349,7 @@ export default function AuroraSettings({ landOn }: {
           <TextInput
             value={delConfirm} onChangeText={setDelConfirm} placeholder="DELETE" placeholderTextColor={C.ash}
             autoCapitalize="characters" autoCorrect={false}
-            style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
+            style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
           />
           {!!delError && <Text accessibilityLiveRegion="assertive" accessibilityRole="alert" style={{ fontFamily: F.mono, fontSize: fs.caption, color: FEEDBACK.error.text, marginTop: 10 }}>{delError}</Text>}
           <APill
@@ -515,7 +515,7 @@ export default function AuroraSettings({ landOn }: {
 
 function Label({ children, color, top, tight }: { children: ReactNode; color: string; top?: boolean; tight?: boolean }) {
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color, marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }}>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color, marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }}>
       {children}
     </Text>
   );
@@ -528,7 +528,7 @@ function Section({ label, tone, children }: { label: string; tone?: string; chil
   const { palette: C } = useTheme();
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
       <ACard>{children}</ACard>
     </View>
   );

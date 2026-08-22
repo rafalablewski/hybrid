@@ -25,7 +25,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, leading, PressScale as Pressable, MAX_FONT_SCALE , tracking, trackFigure} from "../../lib/ui";
+import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub } from "./chart-scrub";
 import { AuroraScreen, ASegment , RADIUS} from "./kit";
 import { withAlpha } from "./field";
@@ -315,7 +315,7 @@ function RepMaxGrid({ C, slide, units, t }: { C: Palette; slide: SlideOf<"repMax
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingTop: 16, paddingBottom: 6 }}>
       {slide.cells.map((cell, i) => (
         <View key={i} style={{ width: "18%", flexGrow: 1, minWidth: 62, borderRadius: RADIUS.field, paddingVertical: 10, alignItems: "center", borderWidth: 1, borderColor: cell?.recent ? C.lime : C.line, ...(cell ? null : { borderStyle: "dashed" as const }) }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label }}>{i + 1}RM</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label") }}>{i + 1}RM</Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, marginVertical: 3, color: cell ? (cell.recent ? txt(C, C.lime) : C.chalk) : C.ash }}>{cell ? Math.round(kgToUnit(cell.loadKg, units)) : "–"}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{cell ? fmtDate(cell.when) : t("w.analyze.ex.repmaxTry")}</Text>
         </View>
@@ -481,7 +481,7 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{tile.cur}</Text>
               {!tile.same && <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: txt(C, tile.good ? C.blue : C.red) }}>{tile.good ? "▲" : "▼"}</Text>}
             </View>
-            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "kicker"), marginTop: 3  }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
           </View>
         ))}
       </View>
@@ -520,7 +520,7 @@ function ConsistencyHeat({ C, slide, foot, t }: { C: Palette; slide: SlideOf<"co
         {stats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
-            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ marginTop: 3, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }} numberOfLines={1}>{st.l}</Text>
           </View>
         ))}
       </View>
@@ -620,7 +620,7 @@ export default function AuroraExercisePage() {
   // rather than a page that re-fetches. `hidden` masks the real text only while
   // the clone is inbound; every degraded path (no provider, failed measurement,
   // Reduce Motion) returns false and shows it immediately.
-  const heroStyle = { fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "tight"), color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk } as const;
   const heroShared = useSharedElementTarget(SHARED_ELEMENTS.exerciseHero, hero.v, heroStyle);
 
   useEffect(() => {
@@ -697,7 +697,7 @@ export default function AuroraExercisePage() {
             <TickerDelta deltaPct={hero.deltaPct ?? null} improving={hero.improving ?? null} size={fs.caption} />
           </View>
         </View>
-        <Text style={{ marginTop: 10, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{hero.label}</Text>
+        <Text style={{ marginTop: 10, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{hero.label}</Text>
       </Animated.View>
 
       {!showAll ? (
@@ -727,7 +727,7 @@ export default function AuroraExercisePage() {
           {slides.map((slide, i) => (
             <View key={slide.kind} style={{ borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line, paddingTop: i === 0 ? 6 : 22, paddingBottom: 24 }}>
               {i > 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 16 }}>
+                <Text style={{ ...ty(C, "overline"), marginBottom: 16  }}>
                   {slideHero(slide, units, t).label}
                 </Text>
               ) : null}
@@ -742,7 +742,7 @@ export default function AuroraExercisePage() {
         accessibilityRole="button"
         style={{ alignSelf: "center", paddingVertical: 8, paddingHorizontal: 12, marginTop: 16 }}
       >
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: C.ash }}>
           {showAll ? t("w.analyze.exp.less") : t("w.analyze.exp.allStats")}
         </Text>
       </Pressable>
@@ -752,7 +752,7 @@ export default function AuroraExercisePage() {
         {substats.map((st) => (
           <View key={st.l} style={{ flex: 1 }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{st.v}</Text>
-            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{st.l}</Text>
+            <Text style={{ marginTop: 4, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{st.l}</Text>
           </View>
         ))}
       </View>
@@ -761,8 +761,8 @@ export default function AuroraExercisePage() {
           the retired dashboard lives IN the slide pager above). */}
       {s.kind === "strength" && s.bestSet && (
         <View style={{ marginTop: 16, marginHorizontal: 2, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.note, color: C.chalk, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</Text></Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.analyze.ex.bestSet")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8 }}>{fmtWeight(s.bestSet.load, units)} × {s.bestSet.reps}<Text style={{ color: C.ash }}> – {t("w.analyze.ex.e1rmLabel")} {fmtWeight(s.bestSet.e1rm, units)} – {fmtDate(s.bestSet.when)}</Text></Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{s.totalReps} {t("w.analyze.ex.repsTail")} {fmtWeight(s.heaviestLoad, units)} {t("w.analyze.ex.allTimeBest")} {fmtWeight(s.bestE1rmAllTime, units)}</Text>
           {s.velocity && (
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 8 }}>{t("w.analyze.ex.velocityProfile")} <Text style={{ color: txt(C, C.lime) }}>{fmtWeight(s.velocity.e1rm, units)}</Text> – {t("w.analyze.ex.velEstPre")} {s.velocity.r2} – {s.velocity.n} {t("w.analyze.ex.velEstTail")}</Text>

@@ -27,7 +27,7 @@ import { fs, space, F, PressScale as Pressable, tracking } from "../../lib/ui";
  * once. This page was briefly a hand-rolled copy of that row, which is exactly
  * the drift the shared component exists to end:
  *
- *   • The LABEL is the display face in chalk (`F.semi` at `fs.note`), not a mono
+ *   • The LABEL is the display face in chalk (`F.semi` at `fs.bodyLg`), not a mono
  *     uppercase kicker. It names a thing, and things get names, not labels.
  *   • The FIGURE is `F.monoBold` at the SAME size, toned. A metric's headline
  *     figure and its name sit on one baseline at one size, which is what makes

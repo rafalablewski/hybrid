@@ -9,7 +9,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor, type Palette } from "../../lib/theme";
-import { fs, space, leading, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { ACard, ACheckMark, RADIUS } from "./kit";
 import { haptic } from "../../lib/haptics";
 import { AuroraIcon } from "./icons";
@@ -60,7 +60,7 @@ export function InjuryBody({
       {INJURY_FIGURES.map((fig) => (
         <View key={fig.side} style={{ flex: 1, alignItems: "center" }}>
           <Figure fig={fig} C={C} toneOf={toneOf} selected={selected} onSelect={onSelect} labelOf={labelOf} height={height} />
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 2 }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "overline"), marginTop: 2  }}>
             {t(`w.analyze.exp.anatomy.map.${fig.side}`)}
           </Text>
         </View>
@@ -215,13 +215,13 @@ export function InjurySheet({
       {/* THE READBACK — the choice said in words, so a highlight is never the
           only confirmation. It holds its height so nothing jumps. */}
       <View accessibilityLiveRegion="polite" style={{ minHeight: 54, marginTop: 14, alignItems: "center" }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: area ? C.chalk : C.ash }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking(fs.headline), color: area ? C.chalk : C.ash }}>
           {area ? t(INJURY_AREA_KEY[area]) : t("w.injury.pickNone")}
         </Text>
         {area ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t(INJURY_AREA_HINT_KEY[area])}</Text> : null}
       </View>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginTop: 18, marginBottom: 8 }}>
+      <Text style={{ ...ty(C, "overline"), marginTop: 18, marginBottom: 8  }}>
         {t("w.injury.whenTitle")}
       </Text>
       <View style={{ flexDirection: "row", gap: 6 }}>
@@ -264,7 +264,7 @@ export function InjurySheet({
         {t("w.injury.protocolNote")}
       </Text>
       <Pressable onPress={onClose} accessibilityRole="button" style={{ alignSelf: "center", marginTop: 14, paddingVertical: 6, paddingHorizontal: 10 }}>
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.injury.cancel")}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{t("w.injury.cancel")}</Text>
       </Pressable>
     </Sheet>
   );
@@ -295,7 +295,7 @@ export function RtpPanel() {
   if (active.length === 0) return null;
   return (
     <View style={{ gap: 12, marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.red) }}>{t("w.rtp.protocol")}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: txt(C, C.red) }}>{t("w.rtp.protocol")}</Text>
       {active.map((p) => <Protocol key={p.id} p={p} onChange={refresh} />)}
     </View>
   );
@@ -340,7 +340,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
     <ACard accent={accent}>
       {/* WHAT AND HOW LONG — the two facts a protocol is about. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.heading, letterSpacing: tracking.display, color: C.chalk }}>
+        <Text style={{ fontFamily: F.black, fontSize: fs.headline, letterSpacing: tracking(fs.headline), color: C.chalk }}>
           {t(INJURY_AREA_KEY[p.tissue as MuscleGroup] ?? p.tissue)}
         </Text>
         {v.days != null ? (
@@ -428,7 +428,7 @@ export function Protocol({ p, onChange }: { p: RtpProtocolRow; onChange: () => v
                             {v.blockedCount === 1 ? t("w.rtp.gateToGo") : `${v.blockedCount} ${t("w.rtp.gatesToGo")}`}
                           </Text>
                           <Pressable onPress={() => setOverrideOpen((o) => !o)} hitSlop={8} accessibilityRole="button" accessibilityState={{ expanded: overrideOpen }}>
-                            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{t("w.rtp.override")}</Text>
+                            <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{t("w.rtp.override")}</Text>
                           </Pressable>
                         </View>
                       )}
@@ -516,4 +516,4 @@ const fmtDay = (iso: string) => {
   return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
 };
 
-const quiet = { fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase" as const, letterSpacing: tracking.label };
+const quiet = { fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase" as const, letterSpacing: tracking(fs.micro, "label") };

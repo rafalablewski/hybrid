@@ -38,7 +38,7 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
       {/* SectionHead idiom: display title left, mono meta right — no marker. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingHorizontal: 2, paddingBottom: 8 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t("feed.live.title")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>
           {t("feed.live.count").replace("{n}", String(live.length)).toUpperCase()}
         </Text>
       </View>
@@ -85,7 +85,7 @@ export default function FeedLiveStrip({ live, onOpen }: { live: LiveAthlete[]; o
                 <Text numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.nano, color: C.ash, maxWidth: 62 }}>
                   {(l.author.displayName || l.author.handle || "").split(" ")[0]}
                 </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: txt(C, colors.red) }}>{elapsed}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: txt(C, colors.red) }}>{elapsed}</Text>
               </View>
             </Pressable>
           );

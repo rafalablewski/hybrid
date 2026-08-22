@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { doneReceiptHero, type DoneReceipt, type DoneReceiptStat, type WeightUnit } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, tracking, trackFigure, F, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, MAX_FONT_SCALE, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 
 // ── AURORA Done receipt block (mobile) ──────────────────────────────────────
 // The finished day, as both week rails render it: the headline, ONE figure at
@@ -56,14 +56,14 @@ export default function ReceiptBlock({
   // A supporting label, for the figures whose unit can't name them. Uppercase
   // mono — the house grammar for a label, and the only casing that is correct
   // in every language (lowercasing "Höhenmeter" would not be German).
-  const suffix = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash } as const;
+  const suffix = ty(C, "overline");
 
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ flex: 1, fontFamily: F.black, fontSize: 19, lineHeight: HEAD_LINE, letterSpacing: tracking.display, color: C.chalk }}
+          style={{ flex: 1, fontFamily: F.black, fontSize: 19, lineHeight: HEAD_LINE, letterSpacing: tracking(19), color: C.chalk }}
         >
           {title}
         </Text>
@@ -74,7 +74,7 @@ export default function ReceiptBlock({
         <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 7, marginTop: 14 }}>
           <Text
             maxFontSizeMultiplier={MAX_FONT_SCALE}
-            style={{ fontFamily: F.black, fontSize: 42, lineHeight: 44, letterSpacing: trackFigure(42), color: C.chalk, fontVariant: ["tabular-nums"] }}
+            style={{ fontFamily: F.black, fontSize: 42, lineHeight: leading(42, "flush"), letterSpacing: trackFigure(42), color: C.chalk, fontVariant: ["tabular-nums"] }}
           >
             {hero.figure}
           </Text>

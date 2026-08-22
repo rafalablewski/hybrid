@@ -196,7 +196,7 @@ function Command({ data, err }: { data: Overview | null; err?: string | null }) 
                 <XAxis dataKey="day" tick={{ fill: ASH, fontSize: fs.caption }} stroke={LINE_HEX} />
                 <Tooltip
                   cursor={{ fill: `${AMBER}14` }}
-                  contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: fs.body }}
+                  contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "var(--font-mono)", fontSize: fs.body }}
                 />
                 <Bar dataKey="ok" stackId="a" fill={LIME_HEX} radius={[0, 0, 0, 0]} />
                 <Bar dataKey="error" stackId="a" fill={ERR_HEX} radius={[3, 3, 0, 0]} />
@@ -627,7 +627,7 @@ function KpiRow({ agentId, k, actual, onLogged }: { agentId: string; k: Kpi; act
                   <CartesianGrid stroke={LINE_HEX} strokeDasharray="3 3" vertical={false} />
                   <XAxis dataKey="t" tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} />
                   <YAxis tick={{ fill: ASH, fontSize: fs.micro }} stroke={LINE_HEX} width={40} />
-                  <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "'JetBrains Mono', monospace", fontSize: fs.body }} />
+                  <Tooltip contentStyle={{ background: INK, border: `1px solid ${LINE}`, borderRadius: "var(--r-field)", fontFamily: "var(--font-mono)", fontSize: fs.body }} />
                   {target != null && <ReferenceLine y={target} stroke={ASH} strokeDasharray="4 4" label={{ value: `target ${target}`, fill: ASH, fontSize: fs.micro, position: "insideTopRight" }} />}
                   <Line type="monotone" dataKey="value" stroke={LIME_HEX} strokeWidth={2} dot={{ r: 3, fill: LIME_HEX }} />
                 </LineChart>
@@ -710,7 +710,7 @@ function Approvals({ onChange }: { onChange: () => void }) {
         <Card key={a.id} style={{ borderLeft: `3px solid ${AMBER}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: space.md, alignItems: "flex-start", flexWrap: "wrap" }}>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ ...disp, fontSize: fs.note, fontWeight: 800, color: CHALK }}>
+              <div style={{ ...disp, fontSize: fs.bodyLg, fontWeight: 800, color: CHALK }}>
                 {a.agentName} <Chip c={ASH}>{a.runtime}</Chip>{a.estimateUsd > 0 && <Chip c={BLUE}>est ${a.estimateUsd.toFixed(2)}</Chip>}
               </div>
               <Mono s={{ fontSize: fs.body, display: "block", marginTop: 2, whiteSpace: "pre-wrap" }} c={ASH}>{a.task}</Mono>

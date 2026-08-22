@@ -3,14 +3,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View, Animated, StyleSheet } from "react-native";
 import { SafeAreaProvider, initialWindowMetrics } from "react-native-safe-area-context";
-import {
-  useFonts,
-  Archivo_400Regular,
-  Archivo_600SemiBold,
-  Archivo_700Bold,
-  Archivo_900Black,
-} from "@expo-google-fonts/archivo";
-import { JetBrainsMono_400Regular, JetBrainsMono_700Bold } from "@expo-google-fonts/jetbrains-mono";
+import { useFonts } from "expo-font";
 import { springs, springDurationMs, MODAL_SCREENS, COVER_SCREENS } from "@hybrid/core";
 import { SessionProvider } from "../lib/session";
 import { LanguageProvider } from "../lib/i18n";
@@ -198,13 +191,17 @@ function Shell() {
 }
 
 export default function RootLayout() {
+  // SÖHNE, BUNDLED. The keys are the aliases `F` hands React Native; the
+  // PostScript names inside the binaries are what SwiftUI resolves, and
+  // native-face.test.ts holds the two together by parsing these very files.
   const [loaded] = useFonts({
-    Archivo_400Regular,
-    Archivo_600SemiBold,
-    Archivo_700Bold,
-    Archivo_900Black,
-    JetBrainsMono_400Regular,
-    JetBrainsMono_700Bold,
+    Sohne_400Buch: require("../assets/fonts/Sohne-Buch.otf"),
+    Sohne_500Kraftig: require("../assets/fonts/Sohne-Kraftig.otf"),
+    Sohne_600Halbfett: require("../assets/fonts/Sohne-Halbfett.otf"),
+    Sohne_700Dreiviertelfett: require("../assets/fonts/Sohne-Dreiviertelfett.otf"),
+    SohneMono_400Buch: require("../assets/fonts/SohneMono-Buch.otf"),
+    SohneMono_500Kraftig: require("../assets/fonts/SohneMono-Kraftig.otf"),
+    SohneMono_600Halbfett: require("../assets/fonts/SohneMono-Halbfett.otf"),
   });
 
   if (!loaded) return <View style={{ flex: 1, backgroundColor: C.ink }} />;

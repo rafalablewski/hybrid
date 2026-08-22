@@ -29,7 +29,7 @@
 // hero title is set at several sizes. The hub head is set at exactly one, and
 // the app's own tracking scale (scale.ts) is in dp — so the hub follows the
 // scale, like AHeading and ASection do, rather than the hero's em convention.
-// One number, `tracking.display`, instead of the -1 / -1 / 0 that shipped.
+// One derivation, `tracking(size)`, instead of the -1 / -1 / 0 that shipped.
 
 import { titleStepDown } from "./hero";
 import { fs, space, tracking } from "./scale";
@@ -56,11 +56,11 @@ export const HUB_MASTHEAD = {
    *  height is what keeps the title's y identical across the three tabs, and
    *  reserving it properly is what retires `season || " "`, the space character
    *  that was doing this job invisibly on both clients. */
-  meta: { size: fs.micro, tracking: tracking.label, height: 15 },
+  meta: { size: fs.micro, tracking: tracking(fs.micro, "label"), height: 15 },
   /** The title, at the top of the ladder. `fs.hero` is the rung Dashboard
    *  already shipped and the one the hub earns as the app's front door; the
    *  other two tabs come up to it rather than Dashboard coming down. */
-  title: { size: fs.hero, lineHeight: 36, tracking: tracking.display, maxLines: 2 },
+  title: { size: fs.hero, lineHeight: 36, tracking: tracking(fs.hero), maxLines: 2 },
   /** Every gap in the block, from the space scale. No hand-typed 2 / 6 / 12. */
   gap: { control: space.lg, meta: space.xxs, below: space.lg },
   /** The scroll collapse, previously Dashboard's alone. Both clients read the

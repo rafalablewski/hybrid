@@ -29,12 +29,12 @@ import { allowFieldValue } from "../lib/field-guard";
 import { ConcernLine } from "./aurora/concern-line";
 import { useLang } from "../lib/i18n";
 import { useLoggerPrefs } from "../lib/logger-prefs";
-import { leading, tracking, F, fs, space, PressScale as Pressable } from "../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 
 const labelStyle = (C: Palette) =>
-  ({ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
+  ({ ...ty(C, "kicker"), marginBottom: 5  }) as const;
 const fieldStyle = (C: Palette) =>
   ({
     fontFamily: F.mono,

@@ -85,7 +85,7 @@ export function AppHeader({
           accessibilityState={{ expanded: menuOpen }}
           style={{ width: APP_HEADER.tile.size, height: APP_HEADER.tile.size, borderRadius: APP_HEADER.tile.radius, backgroundColor: withAlpha(ink ?? C.lime, ALPHA.fill), borderWidth: 1, borderColor: ink ?? C.lime, alignItems: "center", justifyContent: "center" }}
         >
-          <Text style={{ fontFamily: F.black, fontSize: fs.note, color: ink ?? txt(C, C.lime) }}>{initials}</Text>
+          <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: ink ?? txt(C, C.lime) }}>{initials}</Text>
         </Pressable>
 
         {/* the lockup — the wordmark, and the day-streak on the line under it */}

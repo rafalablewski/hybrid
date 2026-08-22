@@ -114,7 +114,7 @@ export default function PostScreen() {
         {/* ONE line — avatar, name, handle, time — exactly as the row reads it
             (feed-card.tsx): the name and the handle shrink, the time never does. */}
         <View style={{ flex: 1, minWidth: 0, flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
+          <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>
             {item.author.displayName || handle || t("w.social.you")}
           </Text>
           {handle && item.author.displayName ? (

@@ -45,8 +45,8 @@ const MARK_COMPONENTS = ["apps/mobile/components/aurora/streak-mark.tsx"];
 describe("the streak mark contract", () => {
   it("is two densities of one mark, both off the scale", () => {
     expect(STREAK_MARK.inline.size).toBe(fs.micro);
-    expect(STREAK_MARK.hairline.tracking).toBe(tracking.caps);
-    expect(STREAK_MARK.inline.tracking).toBe(tracking.normal);
+    expect(STREAK_MARK.hairline.tracking).toBe(tracking(9.5, "caps"));
+    expect(STREAK_MARK.inline.tracking).toBe(tracking(fs.micro));
     for (const rung of Object.values(STREAK_MARK)) expect(rung.gap).toBe(space.xxs);
   });
 

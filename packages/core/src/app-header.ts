@@ -37,7 +37,7 @@ export const APP_HEADER = {
   /** The wordmark. One size, one tracking, on both clients — web stated the
    *  tracking in em (-.03em ≈ -0.57 at 19) where mobile stated it in dp; the
    *  app's tracking scale is in dp (see hub-masthead.ts for the same note). */
-  wordmark: { size: 19, tracking: tracking.display },
+  wordmark: { size: 19, tracking: tracking(19) },
   /** The day-streak's offset under the wordmark — the ONE thing about the mark
    *  that is the header's business. The mark itself (its size, its flame, its
    *  colour and where it goes when tapped) is the shared STREAK_MARK, at its

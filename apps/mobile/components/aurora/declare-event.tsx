@@ -7,7 +7,7 @@ import {
 import { createDayEvent } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
-import { F } from "../../lib/ui";
+import { F, ty } from "../../lib/ui";
 import { AChip, AField, APill } from "./kit";
 import { Glyph, SportMark } from "./icons";
 
@@ -81,16 +81,9 @@ export default function DeclareEvent({
 
   return (
     <View style={{ marginTop: space.lg }}>
-      <Text
-        style={{
-          fontFamily: F.mono,
-          fontSize: fs.micro,
-          textTransform: "uppercase",
-          letterSpacing: tracking.caps,
-          color: C.ash,
-          marginBottom: space.md,
-        }}
-      >
+      {/* `overline`, not `kicker`: these two are SECTION labels — the sheet's
+          structure — and the wider caps tracking is what says so. */}
+      <Text style={{ ...ty(C, "overline"), marginBottom: space.md }}>
         {t("w.event.kindHead")}
       </Text>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
@@ -110,17 +103,7 @@ export default function DeclareEvent({
           being declared is visible before it is saved rather than after. */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: space.xl, marginBottom: space.md }}>
         {kind ? <KindMark kind={kind} color={C.ash} /> : null}
-        <Text
-          style={{
-            fontFamily: F.mono,
-            fontSize: fs.micro,
-            textTransform: "uppercase",
-            letterSpacing: tracking.caps,
-            color: C.ash,
-          }}
-        >
-          {t("w.event.nameHead")}
-        </Text>
+        <Text style={ty(C, "overline")}>{t("w.event.nameHead")}</Text>
       </View>
       <AField
         value={label}

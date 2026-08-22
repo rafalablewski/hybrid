@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { MONO_ADVANCE_EM } from "@hybrid/core";
 
 /**
  * THE NATIVE FACE GUARD.
@@ -20,9 +21,9 @@ import { describe, expect, it } from "vitest";
  *
  * Two rules, both hard:
  *
- *   1. Every `F` alias maps to the PostScript name of the .ttf that
- *      `@expo-google-fonts` actually ships — read out of the font's own `name`
- *      table here, so a package bump that renames a face fails the build
+ *   1. Every `F` alias maps to the PostScript name of the .otf the app actually
+ *      BUNDLES — read out of the font's own `name` table here, so replacing a
+ *      binary (the evaluation cuts for the retail ones, say) fails the build
  *      instead of silently falling back.
  *
  *   2. No `font({ family })` in the SwiftUI kit passes a family through
@@ -30,7 +31,6 @@ import { describe, expect, it } from "vitest";
  */
 
 const ROOT = join(__dirname, "..");
-const REPO = join(ROOT, "..", "..");
 
 /** `F` and its map, read as TEXT — this project runs in plain node, and
  *  lib/ui.tsx imports react-native. */
@@ -83,16 +83,63 @@ function postScriptNameOf(file: string): string {
   throw new Error(`${file}: no PostScript name`);
 }
 
-/** Where `@expo-google-fonts` puts the alias's file: <pkg>/<weight>/<alias>.ttf */
+/**
+ * The bundled binary for an alias. Söhne is licensed, so it is not an npm
+ * package — the .otf files live in `assets/fonts` and `_layout.tsx` requires
+ * them directly, which is also what makes this guard stronger than it was:
+ * it now reads the very bytes the app ships rather than a package's copy.
+ *
+ * `Sohne_600Halbfett` -> assets/fonts/Sohne-Halbfett.otf
+ */
 function fontFile(alias: string): string | null {
-  const [family, weight] = alias.split("_");
-  const pkg = family === "JetBrainsMono" ? "jetbrains-mono" : family.toLowerCase();
-  for (const base of [join(REPO, "node_modules"), join(ROOT, "node_modules")]) {
-    const p = join(base, "@expo-google-fonts", pkg, weight, `${alias}.ttf`);
-    if (existsSync(p)) return p;
-  }
-  return null;
+  const [family, weightAndCut] = alias.split("_");
+  const cut = weightAndCut.replace(/^\d+/, "");
+  const p = join(ROOT, "assets", "fonts", `${family}-${cut}.otf`);
+  return existsSync(p) ? p : null;
 }
+
+/** `head.unitsPerEm` and `hhea.advanceWidthMax` — for a monospaced face the max
+ *  advance IS the advance, which is the whole property being asserted. */
+function monoAdvanceEm(file: string): number {
+  const d = readFileSync(file);
+  const tables = d.readUInt16BE(4);
+  let upem = 0;
+  let maxAdv = 0;
+  for (let i = 0; i < tables; i++) {
+    const rec = 12 + 16 * i;
+    const tag = d.toString("latin1", rec, rec + 4);
+    const off = d.readUInt32BE(rec + 8);
+    if (tag === "head") upem = d.readUInt16BE(off + 18);
+    if (tag === "hhea") maxAdv = d.readUInt16BE(off + 10);
+  }
+  if (!upem || !maxAdv) throw new Error(`${file}: no head/hhea`);
+  return maxAdv / upem;
+}
+
+describe("the mono advance the layout arithmetic depends on", () => {
+  // STEP 7 OF THE FACE MIGRATION, AS A GUARD RATHER THAN A ONE-OFF CHECK.
+  //
+  // `fitMonoFigure` (core scale.ts) sizes Today's hero figure by the one
+  // multiplication a monospaced face makes possible — characters x size x
+  // MONO_ADVANCE_EM — so that constant is not a style, it is an assertion about
+  // the binary. If it and the shipped face ever disagree, the biggest figure on
+  // the app's biggest card silently picks the wrong rung and either ellipsises
+  // or leaves a third of its cell empty.
+  //
+  // The migration plan predicted Söhne Mono would be narrower than JetBrains
+  // Mono and that everything computing a width from a character count would
+  // need recalculating. MEASURED, THEY ARE IDENTICAL: both are exactly 0.600 em
+  // on a 1000 upem. So the constant did not move — and the reason to write this
+  // down as a test rather than a sentence is that the prediction was wrong in
+  // the safe direction, and the next face may not be.
+  for (const cut of ["SohneMono-Buch", "SohneMono-Kraftig", "SohneMono-Halbfett"]) {
+    it(`${cut} advances exactly MONO_ADVANCE_EM`, () => {
+      const file = join(ROOT, "assets", "fonts", `${cut}.otf`);
+      expect(existsSync(file), `${cut}.otf is not bundled`).toBe(true);
+      expect(monoAdvanceEm(file)).toBeCloseTo(MONO_ADVANCE_EM, 4);
+    });
+  }
+});
 
 describe("native face map", () => {
   const F = aliases();
@@ -105,8 +152,8 @@ describe("native face map", () => {
   for (const [key, alias] of Object.entries(aliases())) {
     it(`F.${key} maps to the PostScript name in ${alias}.ttf`, () => {
       const file = fontFile(alias);
-      // A missing package is a broken install, not a passing test.
-      expect(file, `no .ttf found for ${alias}`).toBeTruthy();
+      // A missing binary is a broken bundle, not a passing test.
+      expect(file, `no .otf bundled for ${alias}`).toBeTruthy();
       expect(PS[key]).toBe(postScriptNameOf(file!));
     });
   }

@@ -39,7 +39,7 @@ const HEADER_COMPONENTS = ["apps/mobile/components/aurora/app-header.tsx"];
 
 describe("the app header contract", () => {
   it("is built from named tokens, never hand-typed numbers", () => {
-    expect(APP_HEADER.wordmark.tracking).toBe(tracking.display);
+    expect(APP_HEADER.wordmark.tracking).toBe(tracking(19));
     expect(APP_HEADER.badge.text).toBe(fs.nano);
   });
 

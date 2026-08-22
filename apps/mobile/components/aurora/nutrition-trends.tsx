@@ -10,7 +10,7 @@ import {
   type NutritionInsight,
   type WeightUnit,
 } from "@hybrid/core";
-import { fs, space, tracking, F, leading, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { ACard, ASegment, RADIUS } from "./kit";
@@ -55,7 +55,7 @@ export default function NutritionTrends({
 
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
-        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: space.md, textAlign: "center" }}
+        style={{ ...ty(C, "kicker"), marginTop: space.md, textAlign: "center"  }}
       >
         {t("w.recovery.nutrition.an.loggedDays").replace("{n}", String(loggedDays)).replace("{d}", String(windowDays))}
       </Text>
@@ -128,7 +128,7 @@ function NutrientCard({ stat, units }: { stat: NutrientStat; units: WeightUnit }
           {label}
         </Text>
         {stat.trend && stat.trend.direction !== "flat" ? (
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={ty(C, "kicker")}>
             {t(stat.trend.direction === "up" ? "w.recovery.nutrition.an.trendUp" : "w.recovery.nutrition.an.trendDown").replace("{n}", String(Math.abs(stat.trend.pct)))}
           </Text>
         ) : null}
@@ -153,7 +153,7 @@ function NutrientCard({ stat, units }: { stat: NutrientStat; units: WeightUnit }
 
           <DayBars stat={stat} accent={accent} line={C.line} />
 
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: space.sm }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: space.sm }}>
             {t("w.recovery.nutrition.an.statedDays").replace("{n}", String(stat.statedDays)).replace("{d}", String(stat.series.length))}
           </Text>
         </>

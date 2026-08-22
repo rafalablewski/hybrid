@@ -538,7 +538,7 @@ function UserDrawer({ id, onClose, onSaved }: { id: string; onClose: () => void;
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: space.sm, marginBottom: 20 }}>
               {Object.entries(d.counts).map(([k, v]) => (
                 <div key={k} style={{ background: INK2, border: `1px solid ${LINE}`, borderRadius: "var(--r-card)", padding: "10px 12px" }}>
-                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.heading }}>{v}</div>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.headline }}>{v}</div>
                   <Mono s={{ fontSize: fs.micro, textTransform: "uppercase", letterSpacing: ".08em" }} c={ASH}>{k.replace(/([A-Z])/g, " $1")}</Mono>
                 </div>
               ))}

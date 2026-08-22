@@ -403,7 +403,7 @@ export default function AdminAgents() {
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: space.sm, alignItems: "flex-start" }}>
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.note, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <div style={{ ...disp, fontWeight: 800, fontSize: fs.bodyLg, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {a.name}
                   </div>
                   <div style={{ marginTop: 4 }}>

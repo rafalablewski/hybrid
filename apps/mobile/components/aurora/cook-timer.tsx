@@ -147,7 +147,7 @@ export function CookStepTimer({ seconds, stepNumber }: { seconds: number; stepNu
       <Glyph name="stopwatch" size={fs.body} color={ink} />
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={{ fontFamily: running ? F.monoBold : F.mono, fontSize: fs.caption, letterSpacing: tracking.label, color: ink }}
+        style={{ fontFamily: running ? F.monoBold : F.mono, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "label"), color: ink }}
       >
         {done
           ? t("w.recovery.nutrition.recipeTimerDone")

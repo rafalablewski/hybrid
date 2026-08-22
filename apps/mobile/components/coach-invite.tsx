@@ -70,7 +70,7 @@ export default function CoachInvite() {
   return (
     <ACard style={[cardStack, { borderLeftWidth: 3, borderLeftColor: C.lime }]}>
       <Kicker color={C.lime}>Add a client</Kicker>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk, marginTop: 4 }}>Invite someone not on HYBRID yet</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: 4 }}>Invite someone not on HYBRID yet</Text>
       <Mono style={{ marginTop: 4, lineHeight: 18 }}>Share a link or QR, or enter their email. They get the free app and see what you assign (read-only).</Mono>
       <TextInput
         value={email}
