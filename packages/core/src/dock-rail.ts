@@ -43,7 +43,7 @@
 // mono; mobile History was the outlier because it borrowed AChip, which is an
 // IN-CONTENT filter and correctly stays Archivo where it lives.
 
-import { fs, space, tracking } from "./scale";
+import { fs, space } from "./scale";
 
 /** What a press does. The one thing the two rails do not share. */
 export type DockChipRole =
@@ -71,9 +71,10 @@ export const DOCK_RAIL = {
     hit: 44,
     padX: space.lg,
     size: fs.caption,
-    /** Zero. Plans web carried +.08em and nothing else did; a rail label is a
-     *  word, not a kicker. */
-    tracking: tracking.normal,
+    /** Zero, and DELIBERATELY not `tracking(fs.caption)` — which would return +0.1
+     *  from the small-copy band. Plans web carried +.08em and nothing else did;
+     *  a rail label is a word, not a kicker, so it takes the face's own fit. */
+    tracking: 0,
     radius: 999,
   },
   /** The selected `mode` chip's fill, as a fraction of the accent. Border and

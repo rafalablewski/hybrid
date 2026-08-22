@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken } from "./scale";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
@@ -13,9 +15,11 @@ import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
  * rung that breaks the ladder's promises.
  */
 
+// Eleven rungs. `note` (15) and `heading` (20) were retired in Aug 2026 — see
+// the note on `fs` for why neither was ever chosen.
 const ORDER: TypeRole[] = [
-  "nano", "micro", "caption", "body", "bodyLg", "note",
-  "subtitle", "title", "heading", "headline", "display", "hero", "stat",
+  "nano", "micro", "caption", "body", "bodyLg",
+  "subtitle", "title", "headline", "display", "hero", "stat",
 ];
 
 const SPACE_ORDER: SpaceToken[] = [
@@ -42,9 +46,37 @@ describe("type scale", () => {
     for (const role of ORDER) expect(fs[role], role).toBeGreaterThanOrEqual(10);
   });
 
-  it("keeps `headline` between a heading and a display", () => {
-    expect(fs.headline).toBeGreaterThan(fs.heading);
-    expect(fs.headline).toBeLessThan(fs.display);
+  it("steps grow with size — a ladder is not a list", () => {
+    // WHAT THIS IS NOT: a floor on how close two rungs may sit. I wrote that
+    // rule first, and it was wrong three times in a row — nano->micro,
+    // micro->caption and caption->body are all a single dp, because at 10dp a
+    // 1dp step is +10% and reads as a level while at 34dp it is +3% and does
+    // not. A dp floor is the wrong unit, and a RATIO floor would not have
+    // justified the retirements either: 20->22 and 10->11 are both 1.10.
+    //
+    // The retirements were earned by DUPLICATED JOB, not by spacing. `note`
+    // (15) and `bodyLg` (14) were both "the emphasised body line"; `heading`
+    // (20) and `headline` (22) were both "the screen sub-heading". Two names
+    // for one job is a defect a measurement cannot find, which is why that
+    // argument lives in prose beside `fs` and not in an assertion here.
+    //
+    // WHAT IS TRUE AND WORTH GUARDING: the steps never shrink as the ladder
+    // climbs. 1,1,1,1,2,2,4,4,8,12. That is the optical property a scale has to
+    // hold — equal-looking increments need proportionally larger jumps — and a
+    // ladder that stepped 4 then 2 would be visibly wrong in a way no single
+    // rung looks wrong on its own.
+    const sizes = ORDER.map((r) => fs[r]);
+    const gaps = sizes.slice(1).map((v, i) => v - sizes[i]!);
+    for (let i = 1; i < gaps.length; i++) {
+      expect(gaps[i]!, `${ORDER[i]} -> ${ORDER[i + 1]} steps back down`).toBeGreaterThanOrEqual(gaps[i - 1]!);
+    }
+  });
+
+  it("has retired `note` and `heading`, and cannot get them back by accident", () => {
+    expect(Object.keys(fs)).not.toContain("note");
+    expect(Object.keys(fs)).not.toContain("heading");
+    expect(Object.values(fs)).not.toContain(15);
+    expect(Object.values(fs)).not.toContain(20);
   });
 
   it("ends at `stat` — a figure larger than this is a design smell", () => {
@@ -98,10 +130,13 @@ describe("leading", () => {
 
 describe("tracking", () => {
   it("takes air out of large type and adds it to caps", () => {
-    expect(tracking.display).toBeLessThan(0);
-    expect(tracking.normal).toBe(0);
-    expect(tracking.label).toBeGreaterThan(0);
-    expect(tracking.caps).toBeGreaterThan(tracking.label);
+    // THE BANDS, and the direction of each: large type gets air taken OUT,
+    // small copy gets a trace back IN, and uppercase always gets more.
+    expect(tracking(fs.hero)).toBeLessThan(0);
+    expect(tracking(fs.display)).toBeLessThan(0);
+    expect(tracking(fs.body)).toBe(0);
+    expect(tracking(fs.caption)).toBeGreaterThan(0);
+    expect(tracking(fs.nano, "caps")).toBeGreaterThan(tracking(fs.nano, "label"));
   });
 
   it("trackFigure tightens proportionally, where the absolute rung cannot", () => {
@@ -112,7 +147,7 @@ describe("tracking", () => {
     expect(trackFigure(30) / 30).toBeCloseTo(trackFigure(68) / 68, 2);
     // And every figure in the band is tighter than the absolute rung would be.
     for (const size of [30, 40, 46, 56, 68]) {
-      expect(trackFigure(size), `${size}dp`).toBeLessThan(tracking.display);
+      expect(trackFigure(size), `${size}dp`).toBeLessThan(tracking(fs.display));
     }
   });
 
@@ -128,8 +163,17 @@ describe("tracking", () => {
   it("codifies the two eyebrow trackings already in use", () => {
     // 0.9 (216 sites) and 1.2 (137 sites) at the time of the audit. Changing
     // either is a deliberate restyle of every kicker in the app, not a tweak.
-    expect(tracking.label).toBe(0.9);
-    expect(tracking.caps).toBe(1.2);
+    // THE CONVERSION PROOF. These are the four dominant call-site shapes, and
+    // every one resolves to the dp value that shipped before tracking became an
+    // em — 340 of 461 sized sites render byte-identically. If a band is ever
+    // retuned, this is the test that says what it costs.
+    expect(tracking(fs.nano, "label")).toBe(0.9);   // 201 sites
+    expect(tracking(fs.micro, "label")).toBe(0.9);  //  48 sites
+    expect(tracking(fs.nano, "caps")).toBe(1.2);    //  72 sites
+    expect(tracking(fs.display)).toBe(-0.5);        //  19 sites
+    // And the largest move anywhere, which is a correction rather than a drift:
+    // a 15dp lead was carrying the 34dp hero's tightening.
+    expect(tracking(fs.bodyLg)).toBe(0);
   });
 });
 
@@ -187,12 +231,20 @@ describe("the type faces", () => {
     expect(Object.keys(fonts).sort()).toEqual(["display", "mono"]);
   });
 
-  it("asks the font service for nothing it does not declare", () => {
-    // A webfont in the @import that no token names is a download for nothing,
-    // and it is how Archivo Narrow stayed alive on web after the mobile app had
-    // already decided against it.
-    const families = [...fontImportUrl.matchAll(/family=([^&:]+)/g)].map((m) => m[1]!.replace(/\+/g, " "));
-    expect(families.sort()).toEqual(Object.values(fonts).slice().sort());
+  it("serves exactly the faces it declares, and from nowhere public", () => {
+    // THIS USED TO CHECK `fontImportUrl` against `fonts`, because web pulled
+    // both faces from Google. Söhne is licensed and cannot come from a public
+    // host, so the import is gone and the declaration moved into globals.css —
+    // the rule has to follow the declaration or it is guarding an empty string.
+    //
+    // The original intent survives intact: a face declared and not loaded is
+    // how Archivo Narrow stayed alive on web after mobile had already decided
+    // against it, and a face loaded and not declared is a download for nothing.
+    expect(fontImportUrl, "a public @import cannot serve a licensed face").toBe("");
+    const css = readFileSync(join(__dirname, "..", "..", "..", "apps", "web", "app", "globals.css"), "utf8");
+    const declared = new Set([...css.matchAll(/@font-face\{font-family:"([^"]+)"/g)].map((m) => m[1]!));
+    expect([...declared].sort()).toEqual(Object.values(fonts).slice().sort());
+    expect(css, "no public font host").not.toMatch(/fonts\.googleapis\.com/);
   });
 });
 
@@ -249,7 +301,7 @@ describe("fitMonoFigure", () => {
   });
 
   it("keeps the PLAIN figure inside the cell at the largest scale it allows", () => {
-    // The other three cells do not step — they are fixed at fs.heading — so the
+    // The other three cells do not step — they are fixed at fs.headline — so the
     // grid only holds if that rung clears the cell at the multiplier the text
     // is capped to. This is the assertion the four-column row never had.
     expect(cost("6h 52min".length, 20) * 1.4).toBeLessThanOrEqual(CELL);

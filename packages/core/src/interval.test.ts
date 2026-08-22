@@ -1,12 +1,17 @@
 import { describe, it, expect } from "vitest";
-import { formatClock, buildIntervalPlan, intervalTotalSeconds, locateInterval } from "./interval";
+import { buildIntervalPlan, intervalTotalSeconds, locateInterval } from "./interval";
+import { formatClock } from "./duration";
 
 describe("interval engine", () => {
   it("formats the clock", () => {
-    expect(formatClock(0)).toBe("00:00");
-    expect(formatClock(9)).toBe("00:09");
-    expect(formatClock(75)).toBe("01:15");
-    expect(formatClock(-5)).toBe("00:00");
+    // The timer's own clock is LIVE — fixed width, so a tick never reflows it.
+    expect(formatClock(0, true)).toBe("00:00");
+    expect(formatClock(9, true)).toBe("00:09");
+    expect(formatClock(75, true)).toBe("01:15");
+    expect(formatClock(-5, true)).toBe("00:00");
+    // And it can now print an hour, which the interval-owned cut could not:
+    // 6138s read "102:18" before this moved.
+    expect(formatClock(6138, true)).toBe("01:42:18");
   });
 
   it("builds a plan, dropping the trailing rest", () => {

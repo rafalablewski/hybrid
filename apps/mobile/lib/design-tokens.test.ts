@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { COVER_SCREENS } from "@hybrid/core";
+import { COVER_SCREENS, resolveText, text } from "@hybrid/core";
+import { FACE, faceFor } from "./faces";
 
 /**
  * THE DESIGN-TOKEN RATCHET.
@@ -415,29 +416,33 @@ describe("leading and tracking", () => {
     // fifth is the portion stepper's −, whose box was 26 on a size of 24: once
     // the size took a rung the pair read as a 1.0 ratio, which is nobody's
     // choice, it is two numbers that used to be different.)
+    // 38 → 35: `lh.flush` landed and three of these were figure boxes typed by
+    // eye — a 50 and a 44 beside a trackFigure(), and a `lineHeight: fs.stat`
+    // that was already flush and had no way to say so. A missing rung is one of
+    // the reasons an absolute survives: nobody types a number they have a name
+    // for. See the "a standalone figure sets its box flush" guard below.
+    //
     // 39 → 38: the You tab's profile-setup nudge, moved into the lead rail,
     // took its hand-tuned `lineHeight: 18` with it — on fs.body that is exactly
     // leading(fs.body), which is to say it was never a tuning.
-    burnDown(hits(/lineHeight:\s*\d/g), 36, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    burnDown(hits(/lineHeight:\s*\d/g), 33, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
-  it("HARD — tracking names its token; a big figure derives it", () => {
+  it("HARD — tracking derives from the size; a raw dp is never the answer", () => {
     // 432 → 0. THE SHAPE OF THE ANSWER, because it is not one rule:
     //
-    //   SMALL TYPE takes an ABSOLUTE rung. The eyebrows live at 10–13dp, a band
-    //     narrow enough that one dp value works across all of it, and the app
-    //     has exactly two: tracking.label (0.9) and tracking.caps (1.2). 298
-    //     sites already were those numbers and now say so; 24 more were
-    //     stragglers either side (0.4 … 0.8 under, 1.4 / 2 / 3 over) and snapped
-    //     to the nearer.
+    //   UPPERCASE names its voice — tracking(size, "label") or "caps". Case is
+    //     a choice a size cannot report, so these two stay named. They were dp
+    //     rungs (0.9 / 1.2) until step 2 of the Söhne migration; at fs.nano and
+    //     fs.micro the em values resolve to those same numbers, so 320 of the
+    //     sites that snapped to them did not move again.
     //
-    //   TITLES take tracking.display (-0.5), and that was the contested call.
-    //     Two tightenings were in force at the same sizes: the token at -0.019
-    //     … -0.031em, and a raw -0.3 group at -0.013 … -0.023em. The token wins
-    //     because it IS the token — 51 call sites plus two core contracts (the
-    //     app-header wordmark, the hub masthead's title), and hub-masthead
-    //     chose it deliberately over the -1 that shipped before it. A house
-    //     value that has already survived one argument is the house value.
+    //   EVERYTHING ELSE DERIVES IT — tracking(size), with no role. For text the
+    //     correct tightening is a function of optical size, not of what the
+    //     caller thinks the text is for, so there is no "display" role left to
+    //     pick and no way to put a hero's tightening on a 13dp row. The dp
+    //     token that used to do this was -0.033em on a 15dp lead and -0.011em
+    //     at 46 — one constant meaning three different things.
     //
     //   BIG FIGURES DERIVE IT — trackFigure(size), and this is the part an
     //     absolute could not do. They run 30–68dp, a 2.3× span, where -0.5 is
@@ -449,10 +454,9 @@ describe("leading and tracking", () => {
     //
     // THE BOUNDARY IS THE SCALE'S OWN: fs.hero (34) is documented as
     // "mastheads / cover titles" and fs.stat (46) as "the one hero figure on a
-    // screen". Titles up to hero take the rung; figures from stat take the
-    // function. The four sites sitting at fs.stat under tracking.display moved
-    // with it, and a 32dp food NAME moved back — it is a title that happened to
-    // be large, not a figure.
+    // screen". A title takes tracking(size); a figure takes trackFigure(size).
+    // Both are em-derived now, so the boundary is about which CUT the text is
+    // set in rather than about which of a rung and a function to reach for.
     //
     // TWO EXEMPTIONS, both because the app's TYPE SCALE does not govern them:
     //
@@ -470,7 +474,90 @@ describe("leading and tracking", () => {
     // the rule is wrong, not that the call site is.
     const OWN_SCALE = ["lib/share.tsx", "components/aurora/login.tsx", "components/aurora/mfa-settings.tsx"];
     const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
-    expect(raw, "letterSpacing → tracking.label/.caps/.display, or trackFigure(size)").toEqual([]);
+    expect(raw, 'letterSpacing → tracking(size) / tracking(size, "label"|"caps"), or trackFigure(size) for a figure').toEqual([]);
+  });
+});
+
+describe("named type styles", () => {
+  it("RATCHET — hand-rolled eyebrows converge on ty(C, \"kicker\"|\"overline\")", () => {
+    // THE APP'S DOMINANT LABEL VOICE, and until now every one of its ~325 sites
+    // reassembled it from five properties: the mono face, fs.nano, one of two
+    // trackings, uppercase and ash. One caption SIZE and a spread of caption
+    // STYLES is the drift this whole layer exists to end.
+    //
+    // 153 moved in the first pass — the ones whose property set was EXACTLY the
+    // eyebrow, so the migration could prove it renders what shipped. What is
+    // left carries something extra (an accent ink, a different rung, a figure
+    // beside it) and each needs a person to say which token it meant.
+    //
+    // TWO TOKENS, NOT ONE, and that is the finding rather than a compromise:
+    // collapsing them moved 108 eyebrows by 0.3dp. `kicker` (+0.085em) is the
+    // label above a card or a figure; `overline` (+0.115em) is a section label,
+    // where the label is structure and the extra air is the division.
+    burnDown(
+      hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
+      170,
+      "2027-02-28",
+      'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
+    );
+  });
+
+  it("HARD — the face map spells the same aliases `F` does", () => {
+    // faces.ts cannot import `F` (ui.tsx pulls in React Native and this suite is
+    // pure), so it repeats the alias strings — and a repeated string is a second
+    // source until something holds the two together. This is that something:
+    // the same shape native-face.test.ts uses to hold F_POSTSCRIPT against the
+    // shipped binaries.
+    const ui = readFileSync(join(ROOT, "lib/ui.tsx"), "utf8");
+    const block = ui.match(/export const F = \{([\s\S]*?)\} as const;/)?.[1] ?? "";
+    const aliases = [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    expect(aliases.length, "could not read the F block").toBeGreaterThan(0);
+    for (const face of new Set(Object.values(FACE))) {
+      expect(aliases, `faces.ts names "${face}", which F does not`).toContain(face);
+    }
+  });
+
+  it("HARD — every named style resolves to a face the app actually loads", () => {
+    // The weight map in lib/ui.tsx is lossy by design (the system specifies four
+    // weights per cut; the app loads four Archivo and two mono). Lossy is fine;
+    // MISSING is not — an unmapped pair falls back to F.reg, which is a silent
+    // wrong face, the same failure mode as an unresolvable PostScript name in
+    // SwiftUI. This fails the build instead.
+    for (const token of Object.keys(text) as (keyof typeof text)[]) {
+      const r = resolveText(token);
+      expect(faceFor(r.fontFamily, r.fontWeight), `${token} → ${r.fontFamily} ${r.fontWeight}`).toBeDefined();
+    }
+  });
+});
+
+describe("figures", () => {
+  it("HARD — a standalone figure sets its box flush", () => {
+    // THE DEFECT, and it is invisible until you put two tiles side by side: a
+    // figure has no second line and no descender past the cap band, so any
+    // ratio above 1.0 buys line box that nothing can occupy. At fs.stat that is
+    // seven dp, INSIDE the text node, which is why it survives every attempt to
+    // fix it with padding.
+    //
+    // Before `lh.flush` existed the app reached for it six ways — leading(...,
+    // "tight") at six sites, a hand-typed `lineHeight: fs.stat` at one (which
+    // IS flush, arrived at by eye), plus 50, 44, 35 and a local FIGURE_BOX —
+    // and seventeen more figure sites declared no box at all and took whatever
+    // the platform gave them. Six spellings and a default is not a decision.
+    //
+    // `trackFigure(` is the marker because it is definitionally the figure
+    // tightening: if a call site is big enough to need it, it is a figure.
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      text.split("\n").forEach((line, i) => {
+        if (!line.includes("trackFigure(")) return;
+        if (/^\s*(\/\/|\*|\/\*)/.test(line)) return; // a comment naming it is not a call site
+        if (!line.includes("lineHeight")) { bad.push(`${path}:${i + 1} — figure with no line box`); return; }
+        if (!/lineHeight:\s*(leading\([^)]*"flush"\)|FIGURE_BOX)/.test(line)) {
+          bad.push(`${path}:${i + 1} — figure box is not flush`);
+        }
+      });
+    }
+    expect(bad, `\na figure takes leading(size, "flush") — see lh.flush in scale.ts:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 });
 
@@ -848,7 +935,7 @@ describe("section headers", () => {
     // never a decorative marker on the left. It was then reimplemented eight
     // times — SHead, SecHead, SubHead, RailHead, SectionHead, SectionHeader,
     // SectionLabel ×2 — each agreeing on the shape and disagreeing on everything
-    // measurable: title 18 / fs.bodyLg / fs.title / fs.note, serif-swapped or
+    // measurable: title 18 / fs.bodyLg / fs.title / fs.bodyLg, serif-swapped or
     // not, meta at nano vs micro, tracking 0.9 vs 1.2, top margin 6/16/24/28.
     //
     // A standard that lives in prose gets re-derived. ASection is that standard

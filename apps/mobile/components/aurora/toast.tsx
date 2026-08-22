@@ -107,7 +107,7 @@ export function ToastHost() {
         ) : (
           <BlurView intensity={22} tint="dark" style={StyleSheet.absoluteFill} />
         )}
-        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, textTransform: "uppercase", color: kind === "error" ? FEEDBACK.error.text : FEEDBACK.success.text }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "label"), textTransform: "uppercase", color: kind === "error" ? FEEDBACK.error.text : FEEDBACK.success.text }}>
           {msg}
         </Text>
       </Animated.View>

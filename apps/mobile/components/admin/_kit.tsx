@@ -24,7 +24,7 @@ export function Banner({ tone = "amber", title, children }: { tone?: "amber" | "
   const accent = tone === "red" ? palette.red : palette.amber;
   return (
     <ACard accent={accent} style={[cardStack, { marginBottom: 16 }]}>
-      <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, marginBottom: children ? 6 : 0 }}>{title}</Text>
+      <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk, marginBottom: children ? 6 : 0 }}>{title}</Text>
       {children ? <Mono color={palette.chalk} style={{ lineHeight: 18 }}>{children}</Mono> : null}
     </ACard>
   );

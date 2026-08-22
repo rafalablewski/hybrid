@@ -3,7 +3,7 @@ import { PanResponder, Text, View } from "react-native";
 import { scrubFraction, scrubIndex, type ChartReading, type ScrubMode } from "@hybrid/core";
 import { haptic } from "../../lib/haptics";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, tracking, F } from "../../lib/ui";
+import { F, fs, tracking, ty} from "../../lib/ui";
 import { RADIUS } from "./kit";
 import { withAlpha } from "./field";
 
@@ -216,7 +216,7 @@ export function ChartReadout({ read, side, when, note, C: palette }: {
 }) {
   const theme = useTheme();
   const C = palette ?? theme.palette;
-  const label = { fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.caps, textTransform: "uppercase" as const };
+  const label = ty(C, "overline");
   return (
     <View
       pointerEvents="none"
@@ -230,7 +230,7 @@ export function ChartReadout({ read, side, when, note, C: palette }: {
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 4 }}>
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: read.best ? txt(C, C.lime) : C.chalk }}>{read.value}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.bodyLg, color: read.best ? txt(C, C.lime) : C.chalk }}>{read.value}</Text>
         {!!read.unit && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: 2 }}>{read.unit}</Text>}
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>

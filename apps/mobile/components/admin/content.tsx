@@ -95,7 +95,7 @@ function CapRow({ cap, color }: { cap: Capability; color: string }) {
   return (
     <ACard accent={color} style={cardStack}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms }}>
-        <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk, flex: 1 }}>{cap.title}</Text>
+        <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk, flex: 1 }}>{cap.title}</Text>
         <Chip color={palette.ash}>{cap.area}</Chip>
       </View>
       <Mono color={palette.chalk} style={{ fontSize: fs.body, lineHeight: 19, marginTop: 6 }}>{cap.detail}</Mono>

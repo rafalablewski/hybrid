@@ -106,7 +106,7 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
 }) {
   const h = headline(card, units, t);
   const stroke = kindStroke(C, card.kind);
-  const heroStyle = { fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk } as const;
   const open = () => {
     armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
     onOpen(card.name);
@@ -231,7 +231,7 @@ export default function ExerciseWidgetRail({
           one-exit rule. Mirrors web. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash }}>
           {t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
         </Text>
       </View>

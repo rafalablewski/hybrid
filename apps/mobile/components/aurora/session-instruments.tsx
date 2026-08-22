@@ -45,7 +45,7 @@ import { ALPHA, fmtWeight, type E1rmPoint, type WeightUnit } from "@hybrid/core"
 import { useTheme, txt } from "../../lib/theme";
 import { withAlpha } from "./field";
 import { RADIUS } from "./kit";
-import { fs, tracking, F, TABULAR } from "../../lib/ui";
+import { fs, tracking, F, TABULAR, ty } from "../../lib/ui";
 
 /** The mark for one logged set. Big enough to hit, small enough to crowd. */
 const DOT = 3.1;
@@ -154,7 +154,7 @@ export function SetPath({
       <View style={{ flexDirection: "row", marginTop: 6 }}>
         {labels.map((g, i) => (
           <View key={`${g.exercise}-${i}`} style={{ width: g.count * step + (i ? step * (RUN_GAP / 10) : 0), paddingRight: 4 }}>
-            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>
+            <Text numberOfLines={1} style={ty(C, "kicker")}>
               {g.exercise}
             </Text>
           </View>
@@ -273,7 +273,7 @@ export function EffortRange({
         return (
           <View key={r.exercise} style={{ paddingVertical: 7, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-              <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: lead ? C.chalk : C.ash }}>
+              <Text numberOfLines={1} style={[ty(C, "kicker", lead ? C.chalk : C.ash), { flex: 1 }]}>
                 {r.exercise}
               </Text>
               <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.body, color: lead ? txt(C, C.lime) : C.chalk }]}>
@@ -364,7 +364,7 @@ export function Ribbon({
           <View key={p.key} style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
               <View style={{ width: 6, height: 6, borderRadius: RADIUS.pill, backgroundColor: hue, opacity: p.lead ? 1 : 0.22 + p.weight * 0.55 }} />
-              <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: p.lead ? C.chalk : C.ash }}>
+              <Text numberOfLines={1} style={[ty(C, "kicker", p.lead ? C.chalk : C.ash), { flex: 1 }]}>
                 {p.label}
               </Text>
             </View>

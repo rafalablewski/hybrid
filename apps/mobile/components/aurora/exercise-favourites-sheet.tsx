@@ -12,7 +12,7 @@ import { APanel, ASearch } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
 import { useExerciseFavourites, toggleExerciseFavourite } from "../../lib/exercise-favourites";
 import { haptic } from "../../lib/haptics";
 import { useListMotion } from "../../lib/list-motion";
@@ -88,10 +88,10 @@ export default function ExerciseFavouritesSheet({
             implement says what the name doesn't. */}
         <AuroraExerciseAvatar name={e.name} glyph={24} tint={on ? txt(C, C.lime) : C.ash} />
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
+        <Text style={ty(C, "kicker")}>{days(e)}</Text>
         {/* The pinned star rides the amber TEXT tone, not the fill (the
             accent-text channel). */}
-        <Text style={{ fontSize: fs.note, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
+        <Text style={{ fontSize: fs.bodyLg, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
       </Pressable>
     );
   };
@@ -104,20 +104,20 @@ export default function ExerciseFavouritesSheet({
 
   const head = (label: string, count: number) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, marginBottom: 10, marginHorizontal: 2 }}>
-      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
+      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{count}</Text>
     </View>
   );
 
   return (
     <Sheet visible={visible} onClose={onClose} title={t("w.home.exw.addTitle")} sub={t("w.home.exw.addSub")}>
       {entries.length === 0 ? (
-        <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, paddingVertical: 12 }}>{t("w.home.exw.addEmpty")}</Text>
+        <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, paddingVertical: 12 }}>{t("w.home.exw.addEmpty")}</Text>
       ) : (
         <>
           <ASearch value={query} onChange={(v: string) => refilter(() => setQuery(v))} placeholder={t("w.analyze.ex.search")} />
           {full && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.accentText.amber, marginTop: 10 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.accentText.amber, marginTop: 10 }}>
               {t("w.home.exw.addFull").replace("{n}", String(MAX_EXERCISE_FAVOURITES))}
             </Text>
           )}

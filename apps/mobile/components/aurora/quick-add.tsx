@@ -114,7 +114,7 @@ export function Understood({ answer, entryName, onLog, onPortion }: {
 }) {
   const { palette: C } = useTheme();
   const { t } = useLang();
-  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash } as const;
+  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash } as const;
 
   if (answer.kind === "macros") {
     const f = answer.macros.facts;
@@ -183,7 +183,7 @@ export function Understood({ answer, entryName, onLog, onPortion }: {
           </View>
           <Text
             maxFontSizeMultiplier={FIXED_FONT_SCALE}
-            style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
+            style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}
           >
             {t(PROVENANCE_KEY[m.candidate.source])}
           </Text>

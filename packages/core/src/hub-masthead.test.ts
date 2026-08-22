@@ -51,8 +51,8 @@ describe("the hub masthead contract", () => {
   it("is built from named tokens, never hand-typed numbers", () => {
     // The three values the screens used to type by hand.
     expect(HUB_MASTHEAD.title.size).toBe(fs.hero);
-    expect(HUB_MASTHEAD.title.tracking).toBe(tracking.display);
-    expect(HUB_MASTHEAD.meta.tracking).toBe(tracking.label);
+    expect(HUB_MASTHEAD.title.tracking).toBe(tracking(fs.hero));
+    expect(HUB_MASTHEAD.meta.tracking).toBe(tracking(fs.micro, "label"));
     expect(HUB_MASTHEAD.meta.size).toBe(fs.micro);
     // Every gap comes off the space scale.
     for (const gap of Object.values(HUB_MASTHEAD.gap)) {
@@ -73,7 +73,7 @@ describe("the hub masthead contract", () => {
       const type = hubTitleType(title);
       expect(type.size, title).toBe(fs.hero);
       expect(type.lineHeight, title).toBe(36);
-      expect(type.tracking, title).toBe(tracking.display);
+      expect(type.tracking, title).toBe(tracking(type.size));
     }
   });
 
@@ -109,11 +109,24 @@ describe("the hub head guard — no screen may draw its own", () => {
   it("leaves no hand-rolled title rung behind", () => {
     // The exact literals the three heads shipped, and the `headline` rung Feed
     // borrowed from the section-heading ladder.
+    //
+    // THE `headline` CHECK IS LINE-SCOPED NOW, and the reason is a lesson about
+    // what a rung-watching guard actually watches. When `fs.heading` (20) was
+    // retired its 59 sites moved onto `headline`, and one of them is Feed's
+    // COMPOSER — a TextInput, not a head. The guard was written to catch a
+    // screen drawing its own TITLE and would have failed on a text field,
+    // which is a false positive that teaches the next person to weaken the
+    // rule. A guard keyed to a token inherits every new member of that token,
+    // so it has to say what ELSE makes the line a title.
     for (const file of HUB_SCREENS) {
       const src = code(file);
       expect(src, file).not.toMatch(/fontSize:\s*(34|32)\b/);
-      expect(src, file).not.toMatch(/fontSize:\s*fs\.headline\b/);
       expect(src, file).not.toMatch(/letterSpacing:\s*-1\b/);
+      const titleish = src
+        .split("\n")
+        .filter((l) => /fontSize:\s*fs\.headline\b/.test(l))
+        .filter((l) => !/TextInput|textAlignVertical|placeholder/i.test(l));
+      expect(titleish, `${file} — a hub screen may not draw its own title`).toEqual([]);
     }
   });
 

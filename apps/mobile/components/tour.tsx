@@ -43,10 +43,10 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
             mounts on iOS. Padding is unchanged (CARD_PAD is 20, which is what
             was written here); the outer margin stays with the caller. */}
         <ACard style={{ marginBottom: 24 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>
             {`Step ${i + 1} / ${steps.length}`}
           </Text>
-          <Text style={{ fontFamily: F.bold, fontSize: fs.heading, color: C.chalk, marginTop: 8 }}>{step.title}</Text>
+          <Text style={{ fontFamily: F.bold, fontSize: fs.headline, color: C.chalk, marginTop: 8 }}>{step.title}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, lineHeight: leading(fs.bodyLg, "relaxed"), marginTop: 8 }}>{step.body}</Text>
 
           {/* progress dots */}
@@ -58,16 +58,16 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
 
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 20 }}>
             <Pressable onPress={onDone} hitSlop={10}>
-              <Text style={{ fontFamily: F.semi, fontSize: fs.note, color: C.ash }}>Skip</Text>
+              <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.ash }}>Skip</Text>
             </Pressable>
             <View style={{ flexDirection: "row", gap: space.sm }}>
               {i > 0 && (
                 <Pressable onPress={() => setI((n) => n - 1)} style={{ backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 16, paddingVertical: 11 }}>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Back</Text>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>Back</Text>
                 </Pressable>
               )}
               <Pressable onPress={() => (last ? onDone() : setI((n) => n + 1))} style={{ backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 24, paddingVertical: 11 }}>
-                <CtaLabel label={last ? "Got it" : "Next →"} color={txt(C, C.ink)} fontSize={fs.note} />
+                <CtaLabel label={last ? "Got it" : "Next →"} color={txt(C, C.ink)} fontSize={fs.bodyLg} />
               </Pressable>
             </View>
           </View>

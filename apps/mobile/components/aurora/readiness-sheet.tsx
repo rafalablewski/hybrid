@@ -6,7 +6,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, F } from "../../lib/ui";
+import { F, fs, leading, tracking, ty} from "../../lib/ui";
 import ReadinessFace from "./readiness-face";
 import Sheet from "./sheet";
 
@@ -64,7 +64,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <ReadinessFace feeling={e.feeling} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking.display, color: txt(C, C[READINESS_FACE[e.feeling].accent]) }}>
+              <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking(28), color: txt(C, C[READINESS_FACE[e.feeling].accent]) }}>
                 {t(`w.recovery.readiness.${e.feeling}`)}
               </Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>
@@ -114,7 +114,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
           {e.clearance && e.clearanceKey ? (
             <Block C={C} head={t("w.home.read.pairHead")}>
               <P C={C}>{t("w.home.read.pair").replace("{n}", String(Math.round(e.clearance.gapH)))}</P>
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{t(e.clearanceKey)}</Text>
+              <Text style={{ fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{t(e.clearanceKey)}</Text>
             </Block>
           ) : null}
 
@@ -148,8 +148,8 @@ function Block({ C, head, meta, children }: {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
-        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{head}</Text>
-        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{meta}</Text> : null}
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{head}</Text>
+        {meta ? <Text style={ty(C, "kicker")}>{meta}</Text> : null}
       </View>
       {children}
     </View>

@@ -55,7 +55,7 @@ export default function WaterCard({
           ? { text: t("w.recovery.nutrition.waterEmpty"), color: C.ash }
           : { text: t("w.recovery.nutrition.waterOnTrack"), color: C.ash };
 
-  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash } as const;
+  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash } as const;
 
   return (
     <ACard style={style}>

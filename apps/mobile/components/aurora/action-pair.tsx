@@ -84,7 +84,7 @@ export default function AActionPair({ actions, align = "center" }: {
           <Text
             maxFontSizeMultiplier={FIXED_FONT_SCALE}
             numberOfLines={1}
-            style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: tracking.display, color: a.prominent ? C.onAccent : txt(C, C.chalk) }}
+            style={{ fontFamily: F.black, fontSize: fs.bodyLg, letterSpacing: tracking(fs.bodyLg), color: a.prominent ? C.onAccent : txt(C, C.chalk) }}
           >
             {a.label}
           </Text>

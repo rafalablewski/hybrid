@@ -101,7 +101,7 @@ export default function AdminModeration() {
                     <Chip color={palette.red}>{r.reason}</Chip>
                     <Chip color={palette.ash}>{r.targetType}</Chip>
                   </View>
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: palette.chalk }}>
+                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: palette.chalk }}>
                     {r.targetType}:{r.targetId.slice(0, 8)}
                   </Text>
                   {r.detail ? (

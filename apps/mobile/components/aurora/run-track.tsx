@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { fmtKm, pacePerKm, mmss, STATE_OPACITY } from "@hybrid/core";
 import { createSession } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
-import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { AuroraScreen, ACard, APill, RADIUS } from "./kit";
 
@@ -126,7 +126,7 @@ export default function AuroraRunTrack() {
 function Stat({ label, value, color, C }: { label: string; value: string; color: string; C: ReturnType<typeof useTheme>["palette"] }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
+      <Text style={ty(C, "kicker")}>{label}</Text>
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color, marginTop: 4 }}>{value}</Text>
     </View>
   );

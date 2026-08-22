@@ -24,13 +24,19 @@ export interface IntervalConfig {
   prepSec?: number;
 }
 
-/** mm:ss (clamped at 0; supports >59 min as needed). */
-export function formatClock(totalSeconds: number): string {
-  const s = Math.max(0, Math.round(totalSeconds));
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
-}
+/**
+ * THE CLOCK MOVED TO `duration.ts`, Aug 2026 — import `formatClock` from there.
+ *
+ * It was never an interval-timer concern: it printed mm:ss for anything that
+ * asked, while the app's other span formatter (`formatDuration`, prose hours
+ * and minutes) already lived in `duration.ts` with the argument for how a span
+ * reads written next to it. Two formatters for one subject in two files is how
+ * the second one gets written a third time.
+ *
+ * It also could not print hours — `>59 min as needed` overflowed the minutes
+ * field, so 01:42:18 came out as "102:18". The consolidated version takes the
+ * hours and the live/finished distinction that a fixed-width clock needs.
+ */
 
 /** Expand a config into the ordered phase list (prep → work/rest × rounds; the
  *  final rest is dropped so a session ends on work). */

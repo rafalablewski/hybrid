@@ -6,7 +6,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, fs, F } from "../../lib/ui";
+import { F, fs, leading, tracking, ty} from "../../lib/ui";
 import { Ring, withAlpha } from "./kit";
 
 /**
@@ -110,10 +110,10 @@ export function ReadinessBar({ deficit, height = 10 }: { deficit: ReadinessDefic
         ))}
       </View>
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+        <Text style={ty(C, "kicker")}>
           {t("w.home.readiness.barKept").replace("{n}", String(deficit.kept))}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+        <Text style={ty(C, "kicker")}>
           {t("w.home.readiness.barSpent").replace("{n}", String(deficit.deficit))}
         </Text>
       </View>
@@ -164,7 +164,7 @@ export function ReadinessLedger({ deficit, facts }: { deficit: ReadinessDeficit;
           share instead, so without a line here a reading that moved the score
           would show nowhere at all). */}
       {facts && facts.length > 0 && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 12, lineHeight: leading(fs.nano) + 3 }}>
+        <Text style={{ ...ty(C, "kicker"), marginTop: 12, lineHeight: leading(fs.nano) + 3  }}>
           {`${t("w.home.readiness.provFrom")} – ${facts.map(factLine).join(", ")}`}
         </Text>
       )}
@@ -216,8 +216,8 @@ export function ReadinessBlock({ head, meta, children }: { head: string; meta?: 
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 10 }}>
-        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{head}</Text>
-        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{meta}</Text> : null}
+        <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{head}</Text>
+        {meta ? <Text style={ty(C, "kicker")}>{meta}</Text> : null}
       </View>
       {children}
     </View>

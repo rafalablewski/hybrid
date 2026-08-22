@@ -23,7 +23,7 @@ export default function MeasuredOutcome({ planId }: { planId: string }) {
   const line = efficacyLine(card);
   return (
     <ACard style={{ marginBottom: 12 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: line.measured ? txt(C, C.lime) : C.ash }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: line.measured ? txt(C, C.lime) : C.ash }}>
         Measured outcome
       </Text>
       <Text style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk, marginTop: 6 }}>{line.headline}</Text>

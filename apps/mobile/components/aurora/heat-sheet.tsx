@@ -217,7 +217,7 @@ export function HeatSheet({
     fontSize: fs.micro,
     color: C.ash,
     textTransform: "uppercase" as const,
-    letterSpacing: tracking.label,
+    letterSpacing: tracking(fs.micro, "label"),
   };
   const rule = { borderBottomWidth: 1, borderBottomColor: C.line };
 
@@ -282,7 +282,7 @@ export function HeatSheet({
               fontSize: fs.display,
               color: worthless ? C.ash : txt(C, C.amber),
               lineHeight: leading(fs.display, "tight"),
-              letterSpacing: tracking.display,
+              letterSpacing: tracking(fs.display),
             }}
           />
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>

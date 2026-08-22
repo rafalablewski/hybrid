@@ -11,7 +11,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, deltaPaint } from "../../lib/theme";
-import { fs, space, tracking, trackFigure, F, PressScale as Pressable, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, space, trackFigure, tracking } from "../../lib/ui";
 import { BodyFigures } from "./body-map";
 
 /**
@@ -91,10 +91,10 @@ export default function SessionBody({
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.md }}>
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: fs.hero, letterSpacing: trackFigure(fs.hero), color: C.chalk }}
+          style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }}
         >
           {shown.pct}
-          <Text style={{ fontSize: fs.heading, color: C.ash }}>%</Text>
+          <Text style={{ fontSize: fs.headline, color: C.ash }}>%</Text>
         </Text>
         <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, color: txt(C, C.lime) }}>
           {t(muscleLabelKey(shown.muscle)).toLowerCase()} – {fmtWeight(shown.volumeKg, units)}
@@ -135,7 +135,7 @@ export default function SessionBody({
                   flex: 1,
                   fontFamily: F.mono,
                   fontSize: fs.nano,
-                  letterSpacing: tracking.label,
+                  letterSpacing: tracking(fs.nano, "label"),
                   textTransform: "uppercase",
                   color: on ? C.chalk : C.ash,
                 }}
@@ -164,7 +164,7 @@ export default function SessionBody({
           style={{
             fontFamily: F.mono,
             fontSize: fs.nano,
-            letterSpacing: tracking.label,
+            letterSpacing: tracking(fs.nano, "label"),
             textTransform: "uppercase",
             color: txt(C, C.amber),
             marginTop: space.ms,
@@ -177,7 +177,7 @@ export default function SessionBody({
       {/* Honesty: a custom lift the catalog does not know is absent from the
           figure, and the panel says so rather than quietly under-reporting. */}
       {map.unmapped.length > 0 && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: space.xs }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: space.xs }}>
           {t("session.body.unmapped")
             .replace("{count}", String(map.unmapped.length))
             .replace("{name}", map.unmapped.join(", "))}

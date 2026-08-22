@@ -29,7 +29,7 @@ export default function AdminHome() {
 
       {ADMIN_GROUPS.map((group) => (
         <View key={group} style={{ marginBottom: 18 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: palette.ash, marginBottom: 8 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: palette.ash, marginBottom: 8 }}>
             {group}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -4 }}>

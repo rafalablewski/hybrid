@@ -66,7 +66,7 @@ export default function TargetSheet({
   const tint: Record<TargetField, string> = {
     kcal: txt(C, C.lime), protein: txt(C, C.blue), carbs: txt(C, C.amber), fat: txt(C, C.red),
   };
-  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash } as const;
+  const mono = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash } as const;
 
   const save = () => {
     const ov = cleanTargetOverride({ ...form, trainingFuel: fuel });
