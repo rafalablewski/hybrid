@@ -273,14 +273,19 @@ export type ColorToken = keyof typeof colors;
  * that just recreates the dead token.
  */
 export const fonts = {
-  display: "Archivo", // headings + body + figures
-  mono: "JetBrains Mono", // numbers / kickers
+  display: "Söhne", // headings + body + figures
+  mono: "Söhne Mono", // numbers / kickers
 } as const;
 
 /** Google Fonts @import string (used by the web prototype + web app). Mirror
  *  any change here in `apps/web/app/globals.css`, which carries the literal. */
-export const fontImportUrl =
-  "https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap";
+/** EMPTY BY DESIGN, and it is not an oversight. Söhne is a licensed face and
+ *  cannot be served from a public font host, so web SELF-HOSTS it: the
+ *  @font-face blocks live in `apps/web/app/globals.css` against woff2 in
+ *  `apps/web/public/fonts`. The constant stays so a caller that imported it
+ *  gets an empty string rather than a missing export, and so this note has a
+ *  home — a `@import` reappearing here would silently pull Archivo back. */
+export const fontImportUrl = "";
 
 /** Product surface labels. */
 export const brand = {

@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken } from "./scale";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
@@ -229,12 +231,20 @@ describe("the type faces", () => {
     expect(Object.keys(fonts).sort()).toEqual(["display", "mono"]);
   });
 
-  it("asks the font service for nothing it does not declare", () => {
-    // A webfont in the @import that no token names is a download for nothing,
-    // and it is how Archivo Narrow stayed alive on web after the mobile app had
-    // already decided against it.
-    const families = [...fontImportUrl.matchAll(/family=([^&:]+)/g)].map((m) => m[1]!.replace(/\+/g, " "));
-    expect(families.sort()).toEqual(Object.values(fonts).slice().sort());
+  it("serves exactly the faces it declares, and from nowhere public", () => {
+    // THIS USED TO CHECK `fontImportUrl` against `fonts`, because web pulled
+    // both faces from Google. Söhne is licensed and cannot come from a public
+    // host, so the import is gone and the declaration moved into globals.css —
+    // the rule has to follow the declaration or it is guarding an empty string.
+    //
+    // The original intent survives intact: a face declared and not loaded is
+    // how Archivo Narrow stayed alive on web after mobile had already decided
+    // against it, and a face loaded and not declared is a download for nothing.
+    expect(fontImportUrl, "a public @import cannot serve a licensed face").toBe("");
+    const css = readFileSync(join(__dirname, "..", "..", "..", "apps", "web", "app", "globals.css"), "utf8");
+    const declared = new Set([...css.matchAll(/@font-face\{font-family:"([^"]+)"/g)].map((m) => m[1]!));
+    expect([...declared].sort()).toEqual(Object.values(fonts).slice().sort());
+    expect(css, "no public font host").not.toMatch(/fonts\.googleapis\.com/);
   });
 });
 

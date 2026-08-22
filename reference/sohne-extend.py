@@ -408,6 +408,121 @@ GLYPHS = {
 }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# PASS 3 — THE DIACRITICS, because the app ships en/pl/de.
+#
+# Measured against the three locales' strings, the evaluation cuts are missing
+# 48 characters, and the top eleven are Polish and German marks with ~5,400
+# occurrences between them (ę 1098, ś 722, ą 702, ż 684, ó 662, ć 589, ü 503).
+# Shipping without them makes two of three locales fall back to the system face
+# on almost every line.
+#
+# Every one below is a COMPOSITE of a letter the font already draws plus a mark
+# derived from its own measurements — the period gives the dot, the hyphen gives
+# the stroke weight. Nothing here invents a letterform, which is what keeps the
+# quality honest: the letters are Klim's and only the marks are ours.
+#
+# WHAT IS DELIBERATELY NOT HERE: ß, &, @, and the pictographs (★ ✦ ▶ ↑ ❚ ▤ Ø).
+# Those are real drawing, not assembly, and a hand-drawn ampersand next to
+# Klim's letters would look worse than the system fallback does. Core Text
+# cascades per glyph, so they render in the fallback face rather than as tofu.
+# `sohne-coverage.test.ts` measures the gap so it stays visible.
+# ─────────────────────────────────────────────────────────────────────────────
+
+ACUTE   = {"cacute":"c","nacute":"n","oacute":"o","sacute":"s","zacute":"z",
+           "Cacute":"C","Nacute":"N","Oacute":"O","Sacute":"S","Zacute":"Z"}
+OGONEK  = {"aogonek":"a","eogonek":"e","Aogonek":"A","Eogonek":"E"}
+DOTABV  = {"zdotaccent":"z","Zdotaccent":"Z"}
+DIAERE  = {"udieresis":"u","Udieresis":"U","Adieresis":"A","Odieresis":"O","odieresis":"o"}
+STROKE  = {"Lslash":"L"}
+
+GLYPHS3 = {}
+for _n, _cp in [("cacute",0x107),("nacute",0x144),("oacute",0xF3),("sacute",0x15B),("zacute",0x17A),
+                ("Cacute",0x106),("Nacute",0x143),("Oacute",0xD3),("Sacute",0x15A),("Zacute",0x179),
+                ("aogonek",0x105),("eogonek",0x119),("Aogonek",0x104),("Eogonek",0x118),
+                ("zdotaccent",0x17C),("Zdotaccent",0x17B),
+                ("udieresis",0xFC),("Udieresis",0xDC),("Adieresis",0xC4),("odieresis",0xF6),("Odieresis",0xD6),
+                ("Lslash",0x141),("ellipsis",0x2026),("exclam",0x21)]:
+    GLYPHS3[_n] = _cp
+
+
+def draw3(name, pen, m, ft, gs, cmap):
+    bar, x, capH = m["bar"], m["x"], m["capH"]
+    dx0, dy0, dx1, dy1 = m["dot"]
+    dotW, dotH = dx1 - dx0, dy1 - dy0
+    stem = m["stem"]
+
+    def base(ch):
+        g = cmap[ord(ch)]
+        bp = BoundsPen(gs); gs[g].draw(bp)
+        return g, ft["hmtx"][g][0], bp.bounds
+
+    def place(ch):
+        gs[cmap[ord(ch)]].draw(pen)
+
+    if name == "ellipsis":
+        # Three periods, and the MONO case is the one that bites: an ellipsis is
+        # a single character, so in a monospaced cut all three dots have to live
+        # inside ONE advance. Spacing them at the period's own advance ran them
+        # two cells into the next glyph.
+        if m["mono"]:
+            adv = m["monoAdv"]
+            gap = (adv - dotW) / 2 * 0.86
+            left = (adv - (2 * gap + dotW)) / 2
+            for k in range(3):
+                rect(pen, left + k * gap, dy0, left + k * gap + dotW, dy1)
+            return adv
+        gap = m["dotAdv"]
+        for k in range(3):
+            rect(pen, dx0 + k * gap, dy0, dx1 + k * gap, dy1)
+        return m["dotAdv"] * 3
+
+    if name == "exclam":
+        t = stem
+        top = capH
+        adv = m["monoAdv"] if m["mono"] else m["dotAdv"]
+        cx = adv / 2
+        rect(pen, cx - t / 2, dotH * 1.9, cx + t / 2, top)
+        rect(pen, cx - dotW / 2, dy0, cx + dotW / 2, dy1)
+        return adv
+
+    letter = (ACUTE | OGONEK | DOTABV | DIAERE | STROKE).get(name)
+    if letter is None:
+        return None
+    g, adv, lb = base(letter)
+    place(letter)
+    upper = letter.isupper()
+    cx = (lb[0] + lb[2]) / 2
+    ceiling = capH if upper else x
+
+    if name in ACUTE:
+        # A slanted bar, weighted from the hyphen, sitting clear of the letter.
+        t = bar * 1.15
+        w = x * 0.30
+        y0 = ceiling + dotH * 0.42
+        diagonal(pen, cx - w / 2, y0, cx + w / 2, y0 + w * 0.62, t)
+    elif name in DIAERE:
+        lift = ceiling + dotH * 0.34
+        sep = dotW * 0.92
+        rect(pen, cx - sep - dotW / 2, lift, cx - sep + dotW / 2, lift + dotH)
+        rect(pen, cx + sep - dotW / 2, lift, cx + sep + dotW / 2, lift + dotH)
+    elif name in DOTABV:
+        lift = ceiling + dotH * 0.40
+        rect(pen, cx - dotW / 2, lift, cx + dotW / 2, lift + dotH)
+    elif name in OGONEK:
+        # A hook below the letter's RIGHT side, which is where Polish sets it.
+        t = bar * 0.92
+        w = x * 0.22
+        rx = lb[2] - w * 0.9
+        rect(pen, rx, -w * 0.55, rx + t, 0)
+        rect(pen, rx, -w * 0.55, rx + w, -w * 0.55 + t)
+    elif name in STROKE:
+        w = m["hypW"] * 0.62
+        cy = capH * 0.54
+        diagonal(pen, cx - w / 2, cy - w * 0.46, cx + w / 2, cy + w * 0.46, bar * 0.90)
+    return adv
+
+
 def extend(src, dst):
     ft = TTFont(src)
     m = measure(ft)
@@ -417,10 +532,16 @@ def extend(src, dst):
     cs, gs = top.CharStrings, ft.getGlyphSet()
     order = list(ft.getGlyphOrder())
 
-    ALL = {**GLYPHS, **GLYPHS2}
+    ALL = {**GLYPHS, **GLYPHS2, **GLYPHS3}
     for name, cp in ALL.items():
-        assert name not in cs, f"{name} already present in {src}"
-        fn = (lambda n, p: draw(n, p, m)) if name in GLYPHS else (lambda n, p: draw2(n, p, m, ft, gs, cmap0))
+        # Ö and ö ARE in the 68-glyph subset, so the diacritic pass would draw a
+        # second, worse version over Klim's own. A composite pass adds what is
+        # absent and never overwrites what the foundry drew.
+        if name in cs or cp in cmap0:
+            continue
+        fn = ((lambda n, p: draw(n, p, m)) if name in GLYPHS
+              else (lambda n, p: draw2(n, p, m, ft, gs, cmap0)) if name in GLYPHS2
+              else (lambda n, p: draw3(n, p, m, ft, gs, cmap0)))
         probe = T2CharStringPen(0, gs)
         adv = round(fn(name, probe))
         pen = T2CharStringPen(adv, gs)
@@ -444,12 +565,15 @@ def extend(src, dst):
     for t in ft["cmap"].tables:
         for name, cp in ALL.items():
             t.cmap[cp] = name
-    ft.flavor = "woff2"
+    # THE FLAVOR FOLLOWS THE EXTENSION. This was hard-coded to woff2, which
+    # silently produced WOFF2 bytes inside files named .otf — fine for the web
+    # spec page, and unregisterable by Core Text on the phone. `native-face`
+    # caught it by failing to find a PostScript name; iOS would have failed to
+    # register every face and drawn San Francisco throughout.
+    ft.flavor = "woff2" if dst.endswith(".woff2") else None
     ft.save(dst)
     return len(order)
 
 
 if __name__ == "__main__":
     print(extend(sys.argv[1], sys.argv[2]), "glyphs ->", sys.argv[2])
-
-

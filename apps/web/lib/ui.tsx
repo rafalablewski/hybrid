@@ -171,9 +171,14 @@ export function GlassField() {
   );
 }
 
-export const disp: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
-export const mono: CSSProperties = { fontFamily: "'JetBrains Mono', monospace" };
-export const body: CSSProperties = { fontFamily: "'Archivo', sans-serif" };
+/** The three faces read the CSS custom properties rather than naming a family.
+ *  They used to spell "'Archivo', sans-serif" here and in thirteen SVG <text>
+ *  elements across the admin charts, so a face swap was a fifteen-file edit and
+ *  the charts drew the old face beside the new one for however long it took
+ *  somebody to notice. globals.css owns the family; this owns the role. */
+export const disp: CSSProperties = { fontFamily: "var(--font-display)" };
+export const mono: CSSProperties = { fontFamily: "var(--font-mono)" };
+export const body: CSSProperties = { fontFamily: "var(--font-display)" };
 
 /**
  * A FIGURE'S NUMERALS — spread into any style that draws a number sitting in a

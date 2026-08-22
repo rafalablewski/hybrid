@@ -296,12 +296,13 @@ export const C = colors;
 
 // Loaded in app/_layout.tsx
 export const F = {
-  reg: "Archivo_400Regular",
-  semi: "Archivo_600SemiBold",
-  bold: "Archivo_700Bold",
-  black: "Archivo_900Black",
-  mono: "JetBrainsMono_400Regular",
-  monoBold: "JetBrainsMono_700Bold",
+  reg: "Sohne_400Buch",
+  semi: "Sohne_500Kraftig",
+  bold: "Sohne_600Halbfett",
+  black: "Sohne_700Dreiviertelfett",
+  mono: "SohneMono_400Buch",
+  monoMed: "SohneMono_500Kraftig",
+  monoBold: "SohneMono_600Halbfett",
 } as const;
 
 /**
@@ -369,18 +370,25 @@ export const TABULAR: TextStyle = { fontVariant: [TABULAR_NUMS] };
  * the screenshots kept showing the wrong face, and nothing in the codebase
  * disagreed, because the failure is a silent fallback three layers down.
  *
- * These are the `name` table's ID-6 (PostScript) entries of the very .ttf files
- * `@expo-google-fonts` ships, which is what `CTFontManagerRegisterFontsForURL`
- * registers them under. `native-face.test.ts` parses those files and fails if
- * any entry here stops matching — the map is not allowed to be a guess.
+ * These are the `name` table's ID-6 (PostScript) entries of the .otf files in
+ * `assets/fonts`, which is what `CTFontManagerRegisterFontsForURL` registers
+ * them under. `native-face.test.ts` parses those files and fails if any entry
+ * here stops matching — the map is not allowed to be a guess.
+ *
+ * THEY SAY `TestSohne` BECAUSE THAT IS WHAT THE BINARIES SAY. The evaluation
+ * cuts carry that PostScript name; the retail files will carry `Sohne-*`, and
+ * swapping them means editing these seven strings and nothing else. The guard
+ * reads the name out of the file, so getting it wrong fails the build rather
+ * than drawing San Francisco on a native leaf.
  */
 export const F_POSTSCRIPT: Record<string, string> = {
-  [F.reg]: "Archivo-Regular",
-  [F.semi]: "Archivo-SemiBold",
-  [F.bold]: "Archivo-Bold",
-  [F.black]: "Archivo-Black",
-  [F.mono]: "JetBrainsMono-Regular",
-  [F.monoBold]: "JetBrainsMono-Bold",
+  [F.reg]: "TestSohne-Buch",
+  [F.semi]: "TestSohne-Kraftig",
+  [F.bold]: "TestSohne-Halbfett",
+  [F.black]: "TestSohne-Dreiviertelfett",
+  [F.mono]: "TestSohneMono-Buch",
+  [F.monoMed]: "TestSohneMono-Kraftig",
+  [F.monoBold]: "TestSohneMono-Halbfett",
 };
 
 /**

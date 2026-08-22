@@ -19,8 +19,6 @@
   },
   "dependencies": {
     "@bacons/apple-targets": "^5.0.0",
-    "@expo-google-fonts/archivo": "^0.4.2",
-    "@expo-google-fonts/jetbrains-mono": "^0.4.1",
     "@expo/ui": "~56.0.25",
     "@hybrid/core": "workspace:*",
     "@kingstinct/react-native-healthkit": "14.0.2",

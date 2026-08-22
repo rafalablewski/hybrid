@@ -1419,7 +1419,7 @@ pre u{color:var(--accent); text-decoration:none}
       <tr><td>Archivo 600 SemiBold</td><td>Söhne Kräftig 500</td><td class="n">82</td><td>Söhne's Kräftig sits heavier than Archivo's SemiBold. One step down.</td></tr>
       <tr><td>Archivo 700 Bold</td><td>Söhne Halbfett 600</td><td class="n">288</td><td>Same reason.</td></tr>
       <tr><td>Archivo 900 Black</td><td>Söhne Dreiviertelfett 700</td><td class="n">294</td><td><strong>The visible one.</strong> Everything below 26 also drops to Halbfett — 900 was carrying section titles that never needed it.</td></tr>
-      <tr><td>JetBrains Mono 400</td><td>Söhne Mono Buch 400</td><td class="n">1,220</td><td>Söhne Mono is narrower. Every fixed-width figure slot needs re-measuring.</td></tr>
+      <tr><td>JetBrains Mono 400</td><td>Söhne Mono Buch 400</td><td class="n">1,220</td><td>Both faces advance at exactly 0.600 em, so the width arithmetic is unchanged — measured, not assumed. See step 7.</td></tr>
       <tr><td>JetBrains Mono 700</td><td>Söhne Mono Halbfett 600</td><td class="n">139</td><td>Rule 03.</td></tr>
       <tr><td class="tok">NEW</td><td>Söhne Schmal 700</td><td class="n">4</td><td>The four editorial covers in section 12. Nothing else may take it, and a guard should say so rather than a comment.</td></tr>
     </tbody>
@@ -1433,13 +1433,29 @@ pre u{color:var(--accent); text-decoration:none}
     <li><strong>Retire <span class="m">note</span> and <span class="m">heading</span>.</strong> Mechanical, and it shrinks the surface the face swap has to cross.</li>
     <li><strong>Introduce the named <span class="m">text.*</span> styles</strong> and migrate call sites onto them. This is the step that makes the face swap a one-line change.</li>
     <li><strong>Swap the face.</strong> With everything above done, it is one edit to two constants.</li>
-    <li><strong>Re-measure fixed-width slots.</strong> Söhne Mono's advance differs from JetBrains Mono's, and any layout that computed a width from a character count has to be recalculated.</li>
+    <li><strong>Re-measure fixed-width slots</strong> — and this one turned out to be a no-op, which is worth knowing rather than assuming. Today's hero figure is sized by the one multiplication a monospaced face permits: characters × size × <span class="m">MONO_ADVANCE_EM</span>. Both JetBrains Mono and Söhne Mono advance at <strong>exactly 0.600 em on a 1000 upem</strong>, so the constant did not move. It is now asserted against the shipped binary by a test rather than left as a sentence — the prediction was wrong in the safe direction, and the next face may not be.</li>
   </ol>
 
   <div class="note">
     <b>Steps 2 to 5 are worth doing whether or not Söhne is ever licensed.</b> They
     are the difference between a product with type tokens and a product with a type
     system, and every one of them is verifiable by a test rather than by an opinion.
+    <br><br>
+    <b>All seven are done, on the evaluation cuts.</b> The app bundles seven Söhne
+    binaries, web self-hosts the same faces as woff2, and the swap itself was two
+    constants — <span class="m">F</span> and the (family, weight) map — with not
+    one call site touched, which is the return on having built steps 2 to 5 first.
+    The 294 <span class="m">F.black</span> sites became Dreiviertelfett 700 in the
+    same edit, so the weight correction landed with the face it was designed for
+    rather than being applied to Archivo and judged against the wrong drawing.
+    <br><br>
+    <b>What is still owed is step 1.</b> The bundled binaries are the evaluation
+    cuts, extended here to 120 glyphs so they cover 99.9% of the characters the
+    three locales actually render. <strong>Roughly thirty do not resolve</strong> —
+    <span class="m">&amp;</span>, <span class="m">ß</span>, <span class="m">@</span>,
+    the curly quotes and the pictographs — and those fall through to the system
+    face per glyph rather than drawing tofu. Dropping the retail files in fixes all
+    of it and lets <span class="m">reference/sohne-extend.py</span> be deleted.
   </div>
 </section>
 
