@@ -541,6 +541,63 @@ describe("geometry", () => {
   });
 });
 
+describe("panels", () => {
+  /**
+   * NO PANEL IS HELD OPEN BY A SPACER.
+   *
+   * The session summary ships as full-screen panels again, and the first time
+   * it did, four of its five screens rendered as mostly black ink. The cause
+   * was not the panel format — it was that a panel is a FIXED 844pt screen, so
+   * something has to take up whatever the content does not, and that job was
+   * given to `<View style={{ flex: 1 }} />`. A bare spacer pools all the
+   * leftover height into one hole; an instrument given the same flex draws a
+   * taller chart. The sequence's own written law said "no flex spacer ever
+   * holds a panel open" and the file broke it two screens later, which is
+   * exactly the kind of rule that needs a test rather than a paragraph.
+   *
+   * This is a BUILD FAILURE, not a ratchet: a ratchet would say "no MORE
+   * spacers", which is a budget for the ones that put the holes there.
+   */
+  it("the summary's panels carry instruments, not empty spacers", () => {
+    const PANELLED = [
+      "components/workout-wrapped.tsx",
+      "components/aurora/session-body.tsx",
+      "components/aurora/session-share-card.tsx",
+    ];
+    const bare: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!PANELLED.includes(path)) continue;
+      text.split("\n").forEach((line, i) => {
+        // Prose about a spacer is not a spacer — this guard's own explanation
+        // quotes one, and matched itself the first time it ran.
+        if (/^\s*(?:\*|\/\/)/.test(line)) return;
+        // A self-closing View whose ONLY style is a flex — it holds space and
+        // draws nothing. A flex container WITH children is an instrument zone.
+        if (/<View\s+style=\{\{\s*flex:\s*1\s*\}\}\s*\/>/.test(line)) bare.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      bare,
+      `\na panel is filled by its INSTRUMENT, never by a spacer — give the leftover height to the chart:\n  ${bare.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * A PANEL EXISTS ONLY WHEN IT CAN FILL A SCREEN. The record panel is the case
+   * that proves it: with fewer than HISTORY_MIN_POINTS sessions behind the lift
+   * there is no history to draw, so the record rides the hero as a strip rather
+   * than taking a screen it cannot fill. If this constant is ever read as
+   * anything but a gate on the panel, the panel can come back empty.
+   */
+  it("the record panel is gated on having a history to draw", () => {
+    const ww = FILES.find((f) => f.path === "components/workout-wrapped.tsx");
+    expect(ww, "workout-wrapped.tsx moved — update this guard").toBeTruthy();
+    expect(ww!.text).toMatch(/hasRecordPanel\s*=\s*recordHistory\.length\s*>=\s*HISTORY_MIN_POINTS/);
+    // …and the hero carries the fallback strip, so a record is never lost.
+    expect(ww!.text).toMatch(/cel\s*&&\s*!hasRecordPanel/);
+  });
+});
+
 describe("dynamic type", () => {
   /**
    * THE CLAMP IS THE EXCEPTION, AND AN EXCEPTION HAS TO SAY WHY.

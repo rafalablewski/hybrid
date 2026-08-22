@@ -14,9 +14,14 @@ import { fs, tracking, F } from "../../lib/ui";
  * and the figures that matter are stated in words directly beneath.
  */
 
-/** Height of the accumulation curve's plot, in dp. */
+/**
+ * DEFAULT plot heights, in dp. Both instruments now take a `height`, because a
+ * panel is a fixed screen and the thing that should absorb its slack is the
+ * INSTRUMENT, not a spacer: a chart that grows to fill the space reads as a
+ * composed panel, and the same space left over reads as a hole. This is the
+ * whole reason the first panel sequence emptied out.
+ */
 const CURVE_H = 132;
-/** Height of the set spine's plot, in dp. */
 const SPINE_H = 176;
 /** Gap between exercise groups, in dp — the only thing separating them. */
 const GROUP_GAP = 7;
@@ -29,19 +34,19 @@ const GROUP_GAP = 7;
  * it, never its own duration, so placing sets on a timeline would be half
  * measurement and half guess at how long a set takes. Set order is exact.
  */
-export function TonnageCurve({ spine, width }: { spine: SessionSpine; width: number }) {
+export function TonnageCurve({ spine, width, height = CURVE_H }: { spine: SessionSpine; width: number; height?: number }) {
   const C = useTheme().palette;
   const n = spine.cumulativeKg.length;
   if (n < 2 || spine.totalKg <= 0) return null;
 
   const top = spine.totalKg;
-  const plot = CURVE_H - 10;
+  const plot = height - 10;
   const x = (i: number) => (i / (n - 1)) * width;
   const y = (kg: number) => plot - (kg / top) * (plot - 6);
   const line = spine.cumulativeKg.map((kg, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(kg).toFixed(1)}`).join(" ");
 
   return (
-    <Svg width={width} height={CURVE_H}>
+    <Svg width={width} height={height}>
       <Path d={`${line} L${width} ${plot} L0 ${plot} Z`} fill={C.lime} fillOpacity={0.1} />
       <Path d={line} fill="none" stroke={C.lime} strokeWidth={1.4} strokeLinejoin="round" />
       {/* One tick per set on the baseline: the curve says how much, the ticks
@@ -73,7 +78,7 @@ export function TonnageCurve({ spine, width }: { spine: SessionSpine; width: num
  * now reads as a ramp and a straight-sets day reads as a wall, which is the
  * thing the old chart was gesturing at without ever saying.
  */
-export function SetSpine({ spine, width }: { spine: SessionSpine; width: number }) {
+export function SetSpine({ spine, width, height = SPINE_H }: { spine: SessionSpine; width: number; height?: number }) {
   const C = useTheme().palette;
   const max = Math.max(...spine.bars.map((b) => b.loadKg), 1);
   const gaps = Math.max(0, spine.groups.length - 1) * GROUP_GAP;
@@ -87,14 +92,14 @@ export function SetSpine({ spine, width }: { spine: SessionSpine; width: number 
       x += GROUP_GAP;
       group = b.group;
     }
-    const h = 10 + (b.loadKg / max) * (SPINE_H - 18);
+    const h = 10 + (b.loadKg / max) * (height - 18);
     const at = x;
     x += slot;
     return (
       <Rect
         key={i}
         x={at}
-        y={SPINE_H - h}
+        y={height - h}
         width={barW}
         height={h}
         rx={1.5}
@@ -106,7 +111,7 @@ export function SetSpine({ spine, width }: { spine: SessionSpine; width: number 
 
   return (
     <View>
-      <Svg width={width} height={SPINE_H}>{rects}</Svg>
+      <Svg width={width} height={height}>{rects}</Svg>
       <GroupLabels C={C} spine={spine} slot={slot} />
     </View>
   );
