@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blendOver, contrastRatio, inkHold, inkOn, WCAG } from "./contrast";
+import { blendOver, contrastRatio, easedRamp, inkHold, inkOn, mixOklab, oklabHex, oklabOf, relativeLuminance, smoothstep, WCAG } from "./contrast";
 import { colors } from "./theme/tokens";
 import { FEEDBACK } from "./theme/feedback";
 import { THEMES } from "./theme/palette";
@@ -35,6 +35,81 @@ const FILLS: Record<string, string> = {
   "feedback.error": FEEDBACK.error.fill,
   "feedback.success": FEEDBACK.success.fill,
 };
+
+describe("easedRamp — a ramp with no crease at either end", () => {
+  const LIME = "#c3d363";
+  const INK = "#0c0d0c";
+
+  it("starts and ends EXACTLY where the surfaces do", () => {
+    // A stop table that does not begin where the field begins is a crease of
+    // its own — the whole defect this replaced.
+    const r = easedRamp(LIME, INK, 9);
+    expect(r[0]).toEqual({ at: 0, color: LIME });
+    expect(r[r.length - 1]).toEqual({ at: 1, color: INK });
+  });
+
+  it("leaves and arrives SLOWLY, and crosses the middle fast", () => {
+    // That is the whole point: the eye finds the corner where a linear ramp
+    // departs from solid, and the muddiest colours are in the middle — so the
+    // curve should linger at the ends and hurry through the centre.
+    // Measured in OKLab lightness, not relative luminance: luminance is
+    // roughly the square of perceived lightness, so it falls fastest at the
+    // TOP whatever curve you draw, and would report a linear ramp as eased.
+    const r = easedRamp(LIME, INK, 9);
+    const L = r.map((s) => oklabOf(s.color)[0]);
+    const drop = L.slice(1).map((v, i) => L[i]! - v);
+    const first = drop[0]!;
+    const middle = drop[Math.floor(drop.length / 2)]!;
+    const last = drop[drop.length - 1]!;
+    expect(middle).toBeGreaterThan(first * 2);
+    expect(middle).toBeGreaterThan(last * 2);
+  });
+
+  it("never doubles back — lightness falls the whole way down", () => {
+    for (const from of ["#c3d363", "#2f7893", "#daa51d", "#ec935e"]) {
+      const L = easedRamp(from, INK, 9).map((s) => relativeLuminance(s.color));
+      for (let i = 1; i < L.length; i++) {
+        expect(L[i]!, `${from} stop ${i}`).toBeLessThanOrEqual(L[i - 1]! + 1e-9);
+      }
+    }
+  });
+
+  it("never gets MORE saturated than the colour it started from", () => {
+    // The mud is unavoidable — half of Wild Lime and half of near-black is a
+    // dark olive in every colour space. What is not acceptable is a ramp that
+    // gains chroma on the way, which an ill-chosen path can do.
+    const chroma = (hex: string) => { const [, a, b] = oklabOf(hex); return Math.hypot(a, b); };
+    for (const from of ["#c3d363", "#2f7893", "#daa51d", "#ec935e"]) {
+      const top = chroma(from);
+      for (const s of easedRamp(from, INK, 9)) {
+        expect(chroma(s.color), `${from} @ ${s.at}`).toBeLessThanOrEqual(top + 1e-6);
+      }
+    }
+  });
+
+  it("mixes perceptually, not by the bytes", () => {
+    // OKLab drops the chroma faster than sRGB does on the way to the ground —
+    // it does not fix the mud, it just spends less of the journey in it.
+    const chroma = (hex: string) => { const [, a, b] = oklabOf(hex); return Math.hypot(a, b); };
+    const bytes = blendOver(INK, 0.5, LIME); // the naive midpoint
+    expect(chroma(mixOklab(LIME, INK, 0.5))).toBeLessThan(chroma(bytes));
+  });
+
+  it("round-trips a colour through OKLab", () => {
+    for (const hex of ["#c3d363", "#0c0d0c", "#f7f6f3", "#2f7893"]) {
+      expect(oklabHex(oklabOf(hex))).toBe(hex);
+    }
+  });
+
+  it("smoothstep is flat at both ends and symmetric", () => {
+    expect(smoothstep(0)).toBe(0);
+    expect(smoothstep(1)).toBe(1);
+    expect(smoothstep(0.5)).toBe(0.5);
+    expect(smoothstep(-1)).toBe(0);
+    expect(smoothstep(2)).toBe(1);
+    expect(smoothstep(0.25) + smoothstep(0.75)).toBeCloseTo(1, 10);
+  });
+});
 
 describe("blendOver + inkHold — the measured hold-back", () => {
   const INK = "#0c0d0c";

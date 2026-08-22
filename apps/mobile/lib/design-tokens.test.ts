@@ -1004,15 +1004,17 @@ describe("colour arithmetic", () => {
     // chartreuse — the only stop of a three-density ramp that was neither a rung
     // nor a real gradient. The band is a hue now (the endurance lanes' own
     // easy/steady/hard coding), so the number went with the argument for it.
-    // 104 → 105. The day band's FOOT — withAlpha(C.ink, 0) at the top of the
-    // 26dp ramp that resolves a filled band into the page ground. It is the
-    // transparent end of a real gradient, which is exactly what this floor
-    // exists to allow, and it replaced a 1px hairline: the band used to stop
-    // dead and draw a rule across the join, which read as a rendering fault
-    // because a hairline separates two surfaces that BOTH continue. The quiet
-    // band's own ramp costs this rule nothing — its stops come from BAND_WASH
-    // in core, so they are tokens rather than numbers at the call site.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 105,
+    // 104 → 105 → 104, in one day, and the round trip is the interesting part.
+    // The day band's FOOT briefly added withAlpha(C.ink, 0) — the transparent
+    // end of the gradient that resolves a filled band into the page ground,
+    // which is exactly what this floor exists to allow. Then the foot stopped
+    // being a SCRIM at all: fading near-black over a saturated accent is
+    // sRGB-linear interpolation by another name and takes the muddiest route
+    // available, so it draws opaque OKLab stops now (bandFootStops in core) and
+    // the alpha went with the argument for it. The quiet band's ramp costs this
+    // rule nothing either — its stops come from BAND_WASH, tokens rather than
+    // numbers at the call site.
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 104,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });

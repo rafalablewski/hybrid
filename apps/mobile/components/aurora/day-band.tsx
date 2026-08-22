@@ -3,8 +3,8 @@ import { Animated, ScrollView, StyleSheet, Text, View, type NativeSyntheticEvent
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
-  BAND_FOOT, BAND_HOLD, BAND_WASH, DISCIPLINE_META, FOLD, FOLD_RISE, bandHue, bandText,
-  blendOver, fs, inkHold, inkOn, leading, space, tracking,
+  BAND_FOOT, BAND_HOLD, BAND_WASH, DISCIPLINE_META, FOLD, FOLD_RISE, bandFootStops, bandHue,
+  bandText, blendOver, fs, inkHold, inkOn, leading, space, tracking,
   type DayBand, type SemanticRole, type TrainingKind,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
@@ -84,8 +84,11 @@ const PAD = {
   x: GUTTER + 3,
   /** Above the chrome, under the status inset. */
   top: space.lg,
-  /** Under the last row, BEFORE the foot — nothing is ever drawn in the foot. */
-  bottom: space.xl,
+  /** Under the last row. It IS the foot on a filled band (BAND_FOOT), which is
+   *  why there is no separate `bottom`: the pad and the ramp were two numbers
+   *  doing one job, and keeping them apart is what left the ramp too short to
+   *  resolve in. Nothing is ever drawn in it. */
+  bottom: BAND_FOOT,
   /** Between the mark and the numeral. */
   markGap: space.sm,
   /** Numeral → instruction. */
@@ -240,6 +243,8 @@ export default function AuroraDayBand({
   // the same ladder gives 0.54 on a dark ramp and 1 (no hold at all) on Lyons
   // Blue, which cannot afford one. See inkHold() in core.
   const hold = inkHold(ink, ground, BAND_HOLD);
+  // The filled band's own arrival at the page, computed once per render.
+  const foot = quiet ? [] : bandFootStops(fill, C.ink);
 
   const head = bandText(t, shown.head ?? band.head);
   const say = shown.say.map((l) => bandText(t, l)).join(" ");
@@ -345,9 +350,9 @@ export default function AuroraDayBand({
         marginTop: -insets.top,
         marginBottom: fold ? at(0, 1, [0, -pull]) : 0,
         paddingTop: insets.top + PAD.top,
-        // The foot is pad, not content: nothing is ever drawn on the part of
-        // the ground that is busy becoming the page.
-        paddingBottom: PAD.bottom + BAND_FOOT,
+        // The foot IS the pad: nothing is ever drawn on the part of the ground
+        // that is busy becoming the page.
+        paddingBottom: PAD.bottom,
         backgroundColor: fill,
       }}
     >
@@ -365,7 +370,12 @@ export default function AuroraDayBand({
         />
       ) : (
         <LinearGradient
-          colors={[withAlpha(C.ink, 0), C.ink]}
+          // Opaque stops, not a scrim of ink faded in over the accent — see
+          // bandFootStops(). Fading black over a saturated colour is
+          // sRGB-linear interpolation by another name, and it takes the
+          // muddiest route from the accent to the ground.
+          colors={foot.map((s) => s.color) as unknown as readonly [string, string, ...string[]]}
+          locations={foot.map((s) => s.at) as unknown as readonly [number, number, ...number[]]}
           style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: BAND_FOOT }}
           pointerEvents="none"
         />
