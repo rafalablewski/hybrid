@@ -353,13 +353,17 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
           ]}
         />
       </AEmptyDay>
-      {/* NO FLOOR ON AN EMPTY DAY, today included. A logbook day is `logged`
-          exactly when it holds sessions, so on this branch the floor has zero
-          rows by definition — all it can draw is its empty caption ("a match, a
-          run, a swim — it lands here"), which would be the third time this block
-          said the same thing: once in the description, once on the button, once
-          in the caption. The floor returns the moment the day holds something
-          to list. */}
+      {/* THE FLOOR IS HERE TOO — and on this branch it usually draws nothing.
+          A logbook day is `logged` exactly when it holds SESSIONS, so the floor
+          has zero session rows here by definition, and with `emptyCaption`
+          false (home.tsx sets it for logbook mode) it renders null rather than
+          repeating this block's own sentence a third time — once in the
+          description, once on the button, once in a caption.
+          What it does still draw is the SAUNA. A rest-day sitting is a day with
+          nothing trained and something done, and skipping the floor outright
+          was how twenty minutes of heat the engines had already scored ended up
+          on no surface that names the day. */}
+      {doneFloor}
     </View>
   );
 }

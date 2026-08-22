@@ -597,6 +597,11 @@ export default function AuroraHome() {
       // rendered, forty pixels apart, saying "Log a sport" twice. The PLAN rail
       // has no pair of its own, so there the floor keeps the row.
       logRow={!logbookMode}
+      // …and for the same reason it must not speak the empty day's invitation
+      // there either: the logbook rail's empty branch IS that invitation, drawn
+      // whole. False makes the floor draw nothing on a day holding nothing —
+      // and still draw the sauna on a day holding only that.
+      emptyCaption={!logbookMode}
     />
   );
 
@@ -1224,8 +1229,10 @@ export default function AuroraHome() {
             the rows are the confirmation loop and must never simply vanish.
             Hidden for a true first run (no plan, nothing ever logged): the
             chooser above owns that state, and an empty card under it would be a
-            second competing log CTA. */}
-        {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
+            second competing log CTA. A day carrying a SAUNA is not that state —
+            something is on the record, and `doneEntries` is what has it, since
+            the session list on its own cannot see a sitting. */}
+        {!useRail && !logbookMode && (!!sched || sessions.length > 0 || doneEntries.length > 0) && (
           /* ACard, not a hand-drawn copy of it. This wrapper spelled out
              ACard's exact base style — hairline, RADIUS.card, CARD_PAD, ink2,
              cardShadow — which on iOS 26 is the ONE thing the copy cannot
