@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { contrastRatio, relativeLuminance, deltaE2000, inkOn, labOf, WCAG, DISTINCT_ROLE_DE } from "../contrast";
+import { blendOver, contrastRatio, relativeLuminance, deltaE2000, inkHold, inkOn, labOf, WCAG, DISTINCT_ROLE_DE } from "../contrast";
+import { BAND_HOLD, BAND_WASH } from "../day-fold";
 import { ROLE_COLOR, readinessRole, type SemanticRole } from "../semantic";
 import { THEMES, type ThemeName } from "./palette";
 import { FEEDBACK, type FeedbackKind } from "./feedback";
@@ -359,9 +360,48 @@ describe("the day band's fill takes a legible ink at every score", () => {
     }
 
     it(`${name}: a quiet band's chalk still clears AA on the ground it sits on`, () => {
-      // Rungs 3 and 4 refuse a fill (see day-band.ts). Their type sits on the
+      // The quiet rungs refuse a fill (see day-band.ts). Their type sits on the
       // page ground, which is a different pairing from every filled case above.
       expect(contrastRatio(t.chalk, t.ink)).toBeGreaterThanOrEqual(WCAG.AA);
+    });
+
+    // ── AND THE LINES THAT ARE NOT AT FULL STRENGTH ──────────────────────
+    //
+    // The sweep above guards the HEAD, and only the head. The band draws two
+    // more lines — the numeral and the sentence — at a fraction of that same
+    // ink, and nothing measured them. On Lyons Blue, which `readinessRole`
+    // returns for every score from 60 to 79, the sentence at the old fixed
+    // 0.78 landed at 3.46:1: under AA, in the commonest reading in the app.
+    //
+    // `inkHold` is the fix and this is what holds it: the alpha is chosen by
+    // measurement against the ground it will be drawn on, so it may be a
+    // different number per fill, and it may be 1 when a fill can afford no
+    // hold-back at all. What must never differ is the outcome.
+    for (const role of roles) {
+      const fill = fillFor(role);
+      it(`${name}: the ${role} band's held-back lines clear AA too`, () => {
+        const ink = inkOn(fill, inks);
+        const a = inkHold(ink, fill, BAND_HOLD);
+        expect(contrastRatio(blendOver(ink, a, fill), fill)).toBeGreaterThanOrEqual(WCAG.AA);
+      });
+    }
+
+    it(`${name}: a quiet band's held-back lines clear AA on every ramp stop`, () => {
+      // A quiet band is a RAMP, so its ground is not one colour — the type sits
+      // on whichever stop it happens to fall across. The TOP stop is the worst
+      // case (most tint, least contrast against a light ink), but a ramp edit
+      // could reorder that, so every stop is measured rather than the first.
+      for (const hue of ["amber", "blue", "lime"] as const) {
+        const accent = hue === "lime" ? t.accent : colors[hue];
+        for (const stop of BAND_WASH) {
+          const ground = blendOver(accent, stop.alpha, t.ink);
+          const a = inkHold(t.chalk, ground, BAND_HOLD);
+          expect(
+            contrastRatio(blendOver(t.chalk, a, ground), ground),
+            `${hue} @ ${stop.alpha}`,
+          ).toBeGreaterThanOrEqual(WCAG.AA);
+        }
+      }
     });
   }
 });

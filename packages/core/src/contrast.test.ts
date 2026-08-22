@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contrastRatio, inkOn, WCAG } from "./contrast";
+import { blendOver, contrastRatio, inkHold, inkOn, WCAG } from "./contrast";
 import { colors } from "./theme/tokens";
 import { FEEDBACK } from "./theme/feedback";
 import { THEMES } from "./theme/palette";
@@ -35,6 +35,64 @@ const FILLS: Record<string, string> = {
   "feedback.error": FEEDBACK.error.fill,
   "feedback.success": FEEDBACK.success.fill,
 };
+
+describe("blendOver + inkHold — the measured hold-back", () => {
+  const INK = "#0c0d0c";
+  const CHALK = "#f7f6f3";
+  const LADDER = [0.54, 0.62, 0.68, 0.78] as const;
+
+  it("composites an alpha the way the screen does", () => {
+    expect(blendOver(CHALK, 1, INK)).toBe(CHALK);
+    expect(blendOver(CHALK, 0, INK)).toBe(INK);
+    // Halfway is halfway, per channel, rounded.
+    expect(blendOver("#ffffff", 0.5, "#000000")).toBe("#808080");
+  });
+
+  it("clamps rather than throwing on an alpha outside the range", () => {
+    expect(blendOver(CHALK, 2, INK)).toBe(CHALK);
+    expect(blendOver(CHALK, -1, INK)).toBe(INK);
+  });
+
+  it("takes the strongest hold-back a dark ground can afford", () => {
+    // The quiet band's top stop: amber at 0.20 over the page ground.
+    const quiet = blendOver("#daa51d", 0.2, INK);
+    const a = inkHold(CHALK, quiet, LADDER);
+    expect(a).toBe(0.54);
+    expect(contrastRatio(blendOver(CHALK, a, quiet), quiet)).toBeGreaterThanOrEqual(WCAG.AA);
+  });
+
+  it("gives a tight ground no hold-back at all rather than a failing one", () => {
+    // Lyons Blue is the palette's tightest fill: its best ink only reaches
+    // 4.60:1 at FULL strength, so no step on the ladder can clear AA.
+    const blue = "#2f7893";
+    expect(contrastRatio(CHALK, blue)).toBeLessThan(5);
+    expect(inkHold(CHALK, blue, LADDER)).toBe(1);
+  });
+
+  it("holds DARK ink back less than light ink, because the maths is not symmetric", () => {
+    // Wild Lime has 11.89:1 to spend at full strength, and still cannot afford
+    // the ladder's first step: fading near-black ink toward a BRIGHT ground
+    // closes the gap far faster than fading light ink toward a dark one. So a
+    // filled band lands at 0.62 (4.59:1) where a quiet band lands at 0.54 —
+    // the same rule, measured, giving two answers because the grounds differ
+    // by an order of magnitude in luminance.
+    expect(contrastRatio(INK, "#c3d363")).toBeGreaterThan(11);
+    expect(inkHold(INK, "#c3d363", LADDER)).toBe(0.62);
+    expect(inkHold(CHALK, blendOver("#daa51d", 0.2, INK), LADDER)).toBe(0.54);
+  });
+
+  it("never returns a step that fails the bar it was given", () => {
+    for (const ground of ["#c3d363", "#2f7893", "#daa51d", "#ec935e", "#0c0d0c", "#212126"]) {
+      const ink = inkOn(ground, [INK, CHALK]);
+      const a = inkHold(ink, ground, LADDER);
+      const got = contrastRatio(blendOver(ink, a, ground), ground);
+      // Either it clears the bar, or it went to full strength because the
+      // ground could not afford any step — and then it is the palette's
+      // problem, not the call site's.
+      expect(a === 1 || got >= WCAG.AA).toBe(true);
+    }
+  });
+});
 
 describe("inkOn", () => {
   it("picks the higher-contrast ink, not the first one", () => {

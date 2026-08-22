@@ -111,6 +111,61 @@ export function bandHue(band: Pick<DayBand, "fill" | "rung">): AccentKey | null 
 }
 
 /**
+ * THE BAND ENDS BECAUSE THE COLOUR ENDS — the ramp, and the rule it replaces.
+ *
+ * The quiet band used to be a FLAT wash (`ALPHA.solid`, 0.16) with a 1px rule
+ * drawn across its bottom edge. Both halves of that were wrong.
+ *
+ * A HAIRLINE SEPARATES TWO SURFACES THAT BOTH CONTINUE. Here the surface stops,
+ * so the line had nothing on its far side to belong to — and at
+ * `ALPHA.line` over amber it composited to `#503f12`, a warm rule at roughly
+ * three times the page ground's luminance, run edge to edge under the tallest
+ * object on the screen. It read as a rendering fault, which is what it was.
+ *
+ * AND A FLAT 16% OF A SATURATED WARM ACCENT OVER NEAR-BLACK IS MUD. It lands at
+ * L* ≈ 15 with its chroma still attached: enough colour to be noticed, not
+ * enough lightness to be a surface. Not amber — a stain.
+ *
+ * So the band is a RAMP now. Four stops, and the last one is fully transparent,
+ * which means the band resolves to whatever the screen's own ground is rather
+ * than to a hardcoded copy of it. There is no border at any stop. Because the
+ * bottom dissolves, the top can afford MORE colour than the flat wash carried
+ * (0.20 against 0.16) — so the band reads as more of its hue and less of an
+ * edge at the same time.
+ */
+export const BAND_WASH: readonly { at: number; alpha: number }[] = [
+  { at: 0, alpha: 0.2 },
+  { at: 0.34, alpha: 0.13 },
+  { at: 0.72, alpha: 0.05 },
+  { at: 1, alpha: 0 },
+] as const;
+
+/**
+ * THE FOOT — the distance a FILLED band takes to become the page.
+ *
+ * A quiet band dissolves across its whole height (`BAND_WASH`), which it can
+ * afford: it is a wash. A filled band cannot — it is a FIELD, and a field that
+ * faded under its own instruction would be a field that could not hold one. So
+ * it stays solid through the content and resolves inside a foot BELOW it: 26dp
+ * of pad that carries the ramp and nothing else, so no line of type is ever
+ * drawn on the fading part.
+ *
+ * It is the same 26 either way, which is what keeps the two states one idea:
+ * every band ends by arriving at the ground, and none of them ends at a rule.
+ */
+export const BAND_FOOT = 26;
+
+/**
+ * THE HOLD-BACK LADDER for a band's secondary lines — the steps `inkHold()`
+ * chooses from, most held back first.
+ *
+ * Ordered, not free: a component that can pick any alpha picks a different one
+ * each time it is edited. Four steps is enough range for a dark ground to be
+ * properly quiet and few enough that the band's tones stay a set.
+ */
+export const BAND_HOLD = [0.54, 0.62, 0.68, 0.78] as const;
+
+/**
  * THE DAY BAR'S GEOMETRY — the app header's own row, compressed.
  *
  * It is deliberately DERIVED from `APP_HEADER` rather than typed fresh: the bar

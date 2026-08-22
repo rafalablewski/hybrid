@@ -933,6 +933,11 @@ export const web_home = {
     "w.home.band.sayDoseFlat": "You checked in flat, so the bar eases to {pct}%.",
     "w.home.band.sayDoseWrecked": "You checked in wrecked, so it's {pct}% and a set lighter.",
     "w.home.band.sayDoseBodyweight": "Your check-in shed a set — there's no bar to ease.",
+    // THE DECK'S ONE COMMIT. Swiping is free — the whole ranking can be read
+    // and left alone — so a page other than the first carries the single tap
+    // that changes the day. It says what happens, not what it is.
+    "w.home.band.trainThis": "Train this instead",
+    "w.home.band.deckPage": "Option {n} of {total}",
     "w.home.band.notToday": "Not today?",
 
     // ── DECLARING AN EVENT (day-events.ts, aurora/declare-event.tsx) ──────
@@ -2291,6 +2296,8 @@ export const web_home = {
     "w.home.band.sayDoseFlat": "Meldunek na płasko: sztanga schodzi do {pct}%.",
     "w.home.band.sayDoseWrecked": "Meldunek na wykończeniu: {pct}% i seria mniej.",
     "w.home.band.sayDoseBodyweight": "Meldunek zdjął serię — nie ma sztangi do zejścia.",
+    "w.home.band.trainThis": "Zamiast tego",
+    "w.home.band.deckPage": "Opcja {n} z {total}",
     "w.home.band.notToday": "Nie dziś?",
 
     // ── ZGŁOSZENIE WYDARZENIA (day-events.ts) ─────────────────────────────
@@ -3598,6 +3605,8 @@ export const web_home = {
     "w.home.band.sayDoseFlat": "Check-in flach: die Hantel geht auf {pct}%.",
     "w.home.band.sayDoseWrecked": "Check-in platt: {pct}% und ein Satz weniger.",
     "w.home.band.sayDoseBodyweight": "Der Check-in hat einen Satz gestrichen — es gibt keine Hantel zu senken.",
+    "w.home.band.trainThis": "Stattdessen das",
+    "w.home.band.deckPage": "Option {n} von {total}",
     "w.home.band.notToday": "Heute nicht?",
 
     // ── EIN EREIGNIS EINTRAGEN (day-events.ts) ────────────────────────────

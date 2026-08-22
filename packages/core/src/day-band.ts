@@ -326,7 +326,23 @@ export function rotation(sessions: LoggedSession[], now: number = Date.now()): R
       confident,
     });
   }
-  kinds.sort((a, b) => b.ratio - a.ratio);
+  // A TOTAL ORDER, and the last key is what makes it one.
+  //
+  // This was `b.ratio - a.ratio` alone. `Array#sort` is stable, so every tie
+  // fell through to the Map's insertion order — which is the order each kind
+  // FIRST APPEARS in the 28-day window. Which of two equally-due disciplines
+  // led the band was therefore decided by which one the athlete happened to
+  // train four weeks ago, and logging one backdated session at the old end of
+  // the window flipped the whole band for a reason nobody could infer.
+  //
+  // Four keys, each defensible on its own: most overdue, then longest since,
+  // then most established, then the app's own canonical order of disciplines.
+  // The last is exhaustive, so no tie can reach the iterator.
+  kinds.sort((a, b) =>
+    b.ratio - a.ratio ||
+    b.daysSince - a.daysSince ||
+    b.count - a.count ||
+    TRAINING_KINDS.indexOf(a.kind) - TRAINING_KINDS.indexOf(b.kind));
 
   if (!kinds.some((k) => k.confident)) return { kinds, due: [], confident: false, reason: "no-stable-cadence" };
 
@@ -798,6 +814,76 @@ export function dayBand(input: DayBandInput): DayBand {
   };
 }
 
+/**
+ * THE DECK — the ranking behind the band, and the four rules that keep it a
+ * band rather than a menu.
+ *
+ * The engine has never had one answer. It has a RANKED LIST and it prints the
+ * top of it, which is why an athlete watching the band change its mind reads it
+ * as arbitrary: the alternatives were always there and nothing ever showed
+ * them. So the band discloses the list. It does NOT become a carousel — the
+ * whole argument for replacing the readiness card was that the band says one
+ * thing, and a row of equal options is that card in a new coat.
+ *
+ *  1 PAGE 1 IS THE ANSWER. `deck[0]` is exactly `dayBand(input)`, unchanged. At
+ *    rest the band is what it always was; the deck costs nothing until someone
+ *    reaches for it.
+ *
+ *  2 NO DECK BELOW TWO. One candidate returns a one-page deck, which the
+ *    clients draw with no pager and no dots. An indicator that always shows a
+ *    single dot is chrome that means nothing.
+ *
+ *  3 NAMING RUNGS ONLY. You may page between CANDIDATES, never between
+ *    VERDICTS. `order` and `single` name a training the athlete could choose
+ *    differently; `race`, `deload`, `done`, `protect`, `rest` and `open` are
+ *    statements about the day, and swiping past a floored reading to find a
+ *    nicer one is precisely what the floor exists to prevent.
+ *
+ *  4 THREE, HARD. `rotation()` already refuses to name more than two trainings
+ *    (`MAX_DUE`) on the grounds that three is a training camp; the same
+ *    argument caps this. A deck invites the engine to get lazy — if there are
+ *    always alternatives, nobody has to make the first one right — and the cap
+ *    is the guard. If a fourth candidate would be worth showing, the RANKING
+ *    needs work, not the pager.
+ *
+ * Each page is a full band built by the same ladder with the pages above it
+ * rejected, so every one carries its own evidence line. That is the point of
+ * the gesture: the reason a candidate sits where it sits IS the content.
+ */
+export const BAND_DECK_MAX = 3;
+
+/** The rungs that name a training the athlete could reasonably choose
+ *  differently. Everything else is a verdict about the day. */
+const DECKABLE: readonly BandRung[] = ["order", "single"] as const;
+
+export function dayBandDeck(input: DayBandInput): DayBand[] {
+  const first = dayBand(input);
+  if (!DECKABLE.includes(first.rung)) return [first];
+
+  const rot = input.rot ?? rotation([...(input.sessions ?? [])], input.now ?? Date.now());
+  const deck: DayBand[] = [first];
+  const spent: TrainingKind[] = [...first.kinds];
+
+  while (deck.length < BAND_DECK_MAX) {
+    const next = nextDueKind(rot, spent);
+    if (!next) break;
+    // The same ladder, with everything already offered taken out of the
+    // rotation — so a page is not a re-labelled copy of the one before it, it
+    // is what the engine would have said had the kinds above it not been due.
+    const pruned = rot.kinds.filter((k) => !spent.includes(k.kind) || k.kind === next);
+    const page = dayBand({
+      ...input,
+      rot: { ...rot, kinds: pruned, due: pruned.filter((k) => k.confident && k.kind === next).slice(0, MAX_DUE) },
+    });
+    // A page that fell off the naming rungs is not a candidate, it is a
+    // different verdict — and rule 3 says the deck does not cross that line.
+    if (!DECKABLE.includes(page.rung) || !page.kinds.length) break;
+    deck.push(page);
+    spent.push(...page.kinds);
+  }
+  return deck;
+}
+
 // ============================================================
 //  Rendering
 // ============================================================
@@ -842,6 +928,40 @@ export const BAND_SAY_MAX = 130;
  * Cycles through the rotation's own order, skipping what is already on the
  * band, so the correction is one tap and the app learns what it got wrong.
  */
+/**
+ * TODAY'S ANSWER STAYS TODAY'S ANSWER — the pin.
+ *
+ * A total order (see `rotation()`) makes the band deterministic for a GIVEN
+ * input. It does not stop the input moving underneath it: a refetch on focus, a
+ * session synced from another device, a signal landing late — any of these can
+ * re-rank the day while the athlete is looking at it, and an instruction that
+ * rewrites itself unprompted is one nobody can act on.
+ *
+ * So the kinds the band already named today are promoted back to the front, in
+ * the order it named them. Two rules keep this from becoming a lie:
+ *
+ *  - A PINNED KIND MUST STILL QUALIFY. It is only promoted if it is still in
+ *    `due` — still confident, still into its own cycle. So the pin can reorder
+ *    the day's answer and can never invent one.
+ *  - IT SELF-HEALS. Train the pinned kind and its `daysSince` resets to 0, its
+ *    ratio falls under `DUE_RATIO`, it leaves `due`, and the pin stops applying
+ *    with nothing to clear. The band moves on because the DAY moved on, which
+ *    is the only reason it should ever move.
+ *
+ * The pin is stored per local day by the client (mobile:
+ * `lib/day-band-prefs.ts`), because "what today's answer is" is a fact about
+ * today and expires with it — the same scoping "not today?" already has.
+ */
+export function pinRotation(rot: Rotation, pinned: readonly TrainingKind[]): Rotation {
+  if (!pinned.length || !rot.due.length) return rot;
+  const held = pinned
+    .map((k) => rot.due.find((d) => d.kind === k))
+    .filter((d): d is KindRotation => !!d);
+  if (!held.length) return rot;
+  const rest = rot.due.filter((d) => !held.includes(d));
+  return { ...rot, due: [...held, ...rest].slice(0, MAX_DUE) };
+}
+
 export function nextDueKind(rot: Rotation, rejected: readonly TrainingKind[]): TrainingKind | null {
   const pool = rot.kinds.filter((k) => k.confident && !rejected.includes(k.kind));
   return pool.length ? pool[0]!.kind : null;

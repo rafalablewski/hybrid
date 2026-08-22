@@ -50,6 +50,8 @@ import {
   rotation,
   trainingStreak,
   planDayKind,
+  dayBandDeck,
+  pinRotation,
   dayEventToday,
   dayEventTomorrow,
   isRated,
@@ -109,7 +111,7 @@ import ReadinessSheet from "./readiness-sheet";
 // two placements of one reading made the first look provisional.
 import AuroraDayBand from "./day-band";
 import AuroraDayBar from "./day-bar";
-import { readRejected, readRejectedEvents, rejectEvent, rejectKind } from "../../lib/day-band-prefs";
+import { EMPTY_PREFS, pinKinds, readDayBandPrefs, rejectEvent, rejectKind, type DayBandPrefs } from "../../lib/day-band-prefs";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
@@ -321,13 +323,16 @@ export default function AuroraHome() {
   // BIOMETRICS READ THE RECOVERY STREAM, not the unfiltered one: the latter
   // returns the newest rows of any kind, and a few days of logged meals can
   // evict a week of wearable readings from it (see lib/api.ts).
-  const { data: recoverySignals = [] } = useRecoverySignalsQuery();
+  const recoveryQ = useRecoverySignalsQuery();
+  const recoverySignals = recoveryQ.data ?? [];
   const bio = useMemo(() => toBiometrics(recoverySignals as unknown as Parameters<typeof toBiometrics>[0]), [recoverySignals, today]);
-  const { data: heatSignals = [] } = useHeatSignalsQuery();
+  const heatQ = useHeatSignalsQuery();
+  const heatSignals = heatQ.data ?? [];
   // The food log on the ENGINES' terms, by kind for the same reason: fourteen
   // days of intake against a 28-day maintenance fit is more history than the
   // unfiltered window holds for exactly the athlete who logs most.
-  const { data: nutritionSignals = [] } = useNutritionSignalsQuery();
+  const nutritionQ = useNutritionSignalsQuery();
+  const nutritionSignals = nutritionQ.data ?? [];
   // The same reports the volume model reads, for the heat clearance split.
   const recoveryReports = useRecoveryReports(sessions);
   const log = useMemo(() => personalTrainingLog(sessions), [sessions]);
@@ -502,18 +507,30 @@ export default function AuroraHome() {
   // legs today" over an ordinary Tuesday. Until a plan day can say it is a
   // race, a test or a key session, tomorrow comes only from a detected weekly
   // fixture (and later from an event the athlete declares).
-  const [rejectedKinds, setRejectedKinds] = useState<TrainingKind[]>([]);
-  useEffect(() => { readRejected().then(setRejectedKinds).catch(() => {}); }, [today]);
-  // TOMORROW's rejections, kept apart from today's: "there is no game tomorrow"
-  // and "I am not swimming today" are different answers, and the fixture read
-  // must only honour the first (lib/day-band-prefs.ts).
-  const [rejectedEvents, setRejectedEvents] = useState<TrainingKind[]>([]);
-  useEffect(() => { readRejectedEvents().then(setRejectedEvents).catch(() => {}); }, [today]);
+  // ── EVERY DAY-SCOPED ANSWER, IN ONE READ THAT SAYS WHEN IT LANDED ────────
+  //
+  // This was two `useState([])`s filled by two `useEffect`s, and `[]` meant
+  // both "nothing rejected" and "the disk has not answered yet". The band
+  // consumed them either way, so it drew an instruction against an answer that
+  // had not loaded and then changed its mind when it did. `prefs.loaded` is
+  // what the field waits on now. TODAY's rejections and TOMORROW's stay apart
+  // inside the record — "there is no game tomorrow" and "I am not swimming
+  // today" are different answers (lib/day-band-prefs.ts).
+  const [prefs, setPrefs] = useState<DayBandPrefs>(EMPTY_PREFS);
+  useEffect(() => {
+    let live = true;
+    setPrefs(EMPTY_PREFS);
+    readDayBandPrefs().then((p) => { if (live) setPrefs(p); }).catch(() => { if (live) setPrefs({ ...EMPTY_PREFS, loaded: true }); });
+    return () => { live = false; };
+  }, [today]);
+  const rejectedKinds = prefs.kinds;
+  const rejectedEvents = prefs.events;
   // The races, meets and tests the athlete DECLARED — the half of "what's on
   // tomorrow" no log can answer, entered on the calendar. Soft: the fetcher
   // returns [] rather than throwing, so a missing list costs the band its
   // strongest source and nothing else.
-  const { data: declaredEvents = [] } = useDayEventsQuery();
+  const dayEventsQ = useDayEventsQuery();
+  const declaredEvents = dayEventsQ.data ?? [];
   // The engines take milliseconds; `today` is the day KEY that flips at
   // midnight, so this is a clock read pinned to the day rather than to render.
   const bandNow = useMemo(() => Date.now(), [today]);
@@ -523,11 +540,17 @@ export default function AuroraHome() {
   // said no to, and it PROMOTES the next confident one — otherwise "not today"
   // would silently empty the band rather than correcting it.
   const bandRot = useMemo(() => {
-    if (!rejectedKinds.length) return rot;
-    const next = nextDueKind(rot, rejectedKinds);
-    const kinds = rot.kinds.filter((k) => !rejectedKinds.includes(k.kind));
-    return { ...rot, kinds, due: kinds.filter((k) => k.confident && (k.ratio >= DUE_RATIO || k.kind === next)).slice(0, MAX_DUE) };
-  }, [rot, rejectedKinds]);
+    const corrected = (() => {
+      if (!rejectedKinds.length) return rot;
+      const next = nextDueKind(rot, rejectedKinds);
+      const kinds = rot.kinds.filter((k) => !rejectedKinds.includes(k.kind));
+      return { ...rot, kinds, due: kinds.filter((k) => k.confident && (k.ratio >= DUE_RATIO || k.kind === next)).slice(0, MAX_DUE) };
+    })();
+    // THE PIN, last: whatever the band already named today goes back to the
+    // front, so a refetch cannot re-rank the day under the athlete's eyes. It
+    // can only reorder what is already due — see pinRotation() in core.
+    return pinRotation(corrected, prefs.pin);
+  }, [rot, rejectedKinds, prefs.pin]);
 
   const planToday = useMemo(() => {
     const day = sched?.days.find((d) => d.isToday);
@@ -558,8 +581,8 @@ export default function AuroraHome() {
     [declaredEvents, sched, sessions, rejectedEvents],
   );
 
-  const band = useMemo(
-    () => dayBand({
+  const bandInput = useMemo(
+    () => ({
       deficit,
       muscle: readyVerdict.muscle,
       rx: hasData ? rx : null,
@@ -573,6 +596,13 @@ export default function AuroraHome() {
     }),
     [deficit, readyVerdict.muscle, rx, hasData, planToday, eventSrc, sessions, bandRot, bandNow],
   );
+
+  // THE DECK — the day's answer, then the engine's next candidates. `deck[0]`
+  // is exactly what `dayBand()` returns on its own, so nothing about the band
+  // at rest changes; core decides whether there IS a deck (naming rungs only,
+  // three pages hard — see dayBandDeck).
+  const deck = useMemo(() => dayBandDeck(bandInput), [bandInput]);
+  const band = deck[0]!;
   // ── THE FOLD ───────────────────────────────────────────────────────────
   // One signal, published by this screen's own scroller. The thresholds and the
   // ramp live in @hybrid/core (day-fold.ts) so the field's compression, the
@@ -589,9 +619,6 @@ export default function AuroraHome() {
     if (next !== foldedRef.current) { foldedRef.current = next; setFolded(next); }
   }, [fold]);
 
-  // Offered only when the rotation has somewhere else to go — a correction that
-  // cannot correct anything is a control that does nothing.
-  const bandNext = useMemo(() => nextDueKind(bandRot, [...rejectedKinds, ...band.kinds]), [bandRot, rejectedKinds, band.kinds]);
 
   // THE DONE FLOOR — what was actually logged on the viewed day, handed to the
   // week rail to render as the LOWER FLOOR of its card (aurora/done-floor.tsx).
@@ -879,7 +906,47 @@ export default function AuroraHome() {
   // still has to render, on the page, exactly as the other two tabs draw it —
   // a fabricated score under a full-bleed field of colour is a loud way to be
   // wrong (see the `none` rung in day-band.ts).
-  const fieldOn = !initialLoad && isAthlete && hasData && readyVerdict.kind !== "empty" && band.rung !== "none";
+  // ── THE GATE, AND IT NOW LISTS WHAT THE BAND ACTUALLY EATS ──────────────
+  //
+  // `initialLoad` waits on TWO reads (sessions, macrocycle). The band consumes
+  // ten, and it was allowed on screen the moment those two landed — so it drew
+  // an instruction from a deficit with no check-in in it, then again with one,
+  // then again once the prescription resolved, then again when the disk
+  // returned the rejections. Up to five different bands in one launch, on one
+  // unchanged day, ordered by network jitter. That is the "randomness": not a
+  // decision, but the intermediate states of a decision.
+  //
+  // A read is settled when it has ANSWERED — success or failure. Offline
+  // resolves; it does not hang the field forever.
+  const bandReady =
+    checkinsRead.settled &&
+    signalsRead.settled &&
+    heatQ.isFetched &&
+    nutritionQ.isFetched &&
+    recoveryQ.isFetched &&
+    dayEventsQ.isFetched &&
+    prefs.loaded;
+  const fieldOn = !initialLoad && bandReady && isAthlete && hasData && readyVerdict.kind !== "empty" && band.rung !== "none";
+
+  // ── WRITE THE PIN ONCE, AND ONLY FROM A SETTLED READ ────────────────────
+  //
+  // What the band said today is written down the first time it is reached with
+  // every input in hand, so a later refetch cannot re-rank the day under the
+  // athlete's eyes (pinRotation, in core, promotes it back). It is deliberately
+  // gated on `fieldOn` — pinning a band resolved against half its inputs would
+  // freeze exactly the wrong answer, which is the whole defect this ends.
+  //
+  // Only the rungs that NAME a training are pinned. A protected day's `kinds`
+  // are a guess about tomorrow, and a race's are a fact — neither is a ranking
+  // that could have come out differently.
+  const pinnable = band.rung === "order" || band.rung === "single";
+  const bandKinds = band.kinds.join("+");
+  useEffect(() => {
+    if (!fieldOn || !pinnable || prefs.pin.length || !bandKinds) return;
+    pinKinds(bandKinds.split("+") as TrainingKind[])
+      .then((pin) => setPrefs((p) => ({ ...p, pin })))
+      .catch(() => {});
+  }, [fieldOn, pinnable, prefs.pin.length, bandKinds]);
   // THE GROUND, only when the field is FILLED. A quiet field is a 16% wash on
   // near-black, where the chrome's own tones are already the legible ones —
   // handing those rows a hue to measure against would swap them for no reason.
@@ -1000,18 +1067,10 @@ export default function AuroraHome() {
         {fieldOn ? (
           <View style={{ marginBottom: 16 }}>
             <AuroraDayBand
-              band={band}
+              deck={deck}
               fold={fold}
               top={topChrome(fieldGround, fieldMasthead)}
               onExplain={() => setDayOpen(true)}
-              // TWO CORRECTIONS BEHIND ONE WORD, and they have to be told
-              // apart. On the PROTECT rung the athlete is answering about
-              // TOMORROW ("no, there's no game"), so the rejection goes to the
-              // fixture read and the band drops to the rung below — it is
-              // offered whenever the guess is ours to withdraw, with no
-              // rotation candidate required, because collapsing the rung IS
-              // the correction. Everywhere else the answer is about TODAY's
-              // training, and there has to be somewhere for the band to go.
               // The band's ask needs a session to open the sheet on, and it is
               // TODAY's unrated one — not the viewed day's, which the rail may
               // have scrubbed somewhere else entirely.
@@ -1019,13 +1078,34 @@ export default function AuroraHome() {
                 const s = sessionsOnDay(sessions, bandNow).find((x) => !isRated(x));
                 if (s) setRating(s);
               }}
+              // "NOT TODAY?" NOW BELONGS TO THE PROTECTED DAY ALONE. It used to
+              // carry two corrections behind one word: an answer about TOMORROW
+              // ("no, there's no game") and an answer about TODAY's training.
+              // The second is the deck's job — swipe and pick — so the word is
+              // left with the one job a deck cannot do, because a protected day
+              // has no candidates to page between. Collapsing the rung IS the
+              // correction there, so no rotation candidate is required.
               onNotToday={
-                band.rung === "protect"
-                  ? (band.source === "inferred" && band.kinds[0]
-                      ? () => { rejectEvent(band.kinds[0]!).then(setRejectedEvents).catch(() => {}); }
-                      : undefined)
-                  : (bandNext ? () => { const k = band.kinds[0]; if (k) rejectKind(k).then(setRejectedKinds).catch(() => {}); } : undefined)
+                band.rung === "protect" && band.source === "inferred" && band.kinds[0]
+                  ? () => { rejectEvent(band.kinds[0]!).then((events) => setPrefs((p) => ({ ...p, events }))).catch(() => {}); }
+                  : undefined
               }
+              // THE COMMIT. Swiping is free — the whole ranking can be read and
+              // left alone — and this is the one tap that changes the day. It
+              // rejects everything ranked above the page the athlete chose, so
+              // the correction the band used to take as a word now arrives as
+              // a gesture and a confirmation, and teaches the same rotation.
+              onPick={(i) => {
+                const above = deck.slice(0, i).flatMap((b) => b.kinds);
+                const chosen = deck[i]?.kinds ?? [];
+                if (!above.length) return;
+                void (async () => {
+                  let kinds = rejectedKinds;
+                  for (const k of above) kinds = await rejectKind(k);
+                  const pin = await pinKinds(chosen);
+                  setPrefs((p) => ({ ...p, kinds, pin }));
+                })();
+              }}
             />
           </View>
         ) : topChrome()}

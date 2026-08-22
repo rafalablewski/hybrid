@@ -3,8 +3,8 @@ import { makeT } from "./i18n";
 import {
   BAND_HEAD_MAX, BAND_SAY_MAX, CADENCE_SPREAD_MAX, REST_STREAK_DAYS, ROTATION_STALE_DAYS,
   FIXTURE_LOOKBACK_WEEKS, FIXTURE_MIN_WEEKS, FIXTURE_STALE_DAYS,
-  TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, doneToday, fixtureTomorrow, nextDueKind, rotation,
-  sessionKind, trainingStreak, weeklyFixture,
+  BAND_DECK_MAX, TRAINING_KINDS, bandSay, bandText, blocksKind, dayBand, dayBandDeck, doneToday,
+  fixtureTomorrow, nextDueKind, pinRotation, rotation, sessionKind, trainingStreak, weeklyFixture,
   type DayBand, type DayBandInput, type TrainingKind,
 } from "./day-band";
 import { EVENT_LABEL_MAX } from "./day-events";
@@ -473,6 +473,126 @@ describe("voice", () => {
     expect(dose!.values!.pct).toBe(94);
     // and nothing else in the band mentions a percentage
     expect(b.say.filter((l) => JSON.stringify(l).includes("pct")).length).toBe(1);
+  });
+});
+
+describe("the rank is total", () => {
+  it("breaks a tie the same way every time, whatever order the log arrives in", () => {
+    // Two kinds, identical cadence, identical days-since — a dead-heat ratio.
+    // The old sort left this to Map insertion order, so the answer depended on
+    // which kind appeared FIRST in the 28-day window.
+    const a = [...habit("swimming", 3, 6, 3), ...habit("cycling", 3, 6, 3)];
+    const b = [...habit("cycling", 3, 6, 3), ...habit("swimming", 3, 6, 3)];
+    const first = (list: LoggedSession[]) => rotation(list, NOW).kinds[0]!.kind;
+    expect(first(a)).toBe(first(b));
+    // ...and reversing the array cannot move it either.
+    expect(first([...a].reverse())).toBe(first(a));
+  });
+
+  it("prefers the more overdue, then the longer since, then the better established", () => {
+    const rot = rotation([...habit("running", 2, 8, 6), ...habit("gym", 2, 8, 0)], NOW);
+    const run = rot.kinds.find((k) => k.kind === "running")!;
+    const gym = rot.kinds.find((k) => k.kind === "gym")!;
+    expect(run.ratio).toBeGreaterThan(gym.ratio);
+    expect(rot.kinds[0]!.kind).toBe("running");
+  });
+
+  it("falls to the app's own order of disciplines and never to the iterator", () => {
+    // Same cadence, same count, same days-since: every key but the last ties.
+    const rot = rotation([...habit("sport", 3, 6, 3), ...habit("gym", 3, 6, 3)], NOW);
+    // `gym` leads `sport` in TRAINING_KINDS, so gym wins — deterministically.
+    expect(TRAINING_KINDS.indexOf("gym")).toBeLessThan(TRAINING_KINDS.indexOf("sport"));
+    expect(rot.kinds[0]!.kind).toBe("gym");
+  });
+});
+
+describe("pinRotation — today's answer stays today's answer", () => {
+  const rot = () => rotation([...habit("swimming", 3, 6, 3), ...habit("gym", 3, 6, 3)], NOW);
+
+  it("promotes what the band already said, in the order it said it", () => {
+    const base = rot();
+    expect(base.due.length).toBeGreaterThan(1);
+    const pinned = pinRotation(base, [base.due[1]!.kind]);
+    expect(pinned.due[0]!.kind).toBe(base.due[1]!.kind);
+  });
+
+  it("cannot invent an answer — a pinned kind that no longer qualifies is ignored", () => {
+    const base = rot();
+    // "skiing" is nowhere in this log, so pinning it changes nothing at all.
+    expect(pinRotation(base, ["skiing"]).due).toEqual(base.due);
+    // ...and an empty pin is a no-op by identity.
+    expect(pinRotation(base, [])).toBe(base);
+  });
+
+  it("self-heals: training the pinned kind drops it out with nothing to clear", () => {
+    // The same log, but the swim happened TODAY — ratio 0, out of `due`.
+    const trained = rotation([...habit("swimming", 3, 6, 0), ...habit("gym", 3, 6, 3)], NOW);
+    expect(trained.due.some((d) => d.kind === "swimming")).toBe(false);
+    expect(pinRotation(trained, ["swimming"]).due).toEqual(trained.due);
+  });
+
+  it("never grows the day past what the band will order", () => {
+    const base = rot();
+    const pinned = pinRotation(base, base.kinds.map((k) => k.kind));
+    expect(pinned.due.length).toBeLessThanOrEqual(base.due.length);
+  });
+});
+
+describe("the deck", () => {
+  const deckInput = {
+    deficit: deficit(64),
+    sessions: [...habit("swimming", 3, 6, 3), ...habit("gym", 4, 6, 4), ...habit("running", 3, 6, 3)],
+    now: NOW,
+  };
+
+  it("leads with exactly what the band says on its own", () => {
+    const deck = dayBandDeck(deckInput);
+    const alone = dayBand(deckInput);
+    expect(deck[0]!.rung).toBe(alone.rung);
+    expect(deck[0]!.head).toEqual(alone.head);
+    expect(deck[0]!.kinds).toEqual(alone.kinds);
+  });
+
+  it("never runs past three, however much the rotation offers", () => {
+    expect(dayBandDeck(deckInput).length).toBeLessThanOrEqual(BAND_DECK_MAX);
+  });
+
+  it("gives each page its own kinds — a page is not the one above it relabelled", () => {
+    const deck = dayBandDeck(deckInput);
+    const seen = new Set<TrainingKind>();
+    for (const page of deck) {
+      for (const k of page.kinds) {
+        expect(seen.has(k), `${k} offered twice`).toBe(false);
+        seen.add(k);
+      }
+    }
+  });
+
+  it("refuses to page past a VERDICT — a deck is candidates, never diagnoses", () => {
+    // The floor is the case the band exists to catch. You may not swipe off it.
+    const floored = dayBandDeck({ ...deckInput, deficit: deficit(35, TISSUE, "floor") });
+    expect(floored).toHaveLength(1);
+    expect(floored[0]!.rung).toBe("deload");
+    // Nor off a race, a protected day, a rest day, or a day already trained.
+    for (const input of [
+      { ...deckInput, today: { kind: "running" as TrainingKind, label: "Half marathon", source: "declared" as const } },
+      { ...deckInput, tomorrow: { kind: "sport" as TrainingKind, source: "fixture" as const } },
+      { ...deckInput, streakDays: REST_STREAK_DAYS },
+      { ...deckInput, done: { count: 1, unrated: 0, feel: 3, kind: "gym" as TrainingKind } },
+    ]) {
+      expect(dayBandDeck(input)).toHaveLength(1);
+    }
+  });
+
+  it("draws no deck when the rotation has nothing else to offer", () => {
+    const one = dayBandDeck({ deficit: deficit(64), sessions: habit("running", 3, 8, 3), now: NOW });
+    expect(one).toHaveLength(1);
+  });
+
+  it("is deterministic — the same log builds the same deck, in the same order", () => {
+    const a = dayBandDeck(deckInput).map((b) => b.kinds.join("+"));
+    const b = dayBandDeck({ ...deckInput, sessions: [...deckInput.sessions].reverse() }).map((x) => x.kinds.join("+"));
+    expect(a).toEqual(b);
   });
 });
 
