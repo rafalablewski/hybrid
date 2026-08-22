@@ -108,6 +108,14 @@ export type OnboardingQuestionKind = (typeof ONBOARDING_QUESTION_KINDS)[number];
 export const ONBOARDING_ENGINE_KEYS = [
   "persona", "goal", "experience", "daysPerWeek", "equipment",
   "sex", "birthYear", "bodyweightKg",
+  // THE LAST TWO COMPLETE THE RECOVERY MODEL. `personalizeLandmarks` scales the
+  // athlete's ceiling by seven supplied inputs and divides its confidence by the
+  // same seven; setup was asking for five of them, so nobody could reach a
+  // confident model without finding the questionnaire screen on their own.
+  // Sleep is the single largest recovery factor in the table (its worst tier
+  // costs 22%) and life stress is next. Both are asked of EVERY intake, because
+  // how much someone recovers is not a plan question.
+  "sleep", "stress",
 ] as const;
 
 /**
@@ -179,20 +187,42 @@ export const ONBOARDING_PERSONA_CHOICES: OnboardingChoice[] = [
 /**
  * The built-in questions, in display order. Seed + fallback.
  *
- * THE `personas` FIELD IS THE FORK. Four of these are asked only of an athlete
- * intake — the goal, the experience tier, days per week and equipment — because
- * all four exist to MATCH AND SHAPE A PLAN, and a tracker is not getting one.
- * What both intakes are asked is who they are: sex, birth date and body mass,
- * which the volume and readiness models read for everybody.
+ * THE FORK IS THE OUTCOME, NOT THE DATA — and the first cut of it got this
+ * exactly backwards, so it is worth stating plainly.
  *
- * So the tracker answers four questions instead of eight, and the four it
- * skips are exactly the ones it had no use for.
+ * That cut marked the experience tier, days per week and equipment as
+ * athlete-only, on the reasoning that all three "exist to match and shape a
+ * plan". They do not. `questionnaireFromAnswers` maps experience and
+ * daysPerWeek straight onto the volume profile, where experience is a STIMULUS
+ * multiplier and training frequency is a RECOVERY factor, and both are counted
+ * in `personalizeLandmarks`' confidence divisor. Dropping them did not shorten
+ * a tracker's setup so much as permanently degrade their model: two of seven
+ * confidence inputs gone, for every athlete who chose the simple product.
+ *
+ * The whole argument for this app is that it learns THIS person — that two
+ * athletes doing twenty sets of chest a week are not the same athlete, and only
+ * their own logged response can say which is which. An intake that collects
+ * less from half the user base is an intake working against the engine.
+ *
+ * So: EVERY question about the person is asked of BOTH intakes. The only
+ * athlete-only question is the GOAL, because a tracker has told us they are not
+ * training for one — and the only thing the fork changes at the end is whether
+ * a plan is recommended and a season enrolled.
  */
 export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   {
     id: "persona", key: "persona", kind: "persona", engineKey: "persona", system: true, enabled: true, order: 0,
     title: "How do you want to use HYBRID?", subtitle: "You can switch anytime in Settings.",
-    choices: ONBOARDING_PERSONA_CHOICES, defaultValue: "casual",
+    // NO DEFAULT, and it is the only choice question without one. Every other
+    // answer is seeded from its default so the recommender has a complete set
+    // and a choice step opens with something shown as picked. This one decides
+    // WHICH PRODUCT the athlete is in, so a seeded value would be the app
+    // choosing for them and then reporting the choice back as theirs. It is
+    // also the question the whole wizard forks on: leaving "casual" pre-selected
+    // meant an athlete who never looked at this screen was silently placed in
+    // the tracker. Unanswered has to stay unanswered until it is answered.
+    choices: ONBOARDING_PERSONA_CHOICES,
+    required: true,
   },
   {
     id: "goal", key: "goal", kind: "goal", engineKey: "goal", system: true, enabled: true, order: 1, required: true,
@@ -201,7 +231,6 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   },
   {
     id: "experience", key: "experience", kind: "single", engineKey: "experience", system: true, enabled: true, order: 2,
-    personas: ["athlete"],
     title: "What's your experience?", subtitle: "So we set the right starting load.",
     defaultValue: "beginner",
     choices: [
@@ -243,15 +272,32 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
     title: "What do you weigh?", subtitle: "It sets how much you have to recover from per set — and your working loads.",
     min: 25, max: 300, step: 0.5,
   },
+  // ── THE TWO RECOVERY QUESTIONS ──────────────────────────────────────────
+  // Same 1-5 scale as the daily check-in, deliberately: the athlete meets the
+  // question in the same shape wherever it is asked, and the engine reads one
+  // scale. Both carry a default because mid-scale is an honest population prior
+  // for them — unlike sex or body mass, where a default would be a fabricated
+  // measurement — but the profile still records only what was TOUCHED, so a
+  // skipped one stays unknown rather than becoming a 3 nobody chose.
   {
-    id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 6,
-    personas: ["athlete"],
+    id: "sleep", key: "sleep", kind: "number", engineKey: "sleep", system: true, enabled: true, order: 6,
+    title: "How do you usually sleep?",
+    subtitle: "1 is broken, 5 is consistently great. Sleep moves your recovery ceiling more than anything else we can ask about.",
+    min: 1, max: 5, step: 1, defaultValue: 3,
+  },
+  {
+    id: "stress", key: "stress", kind: "number", engineKey: "stress", system: true, enabled: true, order: 7,
+    title: "How stressful is life right now?",
+    subtitle: "1 is calm, 5 is very stressed. It costs recovery the same way a hard training week does.",
+    min: 1, max: 5, step: 1, defaultValue: 3,
+  },
+  {
+    id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 8,
     title: "How many days a week?", subtitle: "A plan you'll actually finish beats an ideal one.",
     min: 1, max: 7, step: 1, defaultValue: 3,
   },
   {
-    id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 7,
-    personas: ["athlete"],
+    id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 9,
     title: "What equipment do you have?", subtitle: "We'll only prescribe what you can do.",
     defaultValue: "full",
     choices: [

@@ -8,13 +8,22 @@ import {
 } from "./onboarding";
 
 /**
- * THE FORK.
+ * THE FORK — AND WHAT IT IS A FORK IN.
  *
  * The first question asks which of two products the athlete wants. Until this
- * existed the wizard did not branch on the answer: everyone got all eight
- * questions, the goal question was `required` with no skip, and the server
- * enrolled a periodised season for anyone with a goal. Both answers produced
- * identical server state.
+ * existed the wizard did not branch on the answer at all: everyone got every
+ * question, the goal step was `required` with no skip, and the server enrolled
+ * a periodised season for anyone with a goal. Both answers produced identical
+ * server state.
+ *
+ * The first correction over-corrected. It forked the DATA — dropping the
+ * experience tier, days per week and equipment from the tracker — which made
+ * the engine measurably worse for every athlete who chose the simple product,
+ * because those answers feed the volume model rather than the plan matcher.
+ *
+ * What the fork is actually in is the OUTCOME: whether a plan is recommended
+ * and a season enrolled. Everything the app can learn about the person is asked
+ * of both.
  */
 
 const keys = (persona?: "casual" | "athlete") =>
@@ -26,10 +35,20 @@ describe("which questions each intake is asked", () => {
     expect(keys().length).toBe(DEFAULT_ONBOARDING_QUESTIONS.length);
   });
 
-  it("asks a tracker who they are, and nothing about a plan", () => {
-    // The volume and readiness models read sex, birth and body mass for
-    // everybody. Nothing else in this intake has a consumer.
-    expect(keys("casual")).toEqual(["persona", "sex", "birth", "bodyweight"]);
+  it("asks a tracker EVERYTHING about themselves, and only skips the goal", () => {
+    // THE FORK IS THE OUTCOME, NOT THE DATA, and the first cut of it had this
+    // backwards: it marked experience, days per week and equipment athlete-only
+    // on the reasoning that they exist to shape a plan. They do not.
+    // questionnaireFromAnswers maps experience and daysPerWeek onto the volume
+    // profile, where one is a stimulus multiplier and the other a recovery
+    // factor, and both are counted in the model's confidence divisor — so
+    // skipping them permanently degraded every tracker's model.
+    expect(keys("casual")).toEqual(keys("athlete").filter((k) => k !== "goal"));
+  });
+
+  it("makes the goal the ONLY question an intake can skip", () => {
+    const athleteOnly = DEFAULT_ONBOARDING_QUESTIONS.filter((q) => q.personas).map((q) => q.key);
+    expect(athleteOnly).toEqual(["goal"]);
   });
 
   it("asks an athlete everything", () => {
@@ -42,9 +61,21 @@ describe("which questions each intake is asked", () => {
     expect(keys("casual")).not.toContain("goal");
   });
 
-  it("halves the tracker's setup — four questions instead of eight", () => {
-    expect(keys("casual").length).toBe(4);
-    expect(keys("athlete").length).toBe(8);
+  it("costs a tracker exactly one question fewer than an athlete", () => {
+    expect(keys("athlete").length - keys("casual").length).toBe(1);
+  });
+
+  it("asks every intake for all seven inputs the recovery model scales by", () => {
+    // personalizeLandmarks multiplies the athlete's ceiling by seven supplied
+    // inputs and divides its confidence by the same seven. Setup asked for five
+    // of them until sleep and stress were added, so nobody could reach a
+    // confident model without finding the questionnaire screen on their own.
+    const asked = new Set(
+      onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, "casual").map((q) => q.engineKey),
+    );
+    for (const k of ["experience", "birthYear", "bodyweightKg", "sleep", "stress", "daysPerWeek"]) {
+      expect(asked, `the model reads ${k} and setup never asks for it`).toContain(k);
+    }
   });
 });
 
@@ -82,7 +113,8 @@ describe("the admin editor cannot silently un-fork the wizard", () => {
 
   it("re-derives a built-in's persona scope from the code default", () => {
     const forked = onboardingQuestionsForClient(storedRows, "casual").map((q) => q.key);
-    expect(forked).toEqual(["persona", "sex", "birth", "bodyweight"]);
+    expect(forked).toEqual(keys("casual"));
+    expect(forked).not.toContain("goal");
   });
 
   it("treats a custom admin-added question as applying to both", () => {

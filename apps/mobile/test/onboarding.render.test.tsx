@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, waitFor } from "@testing-library/react";
-import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES } from "@hybrid/core";
+import { DEFAULT_ONBOARDING_QUESTIONS, ONBOARDING_GOAL_GROUPS, ONBOARDING_PERSONA_CHOICES, onboardingQuestionsForClient } from "@hybrid/core";
+
+/** The intake each persona actually walks — DERIVED, so adding a question to
+ *  the shipped set changes these tests' step counts instead of breaking them. */
+const intake = (p: "casual" | "athlete") => onboardingQuestionsForClient(DEFAULT_ONBOARDING_QUESTIONS, p);
 import { renderScreen as render } from "./render";
 import Onboarding from "../components/aurora/onboarding";
 import { SCRUB_UNSET } from "../components/aurora/kit";
@@ -183,8 +187,10 @@ describe("what setup writes down", () => {
     // segmented control rather than option rows — a tab, not a button.
     const seg = Array.from(container.querySelectorAll('[role="tab"]')).find((e) => e.textContent === "Intermediate");
     fireEvent.click(seg as HTMLElement); // …and this one is CHOSEN
-    // Past sex, born, weight, days, equipment without touching any of them.
-    for (let i = 0; i < 6; i++) fireEvent.click(cta(container));
+    // Past every remaining question without touching any of them. Experience is
+    // step index 2, the plan step sits at `length`, so that is the distance.
+    const steps = intake("athlete").length - 2;
+    for (let i = 0; i < steps; i++) fireEvent.click(cta(container));
     fireEvent.click(cta(container)); // the plan step's commit
 
     await waitFor(() => expect(written).toHaveBeenCalled());
@@ -195,6 +201,11 @@ describe("what setup writes down", () => {
     expect(profile.daysPerWeek, "a frequency nobody chose").toBeUndefined();
     expect(profile.sex).toBeUndefined();
     expect(profile.birthYear).toBeUndefined();
+    // The two recovery questions carry a default too, and are held to the same
+    // rule: a mid-scale prior is fine to SHOW and must never be recorded as an
+    // answer, or the model would read a 3 nobody gave as a measured value.
+    expect(profile.sleep, "a sleep score nobody chose").toBeUndefined();
+    expect(profile.stress, "a stress score nobody chose").toBeUndefined();
     expect(weighed, "a body mass nobody gave").not.toHaveBeenCalled();
   });
 });
@@ -226,22 +237,25 @@ describe("choosing the tracker", () => {
     expect(body, "the tracker was offered a plan").not.toContain("Start this plan");
   });
 
-  it("still answers the three questions the volume model reads", () => {
-    // The fork drops what a tracker has no use for. It must not drop what every
-    // engine reads about every athlete.
+  it("is asked everything the engine learns from, and only skips the goal", () => {
+    // THE FORK IS THE OUTCOME, NOT THE DATA. An earlier cut dropped experience,
+    // days per week and equipment from this intake, which fed the volume model
+    // rather than the plan matcher — so a tracker's ceiling lost a stimulus
+    // multiplier, a recovery factor and two of seven confidence inputs.
     const { container } = render(<Onboarding />);
     fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[0]!.label));
-    // FOUR screens, so four snapshots — and no click on the last one, which
-    // commits rather than advancing.
+    const qs = intake("casual");
     const seen: string[] = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < qs.length; i++) {
       seen.push(container.textContent ?? "");
-      if (i < 3) fireEvent.click(cta(container));
+      if (i < qs.length - 1) fireEvent.click(cta(container)); // the last commits
     }
     const all = seen.join(" ");
-    for (const key of ["sex", "birth", "bodyweight"]) {
-      const q = DEFAULT_ONBOARDING_QUESTIONS.find((x) => x.key === key)!;
+    for (const q of qs) {
       expect(all, `the tracker was not asked "${q.title}"`).toContain(q.title);
     }
+    // And the one thing it genuinely does not need.
+    const goal = DEFAULT_ONBOARDING_QUESTIONS.find((x) => x.key === "goal")!;
+    expect(all, "the tracker was asked for a goal").not.toContain(goal.title);
   });
 });
