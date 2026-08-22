@@ -69,7 +69,7 @@ function Swatch({ C, label, opacity }: { C: Palette; label: string; opacity: num
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
       <View style={{ width: 11, height: 11, borderRadius: RADIUS.mark, backgroundColor: C.lime, opacity, borderWidth: 1, borderColor: C.line }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{label}</Text>
     </View>
   );
 }
@@ -78,7 +78,7 @@ function SideCol({ label, C, children }: { label: string; C: Palette; children: 
   return (
     <View style={{ flex: 1 }}>
       {label ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
       ) : null}
       <View style={{ width: "100%", aspectRatio: 1 }}>{children}</View>
     </View>

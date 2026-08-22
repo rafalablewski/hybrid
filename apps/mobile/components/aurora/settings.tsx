@@ -273,7 +273,7 @@ export default function AuroraSettings({ landOn }: {
                 <>
                   <AuroraIcon name="lock" size={fs.micro + 2} color={C.ash} />
                   <View style={{ borderWidth: 1, borderColor: txt(C, C.lime), backgroundColor: withAlpha(C.lime, ALPHA.fill), borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: tracking.label }}>{t("w.account.settings.paid")}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime), textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label") }}>{t("w.account.settings.paid")}</Text>
                   </View>
                 </>
               )}
@@ -515,7 +515,7 @@ export default function AuroraSettings({ landOn }: {
 
 function Label({ children, color, top, tight }: { children: ReactNode; color: string; top?: boolean; tight?: boolean }) {
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color, marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }}>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color, marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }}>
       {children}
     </Text>
   );
@@ -528,7 +528,7 @@ function Section({ label, tone, children }: { label: string; tone?: string; chil
   const { palette: C } = useTheme();
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
       <ACard>{children}</ACard>
     </View>
   );

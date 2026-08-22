@@ -93,7 +93,7 @@ export default function LoadSheet({ load, focus, onClose }: {
               the card's own headline weight: a coloured paragraph would
               out-shout the figures it is supposed to be introducing. */}
           {verdict && (
-            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, lineHeight: leading(16), color: C.chalk }}>
+            <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), lineHeight: leading(16), color: C.chalk }}>
               {t(verdict.key)}
             </Text>
           )}
@@ -209,7 +209,7 @@ function Block({ C, head, meta, children }: {
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 11 }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>{head}</Text>
-        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{meta}</Text> : null}
+        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{meta}</Text> : null}
       </View>
       {children}
     </View>
@@ -279,7 +279,7 @@ function Figure({ C, t, explain }: { C: Palette; t: T; explain: LoadExplain }) {
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginBottom: 6 }}>
-        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+        <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
           {t(LOAD_METRIC_LABEL_KEY[explain.metric])}
         </Text>
         <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ flex: 1, fontFamily: F.monoBold, fontSize: fs.caption, color: paintOf(C, explain) }}>{explain.value}</Text>

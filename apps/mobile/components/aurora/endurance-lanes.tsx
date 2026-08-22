@@ -194,7 +194,7 @@ export function LaneOrderChip({ order, onPress }: { order: LaneOrder; onPress: (
         paddingHorizontal: 9, paddingVertical: 4,
       }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
         {t(ORDER_KEY[order])}
       </Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>⌄</Text>
@@ -233,7 +233,7 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         <Text
           numberOfLines={1}
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
+          style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}
         >
           {t("w.home.end.scopeAll")}
         </Text>
@@ -326,7 +326,7 @@ function Tile({ w, label, a11y, foot, footRight, bind, children }: {
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
         numberOfLines={1}
         accessibilityLabel={a11y}
-        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}
+        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}
       >
         {label}
       </Text>
@@ -380,7 +380,7 @@ function EffortsTile({ lane }: { lane: EnduranceLane }) {
   return (
     <Tile w={126} label={t("endurance.efforts")}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{lane.efforts}</Text>
       </View>
       <View style={{ gap: 3, marginTop: "auto" }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>
@@ -422,7 +422,7 @@ function DistanceTile({ lane }: { lane: EnduranceLane }) {
       foot={read ? weekLabel(t, read.weekStart) : ""}
     >
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: read?.best ? txt(C, C.lime) : C.chalk }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking(fs.display), color: read?.best ? txt(C, C.lime) : C.chalk }}>
           {read ? read.value : lane.distanceKm}
         </Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? read.unit : "km"}</Text>
@@ -474,7 +474,7 @@ function TrendTile({ lane }: { lane: EnduranceLane }) {
           window. It used to print the newest trend point, which made this the
           third distinct scope in a rail of five cards. Held, it answers for the
           scrubbed week and the foot says which. */}
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: read?.best ? txt(C, C.lime) : C.chalk }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking(fs.display), color: read?.best ? txt(C, C.lime) : C.chalk }}>
         {read ? `${read.value} ${read.unit}` : formatDisciplinePace(lane.paceAllTime ?? lane.paceTrend[lane.paceTrend.length - 1]!, lane.discipline)}
       </Text>
       <View ref={scrub.plotRef} style={{ marginTop: "auto" }}>

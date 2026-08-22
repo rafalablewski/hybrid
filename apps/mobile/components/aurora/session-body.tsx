@@ -124,7 +124,7 @@ export default function SessionBody({
                   flex: 1,
                   fontFamily: F.mono,
                   fontSize: fs.nano,
-                  letterSpacing: tracking.label,
+                  letterSpacing: tracking(fs.nano, "label"),
                   textTransform: "uppercase",
                   color: on ? C.chalk : C.ash,
                 }}
@@ -153,7 +153,7 @@ export default function SessionBody({
           style={{
             fontFamily: F.mono,
             fontSize: fs.nano,
-            letterSpacing: tracking.label,
+            letterSpacing: tracking(fs.nano, "label"),
             textTransform: "uppercase",
             color: txt(C, C.amber),
             marginTop: space.ms,
@@ -166,7 +166,7 @@ export default function SessionBody({
       {/* Honesty: a custom lift the catalog does not know is absent from the
           figure, and the panel says so rather than quietly under-reporting. */}
       {map.unmapped.length > 0 && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: space.xs }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: space.xs }}>
           {t("session.body.unmapped")
             .replace("{count}", String(map.unmapped.length))
             .replace("{name}", map.unmapped.join(", "))}

@@ -138,7 +138,7 @@ function Row({ C, row, t, age }: {
             : t("w.home.wearable.notMeasured")}
         </Text>
         {provenance ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 2 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: 2 }}>
             {provenance}
           </Text>
         ) : null}

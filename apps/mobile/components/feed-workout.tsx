@@ -60,7 +60,7 @@ export function StatGrid({ stats, units }: { stats: FeedStat[]; units: WeightUni
             {s.device ? <WatchGlyph color={C.ash} /> : null}
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: s.key === "hr" ? txt(C, colors.blue) : C.chalk }}>{feedStatText(s, units, lang)}</Text>
           </View>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash, marginTop: 2 }}>{t(FEED_STAT_LABEL_KEY[s.key]).toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginTop: 2 }}>{t(FEED_STAT_LABEL_KEY[s.key]).toUpperCase()}</Text>
         </View>
       ))}
     </View>

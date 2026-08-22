@@ -15,7 +15,10 @@ describe("the named type styles", () => {
       const s = text[t];
       expect(Object.keys(fs), `${t}.size`).toContain(s.size);
       if (s.leading !== FLUSH) expect(Object.keys(lh), `${t}.leading`).toContain(s.leading);
-      if (s.tracking !== "figure") expect(Object.keys(tracking), `${t}.tracking`).toContain(s.tracking);
+      // A style either names one of the two uppercase voices, names the figure
+      // tightening, or names nothing — in which case the SIZE decides, which is
+      // the whole point of the band table. Anything else is a forked ladder.
+      if (s.tracking !== undefined) expect(["text", "label", "caps", "figure"], `${t}.tracking`).toContain(s.tracking);
       expect(Object.values(weight), `${t}.weight`).toContain(s.weight);
     }
   });
@@ -103,7 +106,7 @@ describe("resolveText", () => {
     // trackFigure is em-derived, so it scales; `tracking` is still dp.
     expect(resolveText("metric").letterSpacing).toBe(trackFigure(fs.stat));
     expect(resolveText("metric", 2).letterSpacing).toBe(trackFigure(fs.stat * 2));
-    expect(resolveText("body").letterSpacing).toBe(tracking.normal);
+    expect(resolveText("body").letterSpacing).toBe(tracking(fs.body));
   });
 
   it("a readout is one weight below a result", () => {

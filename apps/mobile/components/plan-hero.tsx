@@ -380,7 +380,7 @@ export function CoverScreen({
                 <View style={{ flexDirection: "row", gap: wide ? 12 : 18, marginTop: 16, marginBottom: 16 }}>
                   {cover.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 10 }}>
-                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: tracking.display, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                      <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: wide ? 22 : 27, lineHeight: wide ? 24 : 28, letterSpacing: tracking(wide ? 22 : 27), color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: wide ? 12 : 14, color: C.ash }}>{s.unit}</Text>}
                       </Text>

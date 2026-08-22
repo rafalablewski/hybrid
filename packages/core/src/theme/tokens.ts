@@ -263,7 +263,7 @@ export type ColorToken = keyof typeof colors;
  *
  * The tie-break was which face is doing the condensed face's JOB. Archivo
  * Narrow was declared for "labels / chips" — but the app's actual label voice
- * is the mono uppercase tracked eyebrow (`tracking.label` alone holds 216 call
+ * is the mono uppercase tracked eyebrow (the `label` tracking alone holds 216 call
  * sites), and that voice was never Narrow. A third face bought nothing but a
  * second answer to a question already answered, plus a webfont download.
  *

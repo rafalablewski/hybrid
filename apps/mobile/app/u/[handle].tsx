@@ -172,7 +172,7 @@ export default function UserScreen() {
 
   const action = userPageAction(data);
   const coach = data.coach;
-  const label = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const, color: C.ash };
+  const label = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase" as const, color: C.ash };
 
   return (
     <AuroraScreen
@@ -350,7 +350,7 @@ function Overview({ data, cmp, name, onCompare, busy }: {
   const { palette: C } = useTheme();
   const { t } = useLang();
   const stats = data.stats;
-  const label = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const, color: C.ash };
+  const label = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase" as const, color: C.ash };
 
   if (!data.canViewResults) {
     const rel = userPageRelation(data);
@@ -442,7 +442,7 @@ function LoadMore({ label, busy, busyLabel, onLoad }: { label: string; busy: boo
 function ListEnd({ text }: { text: string }) {
   const { palette: C } = useTheme();
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, textAlign: "center", paddingVertical: 14 }}>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, textAlign: "center", paddingVertical: 14 }}>
       {text}
     </Text>
   );
@@ -489,7 +489,7 @@ function People({ handle, tab, onTab }: { handle: string; tab: PeopleTab; onTab:
 
   const side = (id: PeopleTab, l: string) => (
     <Pressable onPress={() => onTab(id)} accessibilityState={{ selected: tab === id }} style={{ paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: tab === id ? C.chalk : "transparent" }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: tab === id ? C.chalk : C.ash }}>{l}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: tab === id ? C.chalk : C.ash }}>{l}</Text>
     </Pressable>
   );
 
@@ -614,7 +614,7 @@ function Coaching({ data, handle, onReload }: { data: UserPageResponse; handle: 
                 <View style={{ marginTop: 8 }}>
                   {p.preview.map((w: ProgramPreviewWeek, wi: number) => (
                     <View key={wi} style={{ marginBottom: 8 }}>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.coaches.week")} {wi + 1}</Text>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{t("w.coaches.week")} {wi + 1}</Text>
                       {w.days.map((d: ProgramPreviewDay, di: number) => (
                         <View key={di} style={{ marginTop: 4 }}>
                           <Text style={{ color: C.chalk, fontSize: fs.caption, fontFamily: F.bold }}>{d.day || `${t("w.coaches.day")} ${di + 1}`}</Text>

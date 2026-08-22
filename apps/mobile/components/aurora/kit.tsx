@@ -1625,7 +1625,7 @@ export function ASection({
     meta == null ? null : typeof meta === "string" ? (
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: palette.ash }}
+        style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"), color: palette.ash }}
       >
         {meta}
       </Text>
@@ -1670,7 +1670,7 @@ export function AHeading({
     <Text
       accessibilityRole="header"
       maxFontSizeMultiplier={MAX_FONT_SCALE}
-      style={[{ fontFamily: F.black, fontSize: type.size, color: palette.chalk, lineHeight: type.lineHeight, letterSpacing: tracking.display }, style]}
+      style={[{ fontFamily: F.black, fontSize: type.size, color: palette.chalk, lineHeight: type.lineHeight, letterSpacing: tracking(type.size) }, style]}
     >
       {children}
     </Text>
@@ -1730,7 +1730,7 @@ export function AStat({
     <ACard solid={solid} style={style}>
       <Text
         maxFontSizeMultiplier={MAX_FONT_SCALE}
-        style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: palette.ash }}
+        style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: palette.ash }}
       >
         {label}
       </Text>
@@ -2168,7 +2168,7 @@ export function AScrubField({
       >
         <RollingNumber
           value={show}
-          style={{ fontFamily: F.black, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking.display }}
+          style={{ fontFamily: F.black, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking(fs.hero) }}
         />
         {suffix ? (
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.note, color: C.ash }}>
@@ -2722,7 +2722,7 @@ export function CardFoot({
   return (
     <View style={{ marginTop: 16 }}>
       {status ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginBottom: 11 }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginBottom: 11 }}>
           {status}
         </Text>
       ) : null}
@@ -2747,7 +2747,7 @@ export function CardFoot({
             numberOfLines={1}
             style={{
               fontFamily: F.monoBold, fontSize: fs.micro
-, textTransform: "uppercase", letterSpacing: tracking.label,
+, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"),
               // Ash, always. Nothing in a footer leaves the card, so nothing
               // here may take the accent.
               color: C.ash, flexShrink: 1,
@@ -2783,7 +2783,7 @@ export function ActionPill({ label, onPress }: { label: string; onPress: () => v
         borderWidth: 1, borderColor: C.line, backgroundColor: "transparent",
       }}
     >
-      <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.chalk }}>
+      <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"), color: C.chalk }}>
         {label}
       </Text>
     </Pressable>

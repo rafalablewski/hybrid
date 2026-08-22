@@ -190,7 +190,7 @@ export default function AuroraBuilder() {
         // Free user at the template limit — more saved routines is Full.
         // Building/previewing (and the first FREE_TEMPLATE_LIMIT saves) stays free.
         <View style={{ marginTop: 16, borderWidth: 1, borderColor: withAlpha(pa.fill, ALPHA.line), backgroundColor: withAlpha(pa.fill, ALPHA.wash), borderRadius: RADIUS.card, padding: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: pa.text }}>✦ {t("w.train.logger.routineFullTitle").toUpperCase()}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 6, lineHeight: leading(fs.micro) }}>{t("w.train.logger.routineFullBlurb")}</Text>
           <APill
             label={t("w.train.logger.routineUnlock")}
@@ -203,7 +203,7 @@ export default function AuroraBuilder() {
 
       {b.routines.length > 0 && (
         <ACard style={{ marginTop: 20 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.train.logger.yourRoutines")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash }}>{t("w.train.logger.yourRoutines")}</Text>
           {b.routines.map((r, i) => (
             <View key={r.id} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: i ? 12 : 10, paddingTop: i ? 12 : 0, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
               <Pressable style={{ flex: 1 }} onPress={() => b.loadRoutine(r)}>
@@ -253,7 +253,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
           value={String(sig.minutes)}
           style={{ fontFamily: F.monoBold, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "tight"), color: C.chalk }}
         />
-        <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, letterSpacing: tracking.normal }}> min</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.heading, color: C.ash, letterSpacing: tracking(fs.heading) }}> min</Text>
       </View>
       <View style={{ marginTop: 6 }}>
         <MetaLine
@@ -277,7 +277,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
 function Metric({ label, value, c, C }: { label: string; value: string; c?: string; C: Palette }) {
   return (
     <View style={{ marginRight: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.monoBold, fontSize: fs.note, color: c ? txt(C, c) : C.chalk, marginTop: 2, fontVariant: ["tabular-nums"] }}>{value}</Text>
     </View>
   );
@@ -310,7 +310,7 @@ function BlockCard({ b, C, units, rirMode, velocity, haptics, bodyweightKg, buil
 
   const field = { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 10, paddingVertical: 8, textAlign: "center" as const };
   const label = (s: string) => (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label, textTransform: "uppercase", marginBottom: 4 }}>{s}</Text>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", marginBottom: 4 }}>{s}</Text>
   );
   return (
     <ACard style={{ marginBottom: 12 }}>
@@ -540,7 +540,7 @@ function StrengthEditor({ b, C, units, rirMode, velocity, haptics, builder, fiel
       )}
       {/* planned rest between working sets — prescription, 15 s steps */}
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.label, textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", flex: 1 }}>{t("w.train.blocks.restBetween")}</Text>
         <Pressable onPress={() => builder.bumpRest(b.uid, -15)} accessibilityRole="button" accessibilityLabel={t("common.decrease")} hitSlop={6} style={{ width: 32, height: 32, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, alignItems: "center", justifyContent: "center" }}>
           <Text style={{ color: C.ash, fontSize: fs.note }}>−</Text>
         </Pressable>

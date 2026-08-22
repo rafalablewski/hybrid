@@ -378,7 +378,7 @@ function QuestionBody({
             to the group above it. */}
         {ONBOARDING_GOAL_GROUPS.map((group, gi) => (
           <View key={group.category} style={{ gap: space.ms, marginTop: gi === 0 ? 0 : space.md }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{group.category}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{group.category}</Text>
             {group.goals.map((g) => (
               <AChoice key={g.id} active={selected === g.id} title={g.label} sub={g.blurb} onPress={() => { haptic.selection(); setAnswer(q.key, g.id); }} />
             ))}

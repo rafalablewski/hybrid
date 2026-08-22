@@ -421,23 +421,21 @@ describe("leading and tracking", () => {
     burnDown(hits(/lineHeight:\s*\d/g), 38, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
-  it("HARD — tracking names its token; a big figure derives it", () => {
+  it("HARD — tracking derives from the size; a raw dp is never the answer", () => {
     // 432 → 0. THE SHAPE OF THE ANSWER, because it is not one rule:
     //
-    //   SMALL TYPE takes an ABSOLUTE rung. The eyebrows live at 10–13dp, a band
-    //     narrow enough that one dp value works across all of it, and the app
-    //     has exactly two: tracking.label (0.9) and tracking.caps (1.2). 298
-    //     sites already were those numbers and now say so; 24 more were
-    //     stragglers either side (0.4 … 0.8 under, 1.4 / 2 / 3 over) and snapped
-    //     to the nearer.
+    //   UPPERCASE names its voice — tracking(size, "label") or "caps". Case is
+    //     a choice a size cannot report, so these two stay named. They were dp
+    //     rungs (0.9 / 1.2) until step 2 of the Söhne migration; at fs.nano and
+    //     fs.micro the em values resolve to those same numbers, so 320 of the
+    //     sites that snapped to them did not move again.
     //
-    //   TITLES take tracking.display (-0.5), and that was the contested call.
-    //     Two tightenings were in force at the same sizes: the token at -0.019
-    //     … -0.031em, and a raw -0.3 group at -0.013 … -0.023em. The token wins
-    //     because it IS the token — 51 call sites plus two core contracts (the
-    //     app-header wordmark, the hub masthead's title), and hub-masthead
-    //     chose it deliberately over the -1 that shipped before it. A house
-    //     value that has already survived one argument is the house value.
+    //   EVERYTHING ELSE DERIVES IT — tracking(size), with no role. For text the
+    //     correct tightening is a function of optical size, not of what the
+    //     caller thinks the text is for, so there is no "display" role left to
+    //     pick and no way to put a hero's tightening on a 13dp row. The dp
+    //     token that used to do this was -0.033em on a 15dp lead and -0.011em
+    //     at 46 — one constant meaning three different things.
     //
     //   BIG FIGURES DERIVE IT — trackFigure(size), and this is the part an
     //     absolute could not do. They run 30–68dp, a 2.3× span, where -0.5 is
@@ -449,10 +447,9 @@ describe("leading and tracking", () => {
     //
     // THE BOUNDARY IS THE SCALE'S OWN: fs.hero (34) is documented as
     // "mastheads / cover titles" and fs.stat (46) as "the one hero figure on a
-    // screen". Titles up to hero take the rung; figures from stat take the
-    // function. The four sites sitting at fs.stat under tracking.display moved
-    // with it, and a 32dp food NAME moved back — it is a title that happened to
-    // be large, not a figure.
+    // screen". A title takes tracking(size); a figure takes trackFigure(size).
+    // Both are em-derived now, so the boundary is about which CUT the text is
+    // set in rather than about which of a rung and a function to reach for.
     //
     // TWO EXEMPTIONS, both because the app's TYPE SCALE does not govern them:
     //
@@ -470,7 +467,7 @@ describe("leading and tracking", () => {
     // the rule is wrong, not that the call site is.
     const OWN_SCALE = ["lib/share.tsx", "components/aurora/login.tsx", "components/aurora/mfa-settings.tsx"];
     const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
-    expect(raw, "letterSpacing → tracking.label/.caps/.display, or trackFigure(size)").toEqual([]);
+    expect(raw, 'letterSpacing → tracking(size) / tracking(size, "label"|"caps"), or trackFigure(size) for a figure').toEqual([]);
   });
 });
 

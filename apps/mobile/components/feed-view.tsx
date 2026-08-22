@@ -285,7 +285,7 @@ export default function FeedView({ top }: { top?: ReactNode }) {
   const footer =
     items.length === 0 ? null : (
       <Animated.View style={[fade, { alignItems: "center", paddingTop: 14, paddingBottom: 8 }]}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>{t("feed.caughtUp").toUpperCase()}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>{t("feed.caughtUp").toUpperCase()}</Text>
         <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.ash, marginTop: 6, marginBottom: 10, textAlign: "center" }}>{t("feed.caughtUpSub")}</Text>
         <APill label={t("feed.goTrain")} onPress={() => router.push("/log")} />
       </Animated.View>

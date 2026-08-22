@@ -56,14 +56,14 @@ export default function ReceiptBlock({
   // A supporting label, for the figures whose unit can't name them. Uppercase
   // mono — the house grammar for a label, and the only casing that is correct
   // in every language (lowercasing "Höhenmeter" would not be German).
-  const suffix = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash } as const;
+  const suffix = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash } as const;
 
   return (
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ flex: 1, fontFamily: F.black, fontSize: 19, lineHeight: HEAD_LINE, letterSpacing: tracking.display, color: C.chalk }}
+          style={{ flex: 1, fontFamily: F.black, fontSize: 19, lineHeight: HEAD_LINE, letterSpacing: tracking(19), color: C.chalk }}
         >
           {title}
         </Text>

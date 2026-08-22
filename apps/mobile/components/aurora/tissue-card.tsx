@@ -120,7 +120,7 @@ export default function TissueCard({
     <ACard solid style={{ marginTop: 16, borderColor: alert ? withAlpha(C.red, ALPHA.rim) : C.line, backgroundColor: alert ? withAlpha(C.red, ALPHA.wash) : undefined }}>
       {/* HEAD — the subject, and how many tissues are on the worklist. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: alert ? txt(C, C.red) : C.chalk }}>{t("w.injury.tissue")}</Text>
+        <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: alert ? txt(C, C.red) : C.chalk }}>{t("w.injury.tissue")}</Text>
         {hasData && (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: alert ? txt(C, C.red) : C.ash }}>
             {axis.flaggedCount}/{axis.total} {t("w.injury.flaggedMeta")}
@@ -133,7 +133,7 @@ export default function TissueCard({
           claiming an all-clear. */}
       {hasData ? (
         <>
-          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, lineHeight: leading(16), marginTop: 8, color: C.chalk }}>
+          <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), lineHeight: leading(16), marginTop: 8, color: C.chalk }}>
             {t(injuryHeadlineKey(axis))}
           </Text>
           <Axis axis={axis} C={C} t={t} />
@@ -170,7 +170,7 @@ export default function TissueCard({
             const day = protocolDay(p);
             return (
               <Pressable key={p.id} onPress={onOpenToday} disabled={!onOpenToday} accessibilityRole="button" style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.red) }}>{t("w.injury.protocolRunning")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: txt(C, C.red) }}>{t("w.injury.protocolRunning")}</Text>
                 <Text style={{ marginLeft: "auto", fontFamily: F.bold, fontSize: fs.caption, color: C.chalk }}>
                   {t(INJURY_AREA_KEY[p.tissue as MuscleGroup])}
                   {day != null ? ` – ${t("w.injury.protocolDay").replace("{n}", String(day)).replace("{total}", String(RTP_TOTAL_DAYS))}` : ""}
@@ -215,7 +215,7 @@ export default function TissueCard({
             <Rows rows={axis.rows} C={C} t={t} />
             {risk.awaitingBaseline.length > 0 && (
               <View style={{ marginTop: 12, padding: 12, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.ash, ALPHA.wash) }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
               </View>
             )}
@@ -264,11 +264,11 @@ export default function TissueCard({
                   accessibilityLabel={`${t("w.injury.wholeBody")}. ${t(verdict.key)} ${t("w.injury.load.explainCta")}`}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                    <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.injury.wholeBody")}</Text>
+                    <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>{t("w.injury.wholeBody")}</Text>
                     {/* ⓘ bare — the glyph is already a ring (house rule). */}
                     <AuroraIcon name="info" size={15} color={C.ash} />
                   </View>
-                  <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, lineHeight: leading(16), color: C.chalk }}>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), lineHeight: leading(16), color: C.chalk }}>
                     {t(verdict.key)}
                   </Text>
                 </Pressable>
@@ -284,7 +284,7 @@ export default function TissueCard({
               </View>
             ) : (
               <View style={{ marginTop: 18 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
               </View>
             )}
@@ -301,7 +301,7 @@ export default function TissueCard({
               <View style={{ marginTop: 16, gap: 10 }}>
                 {driverKinds.map((k) => (
                   <View key={k}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: txt(C, riskColor(risk.band, C)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</Text>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: txt(C, riskColor(risk.band, C)), marginBottom: 3 }}>{t(RISK_DRIVER_LABEL_KEY[k])}</Text>
                     <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t(RISK_DRIVER_EXPLAIN_KEY[k])}</Text>
                   </View>
                 ))}
@@ -452,12 +452,12 @@ function Receipt({ C, t, explain, onOpen }: {
       style={{ flex: 1, minWidth: 0, paddingVertical: RECEIPT_PAD }}
     >
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: paint }}>{explain.value}</Text>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 3 }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: 3 }}>
         {label}
       </Text>
     </Pressable>
   );
 }
 
-const head = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: tracking.label, color: C.ash });
+const head = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: tracking(fs.nano, "label"), color: C.ash });
 const num = (C: Palette, flagged: boolean) => ({ fontFamily: F.mono, fontSize: fs.micro, textAlign: "right" as const, color: flagged ? txt(C, C.red) : C.ash });

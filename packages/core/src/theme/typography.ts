@@ -31,12 +31,12 @@
  * on a card and on the page ground. `ink` names the ROLE and the renderer
  * resolves it against the active palette.
  *
- * Tracking is still in dp, because `tracking` is. The spec calls for em
- * (`reference/typography-system.html` §07, migration step 2) and the conversion
- * is a genuine no-op at current sizes — `tracking.label` 0.9dp at fs.micro is
- * 0.082em, `caps` 1.2dp is 0.109em — but it moves 525 call sites and belongs in
- * its own change, verified on its own. Figures already track proportionally via
- * `trackFigure`.
+ * Tracking resolves through `tracking(size, role)`, which is why most styles below
+ * DO NOT NAME ONE. For text the correct tracking is a function of optical size
+ * (scale.ts's band table), so a style declaring `"display"` beside
+ * `size: "display"` said the same thing twice and left room for the two to
+ * disagree. Only the two uppercase voices and the figure tightening are real
+ * choices, so only those are named.
  */
 
 import { fs, lh, tracking, trackFigure, type LeadingRole, type TrackingRole, type TypeRole } from "../scale";
@@ -141,9 +141,12 @@ export interface TextStyle {
   size: TypeRole;
   /** A ratio in `lh`, or `FLUSH` for a figure that cannot wrap. */
   leading: LeadingRole | typeof FLUSH;
-  /** A role in `tracking`, or `"figure"` for the proportional big-figure
-   *  tightening (`trackFigure(size)` — see scale.ts). */
-  tracking: TrackingRole | "figure";
+  /** `"text"` (the default) derives the tracking from the SIZE via scale.ts's
+   *  band table; `"label"` / `"caps"` are the uppercase trackings, which a size
+   *  cannot report; `"figure"` is the proportional big-figure tightening
+   *  (`trackFigure`). Omit it and the size decides, which is right for every
+   *  style that sets a sentence. */
+  tracking?: TrackingRole | "figure";
   ink: InkRole;
   /** Numerals line up in a column. True for every measured value. */
   tabular?: boolean;
@@ -175,7 +178,7 @@ export const text = {
   /** A tile figure, a ranking. */
   figure: { cut: "mono", weight: weight.semibold, size: "headline", leading: FLUSH, tracking: "figure", ink: "primary", tabular: true },
   /** A figure in a row or a table cell. */
-  figureSm: { cut: "mono", weight: weight.semibold, size: "bodyLg", leading: "snug", tracking: "normal", ink: "primary", tabular: true },
+  figureSm: { cut: "mono", weight: weight.semibold, size: "bodyLg", leading: "snug", ink: "primary", tabular: true },
   /**
    * A READOUT — the world reporting itself, at one weight below a result.
    * This is the system's one semantic weight distinction and it is worth the
@@ -185,26 +188,26 @@ export const text = {
    */
   readout: { cut: "mono", weight: weight.medium, size: "headline", leading: FLUSH, tracking: "figure", ink: "primary", tabular: true },
   /** A quiet figure — a logged set, a chart axis, a row's secondary number. */
-  datum: { cut: "mono", weight: weight.regular, size: "body", leading: "snug", tracking: "normal", ink: "secondary", tabular: true },
+  datum: { cut: "mono", weight: weight.regular, size: "body", leading: "snug", ink: "secondary", tabular: true },
 
   // ── LANGUAGE — the sans cut ───────────────────────────────────────────────
-  hero: { cut: "sans", weight: weight.bold, size: "hero", leading: "tight", tracking: "display", ink: "primary" },
-  display: { cut: "sans", weight: weight.semibold, size: "display", leading: "tight", tracking: "display", ink: "primary" },
-  headline: { cut: "sans", weight: weight.semibold, size: "headline", leading: "snug", tracking: "display", ink: "primary" },
+  hero: { cut: "sans", weight: weight.bold, size: "hero", leading: "tight", ink: "primary" },
+  display: { cut: "sans", weight: weight.semibold, size: "display", leading: "tight", ink: "primary" },
+  headline: { cut: "sans", weight: weight.semibold, size: "headline", leading: "snug", ink: "primary" },
   /** Section titles — the house standard (the Explore tab's SectionHead). */
-  title: { cut: "sans", weight: weight.semibold, size: "title", leading: "snug", tracking: "display", ink: "primary" },
-  subtitle: { cut: "sans", weight: weight.semibold, size: "subtitle", leading: "snug", tracking: "display", ink: "primary" },
+  title: { cut: "sans", weight: weight.semibold, size: "title", leading: "snug", ink: "primary" },
+  subtitle: { cut: "sans", weight: weight.semibold, size: "subtitle", leading: "snug", ink: "primary" },
   /** Primary list line, emphasised body. */
-  bodyLg: { cut: "sans", weight: weight.medium, size: "bodyLg", leading: "snug", tracking: "normal", ink: "primary" },
+  bodyLg: { cut: "sans", weight: weight.medium, size: "bodyLg", leading: "snug", ink: "primary" },
   /** Default reading text. The floor for prose. */
-  body: { cut: "sans", weight: weight.regular, size: "body", leading: "normal", tracking: "normal", ink: "primary" },
+  body: { cut: "sans", weight: weight.regular, size: "body", leading: "normal", ink: "primary" },
   /** Long-form: empty states, AI insight paragraphs. Primary ink — an insight
    *  the athlete has to hunt for is not an insight. */
-  prose: { cut: "sans", weight: weight.regular, size: "body", leading: "relaxed", tracking: "normal", ink: "primary" },
+  prose: { cut: "sans", weight: weight.regular, size: "body", leading: "relaxed", ink: "primary" },
   /** Metadata — a timestamp, a device name, a source. */
-  caption: { cut: "sans", weight: weight.regular, size: "caption", leading: "normal", tracking: "normal", ink: "secondary" },
+  caption: { cut: "sans", weight: weight.regular, size: "caption", leading: "normal", ink: "secondary" },
   /** A small label inside a dense row. */
-  labelSm: { cut: "sans", weight: weight.medium, size: "micro", leading: "snug", tracking: "normal", ink: "secondary" },
+  labelSm: { cut: "sans", weight: weight.medium, size: "micro", leading: "snug", ink: "secondary" },
   /** THE EYEBROW — the app's dominant label voice, 216 call sites' worth. */
   overline: { cut: "mono", weight: weight.medium, size: "nano", leading: "snug", tracking: "caps", ink: "secondary", upper: true },
 } as const satisfies Record<string, TextStyle>;
@@ -230,8 +233,8 @@ export interface ResolvedText {
  * `scaleFactor` carries Dynamic Type / a desktop rung promotion: the SIZE moves
  * and the leading moves WITH it, because leading here is a ratio rather than the
  * absolute dp that made Dynamic Type impossible before `leading()` existed.
- * Tracking follows too for figures (`trackFigure` is proportional) and does not
- * for text (`tracking` is still dp — see the file header).
+ * Tracking follows too, for text and figures alike: both are em-derived now, so
+ * a scaled style keeps its proportions rather than its dp.
  */
 export function resolveText(token: TextToken, scaleFactor = 1): ResolvedText {
   const s = text[token] as TextStyle;
@@ -242,7 +245,7 @@ export function resolveText(token: TextToken, scaleFactor = 1): ResolvedText {
     fontWeight: s.weight,
     fontSize: size,
     lineHeight: Math.round(size * ratio),
-    letterSpacing: s.tracking === "figure" ? trackFigure(size) : tracking[s.tracking],
+    letterSpacing: s.tracking === "figure" ? trackFigure(size) : tracking(size, s.tracking ?? "text"),
     ink: s.ink,
     tabular: s.tabular ?? false,
     upper: s.upper ?? false,

@@ -101,14 +101,14 @@ export default function MfaSettings() {
 
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, accent), marginLeft: 4, marginBottom: 10 }}>
         Two-factor authentication
       </Text>
       <ACard style={{ borderLeftWidth: 3, borderLeftColor: accent }}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm }}>
           <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>Authenticator app (TOTP)</Text>
           <View style={{ backgroundColor: withAlpha(verified.length ? C.lime : C.ash, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
-            <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: tracking.label }}>
+            <Text style={{ fontFamily: F.semi, fontSize: fs.micro, color: txt(C, verified.length ? C.lime : C.ash), textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label") }}>
               {verified.length ? "on" : "off"}
             </Text>
           </View>

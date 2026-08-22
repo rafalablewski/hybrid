@@ -51,8 +51,8 @@ describe("the hub masthead contract", () => {
   it("is built from named tokens, never hand-typed numbers", () => {
     // The three values the screens used to type by hand.
     expect(HUB_MASTHEAD.title.size).toBe(fs.hero);
-    expect(HUB_MASTHEAD.title.tracking).toBe(tracking.display);
-    expect(HUB_MASTHEAD.meta.tracking).toBe(tracking.label);
+    expect(HUB_MASTHEAD.title.tracking).toBe(tracking(fs.hero));
+    expect(HUB_MASTHEAD.meta.tracking).toBe(tracking(fs.micro, "label"));
     expect(HUB_MASTHEAD.meta.size).toBe(fs.micro);
     // Every gap comes off the space scale.
     for (const gap of Object.values(HUB_MASTHEAD.gap)) {
@@ -73,7 +73,7 @@ describe("the hub masthead contract", () => {
       const type = hubTitleType(title);
       expect(type.size, title).toBe(fs.hero);
       expect(type.lineHeight, title).toBe(36);
-      expect(type.tracking, title).toBe(tracking.display);
+      expect(type.tracking, title).toBe(tracking(type.size));
     }
   });
 

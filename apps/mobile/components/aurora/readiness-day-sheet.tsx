@@ -64,7 +64,7 @@ export default function ReadinessDaySheet({ deficit, facts, verdict, rx, onClose
           <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
             <ReadinessRing deficit={d} size={112} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
                 {t("w.home.readiness.dayLabel")}
               </Text>
               {/* THE FACE — one line, naming the limiter and nothing else. The

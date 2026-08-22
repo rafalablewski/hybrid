@@ -99,7 +99,7 @@ export default function AuroraTeamCompare() {
 
             {/* ranked comparison on the chosen metric */}
             <ACard style={{ marginTop: space.md }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: accent }}>{t("w.teams.compare.teamComparison")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: accent }}>{t("w.teams.compare.teamComparison")}</Text>
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: 2 }}>{data?.lift ?? lift}</Text>
               {ranked.map((a) => {
                 const v = a[metric] as number;
@@ -148,12 +148,12 @@ export default function AuroraTeamCompare() {
   );
 }
 
-const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: tracking.caps, color: C.ash, marginTop: space.md });
+const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginTop: space.md });
 
 function Cell({ C, label, value }: { C: Palette; label: string; value: string }) {
   return (
     <View style={{ width: "33.33%", paddingVertical: 5 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk, marginTop: 2 }}>{value}</Text>
     </View>
   );

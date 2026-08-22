@@ -128,7 +128,7 @@ export default function AuroraCalendar() {
       {/* key={selected}: the destination hook claims once per mount, so the
           detail section must be a fresh mount for each day it describes. */}
       <DayDetail key={selected}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
         {new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
       </Text>
 

@@ -176,13 +176,13 @@ export default function AuroraTeamMonitor() {
   );
 }
 
-const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: tracking.caps, color: C.ash, marginTop: space.md });
+const kicker = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginTop: space.md });
 
 function SummaryCard({ C, label, value, color }: { C: Palette; label: string; value: number; color: string }) {
   return (
     <ACard style={{ flex: 1, minWidth: 140, padding: 16 }}>
       <Text style={{ fontFamily: F.black, fontSize: 28, lineHeight: leading(28, "tight"), color }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: 4 }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: 4 }}>{label}</Text>
     </ACard>
   );
 }
@@ -190,7 +190,7 @@ function SummaryCard({ C, label, value, color }: { C: Palette; label: string; va
 function Metric({ C, label, value, sub, color, dot = false }: { C: Palette; label: string; value: string; sub?: string; color: string; dot?: boolean }) {
   return (
     <View style={{ width: "33.33%", paddingVertical: 6 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 5, marginTop: 3 }}>
         {dot ? <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: color }} /> : null}
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color }}>{value}</Text>

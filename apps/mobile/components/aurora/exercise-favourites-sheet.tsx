@@ -88,7 +88,7 @@ export default function ExerciseFavouritesSheet({
             implement says what the name doesn't. */}
         <AuroraExerciseAvatar name={e.name} glyph={24} tint={on ? txt(C, C.lime) : C.ash} />
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
         {/* The pinned star rides the amber TEXT tone, not the fill (the
             accent-text channel). */}
         <Text style={{ fontSize: fs.note, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>
@@ -104,8 +104,8 @@ export default function ExerciseFavouritesSheet({
 
   const head = (label: string, count: number) => (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, marginBottom: 10, marginHorizontal: 2 }}>
-      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{label}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
+      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk }}>{label}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{count}</Text>
     </View>
   );
 
@@ -117,7 +117,7 @@ export default function ExerciseFavouritesSheet({
         <>
           <ASearch value={query} onChange={(v: string) => refilter(() => setQuery(v))} placeholder={t("w.analyze.ex.search")} />
           {full && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.accentText.amber, marginTop: 10 }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.accentText.amber, marginTop: 10 }}>
               {t("w.home.exw.addFull").replace("{n}", String(MAX_EXERCISE_FAVOURITES))}
             </Text>
           )}

@@ -98,10 +98,13 @@ describe("leading", () => {
 
 describe("tracking", () => {
   it("takes air out of large type and adds it to caps", () => {
-    expect(tracking.display).toBeLessThan(0);
-    expect(tracking.normal).toBe(0);
-    expect(tracking.label).toBeGreaterThan(0);
-    expect(tracking.caps).toBeGreaterThan(tracking.label);
+    // THE BANDS, and the direction of each: large type gets air taken OUT,
+    // small copy gets a trace back IN, and uppercase always gets more.
+    expect(tracking(fs.hero)).toBeLessThan(0);
+    expect(tracking(fs.display)).toBeLessThan(0);
+    expect(tracking(fs.body)).toBe(0);
+    expect(tracking(fs.caption)).toBeGreaterThan(0);
+    expect(tracking(fs.nano, "caps")).toBeGreaterThan(tracking(fs.nano, "label"));
   });
 
   it("trackFigure tightens proportionally, where the absolute rung cannot", () => {
@@ -112,7 +115,7 @@ describe("tracking", () => {
     expect(trackFigure(30) / 30).toBeCloseTo(trackFigure(68) / 68, 2);
     // And every figure in the band is tighter than the absolute rung would be.
     for (const size of [30, 40, 46, 56, 68]) {
-      expect(trackFigure(size), `${size}dp`).toBeLessThan(tracking.display);
+      expect(trackFigure(size), `${size}dp`).toBeLessThan(tracking(fs.display));
     }
   });
 
@@ -128,8 +131,17 @@ describe("tracking", () => {
   it("codifies the two eyebrow trackings already in use", () => {
     // 0.9 (216 sites) and 1.2 (137 sites) at the time of the audit. Changing
     // either is a deliberate restyle of every kicker in the app, not a tweak.
-    expect(tracking.label).toBe(0.9);
-    expect(tracking.caps).toBe(1.2);
+    // THE CONVERSION PROOF. These are the four dominant call-site shapes, and
+    // every one resolves to the dp value that shipped before tracking became an
+    // em — 340 of 461 sized sites render byte-identically. If a band is ever
+    // retuned, this is the test that says what it costs.
+    expect(tracking(fs.nano, "label")).toBe(0.9);   // 201 sites
+    expect(tracking(fs.micro, "label")).toBe(0.9);  //  48 sites
+    expect(tracking(fs.nano, "caps")).toBe(1.2);    //  72 sites
+    expect(tracking(fs.display)).toBe(-0.5);        //  19 sites
+    // And the largest move anywhere, which is a correction rather than a drift:
+    // a 15dp lead was carrying the 34dp hero's tightening.
+    expect(tracking(fs.note)).toBe(0);
   });
 });
 

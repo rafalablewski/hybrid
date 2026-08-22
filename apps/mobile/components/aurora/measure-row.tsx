@@ -135,7 +135,7 @@ export function MeasureScale({ cells, tone = null }: { cells: MeasureCell[]; ton
           <Text
             maxFontSizeMultiplier={MAX_FONT_SCALE}
             numberOfLines={1}
-            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: c.selected ? (tone ?? C.chalk) : C.ash }}
+            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: c.selected ? (tone ?? C.chalk) : C.ash }}
           >
             {c.label} <Text style={{ fontSize: fs.micro, color: C.chalk }}>{c.value}</Text>
           </Text>

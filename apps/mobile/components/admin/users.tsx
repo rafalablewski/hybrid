@@ -240,7 +240,7 @@ function UserDetail({
           <ACard accent={palette.amber} style={[cardStack, { marginTop: -4 }]}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
               <View style={{ flexShrink: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, color: txt(palette, palette.amber), textTransform: "uppercase" }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), color: txt(palette, palette.amber), textTransform: "uppercase" }}>
                   User record
                 </Text>
                 <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: palette.chalk, marginTop: 2 }}>{d.name || "—"}</Text>
@@ -267,7 +267,7 @@ function UserDetail({
 
             {d.orgs.length > 0 && (
               <View style={{ marginTop: 16 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: palette.ash, marginBottom: 6 }}>
                   Organizations
                 </Text>
                 {d.orgs.map((o) => (
@@ -278,7 +278,7 @@ function UserDetail({
 
             {/* role / language editor */}
             <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: palette.line, paddingTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: txt(palette, palette.amber), marginBottom: 8 }}>
                 Manage access
               </Text>
 
@@ -323,7 +323,7 @@ function UserDetail({
 
             {/* danger zone */}
             <View style={{ marginTop: 20, borderTopWidth: 1, borderTopColor: withAlpha(palette.red, ALPHA.edge), paddingTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: txt(palette, palette.red), marginBottom: 6 }}>
                 Danger zone
               </Text>
               <Mono color={palette.ash} style={{ lineHeight: 18, marginBottom: 12 }}>

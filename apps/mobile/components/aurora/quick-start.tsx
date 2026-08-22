@@ -109,7 +109,7 @@ export default function QuickStartSheet({
           accessibilityRole="button"
           style={{ marginTop: 16, borderWidth: 1, borderColor: C.line, borderStyle: "dashed", borderRadius: RADIUS.field, paddingVertical: 12, alignItems: "center" }}
         >
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.label, color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "label"), color: C.ash }}>＋ {t("w.home.quickStart.buildNew")}</Text>
         </Pressable>
       </View>
     </Sheet>
@@ -156,9 +156,9 @@ function FavouriteCard({ C, width, r, t, onLaunch, onToggleFav }: { C: P; width:
         <Star C={C} on={!!r.favourite} label={t("w.home.quickStart.removeFav")} onPress={onToggleFav} />
       </View>
       <Text style={{ fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "tight"), color: txt(C, accent) }}>{glyph}</Text>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: tracking.display, color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.note, letterSpacing: tracking(fs.note), color: C.chalk, marginTop: 10, paddingRight: 16 }}>{r.name}</Text>
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 5 }}>{metaLine(r.blocks, t)}</Text>
-      <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
+      <CtaLabel label={`${t("w.home.quickStart.start")} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking(10, "caps"), textTransform: "uppercase", marginTop: 12 }} />
     </Pressable>
   );
 }

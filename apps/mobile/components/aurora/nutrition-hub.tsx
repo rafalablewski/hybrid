@@ -70,7 +70,7 @@ function StatTile({ glyph, tint, value, unit, caption, name, onPress, palette: C
         {value}
         {unit ? <Text style={{ fontSize: fs.caption, color: C.ash }}> {unit}</Text> : null}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginTop: 1 }} numberOfLines={1}>{caption}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash, marginTop: 1 }} numberOfLines={1}>{caption}</Text>
       <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, marginTop: 7 }} numberOfLines={2}>{name}</Text>
     </PressScale>
   );
@@ -101,7 +101,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
   const num = (n: number) => Math.round(n).toLocaleString();
 
   const tile = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 } as const;
-  const keyLabel = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase" as const, color: C.ash };
+  const keyLabel = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase" as const, color: C.ash };
   const nameLabel = { fontFamily: F.bold, fontSize: fs.note, color: C.chalk };
 
   // The delta reads as a verdict, so it takes the app's existing colour
@@ -181,7 +181,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
           {series.days.map((d, i) => (
             <Text
               key={d.date}
-              style={{ flex: 1, textAlign: i === 0 ? "left" : d.today ? "right" : "center", fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: d.today ? txt(C, C.lime) : C.ash, opacity: d.today ? 1 : 0.7 }}
+              style={{ flex: 1, textAlign: i === 0 ? "left" : d.today ? "right" : "center", fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: d.today ? txt(C, C.lime) : C.ash, opacity: d.today ? 1 : 0.7 }}
             >
               {dayLabel(d.date)}
             </Text>

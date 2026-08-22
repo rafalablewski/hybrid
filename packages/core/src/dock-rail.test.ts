@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { DOCK_RAIL, dockChipOn } from "./dock-rail";
-import { fs, space, tracking } from "./scale";
+import { fs, space, track } from "./scale";
 
 describe("the dock rail contract", () => {
   it("clears the 44dp hit-target floor", () => {
@@ -17,7 +17,8 @@ describe("the dock rail contract", () => {
   });
 
   it("sets no tracking — a rail label is a word, not a kicker", () => {
-    expect(DOCK_RAIL.chip.tracking).toBe(tracking.normal);
+    // Deliberately 0, not the small-copy band's +0.1 — see the note on the token.
+    expect(DOCK_RAIL.chip.tracking).toBe(0);
     expect(DOCK_RAIL.chip.tracking).toBe(0);
   });
 

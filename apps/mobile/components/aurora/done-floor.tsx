@@ -153,7 +153,7 @@ export default function DoneFloor({
           accessibilityLabel={countLabel}
           style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 2 }}
         >
-          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
+          <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
           <ArrowGlyph size={14} color={quiet} />
         </Pressable>
       ) : (
@@ -197,7 +197,7 @@ export default function DoneFloor({
                   <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{sessionMeta(s, units, bw(s.startedAt))}</Text>
                 </View>
                 {onPlanRow ? (
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.home.today.kPlan")}</Text>
                 ) : null}
               </Pressable>
               {ask ? (
@@ -209,7 +209,7 @@ export default function DoneFloor({
                   accessibilityHint={t("session.feel.rateUnrated")}
                   style={{ paddingVertical: 8, paddingLeft: 4 }}
                 >
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("session.feel.rate")}</Text>
                 </Pressable>
               ) : null}
             </View>

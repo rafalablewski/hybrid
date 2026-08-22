@@ -189,7 +189,7 @@ export default function PeriodRecords({
           so the window is the one thing that has to be there. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 10 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.act.recordsTitle")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{windowName}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{windowName}</Text>
       </View>
 
       {/* ── THE QUOTE — the period's biggest move, ranked by the very percent
@@ -197,11 +197,11 @@ export default function PeriodRecords({
           table argues for another. ─────────────────────────────────────── */}
       <Quoted onPress={open(quote!)} a11y={spoken(quote!)}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
             {quote!.lift}
           </Text>
           {day && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{day}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{day}</Text>
           )}
         </View>
 
@@ -211,7 +211,7 @@ export default function PeriodRecords({
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 4 }}>
           <Text style={{ ...TABULAR, fontFamily: F.monoBold, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), color: C.chalk }}>
             {value}
-            <Text style={{ fontSize: fs.subtitle, letterSpacing: tracking.label, color: C.ash }}> {unit}</Text>
+            <Text style={{ fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle, "label"), color: C.ash }}> {unit}</Text>
           </Text>
           <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>× {quote!.now.reps}</Text>
         </View>
@@ -255,7 +255,7 @@ export default function PeriodRecords({
           style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16, paddingVertical: 6 }}
         >
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>＋</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>
             {t("w.home.act.showAll").replace("{n}", String(records.length))}
           </Text>
         </Pressable>
@@ -301,7 +301,7 @@ function Row({ name, r, delta, a11y, onPress }: {
   const { palette: C } = useTheme();
   const body = (
     <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-      <Text numberOfLines={1} style={{ width: 88, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+      <Text numberOfLines={1} style={{ width: 88, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
         {name}
       </Text>
       <View style={{ flex: 1 }}>

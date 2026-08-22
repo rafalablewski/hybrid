@@ -55,7 +55,7 @@ export default function SportRecordsSheet({ visible, onClose }: {
       <Text
         style={{
           fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase",
-          letterSpacing: tracking.label, marginTop: space.sm,
+          letterSpacing: tracking(fs.nano, "label"), marginTop: space.sm,
         }}
       >
         {t("w.train.sportPage.ruleFoot")}

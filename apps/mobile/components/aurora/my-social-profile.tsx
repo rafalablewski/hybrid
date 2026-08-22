@@ -242,7 +242,7 @@ export function MySocialProfileEdit({ onDone }: { onDone?: () => void }) {
 function SectionLabel({ children, first }: { children: ReactNode; first?: boolean }) {
   const C = useTheme().palette;
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash, marginLeft: 4, marginBottom: 10, marginTop: first ? 0 : 18 }}>
+    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash, marginLeft: 4, marginBottom: 10, marginTop: first ? 0 : 18 }}>
       {children}
     </Text>
   );

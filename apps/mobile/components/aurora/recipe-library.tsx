@@ -179,10 +179,10 @@ export function RecipeTile({ recipe, onOpen, width = TILE_W, saved = false }: { 
             before the tile knew about it, so a dish you had kept looked exactly
             like one you had not, on the very screen that lists both. */}
         {saved ? <Mark mark={{ kind: "glyph", name: "bookmark" }} size={fs.body} color="rgba(255,255,255,0.85)" /> : <View />}
-        <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
+        <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: "rgba(255,255,255,0.85)" }}>{tile.count}</Text>
       </View>
       <View>
-        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.subtitle, lineHeight: leading(16, "tight"), letterSpacing: tracking.display, color: "#fff" }}>{tile.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.subtitle, lineHeight: leading(16, "tight"), letterSpacing: tracking(fs.subtitle), color: "#fff" }}>{tile.title}</Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8, marginTop: 5 }}>
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: "rgba(255,255,255,0.7)" }}>{tile.meta}</Text>
           <Text style={{ fontFamily: tile.highProtein ? F.monoBold : F.mono, fontSize: fs.nano, color: tile.highProtein ? txt(C, C.lime) : "rgba(255,255,255,0.7)" }}>
@@ -209,13 +209,13 @@ export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () =
       <LinearGradient pointerEvents="none" colors={[withAlpha(TILE_INK, 0), withAlpha(TILE_INK, 0.55), TILE_INK]} locations={[0.38, 0.8, 1]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
       <View style={{ position: "absolute", top: 10, left: 10, right: 14, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
         <HeroNav onPress={onBack} fromLabel={cook.title} material="glass" />
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: "rgba(255,255,255,0.85)" }}>{cook.count}</Text>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: "rgba(255,255,255,0.85)" }}>{cook.count}</Text>
       </View>
       <View style={{ position: "absolute", left: 14, right: 14, bottom: 14 }}>
         <View style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
-          <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
+          <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
         </View>
-        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: tracking.display, color: "#fff", marginTop: 6 }}>{cook.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: tracking(fs.display), color: "#fff", marginTop: 6 }}>{cook.title}</Text>
       </View>
       {/* One tick per step — the method's length, stated by the plate itself.
           NOT the kit's `AStepRail`, and this is the one rail that genuinely
@@ -246,7 +246,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
     <Pressable onPress={onOpen} accessibilityRole="button">
       <ACard style={{ marginBottom: 12 }}>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: space.sm }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t(`w.recovery.nutrition.meal.${recipe.meal}`)}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash }}>{t(`w.recovery.nutrition.meal.${recipe.meal}`)}</Text>
           {isHighProtein(recipe) && (
             <View style={{ backgroundColor: withAlpha(C.lime, ALPHA.fill), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 3 }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: txt(C, C.lime) }}>{t("w.recovery.nutrition.recipeFilter.highProtein")}</Text>
@@ -260,11 +260,11 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
         <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
           {stats.map((st) => (
             <View key={st.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 8 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.heading, lineHeight: leading(fs.heading, "tight"), letterSpacing: tracking.display, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+              <Text style={{ fontFamily: F.black, fontSize: fs.heading, lineHeight: leading(fs.heading, "tight"), letterSpacing: tracking(fs.heading), color: C.chalk, fontVariant: ["tabular-nums"] }}>
                 {st.value}
                 {!!st.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{st.unit}</Text>}
               </Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{st.label}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{st.label}</Text>
             </View>
           ))}
         </View>

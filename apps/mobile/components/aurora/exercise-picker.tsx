@@ -400,12 +400,12 @@ function Head({ label, count, action }: {
   const { palette: C } = useTheme();
   return (
     <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginTop: 8, marginBottom: 8 }}>
-      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk }}>{label}</Text>
+      <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk }}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", gap: 12 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{count}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{count}</Text>
         {action && (
           <Pressable onPress={action.onPress} hitSlop={10} accessibilityRole="button" accessibilityState={{ selected: !!action.on }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: action.on ? txt(C, C.lime) : C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: action.on ? txt(C, C.lime) : C.ash }}>
               {action.label}
             </Text>
           </Pressable>
@@ -457,7 +457,7 @@ const Row = memo(function Row({ entry, onPick, onLongPress, queued, multi }: {
       <View style={{ flex: 1 }}>
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{entry.name}</Text>
         {!!gear && (
-          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: 2 }}>{gear}</Text>
+          <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: 2 }}>{gear}</Text>
         )}
       </View>
       {/* In multi mode the right slot says whether this one is IN — a checked
@@ -468,7 +468,7 @@ const Row = memo(function Row({ entry, onPick, onLongPress, queued, multi }: {
           {queued && <Text style={{ fontFamily: F.black, fontSize: fs.caption, lineHeight: leading(fs.caption, "tight"), color: C.onAccent }}>✓</Text>}
         </View>
       ) : (
-        !!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{hint}</Text>
+        !!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{hint}</Text>
       )}
     </Pressable>
   );

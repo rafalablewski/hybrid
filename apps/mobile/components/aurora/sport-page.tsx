@@ -150,7 +150,7 @@ export default function AuroraSportPage() {
   };
 
   const mono = (size: number, color = C.ash) => ({ fontFamily: F.mono, fontSize: size, color });
-  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: tracking.caps });
+  const label = (color = C.ash) => ({ ...mono(fs.micro, color), textTransform: "uppercase" as const, letterSpacing: tracking(fs.micro, "caps") });
   const fmtDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
 
   const u = durationUnits(t);
@@ -706,7 +706,7 @@ function EffortLegend({ split, labels }: {
         {shown.map((b, i) => (
           <View key={b.k} style={{ flexBasis: `${b.v}%`, flexGrow: 0, flexShrink: 1, minWidth: 58, alignItems: i === shown.length - 1 ? "flex-end" : "flex-start" }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{b.v}%</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking.label, marginTop: 4 }}>{b.k}</Text>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), marginTop: 4 }}>{b.k}</Text>
           </View>
         ))}
       </View>

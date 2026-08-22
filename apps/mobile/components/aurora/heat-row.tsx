@@ -128,9 +128,9 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms }}>
             <View style={{ flex: 1 }}>
               {/* -0.3, the value the check-in card and the protocol card
-                  already head at — not tracking.display (-0.5), which is the
+                  already head at — not the display tightening (-0.5), which is the
                   masthead's rung. */}
-              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk }}>{t("w.recovery.heat.row")}</Text>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), color: C.chalk }}>{t("w.recovery.heat.row")}</Text>
               {/* THE FIGURES READ AS FIGURES. This row exists to put the chronic
                   channel's own number on Today — sittings per week is exactly
                   what the volume multiplier reads — and a sentence buries it.
@@ -165,7 +165,7 @@ export function HeatRow({ sessions = [], recovery = [] }: { sessions?: LoggedSes
       {/* Only once it can honestly say something. */}
       {verdictKey && clearance && (
         <ACard style={{ marginTop: space.sm }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
             {t("w.recovery.heat.clearTitle")}
           </Text>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: space.xs }}>

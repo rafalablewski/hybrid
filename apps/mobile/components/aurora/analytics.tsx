@@ -66,7 +66,7 @@ function AFrame({ title, kicker, children }: { title: string; kicker?: string; c
     <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
-        {!!kicker && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{kicker}</Text>}
+        {!!kicker && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>{kicker}</Text>}
       </View>
       <View style={{ marginTop: 12 }}>{children}</View>
     </ACard>
@@ -127,7 +127,7 @@ function Table({ head, rows, widths }: { head: string[]; rows: React.ReactNode[]
       <View>
         <View style={{ flexDirection: "row", borderBottomWidth: 1, borderBottomColor: C.line }}>
           {head.map((h, i) => (
-            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>{h}</Text>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} key={h} numberOfLines={1} style={{ ...cell(widths[i] ?? 80), fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{h}</Text>
           ))}
         </View>
         {rows.map((r, i) => (

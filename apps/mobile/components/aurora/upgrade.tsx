@@ -119,10 +119,10 @@ export default function AuroraUpgrade() {
     <Sheet visible={open} onClose={close} onClosed={() => router.back()}>
       {/* badge */}
       <View style={{ alignSelf: "center", flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: withAlpha(pa.fill, ALPHA.solid), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: pa.text }}>✦ Full</Text>
       </View>
 
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk, textAlign: "center", marginTop: 16 }}>{t("w.account.upgrade.sheet-title")}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, textAlign: "center", marginTop: 8, lineHeight: leading(fs.caption) }}>{t("w.account.upgrade.sheet-sub")}</Text>
 
       {/* benefits */}
@@ -140,10 +140,10 @@ export default function AuroraUpgrade() {
 
       {/* price */}
       <View style={{ alignItems: "center", marginTop: 16 }}>
-        <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking.display, color: C.chalk }}>
+        <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking(28), color: C.chalk }}>
           {price ?? "$9.99"}<Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}> {t("w.account.upgrade.per-month")}</Text>
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3, letterSpacing: tracking.label }}>{t("w.account.upgrade.trial-note")}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: txt(C, C.lime), marginTop: 3, letterSpacing: tracking(fs.micro, "label") }}>{t("w.account.upgrade.trial-note")}</Text>
       </View>
 
       {!!error && (

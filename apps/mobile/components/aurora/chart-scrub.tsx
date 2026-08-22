@@ -216,7 +216,7 @@ export function ChartReadout({ read, side, when, note, C: palette }: {
 }) {
   const theme = useTheme();
   const C = palette ?? theme.palette;
-  const label = { fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking.caps, textTransform: "uppercase" as const };
+  const label = { fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase" as const };
   return (
     <View
       pointerEvents="none"

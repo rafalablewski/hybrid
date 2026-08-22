@@ -89,7 +89,7 @@ export default function AuroraOtherSports({
             denominator, set in mono uppercase as though it were a measurement.
             No parent, no quote. Mirrors web other-sports.tsx. */}
         {parentage.enduranceMinutes > 0 && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash }}>
             {t("w.home.group.metaOf").replace("{a}", parentageDuration(parentage.sportMinutes, u)).replace("{b}", parentageDuration(parentage.enduranceMinutes, u))}
           </Text>
         )}
@@ -175,8 +175,8 @@ function SportTile({ lane, onOpen }: { lane: OtherSportLane; onOpen?: (sport: st
       </View>
 
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking.display, color: C.chalk }}>{lane.efforts}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{lane.efforts}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
           {t("w.home.other.efforts")}
         </Text>
       </View>

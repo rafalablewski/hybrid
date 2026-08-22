@@ -43,7 +43,7 @@ export default function Tour({ steps, onDone }: { steps: TourStep[]; onDone: () 
             mounts on iOS. Padding is unchanged (CARD_PAD is 20, which is what
             was written here); the outer margin stays with the caller. */}
         <ACard style={{ marginBottom: 24 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.caps, textTransform: "uppercase", color: txt(C, C.lime) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>
             {`Step ${i + 1} / ${steps.length}`}
           </Text>
           <Text style={{ fontFamily: F.bold, fontSize: fs.heading, color: C.chalk, marginTop: 8 }}>{step.title}</Text>

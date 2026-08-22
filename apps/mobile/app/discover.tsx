@@ -64,7 +64,7 @@ export default function DiscoverScreen() {
         <ACard style={cardStack}>{results.length === 0 ? <Empty title={t("w.social.noOneFound")} sub={t("w.social.noOneFoundSub")} /> : results.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { armPerson(h); if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
       ) : (
         <>
-          <Text style={{ color: C.ash, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: tracking.label, marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</Text>
+          <Text style={{ color: C.ash, fontSize: fs.caption, textTransform: "uppercase", letterSpacing: tracking(fs.caption, "label"), marginBottom: 8 }}>{t("w.social.peopleYouMayKnow")}</Text>
           <ACard style={cardStack}>{sugg.length === 0 ? <Empty title={t("w.social.noSuggestions")} sub={t("w.social.noSuggestionsSub")} /> : sugg.map((p) => <Row key={p.userId} p={p} onChanged={refresh} onOpen={(h, c) => { if (h) { armPerson(h); if (c) seedPerson(c); router.push(userPagePath(h)); } }} />)}</ACard>
         </>
       )}

@@ -1073,7 +1073,7 @@ export default function AuroraHome() {
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
               <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
             </View>
             {/* the chooser as a snap slider — the exercise-widget rail's idiom:
                 one card ≈ 72% wide so the next path peeks in from the right,
@@ -1601,9 +1601,9 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
        entirely — 20 was already CARD_PAD, spelled as a number. */
     <APressCard onPress={onPress} a11yLabel={title} glow={accent}>
       <Text style={{ fontSize: fs.title, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking(19), color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.note, color: C.ash, marginTop: 6, lineHeight: leading(fs.note, "tight") }}>{sub}</Text>
-      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 16 }} />
+      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: tracking(11, "caps"), textTransform: "uppercase", marginTop: 16 }} />
     </APressCard>
   );
 }
@@ -1623,9 +1623,9 @@ function StructureCard({ C, width, glyph, accent, title, sub, cta, onPress }: { 
        side. Everything else is now decided once, in the kit. */
     <APressCard onPress={onPress} a11yLabel={title} glow={accent} style={{ width, padding: 16 }}>
       <Text style={{ fontSize: fs.note, lineHeight: leading(fs.note, "tight"), color: txt(C, accent) }}>{glyph}</Text>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking.display, color: C.chalk, marginTop: 10 }}>{title}</Text>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sub}</Text>
-      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking.caps, textTransform: "uppercase", marginTop: 12 }} />
+      <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={10} font={F.mono} style={{ letterSpacing: tracking(10, "caps"), textTransform: "uppercase", marginTop: 12 }} />
     </APressCard>
   );
 }
@@ -1888,7 +1888,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
         {/* The card ASKS until it has an answer, then REPORTS: once the hero
             carries the reading, repeating the question above it is the same
             sentence twice. */}
-        <Text style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk }}>
+        <Text style={{ flexShrink: 1, fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), color: C.chalk }}>
           {t(shownFeeling ? "w.home.today.glanceReadiness" : "w.recovery.readiness.title")}
         </Text>
         {/* Mono meta on the right, per the Explore SectionHead standard: the
@@ -1904,22 +1904,22 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
              window shuts. Chalk, not the accent: the accent is the "go" colour,
              and this undoes a go. */
           <Pressable onPress={undo} disabled={busy} accessibilityRole="button" accessibilityLabel={t("w.home.today.readUndoA11y")} hitSlop={10} style={{ opacity: busy ? STATE_OPACITY.busy : 1 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.chalk }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.chalk }}>
               {t("w.home.today.readUndo")}
             </Text>
           </Pressable>
         ) : !isToday && dayLabel ? (
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayLabel}</Text>
         ) : asking ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: txt(C, C.lime) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: txt(C, C.lime) }}>
             {t("session.feel.promptRecovery")}
           </Text>
         ) : gate.reason === "dayFull" && isToday ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash }}>
             {dayReads.length} / {MAX_READS_PER_DAY}
           </Text>
         ) : held && gate.opensAt != null ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash }}>
             {t("w.home.today.feelNextIn")} {coolH}h {coolM}m
           </Text>
         ) : null}
@@ -1983,7 +1983,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             <PressScale key={key} onPress={() => pick(i + 2)} disabled={locked} accessibilityRole="button" accessibilityState={{ selected: on, disabled: locked }} accessibilityLabel={t(`w.recovery.readiness.${key}`)}
               style={{ flex: 1, alignItems: "center", gap: 8, paddingVertical: 10, marginHorizontal: 2, borderRadius: RADIUS.field, borderWidth: 1, borderColor: on ? withAlpha(accent, ALPHA.rim) : "transparent", backgroundColor: on ? withAlpha(accent, ALPHA.fill) : "transparent", opacity: locked && !on ? STATE_OPACITY.disabled : 1 }}>
               <ReadinessFace feeling={key} />
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: on ? accent : C.ash }}>{t(`w.recovery.readiness.${key}`)}</Text>
             </PressScale>
           );
         })}
@@ -2009,7 +2009,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             accessibilityState={{ expanded: readsOpen }}
             style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
           >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>
               {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
             </Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length}</Text>

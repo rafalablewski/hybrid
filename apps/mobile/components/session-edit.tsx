@@ -34,7 +34,7 @@ import { useTheme, txt, type Palette } from "../lib/theme";
 import Sheet from "./aurora/sheet";
 
 const labelStyle = (C: Palette) =>
-  ({ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
+  ({ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase", marginBottom: 5 }) as const;
 const fieldStyle = (C: Palette) =>
   ({
     fontFamily: F.mono,

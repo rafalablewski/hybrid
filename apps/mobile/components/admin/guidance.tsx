@@ -40,7 +40,7 @@ export default function AdminGuidance() {
         <ACard key={s.id} style={cardStack}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginBottom: s.summary ? 4 : 12 }}>
             <Text style={{ fontSize: fs.title, color: txt(palette, palette.lime) }}>{s.icon}</Text>
-            <Text style={{ fontFamily: F.black, fontSize: 19, color: palette.chalk, letterSpacing: tracking.display, flex: 1 }}>{s.title}</Text>
+            <Text style={{ fontFamily: F.black, fontSize: 19, color: palette.chalk, letterSpacing: tracking(19), flex: 1 }}>{s.title}</Text>
           </View>
           {s.summary ? <Mono color={palette.ash} style={{ fontSize: fs.caption, marginBottom: 12 }}>{s.summary}</Mono> : null}
           <View style={{ gap: space.md }}>

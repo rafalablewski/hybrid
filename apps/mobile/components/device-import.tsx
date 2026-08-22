@@ -486,7 +486,7 @@ export function DeviceImportSheet({
                       <Text
                         maxFontSizeMultiplier={FIXED_FONT_SCALE}
                         numberOfLines={1}
-                        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash }}
+                        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}
                       >
                         {l.title}
                       </Text>
@@ -519,7 +519,7 @@ export function DeviceImportSheet({
               looking for their Garmin should find the answer here. */}
           {(phase === "list" || phase === "unavailable") && (
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash, marginBottom: 10 }}>
                 {t("device.import.sources")}
               </Text>
               {DEVICE_IMPORT_PROVIDERS.map((p) => (

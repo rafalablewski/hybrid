@@ -166,7 +166,7 @@ export default function ASatellite({
       <Text
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
         numberOfLines={1}
-        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, marginTop: SATELLITE.captionGap }}
+        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: SATELLITE.captionGap }}
       >
         {caption.toUpperCase()}
       </Text>

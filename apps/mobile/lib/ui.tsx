@@ -27,7 +27,9 @@ import { useNavScrollProps } from "./nav-scroll";
 // `leading` and `tracking` are the two axes that had no token until the design
 // audit: every lineHeight in the app was an absolute dp (29 of them) and every
 // letterSpacing a fresh guess (18 of them). Use leading(fs.body) rather than a
-// number — an absolute line box is also why Dynamic Type could not work.
+// number — an absolute line box is also why Dynamic Type could not work — and
+// tracking(size) rather than a dp, because a letterSpacing is a proportion of the
+// size it sits on and an absolute one means something different at every rung.
 export { fs, space, lh, leading, tracking, trackFigure };
 import { auroraScrollClearance } from "./layout";
 import { useReducedMotion } from "./use-reduced-motion";
@@ -710,11 +712,11 @@ export function Kicker({ children, color }: { children: ReactNode; color?: strin
         fontSize: fs.micro,
         lineHeight: leading(fs.micro, "snug"),
         textTransform: "uppercase",
-        // tracking.caps — the wider of the two eyebrow trackings, which is what
-        // this primitive has always emitted. The narrower `tracking.label` (0.9)
+        // tracking(fs.micro, "caps") — the wider of the two eyebrow trackings, which is what
+        // this primitive has always emitted. The narrower `tracking(fs.micro, "label")` (0.9)
         // is the one 216 inline kickers use; both are now named, so the choice
         // between them is a decision rather than a coin toss.
-        letterSpacing: tracking.caps,
+        letterSpacing: tracking(fs.micro, "caps"),
         color: color ? txt(palette, color) : palette.ash,
       }}
     >
@@ -794,7 +796,7 @@ export function Chip({
           lineHeight: leading(fs.micro, "snug"),
           color: txt(palette, key),
           textTransform: "uppercase",
-          letterSpacing: tracking.label,
+          letterSpacing: tracking(fs.micro, "label"),
         }}
       >
         {children}

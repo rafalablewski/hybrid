@@ -932,7 +932,7 @@ export default function AuroraWeekVerdict({
             first swipe OR the first column opened, whichever comes first, under
             the key it always used. */}
         {!hinted && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
             {t("w.home.cmp.hint")}
           </Text>
         )}
@@ -973,7 +973,7 @@ export default function AuroraWeekVerdict({
                 Not the sentence's: a fallen Hours column reads terracotta
                 whatever the week's headline was about. */}
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 2 }}>
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 30, letterSpacing: tracking.display, color: openTone }}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: 30, letterSpacing: tracking(30), color: openTone }}>
                 {fmt(detail.metric, detail.total)}
               </Text>
               {openWhy && (
@@ -1078,7 +1078,7 @@ function MetricDetail({
     return bits.join(" – ");
   };
 
-  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase" as const };
+  const kicker = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase" as const };
 
   return (
     <>

@@ -328,12 +328,12 @@ function QuestionBlock({ C, t, q, value, measured, profile, onAnswer }: {
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: space.sm }}>
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}
+          style={{ flex: 1, fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"), color: C.ash }}
         >
           {t(q.labelKey)}
         </Text>
         {measured && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: txt(C, C.lime) }}>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: txt(C, C.lime) }}>
             {t("w.quiz.measured")}
           </Text>
         )}
@@ -350,7 +350,7 @@ function QuestionBlock({ C, t, q, value, measured, profile, onAnswer }: {
             accessibilityRole="button"
             accessibilityLabel={`${t("w.quiz.clear")} ${t(q.labelKey)}`}
           >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
               {t("w.quiz.clear")}
             </Text>
           </Pressable>
@@ -596,7 +596,7 @@ function Changed({ C, t, factors }: {
                 <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>
                   {t(factorLabelKey(f.key as never))}
                 </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash, marginTop: space.xxs }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: space.xxs }}>
                   {`${f.value} — ${t(factorAffectsKey(f.affects as never))}`}
                 </Text>
               </View>
@@ -661,7 +661,7 @@ function TheModel({ C, t, prefs, resolved, baseline }: {
   return (
     <View style={{ paddingTop: space.lg }}>
       {/* ── LANDMARKS ─────────────────────────────────────────────────────── */}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>
         {t("w.analyze.model.landmarks")}
       </Text>
       <Text style={{ ...prose, marginTop: space.sm }}>{t("w.analyze.model.landmarksSub")}</Text>
@@ -727,7 +727,7 @@ function TheModel({ C, t, prefs, resolved, baseline }: {
 
       {/* ── HOW IT BEHAVES ────────────────────────────────────────────────── */}
       <View style={{ marginTop: space.xl, paddingTop: space.lg, borderTopWidth: 1, borderTopColor: C.line }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.label, color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>
           {t("w.analyze.model.behaviour")}
         </Text>
 

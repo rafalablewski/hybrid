@@ -215,7 +215,7 @@ export default function Notifications() {
                 accessibilityRole="button"
                 hitSlop={10}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
                   {t("notif.markAllRead")}
                 </Text>
               </Pressable>

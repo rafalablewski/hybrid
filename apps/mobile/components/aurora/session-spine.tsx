@@ -122,7 +122,7 @@ function GroupLabels({ C, spine, slot }: { C: Palette; spine: SessionSpine; slot
         <View key={`${g.exercise}-${i}`} style={{ width: g.count * slot + (i ? GROUP_GAP : 0), paddingRight: 4 }}>
           <Text
             numberOfLines={1}
-            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}
+            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase" }}
           >
             {g.exercise}
           </Text>

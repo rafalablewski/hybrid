@@ -130,7 +130,7 @@ export default function SavedScreen() {
       {saved.ids.length > shown ? (
         <APill label={t("feed.savedMore").replace("{n}", String(saved.ids.length - shown))} onPress={() => setShown((n) => n + FEED_SAVED_PAGE)} />
       ) : (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: C.ash }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>
           {t("feed.savedCount").replace("{n}", String(saved.ids.length)).toUpperCase()}
         </Text>
       )}

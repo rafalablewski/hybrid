@@ -138,7 +138,7 @@ export function RangeHead({ title, meta }: { title: string; meta: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
       <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash }}>{meta}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{meta}</Text>
     </View>
   );
 }
@@ -267,7 +267,7 @@ function PickerSection({ label, children }: { label: string; children: ReactNode
   const { palette: C } = useTheme();
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginHorizontal: 4, marginBottom: 6 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginHorizontal: 4, marginBottom: 6 }}>
         {label}
       </Text>
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, overflow: "hidden" }}>

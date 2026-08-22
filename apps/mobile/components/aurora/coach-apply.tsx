@@ -60,7 +60,7 @@ export default function AuroraCoachApply() {
 
       {isCoach ? (
         <ACard style={{ marginTop: 16 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime) }}>{t("w.account.settings.coach-already-verified")}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, C.lime) }}>{t("w.account.settings.coach-already-verified")}</Text>
           <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>
             {t("w.account.settings.coach-already-verified-body")}
           </Text>
@@ -71,7 +71,7 @@ export default function AuroraCoachApply() {
         <>
           {existing && (
             <ACard style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, statusColor(existing.status)) }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, statusColor(existing.status)) }}>
                 {t("w.account.settings.coach-app-label")} {t(`w.account.settings.coach-st-${existing.status}`)}
               </Text>
               <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.chalk, marginTop: 8, lineHeight: leading(fs.bodyLg) }}>{t(`w.account.settings.coach-status-${existing.status}`)}</Text>
@@ -93,7 +93,7 @@ export default function AuroraCoachApply() {
                   </View>
                 ))}
               </View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>{t("w.account.settings.coach-your-background")}</Text>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: C.ash }}>{t("w.account.settings.coach-your-background")}</Text>
               <TextInput
                 value={credentials}
                 onChangeText={setCredentials}
