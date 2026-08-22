@@ -72,7 +72,7 @@ export default function AuroraOnboarding() {
   const { palette } = useTheme();
   const { t } = useLang();
   const router = useRouter();
-  const { questions, answers, touched, setAnswer, plan, loading } = useOnboarding();
+  const { questions, answers, touched, setAnswer, plan, loading, persona: intake } = useOnboarding();
   const persona = useClientPersonaChoice();
   const [idx, setIdx] = useState(0);
   /** Which way the wizard last travelled — the only thing `StepSwap` needs to
@@ -86,9 +86,17 @@ export default function AuroraOnboarding() {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  const total = questions.length + 1;
-  const onPlanStep = idx >= questions.length;
-  const q = onPlanStep ? null : questions[idx]!;
+  // THE PLAN STEP BELONGS TO THE ATHLETE INTAKE. A tracker declined the goal
+  // product on the first screen; ending their setup on "Start this plan" was
+  // the clearest expression of the app not listening to that answer.
+  const hasPlanStep = intake !== "casual";
+  const total = questions.length + (hasPlanStep ? 1 : 0);
+  // Switching the persona answer re-derives the wizard, which can make it
+  // SHORTER than the step currently showing (athlete → casual drops four
+  // questions). Without this the screen would render an undefined question.
+  useEffect(() => { setIdx((i) => Math.min(i, Math.max(0, total - 1))); }, [total]);
+  const onPlanStep = hasPlanStep && idx >= questions.length;
+  const q = onPlanStep ? null : questions[Math.min(idx, questions.length - 1)] ?? null;
   const waiting = loading && questions.length === 0;
 
   /** Move a step. The scroll position is part of the move: a step is a PAGE, so
@@ -120,7 +128,10 @@ export default function AuroraOnboarding() {
     timer.current = setTimeout(leave, states.savedHoldMs);
   };
 
-  const next = () => { if (idx < total - 1) go(idx + 1, 1); else void finish(); };
+  /** The last step commits, whether that is the plan step or, for a tracker,
+   *  the final question. */
+  const onLastStep = idx >= total - 1;
+  const next = () => { if (!onLastStep) go(idx + 1, 1); else void finish(); };
   /** Only ever a STEP. It used to fall through to `leave()` at step 0, which
    *  made Back and skip two vocabularies pointing at one destination on the
    *  very first screen a new athlete sees — so the control is simply absent
@@ -218,7 +229,7 @@ export default function AuroraOnboarding() {
         <View style={{ flexDirection: "row", gap: space.md, alignItems: "stretch", paddingTop: space.md }}>
           {idx > 0 && <APill label={t("common.back")} variant="outline" onPress={back} />}
           <APill
-            label={onPlanStep ? (plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
+            label={onPlanStep || onLastStep ? (onPlanStep && plan ? t("w.account.onboarding.start-plan") : t("w.account.onboarding.continue")) : t("w.account.onboarding.next")}
             onPress={next}
             disabled={!canNext || commit !== "idle"}
             state={commit}

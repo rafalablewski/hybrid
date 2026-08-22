@@ -9,6 +9,7 @@
  */
 
 import { GOAL_TREE, GOAL_GROUPS, type GoalPlan, type GoalCategory } from "./plans";
+import type { ClientPersona } from "./nav";
 
 /** A main goal id — always one of the plan library's goal (GOAL_TREE) ids. */
 export type OnboardingGoal = string;
@@ -148,6 +149,23 @@ export interface OnboardingQuestion {
   enabled: boolean;
   /** Built-in question: protected from deletion; key/kind/engineKey are locked. */
   system?: boolean;
+  /**
+   * WHICH INTAKE THIS QUESTION BELONGS TO. Omitted means both.
+   *
+   * The first question asks which of two products the athlete wants — "Just
+   * track my training" or "Train for a goal" — and until Aug 2026 the wizard
+   * did not branch on the answer. Everyone was asked all eight questions, the
+   * goal question was `required` with no skip, and the server enrolled a
+   * periodised season for anyone with a goal. So both answers produced
+   * IDENTICAL server state, and the only difference between the two products
+   * was a flag in device storage that hid some menu rows. Someone who asked for
+   * the simple tracker got a twelve-week programme laid across their calendar
+   * and an upsell offering to make it adapt.
+   *
+   * A tracker needs to be asked who they are, because the volume and readiness
+   * models read it. It does not need to be asked what it is training for.
+   */
+  personas?: ClientPersona[];
   /** Display order (ascending). */
   order: number;
 }
@@ -158,7 +176,18 @@ export const ONBOARDING_PERSONA_CHOICES: OnboardingChoice[] = [
   { value: "athlete", label: "Train for a goal — give me the data", blurb: "Plans, sport S&C, velocity, performance & technique. The full toolkit — a paid upgrade." },
 ];
 
-/** The five built-in questions, in display order. Seed + fallback. */
+/**
+ * The built-in questions, in display order. Seed + fallback.
+ *
+ * THE `personas` FIELD IS THE FORK. Four of these are asked only of an athlete
+ * intake — the goal, the experience tier, days per week and equipment — because
+ * all four exist to MATCH AND SHAPE A PLAN, and a tracker is not getting one.
+ * What both intakes are asked is who they are: sex, birth date and body mass,
+ * which the volume and readiness models read for everybody.
+ *
+ * So the tracker answers four questions instead of eight, and the four it
+ * skips are exactly the ones it had no use for.
+ */
 export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   {
     id: "persona", key: "persona", kind: "persona", engineKey: "persona", system: true, enabled: true, order: 0,
@@ -167,10 +196,12 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   },
   {
     id: "goal", key: "goal", kind: "goal", engineKey: "goal", system: true, enabled: true, order: 1, required: true,
+    personas: ["athlete"],
     title: "What's your main goal?", subtitle: "We'll shape your first plan around it.",
   },
   {
     id: "experience", key: "experience", kind: "single", engineKey: "experience", system: true, enabled: true, order: 2,
+    personas: ["athlete"],
     title: "What's your experience?", subtitle: "So we set the right starting load.",
     defaultValue: "beginner",
     choices: [
@@ -214,11 +245,13 @@ export const DEFAULT_ONBOARDING_QUESTIONS: OnboardingQuestion[] = [
   },
   {
     id: "days", key: "days", kind: "number", engineKey: "daysPerWeek", system: true, enabled: true, order: 6,
+    personas: ["athlete"],
     title: "How many days a week?", subtitle: "A plan you'll actually finish beats an ideal one.",
     min: 1, max: 7, step: 1, defaultValue: 3,
   },
   {
     id: "equipment", key: "equipment", kind: "single", engineKey: "equipment", system: true, enabled: true, order: 7,
+    personas: ["athlete"],
     title: "What equipment do you have?", subtitle: "We'll only prescribe what you can do.",
     defaultValue: "full",
     choices: [
@@ -266,18 +299,61 @@ export function normalizeOnboardingQuestion(raw: unknown): OnboardingQuestion | 
     required: !!r.required,
     enabled: r.enabled === undefined ? true : !!r.enabled,
     system: !!r.system,
+    // WHICH INTAKE, and for a BUILT-IN this is locked to the code default the
+    // same way `kind` and `engineKey` are.
+    //
+    // It has to be. The admin editor stores rows that REPLACE the defaults
+    // wholesale — `onboardingQuestionsForClient` prefers the DB set whenever it
+    // is non-empty — and those rows have no persona column. So an admin who had
+    // ever touched the questionnaire would have silently un-forked the wizard:
+    // every athlete asked for a goal again, and every tracker enrolled in a
+    // season again, with nothing in the editor to show why. Persona scope is
+    // structural rather than copy, so it belongs to the code, not the row.
+    //
+    // An unrecognised entry is dropped, and an EMPTY result becomes undefined
+    // ("both") rather than "nobody" — a question no persona can see is a
+    // question that has deleted itself, which is the failure mode `kind` and
+    // `engineKey` each shipped with once already.
+    personas: normalizePersonas(r.personas) ?? DEFAULT_PERSONAS_BY_KEY[key],
     order: typeof r.order === "number" ? r.order : 0,
   };
 }
 
+const CLIENT_PERSONAS: ClientPersona[] = ["casual", "athlete"];
+
+/** Persona scope of each BUILT-IN question, by key — the code-owned default a
+ *  stored row inherits. */
+const DEFAULT_PERSONAS_BY_KEY: Record<string, ClientPersona[] | undefined> = Object.fromEntries(
+  DEFAULT_ONBOARDING_QUESTIONS.map((q) => [q.key, q.personas]),
+);
+
+function normalizePersonas(raw: unknown): ClientPersona[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const list = raw.filter((v): v is ClientPersona => CLIENT_PERSONAS.includes(v as ClientPersona));
+  return list.length ? [...new Set(list)] : undefined;
+}
+
+/** Whether `q` is asked of `persona`. No `personas` means both, and no persona
+ *  chosen yet means show everything — the wizard re-filters as soon as the
+ *  first question is answered. */
+export const questionAppliesTo = (q: OnboardingQuestion, persona?: ClientPersona | null): boolean =>
+  !persona || !q.personas || q.personas.includes(persona);
+
 /** The list a client should render: enabled questions, ascending order. Falls
  *  back to the built-in defaults when `rows` is empty (table empty/unmigrated). */
-export function onboardingQuestionsForClient(rows: unknown[] | null | undefined): OnboardingQuestion[] {
+export function onboardingQuestionsForClient(
+  rows: unknown[] | null | undefined,
+  /** The persona chosen so far. Omitted → every question, which is the state
+   *  before the first answer. */
+  persona?: ClientPersona | null,
+): OnboardingQuestion[] {
   const list = (rows ?? [])
     .map(normalizeOnboardingQuestion)
     .filter((q): q is OnboardingQuestion => !!q);
   const usable = list.length ? list : DEFAULT_ONBOARDING_QUESTIONS;
-  return usable.filter((q) => q.enabled).sort((a, b) => a.order - b.order);
+  return usable
+    .filter((q) => q.enabled && questionAppliesTo(q, persona))
+    .sort((a, b) => a.order - b.order);
 }
 
 /** Pull the engine-relevant answers out of a raw answer map, applying defaults

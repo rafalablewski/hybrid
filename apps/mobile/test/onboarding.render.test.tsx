@@ -116,9 +116,10 @@ describe("a date the athlete has not answered", () => {
 
   it("offers a year and twelve months, with no figure until touched", () => {
     const { container } = render(<Onboarding />);
-    // persona → goal → experience → sex → BORN. Only the goal is `required`, so
-    // it is the one step Next will not leave until something is picked; the
-    // rest carry defaults or are deliberately skippable.
+    // persona → goal → experience → sex → BORN. The persona must be CHOSEN
+    // rather than left on its seeded "casual" default: the wizard forks on that
+    // answer now, and the tracker intake is not asked for a goal at all.
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
     next(container);
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
     next(container); // → experience
@@ -172,7 +173,10 @@ describe("what setup writes down", () => {
     written.mockClear();
     weighed.mockClear();
     const { container } = render(<Onboarding />);
-    fireEvent.click(cta(container)); // persona → goal (its "casual" default stands)
+    // The ATHLETE intake, chosen: the wizard forks on this answer, and only
+    // this branch is asked the five plan-shaping questions this test steps past.
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[1]!.label));
+    fireEvent.click(cta(container)); // persona → goal
     fireEvent.click(row(container, ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label));
     fireEvent.click(cta(container)); // → experience
     // The three experience choices are short, so the wizard draws them as a
@@ -192,5 +196,52 @@ describe("what setup writes down", () => {
     expect(profile.sex).toBeUndefined();
     expect(profile.birthYear).toBeUndefined();
     expect(weighed, "a body mass nobody gave").not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * THE FORK, AT THE SCREEN.
+ *
+ * The first question offers two products and the wizard did not branch on the
+ * answer: everyone was asked all eight questions, the goal step was `required`
+ * with no skip control, and the run ended on a button reading "Start this
+ * plan". Someone who chose the tracker was enrolled in a twelve-week season
+ * they had just declined, one screen after declining it.
+ */
+describe("choosing the tracker", () => {
+  const cta = (container: HTMLElement) => {
+    const all = container.querySelectorAll('[role="button"]');
+    return all[all.length - 1] as HTMLElement;
+  };
+
+  it("is never asked for a goal, and never ends on a plan", () => {
+    const { container } = render(<Onboarding />);
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[0]!.label));
+    // persona → sex → born → weight, and then it commits. Four steps, not nine.
+    for (let i = 0; i < 3; i++) fireEvent.click(cta(container));
+    const body = container.textContent ?? "";
+    expect(body, "the goal step is in the tracker's wizard").not.toContain(
+      ONBOARDING_GOAL_GROUPS[0]!.goals[0]!.label,
+    );
+    expect(body, "the tracker was offered a plan").not.toContain("Start this plan");
+  });
+
+  it("still answers the three questions the volume model reads", () => {
+    // The fork drops what a tracker has no use for. It must not drop what every
+    // engine reads about every athlete.
+    const { container } = render(<Onboarding />);
+    fireEvent.click(row(container, ONBOARDING_PERSONA_CHOICES[0]!.label));
+    // FOUR screens, so four snapshots — and no click on the last one, which
+    // commits rather than advancing.
+    const seen: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      seen.push(container.textContent ?? "");
+      if (i < 3) fireEvent.click(cta(container));
+    }
+    const all = seen.join(" ");
+    for (const key of ["sex", "birth", "bodyweight"]) {
+      const q = DEFAULT_ONBOARDING_QUESTIONS.find((x) => x.key === key)!;
+      expect(all, `the tracker was not asked "${q.title}"`).toContain(q.title);
+    }
   });
 });
