@@ -100,6 +100,11 @@ export interface PlanScheduleResult {
   /** index into `days` for today (exact match); else the next upcoming day; else
    *  the last day. The rail opens focused here. */
   todayIndex: number;
+  /** Every scheduled day is in the past: the programme has been worked through.
+   *  The DATE-ANCHORED authority on a finished season — `planProgramToday`'s own
+   *  `complete` counts sessions instead, and the two can disagree for an athlete
+   *  who logged more or fewer sessions than days elapsed. */
+  complete: boolean;
   /** every logged-session id recognised as fulfilling SOME plan day — the
    *  complement (sessions logged but never claimed) is the off-plan set. */
   fulfilledSessionIds: string[];
@@ -342,6 +347,11 @@ export function planSchedule(opts: {
 
   let todayIndex = days.findIndex((d) => d.isToday);
   if (todayIndex < 0) todayIndex = days.findIndex((d) => d.ts > todayTs);
+  // NOTHING TODAY AND NOTHING AHEAD means the season is over. The index then
+  // falls back to the last day, which is a reasonable thing for a rail to focus
+  // — and was, on its own, how a finished twelve-week block came to sit on its
+  // final session indefinitely with nothing saying it had ended.
+  const complete = todayIndex < 0 && days.length > 0;
   if (todayIndex < 0) todayIndex = days.length - 1;
 
   return {
@@ -350,6 +360,7 @@ export function planSchedule(opts: {
     totalTrainingDays,
     days,
     todayIndex: Math.max(0, todayIndex),
+    complete,
     fulfilledSessionIds: [...claimed],
   };
 }

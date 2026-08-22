@@ -311,3 +311,37 @@ describe("alsoTodayCopy", () => {
     expect(alsoTodayCopy({ doneCount: 0, isToday: true }).subKey).toBe("w.home.today.alsoTodaySubEmpty");
   });
 });
+
+describe("a season that is over", () => {
+  // A PROGRAMME HAD NO END. `todayIndex` falls back to the last day when there
+  // is nothing today and nothing ahead, which is sensible for a rail to focus
+  // and was, on its own, how a finished twelve-week block came to sit on its
+  // final session indefinitely with nothing saying it had ended.
+  const wellPast = new Date(2027, 5, 1).getTime(); // a year after the start
+
+  it("is not complete while days remain", () => {
+    const r = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    expect(r.complete).toBe(false);
+    expect(r.days.some((d) => d.ts > now)).toBe(true);
+  });
+
+  it("is complete once every scheduled day is in the past", () => {
+    const r = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now: wellPast })!;
+    expect(r.complete).toBe(true);
+    expect(r.days.every((d) => d.ts < wellPast)).toBe(true);
+  });
+
+  it("still focuses the last day, so the rail has somewhere to sit", () => {
+    const r = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now: wellPast })!;
+    expect(r.todayIndex).toBe(r.days.length - 1);
+  });
+
+  it("is not complete on the final day itself", () => {
+    const full = planSchedule({ planId: PLAN, startedAt: start, sessions: [], now })!;
+    const lastTs = full.days[full.days.length - 1]!.ts;
+    const onLastDay = planSchedule({
+      planId: PLAN, startedAt: start, sessions: [], now: lastTs + 12 * 3600_000,
+    })!;
+    expect(onLastDay.complete).toBe(false);
+  });
+});

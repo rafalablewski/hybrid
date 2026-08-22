@@ -46,6 +46,8 @@ import {
   type PlacedRead,
   type ReadGate,
   planSchedule,
+  planAdherence,
+  type PlanAdherence,
   dayBand,
   rotation,
   trainingStreak,
@@ -442,7 +444,18 @@ export default function AuroraHome() {
 
   const acc = useMemo(() => computeAccountability(sessions, { targetPerWeek: 3 }), [sessions]);
   const planMaxes = usePlanMaxes();
-  const plan = useMemo(() => planProgramToday(planId, sessions.length, planMaxes), [planId, sessions.length, planMaxes]);
+  // SESSIONS SINCE ENROLLING, not the athlete's whole history. This was
+  // `sessions.length` — the total in the loaded window — so someone who used the
+  // app for two months before picking a plan did not begin that plan on day one.
+  // The date-anchored rail was never affected; the non-rail plan card and the
+  // "start the plan session" prefill both were.
+  const sinceEnrolment = useMemo(() => {
+    if (!planStartedAt) return sessions.length;
+    const from = new Date(planStartedAt).getTime();
+    if (!Number.isFinite(from)) return sessions.length;
+    return sessions.filter((x) => new Date(x.startedAt).getTime() >= from).length;
+  }, [sessions, planStartedAt]);
+  const plan = useMemo(() => planProgramToday(planId, sinceEnrolment, planMaxes), [planId, sinceEnrolment, planMaxes]);
   // Only a legitimate reading once sessions have really answered — before that
   // an empty list means "we haven't asked", not "you have nothing logged".
   const hasData = sessionsRead.ready && sessions.length > 0;
@@ -1053,6 +1066,26 @@ export default function AuroraHome() {
           <View>
             <FetchError onRetry={load} />
           </View>
+        ) : sched?.complete ? (
+          /* ═════ THE SEASON IS OVER ═════
+             A programme had no end. `planProgramToday` wrapped modulo, so the
+             day after the last session the card silently offered day one again;
+             the rail parked on the final day; and the season card read "week 14
+             of 14" indefinitely. An athlete who finished a twelve-week block was
+             never told they had finished it, never shown what it did, and never
+             offered the next one — the only exit was a Leave flow that asks you
+             to type DELETE.
+
+             This is the moment that was missing, and it reads the SAME schedule
+             the rail does, so the numbers on it are the ones the athlete watched
+             accumulate. ═════ */
+          <SeasonDone
+            C={C}
+            t={t}
+            planName={sched.planName}
+            adherence={planAdherence(sched)}
+            onNext={() => router.push("/plans")}
+          />
         ) : useRail ? (
           <View>
             {/* WHICH BLOCK THIS WEEK IS, and it is the first time the season has
@@ -1066,11 +1099,7 @@ export default function AuroraHome() {
                 the caution channel, not the accent, because a deload is not a
                 destination to go to. */}
             {season && (
-              <Text style={{
-                fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"),
-                textTransform: "uppercase", marginBottom: 8,
-                color: season.deload ? txt(C, C.amber) : C.ash,
-              }}>
+              <Text style={{ ...ty(C, "kicker", season.deload ? txt(C, C.amber) : C.ash), marginBottom: 8 }}>
                 {`${season.blockLabel} – ${t("w.home.cockpit.week")} ${season.weekInBlock} ${t("w.home.cockpit.of")} ${season.blockWeeks}`}
                 {season.deload ? ` – ${t("w.home.recweek.deload")}` : ""}
               </Text>
@@ -2143,3 +2172,46 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
 // was demoted to the single quiet row rendered inline above — see GO FULL.
 
 
+/**
+ * A FINISHED BLOCK — the acknowledgement the product did not have.
+ *
+ * Three figures rather than a paragraph: what was done, what was missed, and
+ * the adherence between them. The door is the shared DoorRow, so it wears the
+ * ringed glyph that means "this leaves" — the athlete is going somewhere to
+ * choose the next block, not expanding something in place.
+ */
+function SeasonDone({ C, t, planName, adherence, onNext }: {
+  C: P;
+  t: (k: string) => string;
+  planName: string;
+  adherence: PlanAdherence;
+  onNext: () => void;
+}) {
+  const Figure = ({ n, label, tone }: { n: string; label: string; tone: string }) => (
+    <View style={{ flex: 1 }}>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.title, color: tone, fontVariant: ["tabular-nums"] }}>{n}</Text>
+      <Text style={{ ...ty(C, "kicker"), marginTop: 2 }}>{label}</Text>
+    </View>
+  );
+  return (
+    <ACard solid>
+      <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk }}>
+        {t("w.home.season.doneTitle")}
+      </Text>
+      <Text style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 4, lineHeight: leading(fs.body) }}>
+        {t("w.home.season.doneSub").replace("{plan}", planName)}
+      </Text>
+      <View style={{ flexDirection: "row", gap: 12, marginTop: 18 }}>
+        <Figure n={String(adherence.done)} label={t("w.home.season.done")} tone={txt(C, C.lime)} />
+        <Figure n={String(adherence.missed)} label={t("w.home.season.missed")} tone={adherence.missed > 0 ? txt(C, C.amber) : C.ash} />
+        <Figure n={`${adherence.percent}%`} label={t("w.home.season.adherence")} tone={C.chalk} />
+      </View>
+      <DoorRow
+        glyph="◫"
+        title={t("w.home.season.nextTitle")}
+        sub={t("w.home.season.nextSub")}
+        onPress={onNext}
+      />
+    </ACard>
+  );
+}
