@@ -55,6 +55,27 @@ import { fonts } from "./tokens";
  * format that a person parses positionally?** `3-1-1-0`, `5:12`, `RPE 8` and
  * `24 × 8` all pass. A sentence containing a number does not, and its number
  * stays in `sans`, proportional — a figure in prose is prose.
+ *
+ * ── THERE IS A THIRD CUT IN THE SPEC AND IT IS DELIBERATELY NOT HERE ────────
+ *
+ * `reference/typography-system.html` ships a CONDENSED cut (Söhne Schmal) for
+ * takeover titles on the four editorial surfaces, at 34dp and above and nowhere
+ * below. It is a real decision, measured both ways: at `subtitle` it reads as a
+ * size drop and cannot be mixed into a list, and at 52 the same condensation
+ * reads as deliberate and fits a cover title in two lines instead of three.
+ *
+ * It is absent from this file because DECLARING A FACE THE APP DOES NOT LOAD is
+ * the exact mistake `condensed` (Archivo Narrow) was deleted for in tokens.ts:
+ * it existed as a name in the tokens and a webfont in the browser and nowhere in
+ * the thing that ships, so the phone drew Archivo while the admin panel drew
+ * Narrow. A token with no consumer is not a head start, it is a lie with a
+ * comment attached.
+ *
+ * TO ADD IT: load the face in `apps/mobile/app/_layout.tsx`, give it a name in
+ * `F` and a PostScript entry in `F_POSTSCRIPT` (native-face.test.ts parses the
+ * shipped binary, so the map cannot be a guess), add it to `fonts` in tokens.ts,
+ * then add `condensed` here and update the cut-count guard below in the same
+ * change. The guard exists so that sequence cannot be short-circuited.
  */
 export const cut = {
   sans: fonts.display,

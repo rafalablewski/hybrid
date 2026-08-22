@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { fs, lh, tracking, trackFigure } from "../scale";
+import { fonts } from "./tokens";
 import { formatClock } from "../duration";
 import { cut, weight, text, resolveText, unitFor, FLUSH, UNIT_RATIO, TIMES, type TextToken } from "./typography";
 
@@ -17,6 +18,18 @@ describe("the named type styles", () => {
       if (s.tracking !== "figure") expect(Object.keys(tracking), `${t}.tracking`).toContain(s.tracking);
       expect(Object.values(weight), `${t}.weight`).toContain(s.weight);
     }
+  });
+
+  it("HARD — the cut set matches the faces the app actually loads", () => {
+    // TWO cuts, because two faces are loaded. The spec's third (Söhne Schmal,
+    // takeover titles at 34 and above) is deliberately absent until the face
+    // ships — see the note on `cut`. This guard is not decoration: `condensed`
+    // was deleted from tokens.ts once for existing as a name with no binary
+    // behind it, and the failure mode was invisible (the phone drew one face,
+    // the admin panel another). If you are adding the third cut, you are also
+    // loading it, and this number moves in the same change.
+    expect(Object.keys(cut).sort()).toEqual(["mono", "sans"]);
+    for (const c of Object.values(cut)) expect(Object.values(fonts)).toContain(c);
   });
 
   it("HARD — mono never goes above 600", () => {
