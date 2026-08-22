@@ -113,11 +113,25 @@ export function declaredOn(events: readonly DeclaredEvent[] | undefined, dayKey:
   return (events ?? []).find((e) => e.date === dayKey) ?? null;
 }
 
-/** The plan's competition day on one local day, if the athlete is enrolled and
- *  the program has one. */
-export function planRaceOn(days: readonly ScheduledDay[] | undefined, dayKey: string): ScheduledDay | null {
-  return (days ?? []).find((d) => d.dateKey === dayKey && d.kind === "competition") ?? null;
+/** The plan-day kinds the band treats as EVENTS. A competition is a fact the
+ *  program states; a key session is the one the week is arranged around. */
+const EVENT_KINDS = ["competition", "key"] as const;
+type EventKind = (typeof EVENT_KINDS)[number];
+
+/** The plan's event day on one local day — a competition, or (unless narrowed)
+ *  a key session. */
+export function planEventOn(
+  days: readonly ScheduledDay[] | undefined,
+  dayKey: string,
+  kinds: readonly EventKind[] = EVENT_KINDS,
+): ScheduledDay | null {
+  return (days ?? []).find((d) => d.dateKey === dayKey && (kinds as readonly string[]).includes(d.kind)) ?? null;
 }
+
+/** The competition-only narrowing, kept as its own name because the race rung
+ *  and the plan card both mean exactly that and not "any event". */
+export const planRaceOn = (days: readonly ScheduledDay[] | undefined, dayKey: string): ScheduledDay | null =>
+  planEventOn(days, dayKey, ["competition"]);
 
 /**
  * WHAT DISCIPLINE A PLAN'S DAY IS — and why `blocksKind()` alone cannot say.
@@ -225,17 +239,25 @@ const asEvent = (e: DeclaredEvent): DayEvent => ({ kind: e.kind, label: e.label 
  * No fixture: a guess is only ever offered about TOMORROW, because that is the
  * one day the band can still change what you do about it.
  */
-export function dayFactOn(src: DayEventSources, dayKey: string): DayEvent | null {
+export function dayFactOn(
+  src: DayEventSources,
+  dayKey: string,
+  kinds: readonly EventKind[] = EVENT_KINDS,
+): DayEvent | null {
   const declared = declaredOn(src.declared, dayKey);
   if (declared) return asEvent(declared);
-  const race = planRaceOn(src.planDays, dayKey);
-  if (!race) return null;
+  const day = planEventOn(src.planDays, dayKey, kinds);
+  if (!day) return null;
   return {
-    kind: planRaceKind(src.planDays, src.planDiscipline),
+    // A COMPETITION day carries no blocks — that is what makes it one — so the
+    // program around it has to name its discipline. A KEY day is a session and
+    // names itself.
+    kind: day.blocks.length ? planDayKind(day.blocks, src.planDiscipline) : planRaceKind(src.planDays, src.planDiscipline),
     // The program's own word for the day ("Race day", "Competition", whatever
     // `peakLabel` says), already localized by the plan it came from.
-    label: race.kindLabel ?? race.title ?? null,
+    label: day.kindLabel ?? day.title ?? null,
     source: "plan",
+    movable: day.kind === "key",
   };
 }
 
@@ -249,7 +271,19 @@ export function dayEventTomorrow(src: DayEventSources, now: number = Date.now())
   // addLocalDays rather than +24h: on the two days a year that are 23 or 25
   // hours long, adding a fixed day in milliseconds lands back on today.
   const key = localDayKey(addLocalDays(now, 1));
-  return dayFactOn(src, key) ?? fixtureTomorrow([...(src.sessions ?? [])], now, src.reject ?? []);
+  const fact = dayFactOn(src, key);
+  // A KEY DAY NEVER PROTECTS A DAY THAT IS ITSELF AN EVENT, and this is the
+  // guard that keeps the rung from contradicting the plan it is reading. The
+  // reason feeding plan days into this rung was refused at first is that
+  // "nothing on the legs today" over a prescribed session is the band arguing
+  // with the program — which stays true for a key session, and is exactly
+  // wrong for a race, since a race outranks whatever today was going to be.
+  //
+  // It is the other half of the rule stated on PlanDayKind: if every day is
+  // key, none is. A program that marks honestly leaves an easy day in front of
+  // its own hard one, and that easy day is the one this protects.
+  if (fact?.movable && planEventOn(src.planDays, localDayKey(now))) return null;
+  return fact ?? fixtureTomorrow([...(src.sessions ?? [])], now, src.reject ?? []);
 }
 
 /**
@@ -258,5 +292,9 @@ export function dayEventTomorrow(src: DayEventSources, now: number = Date.now())
  * `race` rung in day-band.ts.
  */
 export function dayEventToday(src: DayEventSources, now: number = Date.now()): DayEvent | null {
-  return dayFactOn(src, localDayKey(now));
+  // COMPETITION ONLY. Rung 2 outranks even the floor, on the grounds that a
+  // start line cannot be moved — and a key session plainly can. A key day today
+  // is simply today's training, which the ladder's ordinary rungs already name
+  // (the plan's own label reaches the head through `singleLabel`).
+  return dayFactOn(src, localDayKey(now), ["competition"]);
 }

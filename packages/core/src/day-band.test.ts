@@ -376,6 +376,16 @@ describe("the ladder", () => {
     expect(ev.seen!.weekday).toBe(new Date(NOW + DAY).getDay());
   });
 
+  it("softens the sentence for a movable day, and only for one", () => {
+    const key = band({ deficit: deficit(72), tomorrow: { kind: "running", label: "Key session", source: "plan", movable: true } });
+    expect(key.rung).toBe("protect");
+    expect(key.say[0]!.key).toBe("w.home.band.sayProtectKey");
+    // A race keeps the flat instruction: before a start line, "nothing on the
+    // legs today" is the whole of it.
+    const race = band({ deficit: deficit(72), tomorrow: { kind: "running", label: "Half marathon", source: "declared" } });
+    expect(race.say[0]!.key).toBe("w.home.band.sayProtect");
+  });
+
   it("reports a declared tomorrow as declared, not as the plan's", () => {
     // The surface gates "Not today?" on `source === "inferred"`, so a declared
     // event borrowing the plan's source was invisible either way — until
@@ -584,6 +594,18 @@ describe("the deck", () => {
     }
   });
 
+  it("draws no deck for an enrolled athlete — the plan IS the answer", () => {
+    // dayBand() never consults the rotation when a plan is set, so every page
+    // built from one came back as the SAME plan day. Three identical pages,
+    // three dots, and nothing to swipe between.
+    const planned = dayBandDeck({
+      ...deckInput,
+      plan: { isRest: false, trainings: [{ kind: "gym", label: "Squat day" }] },
+    });
+    expect(planned).toHaveLength(1);
+    expect(planned[0]!.rung).toBe("single");
+  });
+
   it("draws no deck when the rotation has nothing else to offer", () => {
     const one = dayBandDeck({ deficit: deficit(64), sessions: habit("running", 3, 8, 3), now: NOW });
     expect(one).toHaveLength(1);
@@ -637,6 +659,10 @@ function everyBand(): DayBand[] {
           }));
         }
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, tomorrow: { kind: "running", label: "Half marathon", source: "declared" } }));
+        // THE MOVABLE HALF of the protect rung — a plan's key session, which
+        // takes the softer sentence because it fires on a day the plan has
+        // already made easy.
+        out.push(band({ deficit: deficit(kept, costs), rx: rxx, tomorrow: { kind: "running", label: "Key session", source: "plan", movable: true } }));
         // A LABEL AT ITS FULL LENGTH, through every head that takes one. The
         // budget for a name is BAND_HEAD_MAX minus the longest wrapper any
         // locale puts around it (see EVENT_LABEL_MAX) — arithmetic that is

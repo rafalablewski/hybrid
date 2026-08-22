@@ -900,6 +900,10 @@ export const web_home = {
     "w.home.band.sayDoneRate": "It's the one thing the app can't measure for you.",
     "w.home.band.sayDoneFeel": "{feel} — and that's what today's load is built from.",
     "w.home.band.sayProtect": "Nothing on the legs today. A walk if you want one.",
+    // The softer half of the same rung: a KEY session can be moved and a race
+    // cannot, and this fires on a day the plan has already made easy — so it
+    // explains that day rather than overruling it.
+    "w.home.band.sayProtectKey": "Keep today easy. Tomorrow is the one the week is built around.",
     // The count the guess was drawn from — so a wrong one is arguable rather
     // than merely wrong. {weekday} is the PLURAL weekday (see weekday.* below).
     "w.home.band.sayProtectUsual": "{n} of the last {total} {weekday}, so nothing heavy on the legs today.",
@@ -2266,6 +2270,7 @@ export const web_home = {
     "w.home.band.sayDoneRate": "Tego jednego aplikacja za ciebie nie zmierzy.",
     "w.home.band.sayDoneFeel": "{feel} — i z tego liczy się dzisiejsze obciążenie.",
     "w.home.band.sayProtect": "Dziś nic na nogi. Spacer, jeśli chcesz.",
+    "w.home.band.sayProtectKey": "Dziś na luzie. Jutro jest ten trening, o który chodzi.",
     "w.home.band.sayProtectUsual": "{n} z ostatnich {total} {weekday} — więc dziś nic ciężkiego na nogi.",
     "w.home.band.sayProtectMaybe": "Jeśli się zgadza, dziś nic ciężkiego na nogi.",
     // Dopełniacz liczby mnogiej — zdanie wyżej wymaga tej formy.
@@ -3576,6 +3581,7 @@ export const web_home = {
     "w.home.band.sayDoneRate": "Das Einzige, was die App nicht für dich messen kann.",
     "w.home.band.sayDoneFeel": "{feel} — und daraus baut sich die Last von heute.",
     "w.home.band.sayProtect": "Heute nichts auf die Beine. Ein Spaziergang, wenn du magst.",
+    "w.home.band.sayProtectKey": "Heute locker. Morgen kommt die Einheit, um die es geht.",
     "w.home.band.sayProtectUsual": "{n} der letzten {total} {weekday} — heute also nichts Schweres auf die Beine.",
     "w.home.band.sayProtectMaybe": "Wenn das stimmt, heute nichts Schweres auf die Beine.",
     "w.home.band.weekday.0": "Sonntage",

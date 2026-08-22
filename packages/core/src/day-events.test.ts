@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   EVENT_LABEL_MAX, dayEventToday, dayEventTomorrow, dayFactOn, declaredOn,
-  planDayKind, planRaceKind, planRaceOn, sanitizeDeclaredEvents, type DeclaredEvent,
+  planDayKind, planEventOn, planRaceKind, planRaceOn, sanitizeDeclaredEvents, type DeclaredEvent,
 } from "./day-events";
 import { planSchedule, type ScheduledDay } from "./plan-schedule";
 import { localDayKey } from "./day-key";
@@ -155,6 +155,8 @@ describe("a plan's competition day", () => {
     expect(dayEventToday({ planDays: sched.days, planDiscipline: sched.discipline }, NOW)).toEqual({
       kind: "running",
       label: "Race day",
+      // A race is the one day on the calendar that cannot be moved.
+      movable: false,
       source: "plan",
     });
   });
@@ -192,6 +194,75 @@ describe("a plan's competition day", () => {
       NOW,
     );
     expect(e).toMatchObject({ source: "declared", label: "Cup final" });
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+describe("a plan's KEY session", () => {
+  /** The 5K program, started so that its 1-based weekday `index` falls on
+   *  TODAY. Its own progression text names Tue (2) and Thu (4) as the hard
+   *  sessions, so `today(1)` stands on the Monday before an interval day. */
+  function today(index: number) {
+    const started = new Date(NOW - (index - 1) * DAY).toISOString();
+    return planSchedule({ planId: "run-5k-beginner-9wk", startedAt: started, sessions: [], now: NOW })!;
+  }
+
+  it("marks the days the program says are hard, and only those", () => {
+    const week = today(1).days.slice(0, 7);
+    expect(week.map((d) => d.kind)).toEqual(["train", "key", "train", "key", "train", "train", "rest"]);
+    expect(week[1]!.kindLabel).toBe("Key session");
+    // A key day is a TRAINING day — unlike a competition, it prescribes a
+    // session, so it must never arrive looking like a rest day.
+    expect(week[1]!.isRest).toBe(false);
+    expect(week[1]!.blocks.length).toBeGreaterThan(0);
+  });
+
+  it("protects the day before it, in the softer voice", () => {
+    // Monday is "Rest / cross-train"; Tuesday is the interval session.
+    const sched = today(1); // standing on Monday, the key day is tomorrow
+    const e = dayEventTomorrow({ planDays: sched.days, planDiscipline: sched.discipline }, NOW);
+    expect(e).toMatchObject({ source: "plan", label: "Key session", movable: true });
+    // It names itself from its own blocks rather than from the program's modal
+    // kind, because unlike a competition it HAS a session.
+    expect(e!.kind).toBe("running");
+  });
+
+  it("never protects a day that is itself an event", () => {
+    // Standing ON Tuesday — itself the key day — the band must not say
+    // "nothing on the legs today" over the session it is standing on. This is
+    // the other half of "if every day is key, none is".
+    const sched = today(2);
+    expect(sched.days[1]!.dateKey).toBe(TODAY);
+    expect(sched.days[1]!.kind).toBe("key");
+    expect(dayEventTomorrow({ planDays: sched.days, planDiscipline: sched.discipline }, NOW)).toBeNull();
+  });
+
+  it("is never today's answer — a key session can be moved, and the floor outranks it", () => {
+    // Rung 2 exists because a start line cannot be rescheduled. A quality
+    // session plainly can, and grinding one on a floored reading is the exact
+    // case the floor is there to catch.
+    const sched = today(2); // standing on Tuesday, the key day itself
+    expect(sched.days[1]!.kind).toBe("key");
+    expect(dayEventToday({ planDays: sched.days, planDiscipline: sched.discipline }, NOW)).toBeNull();
+  });
+
+  it("still yields the day to a race, which outranks whatever today was", () => {
+    const race = today(1);
+    // A declared event on the same day beats the plan's key session, as always.
+    const e = dayEventTomorrow(
+      { planDays: race.days, planDiscipline: race.discipline, declared: [ev(TOMORROW, "sport", "Cup final")] },
+      NOW,
+    );
+    expect(e).toMatchObject({ source: "declared", label: "Cup final" });
+    expect(e!.movable).toBeFalsy();
+  });
+
+  it("planEventOn narrows to competitions when asked, and finds both when not", () => {
+    const sched = today(1);
+    const tue = sched.days[1]!.dateKey;
+    expect(planEventOn(sched.days, tue)?.kind).toBe("key");
+    expect(planEventOn(sched.days, tue, ["competition"])).toBeNull();
+    expect(planRaceOn(sched.days, tue)).toBeNull();
   });
 });
 

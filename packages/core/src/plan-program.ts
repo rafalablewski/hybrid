@@ -87,7 +87,27 @@ export interface PlanEntry {
  *  an RPE. Authored per block (warm-up = easy … finisher = max). */
 export type ConditioningEffort = "recover" | "easy" | "moderate" | "hard" | "max";
 
-export type PlanDayKind = "train" | "active-rest" | "rest" | "competition";
+/**
+ * WHAT A PROGRAM'S DAY IS, beyond its content.
+ *
+ * `key` is the one an athlete would want the day BEFORE protected for — the
+ * session the week is arranged around, which a program states about itself and
+ * nothing can derive. The day band reads it (day-events.ts); everywhere else it
+ * is a label.
+ *
+ * IF EVERY DAY IS KEY, NONE IS. Marking is a statement of RELATIVE importance
+ * inside one program, not a difficulty rating: a block whose every session is
+ * hard should mark none, because there is then no easy day to protect and a
+ * band saying "nothing on the legs today" would be contradicting the plan it is
+ * reading. `day-events.ts` enforces the same idea from the other side — a key
+ * day never protects a day that is itself key.
+ *
+ * There is deliberately no `test` yet. It would behave identically to `key`
+ * everywhere the band currently looks, and the thing that would make it
+ * different — refusing to test a max on a floored reading — is a rung nobody
+ * has built. See `plan-day-test-kind` in capabilities.ts.
+ */
+export type PlanDayKind = "train" | "active-rest" | "rest" | "competition" | "key";
 
 /** A session's time-of-day band. "AM" / "MID" / "PM" for a two- or three-a-day;
  *  omitted when the plan doesn't split a day by clock (an untimed day's sessions
@@ -142,6 +162,9 @@ export interface PlanProgram {
   anchor?: "competition";
   /** Word for the peak day + the "peaks to …" note (e.g. "Competition", "Race day"). */
   peakLabel?: string;
+  /** Word for a `key` day, when the program has its own ("SOS day", "Quality
+   *  day"). Defaults to "Key session". */
+  keyLabel?: string;
   weeks: PlanWeek[];
   progression: string;
   source?: string;
@@ -497,6 +520,9 @@ function kindLabelFor(program: PlanProgram, kind: PlanDayKind): string | null {
   if (kind === "train") return null;
   if (kind === "active-rest") return "Active rest";
   if (kind === "rest") return "Rest";
+  // A program may name its own key session ("SOS day", "Quality day"); without
+  // one it takes the plain words, like Rest and Active rest above.
+  if (kind === "key") return program.keyLabel ?? "Key session";
   return program.peakLabel ?? "Competition"; // competition
 }
 

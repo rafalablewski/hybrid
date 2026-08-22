@@ -568,13 +568,16 @@ type RunCell = "off" | "race" | RunItem[];
 /** Rest-or-cross-train cell (Mon/Wed/some Sun). */
 const ct = (min: number): RunCell => [["Rest / cross-train", `Rest, or ${min}' cross-train`]];
 
-function buildRunDay(cell: RunCell, index: number): PlanDay {
+function buildRunDay(cell: RunCell, index: number, keyDays: readonly number[] = []): PlanDay {
   const title = WEEKDAYS[index - 1] ?? `Day ${index}`;
   if (cell === "off") return { index, kind: "rest", title, sessions: [] };
   if (cell === "race") return { index, kind: "competition", title, sessions: [] };
   return {
     index,
-    kind: "train",
+    // THE PROGRAM'S OWN KEY SESSIONS, positional because that is how the source
+    // states them — see `keyDays` on buildRunProgram. A race-week cell is
+    // already returned above, so a key index can never overwrite the race.
+    kind: keyDays.includes(index) ? "key" : "train",
     title,
     sessions: [
       {
@@ -588,10 +591,22 @@ function buildRunDay(cell: RunCell, index: number): PlanDay {
   };
 }
 
-function buildRunProgram(meta: Omit<PlanProgram, "weeks">, weeks: RunCell[][]): PlanProgram {
+/**
+ * `keyDays` are 1-based WEEKDAY indices, and positional is not laziness — it is
+ * the shape the source itself uses. This program's own progression text says
+ * "Tuesday is the hard interval/hills session and Thursday is the tempo
+ * session", which is a statement about weekdays, every week. Marking the cells
+ * individually would be the same claim written 18 times, with 18 chances to
+ * disagree with the sentence above it.
+ */
+function buildRunProgram(
+  meta: Omit<PlanProgram, "weeks">,
+  weeks: RunCell[][],
+  keyDays: readonly number[] = [],
+): PlanProgram {
   return {
     ...meta,
-    weeks: weeks.map((cells, wi) => ({ index: wi + 1, days: cells.map((c, di) => buildRunDay(c, di + 1)) })),
+    weeks: weeks.map((cells, wi) => ({ index: wi + 1, days: cells.map((c, di) => buildRunDay(c, di + 1, keyDays)) })),
   };
 }
 
@@ -711,6 +726,12 @@ export const RUN_5K_BEGINNER_9WK: PlanProgram = buildRunProgram(
     source: "Hansons 5K Beginner 9-week training plan (miles).",
   },
   RUN_WEEKS,
+  // Tue + Thu — the two the progression text above names as the hard sessions.
+  // The long run (Sat) is deliberately NOT marked: the plan already makes
+  // Friday easy, so protecting it would tell the athlete something the plan has
+  // told them, and a third key day in a five-day week starts to mean "hard"
+  // rather than "the session this week is arranged around".
+  [2, 4],
 );
 
 // ============================================================

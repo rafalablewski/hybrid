@@ -123,6 +123,20 @@ export interface DayEvent {
    * guess reads as a wrong guess rather than as news.
    */
   seen?: { weeks: number; of: number; weekday: number } | null;
+  /**
+   * TRUE WHEN THE DAY COULD BE MOVED — a plan's KEY session, as against a race,
+   * a declared commitment or a detected fixture.
+   *
+   * It changes two things and it is worth being exact about both. It softens
+   * the protect rung's sentence: "nothing on the legs today" is the right
+   * instruction before a start line and an overstatement before a tempo run,
+   * which the athlete's own plan has already put an easy day in front of. And
+   * it keeps the day off rung 2 — a race outranks even the floor because a
+   * start line cannot be rescheduled, and a key session plainly can. Testing or
+   * grinding a quality session on a floored reading is the exact case the floor
+   * exists to catch.
+   */
+  movable?: boolean;
 }
 
 /**
@@ -614,7 +628,7 @@ export function dayBand(input: DayBandInput): DayBand {
   // the exact defect rung 5 was rebuilt to stop. The doctrine is enforced here
   // rather than merely documented at the caller.
   const done = input.done ?? doneToday(input.sessions ?? [], now);
-  const race = input.today && input.today.source !== "fixture" ? input.today : null;
+  const race = input.today && input.today.source !== "fixture" && !input.today.movable ? input.today : null;
   if (race && done.count === 0) {
     const head: BandLine = race.label
       ? { key: `${K}race`, values: { event: race.label } }
@@ -703,7 +717,12 @@ export function dayBand(input: DayBandInput): DayBand {
     // `seen` (a caller that predates it) still hedges — it just cannot say how
     // often, and inventing a count would be worse than not having one.
     const say: BandLine = !guessed
-      ? { key: `${K}sayProtect` }
+      // A MOVABLE day gets the softer sentence. Before a race, "nothing on the
+      // legs today" is the instruction; before a key session it is an
+      // overstatement, and one the athlete's own plan usually contradicts —
+      // this rung fires on a day the program has already made easy, so the
+      // band's job there is to say WHY, not to overrule it.
+      ? { key: tomorrow.movable ? `${K}sayProtectKey` : `${K}sayProtect` }
       : tomorrow.seen
         ? {
             key: `${K}sayProtectUsual`,
@@ -862,6 +881,19 @@ const DECKABLE: readonly BandRung[] = ["order", "single"] as const;
 export function dayBandDeck(input: DayBandInput): DayBand[] {
   const first = dayBand(input);
   if (!DECKABLE.includes(first.rung)) return [first];
+
+  // AN ENROLLED ATHLETE HAS NO DECK, and the reason is not policy — it is that
+  // there is nothing to page through. `dayBand()` sets `rot = plan ? null : …`,
+  // so on a planned day the rotation is never consulted and the plan's own day
+  // IS the answer; a candidate list drawn from the log would be offering an
+  // athlete alternatives to a program they chose.
+  //
+  // It shipped without this guard and the failure was loud rather than subtle:
+  // `nextDueKind` kept finding kinds in the log, each page was built by a
+  // `dayBand()` that ignored the pruned rotation because a plan was set, and
+  // the deck came out as the SAME page three times, under three dots. The
+  // deck's own test suite missed it because every fixture in it was unplanned.
+  if (input.plan) return [first];
 
   const rot = input.rot ?? rotation([...(input.sessions ?? [])], input.now ?? Date.now());
   const deck: DayBand[] = [first];
