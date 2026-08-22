@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { View, Text, Image } from "react-native";
-import Svg, { Polygon, Circle } from "react-native-svg";
+import Svg, { Path, Circle } from "react-native-svg";
 import {
   exerciseBodyMap,
+  bodyPath,
   type BodyFigure,
   type ExerciseBodyMap,
   type MuscleGlow,
@@ -12,7 +13,6 @@ import { useTheme, txt, type Palette } from "../../lib/theme";
 import { fs, tracking, F } from "../../lib/ui";
 import { RADIUS } from "./kit";
 
-const poly = (pts: { x: number; y: number }[]) => pts.map((q) => `${q.x},${q.y}`).join(" ");
 
 // Untargeted muscles sit as faint definition; targeted ones glow from a visible
 // floor up to full at the top mover.
@@ -159,8 +159,13 @@ function Figure({
   return (
     <Svg viewBox="0 0 100 100" width="100%" height="100%">
       {/* faint silhouette so the mannequin reads even where nothing is targeted */}
+      {/* SMOOTHED, not straight. These are the same authored points as before —
+          core's `bodyPath` fits a spline THROUGH them, so the anatomy stays
+          where it was placed and the segments between arrive curved. Drawn as
+          polygons the arms were literal rectangles and the figure read as an
+          action figure. */}
       {fig.outline.map((part, i) => (
-        <Polygon key={`o${i}`} points={poly(part)} fill={C.ash} fillOpacity={0.09} stroke={C.line} strokeWidth={0.5} />
+        <Path key={`o${i}`} d={bodyPath(part)} fill={C.ash} fillOpacity={0.09} stroke={C.line} strokeWidth={0.5} />
       ))}
       <Circle cx={fig.head.cx} cy={fig.head.cy} r={fig.head.r} fill={C.ash} fillOpacity={0.12} stroke={C.line} strokeWidth={0.5} />
       {/* muscle regions, glowing by share of effort */}
@@ -168,9 +173,9 @@ function Figure({
         const intensity = intensityOf[r.muscle] ?? 0;
         const isSel = selected === r.muscle;
         return r.shapes.map((shape, j) => (
-          <Polygon
+          <Path
             key={`${r.muscle}-${j}`}
-            points={poly(shape)}
+            d={bodyPath(shape)}
             fill={C.lime}
             fillOpacity={isSel ? 1 : fillOpacity(intensity)}
             stroke={isSel ? C.lime : "none"}

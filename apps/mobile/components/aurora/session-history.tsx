@@ -16,10 +16,11 @@
  * THE BARS ARE THE PICTURE'S TEXT ALTERNATIVE TOO: the caller states the same
  * delta in words beneath, so nothing here is carried by colour alone.
  */
-import { View } from "react-native";
+import { View, Text } from "react-native";
 import Svg, { Rect } from "react-native-svg";
-import type { E1rmPoint } from "@hybrid/core";
+import { fmtWeight, type E1rmPoint, type WeightUnit } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
+import { fs, tracking, F } from "../../lib/ui";
 
 /** Below this the bars are not a trend, they are two marks — the caller shows
  *  its rows instead. Same floor SIGNATURE_MIN_BARS applies to the signature. */
@@ -73,6 +74,76 @@ export function LiftHistory({
           );
         })}
       </Svg>
+    </View>
+  );
+}
+
+/**
+ * THE SESSION'S OWN EXERCISES, COMPARED — the heaviest working set of each.
+ *
+ * WHY: `LiftHistory` needs a past to plot, and a lift trained twice has none.
+ * The premium panel then had a figure and one row on a whole screen, which is
+ * the thin panel this exists to fill. What ALWAYS exists for a strength session
+ * is the session itself, so the panel compares what it did: which lift was
+ * actually the big one today. That is the question the figure above it — an
+ * estimated max belonging to one exercise — already started asking.
+ *
+ * The scale is the session's own heaviest set, so the bars read as "against the
+ * biggest thing you lifted today" rather than against a number off-screen.
+ */
+export function ExerciseTops({
+  tops,
+  width,
+  height,
+  units,
+  locale,
+}: {
+  tops: { exercise: string; loadKg: number }[];
+  width: number;
+  height: number;
+  units: WeightUnit;
+  locale?: string;
+}) {
+  const C = useTheme().palette;
+  if (tops.length === 0 || width <= 0 || height <= 0) return null;
+  const ranked = [...tops].sort((a, b) => b.loadKg - a.loadKg).slice(0, MAX_BARS);
+  const max = Math.max(...ranked.map((r) => r.loadKg), 1);
+  const slot = width / ranked.length;
+  const barW = Math.max(2, slot - 6);
+
+  return (
+    <View>
+      <Svg width={width} height={height}>
+        {ranked.map((r, i) => {
+          const h = FLOOR + (r.loadKg / max) * (height - FLOOR - 2);
+          return (
+            <Rect
+              key={r.exercise}
+              x={i * slot}
+              y={height - h}
+              width={barW}
+              height={h}
+              rx={1.5}
+              fill={i === 0 ? C.lime : C.chalk}
+              fillOpacity={i === 0 ? 1 : 0.34}
+            />
+          );
+        })}
+      </Svg>
+      {/* Named and figured beneath, so the bars are never the only statement —
+          the same rule the muscle ledger follows under its figure. */}
+      <View style={{ flexDirection: "row", marginTop: 6 }}>
+        {ranked.map((r) => (
+          <View key={r.exercise} style={{ width: slot, paddingRight: 4 }}>
+            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>
+              {r.exercise}
+            </Text>
+            <Text numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>
+              {fmtWeight(r.loadKg, units, undefined, locale)}
+            </Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }

@@ -1,4 +1,4 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, SportSegmentBest } from "@hybrid/core";
+import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, StreamSummary, StreamKind, SportSegmentBest } from "@hybrid/core";
 import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, sanitizeVolumeProfile, type HeatProtocol, type AthleteVolumeProfile } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
@@ -171,6 +171,55 @@ export async function fetchSessionRecordings(): Promise<SessionRecording[]> {
     return Array.isArray(data.recordings) ? data.recordings : [];
   } catch {
     return [];
+  }
+}
+
+/**
+ * THE RECORDING UNDER A SESSION — the second-by-second data the summary's
+ * intensity read is drawn from.
+ *
+ * The phone has POSTed this since the streams work landed (`putSessionStreams`
+ * below) and nothing has ever read it back, which is why the summary showed a
+ * heart-rate average and never the shape it came from. The endpoint has been
+ * complete the whole time: it returns the streams, the laps, and — derived on
+ * READ rather than stored, because its denominator moves as the athlete's
+ * measured max goes up — the seconds spent in each zone, alongside the max HR
+ * those zones are relative to, so the client can say what they are measured
+ * against instead of presenting them as physiology.
+ *
+ * `kind` narrows it. The arrays are the largest thing the API returns and a
+ * caller that wants a heart rate does not want a GPS route with it.
+ *
+ * Empty on any failure: a summary whose recording will not load is the summary
+ * as it shipped before this, not an error the panel has to render.
+ */
+export interface SessionStreamsRead {
+  streams: (SessionStream & StreamSummary)[];
+  laps: SessionLap[];
+  /** seconds in Z1..Z5, or null when the recording carries no heart rate */
+  hrZoneSec: number[] | null;
+  /** the max HR the zones were computed against — measured, never 220-minus-age */
+  maxHrUsed: number | null;
+}
+
+export async function fetchSessionStreams(
+  id: string,
+  kinds?: StreamKind[],
+): Promise<SessionStreamsRead> {
+  const empty: SessionStreamsRead = { streams: [], laps: [], hrZoneSec: null, maxHrUsed: null };
+  try {
+    const q = kinds?.length ? `?kind=${encodeURIComponent(kinds.join(","))}` : "";
+    const res = await fetchWithTimeout(`${API_URL}/api/sessions/${id}/streams${q}`, { headers: await authHeaders() });
+    if (!res.ok) return empty;
+    const d = (await res.json()) as Partial<SessionStreamsRead>;
+    return {
+      streams: Array.isArray(d.streams) ? d.streams : [],
+      laps: Array.isArray(d.laps) ? d.laps : [],
+      hrZoneSec: Array.isArray(d.hrZoneSec) ? d.hrZoneSec : null,
+      maxHrUsed: typeof d.maxHrUsed === "number" ? d.maxHrUsed : null,
+    };
+  } catch {
+    return empty;
   }
 }
 

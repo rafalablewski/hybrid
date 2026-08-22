@@ -27,6 +27,7 @@ import {
   e1rmSeries,
   SPINE_MIN_BARS,
   mmss,
+  paceClock,
   blockTopLoad,
   strengthPrDelta,
   workoutShareCaption,
@@ -51,7 +52,7 @@ import {
   THEMES, STATE_OPACITY } from "@hybrid/core";
 import { fetchConnections, patchSessionDevice } from "../lib/api";
 import { healthKitAvailability } from "../lib/healthkit";
-import { useHeatSignalsQuery, useRevalidate } from "../lib/queries";
+import { useHeatSignalsQuery, useRevalidate, useSessionStreamsQuery } from "../lib/queries";
 import { DeviceMatchSheet } from "./device-match";
 import { DeviceMark } from "./aurora/device-mark";
 import { AuroraIcon } from "./aurora/icons";
@@ -61,7 +62,8 @@ import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
 import SessionBody from "./aurora/session-body";
 import { TonnageCurve, SetSpine } from "./aurora/session-spine";
-import { LiftHistory, HISTORY_MIN_POINTS } from "./aurora/session-history";
+import { LiftHistory, ExerciseTops, HISTORY_MIN_POINTS } from "./aurora/session-history";
+import { HrTrace, SplitRows, TRACE_MIN_SAMPLES } from "./aurora/session-trace";
 import { SessionShareCard } from "./aurora/session-share-card";
 import Sheet from "./aurora/sheet";
 import { HeatSheet } from "./aurora/heat-sheet";
@@ -73,7 +75,7 @@ import { leading, fs, space, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCA
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint, type Palette } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
-import { APill, RADIUS } from "./aurora/kit";
+import { APill, AMeter, RADIUS } from "./aurora/kit";
 
 // `gold` is a THEME value, and this const is module scope — so it names the
 // one theme the app has rather than copying its hex. (The light theme was
@@ -146,8 +148,12 @@ const CHART_MIN = 90;
 const CHART_LABEL = 26;
 /** The set spine's exercise names, drawn under its plot. */
 const SPINE_LABELS = 20;
+/** How many splits a panel prints before the rows stop separating. */
+const SPLIT_ROWS = 8;
+/** Fewer exercises than this is not a comparison, it is a label. */
+const EFFORT_MIN_BARS = 2;
 
-type PanelKey = "hero" | "record" | "body" | "work" | "premium" | "device" | "feel";
+type PanelKey = "hero" | "record" | "body" | "work" | "intensity" | "premium" | "device" | "feel";
 
 /**
  * THE INSTRUMENT ZONE — the part of a panel that ABSORBS THE SCREEN'S SLACK.
@@ -537,12 +543,41 @@ export function WorkoutWrapped({
     [all, topFactLift, bw],
   );
   const factHistoryDrawable = factHistory.length >= HISTORY_MIN_POINTS;
+
+  // ── THE RECORDING ──
+  // Fetched only when there is one to fetch: a session with no device match has
+  // nothing under it, and asking anyway spends a request per summary opened to
+  // be told so. See lib/queries.ts.
+  const { data: recording } = useSessionStreamsQuery(session.id, device != null);
+  const hrStream = recording?.streams.find((r) => r.kind === "hr") ?? null;
+  const hrZoneSec = recording?.hrZoneSec ?? null;
+  const maxHrUsed = recording?.maxHrUsed ?? null;
+  const zoneTotal = hrZoneSec ? hrZoneSec.reduce((n, v) => n + v, 0) : 0;
+  // The intensity panel needs a SHAPE to draw, not just an average — the whole
+  // point is telling a steady hour from intervals that averaged the same.
+  const hasIntensity =
+    hrStream != null && maxHrUsed != null && hrStream.values.length >= TRACE_MIN_SAMPLES;
+  const splits = (recording?.laps ?? []).filter((l) => l.kind === "split");
   // THE SUBJECT AND THE INSTRUMENT MUST BE ABOUT THE SAME THING. Read off
   // `facts[0]` the panel led with the session's tonnage while the chart under it
   // drew a lift's estimated max — two different claims stacked as one. When
   // there is a history to draw, the figure it belongs to leads.
   const topFact = (factHistoryDrawable ? panelFacts.find((f) => f.qualifier) : null) ?? panelFacts[0] ?? null;
   const restFacts = panelFacts.filter((f) => f !== topFact);
+  /** The heaviest working set of each exercise in THIS session — the comparison
+   *  that exists even when a lift has no past to plot. */
+  const effortByExercise = useMemo(() => {
+    const best = new Map<string, number>();
+    for (const b of spine.bars) {
+      // Warm-ups are excluded for the same reason they are ghosted on the spine
+      // and counted in no summary figure: they are not what the session lifted.
+      if (b.warmup || !(b.loadKg > 0)) continue;
+      const name = spine.groups[b.group]?.exercise;
+      if (!name) continue;
+      best.set(name, Math.max(best.get(name) ?? 0, b.loadKg));
+    }
+    return [...best.entries()].map(([exercise, loadKg]) => ({ exercise, loadKg }));
+  }, [spine]);
 
   /**
    * WHICH PANELS EXIST — and the rule that keeps them full.
@@ -564,6 +599,9 @@ export function WorkoutWrapped({
     // dot, a snap offset and a screen for a panel whose only fact was the
     // headline — already shown on the hero — so the sequence would carry a
     // blank screen and the pager would count wrong.
+    // The recording's own panel, before the derived reads: what the session
+    // COST is measured, and a measured figure precedes a modelled one.
+    ...(hasIntensity ? (["intensity"] as const) : []),
     ...(panelFacts.length ? (["premium"] as const) : []),
     ...(device || showDeviceAd ? (["device"] as const) : []),
     "feel",
@@ -781,6 +819,69 @@ export function WorkoutWrapped({
           />
         )}
 
+        {/* ══ 05 — WHAT IT COST YOU ═══════════════════════════════════════ */}
+        {/* THE RECORDING, finally on a screen. An average and a peak cannot tell
+            a steady hour from intervals that averaged the same; the trace can,
+            and the samples under those two numbers have been uploaded by the
+            phone since the streams work landed and never read back. */}
+        {hasIntensity && hrStream && maxHrUsed != null && (
+          <Panel
+            {...panelProps}
+            mark={t("session.intensity.title")}
+            meta={deviceName ?? undefined}
+            subject={
+              <>
+                {/* Measured, so it reads in device blue and wears no tilde. */}
+                <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.hero, letterSpacing: trackFigure(fs.hero), color: txt(C, C.blue) }]}>
+                  {Math.round(hrStream.avg ?? 0)}
+                  <Text style={{ fontSize: fs.heading, color: C.ash }}> bpm</Text>
+                </Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: space.xxs }}>
+                  {t("session.intensity.avg")}
+                  {hrStream.max != null ? ` – ${t("session.intensity.peak").replace("{n}", String(Math.round(hrStream.max)))}` : ""}
+                </Text>
+              </>
+            }
+            instrument={(h) => (
+              <View>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
+                  {t("session.intensity.trace")}
+                </Text>
+                <HrTrace stream={hrStream} maxHr={maxHrUsed} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL)} />
+              </View>
+            )}
+            ledger={
+              <>
+                {/* THE ZONES ARE THE TRACE'S TEXT ALTERNATIVE — every band the
+                    chart draws is named and timed here, so nothing on the panel
+                    is carried by position or colour alone. */}
+                {hrZoneSec && zoneTotal > 0 && (
+                  <View style={{ gap: space.xs }}>
+                    {hrZoneSec.map((sec, i) =>
+                      sec > 0 ? (
+                        <AMeter
+                          key={i}
+                          label={t(`session.zone.z${i + 1}`)}
+                          value={mmss(Math.round(sec))}
+                          pct={(sec / zoneTotal) * 100}
+                          color={C.blue}
+                          emphasis={sec === Math.max(...hrZoneSec)}
+                        />
+                      ) : null,
+                    )}
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "relaxed"), color: C.ash, marginTop: space.sm }}>
+                      {/* Said out loud, because zones presented without their
+                          denominator read as physiology rather than as a ratio
+                          against one measured figure. */}
+                      {t("session.intensity.relativeTo").replace("{n}", String(maxHrUsed))}
+                    </Text>
+                  </View>
+                )}
+              </>
+            }
+          />
+        )}
+
         {/* ══ 05 — WHAT IT COST ═══════════════════════════════════════════ */}
         {panelFacts.length > 0 && topFact && (
           <Panel
@@ -817,7 +918,24 @@ export function WorkoutWrapped({
                       <LiftHistory points={factHistory} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL)} />
                     </View>
                   )
-                : undefined
+                : /* NO HISTORY, BUT NEVER NO INSTRUMENT. A lift trained twice
+                     has no trend to draw — and this panel then had a figure and
+                     a single row, which is the thin screen the reporter flagged.
+                     What always exists for a strength session is THIS session's
+                     own exercises, so the panel compares them: the heaviest set
+                     of each, the top one lit. It answers "what was actually the
+                     big lift today", which is the question the figure above
+                     already started. */
+                  effortByExercise.length >= EFFORT_MIN_BARS
+                  ? (h) => (
+                      <View>
+                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
+                          {t("session.work.topPerExercise")}
+                        </Text>
+                        <ExerciseTops tops={effortByExercise} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL - SPINE_LABELS)} units={units} locale={lang} />
+                      </View>
+                    )
+                  : undefined
             }
             ledger={
               <>
@@ -879,6 +997,18 @@ export function WorkoutWrapped({
                     )}
                   </View>
                 ))}
+                {/* THE SPLITS the recording fell into — derived once when the
+                    stream was written, never on read, which is the reason the
+                    lap table exists at all. Absent for a session that covered
+                    no ground, which is most gym days. */}
+                {splits.length > 0 && (
+                  <View style={{ marginTop: space.lg }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.sm }}>
+                      {t("session.intensity.splits")}
+                    </Text>
+                    <SplitRows laps={splits} paceText={paceClock} label={(i) => `${i + 1}`} max={SPLIT_ROWS} />
+                  </View>
+                )}
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "relaxed"), color: C.ash, marginTop: space.md }}>
                   {t(imported ? "session.device.truthImported" : "session.device.truth")}
                 </Text>

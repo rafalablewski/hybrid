@@ -3,6 +3,7 @@ import { GYM_EXERCISES, gymExercisesByCategory, type GymCategory, type Muscle } 
 import { MUSCLE_SHORT } from "./exercise-anatomy";
 import {
   BODY_FIGURES,
+  bodyPath,
   MUSCLE_SIDE,
   muscleRegion,
   exerciseBodyMap,
@@ -159,5 +160,50 @@ describe("room body marks", () => {
   it("returns null when a room holds no lift the database knows", () => {
     expect(roomBodyMark([])).toBeNull();
     expect(roomBodyMark(["Trail Running", "Padel"])).toBeNull();
+  });
+});
+
+describe("bodyPath — the geometry's de-robotiser", () => {
+  const square = [
+    { x: 0, y: 0 },
+    { x: 10, y: 0 },
+    { x: 10, y: 10 },
+    { x: 0, y: 10 },
+  ];
+
+  it("passes through every authored point, so anatomy stays where it was placed", () => {
+    const d = bodyPath(square);
+    // Each cubic segment ENDS on an authored point — that is the property that
+    // lets a muscle be drawn by placing five points rather than fifty.
+    for (const pt of square) expect(d).toContain(`${pt.x.toFixed(2)} ${pt.y.toFixed(2)}`);
+  });
+
+  it("closes the shape and emits curves, not corners", () => {
+    const d = bodyPath(square);
+    expect(d.startsWith("M")).toBe(true);
+    expect(d.endsWith("Z")).toBe(true);
+    expect(d).toContain("C");
+    // One cubic per edge of a closed ring.
+    expect(d.match(/C/g)?.length).toBe(square.length);
+  });
+
+  it("tension 0 is the polygon it started as", () => {
+    // The control points collapse onto the anchors, so a caller that wants the
+    // old straight-edged reading can still have it without a second code path.
+    const d = bodyPath(square, 0);
+    expect(d).toContain("C0.00 0.00 10.00 0.00 10.00 0.00");
+  });
+
+  it("refuses a degenerate ring rather than emitting a broken path", () => {
+    expect(bodyPath([])).toBe("");
+    expect(bodyPath([{ x: 1, y: 1 }, { x: 2, y: 2 }])).toBe("");
+  });
+
+  it("every shipped figure part is drawable", () => {
+    for (const fig of BODY_FIGURES) {
+      for (const part of fig.outline) expect(bodyPath(part).length).toBeGreaterThan(0);
+      for (const r of fig.regions)
+        for (const shape of r.shapes) expect(bodyPath(shape).length).toBeGreaterThan(0);
+    }
   });
 });
