@@ -53,6 +53,7 @@ export * from "./sport-page";
 export * from "./endurance";
 export * from "./endurance-lanes";
 export * from "./day-band";
+export * from "./day-events";
 export * from "./day-fold";
 export * from "./bodyweight";
 export * from "./body-progress";

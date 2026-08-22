@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, exerciseNameAliasMap, setExerciseCatalog } from "@hybrid/core";
-import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchFoodLogs, fetchHeatSignals, fetchNutritionSignals, fetchRecoverySignals } from "./api";
+import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchDayEvents, fetchFoodLogs, fetchHeatSignals, fetchNutritionSignals, fetchRecoverySignals } from "./api";
 
 // Shared query hooks for the mobile app — parity with the web data-layer. Keys
 // match conceptually so the same mutation→invalidate discipline applies. These
@@ -19,6 +19,7 @@ export const qk = {
   heatSignals: ["signals", "heat"] as const,
   recoverySignals: ["signals", "recovery"] as const,
   nutritionSignals: ["signals", "nutrition"] as const,
+  dayEvents: ["dayEvents"] as const,
 };
 
 /**
@@ -161,6 +162,18 @@ export function useHeatSignalsQuery() {
  */
 export function useNutritionSignalsQuery() {
   return useQuery({ queryKey: qk.nutritionSignals, queryFn: fetchNutritionSignals });
+}
+
+/**
+ * The races, meets and tests the athlete has DECLARED — what the day band's
+ * race and protect rungs read (packages/core/src/day-events.ts).
+ *
+ * Soft: the fetcher returns [] rather than throwing, because a missing events
+ * list must never fail the Dashboard — the band falls back to a detected
+ * fixture and the plan, exactly as it did before this existed.
+ */
+export function useDayEventsQuery() {
+  return useQuery({ queryKey: qk.dayEvents, queryFn: fetchDayEvents });
 }
 
 /** The athlete's readiness check-ins, from the shared cache. */

@@ -869,6 +869,15 @@ export const web_home = {
     "w.home.band.system.aerobic": "aerobic",
     "w.home.band.system.threshold": "threshold",
     "w.home.band.system.anaerobic": "anaerobic",
+    // THE RACE RUNG. A meet, a race or a test that is TODAY. It sits ABOVE the
+    // deload because it is the one entry on the calendar the app cannot move —
+    // a heavy squat goes to Thursday, a start line does not — so a floored
+    // reading changes how the day is RUN rather than whether it happens, which
+    // is what sayRaceFloor carries.
+    "w.home.band.race": "{event} today.",
+    "w.home.band.raceKind": "Your {noun} is today.",
+    "w.home.band.sayRace": "Nothing else today — this is the session.",
+    "w.home.band.sayRaceFloor": "Your reading is on the floor, so start conservative and go on feel.",
     "w.home.band.deload": "Take the deload.",
     // THE DONE RUNG. The day is trained, so the band stops prescribing. It
     // asks for the one value the app cannot measure — how it felt — and once
@@ -925,6 +934,24 @@ export const web_home = {
     "w.home.band.sayDoseWrecked": "You checked in wrecked, so it's {pct}% and a set lighter.",
     "w.home.band.sayDoseBodyweight": "Your check-in shed a set — there's no bar to ease.",
     "w.home.band.notToday": "Not today?",
+
+    // ── DECLARING AN EVENT (day-events.ts, aurora/declare-event.tsx) ──────
+    // The half of "what's on tomorrow" no log can answer. Three fields and no
+    // fourth: the day is the one the sheet is mounted against, so only the
+    // discipline and an optional name are asked for.
+    "w.event.title": "What's on this day?",
+    "w.event.sub": "A race, a meet, a test — the app can't work this one out on its own.",
+    "w.event.kindHead": "Discipline",
+    "w.event.nameHead": "Call it something",
+    "w.event.namePlaceholder": "Half marathon",
+    "w.event.nameNote": "Optional. Without a name it reads as its discipline \u2014 \u201cYou have a game tomorrow.\u201d",
+    "w.event.save": "Add it to the day",
+    "w.event.saving": "Adding\u2026",
+    "w.event.saved": "Added",
+    "w.event.failed": "That didn't save. The events table may not be migrated yet.",
+    "w.event.declared": "Declared",
+    "w.event.add": "Declare a race",
+    "w.event.remove": "Remove",
     "w.home.cockpit.logSession": "Log session",
     "w.home.cockpit.calibrate": "Log a session to calibrate your route",
     "w.home.cockpit.perfTwin": "Performance State",
@@ -2211,6 +2238,13 @@ export const web_home = {
     "w.home.band.system.aerobic": "tlenowa",
     "w.home.band.system.threshold": "progowa",
     "w.home.band.system.anaerobic": "beztlenowa",
+    // RUNG STARTU — zawody dzisiaj. Stoi NAD deloadem: startu nie da się
+    // przełożyć, więc gotowość na dnie zmienia sposób startu, a nie to, czy
+    // start się odbędzie.
+    "w.home.band.race": "{event} dzisiaj.",
+    "w.home.band.raceKind": "Dzisiaj: {noun}.",
+    "w.home.band.sayRace": "Dziś tylko to — nic więcej.",
+    "w.home.band.sayRaceFloor": "Gotowość jest na dnie, więc zacznij zachowawczo i idź na czucie.",
     "w.home.band.deload": "Zrób deload.",
     "w.home.band.doneRate": "Jak to było?",
     "w.home.band.doneLogged": "Dziś zrobione.",
@@ -2258,6 +2292,21 @@ export const web_home = {
     "w.home.band.sayDoseWrecked": "Meldunek na wykończeniu: {pct}% i seria mniej.",
     "w.home.band.sayDoseBodyweight": "Meldunek zdjął serię — nie ma sztangi do zejścia.",
     "w.home.band.notToday": "Nie dziś?",
+
+    // ── ZGŁOSZENIE WYDARZENIA (day-events.ts) ─────────────────────────────
+    "w.event.title": "Co jest tego dnia?",
+    "w.event.sub": "Zawody, start, test — tego aplikacja sama nie odgadnie.",
+    "w.event.kindHead": "Dyscyplina",
+    "w.event.nameHead": "Nazwij to",
+    "w.event.namePlaceholder": "Półmaraton",
+    "w.event.nameNote": "Opcjonalne. Bez nazwy przeczyta się jako dyscyplina \u2014 \u201eJutro masz: mecz.\u201d",
+    "w.event.save": "Dodaj do dnia",
+    "w.event.saving": "Dodaj\u0119\u2026",
+    "w.event.saved": "Dodane",
+    "w.event.failed": "Nie zapisało się. Tabela wydarzeń może nie być jeszcze zmigrowana.",
+    "w.event.declared": "Zgłoszone",
+    "w.event.add": "Zgłoś start",
+    "w.event.remove": "Usuń",
     "w.home.cockpit.logSession": "Zapisz sesję",
     "w.home.cockpit.calibrate": "Zapisz sesję, aby skalibrować swoją trasę",
     "w.home.cockpit.perfTwin": "Stan formy",
@@ -3497,6 +3546,13 @@ export const web_home = {
     "w.home.band.system.aerobic": "aerobe",
     "w.home.band.system.threshold": "Schwellen-",
     "w.home.band.system.anaerobic": "anaerobe",
+    // DIE WETTKAMPF-STUFE — heute. Sie steht ÜBER dem Deload: ein Startschuss
+    // lässt sich nicht verschieben, ein schweres Squat schon. Ein Wert am Boden
+    // ändert also, WIE der Tag gelaufen wird, nicht ob er stattfindet.
+    "w.home.band.race": "{event} heute.",
+    "w.home.band.raceKind": "Heute: {noun}.",
+    "w.home.band.sayRace": "Heute zählt nur das — sonst nichts.",
+    "w.home.band.sayRaceFloor": "Dein Wert liegt am Boden, also geh es konservativ an und richte dich nach dem Gefühl.",
     "w.home.band.deload": "Mach den Deload.",
     "w.home.band.doneRate": "Wie hat sich das angefühlt?",
     "w.home.band.doneLogged": "Heute ist drin.",
@@ -3543,6 +3599,21 @@ export const web_home = {
     "w.home.band.sayDoseWrecked": "Check-in platt: {pct}% und ein Satz weniger.",
     "w.home.band.sayDoseBodyweight": "Der Check-in hat einen Satz gestrichen — es gibt keine Hantel zu senken.",
     "w.home.band.notToday": "Heute nicht?",
+
+    // ── EIN EREIGNIS EINTRAGEN (day-events.ts) ────────────────────────────
+    "w.event.title": "Was ist an diesem Tag?",
+    "w.event.sub": "Ein Rennen, ein Wettkampf, ein Test — das findet die App nicht selbst heraus.",
+    "w.event.kindHead": "Disziplin",
+    "w.event.nameHead": "Gib ihm einen Namen",
+    "w.event.namePlaceholder": "Halbmarathon",
+    "w.event.nameNote": "Optional. Ohne Namen steht dort die Disziplin \u2014 \u201eMorgen: Spiel.\u201c",
+    "w.event.save": "Zum Tag hinzufügen",
+    "w.event.saving": "Wird hinzugefügt\u2026",
+    "w.event.saved": "Hinzugefügt",
+    "w.event.failed": "Das wurde nicht gespeichert. Die Ereignistabelle ist womöglich noch nicht migriert.",
+    "w.event.declared": "Eingetragen",
+    "w.event.add": "Wettkampf eintragen",
+    "w.event.remove": "Entfernen",
     "w.home.cockpit.logSession": "Einheit protokollieren",
     "w.home.cockpit.calibrate": "Protokolliere eine Einheit, um deine Route zu kalibrieren",
     "w.home.cockpit.perfTwin": "Leistungszustand",

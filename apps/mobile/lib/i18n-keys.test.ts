@@ -62,6 +62,19 @@ const TEMPLATED: string[] = [
   "workout.exercises.one",
   "workout.exercises.few",
   "workout.exercises.many",
+  // declare-event.tsx (the kind picker) and calendar.tsx (an unnamed event's
+  // fallback name) — `w.home.band.noun.${kind}` over TRAINING_KINDS. The band
+  // itself builds the same keys inside core, where this guard cannot see them,
+  // which is the other half of why they are enumerated here.
+  "w.home.band.noun.gym",
+  "w.home.band.noun.running",
+  "w.home.band.noun.cycling",
+  "w.home.band.noun.swimming",
+  "w.home.band.noun.rowing",
+  "w.home.band.noun.skiing",
+  "w.home.band.noun.walking",
+  "w.home.band.noun.sport",
+  "w.home.band.noun.other",
 ];
 
 describe("i18n keys", () => {

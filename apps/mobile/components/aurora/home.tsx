@@ -49,8 +49,9 @@ import {
   dayBand,
   rotation,
   trainingStreak,
-  blocksKind,
-  fixtureTomorrow,
+  planDayKind,
+  dayEventToday,
+  dayEventTomorrow,
   isRated,
   nextDueKind,
   DUE_RATIO,
@@ -79,7 +80,7 @@ import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favour
 import { recoveryReadAnswered } from "../../lib/recovery-reminder";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRecoveryReports } from "../../lib/use-recovery-reports";
-import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useHeatSignalsQuery, useNutritionSignalsQuery, useRecoverySignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
+import { useSessionsRead, useSignalsRead, useMacrocycleRead, useCheckinsRead, useDayEventsQuery, useHeatSignalsQuery, useNutritionSignalsQuery, useRecoverySignalsQuery, useRefreshAll, useRevalidate } from "../../lib/queries";
 import { useToday } from "../../lib/use-today";
 import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
@@ -508,6 +509,11 @@ export default function AuroraHome() {
   // must only honour the first (lib/day-band-prefs.ts).
   const [rejectedEvents, setRejectedEvents] = useState<TrainingKind[]>([]);
   useEffect(() => { readRejectedEvents().then(setRejectedEvents).catch(() => {}); }, [today]);
+  // The races, meets and tests the athlete DECLARED — the half of "what's on
+  // tomorrow" no log can answer, entered on the calendar. Soft: the fetcher
+  // returns [] rather than throwing, so a missing list costs the band its
+  // strongest source and nothing else.
+  const { data: declaredEvents = [] } = useDayEventsQuery();
   // The engines take milliseconds; `today` is the day KEY that flips at
   // midnight, so this is a clock read pinned to the day rather than to render.
   const bandNow = useMemo(() => Date.now(), [today]);
@@ -529,10 +535,28 @@ export default function AuroraHome() {
     return {
       isRest: day.isRest,
       dayNumber: day.trainingDayNumber,
-      trainings: (day.sessions.length ? day.sessions.map((ps) => ({ kind: blocksKind(ps.blocks), label: day.title }))
-                                      : [{ kind: blocksKind(day.blocks), label: day.title }]),
+      // planDayKind, not blocksKind: a plan's prose run is expanded into a
+      // CONDITIONING block carrying the coach's label for it ("Tempo", "Hills",
+      // "Easy"), which no keyword resolves to a modality — so every day of the
+      // 5K program read as gym work and the band told an enrolled runner a gym
+      // session was due on a tempo day. The program's own discipline is what
+      // names it (packages/core/src/day-events.ts).
+      trainings: (day.sessions.length ? day.sessions.map((ps) => ({ kind: planDayKind(ps.blocks, sched?.discipline), label: day.title }))
+                                      : [{ kind: planDayKind(day.blocks, sched?.discipline), label: day.title }]),
     };
   }, [sched]);
+
+  // WHAT IS ON TODAY AND TOMORROW — one rule, held in core (day-events.ts), not
+  // here. This used to read `plan ? null : fixtureTomorrow(...)`, which quietly
+  // meant an ENROLLED athlete got the protect rung from nothing at all: the
+  // fixture was skipped because they had a plan, and the plan was never asked.
+  // Now all three sources go in and core orders them — declared beats the
+  // plan's competition day beats a detected fixture — and only the fixture,
+  // which is the only guess of the three, honours a rejection.
+  const eventSrc = useMemo(
+    () => ({ declared: declaredEvents, planDays: sched?.days, planDiscipline: sched?.discipline, sessions, reject: rejectedEvents }),
+    [declaredEvents, sched, sessions, rejectedEvents],
+  );
 
   const band = useMemo(
     () => dayBand({
@@ -540,13 +564,14 @@ export default function AuroraHome() {
       muscle: readyVerdict.muscle,
       rx: hasData ? rx : null,
       plan: planToday,
-      tomorrow: planToday ? null : fixtureTomorrow(sessions, bandNow, rejectedEvents),
+      today: dayEventToday(eventSrc, bandNow),
+      tomorrow: dayEventTomorrow(eventSrc, bandNow),
       sessions,
       rot: bandRot,
       streakDays: trainingStreak(sessions, bandNow),
       now: bandNow,
     }),
-    [deficit, readyVerdict.muscle, rx, hasData, planToday, sessions, bandRot, bandNow, rejectedEvents],
+    [deficit, readyVerdict.muscle, rx, hasData, planToday, eventSrc, sessions, bandRot, bandNow],
   );
   // ── THE FOLD ───────────────────────────────────────────────────────────
   // One signal, published by this screen's own scroller. The thresholds and the

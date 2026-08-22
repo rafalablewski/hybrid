@@ -1,8 +1,10 @@
 -- ===========================================================================
 -- HYBRID — every outstanding migration, in one script, in dependency order.
 --
--- STATUS: ONE SECTION OUTSTANDING — SECTION 4d (SessionSet / SessionStream /
--- SessionLap). Everything before it was run in the Supabase SQL Editor
+-- STATUS: TWO SECTIONS OUTSTANDING — SECTION 4d (SessionSet / SessionStream /
+-- SessionLap) and SECTION 7 (DeclaredEvent, at the very end, appended after the
+-- commented-out optional section 6).
+-- Everything before 4d was run in the Supabase SQL Editor
 -- (Aug 2026), which cleared the three appendices outstanding at the time — the
 -- nutrition LABEL PANEL at the end of section 1, SECTION 4b (RecordAttestation)
 -- and SECTION 4c (SavedPost). Paste the WHOLE file again to apply 4d: every
@@ -60,7 +62,7 @@
 
 
 -- ===========================================================================
--- SECTION 1 / 6 — COLUMN ADDS
+-- SECTION 1 / 7 — COLUMN ADDS
 -- Sources: sql-feel-logged-at.sql, sql-body-height.sql, sql-session-notes.sql,
 --          sql-routine-favourite.sql, sql-session-device.sql,
 --          sql-nutrition-label-panel.sql
@@ -149,7 +151,7 @@ alter table "FoodLog"     add column if not exists "verifiedId" text;
 
 
 -- ===========================================================================
--- SECTION 2 / 6 — INDEXES, CASCADES, RLS HELPERS + POLICIES
+-- SECTION 2 / 7 — INDEXES, CASCADES, RLS HELPERS + POLICIES
 -- Source: sql-all.sql (verbatim)
 --
 -- MUST run before sections 3 and 4: its PART 3 defines public.app_user_id() and
@@ -606,7 +608,7 @@ alter default privileges in schema public revoke all on tables from anon;
 
 
 -- ===========================================================================
--- SECTION 3 / 6 — PlanDayOverride
+-- SECTION 3 / 7 — PlanDayOverride
 -- Source: sql-plan-day-overrides.sql (verbatim)
 --
 -- Depends on public.app_user_id() from section 2. Stores ONLY the athlete's
@@ -657,7 +659,7 @@ create policy plandayoverride_own on "PlanDayOverride" for all
 
 
 -- ===========================================================================
--- SECTION 4 / 6 — Social graph + coach marketplace
+-- SECTION 4 / 7 — Social graph + coach marketplace
 -- Source: sql-social.sql (verbatim)
 --
 -- Depends on public.app_user_id() from section 2 — the file's own header says
@@ -1178,7 +1180,7 @@ revoke all on "SessionSet", "SessionStream", "SessionLap" from anon;
 
 
 -- ===========================================================================
--- SECTION 5 / 6 — RE-APPLY THE ANON REVOKE (belt and braces)
+-- SECTION 5 / 7 — RE-APPLY THE ANON REVOKE (belt and braces)
 --
 -- Section 2 ends with a blanket revoke of PostgREST anon access to every table
 -- in the public schema, plus an ALTER DEFAULT PRIVILEGES so tables created
@@ -1200,7 +1202,7 @@ alter default privileges in schema public revoke all on tables from anon;
 
 
 -- ===========================================================================
--- SECTION 6 / 6 — OPTIONAL, AND COMMENTED OUT ON PURPOSE
+-- SECTION 6 / 7 — OPTIONAL, AND COMMENTED OUT ON PURPOSE
 -- Source: sql-checkin-unfabricate.sql
 --
 -- This is the only statement in the file that modifies existing data, and it is
@@ -1232,3 +1234,57 @@ alter default privileges in schema public revoke all on tables from anon;
 --   and "sleep" = "energy"
 --   and "soreness" = "energy"
 --   and "mood" = "energy";
+
+
+-- ===========================================================================
+-- SECTION 7 / 7 — DeclaredEvent  (NOT YET APPLIED)
+-- Source: sql-declared-events.sql (verbatim)
+--
+-- Depends on public.app_user_id() from section 2. Adds the ONE table behind the
+-- day band's race rung. Until it exists, /api/day-events soft-degrades to an
+-- empty list and the band's "what's on tomorrow" comes only from a detected
+-- weekly fixture and the enrolled plan's competition day, exactly as it did
+-- before — nothing else in the app is affected.
+-- ===========================================================================
+
+-- HYBRID — DeclaredEvent table (the athlete's own races, meets and tests).
+-- Run in the Supabase SQL Editor. Mirrors prisma/schema.prisma model
+-- DeclaredEvent. Idempotent.
+--
+-- WHY IT CANNOT BE DERIVED: the day band protects the day before something that
+-- matters. Half of that the app can work out on its own — weeklyFixture() finds
+-- a kind landing on the same weekday in at least 3 of the last 6 weeks, which is
+-- exactly what a Thursday five-a-side is. The other half is not derivable by
+-- anything: a half marathon in six weeks leaves no trace in the log until the
+-- day it happens. This table is where the athlete says so.
+--
+-- `date` is the client's LOCAL date key (yyyy-mm-dd) stored verbatim — the
+-- server never reasons about the athlete's timezone. `kind` is a core
+-- TrainingKind; `label` is the athlete's own name for the event, already
+-- trimmed by sanitizeDeclaredEvents() before it arrives.
+
+create table if not exists "DeclaredEvent" (
+  "id"        text primary key default gen_random_uuid()::text,
+  "userId"    text not null references "User"("id") on delete cascade,
+  "date"      text not null,             -- local date key yyyy-mm-dd
+  "kind"      text not null,             -- core TrainingKind
+  "label"     text,
+  "createdAt" timestamp(3) not null default now(),
+  "updatedAt" timestamp(3) not null default now()
+);
+
+create index if not exists "DeclaredEvent_userId_date_idx"
+  on "DeclaredEvent" ("userId", "date");
+
+-- Owner-only access (same pattern as PlanDayOverride): a user reads/writes only
+-- their own rows. The server's service-role Prisma connection bypasses RLS.
+alter table "DeclaredEvent" enable row level security;
+drop policy if exists declaredevent_own on "DeclaredEvent";
+create policy declaredevent_own on "DeclaredEvent" for all
+  using ("userId" = public.app_user_id())
+  with check ("userId" = public.app_user_id());
+
+-- Section 5's blanket revoke ran BEFORE this table existed, so the explicit
+-- revoke is repeated here rather than assumed. (The default-privileges line in
+-- section 5 covers it, but only for objects created by the role that ran it.)
+revoke all on "DeclaredEvent" from anon;

@@ -7,6 +7,7 @@ import {
   sessionKind, trainingStreak, weeklyFixture,
   type DayBand, type DayBandInput, type TrainingKind,
 } from "./day-band";
+import { EVENT_LABEL_MAX } from "./day-events";
 import type { LoggedSession } from "./engines/session";
 import type { ReadinessDeficit } from "./engines/readiness-deficit";
 import type { Prescription } from "./engines/types";
@@ -228,6 +229,51 @@ describe("the ladder", () => {
     expect(b.fill).toBe("danger");
   });
 
+  it("puts a race today above the floor, and keeps the reading in the sentence", () => {
+    // The floor outranks the rest of the calendar because a heavy squat can be
+    // moved. A start line cannot, so the race outranks the floor — and the
+    // floored reading is not thrown away, it changes the SENTENCE.
+    const b = band({
+      deficit: deficit(35, TISSUE, "floor"),
+      today: { kind: "running", label: "Half marathon", source: "declared" },
+    });
+    expect(b.rung).toBe("race");
+    expect(b.source).toBe("declared");
+    expect(b.head).toEqual({ key: "w.home.band.race", values: { event: "Half marathon" } });
+    expect(b.say[0]!.key).toBe("w.home.band.sayRaceFloor");
+    // A race is a call to ACT, so it keeps the reading's fill — the quiet rungs
+    // are only the ones that say don't train.
+    expect(b.fill).not.toBeNull();
+    expect(b.mark).toBe("running");
+  });
+
+  it("names an unlabelled race by its own kind, and states the ordinary sentence", () => {
+    const b = band({ deficit: deficit(72), today: { kind: "sport", source: "plan" } });
+    expect(b.rung).toBe("race");
+    expect(b.source).toBe("plan");
+    expect(b.head).toEqual({ key: "w.home.band.raceKind", parts: { noun: "w.home.band.noun.sport" } });
+    expect(b.say[0]!.key).toBe("w.home.band.sayRace");
+  });
+
+  it("refuses to assert a race off a guess", () => {
+    // Rung 2 is the flattest declarative in the app. A fixture reaching it
+    // would announce a race off three Thursdays — the exact defect the protect
+    // rung was rebuilt to stop — so the ladder drops straight past it.
+    const b = band({ deficit: deficit(64), today: { kind: "sport", source: "fixture", seen: { weeks: 3, of: 6, weekday: 4 } } });
+    expect(b.rung).not.toBe("race");
+  });
+
+  it("stops calling it race day once the race is in the log", () => {
+    // The rung is an INSTRUCTION, and once the day is trained there is nothing
+    // left to instruct — the band has a report to make instead.
+    const b = band({
+      deficit: deficit(64),
+      today: { kind: "running", label: "Half marathon", source: "declared" },
+      done: { count: 1, unrated: 1, feel: null, kind: "running" },
+    });
+    expect(b.rung).toBe("done");
+  });
+
   it("protects tomorrow, and refuses a fill while doing it", () => {
     // The case the naive colour rule breaks on: a great reading is not
     // permission, and a chartreuse field over "don't train" says two opposite
@@ -301,7 +347,9 @@ describe("the ladder", () => {
     // and reports `plan`, so nothing offers to correct what nobody guessed.
     const declared = band({ deficit: deficit(55), tomorrow: { kind: "running", label: "Half marathon", source: "declared" } });
     expect(declared.voice).toBe("protects");
-    expect(declared.source).toBe("plan");
+    // It used to borrow the plan's source, which cost nothing while nothing
+    // branched on it. A declared event is its own kind of fact.
+    expect(declared.source).toBe("declared");
     expect(bandText(t, declared.head!)).toBe("Half marathon tomorrow.");
 
     // A plan's own day keeps it too.
@@ -326,6 +374,21 @@ describe("the ladder", () => {
     expect(ev.seen!.of).toBe(FIXTURE_LOOKBACK_WEEKS);
     expect(ev.seen!.weeks).toBeGreaterThanOrEqual(3);
     expect(ev.seen!.weekday).toBe(new Date(NOW + DAY).getDay());
+  });
+
+  it("reports a declared tomorrow as declared, not as the plan's", () => {
+    // The surface gates "Not today?" on `source === "inferred"`, so a declared
+    // event borrowing the plan's source was invisible either way — until
+    // something else branches on it. It is a different kind of fact from a
+    // plan day and it says so.
+    const b = band({
+      deficit: deficit(81),
+      tomorrow: { kind: "running", label: "Half marathon", source: "declared" },
+    });
+    expect(b.rung).toBe("protect");
+    expect(b.source).toBe("declared");
+    expect(b.voice).toBe("protects");
+    expect(b.fill).toBeNull();
   });
 
   it("states rest without a fill, from a plan or from a streak", () => {
@@ -428,6 +491,10 @@ describe("nextDueKind — the one-tap correction", () => {
 //  Copy: it has to exist, in three languages, and it has to fit.
 // ═══════════════════════════════════════════════════════════════════════════
 
+/** A name of exactly the length the store will keep — "x" repeated is enough,
+ *  because what is being measured is characters in a template, not words. */
+const LONGEST_LABEL = "M".repeat(EVENT_LABEL_MAX);
+
 /** Every band the ladder can produce, across the states that change its copy. */
 function everyBand(): DayBand[] {
   const rx = { primary: { move: "Back Squat" }, pickSys: "threshold", readinessAdjust: { feeling: "flat", loadPct: 94, setAdj: 0 } } as unknown as Prescription;
@@ -450,6 +517,17 @@ function everyBand(): DayBand[] {
           }));
         }
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, tomorrow: { kind: "running", label: "Half marathon", source: "declared" } }));
+        // A LABEL AT ITS FULL LENGTH, through every head that takes one. The
+        // budget for a name is BAND_HEAD_MAX minus the longest wrapper any
+        // locale puts around it (see EVENT_LABEL_MAX) — arithmetic that is
+        // worth nothing unless something puts the answer through the templates.
+        out.push(band({ deficit: deficit(kept, costs), rx: rxx, tomorrow: { kind: "running", label: LONGEST_LABEL, source: "declared" } }));
+        out.push(band({ deficit: deficit(kept, costs), rx: rxx, today: { kind: "running", label: LONGEST_LABEL, source: "declared" } }));
+        out.push(band({ deficit: deficit(kept, costs, "floor"), rx: rxx, today: { kind: "running", label: "Half marathon", source: "declared" } }));
+        // ...and the unlabelled head, which speaks nine disciplines.
+        for (const k of TRAINING_KINDS) {
+          out.push(band({ deficit: deficit(kept, costs), rx: rxx, today: { kind: k, source: "plan" } }));
+        }
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, plan: { isRest: true, dayNumber: 12, trainings: [] } }));
         out.push(band({ deficit: deficit(kept, costs), rx: rxx, streakDays: REST_STREAK_DAYS }));
         // THE DONE RUNG, both halves — the ask and every answer it can state.
@@ -480,7 +558,7 @@ describe("band copy", () => {
 
   it("covers every rung the ladder can reach", () => {
     const rungs = new Set(bands.map((b) => b.rung));
-    for (const r of ["deload", "done", "protect", "rest", "order", "single", "open"]) expect(rungs).toContain(r);
+    for (const r of ["race", "deload", "done", "protect", "rest", "order", "single", "open"]) expect(rungs).toContain(r);
   });
 
   it("resolves every key it can emit, in EN/PL/DE", () => {

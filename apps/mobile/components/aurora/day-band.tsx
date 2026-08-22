@@ -42,9 +42,13 @@ import { AuroraIcon, Glyph, SportMark } from "./icons";
  * palette.test.ts sweeping every score the engine can produce.
  *
  * FULL-BLEED, by the house idiom: negative margins the width of the screen
- * gutter, matching internal padding. It does NOT paint under the status bar —
- * the hub shell owns that inset for all three tabs, and taking it would mean
- * every hub screen owning its own. The band starts under the safe area.
+ * gutter, matching internal padding — AND it takes the status-bar inset back
+ * for itself (`marginTop: -insets.top`, see the style below). It shipped the
+ * other way round, starting under the safe area because the hub shell owns
+ * that inset for all three tabs, and the field carrying the app's own chrome
+ * is what settled it: the field is the TOP of the screen, not a stripe below
+ * a black header, so the day's colour is the first thing on screen. The other
+ * two hub tabs still get the shell's inset.
  */
 
 /** A discipline's own drawing, at the head of the band. Resolved through the

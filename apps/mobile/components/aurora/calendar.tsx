@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
-import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, SHARED_ELEMENTS , ALPHA} from "@hybrid/core";
+import { sessionsByDay, monthMatrix, loadIntensity, sessionVolume, localDayKey, localTodayKey, SHARED_ELEMENTS , ALPHA, type DeclaredEvent } from "@hybrid/core";
 import { useSharedSurfaceSource, useSharedSurfaceTarget } from "../../lib/shared-element";
-import { useSessionsQuery } from "../../lib/queries";
+import { useDayEventsQuery, useSessionsQuery } from "../../lib/queries";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { useRefreshOnFocus } from "../../lib/query";
-import { fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
+import { deleteDayEvent, fetchAssignments, updateAssignment, type Assignment } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { fs, space, tracking, F, FIXED_FONT_SCALE, PressScale as Pressable } from "../../lib/ui";
 import { AuroraScreen, ACard, AHeading, withAlpha , RADIUS} from "./kit";
 import { AuroraIcon } from "./icons";
+import Sheet from "./sheet";
+import DeclareEvent from "./declare-event";
 
 const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
 const todayKey = localTodayKey;
@@ -31,6 +33,12 @@ export default function AuroraCalendar() {
   const [month, setMonth] = useState(now.getUTCMonth());
   const [selected, setSelected] = useState(todayKey());
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  // THE ATHLETE'S DECLARED RACES. The calendar is where they are entered,
+  // because a race is a calendar entry — and this screen already knows which
+  // day is selected, so the sheet never has to ask for one. The day BAND is the
+  // only thing that reads them (packages/core/src/day-events.ts).
+  const { data: events = [], refetch: refetchEvents } = useDayEventsQuery();
+  const [declareOpen, setDeclareOpen] = useState(false);
   // The calendarDay pair: the tapped CELL is the source frame and the detail
   // section below the grid is the destination — both on this one screen, so
   // the "navigation" is the `selected` swap. Each cell registers its node here;
@@ -53,12 +61,19 @@ export default function AuroraCalendar() {
   const intensity = useMemo(() => loadIntensity(byDay), [byDay]);
   const matrix = useMemo(() => monthMatrix(year, month), [year, month]);
   const assignmentsByDay = useMemo(() => { const m: Record<string, Assignment[]> = {}; for (const a of assignments) (m[a.date] ??= []).push(a); return m; }, [assignments]);
+  const eventsByDay = useMemo(() => { const m: Record<string, DeclaredEvent[]> = {}; for (const e of events) (m[e.date] ??= []).push(e); return m; }, [events]);
   const label = new Date(Date.UTC(year, month, 1)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
   const today = todayKey();
   const go = (d: number) => { const m = month + d; if (m < 0) { setMonth(11); setYear((y) => y - 1); } else if (m > 11) { setMonth(0); setYear((y) => y + 1); } else setMonth(m); };
   const jumpToday = () => { setYear(now.getUTCFullYear()); setMonth(now.getUTCMonth()); setSelected(today); };
   const selSessions = sessions.filter((s) => localDayKey(s.startedAt) === selected);
   const selAssignments = assignmentsByDay[selected] ?? [];
+  const selEvents = eventsByDay[selected] ?? [];
+  /** An event's name, or its discipline's own noun — the SAME fallback the band
+   *  makes, through the same keys, so the calendar and the band never call one
+   *  event two things. */
+  const eventName = (e: DeclaredEvent) => e.label || t(`w.home.band.noun.${e.kind}`);
+  const removeEvent = async (id: string) => { await deleteDayEvent(id).catch(() => {}); refetchEvents(); };
   const navBtn = { minWidth: 40, height: 40, paddingHorizontal: 10, borderRadius: 20, borderWidth: 1, borderColor: C.line, backgroundColor: C.ink, alignItems: "center" as const, justifyContent: "center" as const };
 
   const chip = (color: string, labelText: string) => (
@@ -108,9 +123,14 @@ export default function AuroraCalendar() {
                   }
                   setSelected(cell.date);
                 }} style={{ flex: 1, aspectRatio: 1, margin: 2, borderRadius: RADIUS.inner, alignItems: "center", justifyContent: "center", opacity: cell.inMonth ? 1 : 0.35, borderWidth: 1, borderColor: isSel ? C.lime : isToday ? withAlpha(C.lime, ALPHA.rim) : C.line, backgroundColor: cellBg }}>
-                  {asg ? (
+                  {asg || eventsByDay[cell.date] ? (
                     <View style={{ position: "absolute", top: 3, right: 3, flexDirection: "row", gap: 2 }}>
-                      <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: C.blue }} />
+                      {asg ? <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: C.blue }} /> : null}
+                      {/* A declared race takes AMBER — the hue the band already
+                          gives a calendar fact it is protecting a day for
+                          (bandHue in core), so the same event is the same
+                          colour wherever it is met. */}
+                      {eventsByDay[cell.date] ? <View style={{ width: 5, height: 5, borderRadius: RADIUS.mark, backgroundColor: C.amber }} /> : null}
                     </View>
                   ) : null}
                   <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: isToday ? txt(C, C.lime) : C.chalk }}>{Number(cell.date.slice(8, 10))}</Text>
@@ -122,6 +142,7 @@ export default function AuroraCalendar() {
         ))}
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 10 }}>
           {t("w.analyze.cal.legendPre")} <Text style={{ color: txt(C, C.blue) }}>●</Text> {t("w.analyze.cal.legendAssigned")}
+          {"  "}<Text style={{ color: txt(C, C.amber) }}>●</Text> {t("w.event.declared")}
         </Text>
       </ACard>
 
@@ -131,6 +152,25 @@ export default function AuroraCalendar() {
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: txt(C, C.lime), marginTop: 8, marginBottom: 8 }}>
         {new Date(`${selected}T00:00:00.000Z`).toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
       </Text>
+
+      {/* WHAT IS DECLARED ON THIS DAY. Above the assignments and the sessions
+          because it is the only thing here that is about the FUTURE — a race
+          is what the rest of the week is arranged around, and the day band
+          reads it to protect the day before it. */}
+      {selEvents.map((e) => (
+        <ACard key={e.id} style={{ marginBottom: 12 }}>
+          {chip(C.amber, t("w.event.declared"))}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm, marginTop: 6 }}>
+            <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>{eventName(e)}</Text>
+            {/* An event is CORRECTED by deleting it, never dismissed: the
+                band's "not today?" withdraws an inference, and this is not
+                one. So the control says what it does. */}
+            <Pressable accessibilityRole="button" accessibilityLabel={t("w.event.remove")} onPress={() => removeEvent(e.id)} hitSlop={10} style={{ minHeight: 44, justifyContent: "center" }}>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{t("w.event.remove")}</Text>
+            </Pressable>
+          </View>
+        </ACard>
+      ))}
 
       {selAssignments.map((a) => (
         <ACard key={a.id} style={{ marginBottom: 12 }}>
@@ -146,7 +186,7 @@ export default function AuroraCalendar() {
         </ACard>
       ))}
 
-      {selSessions.length === 0 && selAssignments.length === 0 ? (
+      {selSessions.length === 0 && selAssignments.length === 0 && selEvents.length === 0 ? (
         <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash }}>{t("w.analyze.cal.nothing")}</Text>
       ) : selSessions.map((s) => (
         <ACard key={s.id} style={{ marginBottom: 12 }}>
@@ -154,7 +194,37 @@ export default function AuroraCalendar() {
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 4 }}>{sessionVolume(s.blocks, false, bw(s.startedAt)).toLocaleString()} kg – {s.blocks.length} {t("w.analyze.cal.blocks")}</Text>
         </ACard>
       ))}
+
+      {/* DECLARE ONE. It GROWS the day rather than leaving it — a bare `＋`
+          with no ring, by the exit grammar: the sheet is the same screen's own
+          detail continuing, and an arrow would promise a destination there is
+          not one of. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={t("w.event.add")}
+        onPress={() => setDeclareOpen(true)}
+        hitSlop={8}
+        style={{ flexDirection: "row", alignItems: "center", gap: space.sm, minHeight: 44, alignSelf: "flex-start", marginTop: 4 }}
+      >
+        <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.ash }}>＋</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking.caps, color: C.ash }}>
+          {t("w.event.add")}
+        </Text>
+      </Pressable>
       </DayDetail>
+
+      <Sheet
+        visible={declareOpen}
+        onClose={() => setDeclareOpen(false)}
+        title={t("w.event.title")}
+        sub={t("w.event.sub")}
+      >
+        <DeclareEvent
+          key={selected}
+          date={selected}
+          onSaved={() => { setDeclareOpen(false); refetchEvents(); }}
+        />
+      </Sheet>
     </AuroraScreen>
   );
 }

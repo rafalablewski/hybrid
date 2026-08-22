@@ -1,5 +1,5 @@
-import type { TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, SportSegmentBest } from "@hybrid/core";
-import { sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, sanitizeVolumeProfile, type HeatProtocol, type AthleteVolumeProfile } from "@hybrid/core";
+import type { DeclaredEvent, TrainingKind, TargetOverride, DeviceWorkout, LoggedSession, SessionBlock, TranslationOverrides, Macrocycle, MacroBlock, ScheduledAssignment, PersonaAccess, LibraryMovement, MuscleGroup, Movement, RtpStage, PlanOverride, PlanOverrides, FoodHit, FoodPortion, MicroFacts, NutritionGoal, NutritionMealPart, SessionStream, SessionLap, SportSegmentBest } from "@hybrid/core";
+import { sanitizeDeclaredEvents, sanitizePersonaAccess, setExerciseCatalog, setExerciseMediaCatalog, localDayKey, localTodayKey, heatSource, sanitizeVolumeProfile, type HeatProtocol, type AthleteVolumeProfile } from "@hybrid/core";
 import { supabase } from "./supabase";
 import { fetchWithTimeout } from "./fetch";
 
@@ -446,6 +446,47 @@ export async function logWater(ml: number, ts = new Date().toISOString()): Promi
 /** One recorded sitting as the client holds it, with both row ids so it can be
  *  removed as a unit. */
 export type HeatLog = { ids: string[]; minutes: number; tempC: number; protocol: HeatProtocol; ts: string };
+
+/**
+ * THE ATHLETE'S DECLARED RACES, MEETS AND TESTS — the half of "what's on
+ * tomorrow" no log can answer, and the only training-intent signal the app
+ * collects other than "not today?".
+ *
+ * SOFT on read: a missing events list must never fail the Dashboard, and the
+ * band simply goes back to taking tomorrow from a detected fixture and the
+ * plan. The WRITE is not soft — see `createDayEvent`.
+ */
+export async function fetchDayEvents(): Promise<DeclaredEvent[]> {
+  try {
+    const data = await fetchJson<{ events?: unknown }>("/api/day-events");
+    // Through core's own sanitizer, so a row the app cannot name never reaches
+    // the largest type on the screen.
+    return sanitizeDeclaredEvents(data.events);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Declare one. THROWS, deliberately: every other write on this screen has a
+ * client-side cache standing behind it, and this one does not — an event the
+ * athlete believes they entered and that silently went nowhere is the app
+ * losing the only thing it ever asked them for.
+ */
+export async function createDayEvent(input: { date: string; kind: TrainingKind; label?: string | null }): Promise<DeclaredEvent | null> {
+  const data = await fetchJson<{ event?: unknown }>("/api/day-events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: input.date, kind: input.kind, label: input.label ?? null }),
+  });
+  return sanitizeDeclaredEvents([data.event])[0] ?? null;
+}
+
+/** Delete one — how a declared event is corrected. It is never dismissed: the
+ *  band's "not today?" withdraws an INFERENCE, and this is not one. */
+export async function deleteDayEvent(id: string): Promise<void> {
+  await fetchJson(`/api/day-events?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+}
 
 /** Every sauna row this athlete owns, filtered server-side by kind so an
  *  unrelated stream (the food log writes up to eight rows per meal) can never

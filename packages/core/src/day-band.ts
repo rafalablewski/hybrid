@@ -20,22 +20,28 @@
  *
  *   1 none     no reading yet — draw nothing. A fabricated score under a
  *              full-bleed field of colour is a loud way to be wrong.
- *   2 deload   the score is on its floor. Outranks the schedule: a plan that
+ *   2 race     A MEET, A RACE OR A TEST IS TODAY. The one calendar entry the
+ *              app cannot move, so it outranks even the floor: a heavy squat
+ *              can go to Thursday, a start line cannot. The reading moves into
+ *              the sentence, where a flat morning changes how the race is RUN.
+ *              It comes from a FACT — a declared event, or the plan's own
+ *              competition day (day-events.ts) — never from a fixture.
+ *   3 deload   the score is on its floor. Outranks the schedule: a plan that
  *              says "squat heavy" on a day the arithmetic has bottomed out is
  *              the exact case the band exists to catch.
- *   3 done     THE DAY HAS ALREADY BEEN TRAINED. Everything below this rung
+ *   4 done     THE DAY HAS ALREADY BEEN TRAINED. Everything below this rung
  *              answers "what should you do today?", and the athlete has
  *              answered it — in the log. The band said "Nothing on the legs
  *              today. A walk if you want one." on a screen that also showed
  *              10.2 t and a trap-bar deadlift, because the ladder was never
  *              handed the one thing it was standing on top of.
- *   4 protect  something is on tomorrow. NO FILL — see the note below.
- *   5 rest     scheduled rest, or a long enough streak that rest IS the work.
- *   6 order    two trainings due. The band stops naming and starts ORDERING;
+ *   5 protect  something is on tomorrow. NO FILL — see the note below.
+ *   6 rest     scheduled rest, or a long enough streak that rest IS the work.
+ *   7 order    two trainings due. The band stops naming and starts ORDERING;
  *              that order is the only thing here an athlete cannot work out
  *              from two separate cards.
- *   7 single   one training due, named in its own vocabulary.
- *   8 open     nothing due — fall back to the prescription's freshest system.
+ *   8 single   one training due, named in its own vocabulary.
+ *   9 open     nothing due — fall back to the prescription's freshest system.
  *
  * ── WHAT THE BAND ASKS FOR, ONCE THE DAY IS DONE ──────────────────────────
  * A finished session has exactly one fact the app cannot measure: how it FELT.
@@ -48,7 +54,7 @@
  *
  * ── COLOUR NEVER CONTRADICTS THE INSTRUCTION ──────────────────────────────
  * The fill is the readiness band's own role, so the field and the ring agree by
- * construction. But a filled field is a CALL TO ACTION, and rungs 3 and 4 tell
+ * construction. But a filled field is a CALL TO ACTION, and rungs 4 and 5 tell
  * the athlete not to train — a bright chartreuse field over "match tomorrow" at
  * a readiness of 81 says two opposite things at once. Those two rungs return
  * `fill: null`, which the clients draw as ground plus a hairline. There is no
@@ -56,7 +62,7 @@
  *
  * ── MOST ATHLETES HAVE NO PLAN ────────────────────────────────────────────
  * The first cut of this ladder read the plan schedule for every rung, which
- * assumes an enrolment most athletes will never have. Rungs 4–6 now take the
+ * assumes an enrolment most athletes will never have. Rungs 5–7 now take the
  * day from the athlete's OWN LOG (`rotation()` below) when there is no plan,
  * and say so by changing VOICE: a scheduled day is asserted ("Run first, lift
  * after"), an inferred one is offered ("Run first, then lift"). The band never
@@ -108,7 +114,7 @@ export interface DayEvent {
    * It exists because the band said "You have a game tomorrow." off the back of
    * three Thursdays in six weeks, in the flattest declarative in the app, to an
    * athlete who had no game. The band's own doctrine is that it never asserts a
-   * session that does not exist; rungs 5–6 honour that by changing VOICE
+   * session that does not exist; rungs 7–8 honour that by changing VOICE
    * between a scheduled day and an inferred one, and this rung did not. Now the
    * inference says what it is and shows the count it was drawn from, so a wrong
    * guess reads as a wrong guess rather than as news.
@@ -236,7 +242,7 @@ export function sessionKind(s: LoggedSession): TrainingKind {
 }
 
 /**
- * DAYS TRAINED IN A ROW, counting back from today — what rung 4 needs for an
+ * DAYS TRAINED IN A ROW, counting back from today — what rung 6 needs for an
  * athlete with no plan to be told to rest.
  *
  * Counts from TODAY if something is logged today, otherwise from yesterday, so
@@ -273,7 +279,7 @@ const median = (xs: number[]): number => {
  * announces "a swim is due" to someone who swims twice a month has spent the
  * loudest position on the screen being wrong, and the athlete has no way to
  * tell that it was a guess. So this returns `due: []` — sending the ladder to
- * rung 7, which claims nothing about the day — in four separate cases, each
+ * rung 9, which claims nothing about the day — in four separate cases, each
  * named in `reason` so a surface can say WHY it is quiet if it wants to.
  */
 export function rotation(sessions: LoggedSession[], now: number = Date.now()): Rotation {
@@ -433,12 +439,12 @@ export function fixtureTomorrow(
 //  The band
 // ============================================================
 
-export type BandRung = "none" | "deload" | "done" | "protect" | "rest" | "order" | "single" | "open";
+export type BandRung = "none" | "race" | "deload" | "done" | "protect" | "rest" | "order" | "single" | "open";
 /** How certain the band is allowed to sound. `suggests` is the unplanned voice. */
 export type BandVoice = "asserts" | "suggests" | "protects" | "states" | "silent";
 /** Where the day came from — surfaced so a client can label an inferred day and
  *  offer the correction that teaches the rotation. */
-export type BandSource = "plan" | "inferred" | "logged" | "prescription" | "none";
+export type BandSource = "plan" | "declared" | "inferred" | "logged" | "prescription" | "none";
 
 /** One line of band copy: a key, slots filled with other keys, slots filled
  *  with literals. Rendered by `bandText()` and nothing else. */
@@ -484,8 +490,15 @@ export interface DayBandInput {
   rx?: Prescription | null;
   /** The plan's day. Absent for the athletes this ladder is built around. */
   plan?: { isRest: boolean; dayNumber?: number | null; trainings: PlannedTraining[] } | null;
-  /** What is on tomorrow, from any of the three sources. */
+  /** What is on tomorrow, from any of the three sources. See day-events.ts,
+   *  which holds the rule that orders them. */
   tomorrow?: DayEvent | null;
+  /**
+   * A FACT on TODAY — a declared race, or the enrolled plan's competition day.
+   * Never a fixture: rung 2 asserts, and a guess about today is what rungs 6–8
+   * already handle in the voice a guess deserves.
+   */
+  today?: DayEvent | null;
   /** The athlete's own log, used only when there is no plan. */
   sessions?: LoggedSession[];
   /** Supply a rotation to avoid recomputing it; otherwise it is derived. */
@@ -559,7 +572,51 @@ export function dayBand(input: DayBandInput): DayBand {
     return { rung: "none", fill: null, voice: "silent", source: "none", figure: 0, head: null, say: [], mark: null, kinds: [] };
   }
 
-  // ── 2. THE FLOOR, which outranks anything the calendar says ──────────────
+  // ── 2. THE RACE IS TODAY ─────────────────────────────────────────────────
+  //
+  // The one calendar entry the app cannot move. Every rung below this one
+  // answers "what should you do today?" by weighing what the athlete COULD do
+  // against what their body is carrying — and on the day of a meet that
+  // question is already settled. Nothing is going to be rescheduled because a
+  // number came back at 41.
+  //
+  // So it outranks even the FLOOR, which outranks everything else. The floor's
+  // own doctrine is why: it is there to catch "a plan that says squat heavy on
+  // a day the arithmetic has bottomed out", and a heavy squat can be moved to
+  // Thursday. A start line cannot. The reading does not disappear — it moves
+  // into the sentence, where a flat morning changes how the race is RUN rather
+  // than whether it happens.
+  //
+  // It does NOT outrank the log: once the day is trained, the race is over and
+  // the band has a report to make (rung 4), not an instruction to give.
+  //
+  // AND IT NEVER TAKES A GUESS. This rung is the flattest declarative the app
+  // has, so a fixture reaching it would assert a race off three Thursdays —
+  // the exact defect rung 5 was rebuilt to stop. The doctrine is enforced here
+  // rather than merely documented at the caller.
+  const done = input.done ?? doneToday(input.sessions ?? [], now);
+  const race = input.today && input.today.source !== "fixture" ? input.today : null;
+  if (race && done.count === 0) {
+    const head: BandLine = race.label
+      ? { key: `${K}race`, values: { event: race.label } }
+      : { key: `${K}raceKind`, parts: { noun: nounKey(race.kind) } };
+    return {
+      rung: "race",
+      // A race is the loudest call to act the app will ever make, so it takes
+      // the reading's own fill — the same rule the rest of the ladder holds.
+      // The quiet rungs are the ones that say DON'T train; this one does not.
+      fill,
+      voice: "asserts",
+      source: race.source === "declared" ? "declared" : "plan",
+      figure,
+      head,
+      say: [{ key: d.clamped === "floor" ? `${K}sayRaceFloor` : `${K}sayRace` }],
+      mark: race.kind,
+      kinds: [race.kind],
+    };
+  }
+
+  // ── 3. THE FLOOR, which outranks anything else the calendar says ─────────
   if (d.clamped === "floor") {
     return {
       rung: "deload", fill: "danger", voice: "asserts", source: "prescription", figure,
@@ -569,7 +626,7 @@ export function dayBand(input: DayBandInput): DayBand {
     };
   }
 
-  // ── 3. THE DAY IS ALREADY TRAINED ────────────────────────────────────────
+  // ── 4. THE DAY IS ALREADY TRAINED ────────────────────────────────────────
   //
   // Everything below this rung answers "what should you do today?" — and once
   // something is in the log, the athlete has answered it. The band used to
@@ -581,7 +638,6 @@ export function dayBand(input: DayBandInput): DayBand {
   // or a plan's own day changes what to do with the REST of the evening, so it
   // keeps the rung below. A GUESS does not — a fixture the app inferred is not
   // worth overriding what actually happened.
-  const done = input.done ?? doneToday(input.sessions ?? [], now);
   if (done.count > 0 && (!tomorrow || tomorrow.source === "fixture")) {
     // The one value the app cannot measure, asked for while it is still worth
     // answering; the answer stated back once it has one.
@@ -607,7 +663,7 @@ export function dayBand(input: DayBandInput): DayBand {
     };
   }
 
-  // ── 4. SOMETHING IS ON TOMORROW ──────────────────────────────────────────
+  // ── 5. SOMETHING IS ON TOMORROW ──────────────────────────────────────────
   //
   // TWO VOICES, because there are two completely different claims here. A plan
   // day and a declared race are FACTS: the athlete or the program put them in
@@ -636,10 +692,11 @@ export function dayBand(input: DayBandInput): DayBand {
             values: { n: tomorrow.seen.weeks, total: tomorrow.seen.of },
           }
         : { key: `${K}sayProtectMaybe` };
-    return quiet("protect", guessed ? "suggests" : "protects", head, [say], tomorrow.kind, guessed ? "inferred" : "plan");
+    const src: BandSource = guessed ? "inferred" : tomorrow.source === "declared" ? "declared" : "plan";
+    return quiet("protect", guessed ? "suggests" : "protects", head, [say], tomorrow.kind, src);
   }
 
-  // ── 5. REST ──────────────────────────────────────────────────────────────
+  // ── 6. REST ──────────────────────────────────────────────────────────────
   const streak = input.streakDays ?? 0;
   if (plan?.isRest) {
     return quiet("rest", "states", { key: `${K}rest` },
@@ -661,7 +718,7 @@ export function dayBand(input: DayBandInput): DayBand {
   const limiter = limiterOf(d);
   const tissueLed = limiter === "tissue";
 
-  // ── 6. TWO TRAININGS — the band orders them ──────────────────────────────
+  // ── 7. TWO TRAININGS — the band orders them ──────────────────────────────
   if (kinds.length > 1) {
     const gym = kinds.find((k) => k === "gym");
     const sport = kinds.find((k) => k !== "gym");
@@ -705,7 +762,7 @@ export function dayBand(input: DayBandInput): DayBand {
     };
   }
 
-  // ── 7. ONE TRAINING — named in its own vocabulary ────────────────────────
+  // ── 8. ONE TRAINING — named in its own vocabulary ────────────────────────
   if (kinds.length === 1) {
     const kind = kinds[0]!;
     const isGym = kind === "gym";
@@ -730,7 +787,7 @@ export function dayBand(input: DayBandInput): DayBand {
     return { rung: "single", fill, voice: plan ? "asserts" : "suggests", source, figure, head, say, mark: kind, kinds: [kind] };
   }
 
-  // ── 8. NOTHING DUE — the prescription's own answer ───────────────────────
+  // ── 9. NOTHING DUE — the prescription's own answer ───────────────────────
   const sys = rx?.pickSys ?? "aerobic";
   const say: BandLine[] = [{ key: `${K}sayOpen`, parts: { system: `${K}system.${sys}` } }];
   const lim = limiterLine(d, muscle);
