@@ -27,6 +27,7 @@ import { forwardRef, useMemo } from "react";
 import { View, Text } from "react-native";
 import {
   brand,
+  heroMetaLine,
   BODY_FIGURES,
   sessionMuscleGlows,
   fmtWeight,
@@ -35,7 +36,7 @@ import {
 } from "@hybrid/core";
 import { BodyFigures } from "./body-map";
 import { withAlpha } from "./field";
-import { F, TABULAR } from "../../lib/ui";
+import { F, TABULAR, FIXED_FONT_SCALE } from "../../lib/ui";
 import { useTheme } from "../../lib/theme";
 
 /** How many muscles the card names. Three is a sentence; six is a table. */
@@ -73,6 +74,14 @@ export const SessionShareCard = forwardRef<
     return out;
   }, [map]);
   const named = map.muscles.slice(0, CARD_MUSCLES);
+  /**
+   * A CARDIO SESSION HAS NO BODY TO LIGHT. A run, a swim, a match or a day of
+   * entirely custom work maps to nothing, and a mannequin drawn at zero
+   * intensity is not an honest empty state — it asserts that the work landed
+   * nowhere. The figure is ABSENT there and the magnitude takes the room, the
+   * same rule the body section downstairs follows.
+   */
+  const hasBody = map.muscles.length > 0;
 
   return (
     <View
@@ -107,6 +116,7 @@ export const SessionShareCard = forwardRef<
       </View>
 
       {/* ── THE BODY — the reason this card is worth posting ── */}
+      {hasBody && (
       <View style={{ alignItems: "center" }}>
         <View style={{ width: width * 0.78 }}>
           <BodyFigures figures={BODY_FIGURES} intensityOf={intensityOf} gap={width * 0.05} />
@@ -121,11 +131,13 @@ export const SessionShareCard = forwardRef<
               marginTop: width * 0.035,
             }}
           >
-            {/* A spaced en dash, never a middot — house rule. */}
-            {named.map((m) => `${m.short.toUpperCase()} ${m.pct}%`).join("  –  ")}
+            {/* Joined by core's own meta-line helper: one separator (a spaced
+                en dash) for every joined line on the app. Never a middot. */}
+            {heroMetaLine(named.map((m) => `${m.short.toUpperCase()} ${m.pct}%`))}
           </Text>
         )}
       </View>
+      )}
 
       {/* ── THE FIGURES ── */}
       <View>
@@ -138,7 +150,13 @@ export const SessionShareCard = forwardRef<
           </Text>
         ) : null}
         <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-          <Text style={[TABULAR, { fontFamily: F.black, fontSize: width * 0.155, color: C.chalk }]}>
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.5}
+            maxFontSizeMultiplier={FIXED_FONT_SCALE}
+            style={[TABULAR, { fontFamily: F.black, fontSize: width * 0.155, color: C.chalk }]}
+          >
             {figures.headline}
           </Text>
         </View>

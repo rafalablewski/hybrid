@@ -7,6 +7,7 @@ import {
   HERO_FIGURE,
   heroGeometry,
   heroTitleType,
+  heroMetaLine,
   SHARED_ELEMENTS,
   sessionWrapped,
   fitScale,
@@ -82,6 +83,13 @@ const GOLD = THEMES.dark.accentText.amber; // Fleur De Lis — the retired `gold
 const CARD_MAX_WIDTH = 420;
 /** How many figures ride the card's foot beside the magnitude. */
 const SHARE_CARD_STATS = 3;
+/** How much of the window's height the PREVIEW of the card may take. A 9:16
+ *  card at capture width is taller than a sheet, so the preview is sized to fit
+ *  and the capture happens off-screen at full size — same component, same
+ *  props, one composition. */
+const SHARE_PREVIEW_H = 0.54;
+/** Far enough left that no device width brings the capture node back on screen. */
+const CAPTURE_OFFSCREEN = 10000;
 /** Device lockup heights — the rail's and the inline chip's. */
 const DEVICE_MARK_H = 15;
 const DEVICE_MARK_SM = 13;
@@ -143,7 +151,7 @@ function Section({ label, meta, children, C }: { label: string; meta?: ReactNode
   return (
     <View style={{ marginTop: space.huge, borderTopWidth: 1, borderTopColor: C.line, paddingTop: space.lg }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+        <Text numberOfLines={2} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
           {label}
         </Text>
         {meta}
@@ -379,16 +387,22 @@ export function WorkoutWrapped({
   const [shareOpen, setShareOpen] = useState(false);
   const [sharing, setSharing] = useState(false);
   const cardRef = useRef<View | null>(null);
-  const cardWidth = Math.min(win.width - HERO.gutter.hero * 2, CARD_MAX_WIDTH);
+  // The capture is full width so the export lands near 1080px; the preview is
+  // whatever fits the sheet without scrolling.
+  const captureWidth = Math.min(win.width - HERO.gutter.hero * 2, CARD_MAX_WIDTH);
+  const previewWidth = Math.min(captureWidth, Math.round(((win.height * SHARE_PREVIEW_H) * 9) / 16));
   const shareStamp = new Date(session.startedAt).toLocaleDateString(lang, {
     weekday: "short", day: "numeric", month: "short",
   });
   /** The masthead's own line: the stamp, and the clock the session started on.
    *  Readiness rides it when the day carried one. */
-  const sessionStamp = [
-    `${shareStamp} – ${new Date(session.startedAt).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" })}`,
+  // Joined by core, never by the screen — one separator for every meta line on
+  // the app (a spaced en dash; the house rule forbids a middot).
+  const sessionStamp = heroMetaLine([
+    shareStamp,
+    new Date(session.startedAt).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" }),
     typeof session.readiness === "number" ? `${t("home.readiness")} ${session.readiness}` : null,
-  ].filter(Boolean).join("  –  ");
+  ]);
   /** The figure row, minus whatever is already set at display size above it. */
   const rowFigures = wrapped.basics.filter((b) => b.labelKey !== wrapped.headline.labelKey);
   const shareFigures = {
@@ -738,11 +752,10 @@ export function WorkoutWrapped({
       <Sheet visible={shareOpen} onClose={() => setShareOpen(false)} title={t("summary.shareStory")}>
         <View style={{ alignItems: "center" }}>
           <SessionShareCard
-            ref={cardRef}
             figures={shareFigures}
             map={muscleRead.map}
             units={units}
-            width={cardWidth}
+            width={previewWidth}
             locale={lang}
           />
         </View>
@@ -750,6 +763,25 @@ export function WorkoutWrapped({
           <APill label={t("summary.share")} onPress={() => void doShare()} disabled={sharing} />
         </View>
       </Sheet>
+
+      {/* THE CAPTURE NODE — the same card at export width, parked off-screen so
+          the preview above can be sized to the sheet. Both read one component
+          and one props object, so the thing that leaves is the thing that was
+          previewed; only the width differs, and the card is width-parametric by
+          construction. Mounted only while the sheet is, so the body figure's
+          geometry is not carried by every session view. */}
+      {shareOpen && (
+        <View pointerEvents="none" style={{ position: "absolute", left: -CAPTURE_OFFSCREEN, top: 0, opacity: 0 }}>
+          <SessionShareCard
+            ref={cardRef}
+            figures={shareFigures}
+            map={muscleRead.map}
+            units={units}
+            width={captureWidth}
+            locale={lang}
+          />
+        </View>
+      )}
 
       {/* ── HEAT SHEET ──
           Defaulted to the session's own end, so a sauna taken straight after is
