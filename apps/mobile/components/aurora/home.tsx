@@ -110,6 +110,7 @@ import AuroraDayBand from "./day-band";
 import AuroraDayBar from "./day-bar";
 import { readRejected, readRejectedEvents, rejectEvent, rejectKind } from "../../lib/day-band-prefs";
 import { readRestDays, setRestDay } from "../../lib/rest-days";
+import { useListMotion } from "../../lib/list-motion";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
@@ -515,6 +516,15 @@ export default function AuroraHome() {
   // four. Owned here, like every other day-scoped preference on this screen.
   const [restDays, setRestDays] = useState<Set<string>>(new Set());
   useEffect(() => { readRestDays().then(setRestDays).catch(() => {}); }, [today]);
+  /**
+   * …and it TRAVELS. Declaring rest is the largest state change on that card —
+   * a centred block with three actions becomes a different block with none,
+   * and the card loses most of its height — so unanimated it snaps, taking
+   * everything below it up the screen with no explanation of what moved. This
+   * arms the shared slide spring on the commit (lib/list-motion.ts), which
+   * also honours Reduce Motion.
+   */
+  const restMotion = useListMotion();
   // The engines take milliseconds; `today` is the day KEY that flips at
   // midnight, so this is a clock read pinned to the day rather than to render.
   const bandNow = useMemo(() => Date.now(), [today]);
@@ -1082,9 +1092,22 @@ export default function AuroraHome() {
               }}
               onSelectDay={setRailDay}
               restDays={restDays}
-              // The write hands back the new set, so the card redraws from the
-              // answer rather than from a re-read that could race it.
-              onDeclareRest={(d, resting) => { setRestDay(d.ts, resting).then(setRestDays).catch(() => {}); }}
+              // THE CARD MOVES ON THE TAP, not on the write. It redrew from
+              // the store's answer, which put an AsyncStorage round-trip
+              // between the finger and the first pixel — and armed the
+              // animation, if it were armed there, around whatever commit
+              // happened to land during the await. The day key is already on
+              // the day, so the next state is computable here: animate, apply,
+              // then persist. The write is best-effort and its result is not
+              // read back; a failure is reconciled by the read on next mount.
+              onDeclareRest={(d, resting) => {
+                restMotion(() => setRestDays((prev) => {
+                  const next = new Set(prev);
+                  if (resting) next.add(d.dateKey); else next.delete(d.dateKey);
+                  return next;
+                }));
+                setRestDay(d.ts, resting).catch(() => {});
+              }}
               doneFloor={doneFloor}
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>

@@ -22,6 +22,7 @@ import { Glyph } from "./icons";
 import AActionPair from "./action-pair";
 import ReceiptBlock from "./receipt-block";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
+import { useListMotion } from "../../lib/list-motion";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { withAlpha } from "./field";
 
@@ -79,6 +80,19 @@ export default function AuroraLogbookRail({
   const { t } = useLang();
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
+  /**
+   * THE DAY DETAIL TRAVELS BETWEEN DAYS.
+   *
+   * Tapping a chip replaces everything under the hairline — a receipt with its
+   * figures, an empty block with three actions, a rest day — and those are
+   * different HEIGHTS. Unanimated, the card snapped between them and the
+   * screen below it jumped with it, which is the teleport list-motion.ts was
+   * written about: correct state, passing tests, an app that feels cheap in a
+   * way nobody can point at. `useListMotion` arms the shared slide spring on
+   * the commit and honours Reduce Motion, where the correct substitution for a
+   * layout change is no motion at all.
+   */
+  const dayMotion = useListMotion();
 
   // FOUR WEEKS, not seven days. The rail scrolls now, so the window is as deep
   // as the data rather than as deep as the row could draw — which is what
@@ -148,7 +162,7 @@ export default function AuroraLogbookRail({
         onContentSizeChange={() => { if (!parked.current) { parked.current = true; railRef.current?.scrollToEnd({ animated: false }); } }}
       >
         {week.days.map((d) => (
-          <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
+          <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => dayMotion(() => { setPicked(d.index); onSelectDay?.(d); })} t={t} />
         ))}
       </ScrollView>
 

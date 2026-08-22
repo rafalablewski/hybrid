@@ -72,11 +72,20 @@ export async function readRestDays(now: number = Date.now()): Promise<Set<string
 }
 
 /**
- * Declare (or retract) a rest day, and hand back the new set so a caller can
- * render from the answer rather than re-reading.
+ * Declare (or retract) a rest day.
  *
- * Takes a TIMESTAMP, not a key, because every caller has the day's own
- * `ts` and none of them should be composing date strings.
+ * Takes a TIMESTAMP, not a key, because every caller has the day's own `ts`
+ * and none of them should be composing date strings.
+ *
+ * IT RETURNS THE NEW SET, AND THE SCREEN DELIBERATELY IGNORES IT. Rendering
+ * from this answer is the obvious shape and it is the wrong one: it puts an
+ * AsyncStorage round-trip between the finger and the first pixel, and there is
+ * a layout animation armed on that commit (lib/list-motion.ts) which would then
+ * be armed around whatever else happened to land during the await. The card
+ * computes its own next state from the day it already has and treats this write
+ * as best-effort; a failure reconciles on the next `readRestDays`. The return
+ * is kept for a caller that has no day in hand — a settings-style bulk edit,
+ * a migration — where the read is the point.
  */
 export async function setRestDay(ts: number, resting: boolean, now: number = Date.now()): Promise<Set<string>> {
   const next = await readRestDays(now);
