@@ -21,8 +21,6 @@ import { View, Text } from "react-native";
 import Svg, { Path, Line as SvgLine } from "react-native-svg";
 import { ALPHA, type SessionStream } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
-import { withAlpha } from "./field";
-import { RADIUS } from "./kit";
 import { fs, tracking, F } from "../../lib/ui";
 
 /** The conventional zone edges, as a share of max — the same five `hrZoneSeconds`
@@ -32,12 +30,6 @@ export const ZONE_EDGES = [0.5, 0.6, 0.7, 0.8, 0.9] as const;
 
 /** Below this a trace is a handful of dots, not a shape. */
 export const TRACE_MIN_SAMPLES = 8;
-
-/** The split track's height, in dp — a rule, not a bar, so it stays under the
- *  figure beside it rather than competing with it. */
-const TRACK_H = 4;
-/** A split that exists always draws something: "slowest" is not "none". */
-const MIN_SHARE_PCT = 4;
 
 /** Down to at most this many points before drawing — a 3 000-sample path is
  *  more nodes than a phone-width chart has pixels, and every one of them costs
@@ -89,55 +81,5 @@ export function HrTrace({
       <Path d={`${line} L${width} ${height} L0 ${height} Z`} fill={C.blue} fillOpacity={0.11} />
       <Path d={line} fill="none" stroke={C.blue} strokeWidth={1.4} strokeLinejoin="round" strokeLinecap="round" />
     </Svg>
-  );
-}
-
-/**
- * SPLITS — the kilometre (or mile) rows a distance recording falls into.
- *
- * Derived once when the recording is written, never on read, which is the whole
- * reason the lap table exists: "my fastest 5 km" has to be an indexed lookup
- * rather than a scan over every stream the athlete has ever made.
- */
-export function SplitRows({
-  laps,
-  paceText,
-  label,
-  max,
-}: {
-  laps: { index: number; distanceKm: number | null; paceSecPerKm: number | null }[];
-  paceText: (secPerKm: number) => string;
-  label: (index: number) => string;
-  max: number;
-}) {
-  const C = useTheme().palette;
-  const shown = laps.filter((l) => l.paceSecPerKm != null).slice(0, max);
-  if (shown.length === 0) return null;
-  // The FASTEST split is the reference, so a bar's length reads as "how close to
-  // your best this one was" rather than as an arbitrary share of a round number.
-  const best = Math.min(...shown.map((l) => l.paceSecPerKm!));
-  const worst = Math.max(...shown.map((l) => l.paceSecPerKm!));
-  const span = worst - best || 1;
-  return (
-    <View>
-      {shown.map((l, i) => {
-        const pace = l.paceSecPerKm!;
-        // Faster → longer. An inverted scale would draw the best split shortest.
-        const share = 1 - (pace - best) / span;
-        return (
-          <View key={l.index} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 6, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-            <Text style={{ width: 26, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>
-              {label(l.index)}
-            </Text>
-            <View style={{ flex: 1, height: TRACK_H, backgroundColor: withAlpha(C.chalk, ALPHA.wash), borderRadius: RADIUS.mark, overflow: "hidden" }}>
-              <View style={{ width: `${Math.max(MIN_SHARE_PCT, share * 100)}%`, height: "100%", backgroundColor: pace === best ? C.lime : C.blue }} />
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: pace === best ? C.lime : C.chalk }}>
-              {paceText(pace)}
-            </Text>
-          </View>
-        );
-      })}
-    </View>
   );
 }

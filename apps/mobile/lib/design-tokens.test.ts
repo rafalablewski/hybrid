@@ -583,6 +583,45 @@ describe("panels", () => {
   });
 
   /**
+   * NO BARS IN THE SUMMARY'S INSTRUMENTS.
+   *
+   * Four charts on one scroll had converged on the same shape — a row of
+   * rectangles — for four different questions: load per set, a lift's history,
+   * a comparison between exercises, and time in each zone. A bar is the least
+   * specific picture available, because it is a rectangle standing in for a
+   * number and says nothing about what KIND of number it is; four of them read
+   * as filler, which is what they were.
+   *
+   * The forms that replaced them are chosen by the fact (session-instruments):
+   * a TRACE for a continuous quantity, a PATH of marks for discrete events, a
+   * RANGE of dots on one axis for a handful of things compared, and a single
+   * cut RIBBON for parts of one whole. This asserts the rectangles do not creep
+   * back — a build failure, not a ratchet, because "no MORE bars" is a budget
+   * for the ones that were already there.
+   */
+  it("the summary draws no bar charts", () => {
+    const INSTRUMENTS = [
+      "components/aurora/session-instruments.tsx",
+      "components/aurora/session-spine.tsx",
+      "components/aurora/session-trace.tsx",
+      "components/aurora/session-body.tsx",
+    ];
+    const bars: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!INSTRUMENTS.includes(path)) continue;
+      text.split("\n").forEach((line, i) => {
+        if (/^\s*(?:\*|\/\/)/.test(line)) return;
+        // An SVG <Rect> in an instrument is a bar. Nothing else needs one.
+        if (/<Rect[\s/>]/.test(line)) bars.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      bars,
+      `\npick the form from the fact — trace, path, range or ribbon (session-instruments.tsx):\n  ${bars.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  /**
    * A PANEL EXISTS ONLY WHEN IT CAN FILL A SCREEN. The record panel is the case
    * that proves it: with fewer than HISTORY_MIN_POINTS sessions behind the lift
    * there is no history to draw, so the record rides the hero as a strip rather
@@ -592,7 +631,7 @@ describe("panels", () => {
   it("the record panel is gated on having a history to draw", () => {
     const ww = FILES.find((f) => f.path === "components/workout-wrapped.tsx");
     expect(ww, "workout-wrapped.tsx moved — update this guard").toBeTruthy();
-    expect(ww!.text).toMatch(/hasRecordPanel\s*=\s*recordHistory\.length\s*>=\s*HISTORY_MIN_POINTS/);
+    expect(ww!.text).toMatch(/hasRecordPanel\s*=\s*recordHistory\.length\s*>=\s*TREND_MIN_POINTS/);
     // …and the hero carries the fallback strip, so a record is never lost.
     expect(ww!.text).toMatch(/cel\s*&&\s*!hasRecordPanel/);
   });

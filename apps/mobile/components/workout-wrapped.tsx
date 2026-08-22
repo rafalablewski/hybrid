@@ -25,6 +25,10 @@ import {
   sessionVolume,
   sessionSpine,
   e1rmSeries,
+  hrDriftPct,
+  hrFallLastMinute,
+  secondsAbove,
+  routePoints,
   SPINE_MIN_BARS,
   mmss,
   paceClock,
@@ -61,9 +65,9 @@ import { SHARE_MARK } from "./aurora/share-mark";
 import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
 import SessionBody from "./aurora/session-body";
-import { TonnageCurve, SetSpine } from "./aurora/session-spine";
-import { LiftHistory, ExerciseTops, HISTORY_MIN_POINTS } from "./aurora/session-history";
-import { HrTrace, SplitRows, TRACE_MIN_SAMPLES } from "./aurora/session-trace";
+import { TonnageCurve } from "./aurora/session-spine";
+import { SetPath, LiftTrend, EffortRange, Ribbon, RouteTrace } from "./aurora/session-instruments";
+import { HrTrace, TRACE_MIN_SAMPLES } from "./aurora/session-trace";
 import { SessionShareCard } from "./aurora/session-share-card";
 import Sheet from "./aurora/sheet";
 import { HeatSheet } from "./aurora/heat-sheet";
@@ -75,7 +79,7 @@ import { leading, fs, space, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCA
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint, type Palette } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
-import { APill, AMeter, RADIUS } from "./aurora/kit";
+import { APill, RADIUS } from "./aurora/kit";
 
 // `gold` is a THEME value, and this const is module scope — so it names the
 // one theme the app has rather than copying its hex. (The light theme was
@@ -150,8 +154,13 @@ const CHART_LABEL = 26;
 const SPINE_LABELS = 20;
 /** How many splits a panel prints before the rows stop separating. */
 const SPLIT_ROWS = 8;
+/** The share of measured max the "time above" reading counts from — the edge of
+ *  zone 4, which is where a session stops being comfortable. */
+const ABOVE_THRESHOLD = 0.8;
 /** Fewer exercises than this is not a comparison, it is a label. */
-const EFFORT_MIN_BARS = 2;
+const EFFORT_MIN_ROWS = 2;
+/** Two points is a line, not a trend — a ceiling needs something under it. */
+const TREND_MIN_POINTS = 3;
 
 type PanelKey = "hero" | "record" | "body" | "work" | "intensity" | "premium" | "device" | "feel";
 
@@ -542,7 +551,7 @@ export function WorkoutWrapped({
     () => (topFactLift ? e1rmSeries(all, topFactLift, bw) : []),
     [all, topFactLift, bw],
   );
-  const factHistoryDrawable = factHistory.length >= HISTORY_MIN_POINTS;
+  const factHistoryDrawable = factHistory.length >= TREND_MIN_POINTS;
 
   // ── THE RECORDING ──
   // Fetched only when there is one to fetch: a session with no device match has
@@ -558,6 +567,16 @@ export function WorkoutWrapped({
   const hasIntensity =
     hrStream != null && maxHrUsed != null && hrStream.values.length >= TRACE_MIN_SAMPLES;
   const splits = (recording?.laps ?? []).filter((l) => l.kind === "split");
+  // THE READINGS AN AVERAGE CANNOT GIVE. All three are honest about what they
+  // are: the fall is the recording's own last minute, NOT the clinical
+  // one-minute-after-you-stop recovery figure, whose samples a workout
+  // recording does not contain (core/session-streams.ts says so at length).
+  const drift = hrStream ? hrDriftPct(hrStream) : null;
+  const fall = hrStream ? hrFallLastMinute(hrStream) : null;
+  const aboveBpm = maxHrUsed != null ? Math.round(maxHrUsed * ABOVE_THRESHOLD) : null;
+  const aboveSec = hrStream && aboveBpm != null ? secondsAbove(hrStream, aboveBpm) : null;
+  const routeStream = recording?.streams.find((r) => r.kind === "route") ?? null;
+  const route = useMemo(() => (routeStream ? routePoints(routeStream) : []), [routeStream]);
   // THE SUBJECT AND THE INSTRUMENT MUST BE ABOUT THE SAME THING. Read off
   // `facts[0]` the panel led with the session's tonnage while the chart under it
   // drew a lift's estimated max — two different claims stacked as one. When
@@ -589,7 +608,7 @@ export function WorkoutWrapped({
    * get one — the record rides the hero as a strip until it has a history to
    * draw, and nothing is ever held open by a spacer.
    */
-  const hasRecordPanel = recordHistory.length >= HISTORY_MIN_POINTS;
+  const hasRecordPanel = recordHistory.length >= TREND_MIN_POINTS;
   const keys: PanelKey[] = [
     "hero",
     ...(hasRecordPanel ? (["record"] as const) : []),
@@ -748,7 +767,7 @@ export function WorkoutWrapped({
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
                   {t("session.record.history")}
                 </Text>
-                <LiftHistory points={recordHistory} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL)} />
+                <LiftTrend points={recordHistory} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL)} />
               </View>
             )}
             ledger={
@@ -803,7 +822,12 @@ export function WorkoutWrapped({
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
                   {t(spine.workingSets < spine.totalSets ? "session.work.loadPerSet" : "session.work.loadPerSetPlain")}
                 </Text>
-                <SetSpine spine={spine} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL - SPINE_LABELS)} />
+                <SetPath
+                  marks={spine.bars.map((b) => ({ loadKg: b.loadKg, warmup: b.warmup, drop: b.drop, top: b.top, group: b.group }))}
+                  labels={spine.groups.map((g) => ({ exercise: g.exercise, count: g.count }))}
+                  width={plotW}
+                  height={Math.max(CHART_MIN, h - CHART_LABEL - SPINE_LABELS)}
+                />
               </View>
             )}
             ledger={
@@ -856,19 +880,39 @@ export function WorkoutWrapped({
                     chart draws is named and timed here, so nothing on the panel
                     is carried by position or colour alone. */}
                 {hrZoneSec && zoneTotal > 0 && (
-                  <View style={{ gap: space.xs }}>
-                    {hrZoneSec.map((sec, i) =>
-                      sec > 0 ? (
-                        <AMeter
-                          key={i}
-                          label={t(`session.zone.z${i + 1}`)}
-                          value={mmss(Math.round(sec))}
-                          pct={(sec / zoneTotal) * 100}
-                          color={C.blue}
-                          emphasis={sec === Math.max(...hrZoneSec)}
+                  <View>
+                    {/* ONE STRIP, CUT — the session's minutes are one thing and
+                        the zones are cuts in it. Five separate meters asserted
+                        five separate quantities and left the reader adding them
+                        back into the session they came from. */}
+                    <Ribbon
+                      width={plotW}
+                      hue={C.blue}
+                      parts={hrZoneSec.map((sec, i) => ({
+                        key: `z${i + 1}`,
+                        label: t(`session.zone.z${i + 1}`),
+                        value: sec,
+                        text: mmss(Math.round(sec)),
+                        weight: i / (hrZoneSec.length - 1),
+                        lead: sec === Math.max(...hrZoneSec),
+                      }))}
+                    />
+                    <View style={{ marginTop: space.md }}>
+                      {aboveSec != null && aboveSec > 0 && aboveBpm != null && (
+                        <WorkRow label={t("session.intensity.above").replace("{n}", String(aboveBpm))} value={mmss(aboveSec)} C={C} />
+                      )}
+                      {drift != null && (
+                        <WorkRow
+                          label={t("session.intensity.drift")}
+                          note={t("session.intensity.driftNote")}
+                          value={`${drift > 0 ? "+" : ""}${drift}%`}
+                          C={C}
                         />
-                      ) : null,
-                    )}
+                      )}
+                      {fall != null && (
+                        <WorkRow label={t("session.intensity.fall")} value={`−${fall} bpm`} C={C} last />
+                      )}
+                    </View>
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "relaxed"), color: C.ash, marginTop: space.sm }}>
                       {/* Said out loud, because zones presented without their
                           denominator read as physiology rather than as a ratio
@@ -915,7 +959,7 @@ export function WorkoutWrapped({
                       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
                         {t("session.record.history")}
                       </Text>
-                      <LiftHistory points={factHistory} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL)} />
+                      <LiftTrend points={factHistory} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL)} />
                     </View>
                   )
                 : /* NO HISTORY, BUT NEVER NO INSTRUMENT. A lift trained twice
@@ -926,13 +970,13 @@ export function WorkoutWrapped({
                      of each, the top one lit. It answers "what was actually the
                      big lift today", which is the question the figure above
                      already started. */
-                  effortByExercise.length >= EFFORT_MIN_BARS
+                  effortByExercise.length >= EFFORT_MIN_ROWS
                   ? (h) => (
                       <View>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
                           {t("session.work.topPerExercise")}
                         </Text>
-                        <ExerciseTops tops={effortByExercise} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL - SPINE_LABELS)} units={units} locale={lang} />
+                        <EffortRange rows={effortByExercise} width={plotW} units={units} locale={lang} />
                       </View>
                     )
                   : undefined
@@ -965,6 +1009,23 @@ export function WorkoutWrapped({
           <Panel
             {...panelProps}
             mark={t("session.device.panelTitle")}
+            instrument={
+              /* THE ROUTE IS THIS PANEL'S PICTURE. Without it the panel had a
+                 subject and a table, which is why it read as a list of numbers
+                 in a sequence of instruments. A gym session has no route and
+                 the ledger spreads instead, as every instrument-less panel
+                 does. */
+              route.length >= 2
+                ? (h) => (
+                    <View>
+                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.ms }}>
+                        {t("session.intensity.route")}
+                      </Text>
+                      <RouteTrace points={route} width={plotW} height={Math.max(CHART_MIN, h - CHART_LABEL)} />
+                    </View>
+                  )
+                : undefined
+            }
             subject={
               <>
                 <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking.display, lineHeight: leading(fs.display, "tight") }}>
@@ -1006,7 +1067,27 @@ export function WorkoutWrapped({
                     <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginBottom: space.sm }}>
                       {t("session.intensity.splits")}
                     </Text>
-                    <SplitRows laps={splits} paceText={paceClock} label={(i) => `${i + 1}`} max={SPLIT_ROWS} />
+                    {/* The run's distance is one thing; the splits are cuts in
+                        it. Weight rides PACE, so the strip darkens where the
+                        effort slowed, and the fastest is the lit one. */}
+                    <Ribbon
+                      width={plotW}
+                      hue={C.blue}
+                      parts={(() => {
+                        const timed = splits.filter((l) => l.paceSecPerKm != null).slice(0, SPLIT_ROWS);
+                        const best = Math.min(...timed.map((l) => l.paceSecPerKm!));
+                        const worst = Math.max(...timed.map((l) => l.paceSecPerKm!));
+                        const range = worst - best || 1;
+                        return timed.map((l) => ({
+                          key: `s${l.index}`,
+                          label: `${l.index + 1}`,
+                          value: l.durationSec,
+                          text: paceClock(l.paceSecPerKm!),
+                          weight: 1 - (l.paceSecPerKm! - best) / range,
+                          lead: l.paceSecPerKm === best,
+                        }));
+                      })()}
+                    />
                   </View>
                 )}
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "relaxed"), color: C.ash, marginTop: space.md }}>
