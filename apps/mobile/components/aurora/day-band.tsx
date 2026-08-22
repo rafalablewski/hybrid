@@ -4,11 +4,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   BAND_HOLD, BAND_WASH, DISCIPLINE_META, FOLD, FOLD_RISE, bandHue, bandText,
-  blendOver, fs, inkHold, inkOn, leading, space, tracking,
-  type DayBand, type SemanticRole, type TrainingKind,
+  blendOver, fs, inkHold, leading, space, tracking,
+  type DayBand, type TrainingKind,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
-import { accentColor, roleColor, useTheme } from "../../lib/theme";
+import { accentColor, useTheme } from "../../lib/theme";
 import { F, PressScale as Pressable } from "../../lib/ui";
 import { withAlpha } from "./field";
 import { GUTTER, RADIUS } from "./geometry";
@@ -32,29 +32,43 @@ import { AuroraIcon, Glyph, SportMark } from "./icons";
  * a clock has no label, and the sentence under the instruction has to add a
  * fact the instruction does not carry — the engine's own copy test holds that.
  *
- * ── NEITHER STATE ENDS AT A RULE ─────────────────────────────────────────
- * There is no border anywhere on this field. It used to be a flat wash with a
- * 1px rule across the bottom, and a hairline separates two surfaces that BOTH
- * continue — here one of them stops, so the rule had nothing on its far side to
- * belong to and read as a rendering fault.
+ * ── ONE MATERIAL, WHICH IS WHY THERE IS NOTHING TO JOIN ──────────────────
+ * The band is a WASH of the day's hue over the page ground, ramping to a fully
+ * transparent last stop. Every rung, one strength. It is not a panel resting on
+ * the screen — it IS the top of the screen, tinted.
  *
- * What replaces it differs by state, because the two grounds do not allow the
- * same thing. A QUIET band DISSOLVES: `BAND_WASH` ramps its tint to a fully
- * transparent last stop, so it resolves to whatever the screen's own ground is,
- * and you cannot see it go — the whole journey is a few levels per channel. A
- * FILLED band STOPS. A fade was tried twice and measured on the third attempt:
- * Wild Lime to the page ground is most of the lightness range and its midpoint
- * is a dark olive in every colour space, so a foot does not soften the edge, it
- * replaces a clean one with a visible stripe of mud. A coloured field ending at
- * an edge is not a seam. See day-fold.ts, which carries the argument.
+ * THAT ARRIVED LAST, after three attempts at the wrong problem. The band began
+ * as a flat wash with a 1px rule across its bottom; the rule went, because a
+ * hairline separates two surfaces that BOTH continue and here one of them
+ * stopped. Then the ACTING rungs were a solid slab of accent, and a slab on a
+ * near-black page has an edge — so the edge was faded over 26dp, which read as
+ * a stripe of mud; then eased over 46dp in OKLab, which read as a better-shaped
+ * stripe; then measured, which is where it ended: Wild Lime to the page ground
+ * is most of the lightness range and its midpoint is a dark olive in EVERY
+ * colour space. No finish makes that transition invisible.
+ *
+ * The seam was never a finish problem. It was two materials. Take the second
+ * one away and the question does not need an answer — which is also why the
+ * panel could get shorter (see PAD): a coloured slab has to earn its height by
+ * being a colour, and a tint does not.
+ *
+ * ── THE ACCENT MOVED TO THE READING ──────────────────────────────────────
+ * The slab was carrying a real fact — that this rung is ASKING for something,
+ * as against reporting — and losing it would have cost the rule the fill was
+ * there to state: a band that tells you not to train shows no colour of action.
+ * So the fact moved onto the object it is about. An acting rung lights the
+ * NUMERAL in the day's own hue at full strength; a reporting rung has no accent
+ * on it anywhere. One numeral's worth of ink instead of a third of the screen.
  *
  * ── ONE INK, HELD BACK BY MEASUREMENT ────────────────────────────────────
- * `inkOn` picks WHICH ink; `inkHold` picks how far it may be held back on this
- * particular ground. The band's secondary lines used a fixed 0.78 and a
- * separate cool `ash` for the numeral — the second of which is what made a warm
- * quiet band read as dirty (a cool grey on a warm ground at low chroma), and
- * the first of which put the sentence at 3.46:1 on Lyons Blue, the fill every
- * score from 60 to 79 resolves to.
+ * Type is `chalk` everywhere now — there is only one ground, and it is dark.
+ * `inkHold` still picks how far that ink may be held back, by measurement
+ * rather than by a constant. The band's secondary lines used a fixed 0.78 and a
+ * separate cool `ash` for the numeral: the second is what made a warm band read
+ * as dirty (a cool grey on a warm ground at low chroma), and the first put the
+ * sentence at 3.46:1 on Lyons Blue — the fill every score from 60 to 79 used to
+ * resolve to. `inkOn` is not needed at all any more: choosing between two inks
+ * was only ever a question a bright slab could ask.
  *
  * THE NUMERAL AND THE SENTENCE TAKE THE SAME HOLD, on purpose. Their rank comes
  * from TYPE — 34pt black against 14pt regular — not from tone, because the
@@ -86,21 +100,26 @@ import { AuroraIcon, Glyph, SportMark } from "./icons";
  * the app already has. `x` is the one derived value and it is not arbitrary:
  * the field's type is heavier than a card's, so it sits three points inside the
  * screen gutter to stay optically flush with the content column below it.
+ *
+ * SHORTENED, once the field stopped being a slab. A coloured panel has to earn
+ * its height by being a colour; a tint does not, so every gap came down one
+ * rung of the scale — about 24dp off the top of the screen, which is 24dp the
+ * day\u2019s first card gets back.
  */
 const PAD = {
   x: GUTTER + 3,
   /** Above the chrome, under the status inset. */
-  top: space.lg,
+  top: space.ms,
   /** Under the last row. */
-  bottom: space.xl,
+  bottom: space.lg,
   /** Between the mark and the numeral. */
   markGap: space.sm,
   /** Numeral → instruction. */
-  headTop: space.ms,
+  headTop: space.sm,
   /** Instruction → sentence. */
-  sayTop: space.sm,
+  sayTop: space.xs,
   /** Sentence → whatever control the page carries. */
-  controlTop: space.lg,
+  controlTop: space.md,
   /** Between the deck's dots. */
   dotGap: space.xs,
 } as const;
@@ -228,25 +247,35 @@ export default function AuroraDayBand({
   const pages = deck.length > 1 ? deck : [band];
   const shown = pages[Math.min(page, pages.length - 1)] ?? band;
 
-  const quiet = band.fill === null;
-  // THE QUIET FIELD IS NOT THE PAGE GROUND. It used to be `ink`, which drew the
-  // tallest object on Today as a black slab and made the reporting rungs look
-  // like a rendering fault rather than a decision. It is a RAMP of the day's own
-  // hue now (`bandHue` in core: amber for a calendar fact, blue for recovery,
-  // lime for a day already trained) — a surface, not a fill, so it still refuses
-  // to read as the call to act that a filled field is.
+  // ── ONE MATERIAL ────────────────────────────────────────────────────────
+  //
+  // Every band is a WASH of the day's hue over the page ground — the same
+  // material at the same strength, whatever the rung. There is no second
+  // substance and therefore no join anywhere on this screen.
+  //
+  // `bandHue` still says WHICH hue (amber for a calendar fact, blue for
+  // recovery, lime for a day already trained, the reading's own role when it
+  // is asking for something), and `band.fill` still says whether the rung is
+  // ACTING or REPORTING. What changed is where that second fact is carried:
+  // it used to be the ground, and it is now the READING.
   const hue = bandHue(band);
   const accent = hue ? accentColor(C, hue) : C.ink;
-  const fill = quiet ? "transparent" : roleColor(C, band.fill as SemanticRole);
-  // The ground the type is MEASURED against. On a ramp that is the top stop:
-  // most tint means the lightest ground, which is the least contrast a light
-  // ink will meet anywhere on it.
-  const ground = quiet ? blendOver(accent, BAND_WASH[0]!.alpha, C.ink) : fill;
-  const ink = quiet ? C.chalk : inkOn(fill, [C.ink, C.chalk]);
-  // How far that ink may be held back HERE. A measurement, not a constant —
-  // the same ladder gives 0.54 on a dark ramp and 1 (no hold at all) on Lyons
-  // Blue, which cannot afford one. See inkHold() in core.
+  // The ground the type is measured against is the ramp's top stop: most tint
+  // means the lightest ground, which is the least contrast a light ink meets
+  // anywhere on it.
+  const ground = blendOver(accent, BAND_WASH[0]!.alpha, C.ink);
+  const ink = C.chalk;
+  // How far that ink may be held back HERE — a measurement, not a constant.
   const hold = inkHold(ink, ground, BAND_HOLD);
+  // THE ACCENT IS THE NUMERAL, NOT THE SLAB. An acting rung lights the day's
+  // reading in its own hue at full strength; a reporting rung has no accent
+  // anywhere on it. That keeps the rule the filled field was there to state —
+  // a band that tells you NOT to train shows no colour of action — while
+  // costing the screen nothing but a numeral's worth of ink. Measured: the
+  // accent-text on the wash's top stop runs 5.96–7.73:1 across all four hues,
+  // clear of AA for body text, let alone a 34pt black figure.
+  const acting = band.fill !== null;
+  const lit = acting && hue && hue !== "ash" ? C.accentText[hue] : null;
 
   const head = bandText(t, shown.head ?? band.head);
   const say = shown.say.map((l) => bandText(t, l)).join(" ");
@@ -353,23 +382,20 @@ export default function AuroraDayBand({
         marginBottom: fold ? at(0, 1, [0, -pull]) : 0,
         paddingTop: insets.top + PAD.top,
         paddingBottom: PAD.bottom,
-        backgroundColor: fill,
       }}
     >
-      {/* THE GROUND. A quiet band is a RAMP whose last stop is fully
-          transparent, so it resolves to whatever the screen's own ground is
-          rather than to a hardcoded copy of it — and you cannot see it go,
-          because the whole journey is a few levels per channel. A FILLED band
-          takes no ramp at all: it is a field, and a field STOPS. See
-          day-fold.ts, which carries the argument. Neither ends at a rule. */}
-      {quiet ? (
-        <LinearGradient
-          colors={BAND_WASH.map((s) => withAlpha(accent, s.alpha)) as unknown as readonly [string, string, ...string[]]}
-          locations={BAND_WASH.map((s) => s.at) as unknown as readonly [number, number, ...number[]]}
-          style={StyleSheet.absoluteFill}
-          pointerEvents="none"
-        />
-      ) : null}
+      {/* THE GROUND, and there is only one. A wash of the day's hue whose last
+          stop is fully transparent, so the band resolves into whatever the
+          screen's own ground is rather than meeting it. Nothing is drawn on
+          top of the page here — the band IS the top of the page, tinted. That
+          is why there is no edge to soften and no rule to draw: the seam
+          problem was never a finish problem, it was two materials. */}
+      <LinearGradient
+        colors={BAND_WASH.map((s) => withAlpha(accent, s.alpha)) as unknown as readonly [string, string, ...string[]]}
+        locations={BAND_WASH.map((s) => s.at) as unknown as readonly [number, number, ...number[]]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
 
       {/* THE CHROME leaves first and travels furthest — the field's own head is
           the part the bar is about to take over, so peeling it off before the
@@ -391,15 +417,17 @@ export default function AuroraDayBand({
             fact about the body; the pages are candidates for the day. Only the
             MARK moves, because that names the discipline being offered. */}
         <View style={{ flexDirection: "row", alignItems: "center", gap: PAD.markGap, paddingHorizontal: PAD.x }}>
-          {shown.mark ? <KindMark kind={shown.mark} color={quiet ? C.accentText.blue : ink} /> : null}
+          {shown.mark ? <KindMark kind={shown.mark} color={lit ?? ink} /> : null}
           <Text
             style={{
               flex: 1,
               fontFamily: F.black,
               fontSize: fs.hero,
               letterSpacing: tracking.display,
-              color: ink,
-              opacity: hold,
+              // LIT when the rung is asking for something, held back when it is
+              // reporting. The one signal, on the one object it is about.
+              color: lit ?? ink,
+              opacity: lit ? 1 : hold,
             }}
           >
             {band.figure}
@@ -465,7 +493,7 @@ export default function AuroraDayBand({
               label={t("session.feel.rate")}
               hint={t("session.feel.rateUnrated")}
               onPress={onRate}
-              color={quiet ? C.accentText.lime : ink}
+              color={lit ?? C.accentText.lime}
             />
           </View>
         ) : null}

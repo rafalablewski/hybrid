@@ -88,7 +88,7 @@ import { usePersona } from "../../lib/persona";
 import { usePlanMaxes } from "../../lib/plan-maxes";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
-import { useTheme, txt, roleColor, accentColor } from "../../lib/theme";
+import { useTheme, txt, accentColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
 import { track } from "../../lib/track";
@@ -950,7 +950,12 @@ export default function AuroraHome() {
   // THE GROUND, only when the field is FILLED. A quiet field is a 16% wash on
   // near-black, where the chrome's own tones are already the legible ones —
   // handing those rows a hue to measure against would swap them for no reason.
-  const fieldGround = fieldOn && band.fill ? roleColor(C, band.fill) : undefined;
+  // THE CHROME ALWAYS STANDS ON A DARK GROUND NOW. The field used to be a solid
+  // accent on its acting rungs, so the header row and the masthead had to be
+  // told which ground they were on and swap their tones for it. The band is one
+  // material at one strength since Aug 2026 — a tint of the page — so there is
+  // no bright ground left to warn them about. See aurora/day-band.tsx.
+  const fieldGround: string | undefined = undefined;
   // The BAR's colour, and it is solid whatever the rung — the field dilutes the
   // hue on a reporting day, the bar never does (day-fold.ts says why).
   const dayHue = bandHue(band);

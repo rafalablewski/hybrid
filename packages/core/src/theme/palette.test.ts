@@ -327,81 +327,61 @@ describe("feedback colours", () => {
 });
 
 /**
- * THE DAY BAND'S FILL — the app's one full-bleed filled field (day-band.ts).
+ * THE DAY BAND'S GROUND — one material, at one strength, in four hues.
  *
- * `accent`/`onAccent` were guarded as a PAIR because chartreuse is the action
- * fill and near-black is what sits on it. The band widened that: its fill is
- * whichever accent `readinessRole` resolves for the day's score, so amber,
- * Lyons Blue and the danger red are all now surfaces carrying a 27pt headline
- * and a sentence — and NOTHING held those to a contrast bar. The ink is chosen
- * by `inkOn` from the palette's two inks rather than assumed, and this sweeps
- * every score the engine can produce so a palette edit cannot quietly put an
- * unreadable instruction in the loudest position on the screen.
+ * This used to sweep a FILLED band: `readinessRole` resolved the day's score to
+ * an accent, that accent was painted as a solid field, and `inkOn` chose which
+ * of the palette's two inks could be read on it. The band is a WASH of its hue
+ * over the page ground now (aurora/day-band.tsx — one material, so there is no
+ * join anywhere), which changes what has to be guarded:
+ *
+ *  - the TYPE is always `chalk`, on a dark ground, at `inkHold`'s answer for
+ *    that ground;
+ *  - the ACCENT is no longer a surface at all. It lights the READING — the
+ *    day's numeral, in the hue's own text value — on the rungs that ask for
+ *    something, and appears nowhere on the rungs that report.
+ *
+ * Both are swept below across every hue the band can take. The old guard is
+ * kept in spirit rather than deleted: it existed because the band made amber,
+ * Lyons Blue and the danger red into surfaces carrying a 27pt headline and
+ * nothing held those to a bar. Nothing does that any more, and this is what
+ * makes sure the replacement is not worse.
  */
-describe("the day band's fill takes a legible ink at every score", () => {
+describe("the day band's ground carries its type at every hue", () => {
   for (const name of Object.keys(THEMES) as ThemeName[]) {
     const t = THEMES[name];
-    const inks = [t.ink, t.chalk] as const;
     const roles = new Set<SemanticRole>();
     for (let score = 1; score <= 98; score++) roles.add(readinessRole(score));
+    // Every hue the band can take: the reading's own roles, plus the three a
+    // REPORTING rung uses for its subject (day-fold.ts REPORT_HUE).
+    const hues = new Set<string>([...[...roles].map((r) => ROLE_COLOR[r]), "amber", "blue", "lime"]);
 
-    // The FILL a client resolves for a role: the theme's own action fill for
-    // `go`, the fixed brand accents for the rest — the same composition
-    // paletteFor() does on mobile, kept here rather than imported so a core
-    // test never reaches into an app.
-    const fillFor = (role: SemanticRole): string =>
-      ROLE_COLOR[role] === "lime" ? t.accent : colors[ROLE_COLOR[role] as "blue" | "amber" | "red" | "ash"];
+    for (const hue of hues) {
+      const accent = hue === "lime" ? t.accent : colors[hue as "blue" | "amber" | "red" | "ash"];
+      const text = t.accentText[hue as keyof typeof t.accentText] ?? t.chalk;
 
-    for (const role of roles) {
-      const fill = fillFor(role);
-      it(`${name}: the ${role} band's best ink clears AA on it`, () => {
-        expect(contrastRatio(inkOn(fill, inks), fill)).toBeGreaterThanOrEqual(WCAG.AA);
-      });
-    }
-
-    it(`${name}: a quiet band's chalk still clears AA on the ground it sits on`, () => {
-      // The quiet rungs refuse a fill (see day-band.ts). Their type sits on the
-      // page ground, which is a different pairing from every filled case above.
-      expect(contrastRatio(t.chalk, t.ink)).toBeGreaterThanOrEqual(WCAG.AA);
-    });
-
-    // ── AND THE LINES THAT ARE NOT AT FULL STRENGTH ──────────────────────
-    //
-    // The sweep above guards the HEAD, and only the head. The band draws two
-    // more lines — the numeral and the sentence — at a fraction of that same
-    // ink, and nothing measured them. On Lyons Blue, which `readinessRole`
-    // returns for every score from 60 to 79, the sentence at the old fixed
-    // 0.78 landed at 3.46:1: under AA, in the commonest reading in the app.
-    //
-    // `inkHold` is the fix and this is what holds it: the alpha is chosen by
-    // measurement against the ground it will be drawn on, so it may be a
-    // different number per fill, and it may be 1 when a fill can afford no
-    // hold-back at all. What must never differ is the outcome.
-    for (const role of roles) {
-      const fill = fillFor(role);
-      it(`${name}: the ${role} band's held-back lines clear AA too`, () => {
-        const ink = inkOn(fill, inks);
-        const a = inkHold(ink, fill, BAND_HOLD);
-        expect(contrastRatio(blendOver(ink, a, fill), fill)).toBeGreaterThanOrEqual(WCAG.AA);
-      });
-    }
-
-    it(`${name}: a quiet band's held-back lines clear AA on every ramp stop`, () => {
-      // A quiet band is a RAMP, so its ground is not one colour — the type sits
-      // on whichever stop it happens to fall across. The TOP stop is the worst
-      // case (most tint, least contrast against a light ink), but a ramp edit
-      // could reorder that, so every stop is measured rather than the first.
-      for (const hue of ["amber", "blue", "lime"] as const) {
-        const accent = hue === "lime" ? t.accent : colors[hue];
+      it(`${name}: ${hue} — chalk clears AA on every stop of the wash`, () => {
+        // A wash is not one colour: the type sits on whichever stop it falls
+        // across. The TOP stop is the worst case for a light ink (most tint,
+        // lightest ground) but a ramp edit could reorder that, so all of them
+        // are measured rather than the first.
         for (const stop of BAND_WASH) {
           const ground = blendOver(accent, stop.alpha, t.ink);
-          const a = inkHold(t.chalk, ground, BAND_HOLD);
+          const hold = inkHold(t.chalk, ground, BAND_HOLD);
           expect(
-            contrastRatio(blendOver(t.chalk, a, ground), ground),
+            contrastRatio(blendOver(t.chalk, hold, ground), ground),
             `${hue} @ ${stop.alpha}`,
           ).toBeGreaterThanOrEqual(WCAG.AA);
         }
-      }
-    });
+      });
+
+      it(`${name}: ${hue} — the lit numeral clears AA on the ground it sits on`, () => {
+        // It is a 34pt black figure, so AA_LARGE would do; it clears the FULL
+        // bar on every hue with room to spare, and holding it there is what
+        // stops a future tint bump quietly spending that margin.
+        const ground = blendOver(accent, BAND_WASH[0]!.alpha, t.ink);
+        expect(contrastRatio(text, ground), hue).toBeGreaterThanOrEqual(WCAG.AA);
+      });
+    }
   }
 });
