@@ -287,7 +287,7 @@ export default function AuroraDayBand({
   const hold = inkHold(ink, ground, BAND_HOLD);
   // THE ACCENT IS THE NUMERAL, NOT THE SLAB. An acting rung lights the day's
   // reading in its own hue at full strength; a reporting rung has no accent
-  // anywhere on it. That keeps the rule the filled field was there to state —
+  // anywhere on it. That keeps the rule the solid field was there to state —
   // a band that tells you NOT to train shows no colour of action — while
   // costing the screen nothing but a numeral's worth of ink. Measured: the
   // accent-text on the wash's top stop runs 5.96–7.73:1 across all four hues,

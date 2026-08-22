@@ -79,13 +79,13 @@ export function barLatched(offsetY: number, wasLatched: boolean): boolean {
 /**
  * THE HUE OF A REPORTING RUNG — the colour of what the rung is ABOUT.
  *
- * Rungs 3 and 4 refuse a fill (see day-band.ts): a filled field is a call to
- * act, and those two tell the athlete not to train. They still have a subject,
- * though, and the subject has a colour in the palette already: a calendar fact
- * is `amber` (sport / plan / caution), recovery is `blue` (conditioning / feel),
- * and a day already trained is `lime` (the "done" green the tonnage wears).
- * `done` is listed although its unrated case DOES take a fill — the rated case
- * does not, and both must resolve.
+ * A reporting rung returns `fill: null` (see day-band.ts): those rungs tell the
+ * athlete NOT to train, so they take no colour of action. They still have a
+ * SUBJECT, though, and the subject has a colour in the palette already: a
+ * calendar fact is `amber` (sport / plan / caution), recovery is `blue`
+ * (conditioning / feel), and a day already trained is `lime` (the "done" green
+ * the tonnage wears). `done` is listed although its unrated case DOES ask for
+ * something — the rated case does not, and both must resolve.
  */
 const REPORT_HUE: Partial<Record<DayBand["rung"], AccentKey>> = {
   protect: "amber",
@@ -99,10 +99,13 @@ const REPORT_HUE: Partial<Record<DayBand["rung"], AccentKey>> = {
  *    the ring cannot disagree about how the day scored;
  *  - a rung that REPORTS takes the hue of its subject, above.
  *
- * The FIELD still washes this at `ALPHA.solid` on a reporting rung and fills at
- * full strength on an acting one. The BAR is always solid: at 46dp it is a
- * label, not a call to act, so it carries the colour concentrated rather than
- * diluted. Returns null only for the empty band, which draws nothing at all.
+ * WHAT THE SURFACES DO WITH IT DIFFERS, and no longer by rung. The FIELD washes
+ * it at one strength whatever the rung (`BAND_WASH`) — it is one material, so
+ * it has no join and no second state; whether the rung is asking is carried by
+ * the READING instead, which lights in this hue on an acting rung and stays
+ * held-back ink on a reporting one. The BAR is always solid: at 46dp it is a
+ * label, and a floating capsule above the content is allowed to be its own
+ * material. Returns null only for the empty band, which draws nothing at all.
  */
 export function bandHue(band: Pick<DayBand, "fill" | "rung">): AccentKey | null {
   if (band.rung === "none") return null;
@@ -165,29 +168,30 @@ export const BAND_WASH: readonly { at: number; alpha: number }[] = Array.from(
 );
 
 /**
- * A BAND ENDS THE WAY ITS GROUND ALLOWS — and the two states do not allow the
- * same thing, which is the symmetry that had to go.
+ * THERE IS ONE MATERIAL, WHICH IS WHY NOTHING HERE DESCRIBES AN EDGE.
  *
- * A QUIET band DISSOLVES. `BAND_WASH` ramps a 20% tint to nothing, and you
- * cannot see it go: the whole journey is #352b0f → #0c0d0c, a few levels per
- * channel spread over the band's full height.
+ * The band is a wash of the day's hue over the page ground, every rung, one
+ * strength — the top OF the screen rather than a panel ON it. It has no border,
+ * no foot and no second state, because it never meets anything.
  *
- * A FILLED band STOPS. It cannot dissolve, and this was tried twice before it
- * was measured properly. Wild Lime to the page ground is most of the lightness
- * range, and the midpoint of that journey is a dark olive in EVERY colour
- * space — there is no route from a saturated yellow-green to near-black that
- * avoids it. So a foot does not soften the edge, it replaces a clean one with a
- * visible stripe of mud: at 26dp it read as a smudge with a crease above it,
- * and easing it to 46dp in OKLab made it a better-shaped smudge.
+ * IT TOOK FOUR ATTEMPTS TO GET THERE and the discarded three are worth keeping,
+ * because each looked right until it was measured. (1) A 1px rule across the
+ * bottom: a hairline separates two surfaces that BOTH continue, and here one of
+ * them stopped. (2) A 26dp scrim fading the accent into the page: a crease
+ * where the solid stopped, and a stripe of mud. (3) The same eased over 46dp in
+ * OKLab: a better-shaped stripe. (4) A crisp edge, on the argument that a
+ * coloured field ending at an edge is not a seam.
  *
- * A COLOURED FIELD ENDING AT AN EDGE IS NOT A SEAM. The thing that was wrong at
- * the start of all this was a HAIRLINE — a rule drawn across the join, which
- * claims to separate two surfaces that both continue when in fact one of them
- * stops. An edge makes no such claim. It is what the top of every coloured
- * header in the world does, and it is crisp rather than dirty.
+ * ALL FOUR WERE FINISHES ON A JOIN. The join existed because the acting rungs
+ * were a solid slab of accent resting on a near-black page, and no finish makes
+ * Wild Lime meet #0c0d0c invisibly: the midpoint of that journey is a dark
+ * olive in EVERY colour space, so a fade does not soften the edge, it replaces
+ * a clean one with a visible stripe. Taking the second material away is what
+ * made the question stop needing an answer.
  *
- * So the rule is not "every band fades", it is: NEITHER STATE ENDS AT A RULE.
- * One dissolves because it can. The other stops because it must.
+ * `BAND_WASH` is eased for the same family of reason at the other end: a linear
+ * ramp drops from the first pixel, so the eye finds the corner where the tint
+ * begins. It holds where the CONTENT is, then dissolves.
  */
 
 /**

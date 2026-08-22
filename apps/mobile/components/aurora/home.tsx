@@ -495,7 +495,7 @@ export default function AuroraHome() {
   const fulfilledIds = useMemo(() => new Set(sched?.fulfilledSessionIds ?? []), [sched]);
 
   // ── THE DAY BAND ──────────────────────────────────────────────────────────
-  // The filled field at the head of the screen, and the only thing on Today
+  // The tinted field at the head of the screen, and the only thing on Today
   // that says what to DO. The ladder lives in core (day-band.ts); this screen
   // supplies the four things only it has — the reading it already made, the
   // athlete's own log, what the plan says about today, and what the athlete

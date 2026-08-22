@@ -826,7 +826,7 @@ export const web_home = {
     "w.home.readiness.floorNote": "The scale bottoms out at 35, and today hit it. The number stopped there; the load behind it didn't — treat this as the deload it's asking for.",
 
     // ── THE DAY BAND (day-band.ts) ────────────────────────────────────────
-    // The filled field at the head of Today: a numeral, an instruction, one
+    // The field at the head of Today: a numeral, an instruction, one
     // sentence. `lead`/`follow`/`then`/`noun` are FRAGMENTS — slots filled with
     // another key before interpolation (see bandText), which is what lets one
     // head template speak for nine disciplines in three languages.

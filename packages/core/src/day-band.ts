@@ -56,13 +56,18 @@
  * something rather than telling them something.
  *
  * ── COLOUR NEVER CONTRADICTS THE INSTRUCTION ──────────────────────────────
- * The fill is the readiness band's own role, so the field and the ring agree by
- * construction. But a filled field is a CALL TO ACTION, and rungs 4 and 5 tell
- * the athlete not to train — a bright chartreuse field over "match tomorrow" at
- * a readiness of 81 says two opposite things at once. Those two rungs return
- * `fill: null`, which the clients draw as ground plus a hairline. There is no
+ * `fill` is the reading's own semantic role, so the band and the ring cannot
+ * disagree about how the day scored. But some rungs tell the athlete NOT to
+ * train, and a colour of ACTION over "match tomorrow" at a readiness of 81 says
+ * two opposite things at once. Those rungs return `fill: null`, and there is no
  * third option and no "nicer colour" that resolves it.
  *
+ * WHERE THAT COLOUR IS DRAWN is the surface's business and it has moved. It was
+ * a solid field behind the whole band; since Aug 2026 the band is one material
+ * (a wash of the day's hue, every rung) and the acting/reporting distinction is
+ * carried by the READING — the numeral lights in the day's hue when the rung is
+ * asking for something and stays held-back ink when it is reporting. The rule
+ * this section states is unchanged; only its medium is.
  * ── MOST ATHLETES HAVE NO PLAN ────────────────────────────────────────────
  * The first cut of this ladder read the plan schedule for every rung, which
  * assumes an enrolment most athletes will never have. Rungs 5–7 now take the
