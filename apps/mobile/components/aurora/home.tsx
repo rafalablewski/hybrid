@@ -109,6 +109,7 @@ import ReadinessSheet from "./readiness-sheet";
 import AuroraDayBand from "./day-band";
 import AuroraDayBar from "./day-bar";
 import { readRejected, readRejectedEvents, rejectEvent, rejectKind } from "../../lib/day-band-prefs";
+import { readRestDays, setRestDay } from "../../lib/rest-days";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
@@ -508,6 +509,12 @@ export default function AuroraHome() {
   // must only honour the first (lib/day-band-prefs.ts).
   const [rejectedEvents, setRejectedEvents] = useState<TrainingKind[]>([]);
   useEffect(() => { readRejectedEvents().then(setRejectedEvents).catch(() => {}); }, [today]);
+  // DECLARED REST DAYS (lib/rest-days.ts) — the second training-INTENT signal
+  // the app collects, and the only one that is not scoped to today: "Saturday
+  // was a rest day" stays true next week, and the logbook rail scrolls back
+  // four. Owned here, like every other day-scoped preference on this screen.
+  const [restDays, setRestDays] = useState<Set<string>>(new Set());
+  useEffect(() => { readRestDays().then(setRestDays).catch(() => {}); }, [today]);
   // The engines take milliseconds; `today` is the day KEY that flips at
   // midnight, so this is a clock read pinned to the day rather than to render.
   const bandNow = useMemo(() => Date.now(), [today]);
@@ -1074,6 +1081,10 @@ export default function AuroraHome() {
                 setQuickOpen(true);
               }}
               onSelectDay={setRailDay}
+              restDays={restDays}
+              // The write hands back the new set, so the card redraws from the
+              // answer rather than from a re-read that could race it.
+              onDeclareRest={(d, resting) => { setRestDay(d.ts, resting).then(setRestDays).catch(() => {}); }}
               doneFloor={doneFloor}
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>

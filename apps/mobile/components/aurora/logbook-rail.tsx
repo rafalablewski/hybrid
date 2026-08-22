@@ -15,9 +15,10 @@ import {
   ALPHA,} from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { fs, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
 import { RADIUS } from "./kit";
 import AEmptyDay from "./empty-day";
+import { Glyph } from "./icons";
 import AActionPair from "./action-pair";
 import ReceiptBlock from "./receipt-block";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
@@ -47,6 +48,8 @@ export default function AuroraLogbookRail({
   onLog,
   onLogSport,
   onSelectDay,
+  restDays,
+  onDeclareRest,
   doneFloor,
 }: {
   sessions: LoggedSession[];
@@ -60,6 +63,12 @@ export default function AuroraLogbookRail({
    *  of the screen (Also-today / feeling cards) to the viewed day. Mirrors the
    *  plan week rail's prop. */
   onSelectDay?: (day: LogbookDay) => void;
+  /** Local day keys the athlete has DECLARED a rest day (lib/rest-days.ts).
+   *  Owned by the screen, like every other day-scoped preference. */
+  restDays?: Set<string>;
+  /** Declare, or retract, a rest day. Absent → the action is not offered and
+   *  the card is exactly the two-state one it was. */
+  onDeclareRest?: (day: LogbookDay, resting: boolean) => void;
   /** The DONE FLOOR — every session logged on the viewed day, rendered as this
    *  card's lower floor under a labelled seam (aurora/done-floor.tsx). It is
    *  passed in rather than built here because the screen owns the day's
@@ -159,6 +168,11 @@ export default function AuroraLogbookRail({
         doneFloor={doneFloor}
         onLog={onLog}
         onLogSport={onLogSport}
+        // A day that HOLDS training is never a rest day, whatever was declared
+        // before the session landed — the work is the answer, and the receipt
+        // branch below never reads this.
+        resting={!!restDays?.has(sel.dateKey) && !sel.logged}
+        onDeclareRest={onDeclareRest}
         t={t}
       />
     </View>
@@ -244,7 +258,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
   );
 }
 
-function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, onLog, onLogSport, t }: {
+function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, onLog, onLogSport, resting, onDeclareRest, t }: {
   C: Pal;
   day: LogbookDay;
   receipt: ReturnType<typeof mergeDoneReceipts>;
@@ -258,6 +272,9 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
   doneFloor?: ReactNode;
   onLog: () => void;
   onLogSport?: (day: LogbookDay) => void;
+  /** The athlete declared this day a rest day (lib/rest-days.ts). */
+  resting: boolean;
+  onDeclareRest?: (day: LogbookDay, resting: boolean) => void;
   t: (k: string) => string;
 }) {
   // The corner stamp — how far this day sits from now, never a second copy of
@@ -284,6 +301,10 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
   const sportLabel = day.isToday
     ? t("w.home.today.alsoTodayLogSport")
     : t("w.home.logbook.sportOn").replace("{day}", day.weekdayShort);
+  // …and the rest declaration names its day for exactly the same reason.
+  const restLabel = day.isToday
+    ? t("w.home.logbook.rest")
+    : t("w.home.logbook.restOn").replace("{day}", day.weekdayShort);
 
   if (day.logged) {
     return (
@@ -331,13 +352,67 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
   // nothing else. The corner stamp still sits above it, since "Yesterday" is a
   // fact about the day rather than part of the block.
   //
-  // THE ACTIONS ARE THE POINT OF THE ARRANGEMENT. Today offers the structured
-  // logger as the one filled action and the SPORT log beside it, neutral —
+  // THE ACTIONS ARE THE POINT OF THE ARRANGEMENT, and there are THREE of them:
+  // Gym, Sport, Rest. Today fills the first and leaves the other two neutral —
   // never the old pairing of a glowing full-bleed pill with a dashed tile forty
   // pixels below it, which was two actions at one weight in two vocabularies. A
-  // PAST day offers the sport alone, named and dated to that day: you cannot
-  // start a live session in a day that has already happened, but you can very
-  // much have played on Saturday and forgotten to log it.
+  // PAST day drops Gym and dates the rest: you cannot start a live session in a
+  // day that has already happened, but you can very much have played on
+  // Saturday, or rested, and not said so.
+  //
+  // THEY ARE NOUNS NOW ("Gym", not "Log a session"), and that is what made room
+  // for the third. Three verb phrases do not share a 320pt measure — "Log a
+  // session", "Log a sport" and a rest label would have wrapped to two rows,
+  // which is the arrangement AActionPair exists to avoid. The verb was carrying
+  // nothing anyway: these sit under a card that says the day is empty, so what
+  // else would tapping "Gym" do? See `action-vocabulary-nouns` in
+  // capabilities.ts — this deliberately unwinds half of the older
+  // log-sport-vs-workout-clarity pass, which is left standing for the SHEET
+  // titles it also set.
+  const actions = [
+    ...(day.isToday ? [{ label: t("w.home.today.alsoTodayLogFirst"), onPress: onLog, prominent: true }] : []),
+    ...(onLogSport ? [{ label: sportLabel, onPress: () => onLogSport(day) }] : []),
+    ...(onDeclareRest ? [{ label: restLabel, onPress: () => onDeclareRest(day, true) }] : []),
+  ];
+
+  // DECLARED REST. The empty day and the rest day are not the same fact, and
+  // until this existed the app could not tell them apart: an empty day is the
+  // app NOT KNOWING, and it draws the invitation to log something — every day,
+  // at an athlete who has decided today is for recovering. The plan rail has
+  // always had a rest day because a program can prescribe one; the plan-less
+  // athlete had no way to say it.
+  //
+  // It takes the PLAN rail's own rest drawing (moon, "Rest day") so one fact
+  // has one shape on both rails, and it keeps ONE action — the retraction —
+  // because a day the athlete has just called a rest day should not still be
+  // asking them to train. Logging anyway is not blocked: a session that lands
+  // here moves the card to the receipt branch, which never reads `resting`.
+  if (resting) {
+    return (
+      <View>
+        {!!stamp && (
+          <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{stamp}</Text>
+          </View>
+        )}
+        <View style={{ alignItems: "center", gap: 7, paddingTop: 14, paddingBottom: 2, paddingHorizontal: 6 }}>
+          <Glyph name="moon" size={30} color={C.ash} />
+          <Text
+            maxFontSizeMultiplier={MAX_FONT_SCALE}
+            style={{ fontFamily: F.black, fontSize: fs.subtitle, letterSpacing: tracking.display, color: C.chalk, textAlign: "center" }}
+          >
+            {t("w.home.rail.restDay")}
+          </Text>
+          <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption, "relaxed"), color: C.ash, textAlign: "center", maxWidth: 260 }}>
+            {t("w.home.logbook.restBody")}
+          </Text>
+        </View>
+        {doneFloor}
+        <AActionPair actions={onDeclareRest ? [{ label: t("w.home.logbook.restUndo"), onPress: () => onDeclareRest(day, false) }] : []} />
+      </View>
+    );
+  }
+
   return (
     <View>
       {!!stamp && (
@@ -346,24 +421,22 @@ function DayDetail({ C, day, receipt, units, streakDays, hasHistory, doneFloor, 
         </View>
       )}
       <AEmptyDay isToday={day.isToday} hasHistory={hasHistory}>
-        <AActionPair
-          actions={[
-            ...(day.isToday ? [{ label: t("w.home.today.alsoTodayLogFirst"), onPress: onLog, prominent: true }] : []),
-            ...(onLogSport ? [{ label: sportLabel, onPress: () => onLogSport(day) }] : []),
-          ]}
-        />
+        {/* THE FLOOR SITS ABOVE THE ACTIONS, not under them. On this branch it
+            usually draws nothing at all: a logbook day is `logged` exactly when
+            it holds SESSIONS, so there are no session rows here by definition,
+            and with `emptyCaption` false (home.tsx sets it for logbook mode) it
+            renders null rather than repeating this block's own sentence a third
+            time — once in the description, once on the button, once in a
+            caption.
+            What it does still draw is the SAUNA, and that is why the order
+            matters. It shipped for one release BELOW the action pair, which put
+            a statement of what the athlete DID underneath two offers of what
+            they could do — the card answered its own question after asking it,
+            and the buttons stopped being the last thing on the card. What
+            happened comes first; the offer closes the block. */}
+        {doneFloor}
+        <AActionPair actions={actions} />
       </AEmptyDay>
-      {/* THE FLOOR IS HERE TOO — and on this branch it usually draws nothing.
-          A logbook day is `logged` exactly when it holds SESSIONS, so the floor
-          has zero session rows here by definition, and with `emptyCaption`
-          false (home.tsx sets it for logbook mode) it renders null rather than
-          repeating this block's own sentence a third time — once in the
-          description, once on the button, once in a caption.
-          What it does still draw is the SAUNA. A rest-day sitting is a day with
-          nothing trained and something done, and skipping the floor outright
-          was how twenty minutes of heat the engines had already scored ended up
-          on no surface that names the day. */}
-      {doneFloor}
     </View>
   );
 }
