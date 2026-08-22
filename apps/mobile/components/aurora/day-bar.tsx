@@ -37,11 +37,19 @@ import { withAlpha } from "./field";
  * being looked at: WHICH COLOUR TODAY IS.
  *
  * ── ONE MATERIAL, ON EVERY RUNG ──────────────────────────────────────────
+ * SOLID IS RIGHT HERE, AND IT IS THE ONE PLACE IT IS. The field stopped being a
+ * slab in Aug 2026 — it is a wash of the day's hue over the page, one material,
+ * so there is no join anywhere on it (see aurora/day-band.tsx). The bar is not
+ * a field: it is a floating capsule ABOVE the content, and a floating object is
+ * allowed to be its own material — that is what makes it read as floating. The
+ * two are never on screen together, because the bar only arrives once the field
+ * has folded away.
+ *
  * Solid, in the day's hue, always — never glass, and never a second treatment
  * for the quiet rungs. The reasoning is in day-fold.ts and it is not a taste
  * argument: a blur costs GPU in exchange for resolving what is behind it, and
  * behind this bar is a near-black page of flat dark cards with nothing to
- * resolve. The field washes the hue at 16%; the bar is the same hue at full
+ * resolve. The field washes the hue; the bar is the same hue at full
  * strength, so the day's colour ARRIVES concentrated rather than fading out.
  *
  * ── THE ENTRANCE IS TRAVEL, NOT A RESOLVE ────────────────────────────────

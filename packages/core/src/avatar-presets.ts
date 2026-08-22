@@ -1,4 +1,4 @@
-// Branded gradient avatar presets — tiny 16\u00d716 PNG data-URIs so they persist in
+// Branded gradient avatar presets — tiny 16×16 PNG data-URIs so they persist in
 // the profile's avatarUrl field and render on BOTH clients through the existing
 // <img>/<Image source={{uri}}> paths (no renderer changes, no Storage bucket).
 // Kept comfortably under the server's 500-char avatarUrl cap (see the

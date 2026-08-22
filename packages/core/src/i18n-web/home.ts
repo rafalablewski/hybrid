@@ -804,7 +804,7 @@ export const web_home = {
     "w.home.readiness.floorNote": "The scale bottoms out at 35, and today hit it. The number stopped there; the load behind it didn't — treat this as the deload it's asking for.",
 
     // ── THE DAY BAND (day-band.ts) ────────────────────────────────────────
-    // The filled field at the head of Today: a numeral, an instruction, one
+    // The field at the head of Today: a numeral, an instruction, one
     // sentence. `lead`/`follow`/`then`/`noun` are FRAGMENTS — slots filled with
     // another key before interpolation (see bandText), which is what lets one
     // head template speak for nine disciplines in three languages.
@@ -847,6 +847,15 @@ export const web_home = {
     "w.home.band.system.aerobic": "aerobic",
     "w.home.band.system.threshold": "threshold",
     "w.home.band.system.anaerobic": "anaerobic",
+    // THE RACE RUNG. A meet, a race or a test that is TODAY. It sits ABOVE the
+    // deload because it is the one entry on the calendar the app cannot move —
+    // a heavy squat goes to Thursday, a start line does not — so a floored
+    // reading changes how the day is RUN rather than whether it happens, which
+    // is what sayRaceFloor carries.
+    "w.home.band.race": "{event} today.",
+    "w.home.band.raceKind": "Your {noun} is today.",
+    "w.home.band.sayRace": "Nothing else today — this is the session.",
+    "w.home.band.sayRaceFloor": "Your reading is on the floor, so start conservative and go on feel.",
     "w.home.band.deload": "Take the deload.",
     // THE DONE RUNG. The day is trained, so the band stops prescribing. It
     // asks for the one value the app cannot measure — how it felt — and once
@@ -869,6 +878,10 @@ export const web_home = {
     "w.home.band.sayDoneRate": "It's the one thing the app can't measure for you.",
     "w.home.band.sayDoneFeel": "{feel} — and that's what today's load is built from.",
     "w.home.band.sayProtect": "Nothing on the legs today. A walk if you want one.",
+    // The softer half of the same rung: a KEY session can be moved and a race
+    // cannot, and this fires on a day the plan has already made easy — so it
+    // explains that day rather than overruling it.
+    "w.home.band.sayProtectKey": "Keep today easy. Tomorrow is the one the week is built around.",
     // The count the guess was drawn from — so a wrong one is arguable rather
     // than merely wrong. {weekday} is the PLURAL weekday (see weekday.* below).
     "w.home.band.sayProtectUsual": "{n} of the last {total} {weekday}, so nothing heavy on the legs today.",
@@ -902,7 +915,34 @@ export const web_home = {
     "w.home.band.sayDoseFlat": "You checked in flat, so the bar eases to {pct}%.",
     "w.home.band.sayDoseWrecked": "You checked in wrecked, so it's {pct}% and a set lighter.",
     "w.home.band.sayDoseBodyweight": "Your check-in shed a set — there's no bar to ease.",
+    // THE DECK'S ONE COMMIT. Swiping is free — the whole ranking can be read
+    // and left alone — so a page other than the first carries the single tap
+    // that changes the day. It says what happens, not what it is.
+    // Spoken form of the reading. The band DRAWS "69/100" — notation, the
+    // same in every locale — but a screen reader saying "sixty-nine slash one
+    // hundred" is not what the numeral means.
+    "w.home.band.scale": "{n} out of 100",
+    "w.home.band.trainThis": "Train this instead",
+    "w.home.band.deckPage": "Option {n} of {total}",
     "w.home.band.notToday": "Not today?",
+
+    // ── DECLARING AN EVENT (day-events.ts, aurora/declare-event.tsx) ──────
+    // The half of "what's on tomorrow" no log can answer. Three fields and no
+    // fourth: the day is the one the sheet is mounted against, so only the
+    // discipline and an optional name are asked for.
+    "w.event.title": "What's on this day?",
+    "w.event.sub": "A race, a meet, a test — the app can't work this one out on its own.",
+    "w.event.kindHead": "Discipline",
+    "w.event.nameHead": "Call it something",
+    "w.event.namePlaceholder": "Half marathon",
+    "w.event.nameNote": "Optional. Without a name it reads as its discipline \u2014 \u201cYou have a game tomorrow.\u201d",
+    "w.event.save": "Add it to the day",
+    "w.event.saving": "Adding\u2026",
+    "w.event.saved": "Added",
+    "w.event.failed": "That didn't save. The events table may not be migrated yet.",
+    "w.event.declared": "Declared",
+    "w.event.add": "Declare a race",
+    "w.event.remove": "Remove",
     "w.home.cockpit.logSession": "Log session",
     "w.home.cockpit.calibrate": "Log a session to calibrate your route",
     "w.home.cockpit.perfTwin": "Performance State",
@@ -2170,6 +2210,13 @@ export const web_home = {
     "w.home.band.system.aerobic": "tlenowa",
     "w.home.band.system.threshold": "progowa",
     "w.home.band.system.anaerobic": "beztlenowa",
+    // RUNG STARTU — zawody dzisiaj. Stoi NAD deloadem: startu nie da się
+    // przełożyć, więc gotowość na dnie zmienia sposób startu, a nie to, czy
+    // start się odbędzie.
+    "w.home.band.race": "{event} dzisiaj.",
+    "w.home.band.raceKind": "Dzisiaj: {noun}.",
+    "w.home.band.sayRace": "Dziś tylko to — nic więcej.",
+    "w.home.band.sayRaceFloor": "Gotowość jest na dnie, więc zacznij zachowawczo i idź na czucie.",
     "w.home.band.deload": "Zrób deload.",
     "w.home.band.doneRate": "Jak to było?",
     "w.home.band.doneLogged": "Dziś zrobione.",
@@ -2186,6 +2233,7 @@ export const web_home = {
     "w.home.band.sayDoneRate": "Tego jednego aplikacja za ciebie nie zmierzy.",
     "w.home.band.sayDoneFeel": "{feel} — i z tego liczy się dzisiejsze obciążenie.",
     "w.home.band.sayProtect": "Dziś nic na nogi. Spacer, jeśli chcesz.",
+    "w.home.band.sayProtectKey": "Dziś na luzie. Jutro jest ten trening, o który chodzi.",
     "w.home.band.sayProtectUsual": "{n} z ostatnich {total} {weekday} — więc dziś nic ciężkiego na nogi.",
     "w.home.band.sayProtectMaybe": "Jeśli się zgadza, dziś nic ciężkiego na nogi.",
     // Dopełniacz liczby mnogiej — zdanie wyżej wymaga tej formy.
@@ -2216,7 +2264,25 @@ export const web_home = {
     "w.home.band.sayDoseFlat": "Meldunek na płasko: sztanga schodzi do {pct}%.",
     "w.home.band.sayDoseWrecked": "Meldunek na wykończeniu: {pct}% i seria mniej.",
     "w.home.band.sayDoseBodyweight": "Meldunek zdjął serię — nie ma sztangi do zejścia.",
+    "w.home.band.scale": "{n} na 100",
+    "w.home.band.trainThis": "Zamiast tego",
+    "w.home.band.deckPage": "Opcja {n} z {total}",
     "w.home.band.notToday": "Nie dziś?",
+
+    // ── ZGŁOSZENIE WYDARZENIA (day-events.ts) ─────────────────────────────
+    "w.event.title": "Co jest tego dnia?",
+    "w.event.sub": "Zawody, start, test — tego aplikacja sama nie odgadnie.",
+    "w.event.kindHead": "Dyscyplina",
+    "w.event.nameHead": "Nazwij to",
+    "w.event.namePlaceholder": "Półmaraton",
+    "w.event.nameNote": "Opcjonalne. Bez nazwy przeczyta się jako dyscyplina \u2014 \u201eJutro masz: mecz.\u201d",
+    "w.event.save": "Dodaj do dnia",
+    "w.event.saving": "Dodaj\u0119\u2026",
+    "w.event.saved": "Dodane",
+    "w.event.failed": "Nie zapisało się. Tabela wydarzeń może nie być jeszcze zmigrowana.",
+    "w.event.declared": "Zgłoszone",
+    "w.event.add": "Zgłoś start",
+    "w.event.remove": "Usuń",
     "w.home.cockpit.logSession": "Zapisz sesję",
     "w.home.cockpit.calibrate": "Zapisz sesję, aby skalibrować swoją trasę",
     "w.home.cockpit.perfTwin": "Stan formy",
@@ -3437,6 +3503,13 @@ export const web_home = {
     "w.home.band.system.aerobic": "aerobe",
     "w.home.band.system.threshold": "Schwellen-",
     "w.home.band.system.anaerobic": "anaerobe",
+    // DIE WETTKAMPF-STUFE — heute. Sie steht ÜBER dem Deload: ein Startschuss
+    // lässt sich nicht verschieben, ein schweres Squat schon. Ein Wert am Boden
+    // ändert also, WIE der Tag gelaufen wird, nicht ob er stattfindet.
+    "w.home.band.race": "{event} heute.",
+    "w.home.band.raceKind": "Heute: {noun}.",
+    "w.home.band.sayRace": "Heute zählt nur das — sonst nichts.",
+    "w.home.band.sayRaceFloor": "Dein Wert liegt am Boden, also geh es konservativ an und richte dich nach dem Gefühl.",
     "w.home.band.deload": "Mach den Deload.",
     "w.home.band.doneRate": "Wie hat sich das angefühlt?",
     "w.home.band.doneLogged": "Heute ist drin.",
@@ -3453,6 +3526,7 @@ export const web_home = {
     "w.home.band.sayDoneRate": "Das Einzige, was die App nicht für dich messen kann.",
     "w.home.band.sayDoneFeel": "{feel} — und daraus baut sich die Last von heute.",
     "w.home.band.sayProtect": "Heute nichts auf die Beine. Ein Spaziergang, wenn du magst.",
+    "w.home.band.sayProtectKey": "Heute locker. Morgen kommt die Einheit, um die es geht.",
     "w.home.band.sayProtectUsual": "{n} der letzten {total} {weekday} — heute also nichts Schweres auf die Beine.",
     "w.home.band.sayProtectMaybe": "Wenn das stimmt, heute nichts Schweres auf die Beine.",
     "w.home.band.weekday.0": "Sonntage",
@@ -3482,7 +3556,25 @@ export const web_home = {
     "w.home.band.sayDoseFlat": "Check-in flach: die Hantel geht auf {pct}%.",
     "w.home.band.sayDoseWrecked": "Check-in platt: {pct}% und ein Satz weniger.",
     "w.home.band.sayDoseBodyweight": "Der Check-in hat einen Satz gestrichen — es gibt keine Hantel zu senken.",
+    "w.home.band.scale": "{n} von 100",
+    "w.home.band.trainThis": "Stattdessen das",
+    "w.home.band.deckPage": "Option {n} von {total}",
     "w.home.band.notToday": "Heute nicht?",
+
+    // ── EIN EREIGNIS EINTRAGEN (day-events.ts) ────────────────────────────
+    "w.event.title": "Was ist an diesem Tag?",
+    "w.event.sub": "Ein Rennen, ein Wettkampf, ein Test — das findet die App nicht selbst heraus.",
+    "w.event.kindHead": "Disziplin",
+    "w.event.nameHead": "Gib ihm einen Namen",
+    "w.event.namePlaceholder": "Halbmarathon",
+    "w.event.nameNote": "Optional. Ohne Namen steht dort die Disziplin \u2014 \u201eMorgen: Spiel.\u201c",
+    "w.event.save": "Zum Tag hinzufügen",
+    "w.event.saving": "Wird hinzugefügt\u2026",
+    "w.event.saved": "Hinzugefügt",
+    "w.event.failed": "Das wurde nicht gespeichert. Die Ereignistabelle ist womöglich noch nicht migriert.",
+    "w.event.declared": "Eingetragen",
+    "w.event.add": "Wettkampf eintragen",
+    "w.event.remove": "Entfernen",
     "w.home.cockpit.logSession": "Einheit protokollieren",
     "w.home.cockpit.calibrate": "Protokolliere eine Einheit, um deine Route zu kalibrieren",
     "w.home.cockpit.perfTwin": "Leistungszustand",

@@ -114,6 +114,7 @@ model User {
   foodLogs          FoodLog[]
   userRecipes       UserRecipe[]
   planDayOverrides  PlanDayOverride[]
+  declaredEvents    DeclaredEvent[]
   assignments       Assignment[]       @relation("assignmentAthlete")
   assignmentsMade   Assignment[]       @relation("assignmentCoach")
   coachLinks        CoachLink[]        @relation("asClient")
@@ -972,6 +973,37 @@ model PlanDayOverride {
 
   @@unique([userId, planId, date])
   @@index([userId, planId])
+}
+
+// A one-off the athlete DECLARED — a race, a meet, a test. The half of "what's
+// on tomorrow" that no log can ever answer: a weekly five-a-side leaves a
+// pattern the app can detect (day-band.ts's weeklyFixture), a half marathon in
+// six weeks leaves nothing at all until the day it happens.
+//
+// The day BAND is the only consumer, and it uses this twice: a race TODAY is the
+// one calendar entry the app cannot move, so it outranks even a floored
+// readiness reading; the day BEFORE one, the band stops prescribing and protects
+// it. See packages/core/src/day-events.ts, which holds the rule that orders this
+// against the plan's competition day and the detected fixture.
+//
+// `date` is the client's LOCAL date key (yyyy-mm-dd) stored verbatim, the same
+// idiom PlanDayOverride uses: a race is on a calendar date, not at an instant,
+// so the server never has to reason about the athlete's timezone to know which
+// day it lands on. `kind` is a core TrainingKind ("running", "sport", "gym", …)
+// and drives the discipline mark the band draws; `label` is the athlete's own
+// name for it, trimmed to EVENT_LABEL_MAX because it is dropped straight into a
+// 44-character headline.
+model DeclaredEvent {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  date      String // local date key yyyy-mm-dd
+  kind      String // core TrainingKind
+  label     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId, date])
 }
 
 model CoachNote {

@@ -1319,6 +1319,15 @@ describe("colour arithmetic", () => {
     // chartreuse — the only stop of a three-density ramp that was neither a rung
     // nor a real gradient. The band is a hue now (the endurance lanes' own
     // easy/steady/hard coding), so the number went with the argument for it.
+    // 104 → 105 → 104, in one day, and the round trip is the interesting part.
+    // The day band's FOOT briefly added withAlpha(C.ink, 0) — the transparent
+    // end of the gradient that resolves a filled band into the page ground,
+    // which is exactly what this floor exists to allow. Then the foot stopped
+    // being a SCRIM at all: the band became ONE material, a wash of the day's
+    // hue over the page ground with a fully transparent last stop, so there is
+    // no join left to finish and the alpha went with the argument for it. The
+    // wash costs this rule nothing either — its stops come from BAND_WASH,
+    // tokens rather than numbers at the call site.
     floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 103,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
