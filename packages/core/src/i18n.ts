@@ -144,6 +144,10 @@ const BASE: Record<Lang, Record<string, string>> = {
     "endurance.pickDiscipline": "Discipline",
     "endurance.weeklyVolume": "Weekly volume – last 8 weeks",
     "endurance.efforts": "EFFORTS",
+    // The timed sports' second fact. Tennis and squash carry no distance and
+    // no pace, so a sport page shows what they DO have — the window's longest
+    // single session — rather than a dash where a metric never existed.
+    "endurance.longest": "LONGEST",
     "endurance.running": "Running",
     "endurance.cycling": "Cycling",
     "endurance.swimming": "Swimming",
@@ -880,6 +884,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "endurance.pickDiscipline": "Dyscyplina",
     "endurance.weeklyVolume": "Objętość tygodniowo – 8 tyg.",
     "endurance.efforts": "WYSIŁKI",
+    "endurance.longest": "NAJDŁUŻSZY",
     "endurance.running": "Bieganie",
     "endurance.cycling": "Kolarstwo",
     "endurance.swimming": "Pływanie",
@@ -1596,6 +1601,7 @@ const BASE: Record<Lang, Record<string, string>> = {
     "endurance.pickDiscipline": "Disziplin",
     "endurance.weeklyVolume": "Wochenvolumen – letzte 8 Wochen",
     "endurance.efforts": "EINHEITEN",
+    "endurance.longest": "LÄNGSTE",
     "endurance.running": "Laufen",
     "endurance.cycling": "Radfahren",
     "endurance.swimming": "Schwimmen",

@@ -177,7 +177,6 @@ export const web_home = {
     // hours AND minutes — the values bring their own units, so the key no
     // longer trails an " h"), metaMoves the rail's coverage of the movements
     // trained in its own 8-week window. The retired key was `metaWeek`.
-    "w.home.group.metaOf": "{a} of {b} this week",
     "w.home.group.metaMoves": "{a} of {b} movements",
     // ── This week — the verdict card (Statistics + Analytics, merged onto Today).
     // The lead sentences take {m} = the metric name below; the vs* lines take
@@ -190,15 +189,6 @@ export const web_home = {
     // ── Other sports — the racket/team/combat block under Endurance. These
     // sports are TIMED, so a tile carries efforts, hours and when it was last
     // played; there is no distance or pace to show and none is invented.
-    "w.home.other.title": "Other sports",
-    "w.home.other.efforts": "Efforts",
-    "w.home.other.hours": "Hours",
-    "w.home.other.freq": "Last 8 weeks",
-    "w.home.other.last": "Last played",
-    "w.home.other.thisWeek": "this week",
-    "w.home.other.sports": "sports",
-    "w.home.other.all": "All sports",
-    "w.home.other.fewer": "Fewer sports",
     "w.home.week.downLead": "Your {m} is down on the week before.",
     "w.home.week.upLead": "Your {m} is up on the week before.",
     "w.home.week.flatLead": "Tracking with the week before.",
@@ -379,33 +369,21 @@ export const web_home = {
     "w.home.exw.volume": "Volume – 8 weeks",
     "w.home.exw.time": "Time – 8 weeks",
     "w.home.today.alsoDayEmpty": "nothing logged this day",
-    "w.home.end.thisWeek": "This week",
-    "w.home.end.orderTrained": "Most trained",
-    "w.home.end.orderRecent": "Most recent",
-    "w.home.end.orderLongest": "Longest",
-    // A lane tile's LABEL names the metric and the scope of the FIGURE it
-    // prints; its footer names the window of the CHART. Scope is stated once,
-    // in a fixed slot, because the tiles of one rail genuinely differ —
-    // whole-history totals sit beside this week's volume and the latest week's
-    // pace, and the block's head cannot be true of all three at once. The old
-    // labels named the chart ("Pace trend") or repeated the footer ("Volume –
-    // 8 weeks" over "8 weeks"), and the figure's own scope went unsaid.
-    // ONE WINDOW PER LANE. `scopeAll` is now the LANE HEAD's right slot — said
-    // once, above the rail — and every tile label is just its metric. The three
-    // compound strings below keep their wording and their translations, but
-    // they are no longer visible labels: they are the ACCESSIBLE names, where
-    // metric-plus-scope is still exactly right to hear.
-    "w.home.end.scopeAll": "All time",
+    // WHAT SURVIVED THE LANES. The endurance section was a stack of rails whose
+    // tiles each named a metric AND its own scope, because the tiles of one
+    // rail genuinely differed — whole-history totals beside this week's volume
+    // beside the latest week's pace — and no head could be true of all three.
+    // Nineteen strings existed to manage that contradiction: three lane orders,
+    // an expander pair, an ALL TIME scope, and six compound metric-plus-scope
+    // labels.
+    //
+    // The section is a PAGER now (aurora/sport-pages.tsx): one page per sport,
+    // one window for every figure on every page. So the contradiction is gone
+    // and the strings that managed it went with it. What is left is the window
+    // itself, said once in the section's headline, and two metric names — a
+    // metric, and nothing else, which is all a label was ever supposed to be.
     "w.home.end.mDistance": "Distance",
     "w.home.end.mPace": "Pace",
-    "w.home.end.mZones": "Zones",
-    "w.home.end.volumeWeek": "Volume – this week",
-    "w.home.end.paceLatest": "Pace – latest week",
-    "w.home.end.zonesAll": "Zones – all time",
-    "w.home.end.zones": "Pace zones",
-    "w.home.end.last": "Last effort",
-    "w.home.end.allSports": "All sports",
-    "w.home.end.fewer": "Show fewer",
     "w.home.end.window8": "8 weeks",
     "w.explore.coaches": "Follow a coach",
     "w.explore.coachSwipe": "Swipe to find a coach for your goal",
@@ -1635,18 +1613,8 @@ export const web_home = {
     "w.home.group.explore": "Odkrywaj",
     "w.home.group.training": "Trening",
     "w.home.group.season": "Sezon",
-    "w.home.group.metaOf": "{a} z {b} w tym tygodniu",
     "w.home.group.metaMoves": "{a} z {b} ćwiczeń",
     "w.home.week.title": "Ten tydzień",
-    "w.home.other.title": "Inne sporty",
-    "w.home.other.efforts": "Wyjścia",
-    "w.home.other.hours": "Godziny",
-    "w.home.other.freq": "Ostatnie 8 tygodni",
-    "w.home.other.last": "Ostatnio grane",
-    "w.home.other.thisWeek": "w tym tygodniu",
-    "w.home.other.sports": "sportów",
-    "w.home.other.all": "Wszystkie sporty",
-    "w.home.other.fewer": "Mniej sportów",
     "w.home.week.downLead": "Twoje {m} jest niższe niż tydzień wcześniej.",
     "w.home.week.upLead": "Twoje {m} jest wyższe niż tydzień wcześniej.",
     "w.home.week.flatLead": "Trzymasz poziom z poprzedniego tygodnia.",
@@ -1764,21 +1732,8 @@ export const web_home = {
     "w.home.exw.volume": "Objętość – 8 tygodni",
     "w.home.exw.time": "Czas – 8 tygodni",
     "w.home.today.alsoDayEmpty": "tego dnia nic nie zapisano",
-    "w.home.end.thisWeek": "W tym tygodniu",
-    "w.home.end.orderTrained": "Najczęstsze",
-    "w.home.end.orderRecent": "Najnowsze",
-    "w.home.end.orderLongest": "Najdłuższe",
-    "w.home.end.scopeAll": "Cała historia",
     "w.home.end.mDistance": "Dystans",
     "w.home.end.mPace": "Tempo",
-    "w.home.end.mZones": "Strefy",
-    "w.home.end.volumeWeek": "Objętość – ten tydzień",
-    "w.home.end.paceLatest": "Tempo – ostatni tydzień",
-    "w.home.end.zonesAll": "Strefy – cała historia",
-    "w.home.end.zones": "Strefy tempa",
-    "w.home.end.last": "Ostatni wysiłek",
-    "w.home.end.allSports": "Wszystkie sporty",
-    "w.home.end.fewer": "Pokaż mniej",
     "w.home.end.window8": "8 tygodni",
     "w.explore.coaches": "Obserwuj trenera",
     "w.explore.coachSwipe": "Przesuwaj, aby znaleźć trenera do swojego celu",
@@ -2921,18 +2876,8 @@ export const web_home = {
     "w.home.group.explore": "Entdecken",
     "w.home.group.training": "Training",
     "w.home.group.season": "Saison",
-    "w.home.group.metaOf": "{a} von {b} diese Woche",
     "w.home.group.metaMoves": "{a} von {b} Übungen",
     "w.home.week.title": "Diese Woche",
-    "w.home.other.title": "Andere Sportarten",
-    "w.home.other.efforts": "Einheiten",
-    "w.home.other.hours": "Stunden",
-    "w.home.other.freq": "Letzte 8 Wochen",
-    "w.home.other.last": "Zuletzt gespielt",
-    "w.home.other.thisWeek": "diese Woche",
-    "w.home.other.sports": "Sportarten",
-    "w.home.other.all": "Alle Sportarten",
-    "w.home.other.fewer": "Weniger Sportarten",
     "w.home.week.downLead": "Dein {m} liegt unter der Vorwoche.",
     "w.home.week.upLead": "Dein {m} liegt über der Vorwoche.",
     "w.home.week.flatLead": "Du liegst auf der Vorwoche.",
@@ -3050,21 +2995,8 @@ export const web_home = {
     "w.home.exw.volume": "Volumen – 8 Wochen",
     "w.home.exw.time": "Zeit – 8 Wochen",
     "w.home.today.alsoDayEmpty": "an diesem Tag nichts geloggt",
-    "w.home.end.thisWeek": "Diese Woche",
-    "w.home.end.orderTrained": "Meist trainiert",
-    "w.home.end.orderRecent": "Zuletzt",
-    "w.home.end.orderLongest": "Längste",
-    "w.home.end.scopeAll": "Gesamt",
     "w.home.end.mDistance": "Distanz",
     "w.home.end.mPace": "Tempo",
-    "w.home.end.mZones": "Zonen",
-    "w.home.end.volumeWeek": "Umfang – diese Woche",
-    "w.home.end.paceLatest": "Tempo – letzte Woche",
-    "w.home.end.zonesAll": "Zonen – gesamt",
-    "w.home.end.zones": "Tempozonen",
-    "w.home.end.last": "Letzte Einheit",
-    "w.home.end.allSports": "Alle Sportarten",
-    "w.home.end.fewer": "Weniger zeigen",
     "w.home.end.window8": "8 Wochen",
     "w.explore.coaches": "Coach folgen",
     "w.explore.coachSwipe": "Wische, um einen Coach für dein Ziel zu finden",

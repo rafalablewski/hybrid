@@ -73,7 +73,7 @@ import {
   type ScheduledDay,
   type LogbookDay,
   ALPHA, STATE_OPACITY } from "@hybrid/core";
-import { sportForDiscipline, hasEnduranceHistory } from "@hybrid/core";
+import { sportForDiscipline, sportPages } from "@hybrid/core";
 import { bandHue, barLatched, foldProgress } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { recoveryReadAnswered } from "../../lib/recovery-reminder";
@@ -111,10 +111,8 @@ import AuroraDayBar from "./day-bar";
 import { readRejected, readRejectedEvents, rejectEvent, rejectKind } from "../../lib/day-band-prefs";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
-import AuroraEnduranceLanes, { LaneOrderChip, useLaneOrder } from "./endurance-lanes";
-import AuroraEnduranceSummary from "./endurance-summary";
+import AuroraSportPages, { SportPagesWindow } from "./sport-pages";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
-import AuroraOtherSports from "./other-sports";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
 // so the full ritual runs on Today — the /checkin screen is the same component.
@@ -434,10 +432,10 @@ export default function AuroraHome() {
   const hasData = sessionsRead.ready && sessions.length > 0;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
-  // THE ENDURANCE LANES' ORDER, owned here because the chip that changes it
-  // renders on the Endurance cluster's headline row rather than inside the
-  // block it orders. See aurora/endurance-lanes.tsx.
-  const laneOrder = useLaneOrder(sessions);
+  // THE ENDURANCE PAGES, built here rather than inside the block: the cluster's
+  // seam and headline must not render over an empty window, and a block can
+  // only report its own emptiness after it has mounted under that headline.
+  const sportPageList = useMemo(() => sportPages(sessions), [sessions]);
   // The date-anchored WEEK RAIL replaces the count-based plan hero whenever an
   // enrolled program + a start date resolve (parity with web home). The shared
   // engine (planSchedule) reconciles each calendar date against logged sessions
@@ -1349,69 +1347,58 @@ export default function AuroraHome() {
             the next headline had to carry that on its own.
 
             The whole section is absent for a pure lifter — no heading, no empty
-            card, no column of zeroes — which is why it is gated on the HISTORY
-            rather than on the window: a runner who took this week off still
-            finds their section where they left it, with the card saying the
-            week was quiet. Mirrors web today.tsx. ═════ */}
-        {hasEnduranceHistory(sessions) && (
+            card, no column of zeroes. It is gated on the PAGES the window
+            produces: a sport with nothing in the last eight weeks has no page,
+            and an athlete with no pages has no section. That is a change from
+            the lanes, which gated on all-time history and so kept a heading
+            above a row of zeroes for a sport somebody stopped doing in
+            March. ═════ */}
+        {sportPageList.length > 0 && (
           <>
             <SectionSeam />
-            {/* The order control sits ON THE HEADLINE, which is where the
-                Explore SectionHead grammar puts a head-level control: beside
-                the title, same row. It used to float on an orphan
-                right-aligned row between the section's opener and its first
-                lane, attached to neither — and a control that orders the whole
-                section belongs at the section's altitude. Hidden with one
-                lane: sorting a list of one is a control that does nothing. */}
+            {/* THE WINDOW sits in the headline's right slot — one fact, at the
+                section's own altitude, the way the Explore SectionHead grammar
+                puts head-level meta. It replaces the lane-order chip, which was
+                a control for sorting three items and, in a section where every
+                page is now ordered by the volume in it, sorted nothing anybody
+                asked about.
+
+                Saying the window ONCE up here is the fix for the section's
+                worst fault: the lanes printed whole-history totals under an
+                ALL TIME lane head, over an eight-week bar chart, beneath a THIS
+                WEEK card, with a latest-week pace delta beside it. Four windows
+                on one screen, in a section whose entire job is comparison. */}
             <GroupMark
               label={t("endurance.title")}
               mt={24}
-              right={isAthlete && laneOrder.many
-                ? <LaneOrderChip order={laneOrder.order} onPress={laneOrder.cycle} />
-                : undefined}
+              right={isAthlete ? <SportPagesWindow /> : undefined}
             />
 
-            {/* ───── (a) THE LEAD — the section's opener, and it is a
-                SENTENCE: how many sports, and which carried them. That is the
-                one thing about this section no other block on Today can state,
-                which is exactly why the two earlier cuts failed — a
-                per-discipline breakdown is a table of contents for the lanes
-                directly below it, and a row of totals is the verdict card's
-                own columns one screen up (distance especially: only these
-                groups ever carry any). Under the sentence, one mono line —
-                this section's own time against its own baseline, the only
-                comparison nothing else makes. It carries no filter: it reads
-                the screen's period, which the verdict card's control
-                writes. ───── */}
-            <AuroraEnduranceSummary sessions={sessions} bw={bw} />
+            {/* ───── ONE PAGE PER SPORT, swiped sideways. The full screen
+                width per sport, snapped, ordered by the volume in the window —
+                so page one is the sport actually being trained, which under the
+                lanes was usually a ball sport exiled to a second block below
+                the fold.
 
-            {/* ───── (b…) ONE LANE PER SPORT — a full-bleed rail per logged
-                discipline carrying that sport's whole read (efforts / distance
-                / time, 8-week volume, pace trend, pace zones, last effort). NOT
-                gated on dayIsToday: an eight-week volume chart is not a
-                property of the day you happen to be scrubbed to. Headless — the
-                GroupMark above now says "Endurance", and the block printing it
-                again would be the title twice in 60dp; the order chip keeps its
-                own row. ───── */}
+                A page carries the name, ONE figure (minutes, the only measure
+                every sport shares), the eight-week ridge, and two or three
+                facts. Zones, splits, pace history and every effort live one tap
+                away on the sport's own page, which already owns them.
+
+                NOT gated on dayIsToday: an eight-week window is not a property
+                of the day you happen to be scrubbed to. Headless — the
+                GroupMark above says "Endurance", and the block printing it
+                again would be the title twice in 60dp. ───── */}
             {isAthlete && (
-              <AuroraEnduranceLanes
-                sessions={sessions}
+              <AuroraSportPages
+                pages={sportPageList}
                 head={false}
-                order={laneOrder.order}
-                canOpen={(d) => !!sportForDiscipline(d)}
-                onOpen={(d) => { const sport = sportForDiscipline(d); if (sport) router.push({ pathname: "/sport-page", params: { name: sport } }); }}
+                onOpen={(page) => {
+                  const name = page.sport ?? (page.discipline ? sportForDiscipline(page.discipline) : null);
+                  if (name) router.push({ pathname: "/sport-page", params: { name } });
+                }}
               />
             )}
-
-            {/* ───── (x) OTHER SPORTS — tennis, squash, five-a-side:
-                everything logged as `discipline: "sport"`, the bucket
-                ENDURANCE_DISCIPLINES deliberately excludes. LAST in the section
-                because it is the same question one step out: what else did you
-                actually play. These sports are TIMED, so a sport gets ONE tile
-                rather than a rail — the block spends its width on the NUMBER of
-                sports, not the depth of each. Renders nothing until a sport is
-                logged. ───── */}
-            <AuroraOtherSports sessions={sessions} onOpen={(sport) => router.push({ pathname: "/sport-page", params: { name: sport } })} />
           </>
         )}
 
