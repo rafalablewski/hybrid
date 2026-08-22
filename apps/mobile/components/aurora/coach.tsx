@@ -10,6 +10,7 @@ import {
   localTodayKey,
   formatStrengthPr,
   ALPHA,
+  GOAL_TREE, goalLabel,
 } from "@hybrid/core";
 import type { LoggedSession } from "@hybrid/core";
 import {
@@ -40,9 +41,15 @@ import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../
 import { AuroraScreen, ACard, APill, AHeading, ASection, RADIUS, AChip, ACheckMark } from "./kit";
 import { AuroraIcon } from "./icons";
 
-// Goals whose periodization model is meaningful (MODEL_FOR-mapped), for the
-// coach's one-click week generator — same list as web.
-const GEN_GOALS = ["Hybrid", "Powerlifting", "Bodybuilding", "Running", "Cycling", "Hyrox", "Triathlon"];
+// THE GOALS THE WEEK GENERATOR OFFERS — all of them, by id.
+//
+// It was a hand-copied list of seven display names, and the list was the seven
+// that the old MODEL_FOR table happened to have a key for. That is no longer a
+// meaningful subset: every goal in the library now resolves to a phase model
+// (goal-profile.ts), so restricting the coach to seven of nineteen would be
+// preserving an accident. The first entry was also "Hybrid", which was never a
+// goal name at all — enrolling it stored a string the library does not know.
+const GEN_GOALS = GOAL_TREE.map((g) => ({ id: g.id, label: g.name }));
 import CoachGroups from "../coach-groups";
 import CoachPrograms from "../coach-programs";
 import CoachInvite from "../coach-invite";
@@ -227,7 +234,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
   const [tagInput, setTagInput] = useState("");
   const [assignId, setAssignId] = useState("");
   const [assignDate, setAssignDate] = useState(() => localTodayKey());
-  const [genGoal, setGenGoal] = useState(GEN_GOALS[0]!);
+  const [genGoal, setGenGoal] = useState(GEN_GOALS[0]!.id);
   const [genWeek, setGenWeek] = useState(1);
   const genMacro = useMemo(() => buildMacrocycle(genGoal), [genGoal]);
   const [generating, setGenerating] = useState(false);
@@ -306,7 +313,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
       const week = buildTrainingWeek({ macro: genMacro, currentWeek: wk, log: personalTrainingLog(sessions), daysPerWeek: days });
       const results = await Promise.all(week.map((it) => assignToClient(link.id, { name: it.name, blocks: it.blocks, date: it.date })));
       const ok = results.filter(Boolean).length;
-      setGenMsg(ok ? `${t("w.teams.coach.enrolled")} ${genGoal} + ${t("w.teams.coach.assignedSessions").replace("{n}", String(ok))} (${t("w.teams.coach.wkAbbr")} ${wk}, ${days}/${t("w.teams.coach.weekAbbr")}).` : t("w.teams.coach.generateFailed"));
+      setGenMsg(ok ? `${t("w.teams.coach.enrolled")} ${goalLabel(genGoal)} + ${t("w.teams.coach.assignedSessions").replace("{n}", String(ok))} (${t("w.teams.coach.wkAbbr")} ${wk}, ${days}/${t("w.teams.coach.weekAbbr")}).` : t("w.teams.coach.generateFailed"));
       load();
     } catch {
       setGenMsg(t("w.teams.coach.generateFailed"));
@@ -416,7 +423,7 @@ function ClientDetail({ link, back }: { link: CoachLink; back: () => void }) {
                 : `${t("w.teams.coach.genHintPre")} (~${trainingDaysPerWeek(sessions)}/${t("w.teams.coach.wkAbbr")}), ${t("w.teams.coach.genHintPost")}`}
             </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.xs, marginTop: 10 }}>
-              {GEN_GOALS.map((g) => selChip(`goal:${g}`, g, genGoal === g, () => { setGenGoal(g); setGenWeek(1); }))}
+              {GEN_GOALS.map((g) => selChip(`goal:${g.id}`, g.label, genGoal === g.id, () => { setGenGoal(g.id); setGenWeek(1); }))}
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }} contentContainerStyle={{ gap: space.xs, paddingRight: 4 }}>
               {genMacro.blocks.flatMap((b) =>

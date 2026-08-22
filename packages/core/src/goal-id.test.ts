@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { resolveGoalId, goalIdToStore, goalLabel, isLibraryGoal } from "./goal-id";
 import { GOAL_TREE } from "./plans";
-import { modelKeyFor, MODEL_FOR } from "./engines/periodization";
+import { modelKeyFor } from "./engines/periodization";
 
 describe("resolveGoalId", () => {
   it("passes an id straight through", () => {
@@ -88,13 +88,16 @@ describe("moving to ids does not change which phase model a goal resolves to", (
     }
   });
 
-  it("still defaults an unknown goal to strength", () => {
-    expect(modelKeyFor("Return from ACL, phase 2")).toBe("strength");
+  it("gives a coach's free-text goal the balanced model, not a specialisation", () => {
+    expect(modelKeyFor("Return from ACL, phase 2")).toBe("concurrent");
   });
 
-  it("documents the twelve goals the table does not name (fixed separately)", () => {
-    const unmapped = GOAL_TREE.filter((g) => MODEL_FOR[g.name] === undefined).map((g) => g.id);
-    expect(unmapped).toContain("hybrid"); // the map says "Hybrid", the goal is "Hybrid Athlete"
-    expect(unmapped).toHaveLength(12);
+  it("gives every goal in the library a model, with nothing falling through", () => {
+    // The table this replaced covered 7 of 19 and defaulted the rest to
+    // strength. Coverage is asserted in goal-profile.test.ts; this is the check
+    // that the periodization entry point agrees.
+    for (const g of GOAL_TREE) {
+      expect(["strength", "endurance", "concurrent", "general"]).toContain(modelKeyFor(g.id));
+    }
   });
 });
