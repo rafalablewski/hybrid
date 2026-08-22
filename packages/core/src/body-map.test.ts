@@ -4,6 +4,7 @@ import { MUSCLE_SHORT } from "./exercise-anatomy";
 import {
   BODY_FIGURES,
   bodyPath,
+  muscleFibres,
   MUSCLE_SIDE,
   muscleRegion,
   exerciseBodyMap,
@@ -207,3 +208,69 @@ describe("bodyPath — the geometry's de-robotiser", () => {
     }
   });
 });
+
+describe("muscleFibres — the strokes that make it read as anatomy", () => {
+  it("runs the fibres along the shape's LONG axis, not the page's", () => {
+    // A tall, narrow belly (a bicep). Fibres must be roughly vertical.
+    const tall = [
+      { x: 45, y: 20 },
+      { x: 55, y: 20 },
+      { x: 55, y: 60 },
+      { x: 45, y: 60 },
+    ];
+    for (const [a, b] of muscleFibres(tall)) {
+      expect(Math.abs(b.y - a.y)).toBeGreaterThan(Math.abs(b.x - a.x));
+    }
+    // A broad, flat belly (a chest). Same code, fibres now roughly horizontal.
+    const wide = [
+      { x: 20, y: 45 },
+      { x: 80, y: 45 },
+      { x: 80, y: 55 },
+      { x: 20, y: 55 },
+    ];
+    for (const [a, b] of muscleFibres(wide)) {
+      expect(Math.abs(b.x - a.x)).toBeGreaterThan(Math.abs(b.y - a.y));
+    }
+  });
+
+  it("follows a DIAGONAL grain, which is the case hand-placing gets wrong", () => {
+    const diagonal = [
+      { x: 30, y: 30 },
+      { x: 36, y: 26 },
+      { x: 70, y: 62 },
+      { x: 64, y: 66 },
+    ];
+    for (const [a, b] of muscleFibres(diagonal)) {
+      const slope = (b.y - a.y) / (b.x - a.x);
+      expect(slope).toBeGreaterThan(0.5);
+      expect(slope).toBeLessThan(2);
+    }
+  });
+
+  it("spaces them across the width and returns the count asked for", () => {
+    expect(muscleFibres(SQUARE, 3)).toHaveLength(3);
+    expect(muscleFibres(SQUARE, 1)).toHaveLength(1);
+    // Spread across the belly, never stacked on the centre line.
+    const mids = muscleFibres(SQUARE, 3).map(([a, b]) => (a.y + b.y) / 2);
+    expect(new Set(mids.map((m) => Math.round(m))).size).toBe(3);
+  });
+
+  it("declines a degenerate shape rather than emitting a stroke through it", () => {
+    expect(muscleFibres([])).toEqual([]);
+    expect(muscleFibres([{ x: 1, y: 1 }, { x: 2, y: 2 }])).toEqual([]);
+    expect(muscleFibres(SQUARE, 0)).toEqual([]);
+  });
+
+  it("every shipped muscle has a grain to draw", () => {
+    for (const fig of BODY_FIGURES)
+      for (const r of fig.regions)
+        for (const shape of r.shapes) expect(muscleFibres(shape).length).toBe(3);
+  });
+});
+
+const SQUARE = [
+  { x: 0, y: 0 },
+  { x: 40, y: 0 },
+  { x: 40, y: 40 },
+  { x: 0, y: 40 },
+];

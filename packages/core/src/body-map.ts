@@ -100,6 +100,87 @@ export function bodyPath(pts: Pt[], tension = 0.5): string {
   return `${d}Z`;
 }
 
+/**
+ * MUSCLE FIBRES — the short strokes that make a drawing read as anatomy.
+ *
+ * WHY THIS EXISTS. The last open case on the session summary was "commissioned
+ * anatomical illustration", held behind `SKETCH_BODY_ART` and priced as a
+ * purchase. It is not one. What separates an anatomical drawing from a
+ * silhouette is not resolution — it is that the muscles are DRAWN: a contour,
+ * and fibres running the length of the belly. Both are geometry, and the
+ * geometry is already here.
+ *
+ * So the figure joins the instrument family as a TRACE. Every muscle is
+ * stroked rather than filled, and these are the strokes inside it: lines
+ * parallel to the muscle's own long axis, spaced across its width, which the
+ * client clips to the muscle's shape.
+ *
+ * THE AXIS IS COMPUTED, NOT AUTHORED. The principal component of the polygon's
+ * vertices IS the direction the belly runs — a lat is broad and diagonal, a
+ * bicep is long and vertical, and each gets fibres along its own grain without
+ * anybody hand-placing them. Hand-placing would also mean re-placing them every
+ * time a shape is retouched, which is how illustration goes stale.
+ *
+ * Returns segments in the same 0–100 space as the shapes.
+ */
+export function muscleFibres(shape: Pt[], count = 3): [Pt, Pt][] {
+  const n = shape.length;
+  if (n < 3 || count < 1) return [];
+  let cx = 0;
+  let cy = 0;
+  for (const q of shape) {
+    cx += q.x;
+    cy += q.y;
+  }
+  cx /= n;
+  cy /= n;
+
+  // Covariance of the vertices; its dominant eigenvector is the long axis.
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  for (const q of shape) {
+    const dx = q.x - cx;
+    const dy = q.y - cy;
+    sxx += dx * dx;
+    syy += dy * dy;
+    sxy += dx * dy;
+  }
+  // Closed form for the principal angle of a 2×2 covariance matrix.
+  const theta = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+  const ux = Math.cos(theta);
+  const uy = Math.sin(theta);
+  const vx = -uy;
+  const vy = ux;
+
+  let uMin = Infinity;
+  let uMax = -Infinity;
+  let vMin = Infinity;
+  let vMax = -Infinity;
+  for (const q of shape) {
+    const dx = q.x - cx;
+    const dy = q.y - cy;
+    const u = dx * ux + dy * uy;
+    const v = dx * vx + dy * vy;
+    uMin = Math.min(uMin, u);
+    uMax = Math.max(uMax, u);
+    vMin = Math.min(vMin, v);
+    vMax = Math.max(vMax, v);
+  }
+  // Overrun the long axis so a clipped fibre reaches the muscle's real edge
+  // rather than stopping at the bounding extent of its vertices.
+  const over = (uMax - uMin) * 0.15;
+  const out: [Pt, Pt][] = [];
+  for (let i = 1; i <= count; i++) {
+    const v = vMin + ((vMax - vMin) * i) / (count + 1);
+    out.push([
+      p(cx + ux * (uMin - over) + vx * v, cy + uy * (uMin - over) + vy * v),
+      p(cx + ux * (uMax + over) + vx * v, cy + uy * (uMax + over) + vy * v),
+    ]);
+  }
+  return out;
+}
+
 // A standing mannequin, arms at the sides. The SAME silhouette serves front and
 // back (a body's outline reads the same from either side); only the muscle
 // regions differ. Hand-tuned schematic geometry — reads as a body, not a render.
