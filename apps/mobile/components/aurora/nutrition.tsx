@@ -3747,7 +3747,17 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                       // the two land on ONE spec: the `fs.stat` rung and
                       // `trackFigure(fs.stat)`, in place of a hand-set 44/-1 that
                       // existed nowhere else.
-                      style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: tracking(fs.stat), color: heroFigures.kcal.over ? txt(C, C.amber) : C.chalk }}
+                      // `trackFigure`, NOT `tracking` — the comment above has
+                      // said so since this landed and the code did not do it.
+                      // The text bands hand a 46dp figure -0.02em; every other
+                      // `fs.stat` hero in the app (exercise 1RM, learned, load
+                      // sheet, the picker's own day header four hundred lines
+                      // up) takes trackFigure's -0.035em. This one number, on
+                      // the most-looked-at screen in the product, sat 0.7dp
+                      // looser than every other number of its size.
+                      // `leading` joins it for the same reason: a figure takes
+                      // a flush line box, and this was inheriting a default.
+                      style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: heroFigures.kcal.over ? txt(C, C.amber) : C.chalk }}
                     />
                     <Text style={ty(C, "kicker")}>{figureText(heroFigures.kcal.have, heroFigures.kcal.want)}</Text>
                   </View>

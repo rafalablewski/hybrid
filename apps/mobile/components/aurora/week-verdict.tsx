@@ -321,18 +321,26 @@ const FIGURE_BOX = leading(PROMOTED_LADDER[0], "flush");
  * a lead set at emphasised-body size reads as a caption for something else.
  */
 function Lead({ template, word, color }: { template: string; word: string | null; color: string }) {
-  const style = { fontFamily: F.reg, fontSize: fs.subtitle, lineHeight: leading(fs.subtitle, "snug"), color };
+  const { palette } = useTheme();
+  // THE FACE IS THE EMPHASIS NOW, so the metric no longer takes a bold run.
+  //
+  // This was `F.reg` at `fs.subtitle`, and the note above this function already
+  // said what was wrong with it: a lead at emphasised-body size "reads as a
+  // caption for something else". It was the quietest thing in a card whose only
+  // job is to carry it, sitting between a mono kicker and a mono receipt grid.
+  //
+  // `editorial` is the serif cut — the app's one interpretive voice, and this
+  // is one of its two call sites. It does not add a sentence; it gives the
+  // sentence that was always here the rank it always had. The `{m}` split
+  // survives because the templates still carry it, but the metric word is set
+  // in the same face and weight as the rest of the line: a bold run inside a
+  // serif sentence is two emphases arguing, and the face has already won.
+  const style = ty(palette, "editorial", color);
   const [before, after] = template.split("{m}");
   if (after === undefined || !word) {
     return <Text style={style}>{template}</Text>;
   }
-  return (
-    <Text style={style}>
-      {before}
-      <Text style={{ fontFamily: F.bold }}>{word}</Text>
-      {after}
-    </Text>
-  );
+  return <Text style={style}>{before}{word}{after}</Text>;
 }
 
 /**

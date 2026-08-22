@@ -23,7 +23,8 @@ export type TypeRole =
   | "headline" //22 — screen sub-headings, and the head of a screen with no hero
   | "display" //26 — screen headings
   | "hero" //   34 — mastheads / cover titles
-  | "stat"; //  46 — the one hero figure on a screen (ring kcal, exercise 1RM)
+  | "stat" //   46 — the one hero figure on a screen (ring kcal, exercise 1RM)
+  | "editorial"; // 30 — SERIF ONLY. See the note under `fs`.
 
 /**
  * Font-size scale (fs.body = the default reading size). px on web, dp on RN.
@@ -88,6 +89,24 @@ export const fs: Record<TypeRole, number> = {
   display: 26,
   hero: 34,
   stat: 46,
+  /**
+   * SERIF ONLY, and it is not a hole in the ladder — it is a second ladder with
+   * one rung on it.
+   *
+   * ITC Garamond Book has an x-height of 0.445 em against Söhne's 0.523 em,
+   * measured off the shipped binaries. Two faces read as ONE size when their
+   * x-heights match, not when their point sizes do, so the serif needs
+   * 1.176x — and 26 (`display`) x 1.176 is 30.6, rounded to even.
+   *
+   * PUTTING IT ON `display` INSTEAD WAS TRIED AND IS WRONG: at 26 the Garamond
+   * sets an x-height of 11.6dp against the sans's 13.6, so the sentence reads
+   * as smaller than the heading above it while claiming more rank.
+   *
+   * NOTHING IN `cut.sans` OR `cut.mono` MAY TAKE THIS RUNG. typography.test.ts
+   * holds that, because a 30dp sans heading would sit two dp off `display` for
+   * no reason anybody could name — which is exactly how `heading.1` died.
+   */
+  editorial: 30,
 };
 
 export type SpaceToken =
@@ -206,7 +225,8 @@ export const leading = (size: number, role: LeadingRole = "normal"): number =>
 export type TrackingRole =
   | "text" //  derived from the SIZE — see the band table below
   | "label" // 0.085em — uppercase mono kickers (the app's dominant eyebrow)
-  | "caps"; // 0.115em — the widest tracked caps: section labels, nav eyebrows
+  | "caps" // 0.115em — the widest tracked caps: section labels, nav eyebrows
+  | "serif"; // -0.008em — ITC Garamond, which the text bands would over-tighten
 
 /**
  * TRACKING IS AN EM VALUE AND `track()` RESOLVES IT — the dp map is gone.
@@ -255,6 +275,15 @@ export type TrackingRole =
 export const TRACKING_EM: Record<Exclude<TrackingRole, "text">, number> = {
   label: 0.085,
   caps: 0.115,
+  /**
+   * THE SERIF TAKES ITS OWN VALUE because the text bands are fitted to Söhne.
+   * At 30dp the band table would hand back -0.02em, and ITC Garamond is a
+   * phototype-era design that is already tightly fitted — tightening it a
+   * further 0.6dp closes the counters on `e` and `a` at reading distance.
+   * -0.008em is half what the band gives, which is the rule for any face that
+   * is not the one the bands were measured on.
+   */
+  serif: -0.008,
 };
 
 /** The text bands, largest first. Read as: at this size and above, this em. */
