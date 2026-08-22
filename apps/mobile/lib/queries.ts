@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { MOVEMENTS, mergeMovements, catalogNames, aliasNames, categoriesByName, exerciseNameAliasMap, setExerciseCatalog } from "@hybrid/core";
-import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchFoodLogs, fetchHeatSignals, fetchNutritionSignals, fetchRecoverySignals } from "./api";
+import { querySessions, querySignals, queryMacrocycle, queryCheckins, fetchCustomExercises, fetchFoodLogs, fetchHeatSignals, fetchNutritionSignals, fetchRecoverySignals, fetchSessionStreams } from "./api";
 
 // Shared query hooks for the mobile app — parity with the web data-layer. Keys
 // match conceptually so the same mutation→invalidate discipline applies. These
 // use the THROWING query* fetchers so useQuery's isError/retry fire and screens
 // can show a real "couldn't load — retry" state instead of a fake empty one.
 // (The exercise overlay stays soft — it degrades to the built-in catalog.)
+
+/** A recording is immutable once written — a re-import replaces it and
+ *  invalidates the key, so there is nothing to re-poll for. */
+const STREAM_STALE_MS = 30 * 60 * 1000;
 
 export const qk = {
   sessions: ["sessions"] as const,
@@ -19,6 +23,8 @@ export const qk = {
   heatSignals: ["signals", "heat"] as const,
   recoverySignals: ["signals", "recovery"] as const,
   nutritionSignals: ["signals", "nutrition"] as const,
+  /** Per session — a recording is only ever read by the summary looking at it. */
+  sessionStreams: (id: string) => ["sessions", id, "streams"] as const,
 };
 
 /**
@@ -144,6 +150,28 @@ export function useRecoverySignalsQuery() {
 
 export function useHeatSignalsQuery() {
   return useQuery({ queryKey: qk.heatSignals, queryFn: fetchHeatSignals });
+}
+
+/**
+ * THE RECORDING UNDER ONE SESSION — fetched only by the summary that draws it.
+ *
+ * Deliberately per-session and NOT part of the sessions list: these are the
+ * largest arrays the API returns (up to STREAM_MAX_SAMPLES per kind), and the
+ * History screen has no use for a heart-rate trace. `enabled` keeps it from
+ * firing at all for a session with no device match — there is nothing under an
+ * unmatched session to fetch, and asking anyway spends a request per summary
+ * opened to be told so.
+ *
+ * A recording does not change once written (a re-import replaces it, which
+ * invalidates this key), so it is held rather than re-fetched on every focus.
+ */
+export function useSessionStreamsQuery(id: string, enabled: boolean) {
+  return useQuery({
+    queryKey: qk.sessionStreams(id),
+    queryFn: () => fetchSessionStreams(id),
+    enabled,
+    staleTime: STREAM_STALE_MS,
+  });
 }
 
 /**

@@ -235,7 +235,7 @@ describe("prose never wears the measuring face", () => {
   it("BURN-DOWN — mono carrying a prose leading", () => {
     burnDown(
       hits(MONO_PROSE),
-      19,
+      18,
       "2027-02-28",
       'prose in the measuring face → ty(C, "caption")',
     );
@@ -430,7 +430,7 @@ describe("type scale", () => {
     //     but the guard is load-bearing and a rename is not worth weakening it
     //     for. It sits as a raw 22 and is counted here, which is the honest
     //     place for a site that has no rung it is allowed to name.
-    burnDown(hits(/fontSize:\s*\d+/g), 44, "2026-11-30", "raw fontSize → use an fs.* rung");
+    burnDown(hits(/fontSize:\s*\d+/g), 42, "2026-11-30", "raw fontSize → use an fs.* rung");
   });
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
@@ -554,7 +554,7 @@ describe("leading and tracking", () => {
     // 39 → 38: the You tab's profile-setup nudge, moved into the lead rail,
     // took its hand-tuned `lineHeight: 18` with it — on fs.body that is exactly
     // leading(fs.body), which is to say it was never a tuning.
-    burnDown(hits(/lineHeight:\s*\d/g), 35, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    burnDown(hits(/lineHeight:\s*\d/g), 33, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking derives from the size; a raw dp is never the answer", () => {
@@ -625,7 +625,7 @@ describe("named type styles", () => {
     // where the label is structure and the extra air is the division.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      170,
+      168,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
@@ -753,7 +753,103 @@ describe("geometry", () => {
     // the argument for why this rule is a ratchet with a human in it rather than
     // a codemod: the pattern can find a raw radius, it cannot tell you which of
     // five tokens the object wanted.
-    burnDown(hits(/borderRadius:\s*\d/g), 119, "2027-02-28", "raw borderRadius → RADIUS.*");
+    burnDown(hits(/borderRadius:\s*\d/g), 116, "2027-02-28", "raw borderRadius → RADIUS.*");
+  });
+});
+
+describe("panels", () => {
+  /**
+   * NO PANEL IS HELD OPEN BY A SPACER.
+   *
+   * The session summary ships as full-screen panels again, and the first time
+   * it did, four of its five screens rendered as mostly black ink. The cause
+   * was not the panel format — it was that a panel is a FIXED 844pt screen, so
+   * something has to take up whatever the content does not, and that job was
+   * given to `<View style={{ flex: 1 }} />`. A bare spacer pools all the
+   * leftover height into one hole; an instrument given the same flex draws a
+   * taller chart. The sequence's own written law said "no flex spacer ever
+   * holds a panel open" and the file broke it two screens later, which is
+   * exactly the kind of rule that needs a test rather than a paragraph.
+   *
+   * This is a BUILD FAILURE, not a ratchet: a ratchet would say "no MORE
+   * spacers", which is a budget for the ones that put the holes there.
+   */
+  it("the summary's panels carry instruments, not empty spacers", () => {
+    const PANELLED = [
+      "components/workout-wrapped.tsx",
+      "components/aurora/session-body.tsx",
+      "components/aurora/session-share-card.tsx",
+    ];
+    const bare: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!PANELLED.includes(path)) continue;
+      text.split("\n").forEach((line, i) => {
+        // Prose about a spacer is not a spacer — this guard's own explanation
+        // quotes one, and matched itself the first time it ran.
+        if (/^\s*(?:\*|\/\/)/.test(line)) return;
+        // A self-closing View whose ONLY style is a flex — it holds space and
+        // draws nothing. A flex container WITH children is an instrument zone.
+        if (/<View\s+style=\{\{\s*flex:\s*1\s*\}\}\s*\/>/.test(line)) bare.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      bare,
+      `\na panel is filled by its INSTRUMENT, never by a spacer — give the leftover height to the chart:\n  ${bare.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * NO BARS IN THE SUMMARY'S INSTRUMENTS.
+   *
+   * Four charts on one scroll had converged on the same shape — a row of
+   * rectangles — for four different questions: load per set, a lift's history,
+   * a comparison between exercises, and time in each zone. A bar is the least
+   * specific picture available, because it is a rectangle standing in for a
+   * number and says nothing about what KIND of number it is; four of them read
+   * as filler, which is what they were.
+   *
+   * The forms that replaced them are chosen by the fact (session-instruments):
+   * a TRACE for a continuous quantity, a PATH of marks for discrete events, a
+   * RANGE of dots on one axis for a handful of things compared, and a single
+   * cut RIBBON for parts of one whole. This asserts the rectangles do not creep
+   * back — a build failure, not a ratchet, because "no MORE bars" is a budget
+   * for the ones that were already there.
+   */
+  it("the summary draws no bar charts", () => {
+    const INSTRUMENTS = [
+      "components/aurora/session-instruments.tsx",
+      "components/aurora/session-spine.tsx",
+      "components/aurora/session-trace.tsx",
+      "components/aurora/session-body.tsx",
+    ];
+    const bars: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!INSTRUMENTS.includes(path)) continue;
+      text.split("\n").forEach((line, i) => {
+        if (/^\s*(?:\*|\/\/)/.test(line)) return;
+        // An SVG <Rect> in an instrument is a bar. Nothing else needs one.
+        if (/<Rect[\s/>]/.test(line)) bars.push(`${path}:${i + 1}`);
+      });
+    }
+    expect(
+      bars,
+      `\npick the form from the fact — trace, path, range or ribbon (session-instruments.tsx):\n  ${bars.join("\n  ")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * A PANEL EXISTS ONLY WHEN IT CAN FILL A SCREEN. The record panel is the case
+   * that proves it: with fewer than HISTORY_MIN_POINTS sessions behind the lift
+   * there is no history to draw, so the record rides the hero as a strip rather
+   * than taking a screen it cannot fill. If this constant is ever read as
+   * anything but a gate on the panel, the panel can come back empty.
+   */
+  it("the record panel is gated on having a history to draw", () => {
+    const ww = FILES.find((f) => f.path === "components/workout-wrapped.tsx");
+    expect(ww, "workout-wrapped.tsx moved — update this guard").toBeTruthy();
+    expect(ww!.text).toMatch(/hasRecordPanel\s*=\s*recordHistory\.length\s*>=\s*TREND_MIN_POINTS/);
+    // …and the hero carries the fallback strip, so a record is never lost.
+    expect(ww!.text).toMatch(/cel\s*&&\s*!hasRecordPanel/);
   });
 });
 
@@ -1223,7 +1319,7 @@ describe("colour arithmetic", () => {
     // chartreuse — the only stop of a three-density ramp that was neither a rung
     // nor a real gradient. The band is a hue now (the endurance lanes' own
     // easy/steady/hard coding), so the number went with the argument for it.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 104,
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 103,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });
