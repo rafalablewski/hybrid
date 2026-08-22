@@ -7,7 +7,7 @@ import {
   ALPHA,} from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, F } from "../../lib/ui";
+import { F, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 import { withAlpha , RADIUS} from "./kit";
 import Sheet from "./sheet";
 
@@ -120,7 +120,7 @@ function Block({ C, head, meta, children }: {
     <View>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginBottom: 9 }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk }}>{head}</Text>
-        {meta ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{meta}</Text> : null}
+        {meta ? <Text style={ty(C, "kicker")}>{meta}</Text> : null}
       </View>
       {children}
     </View>

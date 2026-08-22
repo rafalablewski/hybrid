@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "expo-router";
-import { colors, fs, space, lh, leading, tracking, trackFigure, TABULAR_NUMS, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
+import { colors, fs, space, lh, leading, tracking, trackFigure, TABULAR_NUMS, resolveText, type TextToken, springs, springDurationMs, springToRN, durations, skeleton , ALPHA} from "@hybrid/core";
 import { useTheme, txt } from "./theme";
 import { useNavScrollProps } from "./nav-scroll";
 
@@ -31,6 +31,8 @@ import { useNavScrollProps } from "./nav-scroll";
 // tracking(size) rather than a dp, because a letterSpacing is a proportion of the
 // size it sits on and an absolute one means something different at every rung.
 export { fs, space, lh, leading, tracking, trackFigure };
+import type { ThemePalette as Palette } from "@hybrid/core";
+import { faceFor } from "./faces";
 import { auroraScrollClearance } from "./layout";
 import { useReducedMotion } from "./use-reduced-motion";
 import { RADIUS } from "../components/aurora/kit";
@@ -301,6 +303,37 @@ export const F = {
   mono: "JetBrainsMono_400Regular",
   monoBold: "JetBrainsMono_700Bold",
 } as const;
+
+/**
+ * THE NAMED TYPE STYLES, RESOLVED FOR REACT NATIVE — `ty(C, "kicker")`.
+ *
+ * `@hybrid/core` theme/typography.ts holds the styles as DATA: a cut, a weight,
+ * a size rung, a leading role, a tracking role and an ink role. This turns one
+ * into a real RN TextStyle against the live palette, which is the last mile the
+ * core cannot do — RN has no weight axis for a custom face, and ink is a theme
+ * concern that changes per surface.
+ *
+ * The (family, weight) → binary map lives in `./faces.ts`, which is pure data
+ * so the design-token guard can import it without pulling React Native in. It
+ * is lossy today and deliberately so — see the note there.
+ */
+
+/**
+ * A named style as an RN TextStyle. `color` overrides the token's ink ROLE —
+ * pass it for an accent, leave it for the role the style declares.
+ */
+export function ty(palette: Palette, token: TextToken, color?: string): TextStyle {
+  const r = resolveText(token);
+  return {
+    fontFamily: faceFor(r.fontFamily, r.fontWeight) ?? F.reg,
+    fontSize: r.fontSize,
+    lineHeight: r.lineHeight,
+    letterSpacing: r.letterSpacing,
+    color: color ?? (r.ink === "primary" ? palette.chalk : palette.ash),
+    ...(r.tabular ? { fontVariant: [TABULAR_NUMS] as TextStyle["fontVariant"] } : null),
+    ...(r.upper ? { textTransform: "uppercase" as const } : null),
+  };
+}
 
 /**
  * A FIGURE'S NUMERALS — spread this into any text style that draws a number

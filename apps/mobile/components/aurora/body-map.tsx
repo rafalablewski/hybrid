@@ -9,7 +9,7 @@ import {
   type Muscle,
 } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, tracking, F } from "../../lib/ui";
+import { F, fs, tracking, ty} from "../../lib/ui";
 import { RADIUS } from "./kit";
 
 const poly = (pts: { x: number; y: number }[]) => pts.map((q) => `${q.x},${q.y}`).join(" ");
@@ -78,7 +78,7 @@ function SideCol({ label, C, children }: { label: string; C: Palette; children: 
   return (
     <View style={{ flex: 1 }}>
       {label ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash, textAlign: "center", marginBottom: 2 }}>{label}</Text>
+        <Text style={{ ...ty(C, "overline"), textAlign: "center", marginBottom: 2  }}>{label}</Text>
       ) : null}
       <View style={{ width: "100%", aspectRatio: 1 }}>{children}</View>
     </View>

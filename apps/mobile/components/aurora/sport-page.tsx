@@ -34,7 +34,7 @@ import {
 import { fetchSessionBests, fetchSessions } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub, type ScrubBind } from "./chart-scrub";
 import { AEffortBar, APanel, APill, ASection, AuroraScreen, RADIUS, Spark } from "./kit";
 import { DeviceMark } from "./device-mark";
@@ -706,7 +706,7 @@ function EffortLegend({ split, labels }: {
         {shown.map((b, i) => (
           <View key={b.k} style={{ flexBasis: `${b.v}%`, flexGrow: 0, flexShrink: 1, minWidth: 58, alignItems: i === shown.length - 1 ? "flex-end" : "flex-start" }}>
             <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: C.chalk }}>{b.v}%</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), marginTop: 4 }}>{b.k}</Text>
+            <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{b.k}</Text>
           </View>
         ))}
       </View>

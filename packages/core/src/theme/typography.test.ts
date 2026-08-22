@@ -83,6 +83,40 @@ describe("the named type styles", () => {
   });
 });
 
+describe("the eyebrow pair, resolved", () => {
+  // THE MIGRATION'S CLAIM, WRITTEN DOWN. 153 inline eyebrows moved onto these
+  // two tokens, and the claim was that they render as what shipped. The first
+  // attempt collapsed both trackings onto `overline` and silently moved 108 of
+  // them by 0.3dp, which is visible on a tracked string — so the numbers are
+  // asserted here rather than asserted in a commit message.
+  it("kicker is the standard eyebrow, exactly as it shipped", () => {
+    expect(resolveText("kicker")).toMatchObject({
+      fontFamily: cut.mono,
+      fontWeight: weight.medium,
+      fontSize: fs.nano,
+      letterSpacing: 0.9,
+      ink: "secondary",
+      upper: true,
+    });
+  });
+
+  it("overline is the architectural one, and it is wider", () => {
+    expect(resolveText("overline").letterSpacing).toBe(1.2);
+    expect(resolveText("overline").letterSpacing).toBeGreaterThan(resolveText("kicker").letterSpacing);
+    expect(resolveText("overline").fontSize).toBe(resolveText("kicker").fontSize);
+  });
+
+  it("declares the line box the inline shapes were leaving to the platform", () => {
+    // The old objects set no lineHeight, so the eyebrow took JetBrains Mono's
+    // own metrics: (ascent - descent + lineGap) / upem = 1.320em, i.e. 13.2dp
+    // at fs.nano. `lh.snug` gives 13. The 0.2dp difference is sub-pixel on any
+    // real screen, which is why declaring it is safe — and declaring it is what
+    // lets Dynamic Type carry the leading up with the size.
+    expect(resolveText("kicker").lineHeight).toBe(13);
+    expect(resolveText("kicker", 2).lineHeight).toBe(26);
+  });
+});
+
 describe("resolveText", () => {
   it("derives leading from the size, so Dynamic Type carries it", () => {
     const at1 = resolveText("body");

@@ -3,7 +3,7 @@ import { View, Text } from "react-native";
 import type { WearableExplain, WearableRow } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, F } from "../../lib/ui";
+import { F, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 import Sheet from "./sheet";
 
 type Palette = ReturnType<typeof useTheme>["palette"];
@@ -138,7 +138,7 @@ function Row({ C, row, t, age }: {
             : t("w.home.wearable.notMeasured")}
         </Text>
         {provenance ? (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: 2 }}>
+          <Text style={{ ...ty(C, "kicker"), marginTop: 2  }}>
             {provenance}
           </Text>
         ) : null}

@@ -37,7 +37,7 @@ import { useLang } from "../lib/i18n";
 import { usePlanMaxes, setPlanMax } from "../lib/plan-maxes";
 import { useTheme, txt, accentColor } from "../lib/theme";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { leading, fs, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../lib/ui";
 import { ACard, cardStack, withAlpha, ASection, DockRail, DockChip } from "./aurora/kit";
 import Sheet from "./aurora/sheet";
 import PlanCoverScreen, { PlanDockPill, COVER_GUTTER } from "./plan-hero";
@@ -476,7 +476,7 @@ function SessionBlock({ s, si, count, day, C, onLift }: { s: ProgramSessionView;
 function GroupRule({ label, C }: { label: string; C: Palette }) {
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={ty(C, "kicker")}>{label}</Text>
     </View>
   );
 }
@@ -518,7 +518,7 @@ function QuietMatrix({ lifts, dayMax, label, C, onPress }: { lifts: ProgramLiftV
         <View style={{ width: MX_NAME }}>
           <View style={{ height: HDR_H, justifyContent: "center", paddingLeft: 16, borderBottomWidth: 1, borderBottomColor: hair(C) }}>
             {!!label && (
-              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }} numberOfLines={1}>
+              <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} style={ty(C, "kicker")} numberOfLines={1}>
                 {label}
               </Text>
             )}

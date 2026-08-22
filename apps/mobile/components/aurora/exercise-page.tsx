@@ -25,7 +25,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementTarget } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { fs, F, leading, PressScale as Pressable, MAX_FONT_SCALE , tracking, trackFigure} from "../../lib/ui";
+import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 import { ChartReadout, readoutSide, useChartScrub } from "./chart-scrub";
 import { AuroraScreen, ASegment , RADIUS} from "./kit";
 import { withAlpha } from "./field";
@@ -481,7 +481,7 @@ function CompareChart({ C, slide, units, t }: { C: Palette; slide: SlideOf<"comp
               <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk }}>{tile.cur}</Text>
               {!tile.same && <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, color: txt(C, tile.good ? C.blue : C.red) }}>{tile.good ? "▲" : "▼"}</Text>}
             </View>
-            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginTop: 3 }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "kicker"), marginTop: 3  }} numberOfLines={1}>{tile.l} – {t("w.analyze.ex.compareWas")} {tile.was}</Text>
           </View>
         ))}
       </View>
@@ -727,7 +727,7 @@ export default function AuroraExercisePage() {
           {slides.map((slide, i) => (
             <View key={slide.kind} style={{ borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line, paddingTop: i === 0 ? 6 : 22, paddingBottom: 24 }}>
               {i > 0 ? (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash, marginBottom: 16 }}>
+                <Text style={{ ...ty(C, "overline"), marginBottom: 16  }}>
                   {slideHero(slide, units, t).label}
                 </Text>
               ) : null}

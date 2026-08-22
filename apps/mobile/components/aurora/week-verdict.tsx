@@ -19,7 +19,7 @@ import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, deltaPaint } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, TABULAR, tracking, trackFigure } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale, PressScale as Pressable, TABULAR, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { Mark } from "./mark";
 
 /**
@@ -932,7 +932,7 @@ export default function AuroraWeekVerdict({
             first swipe OR the first column opened, whichever comes first, under
             the key it always used. */}
         {!hinted && (
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, opacity: 0.75, textAlign: "center", marginTop: 10 }}>
+          <Text style={{ ...ty(C, "kicker"), opacity: 0.75, textAlign: "center", marginTop: 10  }}>
             {t("w.home.cmp.hint")}
           </Text>
         )}

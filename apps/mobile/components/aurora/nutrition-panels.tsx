@@ -6,7 +6,7 @@ import {
   type WeightPoint,
   ALPHA,
 } from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale as Pressable, HIT_SLOP } from "../../lib/ui";
+import { F, HIT_SLOP, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { useLang } from "../../lib/i18n";
@@ -29,7 +29,7 @@ export function CDivider({ label, tier, premium }: { label: string; tier?: strin
     <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 16, marginBottom: 12 }}>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
       <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>{label}</Text>
+        <Text style={ty(C, "overline")}>{label}</Text>
         {tier ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", paddingHorizontal: 8, paddingVertical: 2, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: premium ? withAlpha(pa.fill, ALPHA.rim) : C.line, color: premium ? pa.text : C.ash }}>{tier}</Text> : null}
       </View>
       <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
@@ -111,7 +111,7 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
     <ACard solid style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.summary")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{t(`w.recovery.nutrition.an.window${window}`)}</Text>
+        <Text style={ty(C, "kicker")}>{t(`w.recovery.nutrition.an.window${window}`)}</Text>
       </View>
       {summary.loggedDays === 0 ? (
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 12 }}>{t("w.recovery.nutrition.summaryEmpty")}</Text>
@@ -156,7 +156,7 @@ export function SummaryDashboard({ summary, window, goal, weightChangeKg, onUpgr
               form is `have/want` and a split has no `want`. */}
           {summary.macroSplit ? (
             <View style={{ marginTop: 16 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.macroBalance")}</Text>
+              <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.macroBalance")}</Text>
               {([["w.recovery.nutrition.protein", summary.macroSplit.protein, C.blue], ["w.recovery.nutrition.carbs", summary.macroSplit.carbs, C.amber], ["w.recovery.nutrition.fat", summary.macroSplit.fat, C.red]] as const).map(([label, pct, col]) => (
                 <AMeter key={label} label={t(label)} value={`${pct}%`} pct={pct} color={col} />
               ))}
@@ -282,7 +282,7 @@ export function OnboardingGoal({ goal, setGoal, onUpgrade, onWeighIn, onContinue
           <ACard solid style={{ marginTop: 12 }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
               <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t("w.recovery.nutrition.freePlanTitle")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{t("w.recovery.nutrition.freePlanSub")}</Text>
+              <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.freePlanSub")}</Text>
             </View>
             <View style={{ marginTop: 12 }}>
               {["w.recovery.nutrition.freeBulletLogging", "w.recovery.nutrition.freeBulletMeals", "w.recovery.nutrition.freeBulletProducts", "w.recovery.nutrition.freeBulletInsights"].map((k) => (

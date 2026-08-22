@@ -22,7 +22,7 @@ import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { haptic } from "../../lib/haptics";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AStepRail, RADIUS } from "./kit";
 import { AuroraIcon } from "./icons";
 import ReadinessFace from "./readiness-face";
@@ -372,7 +372,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
         </View>
       ) : isDetails ? (
         <>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginTop: 16 }}>
+          <Text style={{ ...ty(C, "overline"), marginTop: 16  }}>
             {t("w.recovery.checkins.step")} {steps.length} / {steps.length} — {t("w.recovery.checkins.detailsStep")}
           </Text>
           <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk, marginTop: 8 }}>{t("w.recovery.checkins.reviewTitle")}</Text>
@@ -402,7 +402,7 @@ export default function AuroraCheckin({ embedded = false, startStep = 0, session
                   ) : (
                     <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>–</Text>
                   )}
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{t(m.labelKey)}</Text>
+                  <Text style={ty(C, "kicker")}>{t(m.labelKey)}</Text>
                 </Pressable>
               );
             })}

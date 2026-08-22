@@ -10,7 +10,7 @@ import {
   type VerifiedStamp,
   ALPHA, durations,
 } from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, HIT_SLOP, HIT_TARGET, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
@@ -189,7 +189,7 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
     <View style={{ marginTop: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingBottom: 8 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingTop: 12, paddingBottom: 8 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.body, color: C.chalk }}>{t("w.recovery.nutrition.facts.title")}</Text>
-        {p100 ? <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.facts.per100")}</Text> : null}
+        {p100 ? <Text style={ty(C, "kicker")}>{t("w.recovery.nutrition.facts.per100")}</Text> : null}
       </View>
       {rows.map((r, i) => (
         <View key={r.key} style={{ flexDirection: "row", alignItems: "baseline", gap: 10, paddingVertical: 8, borderTopWidth: i === 0 ? 0 : 1, borderTopColor: C.line }}>
@@ -300,7 +300,7 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
             <Text
               maxFontSizeMultiplier={MAX_FONT_SCALE}
               numberOfLines={1}
-              style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}
+              style={ty(C, "kicker")}
             >
               {mealLabel}
             </Text>
@@ -421,7 +421,7 @@ export function MacroLedger({ C, figures, onlyTargeted = false, style }: {
           <Text
             maxFontSizeMultiplier={MAX_FONT_SCALE}
             numberOfLines={1}
-            style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}
+            style={ty(C, "kicker")}
           >
             {item.label}
           </Text>

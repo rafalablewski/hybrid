@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, type LayoutChangeEvent } from "react-native";
 import Svg, { Path, Circle, Line as SvgLine } from "react-native-svg";
 import { NUTRITION_GLYPHS, nutritionHubChart, type HubSeries, type NutritionGlyphName } from "@hybrid/core";
-import { fs, F, PressScale , tracking} from "../../lib/ui";
+import { F, PressScale, fs, tracking, ty} from "../../lib/ui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { RADIUS } from "./geometry";
@@ -70,7 +70,7 @@ function StatTile({ glyph, tint, value, unit, caption, name, onPress, palette: C
         {value}
         {unit ? <Text style={{ fontSize: fs.caption, color: C.ash }}> {unit}</Text> : null}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash, marginTop: 1 }} numberOfLines={1}>{caption}</Text>
+      <Text style={{ ...ty(C, "overline"), marginTop: 1  }} numberOfLines={1}>{caption}</Text>
       <Text style={{ fontFamily: F.bold, fontSize: fs.caption, color: C.chalk, marginTop: 7 }} numberOfLines={2}>{name}</Text>
     </PressScale>
   );
@@ -101,7 +101,7 @@ export function NutritionHubBento({ series, avgKcal, weightKg, ratePerWeek, meal
   const num = (n: number) => Math.round(n).toLocaleString();
 
   const tile = { backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, padding: 14 } as const;
-  const keyLabel = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase" as const, color: C.ash };
+  const keyLabel = ty(C, "overline");
   const nameLabel = { fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk };
 
   // The delta reads as a verdict, so it takes the app's existing colour

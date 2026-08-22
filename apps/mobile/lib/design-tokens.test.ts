@@ -1,7 +1,8 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { COVER_SCREENS } from "@hybrid/core";
+import { COVER_SCREENS, resolveText, text } from "@hybrid/core";
+import { FACE, faceFor } from "./faces";
 
 /**
  * THE DESIGN-TOKEN RATCHET.
@@ -474,6 +475,58 @@ describe("leading and tracking", () => {
     const OWN_SCALE = ["lib/share.tsx", "components/aurora/login.tsx", "components/aurora/mfa-settings.tsx"];
     const raw = hits(/letterSpacing:\s*-?\d/g).filter((h) => !OWN_SCALE.some((f) => h.startsWith(f + ":")));
     expect(raw, 'letterSpacing → tracking(size) / tracking(size, "label"|"caps"), or trackFigure(size) for a figure').toEqual([]);
+  });
+});
+
+describe("named type styles", () => {
+  it("RATCHET — hand-rolled eyebrows converge on ty(C, \"kicker\"|\"overline\")", () => {
+    // THE APP'S DOMINANT LABEL VOICE, and until now every one of its ~325 sites
+    // reassembled it from five properties: the mono face, fs.nano, one of two
+    // trackings, uppercase and ash. One caption SIZE and a spread of caption
+    // STYLES is the drift this whole layer exists to end.
+    //
+    // 153 moved in the first pass — the ones whose property set was EXACTLY the
+    // eyebrow, so the migration could prove it renders what shipped. What is
+    // left carries something extra (an accent ink, a different rung, a figure
+    // beside it) and each needs a person to say which token it meant.
+    //
+    // TWO TOKENS, NOT ONE, and that is the finding rather than a compromise:
+    // collapsing them moved 108 eyebrows by 0.3dp. `kicker` (+0.085em) is the
+    // label above a card or a figure; `overline` (+0.115em) is a section label,
+    // where the label is structure and the extra air is the division.
+    burnDown(
+      hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
+      172,
+      "2027-02-28",
+      'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
+    );
+  });
+
+  it("HARD — the face map spells the same aliases `F` does", () => {
+    // faces.ts cannot import `F` (ui.tsx pulls in React Native and this suite is
+    // pure), so it repeats the alias strings — and a repeated string is a second
+    // source until something holds the two together. This is that something:
+    // the same shape native-face.test.ts uses to hold F_POSTSCRIPT against the
+    // shipped binaries.
+    const ui = readFileSync(join(ROOT, "lib/ui.tsx"), "utf8");
+    const block = ui.match(/export const F = \{([\s\S]*?)\} as const;/)?.[1] ?? "";
+    const aliases = [...block.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+    expect(aliases.length, "could not read the F block").toBeGreaterThan(0);
+    for (const face of new Set(Object.values(FACE))) {
+      expect(aliases, `faces.ts names "${face}", which F does not`).toContain(face);
+    }
+  });
+
+  it("HARD — every named style resolves to a face the app actually loads", () => {
+    // The weight map in lib/ui.tsx is lossy by design (the system specifies four
+    // weights per cut; the app loads four Archivo and two mono). Lossy is fine;
+    // MISSING is not — an unmapped pair falls back to F.reg, which is a silent
+    // wrong face, the same failure mode as an unresolvable PostScript name in
+    // SwiftUI. This fails the build instead.
+    for (const token of Object.keys(text) as (keyof typeof text)[]) {
+      const r = resolveText(token);
+      expect(faceFor(r.fontFamily, r.fontWeight), `${token} → ${r.fontFamily} ${r.fontWeight}`).toBeDefined();
+    }
   });
 });
 

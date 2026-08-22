@@ -148,7 +148,7 @@ import { readPlanMaxes } from "../lib/plan-maxes";
 import { track } from "../lib/track";
 import { useLoggerPrefs, setLoggerPref } from "../lib/logger-prefs";
 import { useLang } from "../lib/i18n";
-import { leading, fs, space, F, Mono, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking, trackFigure, useRowEntrance} from "../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, Mono, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty, useRowEntrance} from "../lib/ui";
 import { useTheme, txt, type Palette } from "../lib/theme";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { AuroraIcon, Glyph } from "../components/aurora/icons";
@@ -1614,7 +1614,7 @@ export default function Workout() {
                             {/* Label row — kicker, planned-rest hint, then the
                                 type badge on the right. */}
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>
+                              <Text style={ty(C, "overline")}>
                                 {`${t("workout.setWord")} ${i + 1}${planned ? ` ${t("workout.ofWord")} ${total}` : ""} — ${t("workout.upNow")}`}
                               </Text>
                               <View style={{ marginLeft: "auto", flexDirection: "row", alignItems: "center", gap: 8 }}>
@@ -2347,17 +2347,17 @@ function ExerciseSheet({
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 36 }}>
               <View>
                 <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fmtTonnage(ls.volumeKg, units)}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{t("workout.totalVolume")}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: 3  }}>{t("workout.totalVolume")}</Text>
               </View>
               <View>
                 <Text style={{ fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{setLine}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginTop: 3 }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: 3  }}>{`${t("workout.setWord")} ${i + 1}`}</Text>
               </View>
             </View>
 
             {/* ONE velocity module — the unit is named once, with the mean. */}
             <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 24, marginBottom: 12 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{`${t("workout.barSpeed")} (m/s)`}</Text>
+              <Text style={ty(C, "kicker")}>{`${t("workout.barSpeed")} (m/s)`}</Text>
               {ls.meanVel != null && (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.chalk }}>{`${t("workout.meanWord")} ${ls.meanVel}`}</Text>
               )}
@@ -2469,7 +2469,7 @@ function ExerciseSheet({
               <AuroraExerciseAvatar name={e.name} size={28} />
               <Text numberOfLines={1} style={{ flex: 1, fontFamily: here ? F.bold : F.reg, fontSize: fs.bodyLg, color: here ? C.chalk : C.ash }}>{e.name}</Text>
               {e.kind === "strength" && (
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
+                <Text style={ty(C, "kicker")}>
                   {`${e.sets.length} ${t("workout.setsWord")}`}
                 </Text>
               )}

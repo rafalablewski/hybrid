@@ -7,7 +7,7 @@ import {
   type LoggedSession, type WeightUnit, type FitnessLevelEstimate, STATE_OPACITY } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F, tracking, leading } from "../../lib/ui";
+import { F, leading, tracking, ty} from "../../lib/ui";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useFitnessLevel, type FitnessLevelRead } from "../../lib/use-fitness-level";
 import { ACard, CardFoot } from "./kit";
@@ -94,7 +94,7 @@ export default function LevelCard({ sessions, read }: {
 
   return (
     <ACard solid style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
+      <Text style={ty(C, "kicker")}>
         {t("w.analyze.vol.levelCardTitle")}
       </Text>
 
@@ -136,7 +136,7 @@ export default function LevelCard({ sessions, read }: {
         ))}
       </View>
       {level && (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: 8 }}>
+        <Text style={{ ...ty(C, "kicker"), marginTop: 8  }}>
           {t("w.analyze.vol.levelTier").replace("{n}", String(index + 1))}
         </Text>
       )}

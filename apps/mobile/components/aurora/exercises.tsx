@@ -19,7 +19,7 @@ import { animateListChange } from "../../lib/list-motion";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, PressScale, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { AuroraScreen, ACard, APanel, RADIUS, ASearch } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 import { AuroraIcon } from "./icons";
@@ -167,7 +167,7 @@ export default function AuroraExercises() {
               <LinearGradient colors={[withAlpha(C.blue, 0.32), withAlpha(C.lime, 0.16), C.ink2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
               <View pointerEvents="none" style={{ position: "absolute", top: -40, right: -28, width: 150, height: 150, borderRadius: 75, backgroundColor: C.lime, opacity: 0.16 }} />
               <View style={{ paddingHorizontal: 16, paddingVertical: 16 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{t("w.analyze.ex.block")}</Text>
+                <Text style={ty(C, "overline")}>{t("w.analyze.ex.block")}</Text>
                 <View style={{ flexDirection: "row", gap: 24, marginTop: 8 }}>
                   {[
                     { v: `${summary.inRotation}`, k: t("w.analyze.ex.inRotation") },
@@ -175,7 +175,7 @@ export default function AuroraExercises() {
                   ].map((s) => (
                     <View key={s.k} style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
                       <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk }}>{s.v}</Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{s.k}</Text>
+                      <Text style={ty(C, "kicker")}>{s.k}</Text>
                     </View>
                   ))}
                 </View>

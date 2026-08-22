@@ -6,7 +6,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F, PressScale as Pressable, TABULAR, fs, leading, trackFigure, tracking} from "../../lib/ui";
+import { F, PressScale as Pressable, TABULAR, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 
 /**
  * RECORDS — the Progress cluster's own block: ONE QUOTE, THEN A LEDGER.
@@ -201,7 +201,7 @@ export default function PeriodRecords({
             {quote!.lift}
           </Text>
           {day && (
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{day}</Text>
+            <Text style={ty(C, "kicker")}>{day}</Text>
           )}
         </View>
 

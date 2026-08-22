@@ -5,7 +5,7 @@ import {
   type FoodRole, type PantryFood,
   ALPHA,
 } from "@hybrid/core";
-import { fs, F, leading, tracking, PressScale as Pressable , trackFigure} from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useLang } from "../../lib/i18n";
@@ -70,7 +70,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{stats.count}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.pn.savedFoods")}</Text>
+          <Text style={ty(C, "overline")}>{t("w.recovery.nutrition.pn.savedFoods")}</Text>
           {stats.lead ? (
             <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: 3 }}>
               {t("w.recovery.nutrition.pn.mostly").replace("{v}", roleLabel(stats.lead, t).toLowerCase())}
@@ -92,7 +92,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
           fact about the data, it limits what every other nutrition screen can
           say, and unlike a streak it can be fixed by hand. */}
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, marginTop: 20, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{t("w.recovery.nutrition.pn.labelData")}</Text>
+        <Text style={ty(C, "overline")}>{t("w.recovery.nutrition.pn.labelData")}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: pct >= 50 ? txt(C, C.lime) : C.chalk }}>{pct}%</Text>
       </View>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginTop: 6, lineHeight: leading(fs.nano, "snug") }}>
@@ -323,7 +323,7 @@ export function PantryScreen<T extends PantryFood>({
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.body, color: premium?.text ?? txt(C, C.lime) }}>{t("w.recovery.nutrition.unlockMoreProducts")}</Text>
         </Pressable>
       )}
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, textAlign: "center", marginTop: 10 }}>
+      <Text style={{ ...ty(C, "kicker"), textAlign: "center", marginTop: 10  }}>
         {full ? t("w.recovery.nutrition.unlimited") : `${items.length} / ${limit}`}
       </Text>
     </View>

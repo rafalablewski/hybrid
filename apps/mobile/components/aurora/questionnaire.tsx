@@ -15,7 +15,7 @@ import { setQuestionnaire } from "../../lib/questionnaire";
 import { logWeighIn } from "../../lib/weigh-in";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable, MAX_FONT_SCALE, HIT_SLOP, HIT_TARGET } from "../../lib/ui";
+import { F, HIT_SLOP, HIT_TARGET, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { haptic } from "../../lib/haptics";
 import { AuroraScreen, ACard, ADrawer, ASection, ANumberField, ABirthField, AStepper, ACheckMark, RADIUS, withAlpha } from "./kit";
 import { LeadCard } from "./lead-rail";
@@ -350,7 +350,7 @@ function QuestionBlock({ C, t, q, value, measured, profile, onAnswer }: {
             accessibilityRole="button"
             accessibilityLabel={`${t("w.quiz.clear")} ${t(q.labelKey)}`}
           >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
+            <Text style={ty(C, "kicker")}>
               {t("w.quiz.clear")}
             </Text>
           </Pressable>
@@ -596,7 +596,7 @@ function Changed({ C, t, factors }: {
                 <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.chalk }}>
                   {t(factorLabelKey(f.key as never))}
                 </Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: space.xxs }}>
+                <Text style={{ ...ty(C, "kicker"), marginTop: space.xxs  }}>
                   {`${f.value} — ${t(factorAffectsKey(f.affects as never))}`}
                 </Text>
               </View>

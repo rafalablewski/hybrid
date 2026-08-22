@@ -2,7 +2,7 @@ import { View, Text } from "react-native";
 import { doneReceiptHero, type DoneReceipt, type DoneReceiptStat, type WeightUnit } from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { F, MAX_FONT_SCALE, fs, leading, trackFigure, tracking} from "../../lib/ui";
+import { F, MAX_FONT_SCALE, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
 
 // ── AURORA Done receipt block (mobile) ──────────────────────────────────────
 // The finished day, as both week rails render it: the headline, ONE figure at
@@ -56,7 +56,7 @@ export default function ReceiptBlock({
   // A supporting label, for the figures whose unit can't name them. Uppercase
   // mono — the house grammar for a label, and the only casing that is correct
   // in every language (lowercasing "Höhenmeter" would not be German).
-  const suffix = { fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash } as const;
+  const suffix = ty(C, "overline");
 
   return (
     <View>

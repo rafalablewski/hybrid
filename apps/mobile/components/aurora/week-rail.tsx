@@ -17,7 +17,7 @@ import {
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { leading, fs, F, startGlow, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, PressScale as Pressable, fs, leading, startGlow, tracking, ty} from "../../lib/ui";
 import { RADIUS, ASegment } from "./kit";
 import { CtaLabel } from "./cta-label";
 import ReceiptBlock from "./receipt-block";
@@ -275,7 +275,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: ScheduledDay;
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${t(`w.home.rail.${day.status}`)}`}
       style={{ flex: 1, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5, opacity: day.isRest ? STATE_OPACITY.disabled : 1 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      <Text style={ty(C, "kicker")}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
           hairline disc (preview cue); otherwise a bare tonal number. */}
       <View style={{ height: 28, alignItems: "center", justifyContent: "center" }}>
@@ -384,7 +384,7 @@ function DayDetail({ C, day, receipt, units, streakDays, doneFloor, onStart, onS
   // Sessions postponed ONTO this date — a light catch-up list (all states).
   const catchUp = day.postponedIn.length > 0 && (
     <View style={{ marginTop: 16, borderTopWidth: 1, borderTopColor: C.line, paddingTop: 12 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash, marginBottom: 8 }}>{t("w.home.rail.catchUp")}</Text>
+      <Text style={{ ...ty(C, "overline"), marginBottom: 8  }}>{t("w.home.rail.catchUp")}</Text>
       {day.postponedIn.map((it, i) => (
         <View key={i} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginTop: i ? 8 : 0 }}>
           <View style={{ flex: 1 }}>

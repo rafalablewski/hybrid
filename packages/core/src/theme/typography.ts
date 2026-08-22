@@ -192,7 +192,22 @@ export const text = {
   caption: { cut: "sans", weight: weight.regular, size: "caption", leading: "normal", ink: "secondary" },
   /** A small label inside a dense row. */
   labelSm: { cut: "sans", weight: weight.medium, size: "micro", leading: "snug", ink: "secondary" },
-  /** THE EYEBROW — the app's dominant label voice, 216 call sites' worth. */
+  /**
+   * THE EYEBROW, AND THERE ARE TWO OF THEM — this is the app's dominant label
+   * voice and the pair is not a redundancy.
+   *
+   * `kicker` is the STANDARD eyebrow (+0.085em): the label above a card, a
+   * figure, a row. `overline` is the ARCHITECTURAL one (+0.115em): a section
+   * label or a nav eyebrow, where the label is structure rather than content
+   * and the extra air is what makes it read as a division of the page.
+   *
+   * Both existed in the app before they had names — 281 sites at the narrower
+   * tracking and 142 at the wider — and collapsing them onto one token was
+   * tried first. It moved 108 eyebrows by 0.3dp, which is visible on a tracked
+   * string, so the distinction the two trackings were already encoding turned
+   * out to be real. It is cheaper to name it than to argue with it.
+   */
+  kicker: { cut: "mono", weight: weight.medium, size: "nano", leading: "snug", tracking: "label", ink: "secondary", upper: true },
   overline: { cut: "mono", weight: weight.medium, size: "nano", leading: "snug", tracking: "caps", ink: "secondary", upper: true },
 } as const satisfies Record<string, TextStyle>;
 

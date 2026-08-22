@@ -5,7 +5,7 @@ import {
   type Recipe, type RecipeCollection, type RecipeCookView,
  colors,
   ALPHA,} from "@hybrid/core";
-import { fs, space, leading, tracking, F, PressScale, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, PressScale, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { DockRail, DockChip, RADIUS, ACard, ASection } from "./kit";
@@ -264,7 +264,7 @@ export function RecipeCard({ recipe, onOpen }: { recipe: Recipe; onOpen: () => v
                 {st.value}
                 {!!st.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{st.unit}</Text>}
               </Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{st.label}</Text>
+              <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{st.label}</Text>
             </View>
           ))}
         </View>

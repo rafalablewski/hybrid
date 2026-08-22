@@ -16,10 +16,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { haptic } from "../../lib/haptics";
-import {
-  leading, fs, space, tracking, F, PressScale as Pressable,
-  HIT_SLOP, LoadSwap, Skeleton, useEntrance,
-} from "../../lib/ui";
+import { F, HIT_SLOP, LoadSwap, PressScale as Pressable, Skeleton, fs, leading, space, tracking, ty, useEntrance} from "../../lib/ui";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ACard, AChoice, APill, ASegment, ANumberField, ABirthField, AHeading, AStepRail, ASub, AuroraField, RADIUS } from "./kit";
 
@@ -378,7 +375,7 @@ function QuestionBody({
             to the group above it. */}
         {ONBOARDING_GOAL_GROUPS.map((group, gi) => (
           <View key={group.category} style={{ gap: space.ms, marginTop: gi === 0 ? 0 : space.md }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{group.category}</Text>
+            <Text style={ty(C, "kicker")}>{group.category}</Text>
             {group.goals.map((g) => (
               <AChoice key={g.id} active={selected === g.id} title={g.label} sub={g.blurb} onPress={() => { haptic.selection(); setAnswer(q.key, g.id); }} />
             ))}

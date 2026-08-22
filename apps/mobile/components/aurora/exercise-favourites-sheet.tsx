@@ -12,7 +12,7 @@ import { APanel, ASearch } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, F, PressScale as Pressable, FIXED_FONT_SCALE , tracking} from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
 import { useExerciseFavourites, toggleExerciseFavourite } from "../../lib/exercise-favourites";
 import { haptic } from "../../lib/haptics";
 import { useListMotion } from "../../lib/list-motion";
@@ -88,7 +88,7 @@ export default function ExerciseFavouritesSheet({
             implement says what the name doesn't. */}
         <AuroraExerciseAvatar name={e.name} glyph={24} tint={on ? txt(C, C.lime) : C.ash} />
         <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{e.name}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{days(e)}</Text>
+        <Text style={ty(C, "kicker")}>{days(e)}</Text>
         {/* The pinned star rides the amber TEXT tone, not the fill (the
             accent-text channel). */}
         <Text style={{ fontSize: fs.bodyLg, color: on ? txt(C, C.amber) : C.ash, opacity: on ? 1 : 0.55 }}>{on ? "★" : "☆"}</Text>

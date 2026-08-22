@@ -15,7 +15,7 @@ import {
   ALPHA,} from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
 import { RADIUS } from "./kit";
 import AEmptyDay from "./empty-day";
 import AActionPair from "./action-pair";
@@ -192,7 +192,7 @@ function DayChip({ C, day, selected, onSelect, t }: { C: Pal; day: LogbookDay; s
       accessibilityLabel={`${day.weekdayShort} ${day.dayOfMonth} — ${a11yLoad}`}
       style={{ width: DAY_W, alignItems: "center", gap: 5, paddingTop: 6, paddingBottom: 5 }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{day.weekdayShort}</Text>
+      <Text style={ty(C, "kicker")}>{day.weekdayShort}</Text>
       {/* number slot — today = filled chartreuse disc; a tapped non-today day = a
           hairline disc (preview cue); otherwise a bare tonal number (chalk when
           the day holds training, ash when it doesn't). */}

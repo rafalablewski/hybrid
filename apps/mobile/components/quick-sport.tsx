@@ -18,7 +18,7 @@ import { createSession } from "../lib/api";
 import { saveGuestSession } from "../lib/guest";
 import { useSession } from "../lib/session";
 import { useLang } from "../lib/i18n";
-import { fs, space, F, PressScale as Pressable , tracking} from "../lib/ui";
+import { F, PressScale as Pressable, fs, space, tracking, ty} from "../lib/ui";
 import { useTheme, txt } from "../lib/theme";
 import { AuroraIcon } from "./aurora/icons";
 import { APill, ASearch, AMarkTile, RADIUS } from "./aurora/kit";
@@ -142,7 +142,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
           <Pressable key={name} onPress={() => setSheetSport(name)} style={card}>
             <SportMark sport={name} size={fs.display} color={C.chalk} />
             <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, marginTop: 8 }}>{shortSport(name)}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), marginTop: 4 }}>{t("w.home.today.w.tapLog")}</Text>
+            <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{t("w.home.today.w.tapLog")}</Text>
           </Pressable>
         ))}
       </View>
@@ -175,7 +175,7 @@ export default function QuickSportLog({ sessions = [], onSaved, date }: {
               ) : (
                 groups.map((g) => (
                   <View key={g.category} style={{ marginBottom: 6 }}>
-                    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), marginTop: 10, marginBottom: 4 }}>{g.category}</Text>
+                    <Text style={{ ...ty(C, "overline"), marginTop: 10, marginBottom: 4  }}>{g.category}</Text>
                     {g.sports.map((s) => sportRow(s, sportHint(s)))}
                   </View>
                 ))
@@ -254,7 +254,7 @@ function LogSheet({ sport, date, onClose, onSaved }: { sport: string | null; dat
               otherwise; off-iOS the row states the day it will save to rather
               than offering a control the platform can't draw natively. */}
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.ms, marginTop: 14, paddingVertical: 4 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label") }}>{t("w.home.quickSport.when")}</Text>
+            <Text style={ty(C, "kicker")}>{t("w.home.quickSport.when")}</Text>
             {LIQUID_GLASS_SUPPORTED ? (
               <NativeDateField
                 value={when}
@@ -273,12 +273,12 @@ function LogSheet({ sport, date, onClose, onSaved }: { sport: string | null; dat
           <View style={{ flexDirection: "row", gap: space.sm, alignItems: "flex-end", marginTop: 10 }}>
             {tracksDist && (
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), marginBottom: 6 }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginBottom: 6  }}>{sportDistanceUnit(name) === "m" ? t("workout.distM") : t("workout.dist")}</Text>
                 <TextInput value={distance} onChangeText={setDistance} keyboardType="numeric" placeholder={sportDistanceUnit(name) === "m" ? "400" : "8"} placeholderTextColor={C.ash} autoFocus style={field} />
               </View>
             )}
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), marginBottom: 6 }}>Minutes</Text>
+              <Text style={{ ...ty(C, "kicker"), marginBottom: 6  }}>Minutes</Text>
               <TextInput value={minutes} onChangeText={setMinutes} keyboardType="numeric" placeholder="45" placeholderTextColor={C.ash} autoFocus={!tracksDist} style={field} />
             </View>
             {/* The shared pill, not a hand-rolled one. This call site was the

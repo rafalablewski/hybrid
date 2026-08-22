@@ -30,7 +30,7 @@ import { useLang } from "../../lib/i18n";
 import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, fs, F, PressScale as Pressable, Chip, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
+import { Chip, F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
 import { ACard, APressCard, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
@@ -371,7 +371,7 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
   const Mini = ({ label, value }: { label: string; value: string }) => (
     /* a TILE in a row of tiles, not a full-width card — it keeps the compact inset */
     <ACard style={{ flex: 1, padding: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={ty(C, "kicker")}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.headline, letterSpacing: tracking(fs.headline), marginTop: 4, color: C.chalk }}>{value}</Text>
     </ACard>
   );

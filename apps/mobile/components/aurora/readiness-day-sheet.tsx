@@ -6,7 +6,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, F } from "../../lib/ui";
+import { F, fs, leading, tracking, ty} from "../../lib/ui";
 import Sheet from "./sheet";
 import ReadinessFace from "./readiness-face";
 import { ReadinessRing, ReadinessBar, ReadinessLedger, ReadinessBlock } from "./readiness-ring";
@@ -64,7 +64,7 @@ export default function ReadinessDaySheet({ deficit, facts, verdict, rx, onClose
           <View style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
             <ReadinessRing deficit={d} size={112} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
+              <Text style={ty(C, "kicker")}>
                 {t("w.home.readiness.dayLabel")}
               </Text>
               {/* THE FACE — one line, naming the limiter and nothing else. The

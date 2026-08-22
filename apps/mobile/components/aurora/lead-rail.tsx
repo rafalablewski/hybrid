@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { View, Text, ScrollView, useWindowDimensions } from "react-native";
 import { ALPHA } from "@hybrid/core";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, space, leading, tracking, trackFigure, F, TABULAR } from "../../lib/ui";
+import { F, TABULAR, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { GUTTER, APressCard } from "./kit";
 import { ArrowGlyph } from "./cta-label";
 import { withAlpha } from "./field";
@@ -117,7 +117,7 @@ export function LeadCard({
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>
+          <Text style={ty(C, "overline")}>
             {kicker}
           </Text>
           {/* THE CLAIM'S OWN SHAPE, KEPT: subject on one line, figure on the

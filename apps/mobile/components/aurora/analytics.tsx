@@ -16,7 +16,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, space, F, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, MAX_FONT_SCALE, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { AuroraScreen, ACard, AStat, ASub, ASegment, AMeter , RADIUS} from "./kit";
 import { withAlpha } from "./field";
 
@@ -66,7 +66,7 @@ function AFrame({ title, kicker, children }: { title: string; kicker?: string; c
     <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{title}</Text>
-        {!!kicker && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash }}>{kicker}</Text>}
+        {!!kicker && <Text style={ty(C, "overline")}>{kicker}</Text>}
       </View>
       <View style={{ marginTop: 12 }}>{children}</View>
     </ACard>

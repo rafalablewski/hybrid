@@ -17,7 +17,7 @@ import {
 import { patchSessionFeel } from "../lib/api";
 import { qk } from "../lib/queries";
 import { useLang } from "../lib/i18n";
-import { leading, fs, tracking, F, PressScale as Pressable, MAX_FONT_SCALE } from "../lib/ui";
+import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../lib/ui";
 import { RADIUS } from "./aurora/geometry";
 import { useTheme, txt } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
@@ -151,14 +151,14 @@ export function FeelPrompt({
       {eyebrow ? (
         eyebrow(t("session.feel.q"))
       ) : (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), color: C.ash, textTransform: "uppercase" }}>{t("session.feel.q")}</Text>
+        <Text style={ty(C, "overline")}>{t("session.feel.q")}</Text>
       )}
       <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: compact ? 18 : 21, color: C.chalk, letterSpacing: tracking(compact ? 18 : 21), lineHeight: compact ? 22 : 25, marginTop: 10 }}>{t("session.feel.lead")}</Text>
       {row(FEELS, feel, (v) => { setFeel(v); void save({ feel: v }); })}
 
       {feel != null && (
         <View style={{ marginTop: 16 }}>
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase" }}>{t("session.fatigue.q")}</Text>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={ty(C, "kicker")}>{t("session.fatigue.q")}</Text>
           {row(FATIGUES, fatigue, (v) => { setFatigue(v); void save({ fatigue: v }); })}
           {/* WHAT THIS ANSWER IS WORTH. "Wrecked" ten minutes after a hard
               session describes the session; the same tap ten hours later

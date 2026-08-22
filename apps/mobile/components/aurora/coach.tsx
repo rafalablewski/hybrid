@@ -36,7 +36,7 @@ import {
 } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, PressScale as Pressable , tracking} from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASection, RADIUS, AChip, ACheckMark } from "./kit";
 import { AuroraIcon } from "./icons";
 
@@ -596,7 +596,7 @@ function Metric({ label, value, color }: { label: string; value: string; color: 
   return (
     <View>
       <Text style={{ fontFamily: F.black, fontSize: fs.headline, color }}>{value}</Text>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", marginTop: 2 }}>{label}</Text>
+      <Text style={{ ...ty(C, "kicker"), marginTop: 2  }}>{label}</Text>
     </View>
   );
 }

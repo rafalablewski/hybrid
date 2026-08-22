@@ -9,7 +9,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor, type Palette } from "../../lib/theme";
-import { fs, space, leading, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { ACard, ACheckMark, RADIUS } from "./kit";
 import { haptic } from "../../lib/haptics";
 import { AuroraIcon } from "./icons";
@@ -60,7 +60,7 @@ export function InjuryBody({
       {INJURY_FIGURES.map((fig) => (
         <View key={fig.side} style={{ flex: 1, alignItems: "center" }}>
           <Figure fig={fig} C={C} toneOf={toneOf} selected={selected} onSelect={onSelect} labelOf={labelOf} height={height} />
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginTop: 2 }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ ...ty(C, "overline"), marginTop: 2  }}>
             {t(`w.analyze.exp.anatomy.map.${fig.side}`)}
           </Text>
         </View>
@@ -221,7 +221,7 @@ export function InjurySheet({
         {area ? <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 2 }}>{t(INJURY_AREA_HINT_KEY[area])}</Text> : null}
       </View>
 
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginTop: 18, marginBottom: 8 }}>
+      <Text style={{ ...ty(C, "overline"), marginTop: 18, marginBottom: 8  }}>
         {t("w.injury.whenTitle")}
       </Text>
       <View style={{ flexDirection: "row", gap: 6 }}>

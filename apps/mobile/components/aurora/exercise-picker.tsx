@@ -18,7 +18,7 @@ import { noteSearchMiss } from "../../lib/search-misses";
 import { haptic } from "../../lib/haptics";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, fs, space, F, tracking, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { RADIUS, ASearch, AChip } from "./kit";
 import Sheet from "./sheet";
 import { AuroraExerciseAvatar } from "./exercise-media";
@@ -468,7 +468,7 @@ const Row = memo(function Row({ entry, onPick, onLongPress, queued, multi }: {
           {queued && <Text style={{ fontFamily: F.black, fontSize: fs.caption, lineHeight: leading(fs.caption, "tight"), color: C.onAccent }}>✓</Text>}
         </View>
       ) : (
-        !!hint && <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{hint}</Text>
+        !!hint && <Text style={ty(C, "kicker")}>{hint}</Text>
       )}
     </Pressable>
   );

@@ -68,7 +68,7 @@ import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
 import { shareCardImage, heroFigure, type ShareBest } from "../lib/share";
-import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, trackFigure , tracking} from "../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, TABULAR, fs, leading, trackFigure, tracking, ty} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint, type Palette } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
@@ -92,7 +92,7 @@ const CONFETTI = Array.from({ length: 16 }, (_, i) => {
 function WorkRow({ label, value, note, C, last }: { label: string; value: string; note?: string; C: Palette; last?: boolean }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", paddingVertical: 8, borderBottomWidth: last ? 0 : 1, borderBottomColor: C.line }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>{label}</Text>
+      <Text style={ty(C, "kicker")}>{label}</Text>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
         <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk }}>{value}</Text>
         {note ? <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{note}</Text> : null}
@@ -480,7 +480,7 @@ export function WorkoutWrapped({
               spacer is the fallback, never the layout. */}
           {hasSpine ? (
             <View style={{ flex: 1, justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
+              <Text style={ty(C, "kicker")}>
                 {t("session.work.tonnageThrough")}
               </Text>
               <View style={{ marginTop: 10 }}>
@@ -498,7 +498,7 @@ export function WorkoutWrapped({
                 {/* A modelled figure wears a "~" — it is never presented as a
                     measurement (see core/energy.ts). */}
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ fontFamily: F.black, fontSize: fs.headline * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), color: C.chalk }}>{b.estimate ? "~" : ""}{b.value}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{t(b.labelKey)}</Text>
               </View>
             ))}
           </View>
@@ -708,7 +708,7 @@ export function WorkoutWrapped({
               </>
             )}
             <View style={{ marginTop: 22 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
+              <Text style={ty(C, "kicker")}>
                 {t("session.work.loadPerSet")}
               </Text>
               <View style={{ marginTop: 10 }}>

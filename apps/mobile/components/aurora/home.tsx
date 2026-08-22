@@ -87,7 +87,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor, accentColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
-import { leading, fs, space, F, startGlow, useEntrance, HubDissolve, PressScale, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE , tracking} from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, HubDissolve, MAX_FONT_SCALE, PressScale, PressScale as Pressable, fs, leading, space, startGlow, tracking, ty, useEntrance} from "../../lib/ui";
 import { track } from "../../lib/track";
 import { ACard, APressCard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
@@ -2009,7 +2009,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             accessibilityState={{ expanded: readsOpen }}
             style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
           >
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>
+            <Text style={ty(C, "overline")}>
               {t(isToday ? "w.home.today.readsTitleToday" : "w.home.today.readsTitle")}
             </Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash }}>{dayReads.length}</Text>

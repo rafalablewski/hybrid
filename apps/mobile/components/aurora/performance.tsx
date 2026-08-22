@@ -41,7 +41,7 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, withAlpha, ASection } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import GroupMark from "./group-mark";
@@ -264,7 +264,7 @@ function Full({ top }: { top?: ReactNode }) {
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
               <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
+                <Text style={ty(C, "kicker")}>
                   {t("w.home.cockpit.freshness")}
                 </Text>
                 <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>
@@ -314,7 +314,7 @@ function Full({ top }: { top?: ReactNode }) {
             {/* CAPABILITY — freshness rises on a layoff; this does not. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
+                <Text style={ty(C, "kicker")}>
                   {t("w.home.cockpit.capability").replace("{n}", String(capability.weeks))}
                 </Text>
                 {capability.pct !== null && (
@@ -339,7 +339,7 @@ function Full({ top }: { top?: ReactNode }) {
                 the ring on Today, and it is the only readiness on this tab. */}
             <View style={{ marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
               <View style={{ flexDirection: "row", alignItems: "baseline" }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{t("w.home.cockpit.last14")}</Text>
+                <Text style={ty(C, "kicker")}>{t("w.home.cockpit.last14")}</Text>
                 <Text style={{ marginLeft: "auto", fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
                   {t("w.home.cockpit.shownRange").replace("{lo}", String(plot.lo)).replace("{hi}", String(plot.hi))}
                 </Text>
@@ -576,7 +576,7 @@ function Comp({ C, label, value, onExplain, explainLabel }: {
     >
       <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display) }}>{value}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{label}</Text>
+        <Text style={ty(C, "kicker")}>{label}</Text>
         {/* The glyph IS a ring — wrapping it in a second bordered circle, as the
             Today reading does at 18px, reads as noise beside a nano label. */}
         <AuroraIcon name="info" size={13} color={C.ash} />
@@ -588,7 +588,7 @@ function Comp({ C, label, value, onExplain, explainLabel }: {
 function Mod({ C, label, value, onPress, last }: { C: Palette; label: string; value: string; onPress: () => void; last?: boolean }) {
   return (
     <Pressable onPress={onPress} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, borderBottomWidth: last ? 0 : 1, borderBottomColor: withAlpha(C.line, 0.6) }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>{label}</Text>
+      <Text style={ty(C, "kicker")}>{label}</Text>
       <CtaLabel label={`${value} →`} color={C.ash} fontSize={fs.caption} font={F.mono} style={{ marginLeft: "auto", flexShrink: 1 }} />
     </Pressable>
   );
@@ -640,7 +640,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
             <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash }}>
+              <Text style={ty(C, "kicker")}>
                 {t("w.home.cockpit.freshness")}
               </Text>
               <Text style={{ fontFamily: F.black, fontSize: fs.subtitle, color: txt(C, hpiColor(state.hpi.band, C)), marginTop: 2 }}>

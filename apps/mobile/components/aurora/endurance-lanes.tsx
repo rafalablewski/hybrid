@@ -10,7 +10,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, tracking, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
 import { useChartScrub, type ScrubBind } from "./chart-scrub";
 import { AEffortBar, APanel, GUTTER, RADIUS } from "./kit";
 import HistoryStrip from "./history-strip";
@@ -194,7 +194,7 @@ export function LaneOrderChip({ order, onPress }: { order: LaneOrder; onPress: (
         paddingHorizontal: 9, paddingVertical: 4,
       }}
     >
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
+      <Text style={ty(C, "kicker")}>
         {t(ORDER_KEY[order])}
       </Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>⌄</Text>
@@ -233,7 +233,7 @@ function Lane({ lane, onOpen, canOpen }: { lane: EnduranceLane; onOpen?: (d: Car
         <Text
           numberOfLines={1}
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}
+          style={ty(C, "kicker")}
         >
           {t("w.home.end.scopeAll")}
         </Text>
@@ -326,7 +326,7 @@ function Tile({ w, label, a11y, foot, footRight, bind, children }: {
         maxFontSizeMultiplier={FIXED_FONT_SCALE}
         numberOfLines={1}
         accessibilityLabel={a11y}
-        style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}
+        style={ty(C, "kicker")}
       >
         {label}
       </Text>

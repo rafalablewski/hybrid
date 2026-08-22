@@ -5,7 +5,7 @@ import { relativeTime, seedPerson, splitNotifications, userPagePath, type NotifI
 import { respondFollow, respondEnrollment } from "../lib/social-api";
 import { useTheme, txt } from "../lib/theme";
 import { useLang } from "../lib/i18n";
-import { leading as lineHeight, fs, space, tracking, F, PressScale as Pressable } from "../lib/ui";
+import { F, PressScale as Pressable, fs, leading as lineHeight, space, tracking, ty} from "../lib/ui";
 import { AuroraScreen, ACard, ASection, RADIUS } from "../components/aurora/kit";
 import { HeroAccessory } from "../components/aurora/hero";
 import { AuroraIcon } from "../components/aurora/icons";
@@ -215,7 +215,7 @@ export default function Notifications() {
                 accessibilityRole="button"
                 hitSlop={10}
               >
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
+                <Text style={ty(C, "kicker")}>
                   {t("notif.markAllRead")}
                 </Text>
               </Pressable>

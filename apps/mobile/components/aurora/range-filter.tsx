@@ -12,7 +12,7 @@ import { LiquidSeg } from "./liquid-seg";
 import { GlassWheel, LIQUID_GLASS_RENDERED } from "./swiftui";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { fs, tracking, F, PressScale as Pressable, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
 import { RADIUS } from "./kit";
 
@@ -267,7 +267,7 @@ function PickerSection({ label, children }: { label: string; children: ReactNode
   const { palette: C } = useTheme();
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginHorizontal: 4, marginBottom: 6 }}>
+      <Text style={{ ...ty(C, "kicker"), marginHorizontal: 4, marginBottom: 6  }}>
         {label}
       </Text>
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, overflow: "hidden" }}>

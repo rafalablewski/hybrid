@@ -5,7 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
-import { fs, space, leading, tracking, F, TABULAR, useEntrance, HubDissolve, cardShadow, PressScale, PressScale as Pressable, MAX_FONT_SCALE, FIXED_FONT_SCALE, HIT_TARGET, HIT_SLOP } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, HIT_SLOP, HIT_TARGET, HubDissolve, MAX_FONT_SCALE, PressScale, PressScale as Pressable, TABULAR, cardShadow, fs, leading, space, tracking, ty, useEntrance} from "../../lib/ui";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScrollProps } from "../../lib/nav-scroll";
 import { AuroraIcon } from "./icons";
@@ -2722,7 +2722,7 @@ export function CardFoot({
   return (
     <View style={{ marginTop: 16 }}>
       {status ? (
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginBottom: 11 }}>
+        <Text style={{ ...ty(C, "overline"), marginBottom: 11  }}>
           {status}
         </Text>
       ) : null}

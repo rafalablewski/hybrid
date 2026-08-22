@@ -12,7 +12,7 @@ import {
 import { fetchRtpProtocols, type RtpProtocol } from "../../lib/api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, roleColor } from "../../lib/theme";
-import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE } from "../../lib/ui";
+import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
 import { AuroraIcon } from "./icons";
 import { ACard, CardFoot, ActionPill , RADIUS} from "./kit";
 import LoadSheet from "./load-sheet";
@@ -215,7 +215,7 @@ export default function TissueCard({
             <Rows rows={axis.rows} C={C} t={t} />
             {risk.awaitingBaseline.length > 0 && (
               <View style={{ marginTop: 12, padding: 12, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: C.line, backgroundColor: withAlpha(C.ash, ALPHA.wash) }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginBottom: 4 }}>{t("w.injury.acwrPending")}</Text>
+                <Text style={{ ...ty(C, "kicker"), marginBottom: 4  }}>{t("w.injury.acwrPending")}</Text>
                 <Text style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption), color: C.chalk }}>{t("w.injury.acwrPendingBody")}</Text>
               </View>
             )}
@@ -284,7 +284,7 @@ export default function TissueCard({
               </View>
             ) : (
               <View style={{ marginTop: 18 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "caps"), color: C.ash, marginBottom: 8 }}>{t("w.injury.wholeBody")}</Text>
+                <Text style={{ ...ty(C, "overline"), marginBottom: 8  }}>{t("w.injury.wholeBody")}</Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>{t("w.home.cockpit.watchBuilding")}</Text>
               </View>
             )}
@@ -452,12 +452,12 @@ function Receipt({ C, t, explain, onOpen }: {
       style={{ flex: 1, minWidth: 0, paddingVertical: RECEIPT_PAD }}
     >
       <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.monoBold, fontSize: fs.body, color: paint }}>{explain.value}</Text>
-      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase", letterSpacing: tracking(fs.nano, "label"), color: C.ash, marginTop: 3 }}>
+      <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ ...ty(C, "kicker"), marginTop: 3  }}>
         {label}
       </Text>
     </Pressable>
   );
 }
 
-const head = (C: Palette) => ({ fontFamily: F.mono, fontSize: fs.nano, textTransform: "uppercase" as const, letterSpacing: tracking(fs.nano, "label"), color: C.ash });
+const head = (C: Palette) => (ty(C, "kicker"));
 const num = (C: Palette, flagged: boolean) => ({ fontFamily: F.mono, fontSize: fs.micro, textAlign: "right" as const, color: flagged ? txt(C, C.red) : C.ash });

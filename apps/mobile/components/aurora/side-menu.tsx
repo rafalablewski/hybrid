@@ -37,7 +37,7 @@ import { usePremiumAccent } from "../../lib/premium-accent";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { track } from "../../lib/track";
 import { useExercises } from "../../lib/queries";
-import { fs, F, PressScale as Pressable , tracking} from "../../lib/ui";
+import { F, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
 import { ASearch , RADIUS} from "./kit";
 import { AuroraIcon } from "./icons";
 import { SETTINGS_ROUTES } from "./settings";
@@ -328,7 +328,7 @@ export default function AuroraSideMenu({
             ) : (
               found.map((g) => (
                 <View key={g.kind} style={{ marginBottom: 6 }}>
-                  <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash, paddingTop: 12, paddingBottom: 2 }}>
+                  <Text style={{ ...ty(C, "overline"), paddingTop: 12, paddingBottom: 2  }}>
                     {t(`nav.searchKind.${g.kind}`)}
                   </Text>
                   {g.hits.map((h) => (
@@ -379,7 +379,7 @@ export default function AuroraSideMenu({
                   {groups.map(({ group, items }) => (
                     <View key={group} style={{ marginBottom: 10 }}>
                       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingTop: 10, paddingBottom: 4 }}>
-                        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{groupLabel(group)}</Text>
+                        <Text style={ty(C, "overline")}>{groupLabel(group)}</Text>
                         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{items.length + (group === "train" ? extras.length : 0)}</Text>
                       </View>
                       {items.map(({ item, locked }) => tool(item.id, locked))}

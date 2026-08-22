@@ -7,7 +7,7 @@ import { enrollPlan, fetchMacrocycle } from "../../lib/api";
 import { useRevalidate } from "../../lib/queries";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { useReducedMotion } from "../../lib/use-reduced-motion";
 import { useSharedSurfaceSource } from "../../lib/shared-element";
 import { ACard, AField, GUTTER, RADIUS, withAlpha, DockRail, DockChip } from "./kit";
@@ -159,7 +159,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
     <View onLayout={onLayout} style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
         <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{group.category}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
+        <Text style={ty(C, "kicker")}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}
         </Text>
       </View>
@@ -339,7 +339,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{s.unit}</Text>}
                       </Text>
-                      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginTop: 4 }}>{s.label}</Text>
+                      <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{s.label}</Text>
                     </View>
                   ))}
                 </View>

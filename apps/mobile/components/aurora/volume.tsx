@@ -21,7 +21,7 @@ import { setLoggerPref } from "../../lib/logger-prefs";
 import { useVolumeModel } from "../../lib/use-volume-model";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { leading, tracking, trackFigure, fs, space, F, PressScale as Pressable } from "../../lib/ui";
+import { F, PressScale as Pressable, fs, leading, space, trackFigure, tracking, ty} from "../../lib/ui";
 import { ACard, ADrawer, ASection, CardFoot, RADIUS, withAlpha } from "./kit";
 import { MeasureLine, MeasureTrack, MeasureScale, MEASURE_ROW_PAD } from "./measure-row";
 import Sheet from "./sheet";
@@ -335,7 +335,7 @@ function ByMuscle({ rows, ml, zoneColor, targetFor, history, open, setOpen, zone
     <Panel >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.analyze.vol.byMuscle")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.range7d")}</Text>
+        <Text style={ty(C, "overline")}>{t("w.analyze.vol.range7d")}</Text>
       </View>
 
       <View style={{ marginTop: 4 }}>
@@ -445,7 +445,7 @@ function Prescription({ title, why, items, color, ml, unit }: {
     <Panel >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm }}>
         <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{unit}</Text>
+        <Text style={ty(C, "overline")}>{unit}</Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: 16 }}>
         {items.map((s) => (
@@ -662,7 +662,7 @@ function SourceBody({ resolved, tested, profile, measuredKeys, adaptive, onOpenM
               accessibilityLabel={`${t("w.analyze.vol.nextUp")}: ${t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}`}
               style={{ flexDirection: "row", alignItems: "center", gap: space.ms, marginTop: 14 }}
             >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{t("w.analyze.vol.nextUp")}</Text>
+              <Text style={ty(C, "overline")}>{t("w.analyze.vol.nextUp")}</Text>
               <Text style={{ flex: 1, fontFamily: F.semi, fontSize: fs.bodyLg, color: C.chalk }}>{t(VOLUME_PROFILE_FIELD_KEY[done.next.key])}</Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: txt(C, C.lime) }}>→</Text>
             </Pressable>
@@ -956,7 +956,7 @@ function MuscleHistory({ sets }: { sets: number[] }) {
   // element must not restyle it.
   return (
     <View>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash, marginTop: 16 }}>{t("w.analyze.trends.weeklySets8w")}</Text>
+      <Text style={{ ...ty(C, "kicker"), marginTop: 16  }}>{t("w.analyze.trends.weeklySets8w")}</Text>
       <View style={{ flexDirection: "row", alignItems: "flex-end", height: 56, gap: 5, marginTop: 8 }}>
         {sets.map((n, i) => (
           <View key={i} style={{ flex: 1, height: 4 + (n / mx) * 48, borderRadius: RADIUS.mark, backgroundColor: i === sets.length - 1 ? C.blue : withAlpha(C.blue, ALPHA.rim) }} />
