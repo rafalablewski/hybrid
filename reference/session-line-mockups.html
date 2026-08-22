@@ -1,0 +1,849 @@
+<title>The Session Line</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* ── APP TOKENS — fixed in both themes. The app IS dark; a mockup of it
+      must not invert, or it stops being a mockup. Values are verbatim from
+      packages/core/src/theme/palette.ts ── */
+:root{
+  --ink:#0c0d0c; --ink2:#212126; --line:#2f2f36; --chalk:#f7f6f3; --ash:#8a9691;
+  --acc:#c3d363; --onAcc:#0c0d0c; --blue:#6bb4d4; --amber:#daa51d; --red:#ec935e;
+  --disp:"Archivo","Helvetica Neue",Helvetica,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  /* PAGE tokens — these do follow the viewer's theme */
+  --bg:#141516; --tx:#f7f6f3; --mut:#8a9691; --dim:#5f6a66; --rule:#26272a; --accTx:#c3d363;
+}
+@media (prefers-color-scheme:light){
+  :root:not([data-theme="dark"]){
+    --bg:#eeece6; --tx:#14150f; --mut:#5c6560; --dim:#848b86; --rule:#dad7ce; --accTx:#4a5a12;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#eeece6; --tx:#14150f; --mut:#5c6560; --dim:#848b86; --rule:#dad7ce; --accTx:#4a5a12;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--tx);font-family:var(--disp);margin:0;
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:0 26px 110px}
+
+/* ── page furniture ── */
+.eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.15em;text-transform:uppercase;
+  color:var(--mut);display:flex;flex-wrap:wrap;gap:0 14px}
+.eyebrow b{color:var(--accTx);font-weight:700}
+header.mast{padding:76px 0 42px;border-bottom:1px solid var(--rule);margin-bottom:16px}
+h1{font-family:var(--disp);font-weight:900;letter-spacing:-.032em;line-height:.95;
+  font-size:clamp(40px,7vw,72px);margin:18px 0 0;max-width:14ch;text-wrap:balance}
+.deck{max-width:64ch;color:var(--mut);font-size:clamp(16.5px,1.9vw,19px);line-height:1.55;margin:20px 0 0}
+.deck b{color:var(--tx);font-weight:600}
+
+section.blk{padding:56px 0 0;border-top:1px solid var(--rule);margin-top:56px}
+section.blk:first-of-type{border-top:0}
+.shead{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+  padding-bottom:14px;border-bottom:1px solid var(--rule);margin-bottom:30px}
+.shead h2{font-weight:800;font-size:clamp(24px,3vw,31px);letter-spacing:-.022em;margin:0;line-height:1.12}
+.shead .meta{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--dim);flex:none;text-align:right;line-height:1.5}
+.pair{display:grid;gap:38px;align-items:start;grid-template-columns:1fr}
+@media (min-width:900px){.pair{grid-template-columns:390px minmax(0,1fr);gap:56px}}
+.notes p{max-width:60ch;margin:0 0 13px;color:var(--mut);font-size:15.5px;line-height:1.62}
+.notes p strong{color:var(--tx);font-weight:700}
+.notes h3{font-size:15px;font-weight:700;margin:26px 0 9px;color:var(--tx);letter-spacing:-.004em}
+.notes h3:first-child{margin-top:0}
+.notes code{font-family:var(--mono);font-size:.85em;background:var(--rule);padding:1.5px 5px;border-radius:2px;color:var(--tx)}
+.spec{font-family:var(--mono);font-size:11.5px;line-height:1.85;color:var(--dim);
+  border-left:2px solid var(--rule);padding:2px 0 2px 14px;margin:18px 0 0}
+.spec b{color:var(--accTx);font-weight:500}
+.kill{border-left-color:var(--red)}
+.kill b{color:var(--red)}
+
+/* ── the phone ── */
+.phone{width:390px;max-width:100%;border:1px solid var(--line);border-radius:36px;
+  background:var(--ink);overflow:hidden;position:relative;
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.7);flex:none}
+@media (max-width:440px){.phone{transform-origin:top left;transform:scale(.86);margin-bottom:-90px}}
+.scr{height:706px;display:flex;flex-direction:column;color:var(--chalk);position:relative;overflow:hidden}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:14px 22px 6px;
+  font-family:var(--mono);font-size:11px;color:var(--ash);letter-spacing:.02em}
+.sbar .rt{display:flex;gap:5px;align-items:center}
+.pad{padding-left:12px;padding-right:12px} /* GUTTER = 12 */
+
+/* app type rungs — literal values from packages/core/src/scale.ts */
+.t-nano{font-size:10px}.t-micro{font-size:11px}.t-caption{font-size:12px}
+.t-body{font-size:13px}.t-bodyLg{font-size:14px}.t-note{font-size:15px}
+.t-subtitle{font-size:16px}.t-title{font-size:18px}.t-heading{font-size:20px}
+.t-headline{font-size:22px}.t-display{font-size:26px}.t-hero{font-size:34px}.t-stat{font-size:46px}
+.kick{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--ash)}
+.fig{font-variant-numeric:tabular-nums;letter-spacing:-.035em;font-weight:800}
+.ash{color:var(--ash)}.acc{color:var(--acc)}
+
+/* ── TODAY card ── */
+.today{padding:20px 12px 0;display:flex;flex-direction:column;gap:24px;flex:1}
+.instr{font-weight:800;font-size:26px;line-height:1.15;letter-spacing:-.026em;text-wrap:balance}
+.presc{display:flex;align-items:baseline;gap:10px;font-variant-numeric:tabular-nums}
+.presc .was{font-size:22px;font-weight:600;color:var(--ash);text-decoration:line-through;
+  text-decoration-thickness:1px;letter-spacing:-.03em}
+.presc .now{font-size:34px;font-weight:800;letter-spacing:-.035em;color:var(--acc)}
+.presc .sets{font-family:var(--mono);font-size:13px;color:var(--ash);margin-left:auto}
+.why{border:0;background:none;color:var(--ash);font-family:var(--disp);font-size:14px;
+  text-align:left;padding:0;cursor:pointer;display:flex;gap:9px;align-items:baseline;width:100%}
+.why .pm{font-family:var(--mono);font-size:15px;color:var(--ash);width:11px;flex:none}
+.whybody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .32s cubic-bezier(.2,.7,.3,1)}
+.whybody>div{overflow:hidden}
+.why[aria-expanded="true"]+.whybody{grid-template-rows:1fr}
+.drv{display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--line);font-size:13px;color:var(--ash);
+  align-items:baseline}
+.drv:first-child{margin-top:12px}
+.drv .v{font-family:var(--mono);font-size:12px;color:var(--chalk);margin-left:auto;flex:none;
+  font-variant-numeric:tabular-nums}
+.drv .src{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ash);flex:none;font-weight:400}
+.drv .src.m{color:var(--chalk);font-weight:700}
+.cta{margin-top:auto;margin-bottom:0;background:var(--acc);color:var(--onAcc);border:0;
+  border-radius:999px;padding:17px;font-family:var(--disp);font-weight:800;font-size:16px;
+  letter-spacing:-.01em;cursor:pointer;width:100%}
+.weekstrip{display:flex;gap:6px;padding-bottom:20px}
+.weekstrip div{flex:1;text-align:center;font-family:var(--mono);font-size:10px;color:var(--ash);
+  padding:9px 0 10px;border-top:2px solid var(--line)}
+.weekstrip div.done{border-top-color:var(--acc);color:var(--chalk)}
+.weekstrip div.now{border-top-color:var(--chalk);color:var(--chalk)}
+
+/* ── SESSION LINE ── */
+.sl{flex:1;display:flex;flex-direction:column;padding:8px 12px 0}
+.slhead{display:flex;justify-content:space-between;align-items:baseline;padding-bottom:22px}
+.slbody{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;text-align:center}
+.slex{font-weight:800;font-size:20px;letter-spacing:-.02em}
+.slnum{font-size:72px;font-weight:900;letter-spacing:-.045em;line-height:.9;
+  font-variant-numeric:tabular-nums}
+.slsub{font-family:var(--mono);font-size:13px;color:var(--ash);letter-spacing:.02em}
+.slsay{min-height:74px;display:flex;flex-direction:column;justify-content:center;gap:9px;
+  padding-bottom:26px}
+.heard{font-size:18px;font-weight:700;letter-spacing:-.015em;color:var(--chalk)}
+.heard em{font-style:normal;color:var(--acc)}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.chip{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ash);border:1px solid var(--line);border-radius:3px;padding:3px 7px}
+.chip.set{color:var(--acc);border-color:var(--acc)}
+.wave{display:flex;gap:3px;justify-content:center;align-items:flex-end;height:22px}
+.wave i{width:3px;background:var(--acc);border-radius:2px;height:4px;display:block}
+.listening .wave i{animation:w .9s ease-in-out infinite}
+.wave i:nth-child(2){animation-delay:.08s}.wave i:nth-child(3){animation-delay:.16s}
+.wave i:nth-child(4){animation-delay:.24s}.wave i:nth-child(5){animation-delay:.32s}
+.wave i:nth-child(6){animation-delay:.4s}.wave i:nth-child(7){animation-delay:.48s}
+@keyframes w{0%,100%{height:4px}50%{height:20px}}
+.slfoot{border-top:1px solid var(--line);padding:14px 0 20px;display:flex;
+  justify-content:space-between;align-items:center;font-family:var(--mono);font-size:11px;color:var(--ash)}
+.rest{font-variant-numeric:tabular-nums;color:var(--chalk);font-size:15px;font-weight:700}
+.earpill{display:inline-flex;gap:7px;align-items:center;font-family:var(--mono);font-size:10px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--acc)}
+.earpill .dot{width:5px;height:5px;border-radius:50%;background:var(--acc);flex:none}
+.listening .earpill .dot{animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.scr .sl,.scr .sbar{transition:opacity .4s ease}
+.scr.asleep .sl,.scr.asleep .sbar{opacity:.26}
+.stagecap{position:absolute;left:12px;right:12px;bottom:12px;background:var(--ink2);
+  border-radius:8px;padding:11px 13px;font-family:var(--mono);font-size:10.5px;line-height:1.55;
+  color:var(--ash);letter-spacing:.02em}
+.stagecap b{color:var(--acc);font-weight:500}
+
+/* controls under a phone */
+.ctl{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  background:none;color:var(--mut);border:1px solid var(--rule);border-radius:999px;
+  padding:9px 16px;cursor:pointer}
+.btn:hover{color:var(--tx);border-color:var(--mut)}
+.btn.pri{background:var(--accTx);border-color:var(--accTx);color:var(--bg);font-weight:700}
+:focus-visible{outline:2px solid var(--accTx);outline-offset:3px;border-radius:2px}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.001s!important;transition-duration:.001s!important}}
+</style>
+
+<div class="wrap">
+<header class="mast">
+  <div class="eyebrow"><span>HYBRID</span><span>Interface mockups</span><span>August 2026</span><b>Live — press the buttons</b></div>
+  <h1>The Session Line</h1>
+  <p class="deck">Six screens for the ambient interface, drawn on <b>HYBRID's own kit</b> — Archivo and JetBrains Mono, the real <code>fs</code> rungs, the 12dp gutter, chartreuse reserved for "go". Nothing here needs a camera. Every number shown comes from an engine that already ships.</p>
+</header>
+
+<!-- ════════ 1 ════════ -->
+<section class="blk">
+  <div class="shead">
+    <h2>Today is a claim, not a menu</h2>
+    <div class="meta">Screen 01<br>Replaces the Home tab</div>
+  </div>
+  <div class="pair">
+    <div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>9:41</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="today">
+          <div>
+            <div class="kick" style="margin-bottom:14px">Tuesday — Week 3 of 8</div>
+            <div class="instr">Squat, and go lighter than the plan.</div>
+          </div>
+          <div class="presc">
+            <span class="was">100</span>
+            <span class="now">92.5<span style="font-size:18px;font-weight:600"> kg</span></span>
+            <span class="sets">5 × 3</span>
+          </div>
+          <div>
+            <button class="why" aria-expanded="false" id="whyBtn"><span class="pm">＋</span><span>Because you slept 5 h 12 and your resting HR is 7 bpm above baseline.</span></button>
+            <div class="whybody"><div>
+              <div class="drv"><span>Sleep debt</span><span class="src m">measured</span><span class="v">−2 h 48</span></div>
+              <div class="drv"><span>Resting HR vs baseline</span><span class="src m">measured</span><span class="v">+7 bpm</span></div>
+              <div class="drv"><span>Quad load, 7 days</span><span class="src">observed</span><span class="v">92% MRV</span></div>
+              <div class="drv"><span>Your clearance rate</span><span class="src">profile</span><span class="v">0.85×</span></div>
+            </div></div>
+          </div>
+          <button class="cta">Start</button>
+          <div class="weekstrip">
+            <div class="done">M</div><div class="now">T</div><div>W</div>
+            <div>T</div><div>F</div><div>S</div><div>S</div>
+          </div>
+        </div>
+      </div></div>
+      <div class="ctl"><button class="btn pri" id="whyToggle">Expand the reasoning</button></div>
+    </div>
+    <div class="notes">
+      <h3>What changed</h3>
+      <p>The old Home tab showed a Performance State card, a week rail, an exercise widget and a plan strip, and asked the athlete to synthesise them. This screen <strong>commits to a position</strong> — one instruction, one adjusted number, one action — and puts the synthesis behind a plus.</p>
+      <p>The struck-through <code>100</code> matters more than the <code>92.5</code>. It says <em>the plan said one thing and I overruled it</em>, which is the single behaviour that separates a coach from a calendar.</p>
+      <h3>Every driver carries its provenance</h3>
+      <p>The four rows under the fold reuse the four-layer vocabulary <code>learned.ts</code> already speaks — population, profile, observed, measured. An athlete who wants to argue with the number can see exactly which layer it came from, and <strong>"measured" outranking "observed" is just the device-truth rule surfaced.</strong></p>
+      <div class="spec">
+        instruction <b>fs.display 26 / 800 / -0.026em</b><br>
+        load figure <b>fs.hero 34 / 800 / TRACK_FIGURE_EM</b><br>
+        gutter <b>GUTTER 12</b> — no card chrome anywhere<br>
+        expander <b>bare ＋, ash, no ring</b> — it grows, it does not go<br>
+        drivers <b>whitespace + hairline, no marker before the label</b>
+      </div>
+      <div class="spec kill">
+        killed <b>the tab bar</b> — Home, Workout, Nutrition, Progress, Profile<br>
+        killed <b>every chart without a verdict sentence attached</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 2 ════════ -->
+<section class="blk">
+  <div class="shead">
+    <h2>The set, without the phone</h2>
+    <div class="meta">Screen 02 — live<br>Replaces the Workout tab</div>
+  </div>
+  <div class="pair">
+    <div>
+      <div class="phone"><div class="scr" id="slScr">
+        <div class="sbar"><span>9:58</span><span class="rt" id="slEar"><span class="earpill"><span class="dot"></span>AirPods</span></span></div>
+        <div class="sl">
+          <div class="slhead">
+            <div class="kick">Back Squat</div>
+            <div class="kick" id="slSet">Set 3 of 5</div>
+          </div>
+          <div class="slbody">
+            <div class="slex" id="slState">Ready when you are</div>
+            <div class="slnum" id="slNum">92.5</div>
+            <div class="slsub" id="slSub">kilograms — 3 reps</div>
+          </div>
+          <div class="slsay" id="slSay">
+            <div class="wave" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="heard t-note ash" id="slHeard">Say nothing and I will log it as prescribed.</div>
+            <div class="chips" id="slChips"></div>
+          </div>
+          <div class="slfoot">
+            <span id="slFootL">Phone down to begin</span>
+            <span class="rest" id="slRest">—</span>
+          </div>
+        </div>
+        <div class="stagecap" id="slCap"><b>STAGE 1 — SILENT.</b> The prescription is on screen. Nothing is listening yet, nothing has been asked.</div>
+      </div></div>
+      <div class="ctl">
+        <button class="btn pri" id="slPlay">Play the set</button>
+        <button class="btn" id="slStep">Step</button>
+        <button class="btn" id="slReset">Reset</button>
+      </div>
+    </div>
+    <div class="notes">
+      <h3>The escalation ladder, on one screen</h3>
+      <p>Each rung is used only when the one above fails. <strong>Most sets end at rung one or two</strong> — that is the entire product idea, and the reason this can ship without a camera or a microphone breakthrough.</p>
+      <p><strong>1 Silence.</strong> The prescription was right, the IMU saw the bar rack and the movement stop, the rest timer started itself. Logged.<br>
+      <strong>2 A gesture.</strong> "Same as last week?" — nod. AirPods head gesture, Watch double-tap.<br>
+      <strong>3 A word.</strong> "eight" — "two left" — "add five".<br>
+      <strong>4 A sentence.</strong> "my shoulder's cranky, give me something else".<br>
+      <strong>5 The screen.</strong> Always available, never required.</p>
+      <h3>Why the numbers are this big</h3>
+      <p>Because the phone is on a bench four feet away and the athlete is upside down under a bar. 72px is not a style choice, it is a legibility requirement — and it is the one place this design deliberately leaves the type scale, the way <code>scale.ts</code> already permits for art rather than reading.</p>
+      <h3>The honest limit</h3>
+      <p><strong>Voice is never the only path.</strong> A large minority of people will not talk to their phone in a public gym, and gyms are loud. Every utterance here has a one-tap equivalent on the screen behind it, permanently.</p>
+      <div class="spec">
+        set boundary <b>phone IMU — motion stop, no CV</b><br>
+        rest timer <b>starts itself, never asked for</b><br>
+        speech <b>on-device, closed grammar, LLM only on a miss</b><br>
+        during the set <b>the coach says nothing. Not once.</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 3 ════════ -->
+<section class="blk">
+  <div class="shead">
+    <h2>Eight utterances cover a session</h2>
+    <div class="meta">The grammar<br>Tap one to parse it</div>
+  </div>
+  <div class="gram">
+    <div class="gramlist" id="gramList"></div>
+    <div class="gramout">
+      <div class="kick" style="margin-bottom:14px">Parsed to</div>
+      <pre id="gramOut">Pick an utterance.</pre>
+      <p class="notes" style="margin-top:18px"><strong>This is not an open-ended chatbot.</strong> It is a small closed grammar with a model behind it for the tail — and that distinction is the difference between a reliable product and a demo. The closed grammar runs on-device, costs nothing, and cannot hallucinate a set you did not do.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 4 ════════ -->
+<section class="blk">
+  <div class="shead">
+    <h2>The verdict, with its evidence</h2>
+    <div class="meta">Screen 03<br>The sheet, on request</div>
+  </div>
+  <div class="pair">
+    <div>
+      <div class="phone"><div class="scr" style="justify-content:flex-end">
+        <div class="sbar" style="position:absolute;top:0;left:0;right:0"><span>10:14</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="dim-bg"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="askrow">
+            <span class="kick">You asked</span>
+            <span class="t-title" style="font-weight:700;letter-spacing:-.015em">"Should I do another set?"</span>
+          </div>
+          <div class="ans">I'd stop. That's about as much as you've historically recovered from in a day and a half, and you squat again Thursday.</div>
+          <div class="kick" style="margin:26px 0 4px">Because — ranked</div>
+          <div class="drv"><span>Quad volume today vs your ceiling</span><span class="src m">measured</span><span class="v">92%</span></div>
+          <div class="drv"><span>Your clearance rate vs population</span><span class="src">profile</span><span class="v">0.85×</span></div>
+          <div class="drv"><span>Next quad session</span><span class="src">observed</span><span class="v">36 h</span></div>
+          <div class="drv"><span>Ceiling estimate settled?</span><span class="src m">measured</span><span class="v">yes, n=23</span></div>
+          <div class="sheetfoot">
+            <button class="ghost">Do one anyway</button>
+            <button class="solid">Call it</button>
+          </div>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h3>The one interaction a general model cannot copy</h3>
+      <p>Ask any frontier model whether to do another set and it will give a competent, generic answer. It cannot say <strong>0.85×</strong>, because that number is four months of this athlete's own recovery measured against a population curve — and it cannot know that the ceiling estimate has converged over 23 observations.</p>
+      <p>This is the entire product thesis in one sheet. Not "we have an AI coach". <strong>"We have four months of you."</strong></p>
+      <h3>It says when it does not know</h3>
+      <p>If the landmark replay reports the ceiling has not settled, the fourth row reads <code>not yet, n=6</code> and the verdict softens to a suggestion. <strong>An engine that admits its own uncertainty earns more trust than one that is confidently wrong once.</strong></p>
+      <div class="spec">
+        engines <b>recovery-pairs.ts — landmark-replay.ts — readiness.ts</b><br>
+        all four rows <b>already ship. This is a voice and a prompt away.</b><br>
+        sheet pad <b>sheetPadBottom(insets.bottom) = max(inset, 24)</b><br>
+        nothing inside the sheet <b>trails a pad of its own</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 5 ════════ -->
+<section class="blk">
+  <div class="shead">
+    <h2>The Sunday film</h2>
+    <div class="meta">Screen 04 — live<br>Press play</div>
+  </div>
+  <div class="pair">
+    <div>
+      <div class="phone"><div class="scr" id="filmScr">
+        <div class="sbar"><span>19:20</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="prog" id="filmProg"></div>
+        <div class="film" id="film">
+          <div class="fs on" data-s="0">
+            <div class="kick">Your week — 12 to 18 August</div>
+            <div class="fbig"><span class="fig" id="cTon">0</span><span class="funit">tonnes moved</span></div>
+          </div>
+          <div class="fs" data-s="1">
+            <div class="kick">Where it went</div>
+            <div class="bars" id="fBars">
+              <div><i style="--h:38%"></i><span>M</span></div><div><i style="--h:74%"></i><span>T</span></div>
+              <div><i style="--h:0"></i><span>W</span></div><div><i style="--h:100%" class="hi"></i><span>T</span></div>
+              <div><i style="--h:52%"></i><span>F</span></div><div><i style="--h:22%"></i><span>S</span></div>
+              <div><i style="--h:0"></i><span>S</span></div>
+            </div>
+            <div class="fcap">Thursday was the week.</div>
+          </div>
+          <div class="fs" data-s="2">
+            <div class="kick">The thing that mattered</div>
+            <div class="vcmp">
+              <div><span class="vlab">6 weeks ago — 100 kg</span><i style="--w:62%"></i><span class="vval">0.61 m/s</span></div>
+              <div><span class="vlab">Thursday — 105 kg</span><i style="--w:88%" class="hi"></i><span class="vval">0.68 m/s</span></div>
+            </div>
+            <div class="fcap">More weight, moving faster.</div>
+          </div>
+          <div class="fs" data-s="3">
+            <div class="kick">What that means</div>
+            <div class="fmid">That is the first hard evidence your strength is up rather than your effort.</div>
+          </div>
+          <div class="fs" data-s="4">
+            <div class="kick">One thing for next week</div>
+            <div class="fmid acc">You haven't touched a hinge in nine days.</div>
+            <div class="fcap">I've put a deadlift on Tuesday.</div>
+          </div>
+        </div>
+        <div class="narr" id="filmNarr">You lifted fourteen point two tonnes this week.</div>
+        <div class="filmfoot">
+          <button class="ghost" id="filmBtn">▶ Play</button>
+          <span class="kick" id="filmT">0:00 / 0:20</span>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h3>This is the "video out", and it is not generative</h3>
+      <p>Every frame above is <strong>deterministic motion graphics driven by real engine output</strong>, with a synthesised voice over the top. It renders server-side for cents, it cannot hallucinate, and <code>recap.ts</code> and <code>learned.ts</code> already compute every number in it.</p>
+      <p>Compare that with generating photoreal video of the athlete: expensive, slow, uncanny, and one clip showing a rep they never did ends the brand. <strong>There is no version of that worth the risk.</strong></p>
+      <h3>Why this is a new content category</h3>
+      <p>It is the first fitness media that is <em>about you and true</em>. Not a filtered highlight reel — a film of your own physiology, narrated in the second person, that you could not have made yourself and cannot get anywhere else.</p>
+      <p><strong>It is also the most shareable object the company can produce</strong>, which makes it the retention loop and the acquisition loop at the same time.</p>
+      <div class="spec">
+        source <b>recap.ts + learned.ts — both shipped</b><br>
+        missing <b>a renderer and a voice. That is the whole build.</b><br>
+        ends on <b>an instruction, never a compliment</b><br>
+        cost <b>cents — rendering, not generation</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 6 ════════ -->
+<section class="blk">
+  <div class="shead">
+    <h2>The record, and what it took to earn it</h2>
+    <div class="meta">Screen 05<br>The moat, drawn</div>
+  </div>
+  <div class="pair">
+    <div>
+      <div class="phone"><div class="scr">
+        <div class="sbar"><span>18:02</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="pad" style="flex:1;display:flex;flex-direction:column;gap:22px;padding-top:16px">
+          <div>
+            <div class="kick" style="margin-bottom:12px">Back Squat — best</div>
+            <div style="display:flex;align-items:baseline;gap:10px">
+              <span class="fig" style="font-size:64px;line-height:.9">142.5</span>
+              <span class="t-heading ash" style="font-weight:600">kg</span>
+            </div>
+            <div class="t-body ash" style="margin-top:8px">14 August — 1 rep — +5 kg on May</div>
+          </div>
+          <div class="tierbox">
+            <div class="kick" style="margin-bottom:2px">Evidence — tier 3 of 5</div>
+            <div class="ladder" id="ladder"></div>
+            <div class="tierwhat" id="tierWhat">Recorded — the lift is on video with the plates countable, and the rep completed.</div>
+          </div>
+          <div class="cosign">
+            <div class="t-bodyLg" style="font-weight:700">Co-signed by 2</div>
+            <div class="t-body ash" style="margin-top:3px">M. Kowalska and one other were in the room.</div>
+          </div>
+          <div style="margin-top:auto;padding-bottom:20px">
+            <div class="doorrow"><span class="t-note" style="font-weight:600">All 34 verified lifts</span><span class="ring">→</span></div>
+          </div>
+        </div>
+      </div></div>
+      <div class="ctl"><span class="btn" style="cursor:default;border-style:dashed">Tap a tier on the ladder</span></div>
+    </div>
+    <div class="notes">
+      <h3>The only camera bet worth taking</h3>
+      <p>Not form coaching — <strong>attestation</strong>. <code>packages/core/src/attestation.ts</code> already declares this six-tier ladder and tiers 0 to 2 have shipped. Tier 3 is a narrow, bounded camera problem: one declared attempt, framing the athlete <em>wants</em> to get right, and a single question — how many plates, and did the rep complete.</p>
+      <p>The failure mode is benign. <strong>"Couldn't verify, try again" costs nothing. "Your knee is caving" costs trust and invites liability.</strong></p>
+      <h3>Why this is the moat and the film is not</h3>
+      <p>Every strength number on the internet is self-reported and therefore worth nothing. There is no strength equivalent of a verified marathon time. A credential is worth what its recognition is worth — which makes it a <strong>graph</strong>, and graphs are the only thing on the moat list with real network effects.</p>
+      <p>The film is the most magical screen here. This is the most valuable one. Build it fourth.</p>
+      <div class="spec">
+        shipped <b>tiers 0 claimed — 1 sensed — 2 witnessed</b><br>
+        the bet <b>tier 3 recorded — plate count, not form score</b><br>
+        exit <b>ringed arrow — it leaves. Never a bordered box.</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 7 ════════ -->
+<section class="blk">
+  <div class="shead">
+    <h2>One message a day, and it has to earn it</h2>
+    <div class="meta">Screen 06<br>The interruption budget</div>
+  </div>
+  <div class="pair">
+    <div>
+      <div class="phone"><div class="scr lock">
+        <div class="sbar"><span>6:48</span><span class="rt">◐ ▮▮▮</span></div>
+        <div class="lockt"><span class="fig">6:48</span><span class="kick" style="margin-top:6px;display:block">Tuesday 18 August</span></div>
+        <div class="pad" style="padding-bottom:24px">
+          <div class="notif">
+            <div class="notifhead"><span class="kick acc">HYBRID</span><span class="kick">now</span></div>
+            <div class="t-note" style="font-weight:700;margin-top:7px;line-height:1.35">Today's squat is 92.5, not 100.</div>
+            <div class="t-body ash" style="margin-top:5px;line-height:1.45">You slept 5 h 12 and your resting HR is up 7. Same sets, lighter bar.</div>
+          </div>
+          <div class="rejected">
+            <div class="kick" style="margin-bottom:11px;color:var(--red)">Not sent today</div>
+            <div class="rej"><span>"Bench velocity +11% over six weeks"</span><span>→ weekly film</span></div>
+            <div class="rej"><span>"You hit a PR!"</span><span>→ in-app only</span></div>
+            <div class="rej"><span>"Time to work out!"</span><span>→ never</span></div>
+            <div class="rej"><span>"Great job yesterday!"</span><span>→ never</span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+    <div class="notes">
+      <h3>Three tests, all three must pass</h3>
+      <p><strong>Decision-changing</strong> — it alters what the athlete does in the next 24 hours. <strong>Non-obvious</strong> — they would not have worked it out themselves. <strong>Defensible</strong> — the evidence fits on one line.</p>
+      <p>The message above passes all three and is the single highest-value sentence the product can say. The four below it fail, and three of them are what every competitor sends.</p>
+      <h3>Structural guards, not a settings screen</h3>
+      <p><strong>Hard cap: one proactive message a day.</strong> If the athlete ignores three of a type, that type stops permanently — no re-prompting, no "are you sure". And it arrives when they wake, not when it was computed at 3 a.m.</p>
+      <p>If the day is unremarkable, say nothing. <strong>A coach who is quiet when there is nothing to say is a coach you believe when they speak.</strong></p>
+      <div class="spec kill">
+        the failure mode <b>every fitness app has died of notifications</b><br>
+        this is <b>a survival constraint, not a preference</b>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════ 8 ════════ -->
+<section class="blk">
+  <div class="shead">
+    <h2>What the navigation becomes</h2>
+    <div class="meta">Architecture<br>Before and after</div>
+  </div>
+  <div class="ba">
+    <div class="bacol">
+      <div class="kick" style="color:var(--red);margin-bottom:16px">Today — five tabs, sixty routes</div>
+      <div class="tabs old">
+        <span>Home</span><span>Log</span><span>Nutrition</span><span>Messages</span><span>You</span>
+      </div>
+      <ul class="balist">
+        <li>The athlete navigates to find what the system already knows.</li>
+        <li>Dashboards present evidence and ask for interpretation.</li>
+        <li>Per-set manual entry is the default path.</li>
+        <li>Sixty routes, and the good ones are three taps deep.</li>
+      </ul>
+    </div>
+    <div class="bacol">
+      <div class="kick" style="color:var(--accTx);margin-bottom:16px">After — one surface, one voice, one archive</div>
+      <div class="tabs new">
+        <span class="on">Now</span><span>Record</span><span class="mic">◉ hold to speak</span>
+      </div>
+      <ul class="balist">
+        <li><b>Now</b> — the claim, the session line, the receipt.</li>
+        <li><b>Record</b> — verified lifts, the films, the archive. The trophy cabinet.</li>
+        <li><b>Voice</b> — everything else. Authoring screens are reached by asking.</li>
+        <li>Plan editing, exercise browsing and food logging keep full traditional UI, unapologetically. <b>Authoring is a screen job.</b></li>
+      </ul>
+    </div>
+  </div>
+  <p class="notes" style="margin-top:30px;max-width:74ch"><strong>The honest caveat.</strong> This is the most speculative screen here. Navigation is not only wayfinding — it is browsing, discovery and accountability, and a product that hides its own data reads as unaccountable the first time it tells you something you disagree with. <strong>The AI decides the default; the screen exists so the athlete can inspect and override it.</strong> Ship the Today card first and watch whether anyone misses the tabs before deleting them.</p>
+</section>
+
+<div class="foot">
+  <span>HYBRID</span><span>reference/session-line-mockups.html</span><span>Companion to The Ambient Interface</span><span>Branch claude/zen-turing-bcy1tp</span>
+</div>
+</div>
+
+<style>
+/* ── grammar ── */
+.gram{display:grid;gap:34px;grid-template-columns:1fr}
+@media (min-width:900px){.gram{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:56px}}
+.gramlist{display:flex;flex-direction:column;border-top:1px solid var(--rule)}
+.gramitem{display:flex;justify-content:space-between;align-items:baseline;gap:16px;width:100%;
+  background:none;border:0;border-bottom:1px solid var(--rule);padding:14px 2px;cursor:pointer;
+  text-align:left;font-family:var(--disp);color:var(--tx);font-size:16px;font-weight:600}
+.gramitem span{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--dim);
+  text-transform:uppercase;flex:none;text-align:right}
+.gramitem:hover{color:var(--accTx)}
+.gramitem.on{color:var(--accTx)}
+.gramitem.on span{color:var(--accTx)}
+.gramout pre{font-family:var(--mono);font-size:12.5px;line-height:1.75;color:var(--mut);
+  background:var(--ink);border:1px solid var(--line);border-radius:6px;padding:18px 20px;
+  overflow-x:auto;margin:0;white-space:pre}
+.gramout .notes p{font-size:15px}
+
+/* ── verdict sheet ── */
+.dim-bg{position:absolute;inset:0;background:rgba(12,13,12,.72)}
+.sheet{position:relative;background:var(--ink2);border-top:1px solid var(--line);
+  border-radius:18px 18px 0 0;padding:10px 12px 24px;display:flex;flex-direction:column}
+.grab{width:34px;height:3px;border-radius:2px;background:var(--line);margin:0 auto 18px}
+.askrow{display:flex;flex-direction:column;gap:7px;padding-bottom:16px;border-bottom:1px solid var(--line)}
+.ans{font-size:19px;font-weight:700;line-height:1.35;letter-spacing:-.02em;margin-top:18px;text-wrap:balance}
+.sheetfoot{display:flex;gap:8px;margin-top:26px}
+.ghost{flex:1;background:none;border:1px solid var(--line);color:var(--ash);border-radius:999px;
+  padding:14px;font-family:var(--disp);font-weight:600;font-size:15px;cursor:pointer}
+.solid{flex:1;background:var(--acc);border:0;color:var(--onAcc);border-radius:999px;
+  padding:14px;font-family:var(--disp);font-weight:800;font-size:15px;cursor:pointer}
+
+/* ── film ── */
+.prog{display:flex;gap:4px;padding:6px 12px 0}
+.prog i{flex:1;height:2px;background:var(--line);border-radius:2px;overflow:hidden;display:block}
+.prog i b{display:block;height:100%;width:0;background:var(--acc)}
+.film{flex:1;position:relative;padding:0 12px}
+.fs{position:absolute;inset:0;padding:0 12px;display:flex;flex-direction:column;
+  justify-content:center;gap:20px;opacity:0;pointer-events:none;transition:opacity .45s ease}
+.fs.on{opacity:1}
+.fbig{display:flex;flex-direction:column;gap:4px}
+.fbig .fig{font-size:86px;line-height:.86;font-weight:900;letter-spacing:-.05em}
+.funit{font-size:18px;font-weight:600;color:var(--ash)}
+.fmid{font-size:27px;font-weight:800;line-height:1.2;letter-spacing:-.028em;text-wrap:balance}
+.fmid.acc{color:var(--acc)}
+.fcap{font-family:var(--mono);font-size:12px;color:var(--ash);letter-spacing:.02em}
+.bars{display:flex;gap:8px;align-items:flex-end;height:190px}
+.bars>div{flex:1;display:flex;flex-direction:column;justify-content:flex-end;gap:8px;height:100%}
+.bars i{display:block;height:0;background:var(--line);border-radius:2px;transition:height .7s cubic-bezier(.2,.7,.3,1)}
+.fs.on .bars i{height:var(--h)}
+.bars i.hi{background:var(--acc)}
+.bars span{font-family:var(--mono);font-size:10px;color:var(--ash);text-align:center}
+.vcmp{display:flex;flex-direction:column;gap:22px}
+.vcmp>div{display:flex;flex-direction:column;gap:7px}
+.vlab{font-family:var(--mono);font-size:11px;color:var(--ash);letter-spacing:.04em}
+.vcmp i{display:block;height:10px;width:0;background:var(--line);border-radius:2px;
+  transition:width .8s cubic-bezier(.2,.7,.3,1)}
+.fs.on .vcmp i{width:var(--w)}
+.vcmp i.hi{background:var(--acc)}
+.vval{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--chalk);font-variant-numeric:tabular-nums}
+.narr{padding:0 12px;min-height:52px;display:flex;align-items:center;
+  font-size:14px;line-height:1.4;color:var(--ash);border-top:1px solid var(--line);padding-top:14px;margin-top:8px}
+.filmfoot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 12px 20px}
+.filmfoot .ghost{flex:none;padding:11px 22px;font-size:14px;color:var(--chalk)}
+
+/* ── record ── */
+.tierbox{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0 18px;
+  display:flex;flex-direction:column;gap:12px}
+.ladder{display:flex;gap:5px}
+.rung{flex:1;background:none;border:0;padding:0;cursor:pointer;display:flex;flex-direction:column;gap:7px}
+.rung i{display:block;height:4px;border-radius:2px;background:var(--line)}
+.rung.fill i{background:var(--acc)}
+.rung span{font-family:var(--mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--ash);
+  text-align:left;line-height:1.2}
+.rung.sel span{color:var(--chalk)}
+.rung.sel i{outline:1px solid var(--chalk);outline-offset:2px}
+.tierwhat{font-size:13px;line-height:1.5;color:var(--ash);min-height:40px}
+.cosign{border-bottom:1px solid var(--line);padding-bottom:18px}
+.doorrow{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  border-top:1px solid var(--line);padding-top:16px}
+.ring{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);display:grid;
+  place-items:center;color:var(--ash);font-size:14px;flex:none}
+
+/* ── lock screen ── */
+.lock{background:linear-gradient(175deg,#141517 0%,#0c0d0c 62%)}
+.lockt{text-align:center;padding:46px 0 0;flex:1}
+.lockt .fig{font-size:70px;font-weight:800;letter-spacing:-.045em;line-height:1}
+.notif{background:var(--ink2);border-radius:14px;padding:14px 16px 16px}
+.notifhead{display:flex;justify-content:space-between;align-items:baseline}
+.rejected{margin-top:26px;border-top:1px solid var(--line);padding-top:16px}
+.rej{display:flex;justify-content:space-between;gap:14px;padding:8px 0;font-size:12.5px;color:var(--ash);
+  border-bottom:1px solid var(--line)}
+.rej span:last-child{font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--red);flex:none;align-self:center}
+.rej:last-child{border-bottom:0}
+
+/* ── before / after ── */
+.ba{display:grid;gap:38px;grid-template-columns:1fr}
+@media (min-width:880px){.ba{grid-template-columns:1fr 1fr;gap:52px}}
+.tabs{display:flex;gap:2px;border:1px solid var(--rule);border-radius:10px;overflow:hidden;
+  background:var(--ink);padding:5px}
+.tabs span{flex:1;text-align:center;font-family:var(--mono);font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--ash);padding:11px 2px;border-radius:6px}
+.tabs.new span{font-size:11px}
+.tabs .on{background:var(--ink2);color:var(--chalk)}
+.tabs .mic{color:var(--acc);flex:1.6}
+.balist{margin:20px 0 0;padding-left:18px;max-width:46ch}
+.balist li{margin:0 0 10px;color:var(--mut);font-size:15px;line-height:1.55}
+.balist li b{color:var(--tx);font-weight:700}
+.balist li::marker{color:var(--dim)}
+
+p.notes{max-width:62ch;color:var(--mut);font-size:15.5px;line-height:1.62}
+p.notes strong{color:var(--tx);font-weight:700}
+.deck code,p.notes code{font-family:var(--mono);font-size:.85em;background:var(--rule);
+  padding:1.5px 5px;border-radius:2px;color:var(--tx)}
+.foot{margin-top:70px;padding-top:26px;border-top:1px solid var(--rule);font-family:var(--mono);
+  font-size:11px;letter-spacing:.08em;color:var(--dim);display:flex;flex-wrap:wrap;gap:6px 22px}
+</style>
+
+<script>
+(function(){
+"use strict";
+var RM = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---- 1. Today: the reasoning drawer ---- */
+var wb = document.getElementById("whyBtn"), wt = document.getElementById("whyToggle");
+function toggleWhy(){
+  var open = wb.getAttribute("aria-expanded") === "true";
+  wb.setAttribute("aria-expanded", open ? "false" : "true");
+  wb.querySelector(".pm").textContent = open ? "＋" : "−";
+  wt.textContent = open ? "Expand the reasoning" : "Collapse the reasoning";
+}
+wb.addEventListener("click", toggleWhy); wt.addEventListener("click", toggleWhy);
+
+/* ---- 2. The Session Line ---- */
+var STAGES = [
+  { st:"Ready when you are", num:"92.5", sub:"kilograms — 3 reps",
+    heard:"Say nothing and I will log it as prescribed.", chips:[], listen:false, dim:true,
+    foot:"Phone down to begin", rest:"—", asleep:false,
+    cap:"<b>STAGE 1 — SILENT.</b> The prescription is on screen. Nothing is listening yet, nothing has been asked." },
+  { st:"Bar is moving", num:"92.5", sub:"set 3 — in progress",
+    heard:"", chips:[], listen:false, foot:"Screen asleep — 0:11", rest:"—", asleep:true,
+    cap:"<b>STAGE 2 — THE IMU.</b> The phone went face-down and motion started. The screen sleeps. The coach says nothing during a set. Not once." },
+  { st:"Logged — set 3", num:"92.5", sub:"3 reps, as prescribed",
+    heard:"Anything to add?", chips:[], listen:true, dim:true, foot:"Rest", rest:"0:04", asleep:false,
+    cap:"<b>STAGE 3 — RACKED.</b> Motion stopped, so the set is on record and the rest timer started itself. Zero taps so far. Now it listens." },
+  { st:"Logged — set 3", num:"92.5", sub:"3 reps at RPE 8",
+    heard:"“That was heavy — <em>two left</em>.”",
+    chips:["set 3","92.5 kg","3 reps","RPE 8"], listen:true, foot:"Rest", rest:"1:12", asleep:false,
+    cap:"<b>STAGE 4 — PARSED.</b> Three words carried the only information the system could not predict. The closed grammar ran on-device; no server, no model call." },
+  { st:"Set 4 of 5", num:"92.5", sub:"kilograms — 3 reps",
+    heard:"Same weight. That's your last heavy one.", chips:[], listen:false,
+    foot:"Ready", rest:"2:00", asleep:false,
+    cap:"<b>STAGE 5 — ONE LINE.</b> Spoken between sets, and only because it changes the NEXT set. Anything that does not is saved for the Sunday film." }
+];
+var si = 0, timer = null;
+var el = {
+  scr:document.getElementById("slScr"), state:document.getElementById("slState"),
+  num:document.getElementById("slNum"), sub:document.getElementById("slSub"),
+  heard:document.getElementById("slHeard"), chips:document.getElementById("slChips"),
+  foot:document.getElementById("slFootL"), rest:document.getElementById("slRest"),
+  cap:document.getElementById("slCap"), say:document.getElementById("slSay"),
+  set:document.getElementById("slSet"), ear:document.getElementById("slEar")
+};
+function drawSL(){
+  var s = STAGES[si];
+  el.state.textContent = s.st; el.num.textContent = s.num; el.sub.textContent = s.sub;
+  el.heard.innerHTML = s.heard;
+  el.heard.className = "heard" + (s.dim ? " t-note ash" : "");
+  el.foot.textContent = s.foot; el.rest.textContent = s.rest; el.cap.innerHTML = s.cap;
+  el.set.textContent = si >= 4 ? "Set 4 of 5" : "Set 3 of 5";
+  el.chips.innerHTML = s.chips.map(function(c,i){
+    return '<span class="chip' + (i===0?" set":"") + '">' + c + "</span>"; }).join("");
+  el.scr.classList.toggle("listening", !!s.listen);
+  el.scr.classList.toggle("asleep", !!s.asleep);
+  el.say.style.visibility = s.asleep ? "hidden" : "visible";
+  el.ear.style.opacity = s.listen ? "1" : ".4";
+}
+function step(){ si = (si + 1) % STAGES.length; drawSL(); }
+function stop(){ if(timer){ clearInterval(timer); timer = null; }
+  document.getElementById("slPlay").textContent = "Play the set"; }
+document.getElementById("slPlay").addEventListener("click", function(){
+  if(timer){ stop(); return; }
+  si = 0; drawSL();
+  this.textContent = "Pause";
+  timer = setInterval(function(){
+    if(si === STAGES.length - 1){ stop(); return; }
+    step();
+  }, RM ? 900 : 2600);
+});
+document.getElementById("slStep").addEventListener("click", function(){ stop(); step(); });
+document.getElementById("slReset").addEventListener("click", function(){ stop(); si = 0; drawSL(); });
+drawSL();
+
+/* ---- 3. The grammar ---- */
+var GRAM = [
+  ["done","accept verbatim","{ block: 'strength', exercise: 'Back Squat',\n  set: 3, load: 92.5, reps: 3,\n  source: 'prescribed' }"],
+  ["eight","reps only","{ set: 3, load: 92.5, reps: 8,\n  loadSource: 'prescribed',\n  repsSource: 'spoken' }"],
+  ["two left","effort only","{ set: 3, load: 92.5, reps: 3, rpe: 8,\n  rir: 2,\n  // feeds effort.ts -> personal bias }"],
+  ["hundred for eight","load + reps","{ set: 3, load: 100, reps: 8,\n  deviation: '+7.5 kg vs prescribed' }"],
+  ["add five","next-set delta","{ next: { load: 97.5 },\n  applies: 'set 4',\n  confirm: 'nod' }"],
+  ["last set","close the exercise","{ close: 'Back Squat',\n  sets: 4, tonnage: 1110,\n  advance: 'Romanian Deadlift' }"],
+  ["swap this","structural","{ intent: 'substitute',\n  reason: null,   // will ask, once\n  candidates: ['Front Squat','Hack Squat'] }"],
+  ["how was that?","request a verdict","{ intent: 'verdict',\n  scope: 'set',\n  reads: ['velocity','rom','history'] }"]
+];
+var gl = document.getElementById("gramList"), go = document.getElementById("gramOut");
+GRAM.forEach(function(g, i){
+  var b = document.createElement("button");
+  b.className = "gramitem"; b.type = "button";
+  b.innerHTML = '<em style="font-style:normal">“' + g[0] + '”</em><span>' + g[1] + "</span>";
+  b.addEventListener("click", function(){
+    [].forEach.call(gl.children, function(c){ c.classList.remove("on"); });
+    b.classList.add("on"); go.textContent = g[2];
+  });
+  gl.appendChild(b);
+  if(i === 0){ b.classList.add("on"); go.textContent = g[2]; }
+});
+
+/* ---- 4. The Sunday film ---- */
+var SCENES = [
+  { d:4200, n:"You lifted fourteen point two tonnes this week." },
+  { d:4000, n:"Six sessions. Thursday was the week." },
+  { d:4400, n:"Thursday's squat moved faster at 105 than it did at 100 six weeks ago." },
+  { d:3800, n:"That's the first hard evidence your strength is up rather than your effort." },
+  { d:4000, n:"One thing for next week — you haven't touched a hinge in nine days." }
+];
+var TOTAL = SCENES.reduce(function(a,s){ return a + s.d; }, 0);
+var prog = document.getElementById("filmProg");
+SCENES.forEach(function(){ var i = document.createElement("i");
+  i.appendChild(document.createElement("b")); prog.appendChild(i); });
+var fScenes = [].slice.call(document.querySelectorAll(".fs")),
+    fBtn = document.getElementById("filmBtn"), fNarr = document.getElementById("filmNarr"),
+    fT = document.getElementById("filmT"), cTon = document.getElementById("cTon");
+var fi = 0, raf = null, t0 = 0, elapsed = 0, playing = false;
+function fmt(ms){ var s = Math.floor(ms/1000); return "0:" + (s<10?"0":"") + s; }
+function showScene(i){
+  fScenes.forEach(function(s,k){ s.classList.toggle("on", k === i); });
+  fNarr.textContent = SCENES[i].n;
+  if(i === 0){ countTonnes(); }
+}
+function countTonnes(){
+  if(RM){ cTon.textContent = "14.2"; return; }
+  var st = performance.now();
+  (function tick(now){
+    var p = Math.min(1, (now - st) / 1500), e = 1 - Math.pow(1 - p, 3);
+    cTon.textContent = (14.2 * e).toFixed(1);
+    if(p < 1) requestAnimationFrame(tick);
+  })(st);
+}
+function resetFilm(){
+  cancelAnimationFrame(raf); playing = false; fi = 0; elapsed = 0;
+  fBtn.textContent = "▶ Play"; fT.textContent = "0:00 / 0:20";
+  [].forEach.call(prog.children, function(i){ i.firstChild.style.width = "0"; });
+  fScenes.forEach(function(s,k){ s.classList.toggle("on", k === 0); });
+  fNarr.textContent = SCENES[0].n; cTon.textContent = "0";
+}
+function loop(now){
+  var dt = now - t0; t0 = now; elapsed += dt;
+  var acc = 0, idx = 0;
+  for(var i = 0; i < SCENES.length; i++){
+    var end = acc + SCENES[i].d;
+    var bar = prog.children[i].firstChild;
+    bar.style.width = (elapsed >= end ? 100 : elapsed > acc ? ((elapsed - acc) / SCENES[i].d) * 100 : 0) + "%";
+    if(elapsed >= acc && elapsed < end) idx = i;
+    acc = end;
+  }
+  if(idx !== fi){ fi = idx; showScene(fi); }
+  fT.textContent = fmt(Math.min(elapsed, TOTAL)) + " / 0:20";
+  if(elapsed >= TOTAL){ playing = false; fBtn.textContent = "↺ Replay"; return; }
+  raf = requestAnimationFrame(loop);
+}
+fBtn.addEventListener("click", function(){
+  if(playing){ cancelAnimationFrame(raf); playing = false; fBtn.textContent = "▶ Play"; return; }
+  if(elapsed >= TOTAL) resetFilm();
+  playing = true; fBtn.textContent = "‖ Pause";
+  showScene(fi); t0 = performance.now(); raf = requestAnimationFrame(loop);
+});
+resetFilm();
+
+/* ---- 5. The attestation ladder ---- */
+var TIERS = [
+  ["0","claimed","As logged. The athlete typed it, and every strength number on the internet stops here."],
+  ["1","sensed","A matched device recording corroborates the workout — time, duration, heart rate. Not the barbell load."],
+  ["2","witnessed","A second account co-signed this exact lift. Shipped."],
+  ["3","recorded","Recorded — the lift is on video with the plates countable, and the rep completed."],
+  ["4","instrumented","A bar sensor recorded the rep's velocity and range of motion. Integrate, never manufacture."],
+  ["5","sanctioned","A federation meet result. The ceiling, and it is not ours to award."]
+];
+var lad = document.getElementById("ladder"), tw = document.getElementById("tierWhat");
+TIERS.forEach(function(t, i){
+  var b = document.createElement("button");
+  b.className = "rung" + (i <= 3 ? " fill" : "") + (i === 3 ? " sel" : "");
+  b.type = "button";
+  b.innerHTML = "<i></i><span>" + t[1] + "</span>";
+  b.addEventListener("click", function(){
+    [].forEach.call(lad.children, function(c){ c.classList.remove("sel"); });
+    b.classList.add("sel"); tw.textContent = t[2];
+  });
+  lad.appendChild(b);
+});
+})();
+</script>
