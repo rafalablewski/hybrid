@@ -4,6 +4,7 @@ import { LanguageProvider } from "../lib/i18n";
 import { ThemeProvider } from "../lib/theme";
 import { SessionProvider } from "../lib/session";
 import { NavScrollProvider } from "../lib/nav-scroll";
+import { ConfirmProvider } from "../components/aurora/confirm";
 import QueryProvider from "../lib/query";
 
 /**
@@ -38,7 +39,13 @@ function Providers({ children }: { children: ReactNode }) {
           are written for. */}
       <SessionProvider>
         <LanguageProvider>
-          <NavScrollProvider>{children}</NavScrollProvider>
+          {/* Inside Language exactly as app/_layout.tsx has it, so the sheet's
+              buttons localize — and OUTSIDE the screen, because any row that
+              destroys something calls `useConfirm` unconditionally and the
+              hook throws without this. */}
+          <ConfirmProvider>
+            <NavScrollProvider>{children}</NavScrollProvider>
+          </ConfirmProvider>
         </LanguageProvider>
       </SessionProvider>
     </ThemeProvider>

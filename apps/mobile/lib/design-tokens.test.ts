@@ -1613,7 +1613,19 @@ describe("presentation", () => {
     const floor = file("aurora/done-floor.tsx")!;
     expect(floor.text).not.toMatch(/borderStyle:\s*"dashed"/);
 
-    // 2. The rail offers the pair in BOTH day states — logged and empty.
+    // 2. The rail offers the pair in both day states that ASK for something —
+    //    a day that holds training, and an open one — exactly once in each.
+    //    The count is the invariant in both directions: a state that forgot
+    //    its pair is the original bug, a second pair inside one state is the
+    //    duplication beside it.
+    //
+    //    The DECLARED REST day is deliberately not one of them and must stay
+    //    that way. It is the one state that asks for nothing — the athlete has
+    //    already answered — so its only control would have been the undo, and
+    //    a card whose loudest element is the offer to unsettle what it just
+    //    announced is a card arguing with itself. It stays reversible without
+    //    a pill: the block itself takes the tap (see the `resting` branch),
+    //    which is why this count is 2 and not 3.
     const rail = file("aurora/logbook-rail.tsx")!;
     expect(rail.text.match(/<AActionPair/g) ?? []).toHaveLength(2);
 

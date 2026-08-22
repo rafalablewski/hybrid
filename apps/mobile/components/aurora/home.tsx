@@ -109,6 +109,8 @@ import ReadinessSheet from "./readiness-sheet";
 import AuroraDayBand from "./day-band";
 import AuroraDayBar from "./day-bar";
 import { readRejected, readRejectedEvents, rejectEvent, rejectKind } from "../../lib/day-band-prefs";
+import { readRestDays, setRestDay } from "../../lib/rest-days";
+import { useListMotion } from "../../lib/list-motion";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraSportPages, { SportPagesWindow } from "./sport-pages";
@@ -506,6 +508,21 @@ export default function AuroraHome() {
   // must only honour the first (lib/day-band-prefs.ts).
   const [rejectedEvents, setRejectedEvents] = useState<TrainingKind[]>([]);
   useEffect(() => { readRejectedEvents().then(setRejectedEvents).catch(() => {}); }, [today]);
+  // DECLARED REST DAYS (lib/rest-days.ts) — the second training-INTENT signal
+  // the app collects, and the only one that is not scoped to today: "Saturday
+  // was a rest day" stays true next week, and the logbook rail scrolls back
+  // four. Owned here, like every other day-scoped preference on this screen.
+  const [restDays, setRestDays] = useState<Set<string>>(new Set());
+  useEffect(() => { readRestDays().then(setRestDays).catch(() => {}); }, [today]);
+  /**
+   * …and it TRAVELS. Declaring rest is the largest state change on that card —
+   * a centred block with three actions becomes a different block with none,
+   * and the card loses most of its height — so unanimated it snaps, taking
+   * everything below it up the screen with no explanation of what moved. This
+   * arms the shared slide spring on the commit (lib/list-motion.ts), which
+   * also honours Reduce Motion.
+   */
+  const restMotion = useListMotion();
   // The engines take milliseconds; `today` is the day KEY that flips at
   // midnight, so this is a clock read pinned to the day rather than to render.
   const bandNow = useMemo(() => Date.now(), [today]);
@@ -595,6 +612,11 @@ export default function AuroraHome() {
       // rendered, forty pixels apart, saying "Log a sport" twice. The PLAN rail
       // has no pair of its own, so there the floor keeps the row.
       logRow={!logbookMode}
+      // …and for the same reason it must not speak the empty day's invitation
+      // there either: the logbook rail's empty branch IS that invitation, drawn
+      // whole. False makes the floor draw nothing on a day holding nothing —
+      // and still draw the sauna on a day holding only that.
+      emptyCaption={!logbookMode}
     />
   );
 
@@ -1067,6 +1089,23 @@ export default function AuroraHome() {
                 setQuickOpen(true);
               }}
               onSelectDay={setRailDay}
+              restDays={restDays}
+              // THE CARD MOVES ON THE TAP, not on the write. It redrew from
+              // the store's answer, which put an AsyncStorage round-trip
+              // between the finger and the first pixel — and armed the
+              // animation, if it were armed there, around whatever commit
+              // happened to land during the await. The day key is already on
+              // the day, so the next state is computable here: animate, apply,
+              // then persist. The write is best-effort and its result is not
+              // read back; a failure is reconciled by the read on next mount.
+              onDeclareRest={(d, resting) => {
+                restMotion(() => setRestDays((prev) => {
+                  const next = new Set(prev);
+                  if (resting) next.add(d.dateKey); else next.delete(d.dateKey);
+                  return next;
+                }));
+                setRestDay(d.ts, resting).catch(() => {});
+              }}
               doneFloor={doneFloor}
             />
             <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
@@ -1222,8 +1261,10 @@ export default function AuroraHome() {
             the rows are the confirmation loop and must never simply vanish.
             Hidden for a true first run (no plan, nothing ever logged): the
             chooser above owns that state, and an empty card under it would be a
-            second competing log CTA. */}
-        {!useRail && !logbookMode && (!!sched || sessions.length > 0) && (
+            second competing log CTA. A day carrying a SAUNA is not that state —
+            something is on the record, and `doneEntries` is what has it, since
+            the session list on its own cannot see a sitting. */}
+        {!useRail && !logbookMode && (!!sched || sessions.length > 0 || doneEntries.length > 0) && (
           /* ACard, not a hand-drawn copy of it. This wrapper spelled out
              ACard's exact base style — hairline, RADIUS.card, CARD_PAD, ink2,
              cardShadow — which on iOS 26 is the ONE thing the copy cannot

@@ -24,6 +24,7 @@ import ReceiptBlock from "./receipt-block";
 import { usePlanOverrides } from "../../lib/plan-overrides";
 import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
+import { useListMotion } from "../../lib/list-motion";
 import { withAlpha } from "./field";
 
 // ── AURORA Week rail (mobile) ───────────────────────────────────────────────
@@ -158,6 +159,11 @@ export default function AuroraWeekRail({
   const [picked, setPicked] = useState<number | null>(null);
   useEffect(() => { setPicked(null); }, [planId]);
   const selectedIndex = picked ?? schedule?.todayIndex ?? 0;
+  /** The day detail travels between days — see the twin note in
+   *  logbook-rail.tsx. These two rails are one object in two modes, so a
+   *  transition on one and a teleport on the other is exactly the drift the
+   *  shared shape exists to prevent. */
+  const dayMotion = useListMotion();
 
   // The receipt behind a done day — built from the logged session that
   // fulfilled it, so every figure is real (and untrustworthy ones are dropped).
@@ -214,7 +220,7 @@ export default function AuroraWeekRail({
       {/* the seven-day week — no boxes, no dots; a single tonal system */}
       <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: 16 }}>
         {windowDays.map((d) => (
-          <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => { setPicked(d.index); onSelectDay?.(d); }} t={t} />
+          <DayChip key={d.dateKey} C={C} day={d} selected={d.index === selectedIndex} onSelect={() => dayMotion(() => { setPicked(d.index); onSelectDay?.(d); })} t={t} />
         ))}
       </View>
 
