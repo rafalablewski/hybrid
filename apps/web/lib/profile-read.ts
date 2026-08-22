@@ -1,4 +1,4 @@
-import { relationTo, canViewResults, profileStats, estimateFitnessLevel, badgeFor, type Visibility } from "@hybrid/core";
+import { relationTo, canViewResults, profileStats, estimateFitnessLevel, badgeFor, effectiveAgeYears, sanitizeVolumeProfile, type Visibility } from "@hybrid/core";
 import type { BadgeAccent, FitnessLevel, LoggedSession, PublicProfile, ProfileStats, Relation, FollowState } from "@hybrid/core";
 import { prisma } from "@/lib/db";
 import { edgesFor, allSessionsFor, blockedIdsFor } from "@/lib/social";
@@ -38,6 +38,25 @@ export interface PublicProfileRead {
   sessions: LoggedSession[] | null;
 }
 
+/**
+ * The athlete's questionnaire (sex, birth year, body mass), server-side.
+ *
+ * Raw + soft-guarded for the reason /api/questionnaire is: `User.questionnaire`
+ * is added by reference/sql-questionnaire.sql, and a public profile must keep
+ * rendering on a database where that has not been applied. A miss returns null
+ * and the estimate falls back to its own published defaults.
+ */
+async function readVolumeProfile(userId: string) {
+  try {
+    const rows = await prisma.$queryRaw<{ questionnaire: unknown }[]>`
+      SELECT "questionnaire" FROM "User" WHERE id = ${userId} LIMIT 1
+    `;
+    return sanitizeVolumeProfile(rows[0]?.questionnaire);
+  } catch {
+    return null;
+  }
+}
+
 /** `null` means "not found" as far as the viewer is concerned — including the
  *  case where a block exists in either direction, which hides the profile
  *  entirely rather than admitting it is there. */
@@ -74,26 +93,41 @@ export async function loadPublicProfile(viewerId: string, handle: string): Promi
         select: { weightKg: true },
       }))?.weightKg ?? null
     : null;
-  // SEX, so the public badge is scored against the same bar the athlete's own
-  // Performance card uses. Every threshold in the app is published for a male
-  // athlete and shifted from there, and without this the server would hold a
-  // woman to the men's bar while her own card holds her to the women's — the
-  // two surfaces disagreeing about her level, which is precisely what one
-  // shared estimate exists to prevent.
+  // SEX AND AGE, so the public badge is scored against the same bar the
+  // athlete's own Performance card uses. Every strength and pace threshold in
+  // the app is published for a male athlete and shifted from there, so without
+  // this the server holds a woman to the men's bar while her own card holds her
+  // to the women's — the two surfaces disagreeing about her level, which is
+  // precisely what one shared estimate exists to prevent.
   //
-  // NOTHING PERSISTS SEX ANY MORE. The talent profile was the only place it was
-  // stored server-side, and it went with the Talent Graph (2026-08 strategy
-  // cuts); the volume profile — where the athlete actually sets it — lives in
-  // each device's own prefs, which the server cannot read. So the public badge
-  // falls back to the published (male) bar for everyone, while the athlete's
-  // OWN card still scores her correctly from her device profile. That is a real
-  // disagreement between two surfaces, and the fix is persisting the volume
-  // profile server-side — tracked as `volume-profile-server-sync`.
+  // IT USED TO PASS sex: "M" FOR EVERYONE, and the comment here explained why:
+  // nothing persisted sex server-side once the talent profile went with the
+  // Talent Graph, and the volume profile lived only in each device's prefs. That
+  // was true when it was written and is not true now — `volume-profile-server-
+  // sync` shipped, so `User.questionnaire` carries sex and birth year and
+  // /api/questionnaire reads them. The blocker cleared; this call site did not
+  // follow, which is the whole failure mode a capability register exists to
+  // catch. Read through the SAME `sanitizeVolumeProfile` the write path uses, so
+  // the server cannot read a shape the client could never have saved.
+  //
+  // Soft-guarded (raw query) for the same reason the questionnaire route is: the
+  // column may not be migrated yet, and a public profile must not 500 over a
+  // badge. An unreadable questionnaire scores exactly as it did before.
+  const profileForLevel = sessions ? await readVolumeProfile(profile.userId) : null;
   // ONE WORD and its accent. The ratio never travels — PR loads are already
   // public tiles, and publishing the ratio beside them would let any viewer
   // divide and recover the athlete's body mass.
   const badge = sessions
-    ? badgeFor(estimateFitnessLevel(sessions, { bodyweightKg: bw, sex: "M" }))
+    ? badgeFor(
+        estimateFitnessLevel(sessions, {
+          // The scale outranks the typed figure, exactly as it does in
+          // useFitnessLevel on the client: the standards score against the
+          // athlete's CURRENT mass, not one typed at setup.
+          bodyweightKg: bw ?? profileForLevel?.bodyweightKg ?? null,
+          ageYears: profileForLevel ? effectiveAgeYears(profileForLevel) ?? null : null,
+          sex: profileForLevel?.sex,
+        }),
+      )
     : null;
 
   return {
