@@ -30,7 +30,9 @@ import HeatAccent from "./heat-accent";
 // display-weight numeral demoted to a label, and keeps the arrow into the
 // Done-today sheet. At zero it drops the arrow and speaks the invitation
 // instead ("a match, a run, a swim — it lands here"), because a "0" is not
-// worth a surface.
+// worth a surface — and at zero-with-a-sauna it says nothing at all: the
+// sitting below it already is the day's record, and an invitation over it
+// would be denying the line under it (see `heatOnly`).
 //
 // A ROW CAN ALSO BE RATED FROM HERE. A session the app has no effort rating for
 // counts for nothing in training load (core/session-feel.ts, feel-schedule's
@@ -52,6 +54,16 @@ import HeatAccent from "./heat-accent";
 // swipe, so the only destructive gesture in this list still belongs to a
 // workout.
 //
+// AND IT SURVIVES A DAY WITH NO WORKOUT AT ALL. A rest-day sauna is the most
+// ordinary sitting there is, and it used to be the one the app dropped —
+// though not here. THIS list always drew it: `entries` has never needed a
+// session to hold a sitting. It was the HOSTS that read "no sessions" as "empty
+// day": the logbook rail sent an unlogged day down its empty branch and never
+// mounted the floor at all, so twenty minutes of heat the engines had already
+// scored appeared on no surface that names the day. What was wrong on this side
+// was quieter and is the `heatOnly` branch below — the sitting rendered under an
+// invitation saying nothing had landed here yet.
+//
 // This file is the standard. It once had a web twin it mirrored exactly; the
 // web client was retired in Aug 2026 and took it with it.
 export default function DoneFloor({
@@ -65,6 +77,7 @@ export default function DoneFloor({
   dayTs,
   pad = 20,
   rule = true,
+  emptyCaption = true,
   onOpen,
   onLog,
   onDone,
@@ -93,6 +106,13 @@ export default function DoneFloor({
   pad?: number;
   /** false when the floor IS the card (nothing above it to be separated from). */
   rule?: boolean;
+  /** Draw the invitation ("a match, a run, a swim — it lands here") on a day
+   *  that holds nothing. False where the HOST already says exactly that: the
+   *  logbook rail's empty day is a whole block of it — symbol, headline, one
+   *  sentence and the two log actions — and the caption underneath was the
+   *  third time one card said the same thing. With it false a truly empty day
+   *  draws NO floor; a day holding only a sauna still draws the sauna. */
+  emptyCaption?: boolean;
   onOpen: (sessionId: string) => void;
   onLog: () => void;
   onDone: () => void;
@@ -134,6 +154,24 @@ export default function DoneFloor({
     ? `${rows.length} ${t("w.home.today.glanceDone")}`
     : `${rows.length} ${t("w.home.today.glanceDoneOn").replace("{d}", dayLabel ?? "")}`;
 
+  /**
+   * A SAUNA ON A DAY NOBODY TRAINED IS STILL A DAY WITH SOMETHING ON IT.
+   *
+   * The seam's count counts SESSIONS (see `entries` above), so a day whose only
+   * entry is a sitting has no number to show — and until this branch existed
+   * that fell straight through to the empty state, which spoke the invitation
+   * ("a match, a run, a swim — it lands here") directly above the sauna line
+   * saying something already had. The invitation is for a day holding NOTHING;
+   * a sitting speaks for itself and needs no seam over it.
+   */
+  const heatOnly = rows.length === 0 && entries.length > 0;
+  const showCaption = rows.length === 0 && entries.length === 0 && emptyCaption;
+  const showLogRow = isToday && logRow;
+  // Nothing to state and nothing to offer: draw no floor at all rather than the
+  // seam's gap under a host that has already said this (the logbook rail's
+  // empty day). Every hook above this line — the floor must not skip its own.
+  if (entries.length === 0 && !showCaption && !showLogRow) return null;
+
   return (
     <View>
       {/* Whitespace, not a rule. The seam's LABEL is the separation — the count
@@ -156,11 +194,11 @@ export default function DoneFloor({
           <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: C.ash }}>{countLabel}</Text>
           <ArrowGlyph size={14} color={quiet} />
         </Pressable>
-      ) : (
+      ) : showCaption ? (
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: leading(fs.micro), color: quiet }}>{t(copy.subKey ?? "w.home.today.alsoTodaySubEmpty")}</Text>
-      )}
+      ) : null}
 
-      <View style={{ marginTop: rows.length > 0 ? 4 : 6, gap: 4 }}>
+      <View style={{ marginTop: rows.length > 0 ? 4 : heatOnly ? 0 : 6, gap: 4 }}>
         {entries.map((entry) => {
           // The sauna, as a half-height accent LINE under the workout it
           // followed — never a row of the same rank, and it carries no gesture

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, SERIF_X_HEIGHT_RATIO, X_HEIGHT_EM } from "./scale";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
 
 /**
@@ -15,12 +15,19 @@ import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
  * rung that breaks the ladder's promises.
  */
 
-// Eleven rungs. `note` (15) and `heading` (20) were retired in Aug 2026 — see
-// the note on `fs` for why neither was ever chosen.
+// Eleven rungs on the SANS ladder. `note` (15) and `heading` (20) were retired
+// in Aug 2026 — see the note on `fs` for why neither was ever chosen.
 const ORDER: TypeRole[] = [
   "nano", "micro", "caption", "body", "bodyLg",
   "subtitle", "title", "headline", "display", "hero", "stat",
 ];
+
+// `editorial` (30) is NOT on that ladder and must not be tested against it: it
+// is the serif's own rung, sitting between `display` (26) and `hero` (34)
+// because ITC Garamond needs 1.176x Söhne to reach the same x-height. It is
+// held separately below, and typography.test.ts holds that only `cut.serif`
+// may name it.
+const SERIF_ORDER: TypeRole[] = ["editorial"];
 
 const SPACE_ORDER: SpaceToken[] = [
   "none", "xxs", "xs", "sm", "ms", "md", "lg", "xl", "xxl", "xxxl", "huge",
@@ -28,7 +35,30 @@ const SPACE_ORDER: SpaceToken[] = [
 
 describe("type scale", () => {
   it("names every rung exactly once", () => {
-    expect(Object.keys(fs).sort()).toEqual([...ORDER].sort());
+    expect(Object.keys(fs).sort()).toEqual([...ORDER, ...SERIF_ORDER].sort());
+  });
+
+  it("derives the serif rung rather than hard-coding it", () => {
+    // The rung is `display` x the ratio between the two measured x-heights. If
+    // `display` ever moves, the serif moves with it — a typed 30 would have gone
+    // on claiming a match it no longer had, and the failure is invisible: two
+    // faces at slightly different optical sizes just look faintly wrong.
+    expect(SERIF_X_HEIGHT_RATIO).toBeCloseTo(1.1753, 4);
+    expect(fs.editorial).toBe(Math.round((fs.display * SERIF_X_HEIGHT_RATIO) / 2) * 2);
+    expect(fs.editorial).toBe(30);
+    // The x-heights are the measurement the whole pairing rests on. They are
+    // read off the shipped binaries; changing one without re-measuring is how
+    // this quietly stops being true.
+    expect(X_HEIGHT_EM.sans).toBeCloseTo(0.523, 3);
+    expect(X_HEIGHT_EM.serif).toBeCloseTo(0.445, 3);
+  });
+
+  it("keeps the serif rung off the sans ladder", () => {
+    // A rung the sans could reach is a rung the sans WILL reach. 30 sits two dp
+    // from `display` and would read as a second heading size nobody chose.
+    for (const r of SERIF_ORDER) expect(ORDER).not.toContain(r);
+    expect(fs.editorial).toBeGreaterThan(fs.display);
+    expect(fs.editorial).toBeLessThan(fs.hero);
   });
 
   it("ascends strictly — no two rungs share a size", () => {
@@ -228,7 +258,7 @@ describe("ALPHA — the tint scale", () => {
  */
 describe("the type faces", () => {
   it("declares exactly the faces the app loads", () => {
-    expect(Object.keys(fonts).sort()).toEqual(["display", "mono"]);
+    expect(Object.keys(fonts).sort()).toEqual(["display", "mono", "serif"]);
   });
 
   it("serves exactly the faces it declares, and from nowhere public", () => {
@@ -243,7 +273,20 @@ describe("the type faces", () => {
     expect(fontImportUrl, "a public @import cannot serve a licensed face").toBe("");
     const css = readFileSync(join(__dirname, "..", "..", "..", "apps", "web", "app", "globals.css"), "utf8");
     const declared = new Set([...css.matchAll(/@font-face\{font-family:"([^"]+)"/g)].map((m) => m[1]!));
-    expect([...declared].sort()).toEqual(Object.values(fonts).slice().sort());
+    // WEB SERVES TWO OF THE THREE, and the missing one is deliberate.
+    //
+    // `fonts.serif` is the editorial voice, and the editorial voice is a
+    // CONSUMER surface. The web deployment has no consumer surfaces left — it
+    // is the operator panel, its login and the legal pages (see the mobile-first
+    // rule in CLAUDE.md), and an operator reading Agent HQ is never shown a
+    // sentence that concludes something about their training. Declaring the
+    // face here would ship a webfont download that nothing on the domain can
+    // ever paint, which is the exact defect this assertion was written for.
+    //
+    // If a consumer surface ever returns to web, the face comes with it and
+    // this exclusion goes in the same change.
+    const WEB_FACES = Object.entries(fonts).filter(([k]) => k !== "serif").map(([, v]) => v);
+    expect([...declared].sort()).toEqual(WEB_FACES.slice().sort());
     expect(css, "no public font host").not.toMatch(/fonts\.googleapis\.com/);
   });
 });

@@ -303,6 +303,15 @@ export const F = {
   mono: "SohneMono_400Buch",
   monoMed: "SohneMono_500Kraftig",
   monoBold: "SohneMono_600Halbfett",
+  /**
+   * THE EDITORIAL VOICE — ITC Garamond Book, and the only alias here with a cap
+   * on how often it may appear. ONE element per screen, never under 24dp, never
+   * a figure or a control, English only. Reach for `ty(C, "editorial")` rather
+   * than this alias: the token carries the size, leading and tracking that make
+   * the pairing work, and a hand-rolled `fontFamily: F.serif` throws all three
+   * away. There is no italic because nothing needs one yet.
+   */
+  serif: "ITCGaramondStd_400Bk",
 } as const;
 
 /**
@@ -389,6 +398,7 @@ export const F_POSTSCRIPT: Record<string, string> = {
   [F.mono]: "TestSohneMono-Buch",
   [F.monoMed]: "TestSohneMono-Kraftig",
   [F.monoBold]: "TestSohneMono-Halbfett",
+  [F.serif]: "ITCGaramondStd-Bk",
 };
 
 /**

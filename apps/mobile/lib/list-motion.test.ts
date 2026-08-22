@@ -230,3 +230,50 @@ describe("live logger — every set-list mutation travels", () => {
     expect(body, "the non-reduced curve is the shared slide spring, so both mechanisms agree").toContain("springs.slide");
   });
 });
+
+/**
+ * THE DAY CARD'S STATE CHANGES, same guard, different surface.
+ *
+ * The set list was not the only place a user-caused layout change teleported.
+ * Both week rails replace EVERYTHING under their hairline when a chip is
+ * tapped — a receipt with its figures, an empty block with three actions, a
+ * declared rest day — and those are different heights, so an unanimated swap
+ * snaps the card and takes the rest of the screen with it. The rest
+ * declaration is the largest of them: three actions become none.
+ *
+ * These are text scans for the same reason the file above is one: the bug is
+ * only visible on a device, so it survives every gate that runs the code.
+ */
+describe("the day card travels between its states", () => {
+  const read = (rel: string) => readFileSync(join(__dirname, "..", rel), "utf8");
+
+  /** Both rails are ONE object in two modes. A transition on one and a
+   *  teleport on the other is exactly the drift the shared shape prevents. */
+  for (const rail of ["logbook-rail", "week-rail"]) {
+    it(`${rail} arms the day swap`, () => {
+      const src = read(`components/aurora/${rail}.tsx`);
+      expect(src, "the rail must take the shared motion hook").toContain("useListMotion");
+      // The chip's commit — setPicked plus the caller's lift — travels as ONE
+      // armed unit. Asserted on the call shape rather than on mere presence of
+      // the import, because an unused hook is the failure mode here.
+      expect(
+        src,
+        `${rail}: the day-chip commit must be wrapped in the motion hook, not just imported`,
+      ).toMatch(/onSelect=\{\(\) => dayMotion\(\(\) => \{ setPicked/);
+    });
+  }
+
+  it("declaring a rest day travels, and moves on the TAP rather than on the write", () => {
+    const home = read("components/aurora/home.tsx");
+    expect(home, "the screen owns the commit, so it owns the motion").toContain("restMotion");
+    expect(home, "the state change must be inside the armed callback").toMatch(/restMotion\(\(\) => setRestDays\(/);
+    // The card used to redraw from the STORE's answer, which put an
+    // AsyncStorage round-trip between the finger and the first pixel — and
+    // would have armed the animation around whatever commit landed during the
+    // await. The next set is computable from the day, so it is computed here.
+    expect(
+      home,
+      "setRestDay's result must not be piped back into state — that reintroduces the round-trip",
+    ).not.toMatch(/setRestDay\([^)]*\)\.then\(setRestDays\)/);
+  });
+});

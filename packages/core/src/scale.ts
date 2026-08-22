@@ -23,7 +23,8 @@ export type TypeRole =
   | "headline" //22 — screen sub-headings, and the head of a screen with no hero
   | "display" //26 — screen headings
   | "hero" //   34 — mastheads / cover titles
-  | "stat"; //  46 — the one hero figure on a screen (ring kcal, exercise 1RM)
+  | "stat" //   46 — the one hero figure on a screen (ring kcal, exercise 1RM)
+  | "editorial"; // 30 — SERIF ONLY. See the note under `fs`.
 
 /**
  * Font-size scale (fs.body = the default reading size). px on web, dp on RN.
@@ -71,6 +72,29 @@ export type TypeRole =
  * level needs two rungs of separation to read as a level, so a ladder whose
  * neighbours differ by one dp is carrying a distinction the eye cannot collect.
  */
+/**
+ * THE TWO x-HEIGHTS THE SERIF RUNG IS DERIVED FROM.
+ *
+ * Read off the shipped binaries with fontTools — the OUTLINE of `x`, not the
+ * OS/2 `sxHeight` field, because ITC Garamond's is wrong (it reports 451 on a
+ * 2048 upem head, i.e. 0.22 em, which is not a possible x-height and would put
+ * the serif at 71dp beside a 26dp sans).
+ *
+ * Two faces read as ONE size when their x-heights match, not when their point
+ * sizes do. That makes the ratio below the whole pairing, and it is the reason
+ * this product can mix a grotesque with a Garamond at all: ITC Garamond's
+ * famously large x-height needs 17.6 percent compensation where a true old-style
+ * Garamond (~0.40 em) would need 31 and still read as an older, smaller voice.
+ */
+export const X_HEIGHT_EM = { sans: 0.523, serif: 0.445 } as const;
+
+/** 1.1753. Derived, never typed — replace a binary and this moves with it. */
+export const SERIF_X_HEIGHT_RATIO = X_HEIGHT_EM.sans / X_HEIGHT_EM.serif;
+
+/** `display`, named so the serif rung can be derived from it rather than
+ *  hard-coded beside it. */
+const DISPLAY_PX = 26;
+
 export const fs: Record<TypeRole, number> = {
   nano: 10,
   micro: 11,
@@ -85,9 +109,27 @@ export const fs: Record<TypeRole, number> = {
   // bless hand-rolled heads (those should take a HeroRank); it stops the ones
   // that exist from being 22 in one file and 21 or 24 in the next.
   headline: 22,
-  display: 26,
+  display: DISPLAY_PX,
   hero: 34,
   stat: 46,
+  /**
+   * SERIF ONLY, and it is not a hole in the ladder — it is a second ladder with
+   * one rung on it.
+   *
+   * DERIVED, NOT TYPED: `display` x SERIF_X_HEIGHT_RATIO, rounded to even.
+   * 26 x 1.1753 is 30.6, so 30. Move `display` and the serif follows it, which
+   * is the only way the pairing survives a change to the sans ladder — a
+   * hard-coded 30 would have silently stopped matching.
+   *
+   * PUTTING IT ON `display` INSTEAD WAS TRIED AND IS WRONG: at 26 the Garamond
+   * sets an x-height of 11.6dp against the sans's 13.6, so the sentence reads
+   * as smaller than the heading above it while claiming more rank.
+   *
+   * NOTHING IN `cut.sans` OR `cut.mono` MAY TAKE THIS RUNG. typography.test.ts
+   * holds that, because a 30dp sans heading would sit two dp off `display` for
+   * no reason anybody could name — which is exactly how `heading.1` died.
+   */
+  editorial: Math.round((DISPLAY_PX * SERIF_X_HEIGHT_RATIO) / 2) * 2,
 };
 
 export type SpaceToken =
@@ -206,7 +248,8 @@ export const leading = (size: number, role: LeadingRole = "normal"): number =>
 export type TrackingRole =
   | "text" //  derived from the SIZE — see the band table below
   | "label" // 0.085em — uppercase mono kickers (the app's dominant eyebrow)
-  | "caps"; // 0.115em — the widest tracked caps: section labels, nav eyebrows
+  | "caps" // 0.115em — the widest tracked caps: section labels, nav eyebrows
+  | "serif"; // -0.008em — ITC Garamond, which the text bands would over-tighten
 
 /**
  * TRACKING IS AN EM VALUE AND `track()` RESOLVES IT — the dp map is gone.
@@ -255,6 +298,15 @@ export type TrackingRole =
 export const TRACKING_EM: Record<Exclude<TrackingRole, "text">, number> = {
   label: 0.085,
   caps: 0.115,
+  /**
+   * THE SERIF TAKES ITS OWN VALUE because the text bands are fitted to Söhne.
+   * At 30dp the band table would hand back -0.02em, and ITC Garamond is a
+   * phototype-era design that is already tightly fitted — tightening it a
+   * further 0.6dp closes the counters on `e` and `a` at reading distance.
+   * -0.008em is half what the band gives, which is the rule for any face that
+   * is not the one the bands were measured on.
+   */
+  serif: -0.008,
 };
 
 /** The text bands, largest first. Read as: at this size and above, this em. */

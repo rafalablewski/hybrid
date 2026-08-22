@@ -187,6 +187,135 @@ function hits(pattern: RegExp): string[] {
   return found;
 }
 
+/**
+ * THE SERIF RATCHET — the one face in the system with a quota.
+ *
+ * ITC Garamond is not dangerous because it is wrong somewhere; it is dangerous
+ * because it is right in one place per screen and every subsequent designer will
+ * find a second. The face decays by ACCUMULATION, which means the only guard
+ * worth having is a countable one. Four rules, all mechanical.
+ *
+ * The two sanctioned call sites are the week verdict's lead and the nutrition
+ * nudge. Both were chosen the same way: they were already the only interpretive
+ * sentence on their screen, set in a utility style. If a third is ever added, it
+ * is added HERE first, with the same argument written down.
+ */
+/**
+ * PROSE IN THE MEASURING FACE.
+ *
+ * The face map of the shipped app found Söhne Mono carrying 193 of Today's 269
+ * faced text nodes and 75 of Nutrition's 110. The first read of that was "the
+ * labels are the wrong face", and the fix that suggested — move the 423 kicker
+ * and overline sites onto the sans — was WRONG. Strip mono from a tracked
+ * uppercase label and what is left is tracked uppercase grotesque, which is the
+ * house style of every sports brand since 2012 and the thing the type spec bans
+ * everywhere else.
+ *
+ * Classifying the nodes said something more useful. Of Today's 193, sixty-six
+ * are figures and eighty-seven are day names in the calendar band — both
+ * legitimate. What is not legitimate is the remainder: SENTENCES set in the
+ * measuring face. "Add your first food". "Both numbers are yours — nothing was
+ * changed for you." Empty states, provenance notes, hints.
+ *
+ * AND THE LEADING GIVES THEM AWAY, which is what makes this mechanical rather
+ * than a matter of taste. Every mono style in the token file takes `flush` or
+ * `snug`, because a figure and a label have no prose to lead. A hand-rolled
+ * `F.mono` carrying `normal` or `relaxed` leading is somebody setting a
+ * paragraph and reaching for the wrong face to do it — the author already knew
+ * it was prose, or they would not have opened up the line height.
+ *
+ * 31 at first measurement. The 12 on the Nutrition family went to
+ * `ty(C, "caption")` in the same change that shipped the serif, because those
+ * are the two screens whose rendering was verified. The rest is a sweep, not a
+ * question.
+ */
+describe("prose never wears the measuring face", () => {
+  const MONO_PROSE = /F\.mono(?:Med|Bold)?[^\n]*leading\([^)]*"(?:relaxed|normal)"\)/g;
+
+  it("BURN-DOWN — mono carrying a prose leading", () => {
+    burnDown(
+      hits(MONO_PROSE),
+      19,
+      "2027-02-28",
+      'prose in the measuring face → ty(C, "caption")',
+    );
+  });
+
+  it("HARD — the Nutrition family stays clean", () => {
+    // The two screens whose rendering was verified. A regression here is visible
+    // in the face map, so it is held at zero rather than counted down.
+    const bad = hits(MONO_PROSE).filter((h) =>
+      /nutrition\.tsx|target-sheet\.tsx/.test(h));
+    expect(bad, `prose in the measuring face:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
+describe("the editorial serif", () => {
+  const SANCTIONED = [
+    "components/aurora/week-verdict.tsx",
+    "components/aurora/nutrition-panels.tsx",
+  ];
+
+  /** Screens the athlete reads DURING training. A conclusion has no business on
+   *  any of them: mid-set the eyes get about four hundred milliseconds and
+   *  everything in that window has to be a measurement. */
+  const DURING_TRAINING = [
+    "app/workout.tsx",
+    "app/interval-timer.tsx",
+    "components/aurora/logger",
+    "components/aurora/session-accessory.tsx",
+  ];
+
+  it("HARD — only the sanctioned call sites reach for it", () => {
+    const sites = [...hits(/ty\((?:C|palette)\s*,\s*"editorial"/g), ...hits(/F\.serif\b/g)]
+      .map((h) => h.split(":")[0]!)
+      // `lib/ui.tsx` DECLARES the alias and `app/_layout.tsx` REGISTERS the
+      // binary — both name the face by necessity and neither paints with it.
+      .filter((f) => !f.endsWith(".test.ts") && f !== "lib/ui.tsx" && f !== "app/_layout.tsx");
+    const stray = [...new Set(sites)].filter((f) => !SANCTIONED.some((ok) => f.includes(ok)));
+    expect(stray, `the serif is one element per screen:\n  ${stray.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — one per file, because one per SCREEN is what the rule means", () => {
+    const perFile = new Map<string, number>();
+    for (const h of hits(/ty\((?:C|palette)\s*,\s*"editorial"/g)) {
+      const f = h.split(":")[0]!;
+      if (f.endsWith(".test.ts")) continue;
+      perFile.set(f, (perFile.get(f) ?? 0) + 1);
+    }
+    const doubled = [...perFile].filter(([, n]) => n > 1).map(([f, n]) => `${f} (${n})`);
+    expect(doubled, `a second serif line means neither is the conclusion:\n  ${doubled.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — never on a screen used during training", () => {
+    const bad = hits(/ty\((?:C|palette)\s*,\s*"editorial"|F\.serif\b/g)
+      .map((h) => h.split(":")[0]!)
+      .filter((f) => DURING_TRAINING.some((d) => f.includes(d)));
+    expect(bad, `mid-set the athlete needs measurement, not a conclusion:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — the token carries its own size, so no call site may restyle it", () => {
+    // `ty(C, "editorial")` already holds the size, leading and tracking that make
+    // the pairing work — 30dp against Söhne's 26 is the 1.176x x-height match,
+    // and it is the whole reason the face sits beside the sans at all. A call
+    // site that spreads a `fontSize` over the top has thrown that away and will
+    // land under the 24dp floor sooner or later.
+    const bad = FILES.filter(({ path }) => !path.endsWith(".test.ts"))
+      .flatMap(({ path, text }) =>
+        text.split("\n").flatMap((line, i) =>
+          /"editorial"/.test(line) && /fontSize|letterSpacing|lineHeight/.test(line) ? [`${path}:${i + 1}`] : []));
+    expect(bad, `the editorial token is not restyled at the call site:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("HARD — the serif never renders below its 24dp floor", () => {
+    // Not a source rule but an arithmetic one: whatever `fs.editorial` becomes,
+    // the resolved size stays above the point where Garamond's joins break up on
+    // `ink`. Dynamic Type scales this token DOWN as well as up.
+    expect(resolveText("editorial").fontSize).toBeGreaterThanOrEqual(24);
+    expect(resolveText("editorial", 0.85).fontSize).toBeGreaterThanOrEqual(24);
+  });
+});
+
 /** The source line a "path:line" hit points at — for the rules that exempt a
  *  SANCTIONED declaration from their own pattern. */
 function lineAt(site: string): string {
@@ -496,7 +625,7 @@ describe("named type styles", () => {
     // where the label is structure and the extra air is the division.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      172,
+      170,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
@@ -624,7 +753,7 @@ describe("geometry", () => {
     // the argument for why this rule is a ratchet with a human in it rather than
     // a codemod: the pattern can find a raw radius, it cannot tell you which of
     // five tokens the object wanted.
-    burnDown(hits(/borderRadius:\s*\d/g), 120, "2027-02-28", "raw borderRadius → RADIUS.*");
+    burnDown(hits(/borderRadius:\s*\d/g), 119, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -822,13 +951,16 @@ describe("touch targets", () => {
     //
     // That is not a cosmetic miscount: a ratchet whose floor is the number of
     // canonical components can NEVER reach zero, so it can never graduate to
-    // HARD, which is the entire point of the mechanism. 9 → 5, and the 5 are
+    // HARD, which is the entire point of the mechanism. 9 → 5, and they were
     // real: LaneOrderChip, DayChip (twice — the logbook rail and the week rail
-    // draw the same object separately), MetaPill, PlanDockPill.
+    // draw the same object separately), MetaPill, PlanDockPill. 5 → 4 when the
+    // endurance lanes became a pager: LaneOrderChip went with them, because a
+    // control that sorted three lanes has nothing to sort in a section whose
+    // pages are ordered by the volume in them.
     const SANCTIONED = /\b(?:DockChip|APill|AChip|ActionPill|GlassPillRow)\b/;
     const decls = hits(/^\s*(?:export )?(?:function|const) [A-Z][A-Za-z]*(?:Chip|Pill|Tag)[A-Za-z]*\s*[=(]/gm)
       .filter((site) => !SANCTIONED.test(lineAt(site)));
-    burnDown(decls, 5, "2026-10-31", "chip-shaped component → Chip, AChip or DockChip");
+    burnDown(decls, 4, "2026-10-31", "chip-shaped component → Chip, AChip or DockChip");
   });
 });
 
@@ -1491,7 +1623,19 @@ describe("presentation", () => {
     const floor = file("aurora/done-floor.tsx")!;
     expect(floor.text).not.toMatch(/borderStyle:\s*"dashed"/);
 
-    // 2. The rail offers the pair in BOTH day states — logged and empty.
+    // 2. The rail offers the pair in both day states that ASK for something —
+    //    a day that holds training, and an open one — exactly once in each.
+    //    The count is the invariant in both directions: a state that forgot
+    //    its pair is the original bug, a second pair inside one state is the
+    //    duplication beside it.
+    //
+    //    The DECLARED REST day is deliberately not one of them and must stay
+    //    that way. It is the one state that asks for nothing — the athlete has
+    //    already answered — so its only control would have been the undo, and
+    //    a card whose loudest element is the offer to unsettle what it just
+    //    announced is a card arguing with itself. It stays reversible without
+    //    a pill: the block itself takes the tap (see the `resting` branch),
+    //    which is why this count is 2 and not 3.
     const rail = file("aurora/logbook-rail.tsx")!;
     expect(rail.text.match(/<AActionPair/g) ?? []).toHaveLength(2);
 
