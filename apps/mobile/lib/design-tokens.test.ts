@@ -611,6 +611,10 @@ describe("geometry", () => {
     // with a raw `borderRadius: 2` each; the bands are the kit's AEffortBar now
     // and the track carries ONE RADIUS.pill instead of three raw corners.
     //
+    // 120 → 119: app/statistics.tsx became a redirect when the screen it drew
+    // was finished off (its content moved into History's trend view in Jul
+    // 2026 and the old implementation was left running on the route). Deleting
+    // it took one raw radius with it.
     // 141 → 120, THE ink2 TRIAGE. Every raised surface in the app (a
     // `backgroundColor: ink2`) now names its corner: 21 sites carried a raw
     // integer across SIXTEEN distinct values, and the interesting part is that
@@ -624,7 +628,7 @@ describe("geometry", () => {
     // the argument for why this rule is a ratchet with a human in it rather than
     // a codemod: the pattern can find a raw radius, it cannot tell you which of
     // five tokens the object wanted.
-    burnDown(hits(/borderRadius:\s*\d/g), 120, "2027-02-28", "raw borderRadius → RADIUS.*");
+    burnDown(hits(/borderRadius:\s*\d/g), 119, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -1815,9 +1819,19 @@ describe("screens", () => {
     //     its own on purpose: the screen behind it is the background.
     const EXEMPT = new Set(["app/index.tsx", "app/upgrade.tsx"]);
     const SHELL = /AuroraScreen|HeroScreen|AuroraField/;
+    // A REDIRECT ROUTE HAS NO SURFACE. A route whose whole body is `<Redirect>`
+    // renders nothing and is never on screen for a frame the athlete can see —
+    // it is a forwarding address kept alive so an old deep link lands somewhere
+    // true (app/statistics.tsx, after the screen was folded into History's
+    // trend view). Asking it for a field would be asking it to paint a screen
+    // that does not exist. Stated as a general rule rather than as a name in
+    // EXEMPT, because the next one should be exempt for the same reason
+    // without anyone having to remember to add it.
+    const REDIRECT = /<Redirect\b/;
 
     const routes = FILES.filter(
-      (f) => f.path.startsWith("app/") && f.path.endsWith(".tsx") && !/_layout|\+not-found/.test(f.path),
+      (f) => f.path.startsWith("app/") && f.path.endsWith(".tsx") && !/_layout|\+not-found/.test(f.path)
+        && !REDIRECT.test(f.text),
     );
     // A regex that matches nothing reads exactly like a clean codebase.
     expect(routes.length).toBeGreaterThan(40);

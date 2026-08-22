@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
+import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, isHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -78,7 +78,7 @@ export default function AuroraHistory() {
   // A SPORT FILTER, arriving from that sport's page. The sport page lists three
   // recent efforts and ends in a door to "all N efforts" — a door that landed
   // on unfiltered History would promise a number and show a different one.
-  const { sport: sportRaw } = useLocalSearchParams<{ sport?: string }>();
+  const { sport: sportRaw, view: viewParam } = useLocalSearchParams<{ sport?: string; view?: string }>();
   const sportParam = typeof sportRaw === "string" ? sportRaw.trim() : "";
   const sportFilter = sportParam ? (sportFromSlug(sportParam) ?? sportParam) : null;
   const bw = useBodyweightLookup();
@@ -97,9 +97,19 @@ export default function AuroraHistory() {
   // block chapters key off the date-anchored schedule; both degrade to nothing
   // when no plan is enrolled).
   useEffect(() => {
+    // A `view` PARAM WINS FOR THIS VISIT, and does not overwrite the saved one.
+    // It is what lets /statistics — the screen folded into the trend view in
+    // Jul 2026 — redirect somewhere exact instead of dropping the athlete on
+    // whichever layout they last chose. Arriving by a link that names a layout
+    // should show that layout; it should not silently re-set their preference.
+    if (isHistoryView(viewParam)) {
+      setView(viewParam);
+      fetchMacrocycle().then((m) => { setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null); }).catch(() => {});
+      return;
+    }
     AsyncStorage.getItem(VIEW_KEY).then((v) => setView(normalizeHistoryView(v))).catch(() => setView(normalizeHistoryView(null)));
     fetchMacrocycle().then((m) => { setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null); }).catch(() => {});
-  }, []);
+  }, [viewParam]);
   const pickView = (v: HistoryViewId) => {
     setView(v);
     AsyncStorage.setItem(VIEW_KEY, v).catch(() => {});

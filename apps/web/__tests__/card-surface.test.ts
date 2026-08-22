@@ -115,7 +115,6 @@ const RATCHET: Record<string, number> = {
   "components/aurora/train.tsx": 1,
   "components/aurora/body-map.tsx": 1,
   "components/aurora/exercise-media.tsx": 1,
-  "app/statistics.tsx": 1,
   "app/help.tsx": 1,
   "app/(tabs)/messages.tsx": 1,
 };

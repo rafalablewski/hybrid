@@ -87,6 +87,7 @@ export default defineConfig({
             // project cannot mount this file (its `expo-router` alias swallows
             // native tabs too).
             "lib/nav-accessory.test.ts",
+            "lib/nav-doors.test.ts",
             // Reads the live logger as TEXT to prove every set-list mutation
             // arms a layout animation before it commits. A missing one is the
             // quietest bug we can ship — correct code, passing tests, an app
