@@ -66,13 +66,27 @@ describe("sessionWrapped", () => {
     expect(w.headline.labelKey).toBe("session.distance");
   });
 
-  it("surfaces premium facts including est-1RM and the muscle split", () => {
+  it("surfaces premium facts including est-1RM, and NAMES the lift it is about", () => {
     const s = strengthSession("s1", "2026-01-10T10:00:00.000Z", 60);
     const w = sessionWrapped(s, [s], { units: "kg" });
     const labels = w.facts.map((f) => f.labelKey);
     expect(labels).toContain("session.wrapped.est1rm");
-    // volumeByMuscle attributes bench tonnage to chest.
-    expect(labels.some((l) => l.startsWith("muscle."))).toBe(true);
+    // `topLift` picks by HIGHEST ESTIMATED MAX, which is routinely not the lift
+    // the summary leads with — so an e1RM or a trend that does not say whose it
+    // is reads as a claim about the session. It carries the name now.
+    const e1rm = w.facts.find((f) => f.labelKey === "session.wrapped.est1rm");
+    expect(e1rm?.qualifier).toBeTruthy();
+  });
+
+  it("does NOT push a coarse-bucket muscle fact", () => {
+    const s = strengthSession("s1", "2026-01-10T10:00:00.000Z", 60);
+    const w = sessionWrapped(s, [s], { units: "kg" });
+    // This used to push the top of `volumeByMuscle` — the engine's seven coarse
+    // groups — which put "BACK 7,020 kg" on the same scroll as a body ledger
+    // reading "LATS 3,229 / UPPER BACK 1,787" from the twenty-muscle anatomy
+    // model. Two vocabularies for one session's work, disagreeing about both
+    // the name and the number. The muscle read has one home: the body section.
+    expect(w.facts.map((f) => f.labelKey).some((l) => l.startsWith("muscle."))).toBe(false);
   });
 
   it("adds an e1RM trend fact when the lift has prior history", () => {

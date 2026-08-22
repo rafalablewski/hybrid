@@ -26,6 +26,31 @@ describe("weight units", () => {
     expect(fmtTonnage(38400, "lb")).toMatch(/lb$/);
   });
 
+  // THE DEFECT, PINNED — the same one feed-card.test.ts pins for feedStatText,
+  // which survived here at the formatter every weight on the app runs through.
+  // A bare `toLocaleString()` groups against the DEVICE, so a session whose
+  // muscle ledger reads "3,229 kg" in English rendered "3.229 kg" on the
+  // reporter's Polish handset — three point two two nine, beside a "10.2 t"
+  // whose dot is a decimal point. Every grouping below is stated explicitly
+  // rather than compared against the runner's default, because a test that
+  // agrees with the machine it runs on is what let this ship twice.
+  it("groups deterministically, never against the device", () => {
+    expect(fmtWeight(3229, "kg")).toBe("3,229 kg");
+    expect(fmtTonnage(10200, "kg")).toBe("10.2 t");
+    // The decimal mark and the group mark must never both be "." on one screen.
+    expect(fmtWeight(3229, "kg")).not.toBe(fmtWeight(3.229, "kg"));
+  });
+
+  it("groups in the INTERFACE's language when the caller knows it", () => {
+    expect(fmtWeight(3229, "kg", undefined, "en-US")).toBe("3,229 kg");
+    expect(fmtWeight(3229, "kg", undefined, "de-DE")).toBe("3.229 kg");
+    expect(fmtTonnage(10200, "kg", "de-DE")).toBe("10,2 t");
+    // Polish suppresses grouping at four digits altogether — which is the
+    // point: three locales, three different marks for the same figure, and
+    // only the caller knows which one the reader is actually looking at.
+    expect(fmtWeight(3229, "kg", undefined, "pl-PL")).toBe("3229 kg");
+  });
+
   it("passes blank / non-numeric through", () => {
     expect(displayLoad("", "lb")).toBe("");
     expect(storeLoad("", "lb")).toBe("");

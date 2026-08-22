@@ -300,7 +300,7 @@ describe("type scale", () => {
     //     but the guard is load-bearing and a rename is not worth weakening it
     //     for. It sits as a raw 22 and is counted here, which is the honest
     //     place for a site that has no rung it is allowed to name.
-    burnDown(hits(/fontSize:\s*\d+/g), 44, "2026-11-30", "raw fontSize → use an fs.* rung");
+    burnDown(hits(/fontSize:\s*\d+/g), 42, "2026-11-30", "raw fontSize → use an fs.* rung");
   });
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
@@ -418,7 +418,7 @@ describe("leading and tracking", () => {
     // 39 → 38: the You tab's profile-setup nudge, moved into the lead rail,
     // took its hand-tuned `lineHeight: 18` with it — on fs.body that is exactly
     // leading(fs.body), which is to say it was never a tuning.
-    burnDown(hits(/lineHeight:\s*\d/g), 38, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    burnDown(hits(/lineHeight:\s*\d/g), 36, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking names its token; a big figure derives it", () => {
@@ -537,7 +537,7 @@ describe("geometry", () => {
     // the argument for why this rule is a ratchet with a human in it rather than
     // a codemod: the pattern can find a raw radius, it cannot tell you which of
     // five tokens the object wanted.
-    burnDown(hits(/borderRadius:\s*\d/g), 120, "2027-02-28", "raw borderRadius → RADIUS.*");
+    burnDown(hits(/borderRadius:\s*\d/g), 117, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -1004,7 +1004,7 @@ describe("colour arithmetic", () => {
     // chartreuse — the only stop of a three-density ramp that was neither a rung
     // nor a real gradient. The band is a hue now (the endurance lanes' own
     // easy/steady/hard coding), so the number went with the argument for it.
-    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 104,
+    floorAt(codeHits(/withAlpha\((?:[^()]|\([^()]*\))*?,\s*[\d.]+\)/g), 103,
       "a tint → ALPHA.*; a ramp stop or scrim may keep its number",
       "the remainder is ramp stops and scrims — continuous values, not rungs");
   });

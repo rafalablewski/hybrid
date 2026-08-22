@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { View, Text, ScrollView, Dimensions, Animated, Easing, type TextStyle, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
+import { View, Text, ScrollView, Dimensions, type TextStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   HERO,
   HERO_FIGURE,
@@ -21,11 +20,8 @@ import {
   sessionPanels,
   muscleBaseline,
   muscleCoverage,
-  springs,
-  springToRN,
   isFullAccess,
   sessionVolume,
-  brand,
   sessionSpine,
   SPINE_MIN_BARS,
   mmss,
@@ -63,12 +59,14 @@ import { CtaLabel } from "./aurora/cta-label";
 import { FeelPrompt } from "./feel-prompt";
 import SessionBody from "./aurora/session-body";
 import { TonnageCurve, SetSpine } from "./aurora/session-spine";
+import { SessionShareCard } from "./aurora/session-share-card";
+import Sheet from "./aurora/sheet";
 import { HeatSheet } from "./aurora/heat-sheet";
 import { usePersona } from "../lib/persona";
 import { usePremiumAccent } from "../lib/premium-accent";
 import { useLang } from "../lib/i18n";
 import { shareCardImage, heroFigure, type ShareBest } from "../lib/share";
-import { leading, fs, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, trackFigure , tracking} from "../lib/ui";
+import { leading, fs, space, F, TABULAR, PressScale as Pressable, FIXED_FONT_SCALE, MAX_FONT_SCALE, trackFigure , tracking} from "../lib/ui";
 import { useSharedElementTarget } from "../lib/shared-element";
 import { useTheme, txt, deltaPaint, type Palette } from "../lib/theme";
 import { withAlpha } from "./aurora/field";
@@ -79,14 +77,15 @@ import { APill, RADIUS } from "./aurora/kit";
 // deleted whole in Aug 2026; see the light-theme-removed capability.)
 const GOLD = THEMES.dark.accentText.amber; // Fleur De Lis — the retired `gold` token sat ΔE 8.6 from it
 
-// Deterministic confetti fan for the reveal (module-level → stable positions).
-const CONFETTI = Array.from({ length: 16 }, (_, i) => {
-  const a = (i / 16) * Math.PI * 2;
-  const d = 70 + (i % 4) * 22;
-  return { tx: Math.round(Math.cos(a) * d), ty: Math.round(Math.sin(a) * d - 26), ci: i % 4 };
-});
+/** The share card never grows past this, so a tablet gets a postable 9:16
+ *  rather than a card the height of the window. */
+const CARD_MAX_WIDTH = 420;
+/** How many figures ride the card's foot beside the magnitude. */
+const SHARE_CARD_STATS = 3;
+/** Device lockup heights — the rail's and the inline chip's. */
+const DEVICE_MARK_H = 15;
+const DEVICE_MARK_SM = 13;
 
-// A soft translucent glow disc — the RN parity of the artifact's radial-gradients.
 /** One ledger row under an instrument: a mono label, the figure, and an
  *  optional denominator that must never compete with it. */
 function WorkRow({ label, value, note, C, last }: { label: string; value: string; note?: string; C: Palette; last?: boolean }) {
@@ -99,10 +98,6 @@ function WorkRow({ label, value, note, C, last }: { label: string; value: string
       </View>
     </View>
   );
-}
-
-function Glow({ size, color, top, left, right, bottom }: { size: number; color: string; top?: number; left?: number; right?: number; bottom?: number }) {
-  return <View pointerEvents="none" style={{ position: "absolute", width: size, height: size, borderRadius: size / 2, backgroundColor: color, top, left, right, bottom }} />;
 }
 
 // A number that ticks up from 0 → final on mount, then rests on the exact value.
@@ -130,6 +125,35 @@ function CountUp({ value, style }: { value: string; style: TextStyle }) {
 }
 
 /**
+ * A SECTION OF THE DOCUMENT. A hairline, a mono label, and the content — sized
+ * to what it holds and nothing more. This is the whole difference from what came
+ * before: a `Panel` was `height: panelH` whether or not it had a screen's worth
+ * to say, and four of them did not, so they were held open with `flex: 1`
+ * spacers and read as black voids. Nothing here can stretch.
+ *
+ * No marker before the label (house rule); any meta rides the right of the same
+ * row.
+ *
+ * MODULE SCOPE, deliberately. Declared inside the render this would be a new
+ * component TYPE on every pass, so React would unmount and remount everything
+ * under it — which resets the body figure's selected muscle the instant it is
+ * tapped, the one interaction that section exists for.
+ */
+function Section({ label, meta, children, C }: { label: string; meta?: ReactNode; children: ReactNode; C: Palette }) {
+  return (
+    <View style={{ marginTop: space.huge, borderTopWidth: 1, borderTopColor: C.line, paddingTop: space.lg }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md }}>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+          {label}
+        </Text>
+        {meta}
+      </View>
+      <View style={{ marginTop: space.lg }}>{children}</View>
+    </View>
+  );
+}
+
+/**
  * WORKOUT WRAPPED — the individual-session view, rendered as the reference
  * prototype (reference/pr-wrapped-flow.html): open a session and it IS the
  * experience — the PR reveal (if any) → the premium Wrapped panels you scroll
@@ -154,16 +178,12 @@ export function WorkoutWrapped({
   details: ReactNode;
 }) {
   const C = useTheme().palette;
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const premium = usePremiumAccent();
   const full = isFullAccess(usePersona());
 
-  const win = Dimensions.get("window");
-  const panelH = win.height;
-
-  const [panel, setPanel] = useState(0);
   const [heatOpen, setHeatOpen] = useState(false);
   // null = not known yet (don't flash a "connect a device" prompt at someone
   // who already has one connected).
@@ -304,18 +324,6 @@ export function WorkoutWrapped({
     titleStyle,
   );
 
-  // ── reveal animation ──
-  const scale = useRef(new Animated.Value(cel ? 0 : 1)).current;
-  const burst = useRef(new Animated.Value(0)).current;
-  const spin = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    if (!cel) return;
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, ...springToRN(springs.pop), delay: 150 }).start();
-    Animated.timing(burst, { toValue: 1, duration: 900, delay: 200, useNativeDriver: true }).start();
-    const loop = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 16000, easing: Easing.linear, useNativeDriver: true }));
-    loop.start();
-    return () => loop.stop();
-  }, [cel, scale, burst, spin]);
 
   // The post-workout self-report ("How did that feel?") and the device panel:
   // once this session is MATCHED to a watch workout the panel shows the
@@ -357,429 +365,395 @@ export function WorkoutWrapped({
     if (ok) onMatched(null);
   };
 
-  // Which panels exist (dots + snap offsets), details rides after them.
-  const keys: ("reveal" | "hero" | "body" | "feel" | "premium" | "device" | "work")[] = [
-    ...(cel ? ["reveal" as const] : []),
-    "hero" as const,
-    // A session with no mapped lifting (a run, a match, an all-custom day) has
-    // no body to light, so the panel is absent rather than dark.
-    ...(muscleRead.map.muscles.length ? ["body" as const] : []),
-    "feel" as const,
-    ...(wrapped.facts.length ? ["premium" as const] : []),
-    ...(device || showDeviceAd ? ["device" as const] : []),
-    // The set spine needs enough sets to be a shape; a two-set session has
-    // nothing to draw, so the panel is absent rather than nearly empty.
-    ...(hasSpine ? ["work" as const] : []),
-  ];
-  const detailsIndex = keys.length;
-  /** A panel's position in the sequence — the capture reads the node by it. */
-  const at = (k: (typeof keys)[number]) => keys.indexOf(k);
-  // ── CAPTURE ──
-  // The share control hands over the panel the athlete is looking at. Chrome
-  // (the rail, the dots) drops for the frame the shot is taken on, and the
-  // panel signs itself; nothing is re-laid-out, so what lands in the camera
-  // roll is what was on the screen.
-  const panelRefs = useRef<Record<number, View | null>>({});
-  const [capturing, setCapturing] = useState(false);
-  const captureStamp = `${new Date(session.startedAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })} – ${session.title}`.toUpperCase();
-  const sharePanel = async () => {
-    const i = Math.min(panel, keys.length - 1);
-    setCapturing(true);
-    // Two frames: one for the chrome to leave, one for the footer to land.
-    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
-    try {
-      await shareCardImage({ current: panelRefs.current[i] ?? null }, shareText, t("summary.shareStory"));
-    } finally {
-      setCapturing(false);
-    }
-  };
-  const snapOffsets = keys.map((_, i) => i * panelH);
-  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => setPanel(Math.round(e.nativeEvent.contentOffset.y / panelH));
-  const showDock = panel < detailsIndex;
-
-  // The takeover keeps the HERO SYSTEM's metadata voice — same mono/uppercase/
-  // tracked line the cover's chip and every rail accessory use, tinted gold and
-  // carrying the ✦ premium signifier. It is an EYEBROW, not a third invention.
-  const eyebrow = (label: string) => <HeroEyebrow label={label} tone="tint" accent={GOLD} mark="✦" />;
-  const scrollHint = (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textAlign: "center", marginTop: 16 }}>{t("session.wrapped.scroll")} ↑</Text>
-  );
   // The takeover is rank `cover`, mode `takeover`: no collapse track, but the
-  // rail sits at the system's y and the panels clear the same bar height every
-  // other screen clears.
+  // rail sits at the system's y and the document clears the same bar height
+  // every other screen clears.
   const geom = heroGeometry("cover", insets.top, "takeover");
   const padTop = geom.barHeight;
+  const win = Dimensions.get("window");
 
-  // EVERY PANEL IS ITS OWN SHARE ASSET. The panel registers the node the
-  // capture reads, and in capture mode it drops the pad that existed for the
-  // dock and signs itself instead. What gets shared is the panel as rendered —
-  // there is no second composition to keep in step with this one, which is
-  // exactly how the old two story decks drifted.
-  const Panel = ({ children, center, glows, index }: { children: ReactNode; center?: boolean; glows?: ReactNode; index: number }) => (
-    <View
-      ref={(n) => { panelRefs.current[index] = n; }}
-      collapsable={false}
-      style={{ height: panelH, paddingHorizontal: HERO.gutter.hero, paddingTop: padTop, paddingBottom: capturing ? 28 : 150, justifyContent: center ? "center" : "flex-start", overflow: "hidden", backgroundColor: HERO_TAKEOVER_INK }}
-    >
-      {glows}
-      {children}
-      {capturing && (
-        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: C.line, paddingTop: 9, marginTop: 14 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.caption, letterSpacing: tracking.label, color: C.chalk }}>{brand.name.toUpperCase()}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash }}>{captureStamp}</Text>
-        </View>
-      )}
-    </View>
-  );
+  // ── THE SHARE CARD ──
+  // Not a screenshot of wherever the athlete happened to stop. See
+  // aurora/session-share-card.tsx for why that idea is what emptied the old
+  // panels out. The card is composed once, previewed, then captured.
+  const [shareOpen, setShareOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const cardRef = useRef<View | null>(null);
+  const cardWidth = Math.min(win.width - HERO.gutter.hero * 2, CARD_MAX_WIDTH);
+  const shareStamp = new Date(session.startedAt).toLocaleDateString(lang, {
+    weekday: "short", day: "numeric", month: "short",
+  });
+  /** The masthead's own line: the stamp, and the clock the session started on.
+   *  Readiness rides it when the day carried one. */
+  const sessionStamp = [
+    `${shareStamp} – ${new Date(session.startedAt).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" })}`,
+    typeof session.readiness === "number" ? `${t("home.readiness")} ${session.readiness}` : null,
+  ].filter(Boolean).join("  –  ");
+  /** The figure row, minus whatever is already set at display size above it. */
+  const rowFigures = wrapped.basics.filter((b) => b.labelKey !== wrapped.headline.labelKey);
+  const shareFigures = {
+    title: session.title,
+    stamp: shareStamp,
+    headline: wrapped.headline.value,
+    headlineLabel: t(wrapped.headline.labelKey),
+    record: cel ? heroSub : null,
+    stats: rowFigures
+      .slice(0, SHARE_CARD_STATS)
+      .map((b) => ({ label: t(b.labelKey), value: `${b.estimate ? "~" : ""}${b.value}` })),
+  };
+  const doShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      await shareCardImage(cardRef, shareText, t("summary.shareStory"));
+    } finally {
+      setSharing(false);
+    }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: HERO_TAKEOVER_INK }}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        snapToOffsets={snapOffsets}
-        snapToEnd={false}
-        decelerationRate="fast"
-        scrollEventThrottle={16}
-        onScroll={onScroll}
+        contentContainerStyle={{ paddingTop: padTop, paddingBottom: insets.bottom + space.huge }}
       >
-        {/* ── REVEAL ── */}
-        {cel && (
-          <Panel index={at("reveal")} center glows={<><View pointerEvents="none" style={{ position: "absolute", top: "34%", left: "50%", marginLeft: -230, marginTop: -230, width: 460, height: 460 }}><Animated.View style={{ flex: 1, opacity: 0.9, transform: [{ rotate: spin.interpolate({ inputRange: [0, 1], outputRange: ["0deg", "360deg"] }) }] }}><LinearGradient colors={[withAlpha(GOLD, 0.15), "transparent", withAlpha(C.lime, 0.11), "transparent"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ flex: 1, borderRadius: 230 }} /></Animated.View></View></>}>
-            <View style={{ alignItems: "center" }}>
-              {CONFETTI.map((c, i) => (
-                <Animated.View key={i} pointerEvents="none" style={{ position: "absolute", top: -20, width: 7, height: 7, borderRadius: 2, backgroundColor: [C.lime, GOLD, C.blue, C.red][c.ci], opacity: burst.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }), transform: [{ translateX: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.tx] }) }, { translateY: burst.interpolate({ inputRange: [0, 1], outputRange: [0, c.ty] }) }] }} />
-              ))}
-              <Animated.View style={{ transform: [{ scale }] }}><AuroraIcon name="trophy" size={84} color={GOLD} /></Animated.View>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking.caps, color: GOLD, textTransform: "uppercase", marginTop: 24 }}>{cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}</Text>
-              <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size, marginTop: 12 }} />
-              <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk, marginTop: 6, textAlign: "center" }}>{heroSub}</Text>
-            </View>
-          </Panel>
-        )}
-
-        {/* ── HERO ── */}
-        <Panel index={at("hero")} glows={<><Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.fill)} top={-40} right={-80} /><Glow size={panelH * 0.5} color={withAlpha(C.lime, ALPHA.wash)} bottom={panelH * 0.2} left={-90} /></>}>
-          {eyebrow(t("session.wrapped.title"))}
-          {/* SHARED ELEMENT (destination). The title the tapped row was showing
-              flies here and scales up instead of the page re-rendering it.
-              DECLINED while `cel` is true: a celebration session runs its own
-              reveal on this panel, and a clone landing on a surface that is
-              itself scaling from zero is two motions fighting — the arm simply
-              expires and the ordinary push carries the change. */}
-          <Text ref={titleRef} numberOfLines={titleType.maxLines} style={{ ...titleStyle, marginTop: 12, opacity: titleHidden ? 0 : 1 }}>
+        <View style={{ paddingHorizontal: HERO.gutter.hero }}>
+          {/* ══ MASTHEAD ══
+              THE MAGNITUDE IS THE SESSION'S OWN FIGURE. It used to be the
+              record's load, which put "75 kg" at display size here, again on
+              the reveal screen before it, and a third time as the work
+              section's top set — three of six screens leading with one number
+              while the thing the session actually did (10.2 t) was demoted into
+              a bordered tile. The record is a different fact and gets its own
+              band below. */}
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
+            {sessionStamp}
+          </Text>
+          {/* SHARED ELEMENT (destination) — the title the tapped row was
+              showing flies here rather than the page re-rendering it. */}
+          <Text ref={titleRef} numberOfLines={titleType.maxLines} style={{ ...titleStyle, marginTop: space.sm, opacity: titleHidden ? 0 : 1 }}>
             {session.title}
           </Text>
-          {/* THE INSTRUMENT ZONE. What used to be here was a bare flex spacer:
-              a title at the top, a figure at the bottom, and 380pt of untouched
-              ink between them — on the first thing an athlete sees after
-              training. The accumulation curve fills it with the session's own
-              sets, and it is the one figure on this screen that shows the work
-              as something that BUILT rather than a total that arrived.
 
-              A session with too few sets to make a curve keeps the space: the
-              spacer is the fallback, never the layout. */}
-          {hasSpine ? (
-            <View style={{ flex: 1, justifyContent: "center" }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
-                {t("session.work.tonnageThrough")}
-              </Text>
-              <View style={{ marginTop: 10 }}>
-                <TonnageCurve spine={spine} width={win.width - HERO.gutter.hero * 2} />
-              </View>
-            </View>
-          ) : (
-            <View style={{ flex: 1 }} />
-          )}
-          <CountUp value={heroBig} style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size }} />
-          <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: cel ? txt(C, C.lime) : C.chalk, marginTop: 10 }}>{heroSub}</Text>
-          <View style={{ flexDirection: "row", marginTop: 20, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
-            {wrapped.basics.map((b, i) => (
-              <View key={b.labelKey} style={{ flex: 1, paddingVertical: 16, paddingHorizontal: 4, alignItems: "center", backgroundColor: HERO_TAKEOVER_RAISED, borderLeftWidth: i ? 1 : 0, borderLeftColor: C.line }}>
-                {/* A modelled figure wears a "~" — it is never presented as a
-                    measurement (see core/energy.ts). */}
-                <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={{ fontFamily: F.black, fontSize: fs.headline * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), color: C.chalk }}>{b.estimate ? "~" : ""}{b.value}</Text>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", marginTop: 4 }}>{t(b.labelKey)}</Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.xxl }}>
+            <CountUp
+              value={wrapped.headline.value}
+              style={{ fontFamily: F.black, fontSize: HERO_FIGURE.size, lineHeight: HERO_FIGURE.lineHeight, color: C.chalk, letterSpacing: HERO_FIGURE.tracking * HERO_FIGURE.size }}
+            />
+          </View>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash, marginTop: space.xxs }}>
+            {t(wrapped.headline.labelKey)}
+          </Text>
+
+          {/* THE FIGURE ROW — baseline-aligned on ONE hairline, no boxes. The
+              four bordered tiles this replaces were the last card chrome in the
+              sequence, and they made four equal-weight figures compete with the
+              magnitude directly above them. */}
+          {rowFigures.length > 0 && (
+          <View style={{ flexDirection: "row", marginTop: space.xl, paddingTop: space.md, borderTopWidth: 1, borderTopColor: C.line }}>
+            {/* The headline is set at display size directly above, so it does
+                not also take a slot in the row beneath it — a strength
+                session's headline IS its tonnage, which is how "10.2 t" came
+                to be both the magnitude and the first tile. */}
+            {rowFigures.map((b) => (
+              <View key={b.labelKey} style={{ flex: 1 }}>
+                {/* A modelled figure wears a "~" — never presented as a
+                    measurement (core/energy.ts). */}
+                <Text
+                  maxFontSizeMultiplier={FIXED_FONT_SCALE}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.6}
+                  style={[TABULAR, { fontFamily: F.black, fontSize: fs.heading * fitScale((b.estimate ? "~" : "") + b.value, STAT_FIT_EM), color: C.chalk }]}
+                >
+                  {b.estimate ? "~" : ""}{b.value}
+                </Text>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", marginTop: space.xxs }}>
+                  {t(b.labelKey)}
+                </Text>
               </View>
             ))}
           </View>
-          {/* The first thing after the numbers: pull the watch's read of this
-              exact workout onto the row (or show that it's already there). */}
+          )}
+
+          {/* The watch's read of this exact workout — or the invitation to
+              attach it. */}
           {device ? (
-            /* The lockup finishes the sentence, so the copy never repeats the
-               device's name. Chip and mark are both chalk: the artwork can't be
-               tinted, and a white logo next to lime text would read as two
-               claims at once. See core/device-marks.ts. */
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: 8, paddingHorizontal: 12 }}>
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: space.lg, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: space.sm, borderWidth: 1, borderColor: withAlpha(C.chalk, ALPHA.line), borderRadius: RADIUS.pill, paddingVertical: space.sm, paddingHorizontal: space.md }}>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.chalk }}>{t("session.device.measuredOn")}</Text>
               {deviceMark ? (
-                <DeviceMark provider={device.provider} height={16} on="dark" label={deviceName ?? undefined} />
+                <DeviceMark provider={device.provider} height={DEVICE_MARK_H} on="dark" label={deviceName ?? undefined} />
               ) : (
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.chalk }}>{deviceName ?? t("session.device.matchedChip")}</Text>
               )}
             </Pressable>
           ) : canMatch ? (
-            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: 16, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 8, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: 10, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED }}>
-              <DeviceMark provider="apple" form="mark" height={13} on="dark" label="" />
+            <Pressable onPress={() => setMatchOpen(true)} style={{ marginTop: space.lg, alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: space.sm, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingVertical: space.ms, paddingHorizontal: space.lg }}>
+              <DeviceMark provider="apple" form="mark" height={DEVICE_MARK_SM} on="dark" label="" />
               <Text style={{ fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{t("session.device.matchCta")}</Text>
             </Pressable>
           ) : null}
-          {scrollHint}
-        </Panel>
 
-        {/* ── WHERE THE WORK LANDED ── */}
-        {/* The body, lit by this session's own share of effort. It follows the
-            hero because the hero says HOW MUCH and this says WHERE — and it is
-            the one panel nobody else's summary can produce. */}
-        {muscleRead.map.muscles.length > 0 && (
-          <Panel index={at("body")} glows={<Glow size={panelH * 0.55} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.18} left={-80} />}>
-            {eyebrow(t("session.body.title"))}
-            <SessionBody map={muscleRead.map} coverage={muscleRead.coverage} units={units} />
-          </Panel>
-        )}
-
-        {/* ── HOW DID THAT FEEL? ── */}
-        {/* The immediate read, for a session opened later that was never rated.
-            The card says what a late answer is worth rather than pretending it
-            is the in-the-gym reading. See core/feel-schedule.ts. */}
-        <Panel index={at("feel")} center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.05} left={-90} />}>
-          <FeelPrompt
-            sessionId={session.id}
-            minutes={receipt.durationMin}
-            initialFeel={session.feel ?? null}
-            initialFatigue={session.fatigue ?? null}
-            sessionEnd={session.completedAt ?? session.startedAt ?? null}
-            baseline={feelBaseline}
-            eyebrow={eyebrow}
-          />
-
-          {/* HEAT — the PRIMARY entry, and it lives here for a reason the
-              Today row cannot match: this is the only moment where the gap
-              from the session end is known exactly, which is what the decay in
-              engines/heat.ts and the phase-4 pair matching both read. Passing
-              the session's own end as the default means a sauna logged on the
-              way home is dated to the sauna, not to the tap.
-
-              It ASKS or it REPORTS, depending on what the log already holds —
-              see `loggedHeat` above. An out-of-order import is exactly the case
-              where the invitation arrives after the answer. */}
-          <Pressable
-            onPress={() => setHeatOpen(true)}
-            accessibilityRole="button"
-            accessibilityLabel={t(loggedHeat ? "w.recovery.heat.afterSessionDone" : "w.recovery.heat.afterSession")}
-            style={{
-              marginTop: 22, alignSelf: "stretch", flexDirection: "row", alignItems: "center",
-              justifyContent: "space-between", gap: 12,
-              borderWidth: 1, borderColor: withAlpha(C.amber, ALPHA.line), backgroundColor: withAlpha(C.amber, ALPHA.wash),
-              borderRadius: 20, paddingVertical: 13, paddingHorizontal: 16,
-            }}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.note, color: C.chalk }}>
-                {t(loggedHeat ? "w.recovery.heat.afterSessionDone" : "w.recovery.heat.afterSession")}
-              </Text>
-              <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>
-                {loggedHeat
-                  ? t("w.recovery.heat.afterSessionLogged")
-                      .replace("{n}", String(loggedHeat.minutes))
-                      .replace("{t}", fmtTemp(loggedHeat.tempC, units))
-                      .replace("{at}", new Date(loggedHeat.ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" }))
-                  : t("w.recovery.heat.afterSessionSub")}
-              </Text>
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.amber) }}>&#8594;</Text>
-          </Pressable>
-        </Panel>
-
-        {/* ── PREMIUM ── */}
-        {wrapped.facts.length > 0 && (
-          <Panel index={at("premium")} center glows={<Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.wash)} top={0} left={-100} />}>
-            {eyebrow(t("session.wrapped.premium"))}
-            <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.chalk, marginTop: 8, marginBottom: 20 }}>{t("session.wrapped.premiumLead")}</Text>
-            {wrapped.facts.map((f) => (
-              <View key={f.labelKey + f.value} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: C.line }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
-                <Text style={{ fontFamily: F.black, fontSize: fs.display, color: f.labelKey === "session.wrapped.est1rm" ? txt(C, C.lime) : deltaPaint(C, !f.tone || f.tone === "neutral" ? "flat" : f.tone) }}>{f.value}</Text>
-              </View>
-            ))}
-            {!full && (
-              <APill
-                label={t("session.wrapped.unlock")}
-                color={premium.fill}
-                glyph={(c) => <Text style={{ fontFamily: F.black, fontSize: fs.note, color: c }}>✦</Text>}
-                onPress={() => { onBack(); router.push("/upgrade"); }}
-                style={{ marginTop: 24, alignSelf: "flex-start" }}
-              />
-            )}
-          </Panel>
-        )}
-
-        {/* ── THE DEVICE'S READ (matched) ── */}
-        {device && (
-          <Panel index={at("device")} center glows={<Glow size={panelH * 0.45} color={withAlpha(C.lime, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
-            {eyebrow(t("session.device.panelTitle"))}
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: leading(28, "tight"), marginTop: 12 }}>{device.activityLabel}</Text>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 10 }}>{t(imported ? "session.device.leadImported" : "session.device.lead")}</Text>
-            <View style={{ marginTop: 20, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
-              <View style={{ flexDirection: "row", paddingVertical: 10, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED }}>
-                <View style={{ flex: 1.1 }} />
-                {/* An imported session has no logged column — the recording IS the log. */}
-                {!imported && (
-                  <Text style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase", textAlign: "right" }}>{t("session.device.appCol")}</Text>
-                )}
-                {/* The lockup heads the measured column instead of the device's
-                    name, and the column's figures below are chalk with it — the
-                    whole measured side reads in one ink. */}
-                {deviceMark ? (
-                  <View style={{ flex: 1, alignItems: "flex-end" }}>
-                    <DeviceMark provider={device.provider} height={15} on="dark" label={deviceName ?? undefined} />
-                  </View>
-                ) : (
-                  <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.chalk, textTransform: "uppercase", textAlign: "right" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
-                )}
-              </View>
-              {comparison.map((r) => (
-                <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: 12, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED, borderTopWidth: 1, borderTopColor: C.line }}>
-                  <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
-                  {/* A modelled figure wears a "~" — never presented as a measurement. */}
-                  {!imported && (
-                    <Text style={{ flex: 1, fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, textAlign: "right" }}>{r.app != null ? `${r.appEstimate ? "~" : ""}${r.app}` : "—"}</Text>
-                  )}
-                  <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.bodyLg, color: C.chalk, textAlign: "right" }}>{r.device ?? "—"}</Text>
-                </View>
-              ))}
-            </View>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "relaxed"), color: C.ash, marginTop: 12 }}>{t(imported ? "session.device.truthImported" : "session.device.truth")}</Text>
-            <View style={{ flexDirection: "row", gap: 16, marginTop: 20 }}>
-              <Pressable onPress={() => setMatchOpen(true)}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{t("session.device.rematch")}</Text>
-              </Pressable>
-              <Pressable onPress={() => void unlinkDevice()} disabled={unlinking} style={{ opacity: unlinking ? STATE_OPACITY.busy : 1 }}>
-                <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("session.device.unlink")}</Text>
-              </Pressable>
-            </View>
-          </Panel>
-        )}
-
-        {/* ── CONNECT A DEVICE ── */}
-        {showDeviceAd && (
-          <Panel index={at("device")} center glows={<Glow size={panelH * 0.45} color={withAlpha(C.blue, ALPHA.wash)} top={panelH * 0.06} right={-90} />}>
-            {eyebrow(t("session.wrapped.device.title"))}
-            <Text style={{ fontFamily: F.black, fontSize: 28, color: C.chalk, letterSpacing: tracking.display, lineHeight: leading(28, "tight"), marginTop: 12 }}>{t("session.wrapped.device.lead")}</Text>
-            <View style={{ marginTop: 24, borderRadius: RADIUS.field, borderWidth: 1, borderColor: C.line, overflow: "hidden" }}>
-              {([
-                ["heart", C.red, "session.wrapped.device.hr"],
-                ["flame", C.red, "session.wrapped.device.energy"],
-                ["stopwatch", C.chalk, "session.wrapped.device.time"],
-                ["moon", GOLD, "session.wrapped.device.recovery"],
-              ] as const).map(([icon, tint, key], i) => (
-                <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: 10, paddingVertical: 12, paddingHorizontal: 16, backgroundColor: HERO_TAKEOVER_RAISED, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
-                  <AuroraIcon name={icon} size={16} color={tint} />
-                  <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t(key)}</Text>
-                </View>
-              ))}
-            </View>
-            <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: 24, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: 12, paddingHorizontal: 24 }}>
-              <CtaLabel label={`${t("session.wrapped.device.cta")} →`} color={C.onAccent} fontSize={15} font={F.black} />
-            </Pressable>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.micro, lineHeight: 17, color: C.ash, marginTop: 16 }}>
-              {bwHere ? t("session.wrapped.device.estimate") : t("session.wrapped.device.bodyweight")}
-            </Text>
-          </Panel>
-        )}
-
-        {/* ── THE WORK ── */}
-        {/* What replaced the signature panel: six unlabelled bars captioned
-            "your session's shape". Every set is here now, in order, at the load
-            it actually moved — a ramp reads as a ramp, straight sets read as a
-            wall — with the figures that describe how the session was RUN
-            underneath. See core/session-spine.ts. */}
-        {hasSpine && (
-          <Panel index={at("work")} glows={<Glow size={panelH * 0.5} color={withAlpha(C.blue, ALPHA.wash)} bottom={panelH * 0.1} right={-90} />}>
-            {eyebrow(t("session.work.title"))}
-            {spine.topSet && (
-              <>
-                <Text style={{ fontFamily: F.black, fontSize: fs.hero, letterSpacing: trackFigure(fs.hero), color: C.chalk, marginTop: 12 }}>
-                  {fmtWeight(spine.topSet.loadKg, units)}
-                  {spine.topSet.reps ? <Text style={{ fontSize: fs.heading, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
+          {/* ══ THE RECORD ══
+              A band, not a screen. What stood here was a full panel of trophy,
+              sixteen confetti squares and a rotating gradient, which celebrated
+              a record without ever showing it. */}
+          {cel && (
+            <View style={{ marginTop: space.huge, borderTopWidth: 1, borderTopColor: withAlpha(GOLD, ALPHA.line), paddingTop: space.lg, flexDirection: "row", alignItems: "center", gap: space.md }}>
+              <AuroraIcon name="trophy" size={fs.heading} color={GOLD} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.caps, color: GOLD, textTransform: "uppercase" }}>
+                  {cel.total > 1 ? `${cel.total} ${t("summary.newPrs")}` : t("summary.prOne")}
                 </Text>
-                <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: txt(C, C.lime), marginTop: 2 }}>
-                  {t("session.work.topSet")} – {spine.topSet.exercise}
+                <Text style={{ fontFamily: F.bold, fontSize: fs.subtitle, color: C.chalk, marginTop: space.xxs }}>{heroSub}</Text>
+              </View>
+              <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.display, color: C.chalk }]}>{heroBig}</Text>
+            </View>
+          )}
+
+          {/* ══ WHERE THE WORK LANDED ══ */}
+          {muscleRead.map.muscles.length > 0 && (
+            <Section C={C} label={t("session.body.title")}>
+              <SessionBody map={muscleRead.map} coverage={muscleRead.coverage} units={units} />
+            </Section>
+          )}
+
+          {/* ══ EVERY SET, IN ORDER ══ */}
+          {hasSpine && (
+            <Section
+              C={C}
+              label={t("session.work.title")}
+              meta={
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>
+                  {t("session.work.workingSets")} {spine.workingSets}/{spine.totalSets}
                 </Text>
-              </>
-            )}
-            <View style={{ marginTop: 22 }}>
+              }
+            >
+              {spine.topSet && (
+                <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginBottom: space.lg }}>
+                  <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.hero, letterSpacing: trackFigure(fs.hero), color: C.chalk }]}>
+                    {fmtWeight(spine.topSet.loadKg, units, undefined, lang)}
+                    {spine.topSet.reps ? <Text style={{ fontSize: fs.heading, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
+                  </Text>
+                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: txt(C, C.lime) }}>
+                    {t("session.work.topSet")} – {spine.topSet.exercise}
+                  </Text>
+                </View>
+              )}
+              {/* The legend names the warm-up treatment ONLY when a warm-up is
+                  actually drawn. Printed unconditionally it explained a
+                  convention that wasn't on the chart — every set of this
+                  session was a working set. */}
               <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, textTransform: "uppercase", color: C.ash }}>
-                {t("session.work.loadPerSet")}
+                {t(spine.workingSets < spine.totalSets ? "session.work.loadPerSet" : "session.work.loadPerSetPlain")}
               </Text>
-              <View style={{ marginTop: 10 }}>
+              <View style={{ marginTop: space.ms }}>
                 <SetSpine spine={spine} width={win.width - HERO.gutter.hero * 2} />
               </View>
-            </View>
-            <View style={{ flex: 1 }} />
-            <WorkRow label={t("session.work.workingSets")} value={`${spine.workingSets}`} note={t("session.work.ofTotal").replace("{n}", String(spine.totalSets))} C={C} />
-            {spine.medianRestSec != null && (
-              <WorkRow label={t("session.work.medianRest")} value={mmss(spine.medianRestSec)} C={C} />
-            )}
-            {spine.meanRpe != null && <WorkRow label={t("session.work.meanRpe")} value={`${spine.meanRpe}`} C={C} last={true} />}
-          </Panel>
-        )}
+              <View style={{ marginTop: space.lg }}>
+                {spine.medianRestSec != null && (
+                  <WorkRow label={t("session.work.medianRest")} value={mmss(spine.medianRestSec)} C={C} />
+                )}
+                {spine.meanRpe != null && <WorkRow label={t("session.work.meanRpe")} value={`${spine.meanRpe}`} C={C} last />}
+              </View>
+            </Section>
+          )}
 
-        {/* ── DETAILS (breakdown + manage) ── */}
-        {/* THE LEDGER. It used to open in a different design language — bordered
-            cards, its own gutter, its own ground — one scroll after six
-            full-bleed panels, and the transition read as a seam between two
-            products. It now stands on the panels' ground, at the panels' gutter,
-            with the same hairline rows. */}
-        <View style={{ backgroundColor: HERO_TAKEOVER_INK, paddingHorizontal: HERO.gutter.hero, paddingTop: 28, paddingBottom: insets.bottom + 40, minHeight: panelH }}>
+          {/* ══ TONNAGE THROUGH THE SESSION ══
+              The accumulation curve, in a section of its own. It used to be
+              wedged into the masthead's void, which left voids above AND below
+              it — the spacer problem solved by moving the spacer. */}
+          {hasSpine && (
+            <Section C={C} label={t("session.work.tonnageThrough")}>
+              <TonnageCurve spine={spine} width={win.width - HERO.gutter.hero * 2} />
+            </Section>
+          )}
+
+          {/* ══ THE DEEPER READ ══ */}
+          {wrapped.facts.length > 0 && (
+            <Section
+              C={C}
+              label={t("session.wrapped.premiumLead")}
+              meta={<HeroEyebrow label={t("session.wrapped.premium")} tone="tint" accent={GOLD} mark="✦" />}
+            >
+              {wrapped.facts.map((f, i) => (
+                <View key={f.labelKey + f.value} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: space.md, paddingVertical: space.md, borderBottomWidth: i === wrapped.facts.length - 1 ? 0 : 1, borderBottomColor: C.line }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(f.labelKey)}</Text>
+                    {/* WHICH LIFT. `topLift` picks by highest estimated max, so
+                        the e1RM and its trend routinely belong to a different
+                        lift than the one the session leads with — an unlabelled
+                        red "−16 kg" read as this session going backwards when
+                        it was a second exercise's long-run trend. */}
+                    {f.qualifier ? (
+                      <Text numberOfLines={1} style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: space.xxs }}>{f.qualifier}</Text>
+                    ) : null}
+                  </View>
+                  <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.subtitle, color: f.tone === "up" || f.tone === "down" ? deltaPaint(C, f.tone) : C.chalk }]}>
+                    {f.value}
+                  </Text>
+                </View>
+              ))}
+              {!full && (
+                <View style={{ marginTop: space.lg }}>
+                  <APill label={t("session.wrapped.unlock")} onPress={() => router.push("/account")} variant="outline" />
+                </View>
+              )}
+            </Section>
+          )}
+
+          {/* ══ MEASURED ══
+              Hairline rows on the document's own ground. This was a bordered
+              table dropped into a cinematic sequence — the one part of the old
+              flow that was conceptually right and visually foreign. */}
+          {device && (
+            <Section
+              C={C}
+              label={t("session.device.panelTitle")}
+              meta={deviceMark ? <DeviceMark provider={device.provider} height={DEVICE_MARK_H} on="dark" label={deviceName ?? undefined} /> : (
+                <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.chalk, textTransform: "uppercase" }}>{deviceName ?? t("session.device.deviceCol")}</Text>
+              )}
+            >
+              <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{device.activityLabel}</Text>
+              <View style={{ marginTop: space.md }}>
+                {comparison.map((r, i) => (
+                  <View key={r.labelKey} style={{ flexDirection: "row", alignItems: "baseline", paddingVertical: space.md, borderBottomWidth: i === comparison.length - 1 ? 0 : 1, borderBottomColor: C.line }}>
+                    <Text style={{ flex: 1.1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking.label, color: C.ash, textTransform: "uppercase" }}>{t(r.labelKey)}</Text>
+                    {/* THE MEASURED FIGURE LEADS and the logged one qualifies
+                        it — the hierarchy the device-truth rule actually
+                        states, which the old two equal columns did not. */}
+                    <Text style={[TABULAR, { flex: 1, fontFamily: F.black, fontSize: fs.subtitle, color: C.chalk, textAlign: "right" }]}>{r.device ?? "—"}</Text>
+                    {!imported && (
+                      <Text style={[TABULAR, { flex: 1, fontFamily: F.mono, fontSize: fs.micro, color: C.ash, textAlign: "right" }]}>
+                        {r.app != null ? `${t("session.device.appCol")} ${r.appEstimate ? "~" : ""}${r.app}` : ""}
+                      </Text>
+                    )}
+                  </View>
+                ))}
+              </View>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "relaxed"), color: C.ash, marginTop: space.md }}>
+                {t(imported ? "session.device.truthImported" : "session.device.truth")}
+              </Text>
+              <View style={{ flexDirection: "row", gap: space.lg, marginTop: space.lg }}>
+                <Pressable onPress={() => setMatchOpen(true)}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{t("session.device.rematch")}</Text>
+                </Pressable>
+                <Pressable onPress={() => void unlinkDevice()} disabled={unlinking} style={{ opacity: unlinking ? STATE_OPACITY.busy : 1 }}>
+                  <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{t("session.device.unlink")}</Text>
+                </Pressable>
+              </View>
+            </Section>
+          )}
+
+          {/* ══ CONNECT A DEVICE ══ */}
+          {showDeviceAd && (
+            <Section C={C} label={t("session.wrapped.device.title")}>
+              <Text style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{t("session.wrapped.device.lead")}</Text>
+              <View style={{ marginTop: space.md }}>
+                {([
+                  ["heart", C.red, "session.wrapped.device.hr"],
+                  ["flame", C.red, "session.wrapped.device.energy"],
+                  ["stopwatch", C.chalk, "session.wrapped.device.time"],
+                  ["moon", GOLD, "session.wrapped.device.recovery"],
+                ] as const).map(([icon, tint, key], i) => (
+                  <View key={key} style={{ flexDirection: "row", alignItems: "center", gap: space.ms, paddingVertical: space.ms, borderTopWidth: i ? 1 : 0, borderTopColor: C.line }}>
+                    <AuroraIcon name={icon} size={fs.subtitle} color={tint} />
+                    <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t(key)}</Text>
+                  </View>
+                ))}
+              </View>
+              <Pressable onPress={() => { onBack(); router.push("/connections"); }} style={{ marginTop: space.xl, alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingVertical: space.md, paddingHorizontal: space.xxl }}>
+                <CtaLabel label={`${t("session.wrapped.device.cta")} →`} color={C.onAccent} fontSize={fs.note} font={F.black} />
+              </Pressable>
+            </Section>
+          )}
+
+          {/* ══ HOW DID THAT FEEL ══ */}
+          <Section C={C} label={t("session.feel.q")}>
+            <FeelPrompt
+              sessionId={session.id}
+              minutes={receipt.durationMin}
+              initialFeel={session.feel ?? null}
+              initialFatigue={session.fatigue ?? null}
+              sessionEnd={session.completedAt ?? session.startedAt ?? null}
+              baseline={feelBaseline}
+              /* The section header already asks the question; the prompt's own
+                 kicker would ask it twice on one block. */
+              eyebrow={() => null}
+            />
+            {/* HEAT — the primary entry, and it lives here because this is the
+                only moment where the gap from the session end is known exactly
+                (engines/heat.ts reads that decay). It ASKS or it REPORTS,
+                depending on what the log already holds. */}
+            <Pressable
+              onPress={() => setHeatOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel={t(loggedHeat ? "w.recovery.heat.afterSessionDone" : "w.recovery.heat.afterSession")}
+              style={{ marginTop: space.xl, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md, paddingTop: space.md, borderTopWidth: 1, borderTopColor: C.line }}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontFamily: F.bold, fontSize: fs.note, color: C.chalk }}>
+                  {t(loggedHeat ? "w.recovery.heat.afterSessionDone" : "w.recovery.heat.afterSession")}
+                </Text>
+                <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.ash, marginTop: space.xxs }}>
+                  {loggedHeat
+                    ? t("w.recovery.heat.afterSessionLogged")
+                        .replace("{n}", String(loggedHeat.minutes))
+                        .replace("{t}", fmtTemp(loggedHeat.tempC, units))
+                        .replace("{at}", new Date(loggedHeat.ts).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" }))
+                    : t("w.recovery.heat.afterSessionSub")}
+                </Text>
+              </View>
+              <Text style={{ fontFamily: F.mono, fontSize: fs.subtitle, color: txt(C, C.amber) }}>&#8594;</Text>
+            </Pressable>
+          </Section>
+        </View>
+
+        {/* ══ THE LEDGER ══
+            Already on the document's ground and at its gutter; it now simply
+            continues the scroll rather than arriving after six full screens. */}
+        <View style={{ paddingHorizontal: HERO.gutter.hero, marginTop: space.huge, borderTopWidth: 1, borderTopColor: C.line, paddingTop: space.lg }}>
           {details}
         </View>
       </ScrollView>
 
       {/* THE RAIL — the same 40pt circular control, at the same y, as every
           other screen. A takeover has no stack under it, so it DISMISSES
-          (chevron-down) rather than pops; the geometry is untouched, which is
-          why the thumb never has to re-find it. */}
-      {!capturing && (
-        <View style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, flexDirection: "row", alignItems: "center", zIndex: 5 }}>
-          <HeroNav onPress={onBack} mode="takeover" material="glass" onDark />
-          {/* SHARE, OPPOSITE DISMISS. Dismiss is top-left because that is where
-              the back gesture lives, so the only other panel-level action takes
-              the other corner — and holds it on every panel, so the thumb never
-              has to hunt for it. It shares the panel in front of you.
+          (chevron-down) rather than pops. Share is its twin in the opposite
+          corner, and it opens the card. */}
+      <View style={{ position: "absolute", top: geom.railTop, left: HERO.gutter.edge, right: HERO.gutter.edge, height: HERO.rail.height, flexDirection: "row", alignItems: "center", zIndex: 5 }}>
+        <HeroNav onPress={onBack} mode="takeover" material="glass" onDark />
+        <HeroAction
+          glyph={SHARE_MARK.glyph}
+          fallbackGlyph={SHARE_MARK.fallback}
+          label={t("summary.share")}
+          onPress={() => setShareOpen(true)}
+          style={{ marginLeft: "auto" }}
+        />
+      </View>
 
-              Which makes it HeroNav's twin, and it is drawn as one now: the
-              rail's trailing control, in the leading one's material. It spent
-              its life as a lime-washed box with a text arrow in it — a third
-              drawing of share beside the recipe cover's and the finish
-              summary's, on the app's other social surface. */}
-          {showDock && (
-            <HeroAction
-              glyph={SHARE_MARK.glyph}
-              fallbackGlyph={SHARE_MARK.fallback}
-              label={t("summary.share")}
-              onPress={sharePanel}
-              style={{ marginLeft: "auto" }}
-            />
-          )}
+      {/* ── THE SHARE CARD, PREVIEWED ──
+          What you post is what you are looking at, and you looked at it before
+          it left. */}
+      <Sheet visible={shareOpen} onClose={() => setShareOpen(false)} title={t("summary.shareStory")}>
+        <View style={{ alignItems: "center" }}>
+          <SessionShareCard
+            ref={cardRef}
+            figures={shareFigures}
+            map={muscleRead.map}
+            units={units}
+            width={cardWidth}
+            locale={lang}
+          />
         </View>
-      )}
-
-      {/* WHERE YOU ARE IN THE SEQUENCE. The dock used to carry a share pill
-          too; sharing moved to the rail, because the thing being shared is the
-          panel and the control belongs on it rather than under it. */}
-      {showDock && !capturing && (
-        <View style={{ position: "absolute", left: 24, right: 24, bottom: insets.bottom + 20, flexDirection: "row", justifyContent: "center", gap: 6 }}>
-          {keys.map((_, i) => (
-            <View key={i} style={{ width: i === Math.min(panel, keys.length - 1) ? 18 : 6, height: 6, borderRadius: RADIUS.mark, backgroundColor: i === Math.min(panel, keys.length - 1) ? C.lime : C.line }} />
-          ))}
+        <View style={{ marginTop: space.xl }}>
+          <APill label={t("summary.share")} onPress={() => void doShare()} disabled={sharing} />
         </View>
-      )}
+      </Sheet>
 
       {/* ── HEAT SHEET ──
-          Defaulted to the session's own end, so a sauna taken straight after
-          is dated to the sauna rather than to whenever this screen was tapped.
-          Invalidates the shared heat cache on save so Today's ring and the
-          volume model both see it. */}
+          Defaulted to the session's own end, so a sauna taken straight after is
+          dated to the sauna rather than to whenever this screen was tapped. */}
       <HeatSheet
         visible={heatOpen}
         onClose={() => setHeatOpen(false)}
@@ -791,14 +765,11 @@ export function WorkoutWrapped({
       {/* ── DEVICE MATCH SHEET ── */}
       <DeviceMatchSheet
         session={session}
-        /* Ranking compares candidates against what the athlete LOGGED — scoring
-           against an already-matched device duration would just re-elect it. */
         sessionDurationMin={logged.durationMin}
         visible={matchOpen}
         onClose={() => setMatchOpen(false)}
         onMatched={onMatched}
       />
-
     </View>
   );
 }
