@@ -153,7 +153,13 @@ const MARK = { size: 18, slot: 22 } as const;
 function KindMark({ kind, color }: { kind: TrainingKind | null; color: string }) {
   const mark = kind && kind !== "gym" ? DISCIPLINE_META[kind]?.mark : null;
   return (
-    <View style={{ width: MARK.slot, height: MARK.slot, alignItems: "center", justifyContent: "center" }}>
+    <View
+      // Decoration for a screen reader: whatever the mark names, the
+      // instruction under it already says in words.
+      importantForAccessibility="no-hide-descendants"
+      accessibilityElementsHidden
+      style={{ width: MARK.slot, height: MARK.slot, alignItems: "center", justifyContent: "center" }}
+    >
       {kind === "gym" ? <Glyph name="barbell" size={MARK.size} color={color} />
         : !mark ? null
         : mark.kind === "sport" ? <SportMark sport={mark.sport} size={MARK.size} color={color} />
@@ -295,15 +301,6 @@ export default function AuroraDayBand({
   const acting = band.fill !== null;
   const lit = acting && hue && hue !== "ash" ? C.accentText[hue] : null;
 
-  const head = bandText(t, shown.head ?? band.head);
-  const say = shown.say.map((l) => bandText(t, l)).join(" ");
-  // THE STEP-DOWN. A head over one line's worth of characters takes the next
-  // rung down rather than wrapping to a third line or ellipsizing — an
-  // instruction with its verb cut off is worse than a smaller instruction. The
-  // engine holds every locale under two lines at `display`; this is what makes
-  // the long end of that range sit properly.
-  const headSize = head.length > 24 ? fs.headline : fs.display;
-
   // THE FIELD COLLAPSES, it does not merely fade. Fading the rows while the box
   // kept its height left a dead slab of colour between the bar and the first
   // card — the field had gone and the hole it left had not. The pull is applied
@@ -327,24 +324,37 @@ export default function AuroraDayBand({
   const renderPage = (b: DayBand, i: number) => {
     const h = bandText(t, b.head ?? band.head!);
     const s = b.say.map((l) => bandText(t, l)).join(" ");
+    // THE STEP-DOWN. A head over one line's worth of characters takes the next
+    // rung down rather than wrapping to a third line or ellipsizing — an
+    // instruction with its verb cut off is worse than a smaller instruction.
+    // The engine holds every locale under two lines at `display`; this is what
+    // makes the long end of that range sit properly.
+    const headSize = h.length > 24 ? fs.headline : fs.display;
     return (
       <View
         key={`${b.rung}:${b.kinds.join("+")}:${i}`}
-        accessible
-        // Each page states its own position, because a swipeable band read as
-        // one undifferentiated blob is a band with a hidden ranking.
-        accessibilityLabel={[
-          pages.length > 1 ? t("w.home.band.deckPage").replace("{n}", String(i + 1)).replace("{total}", String(pages.length)) : null,
-          h,
-          s,
-        ].filter(Boolean).join(" – ")}
         style={{ width: size.w || undefined, paddingHorizontal: PAD.x }}
       >
+        {/* THE WORDS ARE GROUPED, THE CONTROL IS NOT. `accessible` collapses a
+            view and everything under it into one element, so wrapping the whole
+            page would have taken the commit button out of the tree with it —
+            the same trap the container had. This groups exactly the two lines
+            that should be read as one thought, and states which page they are:
+            a swipeable band read as one undifferentiated blob is a band with a
+            hidden ranking. */}
+        <View
+          accessible
+          accessibilityLabel={[
+            pages.length > 1 ? t("w.home.band.deckPage").replace("{n}", String(i + 1)).replace("{total}", String(pages.length)) : null,
+            h,
+            s,
+          ].filter(Boolean).join(" – ")}
+        >
         <Text
           style={{
             fontFamily: F.black,
-            fontSize: h.length > 24 ? fs.headline : fs.display,
-            lineHeight: leading(h.length > 24 ? fs.headline : fs.display),
+            fontSize: headSize,
+            lineHeight: leading(headSize),
             letterSpacing: tracking.display,
             color: ink,
             marginTop: PAD.headTop,
@@ -367,6 +377,7 @@ export default function AuroraDayBand({
             {s}
           </Text>
         ) : null}
+        </View>
 
         {/* THE COMMIT, and it is the only one the deck asks for. Swiping is
             free — you may read the whole ranking and swipe back — because a
@@ -387,9 +398,22 @@ export default function AuroraDayBand({
 
   return (
     <Animated.View
-      accessible={pages.length === 1}
-      accessibilityLabel={[t("w.home.band.scale").replace("{n}", String(band.figure)), head, say].filter(Boolean).join(" – ")}
-      onLayout={(e) => setSize({ h: e.nativeEvent.layout.height, w: e.nativeEvent.layout.width })}
+      // NO `accessible` ON THE CONTAINER, and this is a fix rather than an
+      // omission. `accessible` collapses a view and everything under it into
+      // ONE element, so with it set the band read as a single label and its
+      // controls — the ⓘ, the deck's dots, RATE, "Not today?" — stopped being
+      // reachable at all. On the one screen an athlete opens every morning,
+      // every affordance was invisible to VoiceOver.
+      //
+      // The tree does the work instead: each PAGE is its own grouped element
+      // (head + sentence + its position in the deck), the figure carries its
+      // own spoken form below, and every control is a button in its own right.
+      onLayout={(e) => {
+        const { height: h, width: w } = e.nativeEvent.layout;
+        // Guarded: onLayout can fire with the values it already reported, and
+        // this state feeds the fold's `pull`.
+        setSize((prev) => (prev.h === h && prev.w === w ? prev : { h, w }));
+      }}
       style={{
         marginHorizontal: -GUTTER,
         // The field runs under the status bar: it is the top of the screen, not
@@ -440,6 +464,9 @@ export default function AuroraDayBand({
               reading that looks less like a fact than it is. */}
           <KindMark kind={shown.mark} color={lit ?? ink} />
           <Text
+            // "69/100" is notation, and a screen reader saying "sixty-nine
+            // slash one hundred" is not what the numeral means.
+            accessibilityLabel={t("w.home.band.scale").replace("{n}", String(band.figure))}
             style={{
               flex: 1,
               fontFamily: F.black,

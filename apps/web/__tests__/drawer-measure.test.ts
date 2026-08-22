@@ -59,9 +59,29 @@ const MEASURED: Record<string, string> = {
     "The activity card's PAGER measures each page and interpolates the card's height off the scroll offset, so the card grows with the drag instead of jumping after it. It takes the second escape, and takes it by construction: the height is `undefined` (auto) until BOTH pages have reported a positive height, so the box is never pinned while a measurement is still 0. After that it is pinned to a real page height — which is safe for the reason stated at the top of this file: only 0 clamps a child, any height above it overflows normally, and the content container's `alignItems: \"flex-start\"` keeps the taller page from being stretched to the shorter one's box. So page two reports its own 390dp while the card is still sitting at page one's 200dp, which is exactly what the interpolation needs.",
   "components/aurora/day-band.tsx":
     "The day field measures its own height so the FOLD knows how far to pull the content below it up. It pins NO height, and that is the escape: the animated value drives `marginBottom` — a NEGATIVE margin that shortens the space the field occupies — while the field's own box stays auto and lays out at its natural height on every frame. So the measurement is always the field's true height and can never be a clipped 0; the trap needs a box constrained to 0, and there is never one here. It is also why the pull is on the margin rather than the height: pinning the height would have put this file in exactly the case the two escapes exist for, and the collapse has to run every frame of a scroll.",
+  "components/aurora/profile.tsx":
+    "NOT a collapse — the tile grid's drag-reorder. It measures each tile's whole frame (x/y/w/h) to work out which tile the finger is over, and the animated values it drives are a translate and a scale. No height is ever pinned from a measurement, so the trap has nothing to clamp. Listed because the detector is deliberately broad: a file that measures a height and animates something has to say which of the two it is.",
+  "lib/use-drag-reorder.ts":
+    "NOT a collapse — the shared row-reorder hook, and the same story as profile.tsx: rows report `y` and `height` so the hook knows how far one row shifts another, and the interpolation drives translateY. Nothing reads a height into a style.",
   "components/aurora/rolling-number.tsx":
     "RollingNumber's digit column measures its own height to slide a face by exactly one glyph. It pins NO height at all: the incoming face is in flow and defines the box (the outgoing one is absolutely positioned over it), so the measured box is the glyph's real height and never a clipped 0. An unmeasured first frame translates by 0 — the digit simply appears — rather than collapsing.",
 };
+
+/**
+ * Reading a measured height, in either of the two shapes a handler writes it:
+ * `e.nativeEvent.layout.height`, or a destructuring of the same object. The
+ * second half is not hypothetical — this file's own day-band entry went stale
+ * for exactly that reason once, when the handler was rewritten to destructure
+ * and a real measured collapse silently stopped being found. A detector that
+ * only knows one spelling is a detector a rewrite can switch off.
+ *
+ * It stays anchored on HEIGHT: measuring a width is not a collapse, and half
+ * the mobile tree measures one (swipe rows, segmented controls, the hero's
+ * rail). Widening to `.layout` would demand an escape-hatch essay from files
+ * that never had the problem, which is how a guard stops being read.
+ */
+const MEASURES_HEIGHT =
+  /layout\.height|\{[^{}]*\bheight\b[^{}]*\}\s*=\s*[^;\n]*\.layout\b/;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -102,7 +122,7 @@ describe("mobile ADrawer — the measured disclosure", () => {
     const found = walk(MOBILE)
       .filter((f) => {
         const s = readFileSync(f, "utf8");
-        return /layout\.height/.test(s) && /\.interpolate\(/.test(s);
+        return MEASURES_HEIGHT.test(s) && /\.interpolate\(/.test(s);
       })
       .map((f) => relative(MOBILE, f).split(/[\\/]/).join("/"));
 
