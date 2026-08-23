@@ -189,3 +189,8 @@ export function prescribeForSport(
 
   return { sport, ranked, blocks, setScheme, personalized };
 }
+
+/** Storage key for the sport (and level) a screen was last left on — shared by
+ *  the Sport page and Performance so the two cannot disagree, and synced so the
+ *  sport you are training is the one your other device opens on. */
+export const SPORT_STORE_KEY = "hybrid.sport";

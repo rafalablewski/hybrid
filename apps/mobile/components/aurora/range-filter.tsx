@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from "react";
 import { View, Text } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   ACTIVITY_RANGE_PRESETS, DEFAULT_ACTIVITY_RANGE, MONTH_SEGMENT_ID,
   activityMonths, activityRangeSegIndex, activityRangeSegments, activityRangeSpanEnd,
@@ -14,6 +13,7 @@ import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { F, MAX_FONT_SCALE, PressScale as Pressable, fs, tracking, ty} from "../../lib/ui";
 import { useToday } from "../../lib/use-today";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import { RADIUS } from "./kit";
 
 /**
@@ -39,7 +39,8 @@ import { RADIUS } from "./kit";
  * alone would leave two mounted controls disagreeing until the next launch —
  * the worse half of the bug, since the disagreeing card is a scroll away and
  * nothing on screen admits it. So the choice lives in a module store the hook
- * subscribes to, and AsyncStorage is only where it is kept between visits.
+ * subscribes to, and the synced-prefs cache is only where it is kept between
+ * visits — the ACCOUNT is where it is kept between devices.
  */
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
@@ -98,15 +99,21 @@ export function useActivityRange(storeKey: string): {
     useCallback(() => readChoice(storeKey), [storeKey]),
   );
 
+  // THE CHOSEN PERIOD FOLLOWS THE ACCOUNT (lib/synced-prefs.ts → /api/prefs),
+  // so the window you were reading on the phone is the window the next device
+  // opens on. The read still happens once per key rather than once per mounted
+  // control; it just reads the synced cache instead of raw storage, which is
+  // already populated by the time any control mounts.
   useEffect(() => {
     if (hydrated.has(storeKey)) return;
     hydrated.add(storeKey);
-    AsyncStorage.getItem(storeKey).then((v) => { if (v) writeChoice(storeKey, v); }).catch(() => {});
+    const stored = getPref<string | null>(storeKey, null);
+    if (stored) writeChoice(storeKey, stored);
   }, [storeKey]);
 
   const pick = useCallback((id: string) => {
     writeChoice(storeKey, id);
-    AsyncStorage.setItem(storeKey, id).catch(() => {});
+    setPref(storeKey, id);
   }, [storeKey]);
 
   const range = useMemo(() => resolveActivityRange(rangeId, Date.now()), [rangeId, today]);

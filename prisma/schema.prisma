@@ -68,6 +68,19 @@ model User {
   // (reference/sql-plan-maxes.sql).
   planMaxes Json @default("{}")
 
+  // SYNCED PREFERENCES — the settings that follow the ACCOUNT rather than the
+  // handset: pinned lifts and sports, units, rest days, where a screen was
+  // left, which one-shot hints have been seen. A flat { key: value } map keyed
+  // by packages/core synced-prefs.ts's allowlist, read/written via /api/prefs.
+  //
+  // MERGED PER KEY (jsonb `||`), never written whole: two devices changing two
+  // different settings must not clobber each other, which a blob write would
+  // let them do. Each client keeps a local copy as a FAST CACHE and an offline
+  // fallback — the server is the source of truth, the device is never the only
+  // copy. Soft-guarded (raw queries) so the app runs before the column is
+  // migrated (reference/sql-user-prefs.sql).
+  prefs Json @default("{}")
+
   // THE QUESTIONNAIRE — everything the athlete has told the app about
   // themselves: sex, age, height, body mass, training age, years lifting,
   // sessions per week, typical sleep and stress, energy intake. Shape and

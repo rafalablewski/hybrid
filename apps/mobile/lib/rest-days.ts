@@ -1,5 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { dayKeyDiff, localDayKey, localTodayKey } from "@hybrid/core";
+import { REST_DAYS_KEY, dayKeyDiff, localDayKey, localTodayKey } from "@hybrid/core";
+import { getPref, setPref } from "./synced-prefs";
 
 /**
  * A DECLARED REST DAY — the athlete saying so, rather than the app inferring it.
@@ -15,18 +15,21 @@ import { dayKeyDiff, localDayKey, localTodayKey } from "@hybrid/core";
  * day-band-prefs' "not today"), and everything else it knows is what already
  * happened.
  *
- * ── WHY IT LIVES ON THE DEVICE ────────────────────────────────────────────
- * Same reasoning as day-band-prefs: it is a statement about a day, not a
- * record of work, and it changes no figure any engine computes. Putting it in
- * Postgres would mean a migration, an API route and a sync path for a boolean
- * whose only reader is the card that drew the question.
+ * ── IT FOLLOWS THE ACCOUNT NOW ────────────────────────────────────────────
+ * This file used to argue that a rest day belonged on the device — a statement
+ * about a day rather than a record of work, not worth a migration and a sync
+ * path — while admitting the cost in the same breath: it did not survive a
+ * reinstall. That trade was overturned in Aug 2026 when the whole class of
+ * per-device settings moved to the account (lib/synced-prefs.ts → /api/prefs),
+ * because the sync path it was not worth building alone is now written once and
+ * shared. A declared rest day is a thing the athlete SAID, and the app should
+ * not forget it because they changed phones.
  *
- * That IS a real limit and it is worth stating plainly: a rest day declared on
- * the phone is not on the web admin panel and does not survive a reinstall.
- * When rest starts feeding the engines — a streak that a declared rest day does
- * not break, an MRV week that counts it — it has to become a Signal, because at
- * that point it is an input and not a note. See `rest-day-signal` in
- * capabilities.ts.
+ * It is still not a Signal, and that distinction survives: when rest starts
+ * feeding the engines — a streak a declared rest day does not break, an MRV
+ * week that counts it — it becomes an INPUT and wants a row of its own with the
+ * provenance an engine can audit. Syncing the note is not the same as modelling
+ * the fact. See `rest-day-signal` in capabilities.ts.
  *
  * ── NOT SCOPED TO TODAY, unlike a rejection ───────────────────────────────
  * "Not swimming today" must not still be true on Friday, so day-band-prefs
@@ -35,8 +38,6 @@ import { dayKeyDiff, localDayKey, localTodayKey } from "@hybrid/core";
  * store is therefore a SET of day keys, pruned to the rail's own reach so it
  * cannot grow without bound.
  */
-
-const KEY = "hybrid.restDays.v1";
 
 /** How far back a key is kept. The logbook rail reaches 28 days
  *  (LOGBOOK_SCROLL_WINDOW); a quarter is comfortably past anything that can
@@ -51,9 +52,7 @@ interface Stored {
 /** Every declared rest day still in reach, oldest keys dropped. */
 export async function readRestDays(now: number = Date.now()): Promise<Set<string>> {
   try {
-    const raw = await AsyncStorage.getItem(KEY);
-    if (!raw) return new Set();
-    const parsed = JSON.parse(raw) as Stored;
+    const parsed = getPref<Stored | null>(REST_DAYS_KEY, null);
     const days = Array.isArray(parsed?.days) ? parsed.days : [];
     const today = localTodayKey(now);
     // `dayKeyDiff(a, b)` is b − a, so a past key reads NEGATIVE against today.
@@ -91,6 +90,6 @@ export async function setRestDay(ts: number, resting: boolean, now: number = Dat
   const next = await readRestDays(now);
   const key = localDayKey(ts);
   if (resting) next.add(key); else next.delete(key);
-  await AsyncStorage.setItem(KEY, JSON.stringify({ days: [...next] } satisfies Stored)).catch(() => {});
+  setPref(REST_DAYS_KEY, { days: [...next] } satisfies Stored);
   return next;
 }

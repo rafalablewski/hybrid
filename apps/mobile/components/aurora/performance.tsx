@@ -21,7 +21,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { View, Text, ScrollView } from "react-native";
 import Svg, { Path, Line, Circle, Rect } from "react-native-svg";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   computePerformanceState, computeInjuryRisk, computeLoad, performanceTrajectory,
   capabilityTrend, stateVerdict, trajectoryPlot, sessionDaysAgo,
@@ -41,6 +40,8 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useSession } from "../../lib/session";
 import { usePersona, setClientPersona } from "../../lib/persona";
 import { useTheme, txt, roleColor } from "../../lib/theme";
+import { SPORT_STORE_KEY } from "@hybrid/core";
+import { getPref } from "../../lib/synced-prefs";
 import { F, PressScale as Pressable, fs, leading, space, tracking, ty} from "../../lib/ui";
 import { AuroraScreen, ACard, APill, AHeading, ASub, GUTTER, RADIUS, withAlpha, ASection } from "./kit";
 import { HubMasthead } from "./hub-masthead";
@@ -132,14 +133,11 @@ function Full({ top }: { top?: ReactNode }) {
   const [sport, setSport] = useState<{ sport: string; levelIdx: number } | null>(null);
 
   useEffect(() => {
-    AsyncStorage.getItem("hybrid.sport").then((raw) => {
-      if (!raw) return;
-      const s = JSON.parse(raw) as { sport?: string; levelIdx?: number } | null;
-      if (s?.sport && SPORTS[s.sport]) {
-        const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
-        setSport({ sport: s.sport, levelIdx: lvl });
-      }
-    }).catch(() => {});
+    const s = getPref<{ sport?: string; levelIdx?: number } | null>(SPORT_STORE_KEY, null);
+    if (s?.sport && SPORTS[s.sport]) {
+      const lvl = typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length ? s.levelIdx : 0;
+      setSport({ sport: s.sport, levelIdx: lvl });
+    }
   }, []);
 
   const today = useToday();

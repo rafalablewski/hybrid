@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { View, Text, TextInput } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   LEVELS,
   SPORT_PAGE_WEEKS,
@@ -42,9 +41,10 @@ import { AuroraIcon } from "./icons";
 import Sheet from "./sheet";
 import SportRecordsSheet from "./sport-records-sheet";
 import { DoorRow } from "./week-verdict";
+import { SPORT_STORE_KEY } from "@hybrid/core";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import { withAlpha } from "./field";
 
-const STORE_KEY = "hybrid.sport";
 
 /**
  * THE SPORT PAGE (mobile). There is no web twin any more — the user-facing web
@@ -112,18 +112,14 @@ export default function AuroraSportPage() {
   // the old level over the new one, silently reverting it.
   useFocusEffect(
     useCallback(() => {
-      let active = true;
-      AsyncStorage.getItem(STORE_KEY)
-        .then((rawStore) => {
-          if (!active || !rawStore) return;
-          const s = JSON.parse(rawStore) as SportStore | null;
-          if (s && typeof s === "object") {
-            setStore(s);
-            if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
-          }
-        })
-        .catch(() => {});
-      return () => { active = false; };
+      // The synced cache answers synchronously, so there is no await to race
+      // and no `active` flag to keep: the read cannot land after the screen
+      // has gone.
+      const s = getPref<SportStore | null>(SPORT_STORE_KEY, null);
+      if (s && typeof s === "object") {
+        setStore(s);
+        if (typeof s.levelIdx === "number" && s.levelIdx >= 0 && s.levelIdx < LEVELS.length) setLevelIdx(s.levelIdx);
+      }
     }, []),
   );
 
@@ -142,7 +138,7 @@ export default function AuroraSportPage() {
 
   const persist = (next: SportStore) => {
     setStore(next);
-    AsyncStorage.setItem(STORE_KEY, JSON.stringify(next)).catch(() => {});
+    setPref(SPORT_STORE_KEY, next);
   };
   const saveMarker = (value: string) => {
     persist(recordMarker(store, name, value, new Date().toISOString()));

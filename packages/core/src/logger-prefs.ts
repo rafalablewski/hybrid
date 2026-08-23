@@ -72,6 +72,11 @@ export interface LoggerPrefs {
   deviceAutoImport: boolean;
 }
 
+/** Storage key — shared so the clients and the synced-prefs allowlist all name
+ *  the same setting. It was a private const in the mobile store until these
+ *  preferences started following the account rather than the handset. */
+export const LOGGER_PREFS_KEY = "hybrid.loggerPrefs";
+
 export const DEFAULT_LOGGER_PREFS: LoggerPrefs = {
   detailed: true,
   velocity: false,

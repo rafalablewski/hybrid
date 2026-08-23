@@ -56,3 +56,9 @@ export const HELP_ROWS: readonly HelpRow[] = [
 export function supportMailto(subject = "HYBRID support"): string {
   return `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`;
 }
+
+/** Storage key for "the first-run tour has been taken". A fact about the
+ *  PERSON, not the handset — re-teaching the app to someone on their second
+ *  device is exactly what synced preferences exist to stop — so it rides
+ *  synced-prefs.ts rather than sitting in device storage. */
+export const TOUR_SEEN_KEY = "hybrid.tourSeen";

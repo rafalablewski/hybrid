@@ -16,16 +16,24 @@ import { resetPlanMaxes } from "./plan-maxes";
 import { resetQuestionnaire } from "./questionnaire";
 import { resetWeighIn } from "./weigh-in";
 import { resetFlags } from "./flags";
+import { resetSyncedPrefs, syncPrefs } from "./synced-prefs";
 import { disablePush } from "./push";
 
 // Device-level prefs that may safely survive a sign-out (everything else under
 // the `hybrid.` namespace is user-scoped and is wiped so a shared device never
 // leaks one account's state to the next). Mirrors web session.tsx.
-const KEEP_ON_LOGOUT = new Set(["hybrid.lang", "hybrid.tourSeen", "hybrid.announce.dismissed"]);
+// `hybrid.tourSeen` and `hybrid.announce.dismissed` USED to be kept here as
+// device-level. They are synced preferences now (core synced-prefs.ts), which
+// makes them user-scoped: the account re-supplies them on the next sign-in, so
+// keeping a stale copy on a shared handset would show the next person the
+// previous one's state. Only the language — which renders the login screen,
+// before there is an account to ask — still survives a sign-out.
+const KEEP_ON_LOGOUT = new Set(["hybrid.lang"]);
 
 /** Wipe all user-scoped on-device state (AsyncStorage namespace + persona module
  *  singletons) so nothing carries across a sign-out or user switch. */
 async function clearClientState() {
+  resetSyncedPrefs();
   resetPersona();
   resetPlanMaxes();
   resetQuestionnaire();
@@ -87,7 +95,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setReady(true);
       // Restored a signed-in session: flush any workouts saved offline.
-      if (data.session) { flushGuestSessions().catch(() => {}); void claimStoredCoachInvite(); }
+      if (data.session) { flushGuestSessions().catch(() => {}); void claimStoredCoachInvite(); void syncPrefs(); }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
@@ -103,6 +111,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         void claimStoredCoachInvite();
         resetFlags();
         resetPersona();
+        // The account's settings, over whatever this handset had — and any
+        // local-only choices travel UP in the same pass (see syncPrefs).
+        void syncPrefs();
         resetPlanMaxes();
         resetQuestionnaire();
       }
@@ -111,7 +122,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const appSub = AppState.addEventListener("change", (state) => {
       if (state !== "active") return;
       supabase.auth.getSession().then(({ data }) => {
-        if (data.session) flushGuestSessions().catch(() => {});
+        if (data.session) { flushGuestSessions().catch(() => {}); void syncPrefs(); }
       });
     });
     return () => {

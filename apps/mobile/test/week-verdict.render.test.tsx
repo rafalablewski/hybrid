@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { addLocalDays, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { renderScreen } from "./render";
@@ -21,6 +21,12 @@ import { renderScreen } from "./render";
 vi.mock("../lib/api", () => ({
   fetchFlagState: async () => ({ flags: {}, values: {} }),
   fetchTranslationOverrides: async () => ({}),
+  // The synced-preference store reads and writes through these. Stubbed to a
+  // signed-out account: reads answer empty, writes report "not persisted", so
+  // the store falls back to its local cache — the same path the app takes
+  // before reference/sql-user-prefs.sql is applied.
+  getSyncedPrefs: async () => ({}),
+  putSyncedPrefs: async () => false,
 }));
 
 /** Local noon `weeks` calendar weeks back — always the same weekday, so each
@@ -64,6 +70,13 @@ const sessions: LoggedSession[] = [
 ];
 
 const { default: AuroraWeekVerdict } = await import("../components/aurora/week-verdict");
+const { resetSyncedPrefs } = await import("../lib/synced-prefs");
+
+// Preferences live in a MODULE singleton now, which is right for an app (one
+// account, one process) and leaks between cases in a file: a test that presses
+// a column retires the swipe hint, and the next test would inherit that. Same
+// reason sign-out calls this in lib/session.tsx.
+beforeEach(() => resetSyncedPrefs());
 
 describe("the activity card's figure row", () => {
   it("reads Tonnage → Sessions → Hours → Distance even when distance is the week's story", () => {

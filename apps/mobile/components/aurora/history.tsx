@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { View, Text, Animated, PanResponder, FlatList, RefreshControl } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import { fmtKm, sessionVolume, prsForSession, blockSummary, sessionShape, sessionCardioSummary, hasNote, moodDef, tagLabelKey, planSchedule, normalizeHistoryView, springs, springToRN, swipe, rubberBand, projectSwipe, type HistoryViewId, type LoggedSession, type AuroraIconName, sportFromSlug, sportSessions, type MoodDef , ALPHA, FEEDBACK, STATE_OPACITY } from "@hybrid/core";
 import { fetchMacrocycle } from "../../lib/api";
 import { useSessionActions } from "../../lib/session-actions";
@@ -97,12 +97,12 @@ export default function AuroraHistory() {
   // block chapters key off the date-anchored schedule; both degrade to nothing
   // when no plan is enrolled).
   useEffect(() => {
-    AsyncStorage.getItem(VIEW_KEY).then((v) => setView(normalizeHistoryView(v))).catch(() => setView(normalizeHistoryView(null)));
+    setView(normalizeHistoryView(getPref<string | null>(VIEW_KEY, null)));
     fetchMacrocycle().then((m) => { setPlanId(m?.planId ?? null); setPlanStartedAt(m?.planStartedAt ?? null); }).catch(() => {});
   }, []);
   const pickView = (v: HistoryViewId) => {
     setView(v);
-    AsyncStorage.setItem(VIEW_KEY, v).catch(() => {});
+    setPref(VIEW_KEY, v);
   };
 
   const q = useSessionsQuery({ archived: showArchived });

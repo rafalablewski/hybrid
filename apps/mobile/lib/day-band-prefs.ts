@@ -1,4 +1,5 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { DAY_BAND_PREFS_KEY } from "@hybrid/core";
+import { getPref, setPref } from "./synced-prefs";
 import { localTodayKey, type TrainingKind } from "@hybrid/core";
 
 /**
@@ -33,7 +34,6 @@ import { localTodayKey, type TrainingKind } from "@hybrid/core";
  * tomorrow must not stop the app offering you a game today.
  */
 
-const KEY = "hybrid.dayBand.rejected.v1";
 
 interface Stored {
   day: string;
@@ -90,9 +90,8 @@ export async function readDayBandPrefs(now: number = Date.now()): Promise<DayBan
  *  and both setters go through, so a write of one set cannot drop the other. */
 async function read(now: number): Promise<Stored> {
   try {
-    const raw = await AsyncStorage.getItem(KEY);
-    if (!raw) return EMPTY;
-    const parsed = JSON.parse(raw) as Stored;
+    const parsed = getPref<Stored | null>(DAY_BAND_PREFS_KEY, null);
+    if (!parsed) return EMPTY;
     if (parsed?.day !== localTodayKey(now)) return EMPTY;
     return {
       day: parsed.day,
@@ -106,10 +105,7 @@ async function read(now: number): Promise<Stored> {
 }
 
 async function write(now: number, next: Omit<Stored, "day">): Promise<void> {
-  await AsyncStorage.setItem(
-    KEY,
-    JSON.stringify({ day: localTodayKey(now), ...next } satisfies Stored),
-  ).catch(() => {});
+  setPref(DAY_BAND_PREFS_KEY, { day: localTodayKey(now), ...next } satisfies Stored);
 }
 
 /** Kinds rejected for TODAY's training. */
@@ -154,5 +150,5 @@ export async function rejectEvent(kind: TrainingKind, now: number = Date.now()):
 }
 
 export async function clearRejected(): Promise<void> {
-  await AsyncStorage.removeItem(KEY).catch(() => {});
+  setPref(DAY_BAND_PREFS_KEY, null);
 }

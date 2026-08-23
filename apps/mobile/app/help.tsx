@@ -2,6 +2,8 @@ import { useState } from "react";
 import { View, Text, Linking } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { TOUR_SEEN_KEY } from "@hybrid/core";
+import { setPref } from "../lib/synced-prefs";
 import { HELP_ROWS, SUPPORT_EMAIL, supportMailto, type HelpRow } from "@hybrid/core";
 import { API_BASE } from "../lib/api";
 import { useLang } from "../lib/i18n";
@@ -35,7 +37,7 @@ export default function HelpCenter() {
       case "tour":
         // Both flags: `tourSeen` is what suppresses it forever, `pendingTour`
         // is the one-shot marker Today looks for (see aurora/home.tsx).
-        AsyncStorage.removeItem("hybrid.tourSeen").catch(() => {});
+        setPref(TOUR_SEEN_KEY, null);
         AsyncStorage.setItem("hybrid.pendingTour", "1").catch(() => {});
         setTourArmed(true);
         return;
