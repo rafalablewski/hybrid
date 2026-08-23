@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Text, Animated, useWindowDimensions, type LayoutChangeEvent, type NativeSyntheticEvent, type NativeScrollEvent } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   activityVerdict, activitySummary, activityDetailKey, TODAY_RANGE_STORE_KEY,
   durationUnits, formatDuration,
@@ -14,6 +13,7 @@ import {
 import { ACard, withAlpha , RADIUS} from "./kit";
 import ActivityCompare from "./activity-compare";
 import { useActivityRange, useRangeLabels } from "./range-filter";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, deltaPaint } from "../../lib/theme";
@@ -445,7 +445,7 @@ export default function AuroraWeekVerdict({
   const [hinted, setHinted] = useState(true);
 
   useEffect(() => {
-    AsyncStorage.getItem(HINT_KEY).then((v) => setHinted(v === "1")).catch(() => {});
+    setHinted(getPref<boolean>(HINT_KEY, false));
   }, []);
 
   // A new period is a new breakdown: the open column's group filter and its
@@ -540,7 +540,7 @@ export default function AuroraWeekVerdict({
     setPage(i);
     if (!hinted) {
       setHinted(true);
-      AsyncStorage.setItem(HINT_KEY, "1").catch(() => {});
+      setPref(HINT_KEY, true);
     }
   };
 
@@ -643,7 +643,7 @@ export default function AuroraWeekVerdict({
     setOpen(m);
     if (!hinted) {
       setHinted(true);
-      AsyncStorage.setItem(HINT_KEY, "1").catch(() => {});
+      setPref(HINT_KEY, true);
     }
   };
 

@@ -55,6 +55,7 @@ export * from "./endurance-lanes";
 export * from "./sport-pages";
 export * from "./sport-board";
 export * from "./sport-favourites";
+export * from "./synced-prefs";
 export * from "./records-board";
 export * from "./day-band";
 export * from "./day-events";

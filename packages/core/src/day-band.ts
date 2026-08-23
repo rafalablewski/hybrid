@@ -1022,3 +1022,8 @@ export function nextDueKind(rot: Rotation, rejected: readonly TrainingKind[]): T
   const pool = rot.kinds.filter((k) => k.confident && !rejected.includes(k.kind));
   return pool.length ? pool[0]!.kind : null;
 }
+
+/** Storage key for the day band's TODAY-scoped answers — the kinds rejected,
+ *  the events declined, the pins. Shared so the clients and the synced-prefs
+ *  allowlist name the same setting. */
+export const DAY_BAND_PREFS_KEY = "hybrid.dayBand.rejected.v1";

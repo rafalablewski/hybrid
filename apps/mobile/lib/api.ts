@@ -908,6 +908,38 @@ export async function saveNutritionPrefs(patch: { onboarded?: boolean; goal?: Nu
   }
 }
 
+/* ── SYNCED PREFERENCES ────────────────────────────────────────────────────
+   The settings that follow the ACCOUNT rather than this handset. Both calls
+   degrade to a no-op: before reference/sql-user-prefs.sql is applied the route
+   answers {} / 503, and lib/synced-prefs.ts simply keeps using its local cache,
+   so the app behaves exactly as it did when these settings were device-only. */
+export async function getSyncedPrefs(): Promise<Record<string, unknown>> {
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/prefs`, { headers: await authHeaders() });
+    if (!res.ok) return {};
+    return ((await res.json()) as { prefs?: Record<string, unknown> }).prefs ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/** Merge a patch server-side. A key sent as `null` is forgotten. Returns
+ *  whether it actually persisted, so the caller can keep the write pending
+ *  rather than believing a 503. */
+export async function putSyncedPrefs(patch: Record<string, unknown>): Promise<boolean> {
+  if (Object.keys(patch).length === 0) return true;
+  try {
+    const res = await fetchWithTimeout(`${API_URL}/api/prefs`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+      body: JSON.stringify({ patch }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchFoodProducts(): Promise<FoodProductRow[]> {
   try {
     const res = await fetchWithTimeout(`${API_URL}/api/nutrition/products`, { headers: await authHeaders() });

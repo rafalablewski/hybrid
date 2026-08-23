@@ -118,6 +118,8 @@ import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
 import { RangeFilter, useActivityRange, useRangeLabels } from "./range-filter";
+import { TOUR_SEEN_KEY } from "@hybrid/core";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import RecordsBoard from "./records-board";
 import SportBoard from "./sport-board";
 import CoachRail from "./coach-rail";
@@ -839,7 +841,7 @@ export default function AuroraHome() {
   useEffect(() => {
     (async () => {
       try {
-        if (await AsyncStorage.getItem("hybrid.tourSeen")) return;
+        if (getPref<boolean>(TOUR_SEEN_KEY, false)) return;
         if (!(await AsyncStorage.getItem("hybrid.pendingTour"))) return;
         // Guest-first: a one-shot marker (set at sign-in flush) means a guest
         // workout is landing — let it show first; defer the tutorial one open
@@ -857,7 +859,7 @@ export default function AuroraHome() {
   }, []);
   const finishTour = () => {
     setShowTour(false);
-    AsyncStorage.setItem("hybrid.tourSeen", "1").catch(() => {});
+    setPref(TOUR_SEEN_KEY, true);
   };
 
   // The chrome every hub tab wears: the profile header, then the three pills.

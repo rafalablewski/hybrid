@@ -3,6 +3,7 @@ import { View, Text, TextInput, ScrollView, ActivityIndicator, Animated, Keyboar
 import * as Notifications from "expo-notifications";
 import { activateKeepAwakeAsync, deactivateKeepAwake } from "expo-keep-awake";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getPref, setPref } from "../lib/synced-prefs";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useBodyweightLookup, refreshBodyweight } from "../lib/use-bodyweight";
 import { haptic } from "../lib/haptics";
@@ -476,7 +477,7 @@ export default function Workout() {
 
   // Show the one-time logging guide until the athlete has banked a set before.
   useEffect(() => {
-    AsyncStorage.getItem(TIP_KEY).then((v) => setShowTip(v !== "1")).catch(() => {});
+    setShowTip(!getPref<boolean>(TIP_KEY, false));
   }, []);
   const dismissTip = () => {
     // A whole card leaving the top of the scroller, so it travels like any other
@@ -485,7 +486,7 @@ export default function Workout() {
     // arming it twice is the same config and costs nothing.
     animateListChange(reducedMotion);
     setShowTip(false);
-    AsyncStorage.setItem(TIP_KEY, "1").catch(() => {});
+    setPref(TIP_KEY, true);
   };
 
   // Keep the screen on while logging — no dimming/sleep mid-set (chalky hands,

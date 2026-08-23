@@ -230,3 +230,9 @@ export function nutritionHubChart(days: HubDay[], box: HubChartBox): HubChart {
     domain: { lo, hi },
   };
 }
+
+/** Storage keys for the quick-add shelf on the Nutrition hub — the foods this
+ *  athlete reaches for, and the ones they starred. Synced, so the shelf you
+ *  built on the phone is the shelf every device opens with. */
+export const NUTRITION_RECENT_KEY = "hybrid.nutrition.recent";
+export const NUTRITION_FAVS_KEY = "hybrid.nutrition.favorites";

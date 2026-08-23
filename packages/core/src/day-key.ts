@@ -67,3 +67,9 @@ export const dayKeyDiff = (a: string, b: string): number =>
  */
 export const msUntilNextLocalDay = (now: number = Date.now()): number =>
   Math.max(1, addLocalDays(localMidnightMs(now), 1) - now);
+
+/** Storage key for DECLARED REST DAYS — the athlete saying a day was for
+ *  recovering. Shared so the clients and the synced-prefs allowlist name the
+ *  same setting; it was a private const in the mobile store until these
+ *  preferences started following the account. */
+export const REST_DAYS_KEY = "hybrid.restDays.v1";

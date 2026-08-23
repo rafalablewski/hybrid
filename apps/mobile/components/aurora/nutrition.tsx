@@ -3,6 +3,8 @@ import { ActivityIndicator, ScrollView, Share, Text, TextInput, View, useWindowD
 import Svg, { SvgXml } from "react-native-svg";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { NUTRITION_FAVS_KEY, NUTRITION_RECENT_KEY } from "@hybrid/core";
+import { getPref, setPref } from "../../lib/synced-prefs";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -433,8 +435,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
   const [recent, setRecent] = useState<QuickFood[]>([]);
   const [favorites, setFavorites] = useState<QuickFood[]>([]);
   useEffect(() => {
-    AsyncStorage.getItem("hybrid.nutrition.recent").then((r) => { if (r) try { setRecent(JSON.parse(r) as QuickFood[]); } catch { /* corrupt */ } }).catch(() => {});
-    AsyncStorage.getItem("hybrid.nutrition.favorites").then((r) => { if (r) try { setFavorites(JSON.parse(r) as QuickFood[]); } catch { /* corrupt */ } }).catch(() => {});
+    setRecent(getPref<QuickFood[]>(NUTRITION_RECENT_KEY, []));
+    setFavorites(getPref<QuickFood[]>(NUTRITION_FAVS_KEY, []));
   }, []);
   // Every log STAMPS the entry, carrying forward the hours it was already
   // logged at, so the picker can open on what this athlete eats at this time
@@ -446,11 +448,11 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // copy of the entry), and stamping that would drop a log.
     const stamped = { ...q, logs: recordLog(prev?.logs ?? q.logs, Date.now()) };
     const next = [stamped, ...xs.filter((x) => x.key !== q.key)].slice(0, 20);
-    AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {});
+    setPref(NUTRITION_RECENT_KEY, next);
     return next;
   });
   const isFavorite = (key: string) => favorites.some((x) => x.key === key);
-  const toggleFavorite = (q: QuickFood) => setFavorites((xs) => { const next = xs.some((x) => x.key === q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; AsyncStorage.setItem("hybrid.nutrition.favorites", JSON.stringify(next)).catch(() => {}); return next; });
+  const toggleFavorite = (q: QuickFood) => setFavorites((xs) => { const next = xs.some((x) => x.key === q.key) ? xs.filter((x) => x.key !== q.key) : [q, ...xs]; setPref(NUTRITION_FAVS_KEY, next); return next; });
   /**
    * FORGET A RECENT. The MRU is written on every log and could never be edited,
    * so one mistyped quick entry sat at the top of the picker for the next twenty
@@ -467,7 +469,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
     // the moment the athlete caused, which is where motion does its actual job.
     listMotion(() => setRecent((xs) => {
       const next = xs.filter((x) => x.key !== key);
-      AsyncStorage.setItem("hybrid.nutrition.recent", JSON.stringify(next)).catch(() => {});
+      setPref(NUTRITION_RECENT_KEY, next);
       return next;
     }));
     haptic.warning();
