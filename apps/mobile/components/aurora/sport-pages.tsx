@@ -28,9 +28,11 @@ import Nameplate from "./nameplate";
  * eight weekly minute totals for a SINGLE sport, drawn with no baseline, no
  * target and no second sport to read against. What it could say was "some weeks
  * you ran more" — at 164dp, above two facts (68.4 km, 4:48/km) that were worth
- * more and were set at 16. It was also the app's SECOND chart language, beside
- * the shared `HistoryStrip` the rest of the Progress cluster draws; removing it
- * takes the app from two to one.
+ * more and were set at 16. It was also the app's SECOND inline chart language,
+ * beside the shared 24dp history strip the Today rail drew — and that strip has
+ * since gone the same way (see the exercise card), so the cluster now draws no
+ * inline chart at all. The instruments that remain are the DEEP ones on a
+ * sport's or a movement's own page, which is where a chart has room to be read.
  *
  * ── WHAT IT IS NOW ────────────────────────────────────────────────────────
  *

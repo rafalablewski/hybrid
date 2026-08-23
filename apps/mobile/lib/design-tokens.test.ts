@@ -753,7 +753,11 @@ describe("geometry", () => {
     // the argument for why this rule is a ratchet with a human in it rather than
     // a codemod: the pattern can find a raw radius, it cannot tell you which of
     // five tokens the object wanted.
-    burnDown(hits(/borderRadius:\s*\d/g), 116, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 116 → 115: the shared 24dp history strip was retired with the bars it
+    //   fed (see exercise-card-then-now), and its one raw radius went with the
+    //   file. Claimed rather than left as headroom, which is what this guard
+    //   asks for — an unspent win is a licence for the next violation.
+    burnDown(hits(/borderRadius:\s*\d/g), 115, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
