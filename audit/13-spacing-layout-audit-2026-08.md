@@ -1,5 +1,17 @@
 # 13 — Spacing & layout audit (Aug 2026)
 
+> **EXTENDED, same month.** Two follow-on changes landed after this was
+> written and are recorded under capability `hub-cluster-seam`: Today and
+> Performance were checked against each other and their cluster seam was
+> brought into agreement (Today's Progress row 20 → 16; `DoorRow`'s baked-in
+> 14 → 16 across 11 call sites), and three more 2dp head insets turned up when
+> the counts were re-derived rather than trusted — two of them heads this
+> audit's own sweep had stepped over. **The measurements in §0–§6 are the
+> figures as measured on the date above and are left as the record.** What
+> they moved to: mobile off-ladder 604 → 601, the head-inset family 21 → 24,
+> and the screen-tier ceiling 591 → 588 of 1,092 tracked sites. §7's rule
+> table and §9 below state the LIVE numbers.
+
 **Scope:** every `padding*`, `margin*`, `gap`/`rowGap`/`columnGap` value in
 `apps/mobile`, `apps/web` and `packages/core`, plus the constants and shared
 primitives that are supposed to supply them.
@@ -109,8 +121,11 @@ can point at it and large enough to read as sloppy.
 Git history gives no reason for the value; it arrived with `GroupMark` and was
 copied outward from there.
 
-*Status: **fixed** — all 21 sites removed, heads now share the content
-column's left edge with the content they label.*
+*Status: **fixed** — 21 sites removed here, and three more once the counts
+were re-derived rather than trusted (see the banner): two heads whose meta
+this sweep's replacement anchors spelled differently, and one that turned out
+not to be a head inset at all but a gutter between two buttons, which stays.
+Heads now share the content column's left edge with the content they label.*
 
 ---
 
@@ -218,7 +233,7 @@ burn-down, with slack itself a failure.
 | rule | kind | count | due |
 |---|---|---|---|
 | off-ladder spacing in the KIT → a `space.*` rung | burn-down | **11** | 2026-11-30 |
-| off-ladder spacing on a screen → a `space.*` rung | burn-down | **591** | 2027-11-30 |
+| off-ladder spacing on a screen → a `space.*` rung | burn-down | **588** | 2027-11-30 |
 | no local constant shadows a kit spacing token | HARD | 0 | — |
 | a bottom-edge pad takes the inset as a floor, never a term | HARD | 0 | — |
 | `ASection` states the section seam, and states it in tokens | HARD | 0 | — |
@@ -258,7 +273,7 @@ ones that are only visible on hardware you don't have.
 
 ## 8. What is left, honestly
 
-- **604 off-ladder sites on mobile, 136 on web**, now dated. The heaviest are
+- **601 off-ladder sites on mobile, 136 on web**, now dated. The heaviest are
   `aurora/nutrition.tsx` (60), `app/workout.tsx` (36), `aurora/side-menu.tsx`
   (17) and `aurora/user-recipes.tsx` (17). These are screen-at-a-time work: a
   sweep wants the screen open beside it, which is exactly why it is a burn-down
@@ -287,6 +302,6 @@ Every "fixed" above is fixed in the commit that added this file, and the
 verification was the full gate: `@hybrid/core` (4,258 tests), `@hybrid/mobile`
 (323), `@hybrid/web` (236), plus `typecheck` on both clients. The burn-down
 ledger printed by `design-tokens.test.ts` now names spacing as **the single
-largest design debt in the app — 591 of the 1,095 tracked sites**, which is the
+largest design debt in the app — 588 of the 1,092 tracked sites**, which is the
 most useful thing this audit produced: the number is no longer discoverable
 only by writing a script.
