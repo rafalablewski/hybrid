@@ -2464,7 +2464,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <GlassSelectMenu
               label={partLabel(mealType)}
               // THE HERO SYSTEM'S INLINE TITLE, not a hand-rolled one. Both
-              // branches of this switcher drew Archivo BLACK at 19 — a face and
+              // branches of this switcher drew the display face's heaviest cut at 19 — a face and
               // a size that appear on no other screen head in the app, so the
               // picker's title sat 3pt above every title it pushes from. The
               // rank owns the type (reference/hero-system.md §2).

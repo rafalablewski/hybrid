@@ -18,7 +18,7 @@ import { Glyph } from "./icons";
 // The grammar is SwiftUI's `ContentUnavailableView` — symbol, title, ONE
 // description line, then the actions — and the grammar is all we take. The
 // native view is not mounted here on purpose: it styles its own type, so it
-// would put SF Pro in the middle of a card set in Archivo, and it has no slot
+// would put SF Pro in the middle of a card set in the app's face, and it has no slot
 // for our buttons (its props are title/systemImage/description and nothing
 // else), which would split one block across two renderers for no gain. Where a
 // system view IS the right call is a system CONTROL — see `NativeDateField` and

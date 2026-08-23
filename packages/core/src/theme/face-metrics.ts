@@ -9,17 +9,17 @@
  *
  * ── WHY THIS FILE HAD TO EXIST ─────────────────────────────────────────────
  *
- * The type system was designed around **Archivo + JetBrains Mono** and then had
+ * The type system was designed around a DIFFERENT PAIR OF FACES and then had
  * Söhne + Söhne Mono + ITC Garamond swapped underneath it. The swap moved the
  * faces and left every optical constant where it was, so the app has been
- * setting Söhne with Archivo's numbers ever since — most visibly in the tracking
+ * setting Söhne with the old face's numbers ever since — most visibly in the tracking
  * band table, whose em figures were explicitly chosen so that "the DOMINANT call
- * sites do not move at all", i.e. so that the Archivo values survived the swap
+ * sites do not move at all", i.e. so that the OLD values survived the swap
  * intact. That is the right way to migrate a face and the wrong way to finish.
  *
  * The two faces are not interchangeable at that level of detail. Söhne is fitted
- * tighter than Archivo (`n` carries 0.144em of sidebearing against Archivo's
- * ~0.17), so Archivo's tightening applied to Söhne over-tightens every heading
+ * tighter than the face it replaced (`n` carries 0.144em of sidebearing against its
+ * ~0.17), so that tightening applied to Söhne over-tightens every heading
  * in the app — which is the single most reproducible answer to "the type feels
  * wrong and I cannot point at where".
  *
@@ -122,6 +122,66 @@ export const ITC_GARAMOND = {
 export const FIGURE_INK = { top: 0.732, bottom: -0.072 } as const;
 export const FIGURE_INK_EM = Number((FIGURE_INK.top - FIGURE_INK.bottom).toFixed(3));
 
+/**
+ * PER-GLYPH ADVANCES, Söhne Halbfett — the widths a proportional fitter needs.
+ *
+ * `MONO_ADVANCE_EM` answers "how wide is a mono figure" with one number because
+ * every mono glyph is the same width. A PROPORTIONAL value has no such shortcut,
+ * and `session-wrapped.ts` needs one anyway: the Wrapped's hero and stat tiles
+ * must know whether "2:20 /100m" fits before they commit to a size, and a
+ * character COUNT is off by a third (the dot and the space are a third the width
+ * of a digit).
+ *
+ * ── THIS TABLE BELONGED TO THE OLD FACE UNTIL Aug 2026, AND WAS STILL IN USE ──
+ *
+ * Not a stale comment — a stale MEASUREMENT, driving live layout. The Wrapped
+ * fitter had been sizing Söhne figures against the previous face's widths ever
+ * since the swap, and the two disagree badly where it matters most:
+ *
+ *     space   0.360 → 0.202   the old value is 78% too wide
+ *     '.'     0.270 → 0.240
+ *     'm'     0.770 → 0.879   14% too narrow
+ *     digit   0.682 → 0.402 … 0.639
+ *
+ * So every value containing a space — "1500 m", "10.0 km", "2:20 /100m", which
+ * is most of the endurance vocabulary the fitter was ADDED for — was measured
+ * far too wide and shrunk further than it needed to be.
+ *
+ * DIGITS ARE LISTED INDIVIDUALLY, which the old table could not do: Söhne's `1`
+ * is 0.402em against `0`'s 0.639, a 59% spread, so a single digit constant is
+ * wrong for one end or the other. (The sans has no `tnum` feature to even them
+ * out — see `sansHasNoOpenTypeFeatures` — so proportional is what renders.)
+ *
+ * HALBFETT because that is what `F.black` resolves to since the weight ladder
+ * was capped at 600; the Wrapped's figures are drawn with it. The cuts differ by
+ * about 1% here, which is inside the fitter's tolerance, but if `F.black` ever
+ * moves again this table moves with it.
+ *
+ * `~` IS ABSENT FROM THE FACE. The Wrapped prefixes estimates with a tilde, and
+ * the extended trial cuts do not carry one, so it renders in the platform
+ * fallback and is fitted at `ADVANCE_FALLBACK_EM`. Listed here as a known hole
+ * rather than discovered as a wrapped tile.
+ */
+export const SOHNE_ADVANCE_EM: Record<string, number> = {
+  " ": 0.202, ".": 0.24, ",": 0.24, ":": 0.24, "/": 0.416,
+  "+": 0.403, "\u2212": 0.403, "-": 0.368, "%": 0.594, "\u00b0": 0.412,
+  "0": 0.639, "1": 0.402, "2": 0.576, "3": 0.58, "4": 0.615,
+  "5": 0.58, "6": 0.599, "7": 0.557, "8": 0.606, "9": 0.599,
+  a: 0.544, c: 0.525, d: 0.6, e: 0.548, g: 0.601, h: 0.573, i: 0.255,
+  k: 0.562, l: 0.255, m: 0.879, n: 0.573, o: 0.57, p: 0.6, r: 0.391,
+  s: 0.501, t: 0.35, u: 0.573,
+};
+
+/**
+ * The width assumed for a character the table does not carry — `~`, and any
+ * unit or locale string that grows one. Söhne Halbfett's lowercase averages
+ * 0.55em and its digits 0.575em; 0.6 is a deliberate over-estimate, because a
+ * fitter that guesses HIGH shrinks a value that would have fitted, while one
+ * that guesses low lets a value wrap — and a wrapped figure drags its label out
+ * of line with the tiles beside it.
+ */
+export const ADVANCE_FALLBACK_EM = 0.6;
+
 /** A face's ink span — ascender to descender, the height leading has to clear. */
 export const inkSpan = (m: FaceMetrics): number => Number((m.ascender - m.descender).toFixed(4));
 
@@ -159,8 +219,8 @@ export const FACE_LIMITS = {
    * The consequence is specific and it contradicts a guarantee the system used
    * to make: `font-variant-numeric: tabular-nums` DOES NOTHING on these files,
    * because there is no `tnum` feature to activate. `scale.ts`'s note that "both
-   * ship proportional and tabular numeral sets" was true of Archivo and
-   * JetBrains Mono and is false of what ships.
+   * ship proportional and tabular numeral sets" was true of the previous pair and
+   * the mono face it replaced, and is false of what ships.
    *
    * So the app's column alignment does not rest on `tnum` and never can. It
    * rests on the MONO CUT, whose 0.600em advance is uniform by construction —

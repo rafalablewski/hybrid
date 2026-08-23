@@ -456,12 +456,12 @@ export type TrackingRole =
  *
  * Converting to em fixed the units and left two problems standing.
  *
- * (1) THE NUMBERS WERE ARCHIVO'S. The bands were adopted with the note that
+ * (1) THE NUMBERS BELONGED TO THE OLD FACE. The bands were adopted with the note that
  *     "the em figures were chosen so the DOMINANT call sites do not move at
- *     all" — i.e. so that the values fitted to Archivo survived the face swap
+ *     all" — i.e. so that the values fitted to the OLD face survived the face swap
  *     to Söhne untouched. That is the right way to MIGRATE a face and the wrong
- *     way to finish one. Söhne is fitted tighter than Archivo (`n` carries
- *     0.144em of sidebearing; Archivo's is nearer 0.17), so Archivo's
+ *     way to finish one. Söhne is fitted tighter than the face it replaced (`n` carries
+ *     0.144em of sidebearing; the old one's is nearer 0.17), so that
  *     tightening applied on top of Söhne's own tighter fit over-tightens
  *     everything from `subtitle` up. Four headings a row, squeezed — and no
  *     single screen looks broken, which is why it survived so long.
@@ -620,7 +620,7 @@ export const trackFigure = (size: number): number => Math.round(size * TRACK_FIG
  *
  * ── READ `FACE_LIMITS` BEFORE YOU RELY ON THIS. IT IS NOT THE MECHANISM. ───
  *
- * This constant was adopted when the app ran Archivo and JetBrains Mono, which
+ * This constant was adopted under the previous pair of faces, which
  * both carry a `tnum` feature. THE SHIPPED SÖHNE CUTS CARRY NO OPENTYPE
  * FEATURES AT ALL — `GSUB` is empty in all seven binaries — so emitting
  * `tabular-nums` against them activates nothing, and the sans digits stay
@@ -661,7 +661,7 @@ export const TABULAR_NUMS = "tabular-nums" as const;
  * A MONOSPACED GLYPH'S ADVANCE, in em — Söhne Mono's, which is the app's only
  * mono face and the face every FIGURE is set in. Measured across the whole
  * glyph order of all three cuts, not sampled: exactly one advance, 0.600em.
- * (JetBrains Mono, which this replaced, happened to share the value — which is
+ * (The mono face this replaced happened to share the value — which is
  * why the swap was a no-op here and why the next one may not be.)
  *
  * Every glyph in a monospaced face is exactly this wide. That is the whole

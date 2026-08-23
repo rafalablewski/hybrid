@@ -408,22 +408,22 @@ export const TABULAR: TextStyle = { fontVariant: [TABULAR_NUMS] };
 /**
  * THE SAME SIX FACES, UNDER THE NAMES CORE TEXT KNOWS THEM BY.
  *
- * `F` holds ALIASES, not font names. `useFonts({ Archivo_700Bold })` hands
+ * `F` holds ALIASES, not font names. `useFonts({ Sohne_600Halbfett })` hands
  * expo-font the key as a *family alias* and expo-font makes it work by
  * SWIZZLING `UIFont.fontNames(forFamilyName:)` — React Native's text path asks
  * that method, gets the alias resolved to the font's real PostScript name, and
- * draws Archivo. Nothing else on the system asks that method.
+ * draws Söhne. Nothing else on the system asks that method.
  *
  * SwiftUI does not. `@expo/ui`'s `font({ family })` modifier ends in
  * `Font.custom(family, size:)`, which goes to Core Text directly — and Core
- * Text has never heard of "Archivo_700Bold" (the binary's PostScript name is
- * `Archivo-Bold`; the alias only ever existed in expo-font's own dictionary).
+ * Text has never heard of "Sohne_600Halbfett" (the binary's PostScript name is
+ * `TestSohne-Halbfett`; the alias only ever existed in expo-font's own dictionary).
  * An unresolvable name in `Font.custom` does not throw and does not warn: it
  * QUIETLY DRAWS SAN FRANCISCO. So every native leaf in swiftui.tsx that was
  * "given the caller's own face" — the nutrition head's meal switcher
  * ("Breakfast ⌄"), the logger's timer capsule, its set-type menu, the
  * satellite's word, the quick-sport stepper — has been rendering the SYSTEM
- * font next to Archivo everywhere else on the same screen. The prop was passed,
+ * font next to Söhne everywhere else on the same screen. The prop was passed,
  * the screenshots kept showing the wrong face, and nothing in the codebase
  * disagreed, because the failure is a silent fallback three layers down.
  *

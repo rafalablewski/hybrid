@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import { SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM } from "./theme/face-metrics";
 import {
   sessionWrapped, wrappedDiscipline,
   fitScale, textWidthEm, HERO_FIT_EM, HERO_TRACKING_EM, STAT_FIT_EM,
@@ -278,40 +279,58 @@ describe("sessionWrapped — a matched device", () => {
 
 // Making the panel discipline-aware widened the value vocabulary from "11.3 t"
 // to "2:20 /100m" — which wrapped, and a wrapped value drags its label out of
-// line with the tiles beside it. Expected widths below are measured from
-// Archivo Black at the slot's own size (tile 22px / 76px, hero 96px / 338px).
+// line with the tiles beside it.
+//
+// THE WIDTHS BELOW ARE SÖHNE HALBFETT'S, and they were the previous display
+// face's until Aug 2026 — a stale MEASUREMENT driving live layout rather than a
+// stale comment. The old table put a space at 0.360em against Söhne's 0.202 and
+// an `m` at 0.770 against 0.879, so every value carrying a space — which is most
+// of the endurance vocabulary this fitter was added for — measured far too wide
+// and got shrunk further than it needed to be.
+//
+// The visible effect of the correction is that FOUR of the values pinned here as
+// overflowing now fit outright: "1.5 km" and "90 min" in a stat tile, "1500 m"
+// and "10.0 km" in the hero. They were never too big; they were mismeasured.
 describe("fitScale", () => {
   it("does not treat every character as the same width", () => {
-    // The bug a character count would have: same length, 29% different width.
+    // The bug a character count would have: same length, 54% different width.
     expect("11.3 t".length).toBe("1500 m".length);
     expect(textWidthEm("1500 m")).toBeGreaterThan(textWidthEm("11.3 t") * 1.2);
   });
 
+  it("knows a `1` is not as wide as a `0`", () => {
+    // Söhne's digits are proportional across a 59% spread (0.402 to 0.639) and
+    // the face carries no `tnum` feature to even them out, so a single digit
+    // constant — which is what the old table had — is wrong at one end or the
+    // other. "111" against "000" is the whole argument in six characters.
+    expect(textWidthEm("000")).toBeGreaterThan(textWidthEm("111") * 1.5);
+  });
+
   it("leaves a value that already fits alone", () => {
-    for (const v of ["25", "255", "78", "11.3 t", "~395", "0.0 t"])
+    for (const v of ["25", "255", "78", "11.3 t", "~395", "0.0 t", "1.5 km", "90 min"])
       expect(fitScale(v, STAT_FIT_EM), v).toBe(1);
-    for (const v of ["11.3 t", "60 kg", "90 min"])
+    for (const v of ["11.3 t", "60 kg", "90 min", "1500 m", "10.0 km"])
       expect(fitScale(v, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM }), v).toBe(1);
   });
 
   it("shrinks every value that would otherwise overflow its tile", () => {
-    // px widths at 22px measured in the browser; 76px is the tile's inner room.
-    const overflowing: [string, number][] = [
-      ["1500 m", 85], ["2:20 /100m", 129], ["10.0 km", 92], ["5:00 /km", 99], ["1.5 km", 78], ["90 min", 78],
-    ];
-    for (const [v, px] of overflowing) {
+    // em widths at the tile's 22px base; STAT_FIT_EM is the room it has.
+    const overflowing = ["1500 m", "2:20 /100m", "10.0 km", "5:00 /km"];
+    for (const v of overflowing) {
       const s = fitScale(v, STAT_FIT_EM);
       expect(s, v).toBeLessThan(1);
-      expect(px * s, v).toBeLessThanOrEqual(76);
+      // …and having shrunk it, it fits — the property that actually matters.
+      expect(textWidthEm(v) * s, v).toBeLessThanOrEqual(STAT_FIT_EM + 1e-9);
     }
   });
 
   it("shrinks the hero values that would otherwise wrap", () => {
-    const overflowing: [string, number][] = [["1500 m", 352], ["10.0 km", 381]];
-    for (const [v, px] of overflowing) {
+    // The hero is far wider than a tile, so only the two pace formats reach it.
+    const overflowing = ["2:20 /100m", "5:00 /km"];
+    for (const v of overflowing) {
       const s = fitScale(v, HERO_FIT_EM, { trackingEm: HERO_TRACKING_EM });
       expect(s, v).toBeLessThan(1);
-      expect(px * s, v).toBeLessThanOrEqual(338);
+      expect(textWidthEm(v, HERO_TRACKING_EM) * s, v).toBeLessThanOrEqual(HERO_FIT_EM + 1e-9);
     }
   });
 
@@ -323,5 +342,15 @@ describe("fitScale", () => {
   it("stays legible for every value the panel can actually produce", () => {
     for (const v of ["1500 m", "10.0 km", "2:20 /100m", "5:00 /km", "~395", "11.3 t", "90 min", "255", "12"])
       expect(fitScale(v, STAT_FIT_EM), v).toBeGreaterThanOrEqual(0.5);
+  });
+
+  it("over-estimates a glyph the face does not carry, rather than under", () => {
+    // `~` is absent from the shipped cuts, so an estimate prefix renders in the
+    // platform fallback and is fitted at ADVANCE_FALLBACK_EM. Guessing HIGH
+    // shrinks a value that would have fitted; guessing low lets one wrap, and a
+    // wrapped figure drags its label out of line with the tiles beside it.
+    expect(SOHNE_ADVANCE_EM["~"]).toBeUndefined();
+    expect(ADVANCE_FALLBACK_EM).toBeGreaterThan(Math.max(...Object.values(SOHNE_ADVANCE_EM).filter((v) => v < 0.7)) * 0.9);
+    expect(textWidthEm("~9")).toBeCloseTo(ADVANCE_FALLBACK_EM + SOHNE_ADVANCE_EM["9"]!, 5);
   });
 });

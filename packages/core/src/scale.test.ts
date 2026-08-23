@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, SERIF_SIZE_RATIO, X_HEIGHT_EM, TYPE_REF, STEP, SCALE_RATIO, rung, measure, opticalTrackEm, OPTICAL_K, CAPS_AIR_EM } from "./scale";
@@ -317,10 +317,10 @@ describe("ALPHA — the tint scale", () => {
 /**
  * THE FACES — two, and the guard is here because the third one died quietly.
  *
- * `fonts.condensed` (Archivo Narrow) was declared in the brand tokens and
+ * `fonts.condensed` (a narrow cut) was declared in the brand tokens and
  * specified in the build brief for two years, and the mobile app — the product —
- * never loaded it: four Archivo weights and two JetBrains Mono weights in
- * `useFonts`, no `@expo-google-fonts/archivo-narrow` anywhere. Nothing failed,
+ * never loaded it: four sans weights and two mono weights in
+ * `useFonts`, no package for it anywhere. Nothing failed,
  * because a declared-but-unloaded family is not an error on either platform: RN
  * falls back to the system face and CSS falls through to the next name in the
  * stack. So the identity read as three faces in the tokens and shipped as two,
@@ -341,7 +341,7 @@ describe("the type faces", () => {
     // the rule has to follow the declaration or it is guarding an empty string.
     //
     // The original intent survives intact: a face declared and not loaded is
-    // how Archivo Narrow stayed alive on web after mobile had already decided
+    // how the narrow cut stayed alive on web after mobile had already decided
     // against it, and a face loaded and not declared is a download for nothing.
     expect(fontImportUrl, "a public @import cannot serve a licensed face").toBe("");
     const css = readFileSync(join(__dirname, "..", "..", "..", "apps", "web", "app", "globals.css"), "utf8");
@@ -431,5 +431,78 @@ describe("fitMonoFigure", () => {
       expect(got).toBeGreaterThanOrEqual(last);
       last = got;
     }
+  });
+});
+
+/**
+ * THE RETIRED FACES STAY RETIRED — and this guard is about more than tidiness.
+ *
+ * Archivo and JetBrains Mono were replaced by Söhne and Söhne Mono, and the
+ * binaries went with them. What did NOT go was their NAMES: 67 mentions across
+ * 30 files of live source, several of them false by then — globals.css opened
+ * with "Two faces, and that is the identity — Archivo and JetBrains Mono",
+ * `fonts.mono` was documented as "JetBrains Mono, in two" while the app loads
+ * three Söhne Mono cuts, and the mobile kit described itself as built on
+ * "Archivo type".
+ *
+ * A comment naming the wrong face is not cosmetic. It is the same class of
+ * defect `dead-references.test.ts` exists for: the next session reads it,
+ * believes it, and builds on it. And it HID a real one — the Wrapped's figure
+ * fitter was still sizing type from a table of the old face's advances, and no
+ * reader would question that while every comment around it agreed.
+ *
+ * `reference/` and `capabilities.ts` are EXEMPT, exactly as CLAUDE.md says: they
+ * are records of what was true when written, not instructions. The argument for
+ * why a face went lives only in the ledger, and deleting it there would take the
+ * reasoning with it.
+ */
+describe("the retired faces", () => {
+  const RETIRED = [/\bArchivo\b/i, /\bJetBrains\s*Mono\b/i, /\bJetBrainsMono/i];
+  const REPO = join(__dirname, "..", "..", "..");
+  const SKIP = new Set(["node_modules", ".git", ".next", "dist", "build", "reference", "audit", "coverage"]);
+
+  function sources(dir: string, out: string[] = []): string[] {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (SKIP.has(e.name) || e.name.startsWith(".")) continue;
+      const p = join(dir, e.name);
+      if (e.isDirectory()) sources(p, out);
+      // TWO EXEMPTIONS, and both are named rather than pattern-matched.
+      //
+      // `capabilities.ts` is the ledger — CLAUDE.md makes it a record of what
+      // was true when written, not an instruction, and the argument for why a
+      // face went lives nowhere else.
+      //
+      // THIS FILE, because a guard has to name what it forbids: the patterns
+      // below spell the retired faces, so the rule would fail on its own
+      // declaration. That is a loophole exactly one file wide, and it is the
+      // file whose whole job is to close the others.
+      else if (/\.(ts|tsx|css|json)$/.test(e.name)
+               && !e.name.endsWith("capabilities.ts")
+               && p !== __filename) out.push(p);
+    }
+    return out;
+  }
+
+  it("HARD — no live source names a face the app does not load", () => {
+    const hits: string[] = [];
+    for (const dir of ["apps", "packages"]) {
+      for (const file of sources(join(REPO, dir))) {
+        readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+          if (RETIRED.some((re) => re.test(line))) hits.push(`${file.slice(REPO.length + 1)}:${i + 1}  ${line.trim().slice(0, 96)}`);
+        });
+      }
+    }
+    expect(hits, `a retired face is named in live source:\n  ${hits.join("\n  ")}`).toEqual([]);
+  });
+
+  it("sees the whole app, so it cannot pass by walking an empty tree", () => {
+    expect(sources(join(REPO, "apps")).length).toBeGreaterThan(100);
+  });
+
+  it("names the faces that ARE loaded, so this is a swap and not a ban", () => {
+    // The point is not that the words are forbidden — it is that the app's own
+    // source should describe the app. If a future swap retires Söhne, this list
+    // moves in the same change and the guard goes on doing its job.
+    expect(Object.values(fonts)).toEqual(["Söhne", "Söhne Mono", "ITC Garamond Std"]);
   });
 });

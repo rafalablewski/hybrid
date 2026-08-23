@@ -6,15 +6,15 @@ import { MONO_ADVANCE_EM } from "@hybrid/core";
 /**
  * THE NATIVE FACE GUARD.
  *
- * `F` holds expo-font ALIASES ("Archivo_700Bold"). React Native resolves them
+ * `F` holds expo-font ALIASES ("Sohne_600Halbfett"). React Native resolves them
  * because expo-font swizzles `UIFont.fontNames(forFamilyName:)`; SwiftUI does
  * not take that path — `@expo/ui`'s `font({ family })` ends in
  * `Font.custom(family, size:)`, straight into Core Text, which knows the face
- * only by the PostScript name in the binary ("Archivo-Bold").
+ * only by the PostScript name in the binary ("TestSohne-Halbfett").
  *
  * The failure mode is the reason this file exists: `Font.custom` with a name
  * nothing resolves does not throw and does not warn — it draws San Francisco.
- * So a native leaf handed `F.bold` renders the SYSTEM font beside Archivo on
+ * So a native leaf handed `F.bold` renders the SYSTEM font beside Söhne on
  * the same row, the prop looks correct in the diff, and the only evidence is a
  * screenshot. That is exactly how the nutrition head's "Breakfast ⌄" kept
  * coming back off-face after being "fixed".
@@ -133,7 +133,7 @@ describe("the mono advance the layout arithmetic depends on", () => {
   // the app's biggest card silently picks the wrong rung and either ellipsises
   // or leaves a third of its cell empty.
   //
-  // The migration plan predicted Söhne Mono would be narrower than JetBrains
+  // The migration plan predicted Söhne Mono would be narrower than the mono cut
   // Mono and that everything computing a width from a character count would
   // need recalculating. MEASURED, THEY ARE IDENTICAL: both are exactly 0.600 em
   // on a 1000 upem. So the constant did not move — and the reason to write this

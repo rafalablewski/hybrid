@@ -225,7 +225,7 @@ export function FactsPanel({ C, facts, per100, scale = 1 }: {
  * ── IT SPEAKS THE HUB'S VOCABULARY, BECAUSE IT IS THE HUB'S NUMBER ──────────
  * This block and the hub's ring show the SAME day's figures one screen apart,
  * and they were drawn by two people who never met: the hub set its figure in
- * Archivo Black and chalk, this one in mono-bold and CHARTREUSE; the hub gave
+ * the display face's heaviest cut and chalk, this one in mono-bold and CHARTREUSE; the hub gave
  * each macro its own accent (Lyons Blue / Fleur De Lis / Muskmelon), this one painted all three
  * chartreuse; the hub's over-state went red, this one's sand. Agreeing on the
  * arithmetic and disagreeing on every visual is worse than disagreeing on both,

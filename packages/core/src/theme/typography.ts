@@ -15,7 +15,7 @@
  * correct at none of them.
  *
  * A named style is also what makes a face swap a one-line change. Migrating the
- * product from Archivo to Söhne is 2,274 call sites if the face is chosen at the
+ * product to a new face is 2,274 call sites if the face is chosen at the
  * call site, and two constants if it is chosen here.
  *
  * ── WHAT THIS FILE DELIBERATELY DOES NOT DO ─────────────────────────────────
@@ -66,9 +66,9 @@ import { fonts } from "./tokens";
  * reads as deliberate and fits a cover title in two lines instead of three.
  *
  * It is absent from this file because DECLARING A FACE THE APP DOES NOT LOAD is
- * the exact mistake `condensed` (Archivo Narrow) was deleted for in tokens.ts:
+ * the exact mistake `condensed` (a narrow cut) was deleted for in tokens.ts:
  * it existed as a name in the tokens and a webfont in the browser and nowhere in
- * the thing that ships, so the phone drew Archivo while the admin panel drew
+ * the thing that ships, so the phone drew the standard cut while the admin panel drew
  * Narrow. A token with no consumer is not a head start, it is a lie with a
  * comment attached.
  *

@@ -251,7 +251,7 @@ const ROWS_SHOWN = 5;
  * Measure it once, so nobody has to guess again. A 390dp screen gives the card
  * 326dp of content (390 less the 12dp screen gutter each side, less CARD_PAD
  * each side). Four cells with an 8dp gutter are 75dp wide, ~65dp inside their
- * own padding. "6h 52min" is eight glyphs and JetBrains Mono advances 0.6em, so
+ * own padding. "6h 52min" is eight glyphs and Söhne Mono advances 0.6em, so
  * it needs 4.8 × the size: to fit 65dp the figure would have to be 13dp —
  * the app's BODY TEXT size, for the largest figures on Today's largest card.
  * The 17dp the row shrank to (from 20, whenever a fourth metric appeared) was

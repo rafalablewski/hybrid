@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SOHNE, SOHNE_MONO, ITC_GARAMOND, SERIF_SIZE_RATIO, FIGURE_INK_EM, inkSpan, capMatchAt, FACE_LIMITS, type FaceMetrics } from "./face-metrics";
+import { SOHNE, SOHNE_MONO, ITC_GARAMOND, SERIF_SIZE_RATIO, FIGURE_INK_EM, SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM, inkSpan, capMatchAt, FACE_LIMITS, type FaceMetrics } from "./face-metrics";
 import { fs, lh, TYPE_REF } from "../scale";
 
 /**
@@ -300,5 +300,60 @@ describe("what the scale derives from all this", () => {
     // that happens to be round; it is the origin of both axes.
     expect(TYPE_REF).toBe(16);
     expect(fs.bodyLg).toBe(TYPE_REF);
+  });
+});
+
+describe("the proportional advance table", () => {
+  /** Advance of a character, in em, straight out of `hmtx`. */
+  const advance = (t: ReturnType<typeof open>, ch: string) => {
+    const gid = glyphId(t, ch);
+    if (gid === 0) return null;
+    const hhea = t.off["hhea"]!;
+    const numH = t.buf.readUInt16BE(hhea + 34);
+    const hmtx = t.off["hmtx"]!;
+    const i = Math.min(gid, numH - 1);
+    return t.buf.readUInt16BE(hmtx + i * 4) / t.upem;
+  };
+
+  it("HARD — every listed width is the shipped binary's", () => {
+    // The defect this exists for was NOT a stale comment. `session-wrapped.ts`
+    // sized the Wrapped's hero and stat figures from a table measured on the
+    // PREVIOUS display face, and went on doing it through the font swap — a
+    // space 78% too wide, an `m` 14% too narrow, one constant for ten digits
+    // that span 59%. Nothing failed, the figures just shrank more than they had
+    // to. A table of measurements needs a test or it is a rumour.
+    const t = open(SOHNE.halbfett.file);
+    for (const [ch, em] of Object.entries(SOHNE_ADVANCE_EM)) {
+      const real = advance(t, ch);
+      expect(real, `${JSON.stringify(ch)} is not in the face`).not.toBeNull();
+      expect(real!, `advance of ${JSON.stringify(ch)}`).toBeCloseTo(em, 3);
+    }
+  });
+
+  it("HARD — it is Halbfett's, because that is what F.black draws", () => {
+    // The Wrapped's figures use `F.black`, which resolves to Halbfett since the
+    // weight ladder was capped at 600. If the alias ever moves, this table moves
+    // with it — the cuts differ by ~1% here, which is inside the fitter's
+    // tolerance but is not nothing at 96px.
+    const halb = open(SOHNE.halbfett.file);
+    const drei = open(SOHNE.dreiviertelfett.file);
+    expect(advance(halb, "m")).toBeCloseTo(SOHNE_ADVANCE_EM["m"]!, 3);
+    expect(advance(drei, "m")).not.toBeCloseTo(SOHNE_ADVANCE_EM["m"]!, 3);
+  });
+
+  it("HARD — `~` really is absent, so the fallback is load-bearing", () => {
+    // The Wrapped prefixes an estimate with a tilde. The extended trial cuts do
+    // not draw one, so it renders in the platform fallback and is fitted at
+    // ADVANCE_FALLBACK_EM. Listed as a known hole rather than found as a
+    // wrapped tile on somebody's phone.
+    expect(glyphId(open(SOHNE.halbfett.file), "~")).toBe(0);
+    expect(SOHNE_ADVANCE_EM["~"]).toBeUndefined();
+    expect(ADVANCE_FALLBACK_EM).toBe(0.6);
+  });
+
+  it("carries every digit, because one digit constant cannot serve ten", () => {
+    for (const d of "0123456789") expect(SOHNE_ADVANCE_EM[d], d).toBeDefined();
+    const digits = [..."0123456789"].map((d) => SOHNE_ADVANCE_EM[d]!);
+    expect(Math.max(...digits) / Math.min(...digits)).toBeGreaterThan(1.5);
   });
 });

@@ -13,7 +13,7 @@
 // keeps the house display face; SwiftUI's own ContentUnavailableView is the
 // grammar this follows (symbol → title → one description line → the actions),
 // not the renderer, because a system view styles its own type and would put SF
-// Pro in the middle of a card set in Archivo.
+// Pro in the middle of a card set in the app's face.
 //
 // THE TITLE IS ONE STRING IN EVERY TENSE. "No training logged" is true of a
 // first run, of an open today and of a Saturday three weeks back; only the
