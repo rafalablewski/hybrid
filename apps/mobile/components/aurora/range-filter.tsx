@@ -131,8 +131,20 @@ export function useRangeLabels(range: ActivityRange): RangeLabels {
   };
 }
 
-/** The Explore-standard head a period-scoped block opens with: display-face
- *  title left, the span as mono meta right. */
+/**
+ * The Explore-standard head a period-scoped block opens with: display-face
+ * title left, the span as mono meta right.
+ *
+ * NO CONSUMER SINCE AUG 2026, and kept deliberately — the section-seam rule.
+ * Its one caller was the Today verdict card, which lost it when the period
+ * control moved up to the Progress cluster's headline: with a lit `30D`
+ * segment one row above, a display-face "Last 30 days" was the period said
+ * twice, so the title was dropped and the span went to the GroupMark's right
+ * slot. That is an argument about a block sitting UNDER a cluster control, not
+ * about this head. A period-scoped block on a screen that has no such control
+ * — the obvious next one is Endurance — still wants exactly this shape, and
+ * should take it as it is rather than draw a ninth variation of a section head.
+ */
 export function RangeHead({ title, meta }: { title: string; meta: string }) {
   const { palette: C } = useTheme();
   return (
