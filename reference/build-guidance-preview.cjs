@@ -60,7 +60,7 @@ const html = `<!doctype html>
 <title>HYBRID · Admin Guidance (snapshot)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
 <style>
   :root{
     --ink:${C.ink};--card:${C.card};--line:${C.line};--lime:${C.lime};--chalk:${C.chalk};
@@ -70,7 +70,7 @@ const html = `<!doctype html>
   html,body{margin:0}
   body{
     background:var(--ink);color:var(--chalk);
-    font-family:'Archivo',system-ui,sans-serif;line-height:1.5;
+    font-family:'Sohne',system-ui,sans-serif;line-height:1.5;
     min-height:100vh;position:relative;overflow-x:hidden;
   }
   /* ambient liquid-glass field */
@@ -83,11 +83,11 @@ const html = `<!doctype html>
   @keyframes d2{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-6vmax,6vmax,0) scale(1.1)}}
   @keyframes d3{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(-5vmax,-5vmax,0) scale(1.2)}}
   .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:28px 28px 80px}
-  .mono{font-family:'JetBrains Mono',ui-monospace,monospace}
+  .mono{font-family:'SohneMono',ui-monospace,monospace}
   header.top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px;flex-wrap:wrap;gap:12px}
-  .kick{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
+  .kick{font-family:'SohneMono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber)}
   h1{font-weight:900;font-size:30px;letter-spacing:-.03em;margin:2px 0 0}
-  .chip{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ash);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
+  .chip{font-family:'SohneMono',monospace;font-size:11px;color:var(--ash);border:1px solid var(--line);border-radius:999px;padding:6px 12px}
   /* glass surface */
   .card{
     position:relative;border-radius:16px;background:rgba(22,24,22,.55);
@@ -97,33 +97,33 @@ const html = `<!doctype html>
     padding:20px;
   }
   .pills{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
-  .pill{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+  .pill{font-family:'SohneMono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.08em;
     padding:7px 13px;border-radius:8px;cursor:pointer;border:1px solid var(--line);background:transparent;color:var(--ash)}
   .pill.on{border-color:rgba(240,180,94,.5);background:rgba(240,180,94,.12);color:var(--amber)}
   .pane{display:grid;grid-template-columns:240px 1fr;gap:20px;align-items:start}
   .toc{position:sticky;top:18px;padding:16px}
   .toc{border-radius:16px;background:rgba(22,24,22,.55);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08)}
-  .toc-title{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--amber);margin-bottom:10px}
+  .toc-title{font-family:'SohneMono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.14em;color:var(--amber);margin-bottom:10px}
   .toc-link{display:flex;gap:9px;align-items:center;padding:8px 10px;border-radius:8px;color:var(--ash);text-decoration:none;font-size:13px;font-weight:600}
   .toc-link:hover{background:rgba(196,240,53,.10);color:var(--lime)}
   .toc-ic{width:16px;text-align:center}
-  .toc-foot{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ash);margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+  .toc-foot{font-family:'SohneMono',monospace;font-size:10px;color:var(--ash);margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
   .sections{display:flex;flex-direction:column;gap:16px}
   section.card{scroll-margin-top:18px}
   .sec-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
   .sec-ic{font-size:18px;color:var(--lime)}
   .sec-h h2{font-weight:900;font-size:20px;letter-spacing:-.02em;margin:0}
-  .summary{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ash);margin-bottom:14px}
+  .summary{font-family:'SohneMono',monospace;font-size:12px;color:var(--ash);margin-bottom:14px}
   .blocks{display:flex;flex-direction:column;gap:12px}
   .p{font-size:14px;line-height:1.65;margin:0;color:var(--chalk)}
   .note{border-left:3px solid var(--amber);background:rgba(240,180,94,.10);border-radius:8px;padding:10px 14px;font-size:13.5px;line-height:1.6}
-  .note-k{display:block;font-family:'JetBrains Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.14em;color:var(--amber);margin-bottom:4px}
+  .note-k{display:block;font-family:'SohneMono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.14em;color:var(--amber);margin-bottom:4px}
   .term{padding-left:14px;border-left:2px solid var(--line);font-size:13.5px;line-height:1.62}
   .term-h{font-weight:800;font-size:14.5px;color:var(--lime);margin-bottom:3px}
   .steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:g}
   .steps li{display:flex;gap:12px;align-items:flex-start;font-size:13.5px;line-height:1.6}
   .num{counter-increment:g;flex:0 0 auto;width:22px;height:22px;border-radius:7px;background:rgba(196,240,53,.12);
-    border:1px solid rgba(196,240,53,.33);color:var(--lime);font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;
+    border:1px solid rgba(196,240,53,.33);color:var(--lime);font-family:'SohneMono',monospace;font-size:11px;font-weight:700;
     display:grid;place-items:center;margin-top:1px}
   .num::before{content:counter(g)}
   @media (max-width:820px){.pane{grid-template-columns:1fr}.toc{position:static}}

@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
  * was authored FOUR times across the two clients — hand-rolled buttons, the
  * kit's in-content AChip, and two more hand-rolled copies. Twelve properties
  * were decided independently in each: the selected fill (a SOLID lime pill
- * with dark text against a 16% tint), the face (mono 12 against Archivo bold
+ * with dark text against a 16% tint), the face (mono 12 against display bold
  * 13), the hit target (~29 / 44 / ~33 / ~33 against the 44 the kit itself
  * declares), the rest fill, the tracking, a 400 -> 700 weight swap that
  * reflowed the row mid-tap, both paddings, and the bar's own material.

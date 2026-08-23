@@ -1,12 +1,25 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>10 · Aurora — disciplined — HYBRID concept</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+
 <style>
 :root{
   --page:#0a0b0a;
@@ -25,9 +38,9 @@
   --warn:#e0625e;
   --warn-soft:rgba(224,98,94,.12);
   --warn-line:rgba(224,98,94,.32);
-  --display:'Archivo',sans-serif;
-  --body:'Archivo',sans-serif;
-  --mono:'JetBrains Mono',monospace;
+  --display:'Sohne',sans-serif;
+  --body:'Sohne',sans-serif;
+  --mono:'SohneMono',monospace;
   --r-screen:34px;
   --r-card:24px;
   --r-btn:14px;
@@ -186,11 +199,11 @@ a{color:inherit}
     </div>
     <div class="principles">
       <h4>Design principles</h4>
-      <ul><li>ONE accent (lime) — blue/violet/amber retired as decoration</li><li>Red kept strictly semantic: injury & risk only</li><li>Neutral charcoal ramp carries all structure</li><li>Archivo + JetBrains Mono, your real type stack</li></ul>
+      <ul><li>ONE accent (lime) — blue/violet/amber retired as decoration</li><li>Red kept strictly semantic: injury & risk only</li><li>Neutral charcoal ramp carries all structure</li><li>Sohne + SohneMono, your real type stack</li></ul>
     </div>
     <div>
       <h4 style="font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:12px">Type</h4>
-      <div class="type-spec"><b>Archivo</b> display · <b>JetBrains Mono</b><br>your shipped type stack</div>
+      <div class="type-spec"><b>Sohne</b> display · <b>SohneMono</b><br>your shipped type stack</div>
     </div>
   </div>
 

@@ -2,14 +2,14 @@
 
 <style>
   /* AURORA tokens, verbatim from packages/core/src/theme/palette.ts.
-     Archivo + JetBrains Mono can't be fetched here — the stacks name them
+     Sohne + SohneMono can't be fetched here — the stacks name them
      first and fall back to the nearest system faces. Read the EDGES. */
   :root {
     --page:#070806; --ink:#0c0d0c; --ink2:#141614; --card:#151715; --sunk:#101210;
     --line:#242724; --line2:#33372f; --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
     --lime:#c6f84f; --teal:#6cb6bd; --on-accent:#0c0d0c;
-    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
-    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"Sohne",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"SohneMono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
     --guide: transparent;
   }
   body { background: var(--page); color: var(--chalk); font-family: var(--sans); -webkit-font-smoothing: antialiased; line-height: 1.6; }
@@ -190,6 +190,18 @@
 <div class="wrap">
 
   <header>
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
     <div class="kick">Today — the logged day</div>
     <h1>Three concepts, five layouts each. The argument is the left edge.</h1>
     <p class="lede">

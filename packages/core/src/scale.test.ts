@@ -1,7 +1,8 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, SERIF_X_HEIGHT_RATIO, X_HEIGHT_EM } from "./scale";
+import { fs, space, lh, leading, tracking, trackFigure, TRACK_FIGURE_EM, fitMonoFigure, MONO_ADVANCE_EM, type TypeRole, type SpaceToken, SERIF_SIZE_RATIO, X_HEIGHT_EM, TYPE_REF, STEP, SCALE_RATIO, rung, measure, opticalTrackEm, OPTICAL_K, CAPS_AIR_EM } from "./scale";
+import { FIGURE_INK_EM, capMatchAt, SOHNE, ITC_GARAMOND, inkSpan } from "./theme/face-metrics";
 import { ALPHA, fonts, fontImportUrl } from "./theme/tokens";
 
 /**
@@ -22,9 +23,9 @@ const ORDER: TypeRole[] = [
   "subtitle", "title", "headline", "display", "hero", "stat",
 ];
 
-// `editorial` (30) is NOT on that ladder and must not be tested against it: it
-// is the serif's own rung, sitting between `display` (26) and `hero` (34)
-// because ITC Garamond needs 1.176x Söhne to reach the same x-height. It is
+// `editorial` (33) is NOT on that ladder and must not be tested against it: it
+// is the serif's own rung, sitting between `display` (28) and `hero` (35)
+// because ITC Garamond needs 1.186x Söhne to reach the same x-height. It is
 // held separately below, and typography.test.ts holds that only `cut.serif`
 // may name it.
 const SERIF_ORDER: TypeRole[] = ["editorial"];
@@ -40,17 +41,29 @@ describe("type scale", () => {
 
   it("derives the serif rung rather than hard-coding it", () => {
     // The rung is `display` x the ratio between the two measured x-heights. If
-    // `display` ever moves, the serif moves with it — a typed 30 would have gone
-    // on claiming a match it no longer had, and the failure is invisible: two
-    // faces at slightly different optical sizes just look faintly wrong.
-    expect(SERIF_X_HEIGHT_RATIO).toBeCloseTo(1.1753, 4);
-    expect(fs.editorial).toBe(Math.round((fs.display * SERIF_X_HEIGHT_RATIO) / 2) * 2);
-    expect(fs.editorial).toBe(30);
-    // The x-heights are the measurement the whole pairing rests on. They are
-    // read off the shipped binaries; changing one without re-measuring is how
-    // this quietly stops being true.
-    expect(X_HEIGHT_EM.sans).toBeCloseTo(0.523, 3);
-    expect(X_HEIGHT_EM.serif).toBeCloseTo(0.445, 3);
+    // `display` ever moves, the serif moves with it — a typed value would have
+    // gone on claiming a match it no longer had, and the failure is invisible:
+    // two faces at slightly different optical sizes just look faintly wrong.
+    expect(SERIF_SIZE_RATIO).toBeCloseTo(1.18621, 5);
+    expect(fs.editorial).toBe(Math.round(fs.display * SERIF_SIZE_RATIO));
+    expect(fs.editorial).toBe(33);
+    // The x-heights are the measurement the whole pairing rests on, and they now
+    // live in ONE place (theme/face-metrics.ts) read off the shipped binaries.
+    // The serif figure was 0.445 here while the binary measures 0.4409 — a
+    // literal that had drifted from the thing it described, which is the entire
+    // reason metrics stopped being literals.
+    expect(X_HEIGHT_EM.sans).toBeCloseTo(0.523, 4);
+    expect(X_HEIGHT_EM.serif).toBeCloseTo(0.4409, 4);
+  });
+
+  it("matches the two faces on CAPS as well as on x-height", () => {
+    // The check that the x-height match is not buying one axis at another's
+    // expense. Garamond's short caps (0.623em) and Söhne's tall ones (0.718em)
+    // very nearly cancel the size compensation, so the pair agrees on BOTH of
+    // the axes a reader registers. Half a dp on a 20dp cap is below anything
+    // anyone can see; a full dp would mean the pairing rests on one axis only.
+    const { sans, serif } = capMatchAt(fs.display, fs.editorial);
+    expect(Math.abs(sans - serif), `sans ${sans} vs serif ${serif}`).toBeLessThan(1);
   });
 
   it("keeps the serif rung off the sans ladder", () => {
@@ -76,37 +89,85 @@ describe("type scale", () => {
     for (const role of ORDER) expect(fs[role], role).toBeGreaterThanOrEqual(10);
   });
 
-  it("steps grow with size — a ladder is not a list", () => {
-    // WHAT THIS IS NOT: a floor on how close two rungs may sit. I wrote that
-    // rule first, and it was wrong three times in a row — nano->micro,
-    // micro->caption and caption->body are all a single dp, because at 10dp a
-    // 1dp step is +10% and reads as a level while at 34dp it is +3% and does
-    // not. A dp floor is the wrong unit, and a RATIO floor would not have
-    // justified the retirements either: 20->22 and 10->11 are both 1.10.
+  it("IS a modular scale — every rung is the ratio raised to an integer", () => {
+    // THIS REPLACED A GAP HEURISTIC, and the replacement is the point of the
+    // Aug 2026 rebuild. The old assertion was that dp gaps never shrink as the
+    // ladder climbs (1,1,1,1,2,2,4,4,8,12) — a property a hand-written list can
+    // satisfy by accident and a real scale satisfies by construction. It also
+    // could not answer the only question that matters when someone proposes a
+    // new rung: does this size belong on the ladder at all.
     //
-    // The retirements were earned by DUPLICATED JOB, not by spacing. `note`
-    // (15) and `bodyLg` (14) were both "the emphasised body line"; `heading`
-    // (20) and `headline` (22) were both "the screen sub-heading". Two names
-    // for one job is a defect a measurement cannot find, which is why that
-    // argument lives in prose beside `fs` and not in an assertion here.
-    //
-    // WHAT IS TRUE AND WORTH GUARDING: the steps never shrink as the ladder
-    // climbs. 1,1,1,1,2,2,4,4,8,12. That is the optical property a scale has to
-    // hold — equal-looking increments need proportionally larger jumps — and a
-    // ladder that stepped 4 then 2 would be visibly wrong in a way no single
-    // rung looks wrong on its own.
-    const sizes = ORDER.map((r) => fs[r]);
-    const gaps = sizes.slice(1).map((v, i) => v - sizes[i]!);
-    for (let i = 1; i < gaps.length; i++) {
-      expect(gaps[i]!, `${ORDER[i]} -> ${ORDER[i + 1]} steps back down`).toBeGreaterThanOrEqual(gaps[i - 1]!);
+    // Now it can. Every rung is `TYPE_REF x STEP^n` for an INTEGER n, so a
+    // proposed size either has an exponent or it does not, and "it felt right"
+    // has nowhere left to land.
+    // Note the test recovers `n` by INVERTING the ladder and rounding, then
+    // re-derives the rung from it. Rounding a rung to whole dp costs up to half
+    // a dp, which at `nano` is a fifth of a half-step — so the exponent cannot
+    // be recovered to a tight tolerance and asserting one would be theatre. The
+    // identity `fs[role] === rung(n)` is exact and is the real check.
+    const seen = new Set<number>();
+    for (const role of ORDER) {
+      const n = Math.round(Math.log(fs[role] / TYPE_REF) / Math.log(STEP));
+      expect(fs[role], `${role} must equal rung(${n}) = ${rung(n)}`).toBe(rung(n));
+      expect(seen.has(n), `${role} shares exponent ${n} with an earlier rung`).toBe(false);
+      seen.add(n);
     }
+    // The reference rung is the reference size, by construction and not by luck.
+    expect(fs.bodyLg).toBe(TYPE_REF);
+    expect(rung(0)).toBe(TYPE_REF);
+  });
+
+  it("runs one ratio at two intervals, and the coarser one is on top", () => {
+    // Granularity follows the eye: half-steps through the reading band, where
+    // rank comes from ink and weight and the rungs only have to land near a
+    // usable dp; FULL steps once type is seen rather than read, where size IS
+    // the hierarchy and a level has to be unmistakable.
+    const n = (role: TypeRole) => Math.round(Math.log(fs[role] / TYPE_REF) / Math.log(STEP));
+    const READING: TypeRole[] = ["nano", "micro", "caption", "body", "bodyLg", "subtitle", "title", "headline"];
+    for (let i = 1; i < READING.length; i++) {
+      expect(n(READING[i]!) - n(READING[i - 1]!), `${READING[i]} is not one half-step above ${READING[i - 1]}`).toBe(1);
+    }
+    // The display band steps a full major third at a time...
+    expect(n("display") - n("headline")).toBe(2);
+    expect(n("hero") - n("display")).toBe(2);
+    // ...and the hero FIGURE takes a step and a half, because it has to beat a
+    // masthead sitting above it rather than tie with it.
+    expect(n("stat") - n("hero")).toBe(3);
+    expect(fs.stat / fs.hero).toBeGreaterThan(SCALE_RATIO ** 0.5);
+  });
+
+  it("ascends without ever stepping back down in RATIO terms", () => {
+    // The optical property the old gap test was reaching for, stated in the
+    // right unit. Equal-looking increments need proportionally larger jumps, so
+    // what must never shrink is the RATIO between neighbours, not the dp gap —
+    // and on a generated ladder it cannot, which is why this is cheap to hold.
+    const sizes = ORDER.map((r) => fs[r]);
+    const ratios = sizes.slice(1).map((v, i) => v / sizes[i]!);
+    for (const r of ratios) expect(r).toBeGreaterThan(1);
+    expect(Math.max(...ratios)).toBeLessThanOrEqual(SCALE_RATIO ** 1.5 + 0.01);
+  });
+
+  it("gives a measure in characters, not a hand-typed max-width", () => {
+    // 66 characters is the classic centre of the 45-75 band. Turning it into a
+    // width needs the face's average advance, which is a thing the system can
+    // now ask instead of guess.
+    expect(measure(fs.body)).toBe(Math.round(fs.body * 66 * SOHNE.buch.advanceN));
+    // On a phone the reading sizes need no cap at all, and saying so is useful:
+    // it is why `prose` carries no maxWidth on mobile and does on a desktop.
+    expect(measure(fs.body)).toBeGreaterThan(390);
+    expect(measure(fs.body, 45)).toBeLessThan(measure(fs.body, 75));
   });
 
   it("has retired `note` and `heading`, and cannot get them back by accident", () => {
     expect(Object.keys(fs)).not.toContain("note");
     expect(Object.keys(fs)).not.toContain("heading");
-    expect(Object.values(fs)).not.toContain(15);
-    expect(Object.values(fs)).not.toContain(20);
+    // THE CHECK IS ON KEYS, AND IT USED TO BE ON VALUES TOO. That stopped being
+    // meaningful when the ladder was regenerated: `title` is 20 now, which is
+    // the dp `heading` used to hold. Those retirements were never about the
+    // NUMBER 20 — they were about two names for one job (`heading` and
+    // `headline` were both "the screen sub-heading"). A value assertion here
+    // would now fail for a rung that is doing nothing wrong, and would have gone
+    // on passing if someone re-added `heading` at 21.
   });
 
   it("ends at `stat` — a figure larger than this is a design smell", () => {
@@ -183,8 +244,13 @@ describe("tracking", () => {
 
   it("lands on what the biggest figures were already drawn at", () => {
     // fs.stat carried -1.6 by hand at three sites before this existed; the
-    // constant was derived from that cluster, so it has to return it.
-    expect(trackFigure(fs.stat)).toBe(-1.6);
+    // constant was derived from that cluster, so it has to return it AT THE
+    // SIZE THOSE SITES WERE DRAWN AT. The ladder moved `stat` 46 -> 49 in Aug
+    // 2026 and the tracking followed it to -1.7, which is the whole reason this
+    // is an em and not a dp: the intent survives a change of size, and the dp
+    // is recomputed rather than re-guessed.
+    expect(trackFigure(46)).toBe(-1.6);
+    expect(trackFigure(fs.stat)).toBe(-1.7);
     // Rounded to 0.1dp — RN takes fractional letterSpacing, and at this size
     // the tenth is visible.
     expect(trackFigure(46)).toBe(Math.round(46 * TRACK_FIGURE_EM * 10) / 10);
@@ -193,17 +259,24 @@ describe("tracking", () => {
   it("codifies the two eyebrow trackings already in use", () => {
     // 0.9 (216 sites) and 1.2 (137 sites) at the time of the audit. Changing
     // either is a deliberate restyle of every kicker in the app, not a tweak.
-    // THE CONVERSION PROOF. These are the four dominant call-site shapes, and
-    // every one resolves to the dp value that shipped before tracking became an
-    // em — 340 of 461 sized sites render byte-identically. If a band is ever
-    // retuned, this is the test that says what it costs.
+    //
+    // THE CONVERSION PROOF, NOW ACROSS TWO CONVERSIONS. These survived tracking
+    // becoming an em (Aug 2026) and they survive it becoming a CURVE: the
+    // uppercase voices compose caps air with the optical curve, and at `fs.nano`
+    // the curve contributes exactly the +0.0089em that keeps both landing where
+    // they shipped. That is the evidence the composition is the same intent
+    // spelled properly rather than a new one.
     expect(tracking(fs.nano, "label")).toBe(0.9);   // 201 sites
-    expect(tracking(fs.micro, "label")).toBe(0.9);  //  48 sites
     expect(tracking(fs.nano, "caps")).toBe(1.2);    //  72 sites
-    expect(tracking(fs.display)).toBe(-0.5);        //  19 sites
-    // And the largest move anywhere, which is a correction rather than a drift:
-    // a 15dp lead was carrying the 34dp hero's tightening.
+    // THE ONE THAT MOVES, and it moves the way the model says it always should
+    // have: 48 sites at `fs.micro` go 0.9 -> 1.0, because smaller capitals need
+    // MORE air, and a flat em could not say so.
+    expect(tracking(fs.micro, "label")).toBe(1.0);
+    expect(tracking(fs.micro, "label")).toBeGreaterThan(CAPS_AIR_EM.label * fs.micro);
+    // The reference rung takes no correction at all, by construction — this is
+    // the curve's zero and the ladder's origin, and they are the same number.
     expect(tracking(fs.bodyLg)).toBe(0);
+    expect(opticalTrackEm(TYPE_REF)).toBe(0);
   });
 });
 
@@ -244,10 +317,10 @@ describe("ALPHA — the tint scale", () => {
 /**
  * THE FACES — two, and the guard is here because the third one died quietly.
  *
- * `fonts.condensed` (Archivo Narrow) was declared in the brand tokens and
+ * `fonts.condensed` (a narrow cut) was declared in the brand tokens and
  * specified in the build brief for two years, and the mobile app — the product —
- * never loaded it: four Archivo weights and two JetBrains Mono weights in
- * `useFonts`, no `@expo-google-fonts/archivo-narrow` anywhere. Nothing failed,
+ * never loaded it: four sans weights and two mono weights in
+ * `useFonts`, no package for it anywhere. Nothing failed,
  * because a declared-but-unloaded family is not an error on either platform: RN
  * falls back to the system face and CSS falls through to the next name in the
  * stack. So the identity read as three faces in the tokens and shipped as two,
@@ -268,7 +341,7 @@ describe("the type faces", () => {
     // the rule has to follow the declaration or it is guarding an empty string.
     //
     // The original intent survives intact: a face declared and not loaded is
-    // how Archivo Narrow stayed alive on web after mobile had already decided
+    // how the narrow cut stayed alive on web after mobile had already decided
     // against it, and a face loaded and not declared is a download for nothing.
     expect(fontImportUrl, "a public @import cannot serve a licensed face").toBe("");
     const css = readFileSync(join(__dirname, "..", "..", "..", "apps", "web", "app", "globals.css"), "utf8");
@@ -358,5 +431,98 @@ describe("fitMonoFigure", () => {
       expect(got).toBeGreaterThanOrEqual(last);
       last = got;
     }
+  });
+});
+
+/**
+ * THE RETIRED FACES STAY RETIRED — and this guard is about more than tidiness.
+ *
+ * Archivo and JetBrains Mono were replaced by Söhne and Söhne Mono, and the
+ * binaries went with them. What did NOT go was their NAMES: 67 mentions across
+ * 30 files of live source, several of them false by then — globals.css opened
+ * with "Two faces, and that is the identity — Archivo and JetBrains Mono",
+ * `fonts.mono` was documented as "JetBrains Mono, in two" while the app loads
+ * three Söhne Mono cuts, and the mobile kit described itself as built on
+ * "Archivo type".
+ *
+ * A comment naming the wrong face is not cosmetic. It is the same class of
+ * defect `dead-references.test.ts` exists for: the next session reads it,
+ * believes it, and builds on it. And it HID a real one — the Wrapped's figure
+ * fitter was still sizing type from a table of the old face's advances, and no
+ * reader would question that while every comment around it agreed.
+ *
+ * NOTHING IS EXEMPT ANY MORE EXCEPT THIS FILE. `reference/`, `design/` and
+ * `capabilities.ts` were exempt on the CLAUDE.md grounds that they are records
+ * rather than instructions — and that was the right default until the records
+ * were checked. They were not carrying history; `reference/` and `design/` were
+ * carrying 66 mockups that LOADED the retired families from Google Fonts and
+ * rendered in them, and fourteen that embedded the binaries outright. That is
+ * not a memory of a font, it is a live dependency on one. Every mention is
+ * rewritten so the ARGUMENT survives without the dead name, and the mockups now
+ * draw the product's real faces from the repo's own bundle.
+ *
+ * THIS FILE IS THE ONE EXEMPTION, because a guard has to name what it forbids:
+ * the patterns below spell the retired faces, so the rule would fail on its own
+ * declaration. A loophole exactly one file wide, and it is the file whose whole
+ * job is to close the others.
+ */
+describe("the retired faces", () => {
+  const RETIRED = [/\bArchivo\b/i, /\bJetBrains\s*Mono\b/i, /\bJetBrainsMono/i];
+  const REPO = join(__dirname, "..", "..", "..");
+  const SKIP = new Set(["node_modules", ".git", ".next", "dist", "build", "coverage"]);
+
+  function sources(dir: string, out: string[] = []): string[] {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (SKIP.has(e.name) || e.name.startsWith(".")) continue;
+      const p = join(dir, e.name);
+      if (e.isDirectory()) sources(p, out);
+      // ONE EXEMPTION: this file, which must spell the retired faces in order
+      // to forbid them. Everything else is in scope, including the ledger and
+      // the mockup archives — see the note above for why they stopped being
+      // records the moment they started fetching fonts.
+      else if (/\.(ts|tsx|css|json|html|md|mjs|cjs|jsx|js|py)$/.test(e.name) && p !== __filename) out.push(p);
+    }
+    return out;
+  }
+
+  it("HARD — no live source names a face the app does not load", () => {
+    const hits: string[] = [];
+    for (const dir of ["apps", "packages", "reference", "design"]) {
+      for (const file of sources(join(REPO, dir))) {
+        readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+          if (RETIRED.some((re) => re.test(line))) hits.push(`${file.slice(REPO.length + 1)}:${i + 1}  ${line.trim().slice(0, 96)}`);
+        });
+      }
+    }
+    expect(hits, `a retired face is named in live source:\n  ${hits.join("\n  ")}`).toEqual([]);
+  });
+
+  it("sees the whole app AND both archives, so it cannot pass on an empty tree", () => {
+    expect(sources(join(REPO, "apps")).length).toBeGreaterThan(100);
+    expect(sources(join(REPO, "reference")).length).toBeGreaterThan(50);
+    expect(sources(join(REPO, "design")).length).toBeGreaterThan(50);
+  });
+
+  it("HARD — no archived mockup fetches a font from a public host", () => {
+    // The mockups pulled the two retired families off Google Fonts, so opening
+    // any of them downloaded a face the product abandoned. They draw the repo's
+    // own bundled cuts now, by relative path — which also means they render with
+    // no network at all, and cannot silently start showing a different face
+    // because somebody's CDN changed.
+    const bad: string[] = [];
+    for (const dir of ["reference", "design"]) {
+      for (const file of sources(join(REPO, dir))) {
+        const src = readFileSync(file, "utf8");
+        if (/fonts\.googleapis\.com\/css2\?[^"')]*family=(Archivo|JetBrains)/i.test(src)) bad.push(file.slice(REPO.length + 1));
+      }
+    }
+    expect(bad, `still fetching a retired face:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+
+  it("names the faces that ARE loaded, so this is a swap and not a ban", () => {
+    // The point is not that the words are forbidden — it is that the app's own
+    // source should describe the app. If a future swap retires Söhne, this list
+    // moves in the same change and the guard goes on doing its job.
+    expect(Object.values(fonts)).toEqual(["Söhne", "Söhne Mono", "ITC Garamond Std"]);
   });
 });

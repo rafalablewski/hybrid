@@ -414,7 +414,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
   const records = cardRecords(d);
   const setLines = cardSetLines(d?.sets, records.shown);
 
-  // The app's TITLE face (the twin of web's --font-heading): Archivo. A post's
+  // The app's TITLE face (the twin of web's --font-heading): Söhne. A post's
   // headline is a heading, so it draws in the same face as every other heading
   // in the product.
   //
@@ -522,7 +522,7 @@ export default function FeedCard({ item, units, onOpenProfile, onKudos, onCommen
 
         {/* ZONE E — words */}
         {/* RN has no inherited font: a Text with no fontFamily draws in the
-            PLATFORM face, not Archivo — which is what set the feed's prose apart
+            PLATFORM face, not the app's — which is what set the feed's prose apart
             from every other screen's. */}
         {item.body ? <Text style={{ fontFamily: F.reg, color: d?.archetype === "text" ? C.chalk : C.ash, fontSize: fs.body, lineHeight: leading(fs.body), marginTop: 8 }}>{item.body}</Text> : null}
       </Zones>

@@ -246,7 +246,7 @@ const rowH = (l: ProgramLiftView) => (l.note ? 56 : 44);
 // heaviest %) is the single accent; everything else is chalk at falling weight.
 //
 // The FACE, not a `fontWeight`. The ramp asked for four weights — 700/700/500/
-// 400 — from a family that holds exactly one: `F.mono` IS JetBrainsMono
+// 400 — from a family that holds exactly one: `F.mono` IS SohneMono
 // _400Regular, registered under its own name (lib/ui.tsx). So the two heavy
 // tiers were asking for a weight the family cannot serve, which iOS resolves
 // out of the family and Android fakes. There are two mono faces, and the ramp

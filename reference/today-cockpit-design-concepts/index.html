@@ -1,22 +1,35 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>HYBRID — Today &amp; Cockpit · 10 design concepts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0c0d0c;color:#f3f4ef;font-family:'Inter',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:64px 28px 90px}
 .wrap{max-width:1180px;margin:0 auto}
 a{color:inherit;text-decoration:none}
-.tag{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#c4f035;margin-bottom:16px}
+.tag{font-family:'SohneMono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#c4f035;margin-bottom:16px}
 h1{font-size:clamp(36px,6vw,68px);line-height:1.02;letter-spacing:-.03em;font-weight:800;margin-bottom:18px}
 .lede{max-width:760px;color:#9a9e94;font-size:17px;margin-bottom:14px}
 .lede b{color:#f3f4ef;font-weight:600}
-.note{max-width:760px;color:#7c7f76;font-size:14px;font-family:'JetBrains Mono',monospace;line-height:1.7;border-left:2px solid #242724;padding-left:16px;margin-bottom:48px}
+.note{max-width:760px;color:#7c7f76;font-size:14px;font-family:'SohneMono',monospace;line-height:1.7;border-left:2px solid #242724;padding-left:16px;margin-bottom:48px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
 .ix-card{display:block;text-decoration:none;border:1px solid #242724;border-radius:18px;overflow:hidden;background:#121312;transition:transform .18s ease,border-color .18s ease}
 .ix-card:hover{transform:translateY(-4px);border-color:#3a3d3a}
@@ -27,7 +40,7 @@ h1{font-size:clamp(36px,6vw,68px);line-height:1.02;letter-spacing:-.03em;font-we
 .ix-l.sm{width:55%;opacity:.4}
 .ix-chip{position:absolute;right:14px;bottom:14px;width:30px;height:30px;border-radius:8px}
 .ix-meta{padding:16px 18px 20px;display:flex;flex-direction:column;gap:3px;border-top:1px solid #242724}
-.ix-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6e7269;letter-spacing:.1em}
+.ix-num{font-family:'SohneMono',monospace;font-size:11px;color:#6e7269;letter-spacing:.1em}
 .ix-name{font-size:18px;font-weight:700;letter-spacing:-.01em}
 .ix-insp{font-size:12.5px;color:#8b8f86}
 .foot{margin-top:54px;padding-top:26px;border-top:1px solid #242724;font-size:13px;color:#7c7f76;max-width:760px;line-height:1.7}

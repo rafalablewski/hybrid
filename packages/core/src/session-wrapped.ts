@@ -28,6 +28,7 @@ import { orderFigures } from "./figure-order";
 import { fmtWeight, fmtTonnage, type WeightUnit } from "./units";
 import { formatSportDistance } from "./olympic-sports";
 import { sessionEnergy, type EnergyEstimate } from "./energy";
+import { SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM } from "./theme/face-metrics";
 
 /** A free basic stat — unit lives in the value, label is an i18n key. */
 export interface WrappedStat {
@@ -96,29 +97,28 @@ export interface SessionWrapped {
  * beside it.
  *
  * A CHARACTER COUNT WON'T DO. "11.3 t" and "1500 m" are both six characters and
- * measure 66px and 85px in the tile — the dot and the space are a third the
- * width of a digit, so counting them equally is off by 30%. The table below is
- * per-glyph advance width in em, measured from Archivo Black (the app's display
- * face) and verified against both slots.
+ * measure differently in the tile — the dot and the space are a third the width
+ * of a digit, so counting them equally is off by 30%. The widths come from
+ * `SOHNE_ADVANCE_EM` in theme/face-metrics.ts, read off the shipped binary.
+ *
+ * THEY USED TO BE MEASURED FROM THE PREVIOUS DISPLAY FACE, and that survived the
+ * font swap as a live defect rather than as a stale comment: the fitter went on
+ * sizing Söhne figures against widths that were 78% too wide for a space and 14%
+ * too narrow for an `m`, so every value carrying a space — most of the endurance
+ * vocabulary this fitter exists for — was shrunk further than it needed to be.
+ * The table lives in face-metrics.ts now, with a test that re-reads it from the
+ * font, so it cannot rot that way twice.
  *
  * Living here rather than in each client is the point: mobile could lean on
  * `adjustsFontSizeToFit` and web has no equivalent, so two implementations
  * would mean two different answers to "how big is this number".
  */
-const CHAR_EM: Record<string, number> = {
-  " ": 0.36, ".": 0.27, ",": 0.27, ":": 0.27, "/": 0.45, "~": 0.64,
-  "+": 0.6, "−": 0.45, "-": 0.45, "%": 0.9, "°": 0.45,
-  m: 0.77, i: 0.27, n: 0.59, k: 0.64, t: 0.32, g: 0.62, s: 0.55, h: 0.6,
-  e: 0.6, r: 0.42, l: 0.27, a: 0.58, o: 0.62, d: 0.62, u: 0.6, c: 0.55, p: 0.62,
-};
-/** A digit — and the fallback for anything not in the table. */
-const DEFAULT_EM = 0.682;
 
 /** Approximate rendered width of a value, in em of its own font size.
  *  `trackingEm` is the slot's letter-spacing (negative tightens). */
 export function textWidthEm(value: string, trackingEm = 0): number {
   let w = 0;
-  for (const ch of value) w += (CHAR_EM[ch] ?? DEFAULT_EM) + trackingEm;
+  for (const ch of value) w += (SOHNE_ADVANCE_EM[ch] ?? ADVANCE_FALLBACK_EM) + trackingEm;
   return Math.max(0, w);
 }
 

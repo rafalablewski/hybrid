@@ -1,18 +1,30 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>HYBRID — Set logging, redesigned</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
 <style>
   :root{
     --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
     --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
     --lime:#c6f84f; --blue:#6cb6bd; --sand:#d0cd94; --terra:#e58a5c;
-    --font:"Archivo",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+    --font:"Sohne",system-ui,sans-serif; --mono:"SohneMono",ui-monospace,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
   html{-webkit-text-size-adjust:100%}
@@ -194,7 +206,7 @@
   <header class="head">
     <div class="kick">HYBRID — Logging redesign 02</div>
     <h1>The active set, refined</h1>
-    <p>Your five notes, applied to the live logger. Everything runs on the Aurora dark palette, Archivo + JetBrains Mono, and the glass slab — tap the numbers, the presets menu, the ⚡, the RPE chip and the log button; it all works.</p>
+    <p>Your five notes, applied to the live logger. Everything runs on the Aurora dark palette, Sohne + SohneMono, and the glass slab — tap the numbers, the presets menu, the ⚡, the RPE chip and the log button; it all works.</p>
     <ul>
       <li><b>The <span class="l">⋯</span> menu = popular presets.</b> Split into the Add-set control — opens a sheet with <b>3×3, 5×5, 3×12, 4×8</b> and a link to the full planner.</li>
       <li><b>Special is glyph-only.</b> Just the <span style="color:var(--sand)">⚡</span> — tapping opens a sheet of special set types (warm-up, drop, AMRAP, to-failure…).</li>

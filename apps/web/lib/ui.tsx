@@ -172,7 +172,7 @@ export function GlassField() {
 }
 
 /** The three faces read the CSS custom properties rather than naming a family.
- *  They used to spell "'Archivo', sans-serif" here and in thirteen SVG <text>
+ *  They used to spell the family here and in thirteen SVG <text>
  *  elements across the admin charts, so a face swap was a fifteen-file edit and
  *  the charts drew the old face beside the new one for however long it took
  *  somebody to notice. globals.css owns the family; this owns the role. */
@@ -321,7 +321,7 @@ export function Chip({ children, c = LIME }: { children: ReactNode; c?: string }
 }
 
 /** Pill button — mirrors mobile lib/ui Button (fill | outline): same face
- *  (Archivo bold), same size (fs.bodyLg), same ~44px height, so the two clients
+ *  (display bold), same size (fs.bodyLg), same ~44px height, so the two clients
  *  share one button. Fill paints the brand accent (or an explicit `color`) with
  *  onAccent ink; outline is a transparent ghost with a hairline border, `color`
  *  tinting the label + border (muted ash/line when omitted) — e.g. destructive

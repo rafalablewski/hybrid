@@ -49,7 +49,7 @@ body{
   font-variant-numeric:tabular-nums;
 }
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
-.mono{font-family:"SF Mono",ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace}
+.mono{font-family:"SF Mono",ui-monospace,"SohneMono",Menlo,Consolas,monospace}
 
 /* ── masthead ─────────────────────────────────────────────────────────── */
 .wrap{max-width:1240px;margin:0 auto}
@@ -377,6 +377,18 @@ body{
 <div class="wrap">
 
   <header class="head">
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
     <div class="kick mono">Nutrition — design study</div>
     <h1>What's left, <em>while you're still looking for what to add.</em></h1>
     <p>Right now the calorie ring answers <b>“how much is left?”</b> once, at the top of the

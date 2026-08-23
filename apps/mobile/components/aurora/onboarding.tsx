@@ -188,7 +188,7 @@ export default function AuroraOnboarding() {
 
         {/* THE TWO BUTTONS ARE ONE ROW, so they are one height. Back was drawn
             at a hard 56 while APill DERIVES its height from its label: 18dp of
-            padding around fs.subtitle plus whatever line box Archivo gives 16dp
+            padding around fs.subtitle plus whatever line box the display face gives 16dp
             type (17.41 — hhea 878/-210 over 1000upm — which iOS rounds to 18),
             so 54. Two controls in one row, sized by two rules that have never
             heard of each other, landing on the same number only by luck.

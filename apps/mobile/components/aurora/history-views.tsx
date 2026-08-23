@@ -133,7 +133,7 @@ function RestGapRow({ C, days }: { C: Palette; days: number }) {
  * It rides `DockRail` with `role="mode"`: the chips SELECT (one always on, the
  * layout below changes), which is what earns them the accent tint. It used to
  * borrow `AChip` — the in-content filter — and that is why mobile History drew
- * Archivo bold 13 in a band where all three other rails drew mono 12. See
+ * display bold 13 in a band where all three other rails drew mono 12. See
  * packages/core/src/dock-rail.ts.
  */
 export function ViewSwitcher({ view, onChange }: { view: HistoryViewId; onChange: (v: HistoryViewId) => void }) {

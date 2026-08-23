@@ -8,7 +8,7 @@
 // nothing measurable:
 //
 //   selected fill   solid lime + dark text  /  lime @16% + lime text  /  — / —
-//   chip face       mono 12    /  Archivo bold 13  /  mono 12 +.08em  /  mono 12
+//   chip face       mono 12    /  display bold 13  /  mono 12 +.08em  /  mono 12
 //   hit target      ~29        /  44               /  ~33             /  ~33
 //   rest fill       ink2       /  transparent      /  transparent     /  transparent
 //   weight          400 -> 700 /  constant         /  —               /  —
@@ -37,11 +37,11 @@
 // says "on" with the same three signals (fill, border, text) at a fraction of
 // the volume, and it is what AChip already ships to 37 other call sites.
 //
-// WHY MONO AND NOT ARCHIVO. The rail is CHROME, not content: it sits in the same
+// WHY MONO AND NOT THE DISPLAY FACE. The rail is CHROME, not content: it sits in the same
 // band as the hero's eyebrow, meta line and accessory, all of which speak the
 // app's mono voice (see hero.ts). Three of the four shipped rails were already
 // mono; mobile History was the outlier because it borrowed AChip, which is an
-// IN-CONTENT filter and correctly stays Archivo where it lives.
+// IN-CONTENT filter and correctly stays the display face where it lives.
 
 import { fs, space } from "./scale";
 

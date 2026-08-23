@@ -1,3 +1,15 @@
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <title>Readiness — the deficit ring and the door (01 + 07)</title>
 <style>
   :root {
@@ -9,8 +21,8 @@
     --pg: #101210; --pg2: #171a17; --pg-line: #262a26;
     --pg-text: #eef0ea; --pg-mute: #878c82; --pg-accent: #c6f84f; --pg-warn: #e58a5c;
 
-    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-    --sans: Archivo, "Helvetica Neue", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    --mono: "SohneMono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: Sohne, "Helvetica Neue", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
   }
   @media (prefers-color-scheme: light) {
     :root { --pg: #eaece5; --pg2: #f6f7f2; --pg-line: #d2d6c9; --pg-text: #15180f; --pg-mute: #5b6055; --pg-accent: #4d6410; --pg-warn: #a8501f; }
