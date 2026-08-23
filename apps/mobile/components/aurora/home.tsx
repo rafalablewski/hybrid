@@ -1484,7 +1484,11 @@ export default function AuroraHome() {
             (aurora/range-filter.tsx): neutral pill at rest, clear glass lens
             on touch/drag per the iOS 26 system control, with the Month segment
             intercepting to its picker sheet. ───── */}
-        <View style={{ marginTop: 20 }}>
+        {/* space.lg, like every other cluster on this hub: a GroupMark is
+            followed by its first block at 16 on Performance's three clusters
+            and on Today's Recover. This row was the one at 20, which read as
+            the period control drifting away from the headline that scopes it. */}
+        <View style={{ marginTop: space.lg }}>
           <RangeFilter range={progressRange} sessions={sessions} onPick={pickProgressRange} />
         </View>
 

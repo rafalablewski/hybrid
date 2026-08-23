@@ -2341,7 +2341,7 @@ describe("spacing", () => {
   });
 
   it("BURN-DOWN — and then the screens", () => {
-    burnDown(offLadder((p) => !VOCABULARY.test(p)), 591, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 590, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
   });
 
   /**

@@ -373,8 +373,14 @@ export function DoorRow({ title, sub, glyph, onPress, premium = false }: { title
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title} – ${sub}`}
+      // THE SEAM IS `space.lg`, the same 16 a cluster's first block takes.
+      // It was a raw 14 — on no rung of the ladder, and baked into the one
+      // component eleven blocks end with. On Today it is also the FIRST thing
+      // under the Explore headline, so that cluster opened at 14 while every
+      // other cluster on both hub tabs opened at 16: two tabs of one hub,
+      // disagreeing about the same seam, one tap apart.
       style={{
-        flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14,
+        flexDirection: "row", alignItems: "center", gap: space.md, marginTop: space.lg,
         paddingHorizontal: 2, paddingVertical: 4,
       }}
     >
