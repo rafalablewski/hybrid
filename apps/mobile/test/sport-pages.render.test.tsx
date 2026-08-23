@@ -4,24 +4,32 @@ import { sportPages, type LoggedSession, type SessionBlock } from "@hybrid/core"
 import { renderScreen } from "./render";
 
 /**
- * THE ENDURANCE PAGER — one page per sport, and the three things about it that
- * are easy to regress.
+ * THE ENDURANCE GRID — every discipline on one screen, and the things about it
+ * that are easy to regress.
  *
- * All three are faults the RAILS this replaced actually shipped with, which is
- * why they are pinned here rather than trusted to the model's own unit tests:
+ * These outlived two rewrites (the per-discipline RAILS, then the one-page-per-
+ * sport PAGER) because they are not properties of a layout — they are promises
+ * the section makes however it is drawn:
  *
- *   1. A ball sport is a PAGE. Tennis carries no distance, so under the lanes
- *      it was not an endurance lane at all — it lived in a second block below
- *      the fold, in a different grammar, behind a fraction nobody asked for.
- *      It is usually the sport with the most minutes in it.
+ *   1. A ball sport is a FIRST-CLASS PLATE. Tennis carries no distance, so
+ *      under the lanes it was not an endurance lane at all — it lived in a
+ *      second block below the fold, in a different grammar. It is usually the
+ *      sport with the most minutes in it, so it leads.
  *
- *   2. A page shows what the sport HAS. Distance and pace render on the pages
- *      that carry them and are absent — not dashed — on the ones that don't.
- *      A dash is a metric-shaped hole where there was never a metric.
+ *   2. A plate shows what the sport HAS. A rate renders where the sport carries
+ *      one and is absent — not dashed — where it doesn't; a timed sport shows
+ *      its longest effort instead. A dash is a metric-shaped hole where there
+ *      was never a metric.
  *
- *   3. A page OPENS the sport. The depth the lanes spread across five tiles
- *      lives on sport-page.tsx, and the pager is worthless if it cannot get
- *      there.
+ *   3. A plate OPENS the sport. The depth lives on sport-page.tsx, and the
+ *      section is worthless if it cannot get there.
+ *
+ * WHAT CHANGED WITH THE GRID, and why the assertions moved with it: the pager
+ * spent a full screen width per sport and could afford three facts under the
+ * figure. Two-up plates cannot, so the second fact is the discipline's own RATE
+ * rather than its distance — informationally the same choice, since minutes are
+ * already on the plate and each derives from the other, broken on which one an
+ * athlete reads directly. Distance is one tap away on the sport's own page.
  */
 
 vi.mock("../lib/api", () => ({
@@ -60,31 +68,47 @@ const { default: AuroraSportPages } = await import("../components/aurora/sport-p
 
 const pagesOf = (sessions: LoggedSession[]) => sportPages(sessions);
 
-describe("the endurance pager", () => {
-  it("gives a ball sport a page of its own, ahead of the running it outweighs", () => {
+describe("the endurance grid", () => {
+  it("gives a ball sport a plate of its own, ahead of the running it outweighs", () => {
     const pages = pagesOf(SESSIONS);
     const { container } = renderScreen(<AuroraSportPages pages={pages} />);
     const text = container.textContent ?? "";
     expect(text.indexOf("Tennis")).toBeGreaterThan(-1);
     expect(text.indexOf("Tennis")).toBeLessThan(text.indexOf("Running"));
-    // The hero is MINUTES on every page — the one measure a swim, a ride and a
-    // squash match all share.
+    // The figure is MINUTES on every plate — the one measure a swim, a ride and
+    // a squash match all share, and the reason they can be compared at all.
     expect(text).toContain("2h 45min");
   });
 
-  it("renders no distance and no pace for a sport that has neither", () => {
+  it("shows every discipline at once, which is what the section is for", () => {
+    // The pager this replaced could show exactly one, while its own docblock
+    // said the section's job was the comparison. Both sports, one render, no
+    // gesture in between.
+    const { container } = renderScreen(<AuroraSportPages pages={pagesOf(SESSIONS)} />);
+    const text = container.textContent ?? "";
+    expect(text).toContain("Tennis");
+    expect(text).toContain("Running");
+  });
+
+  it("renders no rate at all for a sport that has none", () => {
     const tennis = pagesOf(SESSIONS).filter((p) => p.sport === "Tennis");
     const { container } = renderScreen(<AuroraSportPages pages={tennis} />);
     const text = container.textContent ?? "";
     expect(text).not.toContain("km");
+    expect(text).not.toContain("—");
     // ...and shows instead the fact a timed sport actually carries.
     expect(text.toLowerCase()).toContain("longest");
   });
 
-  it("renders distance and pace where the sport carries them", () => {
+  it("renders the rate in the discipline's OWN unit where it carries one", () => {
     const running = pagesOf(SESSIONS).filter((p) => p.discipline === "running");
     const { container } = renderScreen(<AuroraSportPages pages={running} />);
-    expect(container.textContent ?? "").toContain("8 km");
+    const text = container.textContent ?? "";
+    // 8 km in 46 minutes is 5:45 on the road — and it must read "/km", not the
+    // pool's "/100m" or the erg's "/500m". One function knows (core's
+    // formatDisciplinePace) and every surface goes through it.
+    expect(text).toContain("/km");
+    expect(text).toContain("5:45");
   });
 
   it("opens the sport the page is about", () => {
@@ -93,15 +117,18 @@ describe("the endurance pager", () => {
       <AuroraSportPages pages={pagesOf(SESSIONS)} onOpen={(p) => opened.push(p.sport ?? p.discipline ?? "")} />,
     );
     const page = screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith("Tennis"));
-    expect(page, "the Tennis page is not a button").toBeTruthy();
+    expect(page, "the Tennis plate is not a button").toBeTruthy();
     fireEvent.click(page!);
     expect(opened).toEqual(["Tennis"]);
   });
 
   it("carries no exit when there is nowhere to go", () => {
     const { container } = renderScreen(<AuroraSportPages pages={pagesOf(SESSIONS)} />);
-    // The ring-arrow is the promise that the page leaves; without an onOpen
-    // there is no destination, so there must be no promise.
+    // The pager drew a ring-arrow to promise that a page leaves, because a
+    // full-bleed page does not look tappable. A plate is a card and a card
+    // opens, so the promise IS the press target — which makes the absence of
+    // one the thing to pin: with no destination, nothing here may be a button.
+    expect(screen.queryAllByRole("button")).toHaveLength(0);
     expect(container.textContent ?? "").not.toContain("→");
   });
 

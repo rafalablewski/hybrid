@@ -249,6 +249,7 @@ export type TrackingRole =
   | "text" //  derived from the SIZE — see the band table below
   | "label" // 0.085em — uppercase mono kickers (the app's dominant eyebrow)
   | "caps" // 0.115em — the widest tracked caps: section labels, nav eyebrows
+  | "wordmark" // -0.04em — a NAMEPLATE: one uppercase word at display weight
   | "serif"; // -0.008em — ITC Garamond, which the text bands would over-tighten
 
 /**
@@ -298,6 +299,27 @@ export type TrackingRole =
 export const TRACKING_EM: Record<Exclude<TrackingRole, "text">, number> = {
   label: 0.085,
   caps: 0.115,
+  /**
+   * THE NAMEPLATE, and it is the text bands' opposite case rather than an
+   * exception to them.
+   *
+   * The bands are fitted to Söhne set MIXED-CASE at reading weights, where the
+   * fit has to survive ascenders, descenders and the loose right sidebearing of
+   * a lowercase `r` or `y`. A nameplate is none of that: ONE word, uppercase,
+   * weight 900, at `fs.display` or above. Caps at that weight carry flat
+   * vertical stems and generous designed sidebearings — the gaps the bands are
+   * protecting do not exist, and -0.02em leaves the word looking spaced rather
+   * than set.
+   *
+   * So the value is the band DOUBLED, not halved the way the serif is: -0.04em,
+   * which puts it beside `HERO_TRACKING_EM` (-0.031em, the wrapped hero) rather
+   * than beside body text. At fs.display 26 it returns -1.0; at fs.hero 34,
+   * -1.4.
+   *
+   * ONLY FOR A NAMEPLATE — a single uppercase word carrying a card. A mixed-case
+   * heading at 26 still takes the band; this would close its counters.
+   */
+  wordmark: -0.04,
   /**
    * THE SERIF TAKES ITS OWN VALUE because the text bands are fitted to Söhne.
    * At 30dp the band table would hand back -0.02em, and ITC Garamond is a

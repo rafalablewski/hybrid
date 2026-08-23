@@ -93,6 +93,7 @@ export * from "./rtp-view";
 export * from "./exercise-widget";
 export * from "./exercise-favourites";
 export * from "./history-strip";
+export * from "./nameplate";
 export * from "./progress-parentage";
 export * from "./capabilities";
 export * from "./rpe";

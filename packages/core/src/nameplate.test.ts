@@ -1,0 +1,101 @@
+import { describe, expect, it } from "vitest";
+import {
+  NAMEPLATE_LINE_CHARS,
+  NAMEPLATE_MAX_LINES,
+  fitsNameplate,
+  nameplateLines,
+} from "./nameplate";
+
+/**
+ * The nameplate's one load-bearing condition is that the noun is SHORT, so
+ * these tests are mostly about the boundary: what still sets as a mark, what
+ * has stopped being one, and — the part that matters — that a name which does
+ * not fit says so instead of being quietly cut.
+ */
+describe("nameplateLines", () => {
+  it("sets a single short word as one line, which is the treatment's own case", () => {
+    for (const word of ["Running", "Cycling", "Rowing", "Tennis", "Carbs", "Fat"]) {
+      const n = nameplateLines(word);
+      expect(n.lines, word).toEqual([word]);
+      expect(n.compact, word).toBe(true);
+      expect(n.overflows, word).toBe(false);
+    }
+  });
+
+  it("breaks a two-word name onto two lines and stops calling it compact", () => {
+    const n = nameplateLines("Romanian Deadlift");
+    expect(n.lines).toEqual(["Romanian", "Deadlift"]);
+    expect(n.compact).toBe(false);
+    expect(n.overflows).toBe(false);
+  });
+
+  it("packs words that share a line rather than spending a line per word", () => {
+    // "Back Squat" is 10 characters — inside the line, so it stays one mark.
+    const n = nameplateLines("Back Squat");
+    expect(n.lines).toEqual(["Back Squat"]);
+    expect(n.compact).toBe(true);
+  });
+
+  it("never breaks inside a word, even when the word alone overruns the line", () => {
+    const n = nameplateLines("Kettlebell");
+    expect(n.lines).toEqual(["Kettlebell"]);
+    // It is honest about being tight rather than hyphenating or truncating.
+    expect(n.lines[0]!.length).toBeLessThanOrEqual(NAMEPLATE_LINE_CHARS);
+  });
+
+  it("reports overflow instead of truncating a name the plate cannot hold", () => {
+    const n = nameplateLines("Single Arm Dumbbell Preacher Curl");
+    expect(n.overflows).toBe(true);
+    expect(n.lines.length).toBeLessThanOrEqual(NAMEPLATE_MAX_LINES);
+    // THE NAME SURVIVES. Every word is still there — the plate is told it does
+    // not fit, and no word is dropped on the way to telling it.
+    expect(n.lines.join(" ")).toBe("Single Arm Dumbbell Preacher Curl");
+  });
+
+  it("keeps the whole name when a word on its own is longer than a line", () => {
+    const n = nameplateLines("Supercalifragilistic Press");
+    expect(n.lines.join(" ")).toBe("Supercalifragilistic Press");
+    expect(n.overflows).toBe(true);
+  });
+
+  it("survives the empty and whitespace cases without inventing a line", () => {
+    expect(nameplateLines("")).toEqual({ lines: [], compact: false, overflows: false });
+    expect(nameplateLines("   ")).toEqual({ lines: [], compact: false, overflows: false });
+  });
+
+  it("collapses runs of whitespace rather than setting an empty line", () => {
+    expect(nameplateLines("Back    Squat").lines).toEqual(["Back Squat"]);
+  });
+});
+
+describe("fitsNameplate", () => {
+  it("passes the endurance disciplines — the set the treatment was chosen for", () => {
+    expect(
+      fitsNameplate(["Running", "Cycling", "Swimming", "Rowing", "Walking", "Tennis"]),
+    ).toBe(true);
+  });
+
+  it("fails the movement catalogue, which is why Today keeps the other shape", () => {
+    expect(
+      fitsNameplate([
+        "Romanian Deadlift",
+        "Standing Overhead Press",
+        "Dumbbell Lateral Raise",
+        "Barbell Bench Press",
+      ]),
+    ).toBe(false);
+  });
+
+  it("fails a set with one outlier — a rail is only as good as its worst name", () => {
+    expect(fitsNameplate(["Running", "Cycling", "Single Arm Dumbbell Preacher Curl"])).toBe(false);
+  });
+
+  it("fails an empty set rather than reporting a vacuous pass", () => {
+    expect(fitsNameplate([])).toBe(false);
+  });
+
+  it("takes a narrower line when the caller has less room", () => {
+    expect(fitsNameplate(["Swimming"], { chars: 6 })).toBe(false);
+    expect(fitsNameplate(["Swimming"])).toBe(true);
+  });
+});

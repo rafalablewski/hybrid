@@ -22,6 +22,12 @@ import AuroraSportPages from "./sport-pages";
  *
  *   ALL your endurance (here) → ONE sport (the sport page) → ONE move (the
  *   exercise page, which owns per-move pace analytics).
+ *
+ * WHICH IS WHY THE SECTION IS A GRID and no longer a swiped pager. If this
+ * screen's job is the widest view, then showing exactly one sport at a time was
+ * the layout arguing with the hierarchy above it — the depth is already one tap
+ * down, so the only thing this level can add is the COMPARISON, and a
+ * comparison needs its subjects on screen together.
  */
 export default function AuroraEndurance() {
   const { palette: C } = useTheme();
