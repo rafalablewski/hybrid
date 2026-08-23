@@ -82,6 +82,26 @@ describe("the exercise card", () => {
     expect(bars.length, "the card is still drawing bars").toBeLessThan(2);
   });
 
+  it("gives a long movement name two lines instead of an ellipsis", () => {
+    // The catalogue's common case, not its outlier: at fs.body a 200dp card
+    // fits about eighteen characters, so most names were being cut mid-word.
+    // The strip's 24dp is what pays for the second line.
+    const long = "Standing Overhead Press";
+    const sessions = [
+      { id: "x", title: "Push", startedAt: new Date(Date.now() - 70 * DAY).toISOString(),
+        blocks: [{ kind: "strength", name: long, sets: [{ load: "40", reps: "5" }] }] as SessionBlock[] } as LoggedSession,
+      { id: "y", title: "Push", startedAt: new Date(Date.now() - 5 * DAY).toISOString(),
+        blocks: [{ kind: "strength", name: long, sets: [{ load: "45", reps: "5" }] }] as SessionBlock[] } as LoggedSession,
+    ];
+    renderScreen(rail(sessions));
+    const name = screen.getByText(long);
+    // react-native-web spells numberOfLines as a -webkit-line-clamp; the point
+    // is that it is not 1, and that the whole name is in the tree to be shown.
+    expect(name.textContent).toBe(long);
+    const clamp = getComputedStyle(name).getPropertyValue("-webkit-line-clamp");
+    if (clamp) expect(Number(clamp)).toBeGreaterThan(1);
+  });
+
   it("speaks the baseline to a screen reader, not just to the eye", () => {
     renderScreen(rail(WITH_BASELINE));
     const card = screen.getAllByRole("button").find((b) => (b.getAttribute("aria-label") ?? "").startsWith("Romanian"));

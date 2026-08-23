@@ -139,9 +139,29 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
           has gone, so the mark is now the only place purpose is drawn — and one
           channel for one fact is the argument this card's own note always made,
           it just used to be making it against three. */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6 }}>
         <AuroraExerciseAvatar name={card.name} size={24} glyph={14} tint={C.ash} />
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
+        {/* TWO LINES, because the truncation was the real complaint and the
+            strip's 24dp is what pays for the fix. "Standing Overhead Press" and
+            "Dumbbell Lateral Raise" are the COMMON case in this catalogue, not
+            the outlier, and a 200dp card at fs.body fits about eighteen
+            characters — so the rail's names were being cut mid-word on most of
+            the cards most of the time.
+
+            It is also why this rail keeps the card and does not become a deck.
+            A deck gives ONE item the full width because there are too many to
+            show; here `exerciseWidgetCards` auto-fills THREE (pins cap at
+            eight), so a deck would put one movement on screen where the rail
+            already shows two and a half — the same "one at a time in a section
+            whose job is comparison" fault that was just deleted from Endurance.
+            The name needed room, not a new container. */}
+        <Text
+          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          numberOfLines={2}
+          style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, lineHeight: leading(fs.body, "snug"), color: C.chalk }}
+        >
+          {card.name}
+        </Text>
       </View>
 
       {/* THE FIGURE, and its change on the same baseline. The delta describes
