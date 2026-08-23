@@ -46,16 +46,24 @@ const FACES = [
   ["Sohne", 400, "Sohne-Buch.otf"],
   ["Sohne", 500, "Sohne-Kraftig.otf"],
   ["Sohne", 600, "Sohne-Halbfett.otf"],
-  ["Sohne", 700, "Sohne-Dreiviertelfett.otf"],
   ["SohneMono", 400, "SohneMono-Buch.otf"],
   ["SohneMono", 500, "SohneMono-Kraftig.otf"],
   ["SohneMono", 600, "SohneMono-Halbfett.otf"],
   ["ITCGaramond", 400, "ITCGaramondStd-Bk.ttf"],
 ];
-const CUT_NAME = { 400: "Buch", 500: "Kräftig", 600: "Halbfett", 700: "Dreiviertelfett" };
+const CUT_NAME = { 400: "Buch", 500: "Kräftig", 600: "Halbfett" };
 
 const fontFace = ([family, weight, file]) => {
-  const b64 = readFileSync(join(FONTS, file)).toString("base64");
+  // A missing binary here used to surface as a raw ENOENT from deep inside the
+  // call, which says nothing about WHY. The bundle's contents are the thing this
+  // script is a proof OF, so a face that left the app should say so.
+  let b64;
+  try {
+    b64 = readFileSync(join(FONTS, file)).toString("base64");
+  } catch {
+    throw new Error(`build-type-proof: ${file} is not in apps/mobile/assets/fonts. `
+      + `If the cut was retired, drop it from FACES here in the same change.`);
+  }
   const fmt = file.endsWith(".otf") ? "opentype" : "truetype";
   return `@font-face{font-family:"${family}";font-weight:${weight};font-style:normal;font-display:block;`
     + `src:url(data:font/${fmt === "opentype" ? "otf" : "ttf"};base64,${b64}) format("${fmt}")}`;
@@ -71,7 +79,14 @@ const bTrackEm = (size, role = "text") =>
   : role === "serif" ? -0.008
   : B_CAPS[role];
 /** The BEFORE weights, per named style — 700 was the app's default heading cut. */
-const B_W = { hero: 700, display: 600, headline: 600, title: 600, subtitle: 600, bodyLg: 500, body: 400 };
+/**
+ * The BEFORE weights. `display` was drawn in the 700 (F.black) at 298 sites —
+ * but that cut is no longer bundled, so this pane CANNOT render it faithfully
+ * and does not pretend to: it draws the 600 ceiling and the note beside it says
+ * what is missing. A proof that silently substitutes a weight is worse than one
+ * that admits the gap.
+ */
+const B_W = { hero: 600, display: 600, headline: 600, title: 600, subtitle: 600, bodyLg: 500, body: 400 };
 
 // ── AFTER — recomputed from the live ladder's defining constants ────────────
 const SCALE_RATIO = 1.25;
@@ -191,11 +206,11 @@ function build() {
   assertMatchesScaleTs();
   const css = FACES.map(fontFace).join("\n");
 
-  const weightLadder = [400, 500, 600, 700].map((wt) => `
+  const weightLadder = [400, 500, 600].map((wt) => `
     <div class="wrow">
       <span class="wlab">${wt} ${CUT_NAME[wt]}</span>
       <span style="font-family:${SANS};font-weight:${wt};font-size:34px;letter-spacing:-.0148em">Back squat</span>
-      <span class="wnote">${wt === 700 ? "the app's default at 298 sites" : wt === 600 ? "the ceiling on this ground" : ""}</span>
+      <span class="wnote">${wt === 600 ? "the ceiling on this ground" : ""}</span>
     </div>`).join("");
 
   const figures = [
@@ -284,7 +299,7 @@ from apps/mobile/assets/fonts. Local only — do not commit or publish this page
 
 <section>
   <p class="over">02 — weight</p>
-  <h2 style="margin-top:10px">The four cuts, at 34dp, on the app's ground.</h2>
+  <h2 style="margin-top:10px">The three cuts, at 34dp, on the app's ground.</h2>
   <p class="lead" style="margin:16px 0 22px">This is the argument that most needs the real face. Light strokes on
   near-black bleed outward, so every weight reads heavier than it measures — and Dreiviertelfett was the default.</p>
   <div class="card">${weightLadder}</div>
