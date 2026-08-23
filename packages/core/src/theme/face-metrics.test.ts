@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SOHNE, SOHNE_MONO, ITC_GARAMOND, SERIF_SIZE_RATIO, FIGURE_INK_EM, SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM, inkSpan, capMatchAt, FACE_LIMITS, type FaceMetrics } from "./face-metrics";
+import { SOHNE, SOHNE_MONO, FIGURE_INK_EM, SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM, inkSpan, FACE_LIMITS, type FaceMetrics } from "./face-metrics";
 import { fs, lh, TYPE_REF } from "../scale";
 
 /**
@@ -15,20 +15,16 @@ import { fs, lh, TYPE_REF } from "../scale";
  * nothing noticed, because a pairing that is 1% off does not look broken, it
  * looks slightly cheap.
  *
- * ── TWO WAYS IN, BECAUSE THE TWO FORMATS ANSWER DIFFERENTLY ────────────────
+ * ── HOW IT READS THEM ──────────────────────────────────────────────────────
  *
  * The Söhne cuts are CFF (.otf), whose outlines this file will not attempt to
  * parse — but their OS/2 `sxHeight` and `sCapHeight` are CORRECT (checked
  * against the outlines with fontTools when the values were taken), so the table
- * is a faithful source for them.
- *
- * ITC Garamond is TrueType (.ttf), so its per-glyph bounding boxes are in the
- * `glyf` records and can be read exactly — which is fortunate, because its OS/2
- * fields are WRONG. It reports an x-height of 0.220em, which is not a possible
- * x-height for any face, and is precisely half the real one. That is asserted
- * below rather than merely mentioned: the broken field is the reason the whole
- * file is outline-derived, and if a future release of the binary fixes it, this
- * test should be what tells us.
+ * is a faithful source for them. The `glyf` reader that sat beside it was for
+ * the serif, a TrueType file whose OS/2 x-height reported HALF the real one;
+ * both went when the face did (Aug 2026). If a third face ever lands, do not
+ * assume its tables: the serif is the standing evidence that a shipped binary
+ * can state a measurement that is simply false.
  */
 
 const FONTS = join(__dirname, "..", "..", "..", "..", "apps", "mobile", "assets", "fonts");
@@ -191,60 +187,6 @@ describe("the sans, against the shipped binaries", () => {
   });
 });
 
-describe("the serif, against the shipped binary", () => {
-  const t = () => open(ITC_GARAMOND.book.file);
-
-  it("measures its x-height and cap-height from the OUTLINES", () => {
-    const f = t();
-    expect(f.upem).toBe(ITC_GARAMOND.book.unitsPerEm);
-    expect(bbox(f, "x")!.yMax).toBeCloseTo(ITC_GARAMOND.book.xHeight, 4);
-    expect(bbox(f, "H")!.yMax).toBeCloseTo(ITC_GARAMOND.book.capHeight, 4);
-    expect(bbox(f, "l")!.yMax).toBeCloseTo(ITC_GARAMOND.book.ascender, 4);
-    expect(bbox(f, "p")!.yMin).toBeCloseTo(ITC_GARAMOND.book.descender, 4);
-  });
-
-  it("HARD — its OS/2 x-height is WRONG, which is why nothing may read it", () => {
-    // 0.2202em. Not a possible x-height for any face, and exactly half the real
-    // one — so a system trusting the table would set the serif at DOUBLE the
-    // intended size and the bug would look like a design decision. This is the
-    // single reason face-metrics.ts is outline-derived rather than table-derived,
-    // and the assertion exists so that reason cannot quietly stop being true.
-    const o = os2(t());
-    expect(o.xHeight).toBeCloseTo(0.2202, 4);
-    expect(o.xHeight).not.toBeCloseTo(ITC_GARAMOND.book.xHeight, 2);
-    expect(o.xHeight * 2).toBeCloseTo(ITC_GARAMOND.book.xHeight, 3);
-  });
-
-  it("HARD — cannot set Polish, and the type system knows it", () => {
-    // `cut.serif` is English-only. That rule predates this file; here is the
-    // measurement behind it. A missing glyph is not a fallback, it is a hole in
-    // a sentence set at 33dp.
-    for (const ch of "ąęśżźćń") expect(glyphId(t(), ch), `serif is missing ${ch}`).toBe(0);
-    // ...and it DOES carry these, which is why the rule is about the language
-    // and not about the alphabet.
-    for (const ch of "Łłóé") expect(glyphId(t(), ch), `serif should have ${ch}`).not.toBe(0);
-    expect(FACE_LIMITS.serifMissingPolish).toBe(true);
-  });
-
-  it("HARD — its figures descend, so they can never join a mono column", () => {
-    // HYBRID FIGURES, not lining ones, and the mix is the problem: across 0-9
-    // the set spans +0.742 to -0.102, because some figures sit on the baseline
-    // and others drop below it. So the serif's numerals are not even a
-    // consistent height AMONG THEMSELVES, let alone against a mono column — and
-    // the whole span is taller than the `flush` box was cut to hold. The serif
-    // is barred from figures on typographic grounds anyway; this is the metric
-    // reason the bar is not negotiable.
-    const f = t();
-    const digits = [..."0123456789"].map((d) => bbox(f, d)!);
-    const top = Math.max(...digits.map((d) => d.yMax));
-    const bottom = Math.min(...digits.map((d) => d.yMin));
-    expect(bottom, "some figure must descend").toBeLessThan(-0.05);
-    expect(Math.max(...digits.map((d) => d.yMin)), "and others must not").toBeGreaterThan(-0.03);
-    expect(top - bottom).toBeGreaterThan(FIGURE_INK_EM);
-    expect(FACE_LIMITS.serifFiguresDescend).toBe(true);
-  });
-});
-
 describe("what the binaries cannot do, stated as constraints", () => {
   it("HARD — the sans ships NO OpenType features, so `tnum` is not the mechanism", () => {
     // The claim that broke when the face changed: the system used to document a
@@ -265,35 +207,14 @@ describe("what the binaries cannot do, stated as constraints", () => {
     // shipped cuts are 121-glyph trial files extended by reference/sohne-extend.py,
     // and the extension added punctuation and diacritics, not letters.
     for (const [, m] of SANS_CUTS) expect(glyphId(open(m.file), "ß"), `${m.file} has ß`).toBe(0);
-    // Polish, by contrast, the sans CAN set — which is why only the serif is
-    // language-gated.
+    // Polish, by contrast, the sans CAN set — and since the serif was deleted
+    // in Aug 2026, `ß` is the only alphabet hole left in the shipped set.
     for (const ch of "ąęśżźćńł") expect(glyphId(open(SOHNE.buch.file), ch), `sans is missing ${ch}`).not.toBe(0);
     expect(FACE_LIMITS.sansMissingEszett).toBe(true);
   });
 });
 
 describe("what the scale derives from all this", () => {
-  it("the serif size ratio is the two x-heights and nothing else", () => {
-    expect(SERIF_SIZE_RATIO).toBeCloseTo(SOHNE.buch.xHeight / ITC_GARAMOND.book.xHeight, 5);
-    expect(fs.editorial).toBe(Math.round(fs.display * SERIF_SIZE_RATIO));
-  });
-
-  it("the pair agrees on caps as well as on x-height", () => {
-    const { sans, serif } = capMatchAt(fs.display, fs.editorial);
-    expect(Math.abs(sans - serif)).toBeLessThan(1);
-  });
-
-  it("the editorial leading comes off the serif's own ink span", () => {
-    expect(lh.editorial).toBeCloseTo((inkSpan(ITC_GARAMOND.book) * 4) / 3, 2);
-    // The defect it fixes: at `snug` the editorial voice was set at 1.53x its
-    // APPARENT size — body leading on a display-size pull quote — because a
-    // ratio multiplies an em that the x-height compensation had already
-    // inflated by 18.6%.
-    const apparent = fs.editorial / SERIF_SIZE_RATIO;
-    expect((fs.editorial * lh.snug) / apparent).toBeGreaterThan(1.5);
-    expect((fs.editorial * lh.editorial) / apparent).toBeLessThan(1.5);
-  });
-
   it("the reference size is the size the sans is fitted for", () => {
     // The one number the ladder and the tracking curve share. It is not a rung
     // that happens to be round; it is the origin of both axes.

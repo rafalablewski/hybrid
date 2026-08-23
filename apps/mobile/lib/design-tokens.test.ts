@@ -188,12 +188,15 @@ function hits(pattern: RegExp): string[] {
 }
 
 /**
- * THE SERIF RATCHET — the one face in the system with a quota.
+ * THE EDITORIAL RATCHET — the one style in the system with a quota.
  *
- * ITC Garamond is not dangerous because it is wrong somewhere; it is dangerous
- * because it is right in one place per screen and every subsequent designer will
- * find a second. The face decays by ACCUMULATION, which means the only guard
- * worth having is a countable one. Four rules, all mechanical.
+ * It guarded a FACE until Aug 2026 (ITC Garamond Book, deleted with the rest of
+ * the serif) and it guards the token that outlived it, for the reason that was
+ * always the real one: `editorial` is not dangerous because it is wrong
+ * somewhere, it is dangerous because it is right in ONE place per screen and
+ * every subsequent designer will find a second. A rank that appears twice is a
+ * rank that means nothing, and that decays by ACCUMULATION — which means the
+ * only guard worth having is a countable one. Four rules, all mechanical.
  *
  * The two sanctioned call sites are the week verdict's lead and the nutrition
  * nudge. Both were chosen the same way: they were already the only interpretive
@@ -250,7 +253,7 @@ describe("prose never wears the measuring face", () => {
   });
 });
 
-describe("the editorial serif", () => {
+describe("the editorial voice", () => {
   const SANCTIONED = [
     "components/aurora/week-verdict.tsx",
     "components/aurora/nutrition-panels.tsx",
@@ -267,13 +270,11 @@ describe("the editorial serif", () => {
   ];
 
   it("HARD — only the sanctioned call sites reach for it", () => {
-    const sites = [...hits(/ty\((?:C|palette)\s*,\s*"editorial"/g), ...hits(/F\.serif\b/g)]
+    const sites = hits(/ty\((?:C|palette)\s*,\s*"editorial"/g)
       .map((h) => h.split(":")[0]!)
-      // `lib/ui.tsx` DECLARES the alias and `app/_layout.tsx` REGISTERS the
-      // binary — both name the face by necessity and neither paints with it.
-      .filter((f) => !f.endsWith(".test.ts") && f !== "lib/ui.tsx" && f !== "app/_layout.tsx");
+      .filter((f) => !f.endsWith(".test.ts"));
     const stray = [...new Set(sites)].filter((f) => !SANCTIONED.some((ok) => f.includes(ok)));
-    expect(stray, `the serif is one element per screen:\n  ${stray.join("\n  ")}`).toEqual([]);
+    expect(stray, `the conclusion is one element per screen:\n  ${stray.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — one per file, because one per SCREEN is what the rule means", () => {
@@ -284,22 +285,21 @@ describe("the editorial serif", () => {
       perFile.set(f, (perFile.get(f) ?? 0) + 1);
     }
     const doubled = [...perFile].filter(([, n]) => n > 1).map(([f, n]) => `${f} (${n})`);
-    expect(doubled, `a second serif line means neither is the conclusion:\n  ${doubled.join("\n  ")}`).toEqual([]);
+    expect(doubled, `a second editorial line means neither is the conclusion:\n  ${doubled.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — never on a screen used during training", () => {
-    const bad = hits(/ty\((?:C|palette)\s*,\s*"editorial"|F\.serif\b/g)
+    const bad = hits(/ty\((?:C|palette)\s*,\s*"editorial"/g)
       .map((h) => h.split(":")[0]!)
       .filter((f) => DURING_TRAINING.some((d) => f.includes(d)));
     expect(bad, `mid-set the athlete needs measurement, not a conclusion:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — the token carries its own size, so no call site may restyle it", () => {
-    // `ty(C, "editorial")` already holds the size, leading and tracking that make
-    // the pairing work — 30dp against Söhne's 26 is the 1.176x x-height match,
-    // and it is the whole reason the face sits beside the sans at all. A call
-    // site that spreads a `fontSize` over the top has thrown that away and will
-    // land under the 24dp floor sooner or later.
+    // `ty(C, "editorial")` already holds the size, leading and tracking, and the
+    // SIZE is the entire signal now that the second face is gone — a call site
+    // that spreads a `fontSize` over the top has not restyled the sentence, it
+    // has demoted it back to the utility style the token exists to escape.
     const bad = FILES.filter(({ path }) => !path.endsWith(".test.ts"))
       .flatMap(({ path, text }) =>
         text.split("\n").flatMap((line, i) =>
@@ -307,12 +307,16 @@ describe("the editorial serif", () => {
     expect(bad, `the editorial token is not restyled at the call site:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
-  it("HARD — the serif never renders below its 24dp floor", () => {
-    // Not a source rule but an arithmetic one: whatever `fs.editorial` becomes,
-    // the resolved size stays above the point where Garamond's joins break up on
-    // `ink`. Dynamic Type scales this token DOWN as well as up.
-    expect(resolveText("editorial").fontSize).toBeGreaterThanOrEqual(24);
-    expect(resolveText("editorial", 0.85).fontSize).toBeGreaterThanOrEqual(24);
+  it("HARD — it never resolves down into the utility band", () => {
+    // Not a source rule but an arithmetic one, and the successor to the serif's
+    // 24dp floor (which was about where Garamond's joins broke up on `ink`).
+    // What matters now is RANK: at every Dynamic Type step the conclusion has to
+    // stay above the heading style it was mistaken for, because the moment it
+    // ties with `subtitle` the token is decoration.
+    for (const scale of [0.85, 1, 1.4]) {
+      expect(resolveText("editorial", scale).fontSize,
+        `at ${scale}x`).toBeGreaterThan(resolveText("subtitle", scale).fontSize);
+    }
   });
 });
 

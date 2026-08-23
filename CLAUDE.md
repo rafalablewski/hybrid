@@ -163,11 +163,12 @@ A standalone `·` used as content (e.g. an empty-avatar placeholder glyph) is no
 a separator — leave those.
 
 ## RULE: screen-level sliders run FULL-BLEED — no gap at the screen edge (always)
-Every horizontal slider/rail that sits directly on a screen (Today's exercise
-widgets and "Train your way", Explore's "Follow a coach", …) must let its cards
+Every horizontal slider/rail that sits directly on a screen (Today's "Train your
+way", its "Follow a coach" rail, …) must let its cards
 slide under the physical screen edge — never clip at the content column with
 the screen gutter showing beside a cut card. The **golden standard is the
-exercise-widget rail** (`aurora/exercise-widget.tsx`, both clients): negative
+exercise-widget rail** (`aurora/exercise-widget.tsx` — the rail left Today in
+Aug 2026 and the file is kept as this rule's reference implementation): negative
 horizontal margins the width of the screen gutter pull the scroll clip to the
 true edge (mobile `marginHorizontal: -12` against AuroraScreen's 12dp gutter —
 the kit's `GUTTER`; web `margin: 0 calc(-1 * var(--page-pad-x, 12px))`, the

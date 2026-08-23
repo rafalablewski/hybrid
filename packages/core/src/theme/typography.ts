@@ -81,19 +81,6 @@ import { fonts } from "./tokens";
 export const cut = {
   sans: fonts.display,
   mono: fonts.mono,
-  /**
-   * THE SERIF, and it is the one cut with a cap on how often it may appear.
-   *
-   * ITC Garamond Book. ONE element per screen, never below `fs.editorial`,
-   * never a figure, a control, a label or a state, and never in the accent
-   * colour — the accent means go, and a conclusion is not a destination. The
-   * full rule lives on `text.editorial` below.
-   *
-   * ENGLISH ONLY. ITC Garamond Std carries Ł and ó but not ą ę ś ż ń ć ź, so a
-   * Polish or Czech string cannot be set in it at all. Every consumer resolves
-   * to `sans` outside English rather than rendering a line with holes in it.
-   */
-  serif: fonts.serif,
 } as const;
 
 export type Cut = keyof typeof cut;
@@ -294,32 +281,42 @@ export const text = {
   kicker: { cut: "mono", weight: weight.medium, size: "nano", leading: "snug", tracking: "label", ink: "secondary", upper: true },
   overline: { cut: "mono", weight: weight.medium, size: "nano", leading: "snug", tracking: "caps", ink: "secondary", upper: true },
 
-  // ── INTERPRETATION — the serif cut ────────────────────────────────────────
+  // ── INTERPRETATION ────────────────────────────────────────────────────────
   /**
    * THE ONE SENTENCE ON A SCREEN THAT CONCLUDES SOMETHING.
    *
-   * Söhne measures; this interprets. The two consumers today are the week
-   * verdict's lead and the nutrition nudge, and both were ALREADY the only
+   * The rest of the app MEASURES; this interprets. The two consumers are the
+   * week verdict's lead and the nutrition nudge, and both were ALREADY the only
    * interpretive sentence on their screen — they were simply set in a utility
    * style. The verdict lead was `sans` at `subtitle`, which its own file warned
    * "reads as a caption for something else"; the nudge was `sans` at `body`,
    * the style help text uses. This token does not add a voice, it gives one
    * that already existed the rank it always had.
    *
+   * IT WAS A SECOND FACE UNTIL AUG 2026 — ITC Garamond Book, one weight, an
+   * x-height-matched rung (`fs.editorial`) and a leading derived from the
+   * serif's own ink. The face was deleted; the RANK it carried is what the two
+   * sentences actually needed, so the token stays and the rank is now spelled
+   * in the one axis the sans has left: SIZE. `title` (20) is a rung above the
+   * `subtitle` the lead sat at before the serif and two above the nudge's
+   * `body`, and it is REGULAR rather than the medium `title` and `subtitle`
+   * take — a conclusion is prose, not a heading, and weight is how the headings
+   * around it stay distinguishable from it. A note the serif's removal also
+   * settles: this line sets Polish and German now, which ITC Garamond could not
+   * (it had no ą ę ś ż ń ć ź), so the token no longer degrades outside English.
+   *
    * THE RULES, and they are ratcheted in apps/mobile/lib/design-tokens.test.ts:
    *   ONE per screen. A second means neither is the conclusion.
    *   NEVER on a screen used DURING training. Mid-set the athlete needs
-   *     measurement, and a serif sentence is not measurement. Workout, interval
-   *     timer and the active endurance screens are closed to it.
+   *     measurement, and an interpretive sentence is not measurement. Workout,
+   *     interval timer and the active endurance screens are closed to it.
    *   NEVER a figure, unit, control, label, badge or state.
    *   NEVER uppercase, letterspaced positive, or in the accent colour.
-   *   NEVER below 24dp — Garamond's joins break up on `ink` under that.
-   *   ENGLISH ONLY (see `cut.serif`).
    *
    * `tabular` is absent on purpose: the guard below requires it to track the
    * mono cut, and a sentence has no column to line up with.
    */
-  editorial: { cut: "serif", weight: weight.regular, size: "editorial", leading: "editorial", tracking: "serif", ink: "primary" },
+  editorial: { cut: "sans", weight: weight.regular, size: "title", leading: "snug", tracking: "text", ink: "primary" },
 } as const satisfies Record<string, TextStyle>;
 
 export type TextToken = keyof typeof text;

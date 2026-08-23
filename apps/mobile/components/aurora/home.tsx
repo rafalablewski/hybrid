@@ -76,7 +76,6 @@ import {
   type ScheduledDay,
   type LogbookDay,
   ALPHA, STATE_OPACITY } from "@hybrid/core";
-import { sportForDiscipline, sportPages } from "@hybrid/core";
 import { bandHue, barLatched, foldProgress } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
 import { recoveryReadAnswered } from "../../lib/recovery-reminder";
@@ -94,7 +93,6 @@ import { F, FIXED_FONT_SCALE, HubDissolve, MAX_FONT_SCALE, PressScale, PressScal
 import { track } from "../../lib/track";
 import { ACard, APressCard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
-import ExerciseWidgetRail from "./exercise-widget";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
 import { useNavScroll, useNavScrollProps } from "../../lib/nav-scroll";
@@ -116,7 +114,6 @@ import { readRestDays, setRestDay } from "../../lib/rest-days";
 import { useListMotion } from "../../lib/list-motion";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
-import AuroraSportPages, { SportPagesWindow } from "./sport-pages";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
@@ -127,7 +124,6 @@ import AuroraLogbookRail from "./logbook-rail";
 import DoneFloor from "./done-floor";
 import FeelSheet from "../feel-sheet";
 import GroupMark from "./group-mark";
-import SectionSeam from "./section-seam";
 import { TodayTabs } from "./today-tabs";
 import { AppHeader } from "./app-header";
 import { StreakMark } from "./streak-mark";
@@ -440,10 +436,6 @@ export default function AuroraHome() {
   const hasData = sessionsRead.ready && sessions.length > 0;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
-  // THE ENDURANCE PAGES, built here rather than inside the block: the cluster's
-  // seam and headline must not render over an empty window, and a block can
-  // only report its own emptiness after it has mounted under that headline.
-  const sportPageList = useMemo(() => sportPages(sessions), [sessions]);
   // The date-anchored WEEK RAIL replaces the count-based plan hero whenever an
   // enrolled program + a start date resolve (parity with web home). The shared
   // engine (planSchedule) reconciles each calendar date against logged sessions
@@ -1450,25 +1442,24 @@ export default function AuroraHome() {
             place, it does not go anywhere. */}
         <HeatRow sessions={sessions} recovery={recoveryReports} />
 
-        {/* ═════ GROUP: PROGRESS — where the LIFTING is going. Three named
-            things, in the order the question is actually asked: the period's
-            verdict, the records it produced, and the movements underneath them.
-
-            Endurance used to be part of this cluster, which is what forced the
-            reading it never survived: a runner scrolled past a strength
-            verdict, a strength records rail and a strength-favourites rail to
-            reach their own sport, under a single headline claiming all of it
-            was "Progress". It is its own section now, below the seam. Mirrors
-            web today.tsx. ═════ */}
+        {/* ═════ GROUP: PROGRESS — where the training is going, in ONE card.
+            The cluster used to run three named things deep (the verdict, the
+            records it produced, the movements underneath them) and then a whole
+            Endurance section below a seam, which is four screens of
+            retrospective on a page whose job is TODAY. Records, the exercise
+            rail and the Endurance pages were removed from this screen in Aug
+            2026; each one still exists where it is asked for — the records on
+            the exercise and sport pages, the movements on /exercises, the
+            disciplines on /endurance and each sport's own page — and the two
+            doors at the end of this cluster are how you get to them. ═════ */}
         <GroupMark label={t("w.home.group.progress")} />
 
-        {/* ───── (a) THIS WEEK — the verdict card, and the screen's date
-            filter (Endurance shows the same one again, on the same period). A
-            verdict with its working-out shown. Replaces the
+        {/* ───── THIS WEEK — the verdict card, and the screen's only date
+            filter. A verdict with its working-out shown. Replaces the
             Statistics and Analytics destinations on Today (both are now
-            promotedTo "today" in core nav.ts). It also renders (b) RECORDS
-            directly underneath, because a PR belongs to the period this filter
-            is showing — same window, one control. ───── */}
+            promotedTo "today" in core nav.ts). It used to carry a RECORDS
+            block underneath, on the same window; the records went with the rest
+            of the retrospective and live on the pages that own them. ───── */}
         <AuroraWeekVerdict
           sessions={sessions}
           units={units}
@@ -1476,92 +1467,11 @@ export default function AuroraHome() {
           onSession={(id) => router.push(`/session/${id}`)}
         />
 
-        {/* ───── (c) EXERCISES — the favourites widget rail (free for
-            everyone): swipeable full-bleed cards, one favourite per purpose,
-            stock-ticker deltas; tap opens that movement's own stats page.
-            Hidden until there's history — an empty rail would just be chrome.
-            Last in the cluster because it is the finest grain: verdict →
-            records → per-movement. ───── */}
-        {sessions.length > 0 && (
-          <ExerciseWidgetRail
-            sessions={sessions}
-            deferToLanes={isAthlete}
-            onOpen={(name) => router.push(`/exercise?name=${encodeURIComponent(name)}`)}
-            onAll={() => router.push("/exercises")}
-          />
-        )}
-
-        {/* ═════ THE SEAM, then ENDURANCE. The seam is the page turning: one
-            full-bleed hairline, fading at both ends, belonging to neither
-            section (aurora/section-seam.tsx). Whitespace alone separated the
-            clusters while they were short; after a screen of Progress the extra
-            air read as a gap in a list rather than as the end of a chapter, and
-            the next headline had to carry that on its own.
-
-            The whole section is absent for a pure lifter — no heading, no empty
-            card, no column of zeroes. It is gated on the PAGES the window
-            produces: a sport with nothing in the last eight weeks has no page,
-            and an athlete with no pages has no section. That is a change from
-            the lanes, which gated on all-time history and so kept a heading
-            above a row of zeroes for a sport somebody stopped doing in
-            March. ═════ */}
-        {sportPageList.length > 0 && (
-          <>
-            <SectionSeam />
-            {/* THE WINDOW sits in the headline's right slot — one fact, at the
-                section's own altitude, the way the Explore SectionHead grammar
-                puts head-level meta. It replaces the lane-order chip, which was
-                a control for sorting three items and, in a section where every
-                page is now ordered by the volume in it, sorted nothing anybody
-                asked about.
-
-                Saying the window ONCE up here is the fix for the section's
-                worst fault: the lanes printed whole-history totals under an
-                ALL TIME lane head, over an eight-week bar chart, beneath a THIS
-                WEEK card, with a latest-week pace delta beside it. Four windows
-                on one screen, in a section whose entire job is comparison. */}
-            <GroupMark
-              label={t("endurance.title")}
-              mt={24}
-              right={isAthlete ? <SportPagesWindow /> : undefined}
-            />
-
-            {/* ───── EVERY DISCIPLINE AT ONCE — two-up nameplates, ordered by
-                the volume in the window, so the sport actually being trained
-                leads. Under the lanes that was usually a ball sport exiled to a
-                second block below the fold; under the PAGER that replaced them
-                it was page one of six, which is the same exile with a gesture
-                in front of it.
-
-                A plate carries the NAME at display size (a discipline is one
-                short word, which is the whole reason the treatment fits here),
-                ONE figure — minutes, the only measure every sport shares — and
-                the discipline's own rate in its own unit. Distance, zones,
-                splits and every effort live one tap away on the sport's own
-                page, which already owns them.
-
-                NOT gated on dayIsToday: an eight-week window is not a property
-                of the day you happen to be scrubbed to. Headless — the
-                GroupMark above says "Endurance", and the block printing it
-                again would be the title twice in 60dp. ───── */}
-            {isAthlete && (
-              <AuroraSportPages
-                pages={sportPageList}
-                head={false}
-                onOpen={(page) => {
-                  const name = page.sport ?? (page.discipline ? sportForDiscipline(page.discipline) : null);
-                  if (name) router.push({ pathname: "/sport-page", params: { name } });
-                }}
-              />
-            )}
-          </>
-        )}
-
-        {/* THE RETROSPECTIVE'S EXIT — the doors past this period. They sit
-            after BOTH clusters, not at the end of Progress: they are the way
-            out of everything above them (the archive holds endurance too), and
-            one exit point after all the breakdowns is the rule wave 3
-            established. Same door-row anatomy, same destinations. */}
+        {/* THE RETROSPECTIVE'S EXIT — the doors past this period, and now the
+            only way to the depth this screen stopped drawing: the archive holds
+            every session (endurance included) and Deep holds the breakdowns.
+            One exit point after the verdict, per the rule wave 3 established.
+            Same door-row anatomy, same destinations. */}
         <DoorRow glyph="▤" title={t("w.home.week.archive")} sub={t("w.home.week.archiveSub")} onPress={() => router.push("/history")} />
         {isAthlete && <DoorRow glyph="◫" title={t("w.home.week.deep")} sub={t("w.home.week.deepSub")} onPress={() => router.push("/analytics")} />}
 

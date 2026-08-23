@@ -2,15 +2,15 @@
  * WHAT THE SHIPPED BINARIES ACTUALLY MEASURE.
  *
  * Every optical constant in `scale.ts` and `typography.ts` — the modular ladder's
- * reference size, the tracking curve, the figure's line box, the serif's size
- * compensation — resolves through a number in this file. Nothing downstream may
+ * reference size, the tracking curve, the figure's line box — resolves through a
+ * number in this file. Nothing downstream may
  * hard-code a font metric, because a hard-coded metric is a claim about a
  * binary that nobody re-checks when the binary changes.
  *
  * ── WHY THIS FILE HAD TO EXIST ─────────────────────────────────────────────
  *
  * The type system was designed around a DIFFERENT PAIR OF FACES and then had
- * Söhne + Söhne Mono + ITC Garamond swapped underneath it. The swap moved the
+ * Söhne + Söhne Mono swapped underneath it. The swap moved the
  * faces and left every optical constant where it was, so the app has been
  * setting Söhne with the old face's numbers ever since — most visibly in the tracking
  * band table, whose em figures were explicitly chosen so that "the DOMINANT call
@@ -27,10 +27,10 @@
  *
  * Read off `apps/mobile/assets/fonts/*` with fontTools: glyph OUTLINE bounds
  * through a BoundsPen, advances from `hmtx`, normalised by `head.unitsPerEm`
- * (1000 for the Söhne cuts, 2048 for ITC Garamond). Outlines, not the OS/2
- * fields — ITC Garamond's `sxHeight` reports 0.220em, which is not a possible
- * x-height and is exactly half the real one, so the table is wrong in the
- * binary and anything trusting it lands at double the intended size.
+ * (1000 for every Söhne cut). Outlines, not the OS/2 fields: a shipped binary's
+ * own tables can be wrong, and the retired serif proved it — ITC Garamond's
+ * `sxHeight` reported half the real x-height, so anything trusting that table
+ * set the face at double the intended size.
  *
  * `face-metrics.test.ts` re-reads the binaries and fails if any figure here has
  * drifted from what ships, so replacing a font file cannot silently invalidate
@@ -86,25 +86,6 @@ export const SOHNE_MONO = {
   buch: { file: "SohneMono-Buch.otf", unitsPerEm: 1000, xHeight: 0.523, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.476, advanceN: 0.6, letterfitN: 0.18 },
   kraftig: { file: "SohneMono-Kraftig.otf", unitsPerEm: 1000, xHeight: 0.525, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.476, advanceN: 0.6, letterfitN: 0.159 },
   halbfett: { file: "SohneMono-Halbfett.otf", unitsPerEm: 1000, xHeight: 0.526, capHeight: 0.718, ascender: 0.718, descender: -0.178, stem: 0.491, advanceN: 0.6, letterfitN: 0.139 },
-} as const satisfies Record<string, FaceMetrics>;
-
-/**
- * THE SERIF — ITC Garamond Std Book, one weight, and the reason the pairing is
- * possible at all.
- *
- * ITC Garamond is a 1975 phototype interpretation, not an old-style revival, and
- * its x-height is famously enormous for a Garamond: 0.441em against a true
- * Garamond's ~0.40 and Söhne's 0.523. That 0.441 is what lets a serif sit beside
- * a grotesque without reading as a smaller, older voice — see
- * `SERIF_SIZE_RATIO` in scale.ts.
- *
- * Its cap-height (0.623) is much shorter than Söhne's (0.718), and that is a
- * gift rather than a problem: at the x-height-matched sizes the two faces' CAPS
- * land within half a dp of each other as well (see `capMatchAt` below), so the
- * pairing is correct on both of the axes a reader actually registers.
- */
-export const ITC_GARAMOND = {
-  book: { file: "ITCGaramondStd-Bk.ttf", unitsPerEm: 2048, xHeight: 0.4409, capHeight: 0.623, ascender: 0.6948, descender: -0.2261, stem: 0.2461, advanceN: 0.5815, letterfitN: 0.0298 },
 } as const satisfies Record<string, FaceMetrics>;
 
 /**
@@ -243,26 +224,6 @@ export const ADVANCE_FALLBACK_EM = 0.6;
 export const inkSpan = (m: FaceMetrics): number => Number((m.ascender - m.descender).toFixed(4));
 
 /**
- * The size at which `serif` matches `sans` optically — the x-height ratio.
- *
- * TWO FACES READ AS ONE SIZE WHEN THEIR x-HEIGHTS MATCH, not when their point
- * sizes do. Lowercase is what a reader measures a face by; the em square is an
- * arbitrary box neither face fills.
- */
-export const SERIF_SIZE_RATIO = Number((SOHNE.buch.xHeight / ITC_GARAMOND.book.xHeight).toFixed(5));
-
-/**
- * What the two faces' CAPS do at the x-height-matched pair — the check that the
- * ratio above is not buying agreement on one axis at another's expense.
- * At sans 28 / serif 33 this returns { sans: 20.1, serif: 20.56 }: half a dp
- * apart on a 20dp cap, which is below the threshold anyone can see.
- */
-export const capMatchAt = (sansSize: number, serifSize: number) => ({
-  sans: Number((sansSize * SOHNE.buch.capHeight).toFixed(2)),
-  serif: Number((serifSize * ITC_GARAMOND.book.capHeight).toFixed(2)),
-});
-
-/**
  * ── WHAT THE BINARIES DO NOT CARRY, AND WHAT IT COSTS ──────────────────────
  *
  * These are constraints on the SYSTEM, not trivia. Each one invalidates
@@ -302,19 +263,4 @@ export const FACE_LIMITS = {
    * falls through to whatever the platform substitutes mid-word.
    */
   sansMissingEszett: true,
-  /**
-   * THE SERIF CANNOT SET POLISH OR CZECH. ITC Garamond Std carries `Ł ł ó Ó`
-   * but not `ą ę ś ż ź ć ń`. This is why `cut.serif` is English-only and why
-   * every consumer falls back to `sans` rather than rendering a line with holes
-   * in it — a rule that predates this file and is confirmed by it.
-   */
-  serifMissingPolish: true,
-  /**
-   * THE SERIF'S FIGURES DESCEND — top +0.742, bottom -0.102, an 0.844em span
-   * against the mono's 0.804. They are hybrid figures, not lining ones, so they
-   * will not sit in a row of mono figures and will not fit a `flush` box. The
-   * serif is barred from figures on typographic grounds anyway; this is the
-   * metric reason the bar is not negotiable.
-   */
-  serifFiguresDescend: true,
 } as const;

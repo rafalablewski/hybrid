@@ -201,12 +201,6 @@ export default function RootLayout() {
     SohneMono_400Buch: require("../assets/fonts/SohneMono-Buch.otf"),
     SohneMono_500Kraftig: require("../assets/fonts/SohneMono-Kraftig.otf"),
     SohneMono_600Halbfett: require("../assets/fonts/SohneMono-Halbfett.otf"),
-    // THE EDITORIAL VOICE. One weight, no italic — see `F.serif` in lib/ui.tsx.
-    // It is loaded on the SAME blocking pass as Söhne rather than lazily: it
-    // paints the week verdict's lead and the nutrition nudge, both of which sit
-    // above the fold on tab roots, and a face that arrives late would reflow the
-    // one sentence on the screen the athlete is reading.
-    ITCGaramondStd_400Bk: require("../assets/fonts/ITCGaramondStd-Bk.ttf"),
   });
 
   if (!loaded) return <View style={{ flex: 1, backgroundColor: C.ink }} />;

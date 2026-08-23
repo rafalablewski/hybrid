@@ -105,36 +105,6 @@ interface Column {
 }
 
 const COLUMNS: Column[] = [
-  // ── Records ledger (aurora/period-records.tsx) ──────────────────────────
-  //
-  // `point(p)` is `${trim(load)} × ${reps}`. TEN CHARACTERS is the cap: five
-  // for the load ("120.5" in kg, "1,240" in pounds — `fmtWeight` groups above
-  // a thousand and drops decimals for lb), three for " × ", two for the reps.
-  {
-    where: "period-records.tsx ORIGIN_W",
-    width: 66,
-    size: fs.nano,
-    cut: "mono",
-    literals: ["120.5 × 12", "1,240 × 12", "100 × 10", "62.5 × 8", "7.5 × 20"],
-  },
-  {
-    where: "period-records.tsx ARRIVAL_W",
-    width: 92,
-    size: fs.body,
-    cut: "mono",
-    literals: ["120.5 × 12", "1,240 × 12", "100 × 10", "62.5 × 8", "7.5 × 20"],
-  },
-  {
-    where: "period-records.tsx DELTA_W",
-    width: 78,
-    size: fs.caption,
-    cut: "mono",
-    // The rep deltas and the debut come from the dictionary; the LOAD delta is
-    // `+${fmtWeight(kg, units)}`, which the literals cover at its widest.
-    keys: ["w.home.act.prNew", "w.home.act.prRepDeltaOne"],
-    literals: ["+12 reps", "+12 powt.", "+12 Wdh.", "+120.5 kg", "+2.5 kg", "+55 lb"],
-  },
-
   // ── Tissue table (aurora/tissue-card.tsx) ───────────────────────────────
   {
     where: "tissue-card.tsx AREA_W",

@@ -334,15 +334,6 @@ export const F = {
   mono: "SohneMono_400Buch",
   monoMed: "SohneMono_500Kraftig",
   monoBold: "SohneMono_600Halbfett",
-  /**
-   * THE EDITORIAL VOICE — ITC Garamond Book, and the only alias here with a cap
-   * on how often it may appear. ONE element per screen, never under 24dp, never
-   * a figure or a control, English only. Reach for `ty(C, "editorial")` rather
-   * than this alias: the token carries the size, leading and tracking that make
-   * the pairing work, and a hand-rolled `fontFamily: F.serif` throws all three
-   * away. There is no italic because nothing needs one yet.
-   */
-  serif: "ITCGaramondStd_400Bk",
 } as const;
 
 /**
@@ -417,7 +408,7 @@ export const TABULAR: TextStyle = { fontVariant: [TABULAR_NUMS] };
  *
  * THEY SAY `TestSohne` BECAUSE THAT IS WHAT THE BINARIES SAY. The evaluation
  * cuts carry that PostScript name; the retail files will carry `Sohne-*`, and
- * swapping them means editing these seven strings and nothing else. The guard
+ * swapping them means editing these six strings and nothing else. The guard
  * reads the name out of the file, so getting it wrong fails the build rather
  * than drawing San Francisco on a native leaf.
  */
@@ -428,7 +419,6 @@ export const F_POSTSCRIPT: Record<string, string> = {
   [F.mono]: "TestSohneMono-Buch",
   [F.monoMed]: "TestSohneMono-Kraftig",
   [F.monoBold]: "TestSohneMono-Halbfett",
-  [F.serif]: "ITCGaramondStd-Bk",
 };
 
 /**

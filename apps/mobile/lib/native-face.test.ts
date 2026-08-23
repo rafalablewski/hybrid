@@ -94,10 +94,11 @@ function postScriptNameOf(file: string): string {
 function fontFile(alias: string): string | null {
   const [family, weightAndCut] = alias.split("_");
   const cut = weightAndCut.replace(/^\d+/, "");
-  // BOTH CONTAINER FORMATS, because the two foundries ship different ones:
-  // Söhne arrives as CFF `.otf`, ITC Garamond as TrueType `.ttf`. The alias
-  // still mirrors the filename exactly (`400Bk` -> `-Bk`), which is what makes
-  // this lookup a check rather than a guess — rename one and the test fails.
+  // BOTH CONTAINER FORMATS. Söhne arrives as CFF `.otf`; the `.ttf` arm is kept
+  // for the next face that does not (the retired serif was TrueType), and costs
+  // one `existsSync`. The alias still mirrors the filename exactly
+  // (`600Halbfett` -> `-Halbfett`), which is what makes this lookup a check
+  // rather than a guess — rename one and the test fails.
   for (const ext of [".otf", ".ttf"]) {
     const p = join(ROOT, "assets", "fonts", `${family}-${cut}${ext}`);
     if (existsSync(p)) return p;

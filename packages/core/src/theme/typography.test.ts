@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { fs, lh, tracking, trackFigure, STEP, promote, type TypeRole } from "../scale";
+import { fs, lh, leading, tracking, trackFigure, STEP, promote, type TypeRole } from "../scale";
 import { fonts } from "./tokens";
 import { formatClock } from "../duration";
 import { cut, weight, text, resolveText, unitFor, measureFor, DESKTOP_PROMOTION, WEIGHT_STEM_EM, UNIT_RATIO, TIMES, type TextStyle, type TextToken } from "./typography";
@@ -16,37 +16,37 @@ describe("the named type styles", () => {
       expect(Object.keys(fs), `${t}.size`).toContain(s.size);
       expect(Object.keys(lh), `${t}.leading`).toContain(s.leading);
       // A style either names one of the two uppercase voices, names the figure
-      // tightening, names the serif's halved curve, or names nothing — in which
-      // case the SIZE decides, which is the whole point of the optical curve.
-      // Anything else is a forked ladder.
-      if (s.tracking !== undefined) expect(["text", "label", "caps", "figure", "serif"], `${t}.tracking`).toContain(s.tracking);
+      // tightening, or names nothing — in which case the SIZE decides, which is
+      // the whole point of the optical curve. Anything else is a forked ladder.
+      if (s.tracking !== undefined) expect(["text", "label", "caps", "figure"], `${t}.tracking`).toContain(s.tracking);
       expect(Object.values(weight), `${t}.weight`).toContain(s.weight);
     }
   });
 
   it("HARD — the cut set matches the faces the app actually loads", () => {
-    // THREE cuts, because three faces are loaded — Söhne, Söhne Mono and ITC
-    // Garamond Book. Söhne Schmal (takeover titles at 34 and above) is still
-    // deliberately absent until the face ships — see the note on `cut`. This
+    // TWO cuts, because two faces are loaded — Söhne and Söhne Mono. ITC
+    // Garamond Book was a third until Aug 2026 and its deletion moved this list
+    // in the same change, which is the guard working in the outward direction.
+    // Söhne Schmal (takeover titles at 34 and above) is still deliberately
+    // absent until the face ships — see the note on `cut`. This
     // guard is not decoration: `condensed` was deleted from tokens.ts once for
     // existing as a name with no binary behind it, and the failure mode was
     // invisible (the phone drew one face, the admin panel another). If you are
     // adding a cut, you are also loading it, and this list moves in the same
     // change.
-    expect(Object.keys(cut).sort()).toEqual(["mono", "sans", "serif"]);
+    expect(Object.keys(cut).sort()).toEqual(["mono", "sans"]);
     for (const c of Object.values(cut)) expect(Object.values(fonts)).toContain(c);
   });
 
-  it("HARD — the editorial rung belongs to the serif and nothing else", () => {
-    // `fs.editorial` (33) exists ONLY because ITC Garamond needs 1.186x Söhne to
-    // land on the same x-height. A sans or mono style taking it would be a 33dp
-    // rung sitting two dp off `hero` for a reason nobody could name, which is
-    // exactly how `heading` accumulated before it was deleted.
-    const bad = TOKENS.filter((t) => (text[t] as TextStyle).size === "editorial" && (text[t] as TextStyle).cut !== "serif");
-    expect(bad, `fs.editorial is serif-only:\n  ${bad.join("\n  ")}`).toEqual([]);
-    // …and the serif never reaches for a rung below the 24dp floor.
-    const thin = TOKENS.filter((t) => (text[t] as TextStyle).cut === "serif" && fs[(text[t] as TextStyle).size] < 24);
-    expect(thin, `the serif floor is 24dp:\n  ${thin.join("\n  ")}`).toEqual([]);
+  it("HARD — no style names a rung the ladder does not carry", () => {
+    // This used to guard `fs.editorial` (33) — the serif's own rung, off the
+    // ladder, and forbidden to any cut but `serif`, because a 33dp sans heading
+    // would have sat two dp off `hero` for a reason nobody could name. The face
+    // went in Aug 2026 and the rung went with it; what the guard protects now is
+    // the property underneath it: every size a token names is a rung, so moving
+    // a rung moves the app and nothing sits between two of them.
+    const bad = TOKENS.filter((t) => !(text[t] as TextStyle).size || !(Object.keys(fs) as string[]).includes((text[t] as TextStyle).size));
+    expect(bad, `every size must be a rung:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — mono never goes above 600", () => {
@@ -259,27 +259,36 @@ describe("the weight ladder on a dark ground", () => {
 });
 
 describe("the editorial voice", () => {
-  it("HARD — the editorial LEADING belongs to the serif, like the rung does", () => {
-    // `lh.editorial` is 1.23, derived from ITC Garamond's own 0.921em ink span.
-    // A sans style taking it would be setting tighter-than-`tight` leading on a
-    // face whose ink is 0.898em, for a reason nobody could name.
-    const bad = TOKENS.filter((t) => (text[t] as TextStyle).leading === "editorial" && (text[t] as TextStyle).cut !== "serif");
-    expect(bad, `lh.editorial is serif-only:\n  ${bad.join("\n  ")}`).toEqual([]);
-    expect((text.editorial as TextStyle).leading).toBe("editorial");
+  it("HARD — the conclusion outranks the utility styles it was mistaken for", () => {
+    // THE WHOLE POINT OF THE TOKEN, and it is the part that survived the face.
+    // The two consumers (the week verdict's lead, the nutrition nudge) were set
+    // in `subtitle` and `body` — a heading style and a help-text style — which
+    // is what "reads as a caption for something else" meant. The serif carried
+    // the rank from Aug 2026 until the face was deleted; SIZE carries it now, so
+    // the one thing that must not drift back is the rung.
+    expect(resolveText("editorial").fontSize).toBeGreaterThan(resolveText("subtitle").fontSize);
+    expect(resolveText("editorial").fontSize).toBeGreaterThan(resolveText("body").fontSize);
   });
 
-  it("no longer sets a display-size quote at body leading", () => {
-    // THE DEFECT: `fs.editorial` is inflated 18.6% so the serif's x-height lands
-    // where the sans's does. A leading RATIO multiplies that inflated em, so
-    // `snug` (1.30) was really 1.53x the apparent size — body leading on a pull
-    // quote, which is exactly the "reads as a caption for something else"
-    // complaint the token was created to fix, arriving through the other axis.
-    const apparent = fs.editorial / (fs.editorial / fs.display); // = fs.display
-    expect(apparent).toBe(fs.display);
-    expect(resolveText("editorial").lineHeight).toBeLessThan(Math.round(fs.editorial * lh.snug));
-    expect(resolveText("editorial").lineHeight / fs.display).toBeLessThan(1.5);
+  it("HARD — it is PROSE, so it never takes a heading's weight", () => {
+    // The other half of the distinction, and the reason a bigger `subtitle` is
+    // not the same token. `title` and `subtitle` are set in medium; a sentence
+    // that concludes something is regular, and the weight is what keeps the
+    // headings around it legible as headings.
+    expect(resolveText("editorial").fontWeight).toBe(weight.regular);
+    expect(resolveText("editorial").fontWeight).toBeLessThan(resolveText("title").fontWeight);
   });
 
+  it("no longer sets a conclusion at a pull quote's line box", () => {
+    // The defect the serif's own leading was derived to fix: `fs.editorial` was
+    // inflated 18.6% so ITC Garamond's x-height landed where Söhne's did, and a
+    // leading RATIO multiplies that inflated em — so `snug` was really 1.53x the
+    // APPARENT size, i.e. body leading on a display-size quote. On one face the
+    // em and the apparent size are the same thing again, and `snug` is what a
+    // one-to-two-line sentence takes.
+    expect(resolveText("editorial").lineHeight).toBe(leading(fs.title, "snug"));
+    expect(resolveText("editorial").lineHeight / resolveText("editorial").fontSize).toBeLessThan(1.5);
+  });
 });
 
 describe("controls", () => {

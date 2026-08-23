@@ -12,17 +12,13 @@
 // need ever appears, split into WEB_FS / MOBILE_FS here and the call sites
 // (fs.body, …) won't have to change.
 
-import { SOHNE, SERIF_SIZE_RATIO, FIGURE_INK_EM, inkSpan, ITC_GARAMOND } from "./theme/face-metrics";
+import { SOHNE, FIGURE_INK_EM } from "./theme/face-metrics";
 
 /**
  * RE-EXPORTED so the ONE place a font metric is written down stays
- * theme/face-metrics.ts. These were literals here until Aug 2026, and the serif
- * one was wrong: 0.445 against the binary's measured 0.4409.
+ * theme/face-metrics.ts. This was a literal here until Aug 2026.
  */
-export { SERIF_SIZE_RATIO };
-/** @deprecated The name says x-height; the thing is a SIZE ratio. Use `SERIF_SIZE_RATIO`. */
-export const SERIF_X_HEIGHT_RATIO = SERIF_SIZE_RATIO;
-export const X_HEIGHT_EM = { sans: SOHNE.buch.xHeight, serif: ITC_GARAMOND.book.xHeight } as const;
+export const X_HEIGHT_EM = { sans: SOHNE.buch.xHeight } as const;
 
 export type TypeRole =
   | "nano" //    10 — micro mono eyebrow labels (uppercase, tracked)
@@ -35,8 +31,7 @@ export type TypeRole =
   | "headline" //22 — screen sub-headings, and the head of a screen with no hero
   | "display" // 28 — screen headings
   | "hero" //    35 — mastheads / cover titles
-  | "stat" //    49 — the one hero figure on a screen (ring kcal, exercise 1RM)
-  | "editorial"; // 33 — SERIF ONLY. Derived from `display`; see the note under `fs`.
+  | "stat"; //   49 — the one hero figure on a screen (ring kcal, exercise 1RM)
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -170,7 +165,7 @@ export const rung = (n: number): number => Math.round(TYPE_REF * STEP ** n);
  * ladder — the desktop promotion, a step-down ramp, a fitter — has to walk it in
  * INDICES. See `promote`.
  */
-export const RUNG_INDEX: Record<Exclude<TypeRole, "editorial">, number> = {
+export const RUNG_INDEX: Record<TypeRole, number> = {
   nano: -4, //    10.24  → 10
   micro: -3, //   11.45  → 11
   caption: -2, // 12.80  → 13
@@ -200,10 +195,7 @@ export const RUNG_INDEX: Record<Exclude<TypeRole, "editorial">, number> = {
  * walking in indices means a promotion always LANDS ON A RUNG, so a promoted
  * ladder is the same ladder rather than a set of near-misses beside it.
  */
-export const promote = (role: TypeRole, steps = 1): number =>
-  role === "editorial"
-    ? Math.round(promote("display", steps) * SERIF_SIZE_RATIO)
-    : rung(RUNG_INDEX[role] + steps);
+export const promote = (role: TypeRole, steps = 1): number => rung(RUNG_INDEX[role] + steps);
 
 export const fs: Record<TypeRole, number> = {
   nano: rung(RUNG_INDEX.nano),
@@ -217,37 +209,6 @@ export const fs: Record<TypeRole, number> = {
   display: rung(RUNG_INDEX.display),
   hero: rung(RUNG_INDEX.hero),
   stat: rung(RUNG_INDEX.stat),
-  /**
-   * SERIF ONLY, and it is not a hole in the ladder — it is a second ladder with
-   * one rung on it.
-   *
-   * DERIVED, NOT TYPED: `display` × `SERIF_SIZE_RATIO`, the x-height ratio read
-   * off the two shipped binaries (theme/face-metrics.ts). 28 × 1.18621 is 33.2,
-   * so 33. Move `display` and the serif follows it, which is the only way the
-   * pairing survives a change to the sans ladder — a hard-coded value would have
-   * silently stopped matching.
-   *
-   * THE PREVIOUS SPELLING ROUNDED TO EVEN and this one does not. Even-rounding
-   * was arbitrary dressing on a derived number: it threw away 0.8dp of a
-   * measured ratio to buy a property — evenness — that nothing in the system
-   * asks for or checks.
-   *
-   * PUTTING IT ON `display` INSTEAD WAS TRIED AND IS WRONG: at 28 the Garamond
-   * sets an x-height of 12.3dp against the sans's 14.6, so the sentence reads as
-   * smaller than the heading above it while claiming more rank.
-   *
-   * IT MATCHES ON CAPS TOO, which is the check that the x-height match is not
-   * buying one axis at another's expense: `capMatchAt(28, 33)` returns 20.10 and
-   * 20.56 — half a dp apart on a 20dp cap. Garamond's short caps (0.623em) and
-   * Söhne's tall ones (0.718em) happen to cancel the size difference almost
-   * exactly, and that coincidence is most of why these two faces can share a
-   * screen at all.
-   *
-   * NOTHING IN `cut.sans` OR `cut.mono` MAY TAKE THIS RUNG. typography.test.ts
-   * holds that, because a 33dp sans heading would sit two dp off `hero` for no
-   * reason anybody could name — which is exactly how `heading` died.
-   */
-  editorial: Math.round(rung(RUNG_INDEX.display) * SERIF_SIZE_RATIO),
 };
 
 /**
@@ -348,8 +309,7 @@ export type LeadingRole =
   | "tight" //     1.15 — display/hero titles
   | "snug" //      1.30 — headings, list rows, anything one-to-two lines
   | "normal" //    1.50 — the default for reading text
-  | "relaxed" //   1.62 — long-form prose, empty-state bodies
-  | "editorial"; //1.23 — SERIF ONLY, derived from ITC Garamond's own ink span
+  | "relaxed"; //  1.62 — long-form prose, empty-state bodies
 
 /**
  * Line-height RATIOS. Multiply by the font size (see `leading`).
@@ -400,29 +360,6 @@ export const lh: Record<LeadingRole, number> = {
   snug: 1.3,
   normal: 1.5,
   relaxed: 1.62,
-  /**
-   * THE SERIF'S OWN LEADING, and it exists because the serif's em is INFLATED.
-   *
-   * `fs.editorial` is 33 so that a 0.4409em x-height lands where the sans's
-   * 0.523em does at 28. That compensation is correct for SIZE and it quietly
-   * breaks LEADING, because a leading ratio multiplies the em — and the serif's
-   * em is 18.6% bigger than the size it is pretending to be. Setting the
-   * editorial voice at `snug` therefore gave it 33 × 1.30 = 43dp of line box,
-   * which is 1.53× the apparent size: BODY leading, on a display-size pull
-   * quote. That is precisely the "reads as a caption for something else"
-   * complaint the token was created to fix, arriving back through the other axis.
-   *
-   * DERIVED FROM THE FACE'S OWN INK, so the em drops out of the question: ITC
-   * Garamond spans 0.9209em ascender-to-descender (`l` +0.6948 to `p` -0.2261),
-   * and a line box one third again the height of the ink it carries is the
-   * oldest rule in setting display type. 0.9209 × 4/3 = 1.2279 → 1.23, i.e.
-   * 40dp at `fs.editorial`, or 1.45× the apparent size. A pull quote that holds
-   * together as a block instead of drifting apart into separate lines.
-   *
-   * SERIF ONLY. A sans style taking it would be setting 1.23 on a face whose ink
-   * is 0.898em — tighter than `tight` — for no reason anyone could name.
-   */
-  editorial: Number(((inkSpan(ITC_GARAMOND.book) * 4) / 3).toFixed(2)),
 };
 
 /**
@@ -439,8 +376,7 @@ export type TrackingRole =
   | "text" //  derived from the SIZE by a continuous curve — see `OPTICAL_K`
   | "label" // +0.085em of CAPS AIR over the curve — the app's dominant eyebrow
   | "caps" //  +0.115em of CAPS AIR over the curve — section labels, nav eyebrows
-  | "wordmark" // −0.030em: caps air REMOVED — a nameplate, see CAPS_AIR_EM
-  | "serif"; // ITC Garamond, which takes half the curve — see below
+  | "wordmark"; // −0.030em: caps air REMOVED — a nameplate, see CAPS_AIR_EM
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -573,20 +509,6 @@ export const opticalTrackEm = (size: number): number =>
 export const CAPS_AIR_EM = { label: 0.085, caps: 0.115, wordmark: -0.030 } as const;
 
 /**
- * THE SERIF TAKES HALF THE CURVE, and the halving is the rule for any face the
- * curve was not measured on.
- *
- * `opticalTrackEm` is fitted to Söhne. ITC Garamond is a phototype-era design
- * that is already tightly fitted — 0.0298em of sidebearing on `n` against
- * Söhne's 0.144em, a fifth as much — so the correction Söhne wants at 33dp
- * (-0.0127em) would close the counters on `e` and `a` at reading distance. Half
- * of it is the value, and the halving is stated as a factor rather than baked
- * into a number so that it stays visibly a JUDGEMENT about a second face rather
- * than looking like another measurement.
- */
-export const SERIF_TRACK_FACTOR = 0.5;
-
-/**
  * Tracking in dp for a size — `tracking(fs.nano, "label")` → 0.9.
  *
  * Rounded to 0.1dp, the precision `trackFigure` already uses: RN takes
@@ -598,10 +520,7 @@ export const SERIF_TRACK_FACTOR = 0.5;
  */
 export function tracking(size: number, role: TrackingRole = "text"): number {
   const optical = opticalTrackEm(size);
-  const em =
-    role === "text" ? optical
-    : role === "serif" ? optical * SERIF_TRACK_FACTOR
-    : CAPS_AIR_EM[role] + optical;
+  const em = role === "text" ? optical : CAPS_AIR_EM[role] + optical;
   return Math.round(size * em * 10) / 10;
 }
 
