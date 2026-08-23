@@ -244,7 +244,7 @@ function SessionPulse({ items, units, C, bodyweightKg }: { items: EditableBlock[
     { pct: sig.split.endurance, fill: C.blue, label: t("w.train.signal.end") },
   ];
   return (
-    <View style={{ marginTop: 4, marginBottom: 16, marginHorizontal: 2 }}>
+    <View style={{ marginTop: space.xxs, marginBottom: space.lg }}>
       {/* The One Number GROWS as exercises are added — composing a routine is
           meant to feel like loading a bar — so it rolls to each new value
           instead of swapping to it. */}

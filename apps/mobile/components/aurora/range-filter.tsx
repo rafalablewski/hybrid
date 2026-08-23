@@ -5,6 +5,7 @@ import {
   activityMonths, activityRangeSegIndex, activityRangeSegments, activityRangeSpanEnd,
   activityRangeTitleKey, resolveActivityRange,
   type ActivityRange, type LoggedSession,
+  space,
 } from "@hybrid/core";
 import Sheet from "./sheet";
 import { LiquidSeg } from "./liquid-seg";
@@ -155,7 +156,7 @@ export function useRangeLabels(range: ActivityRange): RangeLabels {
 export function RangeHead({ title, meta }: { title: string; meta: string }) {
   const { palette: C } = useTheme();
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 8 }}>
+    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.md, marginBottom: space.ms }}>
       <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{title}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{meta}</Text>
     </View>
@@ -286,7 +287,7 @@ function PickerSection({ label, children }: { label: string; children: ReactNode
   const { palette: C } = useTheme();
   return (
     <View style={{ marginTop: 16 }}>
-      <Text style={{ ...ty(C, "kicker"), marginHorizontal: 4, marginBottom: 6  }}>
+      <Text style={{ ...ty(C, "kicker"), marginBottom: space.xs }}>
         {label}
       </Text>
       <View style={{ backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, overflow: "hidden" }}>

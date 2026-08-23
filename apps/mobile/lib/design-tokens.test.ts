@@ -640,7 +640,7 @@ describe("named type styles", () => {
     //   reading size now, so two hand-rolled eyebrows left with them.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      165,
+      164,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
@@ -2241,6 +2241,209 @@ describe("screens", () => {
     const readers = FILES.filter((f) => /from "\.\/measure-row"/.test(f.text)).map((f) => f.path);
     expect(readers).toContain("components/aurora/volume.tsx");
     expect(readers).toContain("components/aurora/activity-compare.tsx");
+  });
+});
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * SPACING — the axis that had every token and no guard.
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * The Aug 2026 spacing audit measured what the other rules in this file already
+ * predicted. `space` has been the shared ladder since the scale landed — 4, 6,
+ * 8, 10, 12, 16, 20, 24, 32, 40, one map for both clients — and it is READ 642
+ * times in apps/mobile against 3,183 raw numeric paddings, margins and gaps.
+ * Token adoption on the spacing axis is under a fifth, which is not a system
+ * with drift in it; it is a system that was never adopted.
+ *
+ * Two axes of it were already guarded and it shows: the SIDE gutter, by
+ * apps/web/__tests__/screen-gutter.test.ts (a bleed must name its container),
+ * and the card's inset, by card-surface.test.ts. Nothing watched the VERTICAL
+ * rhythm, and that is where the audit found the damage:
+ *
+ *   • 1,262 raw `marginTop`s across 24 DISTINCT VALUES. The seam between two
+ *     blocks is written 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 22,
+ *     24, 26 and 28 — no rule picks between them, so every screen picks again.
+ *   • The section head: `ASection` says space.xxl over / space.ms under. Today
+ *     hand-rolled two heads at 24/12, Explore's at 24/12, nutrition-hub's at
+ *     28/10, the favourites sheet's at 16/10, RangeHead at ?/8 — five spellings
+ *     of one seam, four of them on screens an athlete crosses in one session.
+ *   • An undocumented 2dp inset ("the content column, plus two") on 21 heads,
+ *     subtitles and blocks, so a GroupMark sat 2dp right of the ASection above
+ *     it and of every card below it, down the same scroll.
+ *   • Three constants named `CARD_PAD` holding two values (20 in the kit and in
+ *     the two week rails, which redeclared it rather than importing it; 5 in
+ *     hold-menu, a different object entirely).
+ *   • The two bottom-edge pads `sheetPadBottom` was written to kill, still
+ *     spelled by hand on the logger's cover: a bare 48, and `safe.bottom + 28`
+ *     — 62dp of dead band on a notched iPhone where 34 is the answer.
+ *
+ * All of the above are fixed in the change that added these rules. What follows
+ * is what stops them coming back, and the count of what is left.
+ *
+ * WHY THE LADDER IS THE UNIT OF THE RULE. A `space.md` and a literal 12 render
+ * identically, so a rule that demanded the token and nothing else would be
+ * style policing. The rule is about the VALUE: a 13, a 17, a 28 cannot be any
+ * rung, so it is a number somebody tuned by eye against one screen — and the
+ * next person to touch that screen tunes it again. On-ladder literals are left
+ * alone here deliberately; they are already the right size, and they are the
+ * `space.*` sweep's business rather than this ratchet's.
+ */
+describe("spacing", () => {
+  /** Every property that puts space between or inside things. */
+  const SPACING_PROPS =
+    "padding|paddingTop|paddingBottom|paddingLeft|paddingRight|paddingHorizontal|paddingVertical|" +
+    "margin|marginTop|marginBottom|marginLeft|marginRight|marginHorizontal|marginVertical|" +
+    "gap|rowGap|columnGap";
+
+  /** The `space` ladder, as raw dp. Kept as literals rather than derived from
+   *  the imported map so that MOVING a rung is a visible edit here too — this
+   *  rule's whole claim is that these eleven numbers are the vocabulary. */
+  const LADDER = new Set([0, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40]);
+
+  /** POSITIVE values only. A NEGATIVE margin is never a rhythm rung — it is a
+   *  bleed out of a container's padding or an optical nudge, and the bleed is
+   *  already ruled on, by name, in apps/web/__tests__/screen-gutter.test.ts
+   *  ("every container bleed names what it bleeds"). Counting it here would put
+   *  the same site under two rules with different remedies. */
+  const OFF_LADDER = new RegExp(`\\b(?:${SPACING_PROPS}):\\s*(\\d+(?:\\.\\d+)?)\\b`, "g");
+
+  const offLadder = (where: (path: string) => boolean): string[] => {
+    const found: string[] = [];
+    for (const { path, text } of FILES) {
+      if (!where(path.split("\\").join("/"))) continue;
+      text.split("\n").forEach((line, i) => {
+        const t = line.trimStart();
+        if (t.startsWith("*") || t.startsWith("//") || t.startsWith("/*")) return;
+        for (const m of line.matchAll(OFF_LADDER)) {
+          if (!LADDER.has(Number(m[1]))) found.push(`${path}:${i + 1}`);
+        }
+      });
+    }
+    return found;
+  };
+
+  /** The files a screen COPIES FROM — the kit and the primitives it re-exports.
+   *  Split out and dated first because a number here is not one violation: it
+   *  is the shape every caller inherits, and the search field's 18/17 is the
+   *  reason "what padding does a field take?" has no answer a screen can read
+   *  off the system. */
+  const VOCABULARY =
+    /^components\/aurora\/(?:kit|field|sheet|hero|geometry|group-mark|section-seam|rail-tail|cta-label|nutrition-kit)\.tsx?$/;
+
+  it("BURN-DOWN — the shared vocabulary lands on the ladder first", () => {
+    burnDown(offLadder((p) => VOCABULARY.test(p)), 11, "2026-11-30", "off-ladder spacing in the KIT → a space.* rung", [
+      {
+        where: /gap: 2, (?:height|width)/,
+        why: "a bar chart's inter-bar gap is instrument geometry, not layout rhythm — it is sized against the bar's own width, and moving it to a rung would show as a redrawn chart",
+      },
+    ]);
+  });
+
+  it("BURN-DOWN — and then the screens", () => {
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 591, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+  });
+
+  /**
+   * A CONSTANT THAT SHADOWS A KIT TOKEN.
+   *
+   * `CARD_PAD` meant 20 in the kit, 20 again in week-rail and logbook-rail —
+   * which had each written `const CARD_PAD = 20` rather than importing it, so
+   * the kit's token could move and the two rails would not — and 5 in
+   * hold-menu, which is not a content card at all. Three declarations, two
+   * values, one name; a reader who knows what CARD_PAD is knows it wrongly in
+   * two files out of three.
+   *
+   * This is HARD rather than a burn-down because it is not a sweep: a local
+   * constant either names something the kit already names, or it names
+   * something else and should say so. hold-menu's is `MENU_PAD` now, with the
+   * reason at the declaration — importing the kit's 20 there would have moved
+   * every row's corner, since the row radius is derived from it.
+   */
+  it("HARD — no local constant shadows a kit spacing token", () => {
+    // `export` included: the kit's own definitions are excluded BY PATH below,
+    // so an exported shadow anywhere else is still a shadow.
+    const OWNED = /^\s*(?:export )?const (CARD_PAD|GUTTER|SHEET_PAD|CARD_GUTTER)\b/;
+    const shadows: string[] = [];
+    for (const { path, text } of FILES) {
+      const p = path.split("\\").join("/");
+      // The kit's own declarations are the definitions, not shadows of them.
+      if (/^components\/aurora\/(?:kit|geometry)\.tsx?$/.test(p)) continue;
+      text.split("\n").forEach((line, i) => {
+        if (OWNED.test(line)) shadows.push(`${p}:${i + 1}  ${line.trim()}`);
+      });
+    }
+    expect(
+      shadows,
+      "import the token from ./kit — a second declaration is a copy that stops " +
+        "tracking. If it genuinely is not the kit's thing, give it its own name " +
+        `and say why at the declaration (see hold-menu's MENU_PAD):\n${shadows.join("\n")}`,
+    ).toEqual([]);
+  });
+
+  /**
+   * MAX, NEVER PLUS — the arithmetic under a surface that sits on the screen's
+   * bottom edge.
+   *
+   * A sheet's panel, a cover's last row and a dock all sit ON the bottom edge,
+   * so the home-indicator inset is the FLOOR of their pad, not an addition to
+   * it. `sheetPadBottom` in @hybrid/core is that one number for both clients,
+   * and `coverPadBottom` in lib/layout names it for a cover; the doc on each
+   * carries the tally of what `+` cost before they existed.
+   *
+   * The pattern is unmistakable and so is the fix, which is why this is HARD:
+   * `insets.bottom + 28` reserves 62dp where 34 was correct, and it fails
+   * invisibly — as a dead band nobody can point at, on exactly the devices the
+   * developer is not holding.
+   */
+  it("HARD — a bottom-edge pad takes the inset as a floor, never as a term", () => {
+    const sums: string[] = [];
+    for (const { path, text } of FILES) {
+      text.split("\n").forEach((line, i) => {
+        const t = line.trimStart();
+        if (t.startsWith("*") || t.startsWith("//") || t.startsWith("/*")) return;
+        for (const m of line.matchAll(/paddingBottom:\s*[\w.]*(?:insets?|safe)\w*\.bottom\s*\+\s*([\w.$]+)/g)) {
+          // An ALL-CAPS constant is a NAMED CLEARANCE — something is standing in
+          // that space (a dock, an overlaid rail) and the pad is reserving its
+          // height, which is the one reading under which `+` is correct. A bare
+          // number or a bare rung names nothing, so it is the bug.
+          if (/^[A-Z][A-Z0-9_]*$/.test(m[1]!)) continue;
+          sums.push(`${path.split("\\").join("/")}:${i + 1}  ${m[0].trim()}`);
+        }
+      });
+    }
+    expect(
+      sums,
+      "the safe-area inset is the FLOOR of a bottom-edge pad, not a term in it — " +
+        "use sheetPadBottom (@hybrid/core) or coverPadBottom (lib/layout). If " +
+        "something really is standing in that space, reserve it under a NAMED " +
+        "clearance (see workout-wrapped's DOCK_CLEARANCE / RAIL_CLEARANCE):\n" +
+        sums.join("\n"),
+    ).toEqual([]);
+  });
+
+  /**
+   * THE SECTION SEAM IS ONE PAIR OF NUMBERS.
+   *
+   * `ASection` owns it: `space.xxl` above, `space.ms` below. The audit found
+   * five hand-rolled heads carrying their own pair, which is how the same seam
+   * came to be 24/12 on Today, 24/12 in Explore, 28/10 in the nutrition hub and
+   * 16/10 in the favourites sheet. Convergence onto the component is already a
+   * dated ratchet above ("section-header component → ASection"); this rule
+   * guards the thing that matters even before a head gets there, which is that
+   * the two numbers are not re-picked.
+   *
+   * It reads the SEAM, not the component: a row that carries a section head's
+   * exact anatomy (a black display title with a mono meta opposite) and then
+   * writes its own marginTop/marginBottom is what this catches.
+   */
+  it("HARD — ASection states the section seam, and states it in tokens", () => {
+    const kit = FILES.find((f) => f.path.split("\\").join("/") === "components/aurora/kit.tsx");
+    expect(kit, "kit.tsx not found").toBeTruthy();
+    expect(
+      kit!.text,
+      "the section seam moved out of the tokens — ASection is where both numbers are written",
+    ).toContain("const rhythm: ViewStyle = { marginTop: space.xxl, marginBottom: space.ms };");
   });
 });
 

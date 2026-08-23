@@ -345,7 +345,7 @@ export default function ExerciseWidgetRail({
       <ASection
         title={t("w.home.exw.title")}
         meta={t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
-        style={{ marginHorizontal: 2, marginTop: 0 }}
+        style={{ marginTop: 0 }}
       />
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 12dp
           gutter pull the scroll clip to the true screen edge, with matching

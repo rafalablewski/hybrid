@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import Svg, { Path } from "react-native-svg";
-import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation , ALPHA} from "@hybrid/core";
+import { exerciseAnatomy, type ExerciseAnatomy, type MuscleActivation, ALPHA, space } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { F, FIXED_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
@@ -58,7 +58,7 @@ function AnatomyBody({ C, a, name, active, t }: { C: Palette; a: ExerciseAnatomy
           sketch once it exists, the procedural skeleton as today's placeholder
           (see exercise-media.tsx). Loops only while open. */}
       <AuroraExerciseMedia name={name} active={active} />
-      <Text style={{ marginTop: 12, marginHorizontal: 2, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{a.emphasis}</Text>
+      <Text style={{ marginTop: space.md, fontFamily: F.reg, fontSize: fs.body, lineHeight: leading(fs.body), color: C.ash }}>{a.emphasis}</Text>
 
       {/* muscles worked */}
       <View style={{ marginTop: 20 }}>

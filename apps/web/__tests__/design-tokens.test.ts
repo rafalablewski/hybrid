@@ -98,3 +98,63 @@ describe("colour", () => {
     expect(revived, "retired token → one of the four accents").toEqual([]);
   });
 });
+
+/**
+ * THE SPACING LADDER, WEB SIDE — the other half that was missing.
+ *
+ * Same story as the hex rule above, one axis over. `space` in @hybrid/core is
+ * ONE map for both clients (4, 6, 8, 10, 12, 16, 20, 24, 32, 40) and the admin
+ * panel reads it almost nowhere: the Aug 2026 spacing audit counted 504 raw
+ * numeric paddings, margins and gaps across apps/web, 136 of them on no rung of
+ * the ladder at all (130 once the six crash-boundary files the hex rule already
+ * excludes come out — a crash page cannot import a token map either) — 13s, 15s, 22s, 26s, 60s, each one a number somebody tuned
+ * against one panel.
+ *
+ * The mobile twin of this rule (apps/mobile/lib/design-tokens.test.ts, the
+ * `spacing` block) carries the full argument and the same two-tier shape: an
+ * off-ladder value is not a style-guide infraction, it is a value that cannot
+ * be any rung, which means nothing generated it and nothing can say whether the
+ * next one belongs. On-ladder literals are left alone here on purpose — they
+ * are already the right size, and converting them to `space.*` is a separate,
+ * lower-stakes sweep.
+ *
+ * The date is later than mobile's KIT tier and earlier than its screen tier, in
+ * proportion to the work: 130 sites, all of them in an operator tool with no
+ * App Store review between a fix and its users.
+ */
+describe("spacing", () => {
+  const SPACING_PROPS =
+    "padding|paddingTop|paddingBottom|paddingLeft|paddingRight|paddingHorizontal|paddingVertical|" +
+    "margin|marginTop|marginBottom|marginLeft|marginRight|marginHorizontal|marginVertical|" +
+    "gap|rowGap|columnGap";
+  /** POSITIVE only — a negative margin is a bleed, and bleeds are ruled on by
+   *  name in screen-gutter.test.ts. See the mobile twin's note. */
+  const OFF_LADDER = new RegExp(`\\b(?:${SPACING_PROPS}):\\s*(\\d+(?:\\.\\d+)?)\\b`, "g");
+  const LADDER = new Set([0, 4, 6, 8, 10, 12, 16, 20, 24, 32, 40]);
+
+  it("RATCHET — an off-ladder padding, margin or gap gives way to a space.* rung", () => {
+    const found: string[] = [];
+    for (const f of FILES) {
+      f.text.split("\n").forEach((l, i) => {
+        if (/^\s*(\/\/|\*|\/\*)/.test(l)) return;
+        for (const m of l.matchAll(OFF_LADDER)) {
+          if (!LADDER.has(Number(m[1]))) found.push(`${f.path}:${i + 1} ${m[0]}`);
+        }
+      });
+    }
+    const sites = `\n  ${found.slice(0, 30).join("\n  ")}${found.length > 30 ? `\n  …and ${found.length - 30} more` : ""}`;
+    expect(
+      found.length,
+      `\noff-ladder spacing → a space.* rung\nRATCHET BROKEN — ceiling 130, found ${found.length}:${sites}`,
+    ).toBeLessThanOrEqual(130);
+    expect(
+      found.length,
+      `\noff-ladder spacing → a space.* rung\nSLACK — the ceiling is 130 and there are only ${found.length}. ` +
+        `Lower it in this change: unclaimed headroom is room for a new violation.`,
+    ).toBe(130);
+    expect(
+      new Date().toISOString().slice(0, 10) > "2027-06-30" && found.length > 0,
+      "\noff-ladder spacing → a space.* rung\nPAST DUE — this was to reach zero by 2027-06-30.",
+    ).toBe(false);
+  });
+});

@@ -78,17 +78,25 @@ export interface HoldMenuAnchor { x: number; y: number; w: number; h: number }
  *  fits below the anchor. An estimate is enough: being a few px out flips the
  *  card one press early, never off the screen. */
 const ROW_H = 40;
-const CARD_PAD = 5;
+/** The anchored card's own inset, and the gap between it and the thing it hangs
+ *  off. NOT the kit's `CARD_PAD` (20) and deliberately not named like it: this
+ *  card's children are ROWS that carry their own inset, so its pad is a hairline
+ *  frame around them rather than a content card's reading margin. It was called
+ *  `CARD_PAD` until Aug 2026, which put three different values behind one name
+ *  in this codebase (20 in the kit, 20 in the two week rails, 5 here) — and the
+ *  row radius below is DERIVED from it, so importing the kit's token into this
+ *  file to "fix" the duplicate would have quietly moved every row's corner. */
+const MENU_PAD = 5;
 const GAP = 6;
 /** The card's own corner, and its rows'. The row radius is DERIVED rather than
- *  guessed: a child inset by `CARD_PAD` on all sides is only truly concentric at
+ *  guessed: a child inset by `MENU_PAD` on all sides is only truly concentric at
  *  `parent − pad`, and two arcs on different centres are why a highlighted row
  *  reads as pasted into the card instead of set in it. It was a hand-tuned
  *  `RADIUS.inner + 2` over `RADIUS.inner − 2`, which is 14 over 10 where
  *  concentric is 14 over 9 — one pixel, on the one corner a finger is resting
  *  next to while it reads the menu. */
 const CARD_RADIUS = RADIUS.inner + 2;
-const ROW_RADIUS = concentricRadius(CARD_RADIUS, CARD_PAD);
+const ROW_RADIUS = concentricRadius(CARD_RADIUS, MENU_PAD);
 
 /** How long the finger sits on the thing before the card comes up. The logger
  *  card's own long-press number, so every hold in the app arms at one speed. */
@@ -133,7 +141,7 @@ export function AnchoredMenu({
 
   if (!open) return null;
 
-  const cardH = items.length * ROW_H + CARD_PAD * 2;
+  const cardH = items.length * ROW_H + MENU_PAD * 2;
   const below = anchor.y + anchor.h + GAP;
   // FLIP when the card would run off the bottom.
   const fitsBelow = below + cardH < screenH - 24;
@@ -168,7 +176,7 @@ export function AnchoredMenu({
           borderWidth: 1,
           borderColor: C.line,
           borderRadius: CARD_RADIUS,
-          padding: CARD_PAD,
+          padding: MENU_PAD,
           opacity: enter,
           transformOrigin: `${side} ${fitsBelow ? "top" : "bottom"}`,
           transform: reduced

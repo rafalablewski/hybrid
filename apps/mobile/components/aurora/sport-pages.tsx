@@ -99,7 +99,7 @@ export default function AuroraSportPages({
         <ASection
           title={t("endurance.title")}
           meta={t("w.home.end.window8")}
-          style={{ marginHorizontal: space.xxs / 2, marginTop: 0 }}
+          style={{ marginTop: 0 }}
         />
       )}
 

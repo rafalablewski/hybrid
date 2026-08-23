@@ -160,7 +160,7 @@ import ASatellite from "../components/aurora/satellite";
 import { SHARE_MARK } from "../components/aurora/share-mark";
 import { HeroNav } from "../components/aurora/hero";
 import { useReducedMotion } from "../lib/use-reduced-motion";
-import { coverInsets } from "../lib/layout";
+import { coverInsets, coverPadBottom } from "../lib/layout";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Mark } from "../components/aurora/mark";
 
@@ -1392,7 +1392,7 @@ export default function Workout() {
           shell's paddings itself: 16 of vertical rhythm, the kit's GUTTER at
           the sides — web's logger renders inside main's 12px gutter, and this
           is the mobile half of that parity. */}
-      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingBottom: space.huge }} keyboardShouldPersistTaps="handled">
         {/* No session-title input — the workout auto-titles itself; a name is
             only entered on the summary (Save as routine / optional rename).
 
@@ -2755,7 +2755,7 @@ function Summary({
           padding above them would stop the field at the status bar. */}
       <AuroraField />
       <FinishField />
-      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingTop: safe.top + 16, paddingBottom: safe.bottom + 28, flexGrow: 1 }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingHorizontal: GUTTER, paddingTop: safe.top + 16, paddingBottom: coverPadBottom(safe.bottom), flexGrow: 1 }}>
         {/* The one exit — where dismissal muscle memory expects it. Guests leave
             to the welcome screen (there's no Today tab behind them). The same
             satellite the dock's Pause and Finish are, at the same 44: this

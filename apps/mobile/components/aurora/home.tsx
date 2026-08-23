@@ -93,7 +93,7 @@ import { useTheme, txt, accentColor } from "../../lib/theme";
 import { usePremiumAccent } from "../../lib/premium-accent";
 import { F, FIXED_FONT_SCALE, HubDissolve, MAX_FONT_SCALE, PressScale, PressScale as Pressable, fs, leading, space, startGlow, tracking, ty, useEntrance} from "../../lib/ui";
 import { track } from "../../lib/track";
-import { ACard, APressCard, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
+import { ACard, APressCard, ASection, AuroraField, GUTTER, RADIUS, CARD_PAD, Ring } from "./kit";
 import { HubMasthead } from "./hub-masthead";
 import { ArrowGlyph, CtaLabel } from "./cta-label";
 import { auroraScrollClearance } from "../../lib/layout";
@@ -1224,10 +1224,7 @@ export default function AuroraHome() {
               }}
               doneFloor={doneFloor}
             />
-            <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2, flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" }}>
-              <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.logbook.trainYourWay")}</Text>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash }}>{t("w.home.logbook.optional")}</Text>
-            </View>
+            <ASection title={t("w.home.logbook.trainYourWay")} meta={t("w.home.logbook.optional")} />
             {/* the chooser as a snap slider — the exercise-widget rail's idiom:
                 one card ≈ 72% wide so the next path peeks in from the right,
                 FULL-BLEED like every screen-level rail: negative margins the
@@ -1573,10 +1570,7 @@ export default function AuroraHome() {
             for your goal" is a subtitle, not a meta value, and at 30-odd
             characters in PL/DE it would collide with the title on a phone. Same
             anatomy the rail's own built-in header uses. */}
-        <View style={{ marginTop: 24, marginBottom: 12, marginHorizontal: 2 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.today.rowCoach")}</Text>
-          <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 3 }}>{t("w.home.today.rowCoachSub")}</Text>
-        </View>
+        <ASection title={t("w.home.today.rowCoach")} sub={t("w.home.today.rowCoachSub")} />
         <CoachRail onOpen={() => router.push("/coaches")} headerless bleed />
 
         </HubDissolve>
