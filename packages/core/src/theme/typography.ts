@@ -39,7 +39,7 @@
  * choices, so only those are named.
  */
 
-import { fs, lh, measure, promote, STEP, tracking, trackFigure, type LeadingRole, type TrackingRole, type TypeRole } from "../scale";
+import { fs, leading, lh, measure, promote, STEP, tracking, trackFigure, type LeadingRole, type TrackingRole, type TypeRole } from "../scale";
 import { SOHNE } from "./face-metrics";
 import { fonts } from "./tokens";
 
@@ -81,19 +81,6 @@ import { fonts } from "./tokens";
 export const cut = {
   sans: fonts.display,
   mono: fonts.mono,
-  /**
-   * THE SERIF, and it is the one cut with a cap on how often it may appear.
-   *
-   * ITC Garamond Book. ONE element per screen, never below `fs.editorial`,
-   * never a figure, a control, a label or a state, and never in the accent
-   * colour — the accent means go, and a conclusion is not a destination. The
-   * full rule lives on `text.editorial` below.
-   *
-   * ENGLISH ONLY. ITC Garamond Std carries Ł and ó but not ą ę ś ż ń ć ź, so a
-   * Polish or Czech string cannot be set in it at all. Every consumer resolves
-   * to `sans` outside English rather than rendering a line with holes in it.
-   */
-  serif: fonts.serif,
 } as const;
 
 export type Cut = keyof typeof cut;
@@ -129,28 +116,52 @@ export type Cut = keyof typeof cut;
  * counter with, and at `fs.stat` a mono 700's 8, 9, 6 and 0 converge at exactly
  * the distance this product is read at.
  *
- * ── AND WHY THERE IS NO LONGER A 700 AT ALL ───────────────────────────────
+ * ── AND WHY THE 700 IS BACK, WITH A SIZE FLOOR INSTEAD OF A ROLE ──────────
  *
- * The first cut of this rebuild kept `bold` for one style — `takeover`, the
- * Wrapped's cover titles — on the reasoning that irradiation runs the OTHER way
- * on a lit surface, so a 700 is correct there. That reasoning was sound and the
- * premise was FALSE: `HERO_TAKEOVER_INK` is #0a0b09, which is DARKER than
- * `colors.ink` (#0c0d0c). The Wrapped covers are the darkest ground in the app,
- * not the brightest. HYBRID has no lit full-bleed surface, so the exception had
- * nowhere to apply, and a weight with no legal surface is a weight with no
- * consumer — which is what `condensed` was deleted from tokens.ts for.
+ * The rebuild kept `bold` for one style — `takeover`, the Wrapped's cover
+ * titles — on the reasoning that irradiation runs the OTHER way on a lit
+ * surface. The premise was checked and found false (`HERO_TAKEOVER_INK` is
+ * #0a0b09, DARKER than `colors.ink`), so the exception had nowhere to apply and
+ * `weight.bold`, `text.takeover`, the `F.takeover` alias and the Dreiviertelfett
+ * binary were all deleted together.
  *
- * So `weight.bold`, `text.takeover`, the `F.takeover` alias, the `weightOnGround`
- * mechanism and the Dreiviertelfett binary all went together. One ground, one
- * ladder, three weights. If a genuinely lit surface is ever built — a chartreuse
- * fill big enough to set a heading on, a photographic cover — the correction is
- * a real one and comes back with the surface, measured against it rather than
- * assumed for it.
+ * THAT ANSWERED THE WRONG QUESTION. "Is the Wrapped cover lit?" is a question
+ * about one surface; "does the top of the hierarchy need a weight step?" is a
+ * question about the system, and it was never asked. Deleting the cut answered
+ * the first and settled the second by accident: the app was left with no weight
+ * above 600 anywhere, so `hero` went 34/700 → 35/600 — three percent bigger and
+ * a full step lighter — in the same change that grew the reading band 8-12%.
+ * The masthead got quieter while the text under it got louder, which compresses
+ * the hierarchy from both ends and is exactly the kind of change that is felt
+ * before it can be named.
+ *
+ * IRRADIATION IS A SMALL-SIZE PROBLEM. It closes counters in proportion to
+ * STEM OVER COUNTER, and that ratio falls as the type grows: Dreiviertelfett's
+ * 0.16em stem is 2.2dp against a 10dp cap at `fs.body` — the 62 sites the
+ * rebuild was right to clear — and 5.6dp against a 25dp cap at `fs.hero`, where
+ * there is nothing to fill in. The correction was right in the reading band and
+ * wrong as a ceiling on the product.
+ *
+ * SO THE RULE IS A FLOOR, NOT AN EXCEPTION: `weight.bold` is legal at
+ * `fs.display` (28) and above, and nowhere else. That is checkable — the size is
+ * in the same style object as the weight — where "except on a lit surface" was
+ * a claim about a colour three files away, which is how the first version of
+ * this rule survived being false. `text.hero` takes it; `apps/mobile`'s 60
+ * hand-rolled display-band sites take `F.takeover`; `design-tokens.test.ts`
+ * fails the build on a `F.takeover` under 28dp, and typography.test.ts on a
+ * token that names `bold` below the same rung.
+ *
+ * MONO IS STILL CAPPED AT 600 and that is not the same argument: every mono
+ * glyph sits on one 0.600em advance, so weight is the only axis left to close a
+ * counter with, and there is no size at which a mono 700's 8, 9, 6 and 0 stop
+ * converging.
  */
 export const weight = {
   regular: 400,
   medium: 500,
   semibold: 600,
+  /** DISPLAY BAND ONLY — `fs.display` (28) and above. See the note above. */
+  bold: 700,
 } as const;
 
 /** The measured stems, so the ladder's argument can be checked rather than read. */
@@ -158,6 +169,7 @@ export const WEIGHT_STEM_EM: Record<number, number> = {
   400: SOHNE.buch.stem,
   500: SOHNE.kraftig.stem,
   600: SOHNE.halbfett.stem,
+  700: SOHNE.dreiviertelfett.stem,
 };
 
 export type WeightRole = keyof typeof weight;
@@ -229,7 +241,9 @@ export const text = {
    * irradiation note on `weight`. At 35dp on near-black, Halbfett is already
    * emphatic; Dreiviertelfett is a slab with the counters filling in.
    */
-  hero: { cut: "sans", weight: weight.semibold, size: "hero", leading: "tight", ink: "primary" },
+  // THE ONE TOKEN AT 700. A masthead is seen before it is read, and it is the
+  // only rung where the heaviest cut has no counter to close — see `weight`.
+  hero: { cut: "sans", weight: weight.bold, size: "hero", leading: "tight", ink: "primary" },
   display: { cut: "sans", weight: weight.semibold, size: "display", leading: "tight", ink: "primary" },
   headline: { cut: "sans", weight: weight.semibold, size: "headline", leading: "snug", ink: "primary" },
   /** Section titles — the house standard (the Explore tab's SectionHead). */
@@ -294,32 +308,42 @@ export const text = {
   kicker: { cut: "mono", weight: weight.medium, size: "nano", leading: "snug", tracking: "label", ink: "secondary", upper: true },
   overline: { cut: "mono", weight: weight.medium, size: "nano", leading: "snug", tracking: "caps", ink: "secondary", upper: true },
 
-  // ── INTERPRETATION — the serif cut ────────────────────────────────────────
+  // ── INTERPRETATION ────────────────────────────────────────────────────────
   /**
    * THE ONE SENTENCE ON A SCREEN THAT CONCLUDES SOMETHING.
    *
-   * Söhne measures; this interprets. The two consumers today are the week
-   * verdict's lead and the nutrition nudge, and both were ALREADY the only
+   * The rest of the app MEASURES; this interprets. The two consumers are the
+   * week verdict's lead and the nutrition nudge, and both were ALREADY the only
    * interpretive sentence on their screen — they were simply set in a utility
    * style. The verdict lead was `sans` at `subtitle`, which its own file warned
    * "reads as a caption for something else"; the nudge was `sans` at `body`,
    * the style help text uses. This token does not add a voice, it gives one
    * that already existed the rank it always had.
    *
+   * IT WAS A SECOND FACE UNTIL AUG 2026 — ITC Garamond Book, one weight, an
+   * x-height-matched rung (`fs.editorial`) and a leading derived from the
+   * serif's own ink. The face was deleted; the RANK it carried is what the two
+   * sentences actually needed, so the token stays and the rank is now spelled
+   * in the one axis the sans has left: SIZE. `title` (20) is a rung above the
+   * `subtitle` the lead sat at before the serif and two above the nudge's
+   * `body`, and it is REGULAR rather than the medium `title` and `subtitle`
+   * take — a conclusion is prose, not a heading, and weight is how the headings
+   * around it stay distinguishable from it. A note the serif's removal also
+   * settles: this line sets Polish and German now, which ITC Garamond could not
+   * (it had no ą ę ś ż ń ć ź), so the token no longer degrades outside English.
+   *
    * THE RULES, and they are ratcheted in apps/mobile/lib/design-tokens.test.ts:
    *   ONE per screen. A second means neither is the conclusion.
    *   NEVER on a screen used DURING training. Mid-set the athlete needs
-   *     measurement, and a serif sentence is not measurement. Workout, interval
-   *     timer and the active endurance screens are closed to it.
+   *     measurement, and an interpretive sentence is not measurement. Workout,
+   *     interval timer and the active endurance screens are closed to it.
    *   NEVER a figure, unit, control, label, badge or state.
    *   NEVER uppercase, letterspaced positive, or in the accent colour.
-   *   NEVER below 24dp — Garamond's joins break up on `ink` under that.
-   *   ENGLISH ONLY (see `cut.serif`).
    *
    * `tabular` is absent on purpose: the guard below requires it to track the
    * mono cut, and a sentence has no column to line up with.
    */
-  editorial: { cut: "serif", weight: weight.regular, size: "editorial", leading: "editorial", tracking: "serif", ink: "primary" },
+  editorial: { cut: "sans", weight: weight.regular, size: "title", leading: "snug", tracking: "text", ink: "primary" },
 } as const satisfies Record<string, TextStyle>;
 
 export type TextToken = keyof typeof text;
@@ -406,12 +430,16 @@ export function resolveText(token: TextToken, scaleFactor = 1, steps = 0): Resol
   // next rung is 13, because rounding a rung and then multiplying loses the half
   // dp the exact ladder carries. A promotion has to land ON a rung.
   const size = Math.round(promote(s.size, steps) * scaleFactor);
-  const ratio = lh[s.leading];
   return {
     fontFamily: cut[s.cut],
     fontWeight: s.weight,
     fontSize: size,
-    lineHeight: Math.round(size * ratio),
+    // THROUGH `leading()`, never a second multiplication. This line was
+    // `Math.round(size * lh[s.leading])` — the same arithmetic, which is exactly
+    // why it was wrong to have: `flush` is a floor and rounds UP, so a duplicate
+    // of the formula resolves a token one dp under the box the same style gets
+    // from `leading()` at a call site.
+    lineHeight: leading(size, s.leading),
     letterSpacing: s.tracking === "figure" ? trackFigure(size) : tracking(size, s.tracking ?? "text"),
     ink: s.ink,
     tabular: s.tabular ?? false,

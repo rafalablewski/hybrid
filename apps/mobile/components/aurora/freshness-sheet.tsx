@@ -54,7 +54,7 @@ export default function FreshnessSheet({ explain, onClose }: {
               rule as the headline above it, and the one sentence that says what
               it does to that headline. */}
           <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
-            <Text style={{ fontFamily: F.black, fontSize: 44, lineHeight: leading(44, "flush"), letterSpacing: trackFigure(44), color: txt(C, roleColor(C, e.role)) }}>{e.score}</Text>
+            <Text style={{ fontFamily: F.takeover, fontSize: 44, lineHeight: leading(44, "flush"), letterSpacing: trackFigure(44), color: txt(C, roleColor(C, e.role)) }}>{e.score}</Text>
             <Text style={{ flex: 1, fontFamily: F.reg, fontSize: fs.caption, color: C.ash, lineHeight: leading(fs.caption) }}>
               {t("w.home.fresh.rollup").replace("{n}", String(e.weightPct))}
             </Text>

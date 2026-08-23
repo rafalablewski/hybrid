@@ -68,7 +68,7 @@ function PantryHero({ items }: { items: readonly PantryFood[] }) {
        the whole box was the kit spelled out. Only the leading gap is passed. */
     <ACard style={{ marginTop: 16 }}>
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{stats.count}</Text>
+        <Text style={{ fontFamily: F.takeover, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{stats.count}</Text>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={ty(C, "overline")}>{t("w.recovery.nutrition.pn.savedFoods")}</Text>
           {stats.lead ? (

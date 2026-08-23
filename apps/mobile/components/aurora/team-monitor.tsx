@@ -181,7 +181,7 @@ const kicker = (C: Palette) => ({ ...ty(C, "overline"), marginTop: space.md  });
 function SummaryCard({ C, label, value, color }: { C: Palette; label: string; value: number; color: string }) {
   return (
     <ACard style={{ flex: 1, minWidth: 140, padding: 16 }}>
-      <Text style={{ fontFamily: F.black, fontSize: 28, lineHeight: leading(28, "tight"), color }}>{value}</Text>
+      <Text style={{ fontFamily: F.takeover, fontSize: 28, lineHeight: leading(28, "tight"), color }}>{value}</Text>
       <Text style={{ ...ty(C, "kicker"), marginTop: 4  }}>{label}</Text>
     </ACard>
   );

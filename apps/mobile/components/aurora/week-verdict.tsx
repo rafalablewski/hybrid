@@ -13,7 +13,6 @@ import {
   type VerdictDirection, type WeightUnit, deltaRole, STATE_OPACITY } from "@hybrid/core";
 import { ACard, withAlpha , RADIUS} from "./kit";
 import ActivityCompare from "./activity-compare";
-import PeriodRecords from "./period-records";
 import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
 import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
@@ -310,7 +309,7 @@ const PROMOTED_LADDER = [fs.display, fs.headline, fs.headline] as const;
 const FIGURE_BOX = leading(PROMOTED_LADDER[0], "flush");
 
 /**
- * Render a "{m}"-templated sentence with the metric name in bold.
+ * Render a "{m}"-templated sentence.
  *
  * It reads at `fs.subtitle` on `snug` leading, a rung up from the `fs.bodyLg` it
  * spent its life at. Two things bought the rung. It has the CARD'S WHOLE WIDTH
@@ -322,19 +321,21 @@ const FIGURE_BOX = leading(PROMOTED_LADDER[0], "flush");
  */
 function Lead({ template, word, color }: { template: string; word: string | null; color: string }) {
   const { palette } = useTheme();
-  // THE FACE IS THE EMPHASIS NOW, so the metric no longer takes a bold run.
+  // THE RANK IS THE EMPHASIS, so the metric no longer takes a bold run.
   //
   // This was `F.reg` at `fs.subtitle`, and the note above this function already
   // said what was wrong with it: a lead at emphasised-body size "reads as a
   // caption for something else". It was the quietest thing in a card whose only
   // job is to carry it, sitting between a mono kicker and a mono receipt grid.
   //
-  // `editorial` is the serif cut — the app's one interpretive voice, and this
-  // is one of its two call sites. It does not add a sentence; it gives the
-  // sentence that was always here the rank it always had. The `{m}` split
-  // survives because the templates still carry it, but the metric word is set
-  // in the same face and weight as the rest of the line: a bold run inside a
-  // serif sentence is two emphases arguing, and the face has already won.
+  // `editorial` is the app's one interpretive voice — a rung above the heading
+  // styles, set in regular because a conclusion is prose, not a heading — and
+  // this is one of its two call sites. It does not add a sentence; it gives the
+  // sentence that was always here the rank it always had. (It was a SERIF face
+  // from Aug 2026 until the face was deleted; the token kept the rank and lost
+  // the second binary.) The `{m}` split survives because the templates still
+  // carry it, but the metric word is set exactly like the rest of the line: two
+  // emphases in one sentence is neither of them winning.
   const style = ty(palette, "editorial", color);
   const [before, after] = template.split("{m}");
   if (after === undefined || !word) {
@@ -947,9 +948,10 @@ export default function AuroraWeekVerdict({
       </ACard>
 
       {/* ── THE BREAKDOWN, AS A SHEET. It comes up OVER Today rather than
-          unfolding inside the card, so pressing a figure no longer shoves
-          Records, the exercise rail and the whole Endurance cluster off the
-          fold — and it dismisses the way everything else on this screen
+          unfolding inside the card, so pressing a figure moves nothing beneath
+          it — which is what pushed Records, the exercise rail and the whole
+          Endurance cluster off the fold back when Today still carried them —
+          and it dismisses the way everything else on this screen
           dismisses (drag, scrim, tap out), instead of only by finding the
           column that opened it, three hundred points up by then.
 
@@ -1009,22 +1011,6 @@ export default function AuroraWeekVerdict({
           </View>
         )}
       </Sheet>
-
-      {/* RECORDS — the Progress cluster's block (b), which used to be a mono
-          kicker in this card's foot. It is a SECTION of its own now
-          (aurora/period-records.tsx), headed like its neighbours, because
-          Progress reads as three named things: This week, Records, Exercises.
-          It still takes ITS window from this card's filter — a PR belongs to
-          the period it happened in — which is why the range and the window's
-          name are passed down rather than resolved again. */}
-      <PeriodRecords
-        sessions={sessions}
-        range={range}
-        windowName={title}
-        units={units}
-        bw={bw}
-        onSession={onSession}
-      />
 
       {/* The doors moved OUT of this card (wave 3): they are the retrospective's
           single exit now, rendered at the END of the Endurance cluster in

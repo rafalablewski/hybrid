@@ -215,7 +215,7 @@ export function CookPlate({ cook, onBack }: { cook: RecipeCookView; onBack: () =
         <View style={{ alignSelf: "flex-start", backgroundColor: C.lime, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 3 }}>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.onAccent }}>{cook.chip}</Text>
         </View>
-        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: tracking(fs.display), color: "#fff", marginTop: 6 }}>{cook.title}</Text>
+        <Text numberOfLines={2} style={{ fontFamily: F.takeover, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: tracking(fs.display), color: "#fff", marginTop: 6 }}>{cook.title}</Text>
       </View>
       {/* One tick per step — the method's length, stated by the plate itself.
           NOT the kit's `AStepRail`, and this is the one rail that genuinely

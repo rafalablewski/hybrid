@@ -12,17 +12,13 @@
 // need ever appears, split into WEB_FS / MOBILE_FS here and the call sites
 // (fs.body, …) won't have to change.
 
-import { SOHNE, SERIF_SIZE_RATIO, FIGURE_INK_EM, inkSpan, ITC_GARAMOND } from "./theme/face-metrics";
+import { SOHNE, FIGURE_INK, lineBoxFloor } from "./theme/face-metrics";
 
 /**
  * RE-EXPORTED so the ONE place a font metric is written down stays
- * theme/face-metrics.ts. These were literals here until Aug 2026, and the serif
- * one was wrong: 0.445 against the binary's measured 0.4409.
+ * theme/face-metrics.ts. This was a literal here until Aug 2026.
  */
-export { SERIF_SIZE_RATIO };
-/** @deprecated The name says x-height; the thing is a SIZE ratio. Use `SERIF_SIZE_RATIO`. */
-export const SERIF_X_HEIGHT_RATIO = SERIF_SIZE_RATIO;
-export const X_HEIGHT_EM = { sans: SOHNE.buch.xHeight, serif: ITC_GARAMOND.book.xHeight } as const;
+export const X_HEIGHT_EM = { sans: SOHNE.buch.xHeight } as const;
 
 export type TypeRole =
   | "nano" //    10 — micro mono eyebrow labels (uppercase, tracked)
@@ -35,8 +31,7 @@ export type TypeRole =
   | "headline" //22 — screen sub-headings, and the head of a screen with no hero
   | "display" // 28 — screen headings
   | "hero" //    35 — mastheads / cover titles
-  | "stat" //    49 — the one hero figure on a screen (ring kcal, exercise 1RM)
-  | "editorial"; // 33 — SERIF ONLY. Derived from `display`; see the note under `fs`.
+  | "stat"; //   49 — the one hero figure on a screen (ring kcal, exercise 1RM)
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -170,7 +165,7 @@ export const rung = (n: number): number => Math.round(TYPE_REF * STEP ** n);
  * ladder — the desktop promotion, a step-down ramp, a fitter — has to walk it in
  * INDICES. See `promote`.
  */
-export const RUNG_INDEX: Record<Exclude<TypeRole, "editorial">, number> = {
+export const RUNG_INDEX: Record<TypeRole, number> = {
   nano: -4, //    10.24  → 10
   micro: -3, //   11.45  → 11
   caption: -2, // 12.80  → 13
@@ -200,10 +195,7 @@ export const RUNG_INDEX: Record<Exclude<TypeRole, "editorial">, number> = {
  * walking in indices means a promotion always LANDS ON A RUNG, so a promoted
  * ladder is the same ladder rather than a set of near-misses beside it.
  */
-export const promote = (role: TypeRole, steps = 1): number =>
-  role === "editorial"
-    ? Math.round(promote("display", steps) * SERIF_SIZE_RATIO)
-    : rung(RUNG_INDEX[role] + steps);
+export const promote = (role: TypeRole, steps = 1): number => rung(RUNG_INDEX[role] + steps);
 
 export const fs: Record<TypeRole, number> = {
   nano: rung(RUNG_INDEX.nano),
@@ -217,37 +209,6 @@ export const fs: Record<TypeRole, number> = {
   display: rung(RUNG_INDEX.display),
   hero: rung(RUNG_INDEX.hero),
   stat: rung(RUNG_INDEX.stat),
-  /**
-   * SERIF ONLY, and it is not a hole in the ladder — it is a second ladder with
-   * one rung on it.
-   *
-   * DERIVED, NOT TYPED: `display` × `SERIF_SIZE_RATIO`, the x-height ratio read
-   * off the two shipped binaries (theme/face-metrics.ts). 28 × 1.18621 is 33.2,
-   * so 33. Move `display` and the serif follows it, which is the only way the
-   * pairing survives a change to the sans ladder — a hard-coded value would have
-   * silently stopped matching.
-   *
-   * THE PREVIOUS SPELLING ROUNDED TO EVEN and this one does not. Even-rounding
-   * was arbitrary dressing on a derived number: it threw away 0.8dp of a
-   * measured ratio to buy a property — evenness — that nothing in the system
-   * asks for or checks.
-   *
-   * PUTTING IT ON `display` INSTEAD WAS TRIED AND IS WRONG: at 28 the Garamond
-   * sets an x-height of 12.3dp against the sans's 14.6, so the sentence reads as
-   * smaller than the heading above it while claiming more rank.
-   *
-   * IT MATCHES ON CAPS TOO, which is the check that the x-height match is not
-   * buying one axis at another's expense: `capMatchAt(28, 33)` returns 20.10 and
-   * 20.56 — half a dp apart on a 20dp cap. Garamond's short caps (0.623em) and
-   * Söhne's tall ones (0.718em) happen to cancel the size difference almost
-   * exactly, and that coincidence is most of why these two faces can share a
-   * screen at all.
-   *
-   * NOTHING IN `cut.sans` OR `cut.mono` MAY TAKE THIS RUNG. typography.test.ts
-   * holds that, because a 33dp sans heading would sit two dp off `hero` for no
-   * reason anybody could name — which is exactly how `heading` died.
-   */
-  editorial: Math.round(rung(RUNG_INDEX.display) * SERIF_SIZE_RATIO),
 };
 
 /**
@@ -344,17 +305,16 @@ export const sheetPadBottom = (insetBottom = 0) => Math.max(insetBottom, space.x
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type LeadingRole =
-  | "flush" //     0.90 — a STANDALONE FIGURE, cut to the figure set's own ink
+  | "flush" //     1.02 — a STANDALONE FIGURE, cut as close to its ink as iOS allows
   | "tight" //     1.15 — display/hero titles
   | "snug" //      1.30 — headings, list rows, anything one-to-two lines
   | "normal" //    1.50 — the default for reading text
-  | "relaxed" //   1.62 — long-form prose, empty-state bodies
-  | "editorial"; //1.23 — SERIF ONLY, derived from ITC Garamond's own ink span
+  | "relaxed"; //  1.62 — long-form prose, empty-state bodies
 
 /**
  * Line-height RATIOS. Multiply by the font size (see `leading`).
  *
- * ── `flush` IS CUT TO THE FIGURE SET'S INK, AND 1.00 WAS NEVER THAT ────────
+ * ── `flush` IS A FLOOR, AND THE FLOOR IS NOT THE INK ──────────────────────
  *
  * `tight` used to be documented as covering "display/hero titles, stat figures"
  * and it is wrong for the second half of that. A figure has no second line and
@@ -371,58 +331,50 @@ export type LeadingRole =
  * at the rest. Seventeen more figure sites set no lineHeight at all and took
  * whatever the platform's default was.
  *
- * BUT 1.00 WAS ITSELF A GUESS — the round number nearest the intent, not the
- * intent. Measured (theme/face-metrics.ts `FIGURE_INK`), the mono cut's figure
- * characters span 0.804em: digits from +0.729 to -0.011, and `/` — which is in
- * `5:12 /km` — from +0.732 to -0.072. So a 1.00 box was still carrying 0.196em
- * of nothing, 9dp of it at `fs.stat`, which is the same defect one notch
- * quieter.
+ * ── THE 0.90 THAT SHIPPED, AND WHAT IT DID ────────────────────────────────
  *
- * `flush` IS 0.90, NOT 0.804, and the gap is deliberate. React Native positions
- * a line's baseline from the font's own ascent (Söhne's hhea ascent is 1.037em,
- * so the natural box is 1.326em), and a declared lineHeight far below that
- * starts to move the baseline rather than only tightening the box. 0.90 clears
- * the measured ink by 0.096em — about 4.7dp at `fs.stat` — which is headroom for
- * that placement rather than slack in the design. The theoretical floor is
- * written down here so the next person shaving it knows which number is the
- * design and which is the platform.
+ * This rung was briefly 0.90 — the mono figure set's measured ink span (0.804em)
+ * plus 0.096em called "headroom for React Native's baseline placement". The
+ * ink measurement is right and the conclusion drawn from it is not, and the app
+ * shipped every figure in the product with the top of its digits sliced off:
+ * `12.24 km` on the week verdict lost 3.4dp of a 20.1dp digit.
  *
- * IT IS SAFE ONLY BECAUSE THE FIGURE SET IS CLOSED. `flush` is legal on `mono`
- * figures and nothing else — typography.test.ts holds that — and a figure is
- * drawn from `0123456789 : . % × / + -`. Put a lowercase `g` in a flush box and
- * its descender is outside the ink this number was cut to.
+ * A LINE BOX IS NOT A CROP OF THE INK. React Native declares a `lineHeight` as
+ * both the minimum and the maximum line height and adds no baseline
+ * compensation; TextKit honours that by holding the font's DESCENT against the
+ * bottom of the fragment and taking the shortfall out of the ascent. So the room
+ * above the baseline is `box − descent` no matter what the string contains, and
+ * the descent is 0.289em in all seven shipped cuts whether it is used or not.
+ * The ink's own depth (`/` at -0.072em) never enters into it.
+ *
+ * THE FLOOR IS THEREFORE `inkTop + descent` — 0.732 + 0.289 = 1.021em
+ * (`lineBoxFloor` in theme/face-metrics.ts, which owns both measurements). One
+ * consequence worth stating plainly, because it is the part that reads as a
+ * regression: this is LARGER than the 1.00 it was cut from, so 1.00 was already
+ * a fraction under the floor — half a dp at `stat`, which is why nothing was
+ * ever seen. 0.90 was under it by 0.121em, which at `display` is 3.4dp, which is
+ * a sixth of the digit.
+ *
+ * WHAT IS STILL WORTH WANTING: at the floor the visible band under a figure is
+ * the reserved descent minus the ink's own depth, ~0.217em. That space is real
+ * and it is the platform's, not the design's — `lineHeight` cannot reach it, and
+ * the only honest way to close a row up is to let the box be correct and pull
+ * the LAYOUT in around it with a negative margin at the call site. A tighter
+ * ratio does not remove the band; it removes the top of the number.
+ *
+ * IT IS STILL A FIGURE'S RUNG. `flush` is legal on `mono` figures and nothing
+ * else — typography.test.ts holds that — because the floor is computed from the
+ * FIGURE ink set (`0123456789 : . % × / + -`, plus the unit letters that ride
+ * inside a formatted value, whose 0.718em tops sit under `/`'s 0.732em). Put a
+ * lowercase `g` in a flush box and its descender is outside the ink this number
+ * was cut to.
  */
-const FLUSH_HEADROOM_EM = 0.096;
-
 export const lh: Record<LeadingRole, number> = {
-  flush: Number((FIGURE_INK_EM + FLUSH_HEADROOM_EM).toFixed(2)), // 0.804 + 0.096 = 0.90
+  flush: lineBoxFloor(FIGURE_INK.top), // 0.732 + 0.289 = 1.021 — see above
   tight: 1.15,
   snug: 1.3,
   normal: 1.5,
   relaxed: 1.62,
-  /**
-   * THE SERIF'S OWN LEADING, and it exists because the serif's em is INFLATED.
-   *
-   * `fs.editorial` is 33 so that a 0.4409em x-height lands where the sans's
-   * 0.523em does at 28. That compensation is correct for SIZE and it quietly
-   * breaks LEADING, because a leading ratio multiplies the em — and the serif's
-   * em is 18.6% bigger than the size it is pretending to be. Setting the
-   * editorial voice at `snug` therefore gave it 33 × 1.30 = 43dp of line box,
-   * which is 1.53× the apparent size: BODY leading, on a display-size pull
-   * quote. That is precisely the "reads as a caption for something else"
-   * complaint the token was created to fix, arriving back through the other axis.
-   *
-   * DERIVED FROM THE FACE'S OWN INK, so the em drops out of the question: ITC
-   * Garamond spans 0.9209em ascender-to-descender (`l` +0.6948 to `p` -0.2261),
-   * and a line box one third again the height of the ink it carries is the
-   * oldest rule in setting display type. 0.9209 × 4/3 = 1.2279 → 1.23, i.e.
-   * 40dp at `fs.editorial`, or 1.45× the apparent size. A pull quote that holds
-   * together as a block instead of drifting apart into separate lines.
-   *
-   * SERIF ONLY. A sans style taking it would be setting 1.23 on a face whose ink
-   * is 0.898em — tighter than `tight` — for no reason anyone could name.
-   */
-  editorial: Number(((inkSpan(ITC_GARAMOND.book) * 4) / 3).toFixed(2)),
 };
 
 /**
@@ -431,16 +383,22 @@ export const lh: Record<LeadingRole, number> = {
  * React Native needs `lineHeight` in dp, so this is the mobile entry point;
  * pass the ratio (`lh.normal`) directly wherever a ratio is accepted. Rounded
  * to a whole dp because a fractional line box lands text off the pixel grid.
+ *
+ * `flush` ROUNDS UP, and the asymmetry is the whole point of the rung. Every
+ * other role is a PREFERENCE with slack built into it, so half a dp either way
+ * is nothing; `flush` is a FLOOR (see `lh` above), and rounding a floor down is
+ * how you get a box that is correct in the ratio and clipping on the screen —
+ * `fs.headline` is the worst of the rungs at 0.46dp under. A dp of unused box is
+ * invisible; a dp off the top of a digit is the bug this rung just had.
  */
 export const leading = (size: number, role: LeadingRole = "normal"): number =>
-  Math.round(size * lh[role]);
+  role === "flush" ? Math.ceil(size * lh.flush) : Math.round(size * lh[role]);
 
 export type TrackingRole =
   | "text" //  derived from the SIZE by a continuous curve — see `OPTICAL_K`
   | "label" // +0.085em of CAPS AIR over the curve — the app's dominant eyebrow
   | "caps" //  +0.115em of CAPS AIR over the curve — section labels, nav eyebrows
-  | "wordmark" // −0.030em: caps air REMOVED — a nameplate, see CAPS_AIR_EM
-  | "serif"; // ITC Garamond, which takes half the curve — see below
+  | "wordmark"; // −0.030em: caps air REMOVED — a nameplate, see CAPS_AIR_EM
 
 /**
  * ─────────────────────────────────────────────────────────────────────────────
@@ -573,20 +531,6 @@ export const opticalTrackEm = (size: number): number =>
 export const CAPS_AIR_EM = { label: 0.085, caps: 0.115, wordmark: -0.030 } as const;
 
 /**
- * THE SERIF TAKES HALF THE CURVE, and the halving is the rule for any face the
- * curve was not measured on.
- *
- * `opticalTrackEm` is fitted to Söhne. ITC Garamond is a phototype-era design
- * that is already tightly fitted — 0.0298em of sidebearing on `n` against
- * Söhne's 0.144em, a fifth as much — so the correction Söhne wants at 33dp
- * (-0.0127em) would close the counters on `e` and `a` at reading distance. Half
- * of it is the value, and the halving is stated as a factor rather than baked
- * into a number so that it stays visibly a JUDGEMENT about a second face rather
- * than looking like another measurement.
- */
-export const SERIF_TRACK_FACTOR = 0.5;
-
-/**
  * Tracking in dp for a size — `tracking(fs.nano, "label")` → 0.9.
  *
  * Rounded to 0.1dp, the precision `trackFigure` already uses: RN takes
@@ -598,10 +542,7 @@ export const SERIF_TRACK_FACTOR = 0.5;
  */
 export function tracking(size: number, role: TrackingRole = "text"): number {
   const optical = opticalTrackEm(size);
-  const em =
-    role === "text" ? optical
-    : role === "serif" ? optical * SERIF_TRACK_FACTOR
-    : CAPS_AIR_EM[role] + optical;
+  const em = role === "text" ? optical : CAPS_AIR_EM[role] + optical;
   return Math.round(size * em * 10) / 10;
 }
 

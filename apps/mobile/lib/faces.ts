@@ -22,13 +22,11 @@ export const FACE: Record<string, string> = {
   "Söhne:400": "Sohne_400Buch",
   "Söhne:500": "Sohne_500Kraftig",
   "Söhne:600": "Sohne_600Halbfett",
+  // 700 is the DISPLAY band only (fs.display and above) — see `weight` in core.
+  "Söhne:700": "Sohne_700Dreiviertelfett",
   "Söhne Mono:400": "SohneMono_400Buch",
   "Söhne Mono:500": "SohneMono_500Kraftig",
   "Söhne Mono:600": "SohneMono_600Halbfett",
-  // ITC Garamond ships ONE weight on purpose — the editorial voice has no
-  // emphasis axis. A bold serif beside Söhne Halbfett is two voices claiming
-  // one rank, so `weight.regular` is the only key that can ever resolve here.
-  "ITC Garamond Std:400": "ITCGaramondStd_400Bk",
 };
 
 export const faceFor = (family: string, weight: number): string | undefined => FACE[`${family}:${weight}`];

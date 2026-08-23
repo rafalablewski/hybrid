@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { COVER_SCREENS, resolveText, text } from "@hybrid/core";
+import { COVER_SCREENS, fs, lh, resolveText, text } from "@hybrid/core";
 import { FACE, faceFor } from "./faces";
 
 /**
@@ -188,12 +188,15 @@ function hits(pattern: RegExp): string[] {
 }
 
 /**
- * THE SERIF RATCHET — the one face in the system with a quota.
+ * THE EDITORIAL RATCHET — the one style in the system with a quota.
  *
- * ITC Garamond is not dangerous because it is wrong somewhere; it is dangerous
- * because it is right in one place per screen and every subsequent designer will
- * find a second. The face decays by ACCUMULATION, which means the only guard
- * worth having is a countable one. Four rules, all mechanical.
+ * It guarded a FACE until Aug 2026 (ITC Garamond Book, deleted with the rest of
+ * the serif) and it guards the token that outlived it, for the reason that was
+ * always the real one: `editorial` is not dangerous because it is wrong
+ * somewhere, it is dangerous because it is right in ONE place per screen and
+ * every subsequent designer will find a second. A rank that appears twice is a
+ * rank that means nothing, and that decays by ACCUMULATION — which means the
+ * only guard worth having is a countable one. Four rules, all mechanical.
  *
  * The two sanctioned call sites are the week verdict's lead and the nutrition
  * nudge. Both were chosen the same way: they were already the only interpretive
@@ -250,7 +253,7 @@ describe("prose never wears the measuring face", () => {
   });
 });
 
-describe("the editorial serif", () => {
+describe("the editorial voice", () => {
   const SANCTIONED = [
     "components/aurora/week-verdict.tsx",
     "components/aurora/nutrition-panels.tsx",
@@ -267,13 +270,11 @@ describe("the editorial serif", () => {
   ];
 
   it("HARD — only the sanctioned call sites reach for it", () => {
-    const sites = [...hits(/ty\((?:C|palette)\s*,\s*"editorial"/g), ...hits(/F\.serif\b/g)]
+    const sites = hits(/ty\((?:C|palette)\s*,\s*"editorial"/g)
       .map((h) => h.split(":")[0]!)
-      // `lib/ui.tsx` DECLARES the alias and `app/_layout.tsx` REGISTERS the
-      // binary — both name the face by necessity and neither paints with it.
-      .filter((f) => !f.endsWith(".test.ts") && f !== "lib/ui.tsx" && f !== "app/_layout.tsx");
+      .filter((f) => !f.endsWith(".test.ts"));
     const stray = [...new Set(sites)].filter((f) => !SANCTIONED.some((ok) => f.includes(ok)));
-    expect(stray, `the serif is one element per screen:\n  ${stray.join("\n  ")}`).toEqual([]);
+    expect(stray, `the conclusion is one element per screen:\n  ${stray.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — one per file, because one per SCREEN is what the rule means", () => {
@@ -284,22 +285,21 @@ describe("the editorial serif", () => {
       perFile.set(f, (perFile.get(f) ?? 0) + 1);
     }
     const doubled = [...perFile].filter(([, n]) => n > 1).map(([f, n]) => `${f} (${n})`);
-    expect(doubled, `a second serif line means neither is the conclusion:\n  ${doubled.join("\n  ")}`).toEqual([]);
+    expect(doubled, `a second editorial line means neither is the conclusion:\n  ${doubled.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — never on a screen used during training", () => {
-    const bad = hits(/ty\((?:C|palette)\s*,\s*"editorial"|F\.serif\b/g)
+    const bad = hits(/ty\((?:C|palette)\s*,\s*"editorial"/g)
       .map((h) => h.split(":")[0]!)
       .filter((f) => DURING_TRAINING.some((d) => f.includes(d)));
     expect(bad, `mid-set the athlete needs measurement, not a conclusion:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("HARD — the token carries its own size, so no call site may restyle it", () => {
-    // `ty(C, "editorial")` already holds the size, leading and tracking that make
-    // the pairing work — 30dp against Söhne's 26 is the 1.176x x-height match,
-    // and it is the whole reason the face sits beside the sans at all. A call
-    // site that spreads a `fontSize` over the top has thrown that away and will
-    // land under the 24dp floor sooner or later.
+    // `ty(C, "editorial")` already holds the size, leading and tracking, and the
+    // SIZE is the entire signal now that the second face is gone — a call site
+    // that spreads a `fontSize` over the top has not restyled the sentence, it
+    // has demoted it back to the utility style the token exists to escape.
     const bad = FILES.filter(({ path }) => !path.endsWith(".test.ts"))
       .flatMap(({ path, text }) =>
         text.split("\n").flatMap((line, i) =>
@@ -307,12 +307,16 @@ describe("the editorial serif", () => {
     expect(bad, `the editorial token is not restyled at the call site:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
-  it("HARD — the serif never renders below its 24dp floor", () => {
-    // Not a source rule but an arithmetic one: whatever `fs.editorial` becomes,
-    // the resolved size stays above the point where Garamond's joins break up on
-    // `ink`. Dynamic Type scales this token DOWN as well as up.
-    expect(resolveText("editorial").fontSize).toBeGreaterThanOrEqual(24);
-    expect(resolveText("editorial", 0.85).fontSize).toBeGreaterThanOrEqual(24);
+  it("HARD — it never resolves down into the utility band", () => {
+    // Not a source rule but an arithmetic one, and the successor to the serif's
+    // 24dp floor (which was about where Garamond's joins broke up on `ink`).
+    // What matters now is RANK: at every Dynamic Type step the conclusion has to
+    // stay above the heading style it was mistaken for, because the moment it
+    // ties with `subtitle` the token is decoration.
+    for (const scale of [0.85, 1, 1.4]) {
+      expect(resolveText("editorial", scale).fontSize,
+        `at ${scale}x`).toBeGreaterThan(resolveText("subtitle", scale).fontSize);
+    }
   });
 });
 
@@ -554,7 +558,13 @@ describe("leading and tracking", () => {
     // 39 → 38: the You tab's profile-setup nudge, moved into the lead rail,
     // took its hand-tuned `lineHeight: 18` with it — on fs.body that is exactly
     // leading(fs.body), which is to say it was never a tuning.
-    burnDown(hits(/lineHeight:\s*\d/g), 33, "2026-11-30", "absolute lineHeight → leading(size, role)");
+    //
+    // 33 → 29: the four that were UNDER the clipping floor (see the guard at
+    // the end of this file). This is the argument for the ratchet stated as
+    // evidence rather than as taste — a typed line box is a claim about a
+    // font's descent, every one of these four got it wrong, and three of them
+    // had been drawing clipped glyphs for as long as they had existed.
+    burnDown(hits(/lineHeight:\s*\d/g), 29, "2026-11-30", "absolute lineHeight → leading(size, role)");
   });
 
   it("HARD — tracking derives from the size; a raw dp is never the answer", () => {
@@ -692,6 +702,88 @@ describe("figures", () => {
       });
     }
     expect(bad, `\na figure takes leading(size, "flush") — see lh.flush in scale.ts:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
+/**
+ * ── A LINE BOX SMALLER THAN THE INK IT CARRIES ─────────────────────────────
+ *
+ * The bug this guard was written for shipped to TestFlight and looked like a
+ * font problem: every figure in the app drew with the top of its digits sliced
+ * off — `12.24 km` on the week verdict lost 3.4dp of a 20.1dp digit — and
+ * nothing failed. It cannot fail. A `lineHeight` too small for its `fontSize`
+ * is valid style, valid types, and renders: React Native declares the value as
+ * both the minimum and the maximum line height, and TextKit honours that by
+ * keeping the font's DESCENT against the bottom of the fragment and taking the
+ * shortfall out of the ascent. The glyph is clipped, in silence.
+ *
+ * So the room a box offers above the baseline is `box − 0.289em`, and the floor
+ * for anything with ink at 0.732em is 1.021em — `lh.flush`, which core derives
+ * with `lineBoxFloor` off the shipped binaries. This reads the pairs a source
+ * line states OUTRIGHT — the
+ * token path is guaranteed by `lh.flush` being the floor, which core's own
+ * tests hold — and it is the same arithmetic in the same direction: a typed box
+ * is a claim about a font, and this is the only thing that checks it.
+ */
+/**
+ * ── THE DISPLAY WEIGHT HAS A FLOOR, AND THE FLOOR IS CHECKABLE ─────────────
+ *
+ * `F.takeover` is Söhne Dreiviertelfett — a 0.16em stem, +78% over the regular.
+ * On this ground that is mud at reading size: the rebuild found it on 298 call
+ * sites, 62 of them at `fs.body` or below, and clearing those was right.
+ *
+ * It is not mud at 35dp, and the version of this rule that deleted the cut from
+ * the product could not tell the difference, because it was phrased as an
+ * exception for a SURFACE ("a lit full-bleed cover") — a claim about a colour
+ * constant three files away, which is why it survived being false for a
+ * release. A floor phrased as a SIZE sits in the same style object as the
+ * weight, so it can be read off the source, which is what this does.
+ */
+describe("the display weight stays in the display band", () => {
+  const FS: Record<string, number> = { ...fs };
+
+  it("HARD — `F.takeover` never appears under fs.display", () => {
+    const bad: string[] = [];
+    for (const { path, text: src } of FILES) {
+      src.split("\n").forEach((line, i) => {
+        if (!/F\.takeover/.test(line)) return;
+        if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;      // a comment naming it is not a call site
+        if (path === "lib/ui.tsx") return;                // DECLARES the alias and its PostScript name
+        const m = /fontSize:\s*(fs\.([a-zA-Z]+)|[0-9]+)/.exec(line);
+        if (!m) { bad.push(`${path}:${i + 1} — the display weight with no size on the line`); return; }
+        const px = m[2] ? FS[m[2]] : Number(m[1]);
+        if (!px || px < fs.display) bad.push(`${path}:${i + 1} — ${px}dp is under the ${fs.display}dp floor`);
+      });
+    }
+    expect(bad, `\nthe 700 is display-band only — see F.takeover in lib/ui.tsx:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
+describe("no line box is smaller than the ink it has to carry", () => {
+  // `lh.flush` IS the floor — core derives it as `lineBoxFloor(FIGURE_INK.top)`
+  // off the shipped binaries and asserts that identity, so reading it here keeps
+  // one number in the system rather than a second copy of the arithmetic.
+  const FLOOR = lh.flush;
+  /** `fs.title` or a bare number, on the same style object line as its box. */
+  const SIZED = /fontSize:\s*(fs\.([a-zA-Z]+)|[0-9]+(?:\.[0-9]+)?)/;
+  const BOXED = /lineHeight:\s*([0-9]+(?:\.[0-9]+)?)\b/;
+
+  it("HARD — a typed lineHeight clears the descent the platform reserves", () => {
+    const bad: string[] = [];
+    for (const { path, text } of FILES) {
+      text.split("\n").forEach((line, i) => {
+        const size = SIZED.exec(line);
+        const box = BOXED.exec(line);
+        if (!size || !box) return;
+        const px = size[2] ? fs[size[2] as keyof typeof fs] : Number(size[1]);
+        if (!px) return;
+        const ratio = Number(box[1]) / px;
+        if (ratio < FLOOR) {
+          bad.push(`${path}:${i + 1} — ${box[1]}dp box on ${px}dp text (${ratio.toFixed(3)}, floor ${FLOOR}) → clips ${((FLOOR - ratio) * px).toFixed(1)}dp off the top`);
+        }
+      });
+    }
+    expect(bad, `\na line box is a floor, not a crop — take leading(size, role):\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 });
 

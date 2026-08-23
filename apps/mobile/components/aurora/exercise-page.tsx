@@ -620,7 +620,7 @@ export default function AuroraExercisePage() {
   // rather than a page that re-fetches. `hidden` masks the real text only while
   // the clone is inbound; every degraded path (no provider, failed measurement,
   // Reduce Motion) returns false and shows it immediately.
-  const heroStyle = { fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk } as const;
+  const heroStyle = { fontFamily: F.takeover, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk } as const;
   const heroShared = useSharedElementTarget(SHARED_ELEMENTS.exerciseHero, hero.v, heroStyle);
 
   useEffect(() => {

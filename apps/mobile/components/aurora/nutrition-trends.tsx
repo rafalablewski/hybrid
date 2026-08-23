@@ -141,7 +141,7 @@ function NutrientCard({ stat, units }: { stat: NutrientStat; units: WeightUnit }
       ) : (
         <>
           <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.md, flexWrap: "wrap" }}>
-            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.black, fontSize: 30, lineHeight: 32, color: C.chalk, fontVariant: ["tabular-nums"] }}>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.takeover, fontSize: 30, lineHeight: 32, color: C.chalk, fontVariant: ["tabular-nums"] }}>
               {fmt(stat.avg!)}
             </Text>
             {stat.target != null ? (

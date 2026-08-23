@@ -335,7 +335,7 @@ function PlanList({ goal, pick, back }: { goal: GoalNode; pick: (id: string) => 
                 <View style={{ flexDirection: "row", gap: 16, marginTop: 12, marginBottom: 10 }}>
                   {hero.stats.map((s) => (
                     <View key={s.label} style={{ flex: 1, borderTopWidth: 2, borderTopColor: withAlpha(C.chalk, ALPHA.solid), paddingTop: 8 }}>
-                      <Text style={{ fontFamily: F.black, fontSize: fs.headline, lineHeight: 21, letterSpacing: tracking(fs.headline), color: C.chalk, fontVariant: ["tabular-nums"] }}>
+                      <Text style={{ fontFamily: F.black, fontSize: fs.headline, lineHeight: leading(fs.headline, "flush"), letterSpacing: tracking(fs.headline), color: C.chalk, fontVariant: ["tabular-nums"] }}>
                         {s.value}
                         {!!s.unit && <Text style={{ fontSize: fs.caption, color: C.ash }}>{s.unit}</Text>}
                       </Text>

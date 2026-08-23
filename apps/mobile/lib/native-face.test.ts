@@ -94,10 +94,11 @@ function postScriptNameOf(file: string): string {
 function fontFile(alias: string): string | null {
   const [family, weightAndCut] = alias.split("_");
   const cut = weightAndCut.replace(/^\d+/, "");
-  // BOTH CONTAINER FORMATS, because the two foundries ship different ones:
-  // Söhne arrives as CFF `.otf`, ITC Garamond as TrueType `.ttf`. The alias
-  // still mirrors the filename exactly (`400Bk` -> `-Bk`), which is what makes
-  // this lookup a check rather than a guess — rename one and the test fails.
+  // BOTH CONTAINER FORMATS. Söhne arrives as CFF `.otf`; the `.ttf` arm is kept
+  // for the next face that does not (the retired serif was TrueType), and costs
+  // one `existsSync`. The alias still mirrors the filename exactly
+  // (`600Halbfett` -> `-Halbfett`), which is what makes this lookup a check
+  // rather than a guess — rename one and the test fails.
   for (const ext of [".otf", ".ttf"]) {
     const p = join(ROOT, "assets", "fonts", `${family}-${cut}${ext}`);
     if (existsSync(p)) return p;
@@ -156,9 +157,10 @@ describe("native face map", () => {
    * TWO ALIASES MAY SHARE ONE BINARY, so the map is checked per BINARY rather
    * than per alias key. `F.bold` and `F.black` both resolve to
    * `Sohne_600Halbfett` since Aug 2026 — deliberately, because on a near-black
-   * ground the weight ladder stops at 600 and an alias resolving above it would
-   * be 298 call sites contradicting the type system (the argument is on `F` in
-   * ui.tsx). A TypeScript object literal cannot carry the same computed key
+   * ground the READING band stops at 600 and an alias resolving above it would
+   * be 182 call sites contradicting the type system (the argument is on `F` in
+   * ui.tsx; `F.takeover` carries the 700 for the display band, under a size
+   * floor design-tokens.test.ts checks). A TypeScript object literal cannot carry the same computed key
    * twice, so `F_POSTSCRIPT` names each binary once and this resolves through
    * the alias.
    *
@@ -195,16 +197,24 @@ describe("native face map", () => {
     for (const alias of Object.values(F)) expect(psFor(alias)).not.toBe(alias);
   });
 
-  it("HARD — there is no 700 alias, because there is no 700 binary", () => {
-    // Dreiviertelfett left the bundle with `weight.bold`. It had survived for
-    // one style — the Wrapped's cover titles — on the reasoning that a LIT
-    // surface wants a heavier cut, and HERO_TAKEOVER_INK turned out to be
-    // #0a0b09: darker than `ink`. No lit full-bleed surface exists, so the
-    // exception had nowhere to apply and the face was dead weight.
-    expect(Object.entries(F).filter(([, a]) => a.includes("700"))).toEqual([]);
-    // `black` is an alias for the 600 — the correction itself, pinned.
+  it("HARD — the 700 alias exists, is bundled, and `black` is not it", () => {
+    // Dreiviertelfett left the bundle with `weight.bold` and came back a day
+    // later as `F.takeover`, floored at `fs.display`. The two halves of that
+    // are both worth pinning, because the first is what makes the second safe:
+    //
+    //   `black` STAYS at 600. Its 182 reading-band sites are the ones the
+    //     correction was for — a 0.16em stem at 14dp closes the counters of a,
+    //     e and s on this ground, and that finding does not expire.
+    //   `takeover` IS the 700, and it resolves to a binary that ships. An alias
+    //     naming a face the app does not load is the failure this whole file
+    //     exists for: RN falls back to the system face and nothing errors.
+    const takeover = F["takeover"]!;
+    expect(takeover).toContain("700");
+    expect(fontFile(takeover), "the 700 binary must be bundled").not.toBeNull();
     expect(F["black"]).toBe(F["bold"]);
     expect(F["black"]).toContain("600");
+    // …and 700 is the only alias above Halbfett, in either cut.
+    expect(Object.entries(F).filter(([, a]) => a.includes("700")).map(([k]) => k)).toEqual(["takeover"]);
   });
 });
 

@@ -338,7 +338,7 @@ export default function AuroraProfile() {
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={{ width: "100%", height: "100%" }} />
             ) : (
-              <Text style={{ fontFamily: F.black, fontSize: 32, color: lime }}>{initials}</Text>
+              <Text style={{ fontFamily: F.takeover, fontSize: 32, color: lime }}>{initials}</Text>
             )}
           </View>
         </View>

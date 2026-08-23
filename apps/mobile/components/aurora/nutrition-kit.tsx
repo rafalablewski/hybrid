@@ -287,7 +287,7 @@ export function DayGap({ C, gap, mealLabel, mealKcal = 0 }: {
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
         <RollingNumber
           value={String(Math.abs(left))}
-          style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: tracking(fs.stat), color: tone }}
+          style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: fs.stat, letterSpacing: tracking(fs.stat), color: tone }}
         />
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}

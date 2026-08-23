@@ -2,15 +2,15 @@
  * WHAT THE SHIPPED BINARIES ACTUALLY MEASURE.
  *
  * Every optical constant in `scale.ts` and `typography.ts` — the modular ladder's
- * reference size, the tracking curve, the figure's line box, the serif's size
- * compensation — resolves through a number in this file. Nothing downstream may
+ * reference size, the tracking curve, the figure's line box — resolves through a
+ * number in this file. Nothing downstream may
  * hard-code a font metric, because a hard-coded metric is a claim about a
  * binary that nobody re-checks when the binary changes.
  *
  * ── WHY THIS FILE HAD TO EXIST ─────────────────────────────────────────────
  *
  * The type system was designed around a DIFFERENT PAIR OF FACES and then had
- * Söhne + Söhne Mono + ITC Garamond swapped underneath it. The swap moved the
+ * Söhne + Söhne Mono swapped underneath it. The swap moved the
  * faces and left every optical constant where it was, so the app has been
  * setting Söhne with the old face's numbers ever since — most visibly in the tracking
  * band table, whose em figures were explicitly chosen so that "the DOMINANT call
@@ -27,10 +27,10 @@
  *
  * Read off `apps/mobile/assets/fonts/*` with fontTools: glyph OUTLINE bounds
  * through a BoundsPen, advances from `hmtx`, normalised by `head.unitsPerEm`
- * (1000 for the Söhne cuts, 2048 for ITC Garamond). Outlines, not the OS/2
- * fields — ITC Garamond's `sxHeight` reports 0.220em, which is not a possible
- * x-height and is exactly half the real one, so the table is wrong in the
- * binary and anything trusting it lands at double the intended size.
+ * (1000 for every Söhne cut). Outlines, not the OS/2 fields: a shipped binary's
+ * own tables can be wrong, and the retired serif proved it — ITC Garamond's
+ * `sxHeight` reported half the real x-height, so anything trusting that table
+ * set the face at double the intended size.
  *
  * `face-metrics.test.ts` re-reads the binaries and fails if any figure here has
  * drifted from what ships, so replacing a font file cannot silently invalidate
@@ -67,14 +67,27 @@ export interface FaceMetrics {
  * in `typography.ts` can be reasoned about as stem width alone.
  */
 /**
- * THREE CUTS, not four — Dreiviertelfett left the bundle with `weight.bold`.
- * The app paints one ground and it is near-black, so the ladder tops out at
- * Halbfett; see the note on `weight` in typography.ts.
+ * FOUR CUTS. Dreiviertelfett left the bundle with `weight.bold` in Aug 2026 and
+ * came back a day later — the app paints one near-black ground, which is a
+ * reason to keep the heaviest cut away from READING sizes and not a reason to
+ * have no display weight at all. See the note on `weight` in typography.ts.
  */
 export const SOHNE = {
   buch: { file: "Sohne-Buch.otf", unitsPerEm: 1000, xHeight: 0.523, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.09, advanceN: 0.564, letterfitN: 0.144 },
   kraftig: { file: "Sohne-Kraftig.otf", unitsPerEm: 1000, xHeight: 0.525, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.12, advanceN: 0.563, letterfitN: 0.122 },
   halbfett: { file: "Sohne-Halbfett.otf", unitsPerEm: 1000, xHeight: 0.526, capHeight: 0.718, ascender: 0.718, descender: -0.178, stem: 0.14, advanceN: 0.573, letterfitN: 0.112 },
+  /**
+   * THE DISPLAY WEIGHT, and the one cut with a size floor rather than a role.
+   *
+   * 0.16em of stem — +78% over Buch — which is why it is mud at reading size and
+   * why it was right to take it off the 62 body-sized call sites that had it.
+   * It is NOT why it should have left the product: irradiation closes counters
+   * in proportion to stem-over-counter, and that ratio is a function of SIZE. At
+   * `fs.hero` this stem is 5.6dp against a 25dp cap; at `fs.body` it was 2.2dp
+   * against 10. See the weight ladder in typography.ts for the rule that
+   * replaced the blanket cap.
+   */
+  dreiviertelfett: { file: "Sohne-Dreiviertelfett.otf", unitsPerEm: 1000, xHeight: 0.527, capHeight: 0.718, ascender: 0.718, descender: -0.176, stem: 0.16, advanceN: 0.583, letterfitN: 0.102 },
 } as const satisfies Record<string, FaceMetrics>;
 
 /**
@@ -86,25 +99,6 @@ export const SOHNE_MONO = {
   buch: { file: "SohneMono-Buch.otf", unitsPerEm: 1000, xHeight: 0.523, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.476, advanceN: 0.6, letterfitN: 0.18 },
   kraftig: { file: "SohneMono-Kraftig.otf", unitsPerEm: 1000, xHeight: 0.525, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.476, advanceN: 0.6, letterfitN: 0.159 },
   halbfett: { file: "SohneMono-Halbfett.otf", unitsPerEm: 1000, xHeight: 0.526, capHeight: 0.718, ascender: 0.718, descender: -0.178, stem: 0.491, advanceN: 0.6, letterfitN: 0.139 },
-} as const satisfies Record<string, FaceMetrics>;
-
-/**
- * THE SERIF — ITC Garamond Std Book, one weight, and the reason the pairing is
- * possible at all.
- *
- * ITC Garamond is a 1975 phototype interpretation, not an old-style revival, and
- * its x-height is famously enormous for a Garamond: 0.441em against a true
- * Garamond's ~0.40 and Söhne's 0.523. That 0.441 is what lets a serif sit beside
- * a grotesque without reading as a smaller, older voice — see
- * `SERIF_SIZE_RATIO` in scale.ts.
- *
- * Its cap-height (0.623) is much shorter than Söhne's (0.718), and that is a
- * gift rather than a problem: at the x-height-matched sizes the two faces' CAPS
- * land within half a dp of each other as well (see `capMatchAt` below), so the
- * pairing is correct on both of the axes a reader actually registers.
- */
-export const ITC_GARAMOND = {
-  book: { file: "ITCGaramondStd-Bk.ttf", unitsPerEm: 2048, xHeight: 0.4409, capHeight: 0.623, ascender: 0.6948, descender: -0.2261, stem: 0.2461, advanceN: 0.5815, letterfitN: 0.0298 },
 } as const satisfies Record<string, FaceMetrics>;
 
 /**
@@ -125,6 +119,48 @@ export const ITC_GARAMOND = {
  */
 export const FIGURE_INK = { top: 0.732, bottom: -0.072 } as const;
 export const FIGURE_INK_EM = Number((FIGURE_INK.top - FIGURE_INK.bottom).toFixed(3));
+
+/**
+ * THE DECLARED LINE METRICS — the numbers the PLATFORM lays text out with, and
+ * the reason a line box has a floor that has nothing to do with the ink in it.
+ *
+ * All seven shipped cuts agree exactly: hhea ascent 1.037, descent -0.289,
+ * lineGap 0 — and OS/2's typo and win pairs carry the same values, so it does
+ * not matter which table a platform prefers. `face-metrics.test.ts` re-reads all
+ * three tables from every binary.
+ *
+ * ── WHY THIS IS NOT TRIVIA, AND WHAT IT COST TO LEARN ─────────────────────
+ *
+ * React Native sets a declared `lineHeight` as BOTH the minimum and the maximum
+ * line height (RCTTextAttributes, and it adds no baseline compensation of its
+ * own). TextKit then honours it by keeping the font's DESCENT against the bottom
+ * of the line fragment and taking the difference out of the ascent — the text
+ * does not shrink and it does not centre, it slides down and the top of the
+ * glyph is clipped by the fragment.
+ *
+ * So the space a line box actually offers ABOVE the baseline is
+ * `box − descent`, whatever the string is. A box cut to the ink it carries is
+ * therefore too small by the descent it will never use, and the failure is
+ * silent: no error, no ellipsis, no reflow — the tops of the digits are simply
+ * gone, at a size where every figure on the screen is drawn the same way.
+ *
+ * `lineBoxFloor` is that arithmetic, and `lh.flush` is its one consumer today.
+ */
+export const FACE_LINE = { ascent: 1.037, descent: 0.289, lineGap: 0 } as const;
+
+/** The font's own line box — what you get when nothing declares a `lineHeight`. */
+export const NATURAL_LINE_EM = Number((FACE_LINE.ascent + FACE_LINE.descent + FACE_LINE.lineGap).toFixed(3));
+
+/**
+ * The smallest line box, in em, that can carry ink reaching `inkTop` above the
+ * baseline without the platform clipping it.
+ *
+ * The descent is added because it is RESERVED, not because anything occupies it
+ * (a figure's deepest glyph is `/` at 0.072em). It cannot be reclaimed with
+ * `lineHeight` — only by letting the box be honest and pulling the layout in
+ * around it with a negative margin, which is a call-site decision.
+ */
+export const lineBoxFloor = (inkTop: number): number => Number((inkTop + FACE_LINE.descent).toFixed(3));
 
 /**
  * PER-GLYPH ADVANCES, Söhne Halbfett — the widths a proportional fitter needs.
@@ -243,26 +279,6 @@ export const ADVANCE_FALLBACK_EM = 0.6;
 export const inkSpan = (m: FaceMetrics): number => Number((m.ascender - m.descender).toFixed(4));
 
 /**
- * The size at which `serif` matches `sans` optically — the x-height ratio.
- *
- * TWO FACES READ AS ONE SIZE WHEN THEIR x-HEIGHTS MATCH, not when their point
- * sizes do. Lowercase is what a reader measures a face by; the em square is an
- * arbitrary box neither face fills.
- */
-export const SERIF_SIZE_RATIO = Number((SOHNE.buch.xHeight / ITC_GARAMOND.book.xHeight).toFixed(5));
-
-/**
- * What the two faces' CAPS do at the x-height-matched pair — the check that the
- * ratio above is not buying agreement on one axis at another's expense.
- * At sans 28 / serif 33 this returns { sans: 20.1, serif: 20.56 }: half a dp
- * apart on a 20dp cap, which is below the threshold anyone can see.
- */
-export const capMatchAt = (sansSize: number, serifSize: number) => ({
-  sans: Number((sansSize * SOHNE.buch.capHeight).toFixed(2)),
-  serif: Number((serifSize * ITC_GARAMOND.book.capHeight).toFixed(2)),
-});
-
-/**
  * ── WHAT THE BINARIES DO NOT CARRY, AND WHAT IT COSTS ──────────────────────
  *
  * These are constraints on the SYSTEM, not trivia. Each one invalidates
@@ -302,19 +318,4 @@ export const FACE_LIMITS = {
    * falls through to whatever the platform substitutes mid-word.
    */
   sansMissingEszett: true,
-  /**
-   * THE SERIF CANNOT SET POLISH OR CZECH. ITC Garamond Std carries `Ł ł ó Ó`
-   * but not `ą ę ś ż ź ć ń`. This is why `cut.serif` is English-only and why
-   * every consumer falls back to `sans` rather than rendering a line with holes
-   * in it — a rule that predates this file and is confirmed by it.
-   */
-  serifMissingPolish: true,
-  /**
-   * THE SERIF'S FIGURES DESCEND — top +0.742, bottom -0.102, an 0.844em span
-   * against the mono's 0.804. They are hybrid figures, not lining ones, so they
-   * will not sit in a row of mono figures and will not fit a `flush` box. The
-   * serif is barred from figures on typographic grounds anyway; this is the
-   * metric reason the bar is not negotiable.
-   */
-  serifFiguresDescend: true,
 } as const;

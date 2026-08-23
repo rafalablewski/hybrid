@@ -503,7 +503,7 @@ export function recapShareText(recap: WeeklyRecap, t: (k: string) => string, uni
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ alignItems: "center", flex: 1 }}>
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk }}>{value}</Text>
+      <Text style={{ fontFamily: F.takeover, fontSize: fs.display, color: C.chalk }}>{value}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
     </View>
   );
@@ -597,7 +597,7 @@ export const RecipeShareCard = forwardRef<View, { recipe: Recipe; labels: Recipe
         <Text style={{ fontFamily: F.monoBold, fontSize: fs.nano, letterSpacing: 2, textTransform: "uppercase", color: accent }}>
           {labels.eyebrow}
         </Text>
-        <Text numberOfLines={2} style={{ fontFamily: F.black, fontSize: fs.hero, color: C.chalk, letterSpacing: -1.2, marginTop: 10 }}>
+        <Text numberOfLines={2} style={{ fontFamily: F.takeover, fontSize: fs.hero, color: C.chalk, letterSpacing: -1.2, marginTop: 10 }}>
           {recipe.name}
         </Text>
         <Text numberOfLines={2} style={{ fontFamily: F.reg, fontSize: fs.body, color: C.ash, marginTop: 8 }}>
