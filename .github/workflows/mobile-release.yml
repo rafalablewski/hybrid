@@ -55,7 +55,7 @@ jobs:
       WATCH_BUNDLE_ID: com.hybriddomain.xyz.watchkitapp
       APP_GROUP_ID: group.com.hybriddomain.xyz
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Use the newest Xcode on the runner (the default 16.4 is older than the
       # Xcode the project was prebuilt/verified with, which breaks native pods).
