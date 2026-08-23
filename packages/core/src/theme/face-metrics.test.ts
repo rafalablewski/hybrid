@@ -363,13 +363,22 @@ describe("the proportional advance table", () => {
 
   it("HARD — the capitals really do spread 3.5×, which is why a constant failed", () => {
     const f = open(SOHNE.halbfett.file);
-    expect(advance(f, "W")).toBeCloseTo(0.943, 3);
-    expect(advance(f, "I")).toBeCloseTo(0.272, 3);
-    expect(advance(f, "W") / advance(f, "I")).toBeGreaterThan(3.4);
+    // `advance` returns null for a glyph the face does not carry, which is a
+    // real answer for `~` and a FAILURE for a capital letter. Narrowing it
+    // here rather than at each call keeps the arithmetic below readable and
+    // makes a missing glyph fail loudly instead of poisoning a sum with null.
+    const em = (ch: string): number => {
+      const a = advance(f, ch);
+      if (a === null) throw new Error(`Söhne Halbfett has no glyph for ${JSON.stringify(ch)}`);
+      return a;
+    };
+    expect(em("W")).toBeCloseTo(0.943, 3);
+    expect(em("I")).toBeCloseTo(0.272, 3);
+    expect(em("W") / em("I")).toBeGreaterThan(3.4);
     // The German name that decided it: nine capitals, assumed 5.40em under the
     // fallback, actually 6.27 — against a 5.4em nameplate line.
     let real = 0;
-    for (const ch of "SCHWIMMEN") real += advance(f, ch);
+    for (const ch of "SCHWIMMEN") real += em(ch);
     expect(real).toBeCloseTo(6.27, 2);
     expect("SCHWIMMEN".length * ADVANCE_FALLBACK_EM).toBeCloseTo(5.4, 5);
   });
