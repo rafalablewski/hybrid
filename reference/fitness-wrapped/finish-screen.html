@@ -1,11 +1,24 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>HYBRID — Finish Screen (all themes)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@500;700;800;900&family=Cinzel:wght@600;800;900&family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Nunito:wght@600;700;800&family=Orbitron:wght@600;800;900&family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Cinzel:wght@600;800;900&family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&family=Orbitron:wght@600;800;900&family=Oswald:wght@400;500;600;700&family=Rajdhani:wght@500;600;700&family=Space+Grotesk:wght@500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -16,14 +29,14 @@ body{font-family:system-ui,sans-serif;background:radial-gradient(120% 80% at 50%
 .screen{position:relative;width:100%;height:100%;border-radius:42px;overflow:hidden;background:#000}
 .radios{position:absolute;opacity:0;pointer-events:none}
 .island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:108px;height:30px;background:#000;border-radius:99px;z-index:45}
-.statusbar{position:absolute;top:0;left:0;right:0;height:50px;z-index:42;display:flex;align-items:center;justify-content:space-between;padding:16px 26px 0;font-family:"JetBrains Mono",monospace;font-size:13px;font-weight:700;color:var(--chrome)}
+.statusbar{position:absolute;top:0;left:0;right:0;height:50px;z-index:42;display:flex;align-items:center;justify-content:space-between;padding:16px 26px 0;font-family:"SohneMono",monospace;font-size:13px;font-weight:700;color:var(--chrome)}
 .statusbar .ic{display:flex;gap:5px;align-items:center}
 .statusbar .ic b{display:block;width:17px;height:11px;border:1.5px solid currentColor;border-radius:3px;position:relative}
 .statusbar .ic b::after{content:"";position:absolute;inset:1.5px;right:5px;background:currentColor;border-radius:1px}
 .statusbar .ic s{width:13px;height:11px;background:currentColor;-webkit-mask:radial-gradient(circle at 0 100%,#000 32%,transparent 33%);mask:radial-gradient(circle at 0 100%,#000 32%,transparent 33%)}
 .tabs{position:absolute;top:52px;left:0;right:0;z-index:43;display:flex;gap:6px;padding:6px 12px;overflow-x:auto;background:rgba(8,8,8,.5);backdrop-filter:blur(10px);scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
-.tabs label{flex:0 0 auto;font-family:"JetBrains Mono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#dfe2dc;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:6px 12px;cursor:pointer;white-space:nowrap}
+.tabs label{flex:0 0 auto;font-family:"SohneMono",monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#dfe2dc;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:6px 12px;cursor:pointer;white-space:nowrap}
 .flow{display:none;position:absolute;inset:0;color:var(--fg);font-family:var(--body),system-ui,sans-serif}
 .deck{position:absolute;inset:0;overflow-y:auto;scroll-snap-type:y mandatory;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
 .deck::-webkit-scrollbar{display:none}
@@ -74,7 +87,7 @@ h1 .ac{color:var(--ac)}
 .actions{position:absolute;left:0;right:0;bottom:0;z-index:40;padding:16px 18px 30px;display:flex;gap:10px;align-items:center}
 .actions .ghost{flex:0 0 auto;display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;color:var(--fg);background:var(--surf);border:1px solid var(--line);border-radius:99px;padding:14px 16px}
 .actions .share{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;font-family:var(--disp);font-weight:800;font-size:15px;border-radius:99px;padding:15px}
-.caption{position:fixed;bottom:16px;left:0;right:0;text-align:center;font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;color:#6b6f6a}
+.caption{position:fixed;bottom:16px;left:0;right:0;text-align:center;font-family:"SohneMono",monospace;font-size:11px;letter-spacing:.1em;color:#6b6f6a}
 /* theme-specific decor */
 .stars{position:absolute;inset:0;pointer-events:none}.stars i{position:absolute;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:0 0 6px #fff;animation:twk 4s ease-in-out infinite}@keyframes twk{0%,100%{opacity:.3}50%{opacity:1}}
 .grid{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 38px,rgba(0,240,255,.10) 38px 39px),repeating-linear-gradient(0deg,transparent 0 38px,rgba(0,240,255,.10) 38px 39px);transform:perspective(420px) rotateX(58deg) translateY(30%);transform-origin:bottom;opacity:.6}
@@ -93,7 +106,7 @@ h1 .ac{color:var(--ac)}
 <div class="device">
   <input class="radios" type="radio" name="theme" id="t0" checked><input class="radios" type="radio" name="theme" id="t1"><input class="radios" type="radio" name="theme" id="t2"><input class="radios" type="radio" name="theme" id="t3"><input class="radios" type="radio" name="theme" id="t4"><input class="radios" type="radio" name="theme" id="t5">
   <div class="screen">
-<section class="flow" id="f-aurora" style="background:#0c0d0c;--fg:#f3f4ef;--mut:#b6bcb3;--ac:#c4f035;--ac2:#7fd4e8;--line:rgba(255,255,255,.14);--surf:rgba(255,255,255,.08);--track:rgba(255,255,255,.12);--disp:'Archivo';--body:'Archivo';--mono:'JetBrains Mono'">
+<section class="flow" id="f-aurora" style="background:#0c0d0c;--fg:#f3f4ef;--mut:#b6bcb3;--ac:#c4f035;--ac2:#7fd4e8;--line:rgba(255,255,255,.14);--surf:rgba(255,255,255,.08);--track:rgba(255,255,255,.12);--disp:'Sohne';--body:'Sohne';--mono:'SohneMono'">
   <div class="deck">
     <section class="slide cele"><div class="g1"></div><div class="g2"></div><div class="lg"></div><div class="confetti"><i style="left:6%;background:#c4f035;animation-duration:3.0s;animation-delay:0.1s"></i><i style="left:14%;background:#7fd4e8;animation-duration:4.3s;animation-delay:1.4s"></i><i style="left:21%;background:#c9a9f0;animation-duration:4.2s;animation-delay:1.2s"></i><i style="left:29%;background:#f0b45e;animation-duration:3.1s;animation-delay:0.8s"></i><i style="left:36%;background:#f3f4ef;animation-duration:3.1s;animation-delay:0.5s"></i><i style="left:44%;background:#c4f035;animation-duration:4.6s;animation-delay:0.4s"></i><i style="left:52%;background:#7fd4e8;animation-duration:4.5s;animation-delay:1.4s"></i><i style="left:59%;background:#c9a9f0;animation-duration:3.2s;animation-delay:1.4s"></i><i style="left:67%;background:#f0b45e;animation-duration:3.5s;animation-delay:0.8s"></i><i style="left:74%;background:#f3f4ef;animation-duration:3.4s;animation-delay:0.8s"></i><i style="left:82%;background:#c4f035;animation-duration:3.6s;animation-delay:0.3s"></i><i style="left:90%;background:#7fd4e8;animation-duration:4.6s;animation-delay:1.6s"></i></div><div class="cnt">
       <svg class="check" viewBox="0 0 128 128"><circle cx="64" cy="64" r="58"/><path d="M40 66 L57 83 L88 47"/></svg>

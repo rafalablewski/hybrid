@@ -8,7 +8,7 @@
    (aurora/today.tsx, week-rail.tsx, exercise-widget.tsx, explore.tsx,
    pill-nav.tsx, readiness-face.tsx). The device on this page renders the
    real screens, not a diagram of them.
-   Type: Archivo and JetBrains Mono can't be loaded here (CSP blocks font
+   Type: Sohne and SohneMono can't be loaded here (CSP blocks font
    CDNs), so display maps to a heavy system grotesque and mono to a true
    system monospace. The app's own rule that Kyoto Hour swaps --font-heading
    to a serif is preserved.
@@ -704,6 +704,18 @@ footer {
 <div class="wrap">
 
   <header class="masthead">
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
     <p class="eyebrow">HYBRID – Motion – Waves 1–3 shipped, awaiting on-device sign-off</p>
     <h1>Screens should <em>move</em>, not blink.</h1>
     <p class="deck">

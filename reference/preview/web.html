@@ -1,18 +1,31 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID — web changes preview</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
 <style>
   :root{
     --ink:#0c0d0c; --ink2:#14161a; --card:#181b20; --card2:#1f232a;
     --line:#2a2e34; --chalk:#ededea; --ash:#8b919b;
     --lime:#c4f035; --blue:#5aa6ff; --violet:#b29bff; --amber:#f5b53d; --red:#ff5f5f;
-    --disp:'Archivo',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+    --disp:'Sohne',system-ui,sans-serif; --mono:'SohneMono',ui-monospace,monospace;
   }
   *{box-sizing:border-box}
   body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#10231022,transparent),var(--ink);color:var(--chalk);font-family:var(--disp);-webkit-font-smoothing:antialiased}

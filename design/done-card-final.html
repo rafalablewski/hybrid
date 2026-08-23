@@ -1,9 +1,21 @@
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <title>Your training — the card as shipped</title>
 
 <style>
   /* AURORA tokens, verbatim from packages/core/src/theme/palette.ts. The app is
      dark-only, so this page is dark-only and paints every colour explicitly.
-     Archivo + JetBrains Mono can't be fetched here; the stacks name them first
+     Sohne + SohneMono can't be fetched here; the stacks name them first
      and fall back to the nearest system faces. Every measurement on this page is
      the value in the source — 1px here is 1dp on the phone. */
   :root {
@@ -11,8 +23,8 @@
     --line:#242724; --line2:#33372f;
     --chalk:#f3f4ef; --ash:#8b8f86; --ash2:#5f6459;
     --lime:#c6f84f; --blue:#6cb6bd; --on-accent:#0c0d0c;
-    --sans:"Archivo",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
-    --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"Sohne",-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
+    --mono:"SohneMono",ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
     --edge: transparent;
   }
   * { box-sizing: border-box; }

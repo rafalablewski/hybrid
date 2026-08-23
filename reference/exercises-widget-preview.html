@@ -1,11 +1,24 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID — Today: Exercises widget (preview)</title>
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sohne+Narrow:wght@500;600;700&display=swap");
 
 /* ── HYBRID Aurora tokens (mirror packages/core/src/theme/tokens.ts) ── */
 :root {
@@ -24,8 +37,8 @@
   --blue-text: #6cb6bd;
   --amber-text: #d0cd94;
   --red-text: #e58a5c;
-  --font-display: "Archivo", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Sohne", system-ui, sans-serif;
+  --font-mono: "SohneMono", ui-monospace, monospace;
   --r-card: 28px;
 }
 * { box-sizing: border-box; margin: 0; }
@@ -537,11 +550,11 @@ function lineChart(el, cfg) {
   for (const f of [0, .5, 1]) {
     const v = lo + f * (hi - lo), y = Y(v);
     sv("line", { x1: pl, x2: W - pr, y1: y, y2: y, stroke: T.line, "stroke-dasharray": "3 3" }, svg);
-    sv("text", { x: pl - 8, y: y + 3, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = yf(v);
+    sv("text", { x: pl - 8, y: y + 3, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "SohneMono, monospace" }, svg).textContent = yf(v);
   }
   const xIdx = cfg.xAll ? vals.map((_, i) => i) : [0, Math.round((n - 1) / 3), Math.round(2 * (n - 1) / 3), n - 1];
   for (const i of xIdx)
-    sv("text", { x: X(i), y: H - 8, "text-anchor": i === 0 ? "start" : i === n - 1 ? "end" : "middle", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = cfg.labels[i];
+    sv("text", { x: X(i), y: H - 8, "text-anchor": i === 0 ? "start" : i === n - 1 ? "end" : "middle", fill: T.ash, "font-size": 9, "font-family": "SohneMono, monospace" }, svg).textContent = cfg.labels[i];
   const pts = vals.map((v, i) => [X(i), Y(v)]);
   sv("path", { d: smoothPath(pts), fill: "none", stroke: cfg.color, "stroke-width": 2.5, "stroke-linecap": "round" }, svg);
   const cross = sv("line", { y1: pt, y2: H - pb, stroke: T.ash, "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0 }, svg);
@@ -608,7 +621,7 @@ function tonnageChart(el, d) {
   for (const f of [.5, 1]) {
     const y = Y(hi * f / 1.1);
     sv("line", { x1: pl, x2: W - pr, y1: y, y2: y, stroke: T.line, "stroke-dasharray": "3 3" }, svg);
-    sv("text", { x: pl - 6, y: y + 3, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = (hi * f / 1.1).toFixed(1) + "t";
+    sv("text", { x: pl - 6, y: y + 3, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "SohneMono, monospace" }, svg).textContent = (hi * f / 1.1).toFixed(1) + "t";
   }
   for (let i = 0; i < n; i++) {
     const x = pl + (i + 0.5) * (plotW / n) - bw / 2;
@@ -617,7 +630,7 @@ function tonnageChart(el, d) {
     sv("rect", { x, y: yb, width: bw, height: H - pb - yb, fill: T.deepBase, rx: 2 }, g);
     sv("rect", { x, y: yt, width: bw, height: Math.max(0, yb - yt - 2), fill: T.deepHard, rx: 3 }, g);
     if (i % 2 === 0 || i === n - 1)
-      sv("text", { x: x + bw / 2, y: H - 7, "text-anchor": "middle", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = "W" + (i + 1);
+      sv("text", { x: x + bw / 2, y: H - 7, "text-anchor": "middle", fill: T.ash, "font-size": 9, "font-family": "SohneMono, monospace" }, svg).textContent = "W" + (i + 1);
     const over = (e) => {
       const t = e.touches ? e.touches[0] : e;
       showTip(`W${i + 1} – base <b>${d.base[i].toFixed(1)} t</b> – hard <b>${d.hard[i].toFixed(1)} t</b>`, t.clientX, t.clientY);
@@ -645,7 +658,7 @@ function deltaCard(el, deltas) {
     const y = faster ? mid + 2 : mid - 2 - h;
     const g = sv("g", { cursor: "pointer" }, svg);
     sv("rect", { x, y: faster ? mid + 2 : y, width: bw, height: h, rx: 3, fill: faster ? T.lime : T.redText }, g);
-    sv("text", { x: x + bw / 2, y: faster ? mid + h + 14 : y - 6, "text-anchor": "middle", fill: faster ? T.lime : T.redText, "font-size": 9.5, "font-weight": 700, "font-family": "JetBrains Mono, monospace" }, g).textContent = (v > 0 ? "+" : "") + v + "s";
+    sv("text", { x: x + bw / 2, y: faster ? mid + h + 14 : y - 6, "text-anchor": "middle", fill: faster ? T.lime : T.redText, "font-size": 9.5, "font-weight": 700, "font-family": "SohneMono, monospace" }, g).textContent = (v > 0 ? "+" : "") + v + "s";
     const over = (e) => {
       const t = e.touches ? e.touches[0] : e;
       showTip(`Run ${i + 1} of 8 – <b>${v > 0 ? "+" : ""}${v} s/km</b> vs avg`, t.clientX, t.clientY);

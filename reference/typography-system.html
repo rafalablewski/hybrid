@@ -269,10 +269,10 @@ and its number stays in Söhne, proportional — a figure in prose is prose.</di
       <div class="meta"><p class="overline">02 — What was wrong</p></div>
       <h2>The system was built for a different pair of fonts.</h2></div>
 <div class="stack-lg">
-<p class="lead dim">Söhne, Söhne Mono and ITC Garamond were swapped in underneath a system designed around Archivo and JetBrains Mono.
+<p class="lead dim">Söhne, Söhne Mono and ITC Garamond were swapped in underneath a system designed around a different pair of faces.
 The swap moved the faces and left every optical constant where it was. Four consequences, each invisible on any single screen:</p>
 <ul class="clean">
-  <li><span class="k">Tracking</span><span><strong>The bands were Archivo's.</strong> They were adopted with a note that their values were chosen so the Archivo call sites would not move. Söhne is fitted tighter — <span class="m">n</span> carries 0.144em of sidebearing against Archivo's ~0.17 — so Archivo's tightening on top of Söhne's own tighter fit over-tightened <em>every heading in the app</em>.</span></li>
+  <li><span class="k">Tracking</span><span><strong>The bands belonged to the old face.</strong> They were adopted with a note that their values were chosen so the the previous face call sites would not move. Söhne is fitted tighter — <span class="m">n</span> carries 0.144em of sidebearing against its ~0.17 — so that tightening on top of Söhne's own tighter fit over-tightened <em>every heading in the app</em>.</span></li>
   <li><span class="k">Weight</span><span><strong>The heaviest cut was the default.</strong> Dreiviertelfett (0.16em stem) carried 298 call sites against 258 for the regular and 81 for the medium — the distribution inverted — with 62 of them at reading size or below, where a 2.2dp stroke closes the counters of <span class="m">a</span>, <span class="m">e</span> and <span class="m">s</span>.</span></li>
   <li><span class="k">Leading</span><span><strong>A figure's line box was a round number.</strong> <span class="m">flush</span> was 1.00 — the value nearest the intent. The mono figure set spans 0.804em, so every hero figure carried 9dp of box nothing could occupy.</span></li>
   <li><span class="k">Pairing</span><span><strong>The serif's x-height was a stale literal.</strong> 0.445 in the source against 0.4409 in the binary, and its leading ratio multiplied an em the size compensation had already inflated by 18.6% — so a display-size pull quote was set at body leading.</span></li>
@@ -491,7 +491,7 @@ from 16 to 32 has to equal the correction from 32 to 64, and only a log does tha
 </div>
 <div class="stack">
 <h3>What replaced a step table</h3>
-<p class="dim">The band table had two defects beyond carrying Archivo's numbers. It <strong>had steps</strong>: 25dp returned −0.015em
+<p class="dim">The band table had two defects beyond carrying the previous face's numbers. It <strong>had steps</strong>: 25dp returned −0.015em
 and 26dp −0.020em, so a rung boundary was a visible discontinuity in the middle of the ladder — and a computed size could land either
 side of one for reasons having nothing to do with optics.</p>
 <div class="note"><strong>Every move is a loosening.</strong> The reading band does not move at all, the display band gets its air back,

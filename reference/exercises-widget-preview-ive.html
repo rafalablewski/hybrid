@@ -1,11 +1,24 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID — Exercises widget (Ive variant)</title>
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
 
 /* ── HYBRID Aurora tokens (unchanged) ── */
 :root {
@@ -22,8 +35,8 @@
   --blue-text: #6cb6bd;
   --amber-text: #d0cd94;
   --red-text: #e58a5c;
-  --font-display: "Archivo", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Sohne", system-ui, sans-serif;
+  --font-mono: "SohneMono", ui-monospace, monospace;
 }
 * { box-sizing: border-box; margin: 0; }
 html, body { background: var(--color-ink); color: var(--color-chalk); }
@@ -418,7 +431,7 @@ function lineFull(el, cfg) {
   const yf = cfg.yfmt || ((v) => Math.round(v));
   const mid = lo + (hi - lo) / 2, ym = Y(mid);
   sv("line", { x1: 0, x2: W, y1: ym, y2: ym, stroke: T.line, "stroke-dasharray": "3 4" }, svg);
-  sv("text", { x: 4, y: ym - 6, fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace", opacity: .8 }, svg).textContent = yf(mid);
+  sv("text", { x: 4, y: ym - 6, fill: T.ash, "font-size": 9, "font-family": "SohneMono, monospace", opacity: .8 }, svg).textContent = yf(mid);
   const id = "lf" + (++gid);
   const grad = sv("linearGradient", { id, x1: 0, y1: 0, x2: 0, y2: 1 }, sv("defs", {}, svg));
   sv("stop", { offset: "0%", "stop-color": cfg.color, "stop-opacity": .18 }, grad);
@@ -432,7 +445,7 @@ function lineFull(el, cfg) {
   sv("circle", { cx: Math.min(lx, W - 6), cy: ly, r: 4, fill: cfg.color, stroke: T.ink, "stroke-width": 2 }, svg);
   const xIdx = cfg.xAll ? vals.map((_, i) => i) : [0, n - 1];
   for (const i of xIdx)
-    sv("text", { x: i === 0 ? 4 : Math.min(X(i), W - 4), y: H - 10, "text-anchor": i === 0 ? "start" : "end", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = cfg.labels[i];
+    sv("text", { x: i === 0 ? 4 : Math.min(X(i), W - 4), y: H - 10, "text-anchor": i === 0 ? "start" : "end", fill: T.ash, "font-size": 9, "font-family": "SohneMono, monospace" }, svg).textContent = cfg.labels[i];
   const cross = sv("line", { y1: pt, y2: H - pb, stroke: T.ash, "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0 }, svg);
   const hit = sv("rect", { x: 0, y: 0, width: W, height: H, fill: "transparent" }, svg);
   const move = (e) => {
@@ -476,8 +489,8 @@ function barsFull(el, d) {
     g.addEventListener("mouseleave", hideTip);
     g.addEventListener("touchend", hideTip);
   }
-  sv("text", { x: 4, y: H - 8, fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = "12 wks ago";
-  sv("text", { x: W - 4, y: H - 8, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "JetBrains Mono, monospace" }, svg).textContent = "now";
+  sv("text", { x: 4, y: H - 8, fill: T.ash, "font-size": 9, "font-family": "SohneMono, monospace" }, svg).textContent = "12 wks ago";
+  sv("text", { x: W - 4, y: H - 8, "text-anchor": "end", fill: T.ash, "font-size": 9, "font-family": "SohneMono, monospace" }, svg).textContent = "now";
   el.appendChild(svg);
 }
 
@@ -495,7 +508,7 @@ function deltas(el, ds) {
     const faster = v < 0;
     const g = sv("g", { cursor: "pointer" }, svg);
     sv("rect", { x, y: faster ? mid + 2 : mid - 2 - h, width: bw, height: h, rx: 2.5, fill: faster ? T.lime : T.redText }, g);
-    sv("text", { x: x + bw / 2, y: faster ? mid + h + 16 : mid - h - 8, "text-anchor": "middle", fill: faster ? T.lime : T.redText, "font-size": 9.5, "font-weight": 700, "font-family": "JetBrains Mono, monospace" }, g).textContent = (v > 0 ? "+" : "") + v;
+    sv("text", { x: x + bw / 2, y: faster ? mid + h + 16 : mid - h - 8, "text-anchor": "middle", fill: faster ? T.lime : T.redText, "font-size": 9.5, "font-weight": 700, "font-family": "SohneMono, monospace" }, g).textContent = (v > 0 ? "+" : "") + v;
     const over = (e) => {
       const t = e.touches ? e.touches[0] : e;
       showTip(`Run ${i + 1} of 8 – <b>${v > 0 ? "+" : ""}${v} s/km</b> vs avg`, t.clientX, t.clientY);

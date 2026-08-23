@@ -1,21 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Today tab header — 5 options</title>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
 <style>
 :root{--ink:#0c0d0c;--lime:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--line:#2a2d2a;--ink2:#141614}
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#050605;color:var(--chalk);font-family:"Archivo",system-ui,sans-serif;padding:48px 20px 80px}
+body{background:#050605;color:var(--chalk);font-family:"Sohne",system-ui,sans-serif;padding:48px 20px 80px}
 h1{font-size:30px;font-weight:900;letter-spacing:-.03em;text-align:center}
 h1 .d{color:var(--lime)}
-p.sub{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--ash);text-align:center;margin-top:10px}
+p.sub{font-family:"SohneMono",monospace;font-size:13px;color:var(--ash);text-align:center;margin-top:10px}
 .grid{display:flex;flex-wrap:wrap;gap:18px;justify-content:center;max-width:1100px;margin:40px auto 0}
 a.opt{display:block;width:320px;padding:22px;border-radius:20px;background:var(--ink2);border:1px solid var(--line);text-decoration:none;color:var(--chalk);transition:.2s}
 a.opt:hover{border-color:var(--lime);transform:translateY(-3px)}
-a.opt .n{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
+a.opt .n{font-family:"SohneMono",monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--lime)}
 a.opt h2{font-size:20px;font-weight:800;margin-top:8px}
 a.opt em{display:block;font-style:normal;font-size:14px;color:var(--ash);margin-top:8px;line-height:1.5}
 </style>

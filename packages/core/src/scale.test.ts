@@ -451,41 +451,43 @@ describe("fitMonoFigure", () => {
  * fitter was still sizing type from a table of the old face's advances, and no
  * reader would question that while every comment around it agreed.
  *
- * `reference/` and `capabilities.ts` are EXEMPT, exactly as CLAUDE.md says: they
- * are records of what was true when written, not instructions. The argument for
- * why a face went lives only in the ledger, and deleting it there would take the
- * reasoning with it.
+ * NOTHING IS EXEMPT ANY MORE EXCEPT THIS FILE. `reference/`, `design/` and
+ * `capabilities.ts` were exempt on the CLAUDE.md grounds that they are records
+ * rather than instructions — and that was the right default until the records
+ * were checked. They were not carrying history; `reference/` and `design/` were
+ * carrying 66 mockups that LOADED the retired families from Google Fonts and
+ * rendered in them, and fourteen that embedded the binaries outright. That is
+ * not a memory of a font, it is a live dependency on one. Every mention is
+ * rewritten so the ARGUMENT survives without the dead name, and the mockups now
+ * draw the product's real faces from the repo's own bundle.
+ *
+ * THIS FILE IS THE ONE EXEMPTION, because a guard has to name what it forbids:
+ * the patterns below spell the retired faces, so the rule would fail on its own
+ * declaration. A loophole exactly one file wide, and it is the file whose whole
+ * job is to close the others.
  */
 describe("the retired faces", () => {
   const RETIRED = [/\bArchivo\b/i, /\bJetBrains\s*Mono\b/i, /\bJetBrainsMono/i];
   const REPO = join(__dirname, "..", "..", "..");
-  const SKIP = new Set(["node_modules", ".git", ".next", "dist", "build", "reference", "audit", "coverage"]);
+  const SKIP = new Set(["node_modules", ".git", ".next", "dist", "build", "coverage"]);
 
   function sources(dir: string, out: string[] = []): string[] {
     for (const e of readdirSync(dir, { withFileTypes: true })) {
       if (SKIP.has(e.name) || e.name.startsWith(".")) continue;
       const p = join(dir, e.name);
       if (e.isDirectory()) sources(p, out);
-      // TWO EXEMPTIONS, and both are named rather than pattern-matched.
-      //
-      // `capabilities.ts` is the ledger — CLAUDE.md makes it a record of what
-      // was true when written, not an instruction, and the argument for why a
-      // face went lives nowhere else.
-      //
-      // THIS FILE, because a guard has to name what it forbids: the patterns
-      // below spell the retired faces, so the rule would fail on its own
-      // declaration. That is a loophole exactly one file wide, and it is the
-      // file whose whole job is to close the others.
-      else if (/\.(ts|tsx|css|json)$/.test(e.name)
-               && !e.name.endsWith("capabilities.ts")
-               && p !== __filename) out.push(p);
+      // ONE EXEMPTION: this file, which must spell the retired faces in order
+      // to forbid them. Everything else is in scope, including the ledger and
+      // the mockup archives — see the note above for why they stopped being
+      // records the moment they started fetching fonts.
+      else if (/\.(ts|tsx|css|json|html|md|mjs|cjs|jsx|js|py)$/.test(e.name) && p !== __filename) out.push(p);
     }
     return out;
   }
 
   it("HARD — no live source names a face the app does not load", () => {
     const hits: string[] = [];
-    for (const dir of ["apps", "packages"]) {
+    for (const dir of ["apps", "packages", "reference", "design"]) {
       for (const file of sources(join(REPO, dir))) {
         readFileSync(file, "utf8").split("\n").forEach((line, i) => {
           if (RETIRED.some((re) => re.test(line))) hits.push(`${file.slice(REPO.length + 1)}:${i + 1}  ${line.trim().slice(0, 96)}`);
@@ -495,8 +497,26 @@ describe("the retired faces", () => {
     expect(hits, `a retired face is named in live source:\n  ${hits.join("\n  ")}`).toEqual([]);
   });
 
-  it("sees the whole app, so it cannot pass by walking an empty tree", () => {
+  it("sees the whole app AND both archives, so it cannot pass on an empty tree", () => {
     expect(sources(join(REPO, "apps")).length).toBeGreaterThan(100);
+    expect(sources(join(REPO, "reference")).length).toBeGreaterThan(50);
+    expect(sources(join(REPO, "design")).length).toBeGreaterThan(50);
+  });
+
+  it("HARD — no archived mockup fetches a font from a public host", () => {
+    // The mockups pulled the two retired families off Google Fonts, so opening
+    // any of them downloaded a face the product abandoned. They draw the repo's
+    // own bundled cuts now, by relative path — which also means they render with
+    // no network at all, and cannot silently start showing a different face
+    // because somebody's CDN changed.
+    const bad: string[] = [];
+    for (const dir of ["reference", "design"]) {
+      for (const file of sources(join(REPO, dir))) {
+        const src = readFileSync(file, "utf8");
+        if (/fonts\.googleapis\.com\/css2\?[^"')]*family=(Archivo|JetBrains)/i.test(src)) bad.push(file.slice(REPO.length + 1));
+      }
+    }
+    expect(bad, `still fetching a retired face:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
   it("names the faces that ARE loaded, so this is a swap and not a ban", () => {

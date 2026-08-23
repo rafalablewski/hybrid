@@ -6,7 +6,7 @@
     --teal: #6cb6bd; --slate: #8ba0cc; --sand: #d0cd94; --terra: #e58a5c; --gold: #e6c34e;
     --wfbg: #101210; --wfline: #3a3e39; --wfink: #9aa094;
     --display: -apple-system, "SF Pro Display", "Helvetica Neue", "Segoe UI", system-ui, sans-serif;
-    --mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+    --mono: "SohneMono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
     --r-card: 20px; --r-chip: 999px; --r-field: 12px;
     --max: 860px;
   }
@@ -188,6 +188,19 @@
 <main>
 
 <header class="hero">
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
   <p class="kicker">HYBRID — product design specification — v1.0 — August 2026 — <b>CONNECT</b></p>
   <h1>The feed where a number is worth something</h1>
   <p class="lede">A complete specification for HYBRID's social feed: information architecture, feed anatomy, 34 card types, interaction design, ranking, engagement loops, the visual system, ten wireframes, and a critical self-review. Built to be handed to product, design, engineering, and investors as one blueprint.</p>
@@ -616,9 +629,9 @@
   <h3>Typography</h3>
   <div class="twrap"><table>
     <tr><th>Role</th><th>Face</th><th>Feed usage</th></tr>
-    <tr><td>Display</td><td>Archivo 400–900</td><td>Headlines (zone B) at 800; names at 700; body at 400. Light theme headings switch to Shippori Mincho per the shipped theme.</td></tr>
-    <tr><td>Condensed</td><td>Archivo Narrow 500–700</td><td>Chips, pills, filter tabs</td></tr>
-    <tr><td>Mono</td><td>JetBrains Mono 400–700</td><td>Every figure, timestamp, kicker. Always <code>tabular-nums</code>. Loads render as "180 kg" with the unit at 70% size.</td></tr>
+    <tr><td>Display</td><td>Sohne 400–900</td><td>Headlines (zone B) at 800; names at 700; body at 400. Light theme headings switch to Shippori Mincho per the shipped theme.</td></tr>
+    <tr><td>Condensed</td><td>Sohne Narrow 500–700</td><td>Chips, pills, filter tabs</td></tr>
+    <tr><td>Mono</td><td>SohneMono 400–700</td><td>Every figure, timestamp, kicker. Always <code>tabular-nums</code>. Loads render as "180 kg" with the unit at 70% size.</td></tr>
   </table></div>
   <p>Scale (from <code>scale.ts</code>, shared by both clients): <span class="mono">nano 10 · micro 11 · caption 12 · body 13 · bodyLg 14 · note 15 · subtitle 16 · title 18 · heading 20 · headline 22 · display 26 · hero 34 · stat 46</span> — the middots here are the file's own notation, not UI copy. Feed mapping: card headline = <strong>headline 22</strong>, PR load = <strong>stat 46</strong>, names = <strong>note 15</strong>, meta = <strong>caption 12</strong>, stat rows = <strong>subtitle 16 mono</strong>. Line heights and tracking from the same map (display −0.5, labels +0.9, caps +1.2).</p>
 
@@ -881,6 +894,6 @@
 </section>
 
 <hr>
-<p class="muted" style="font: 500 11.5px/1.7 var(--mono)">HYBRID — CONNECT feed specification v1.0 — August 2026. Set in the app's type roles (Archivo / JetBrains Mono in product; system equivalents in this document). Colors are the shipped Aurora Spectrum and Kyoto Hour palettes. Source of truth for capability status: packages/core/src/capabilities.ts.</p>
+<p class="muted" style="font: 500 11.5px/1.7 var(--mono)">HYBRID — CONNECT feed specification v1.0 — August 2026. Set in the app's type roles (Sohne / SohneMono in product; system equivalents in this document). Colors are the shipped Aurora Spectrum and Kyoto Hour palettes. Source of truth for capability status: packages/core/src/capabilities.ts.</p>
 
 </main>

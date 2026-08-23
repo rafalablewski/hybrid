@@ -6,17 +6,17 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cartesia
 //  Desktop mirror of the mobile app + deep analytics.
 //  Sidebar shell, wide multi-column layouts, real charts.
 //  Three analytics dashboards: Athlete / Coach / Operator.
-//  Identity mirrors the mobile app: ink + lime, Archivo.
+//  Identity mirrors the mobile app: ink + lime, Sohne.
 // ============================================================
 
 const INK = "#0c0d0c", INK2 = "#141614", CARD = "#161816", LINE = "#2a2d2a";
 const LIME = "#c4f035", CHALK = "#f3f4ef", ASH = "#8b8f86", BLUE = "#7fd4e8", VIOLET = "#c9a9f0", AMBER = "#f0b45e", RED = "#e0625e";
 
-const F = `@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Narrow:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');`;
-const disp = { fontFamily: "'Archivo', sans-serif" };
-const cond = { fontFamily: "'Archivo Narrow', sans-serif" };
-const mono = { fontFamily: "'JetBrains Mono', monospace" };
-const body = { fontFamily: "'Archivo', sans-serif" };
+const F = `@import url('https://fonts.googleapis.com/css2?family=Sohne+Narrow:wght@500;600;700&display=swap');`;
+const disp = { fontFamily: "'Sohne', sans-serif" };
+const cond = { fontFamily: "'Sohne Narrow', sans-serif" };
+const mono = { fontFamily: "'SohneMono', monospace" };
+const body = { fontFamily: "'Sohne', sans-serif" };
 
 // ---------- data ----------
 const STRENGTH = [{ w: "Wk1", squat: 142, bench: 110, dl: 180 }, { w: "Wk2", squat: 146, bench: 112, dl: 184 }, { w: "Wk3", squat: 145, bench: 113, dl: 184 }, { w: "Wk4", squat: 151, bench: 116, dl: 188 }, { w: "Wk5", squat: 154, bench: 118, dl: 192 }];

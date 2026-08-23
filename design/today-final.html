@@ -1,6 +1,18 @@
 <!doctype html>
 <html lang="en" data-template="aurora">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID — Today page · your spec</title>
@@ -12,9 +24,9 @@
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:#070807;color:var(--chalk);
-    font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+    font-family:"Sohne",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
   body{padding:32px 16px 120px;display:flex;flex-direction:column;align-items:center;gap:24px}
-  .mono{font-family:"JetBrains Mono",ui-monospace,monospace}
+  .mono{font-family:"SohneMono",ui-monospace,monospace}
 
   .intro{max-width:620px;width:100%;text-align:center}
   .intro h1{font-size:28px;font-weight:800;letter-spacing:-.02em}

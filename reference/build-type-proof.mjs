@@ -278,7 +278,7 @@ from apps/mobile/assets/fonts. Local only — do not commit or publish this page
   <p class="over">01 — the ladder</p>
   <h2 style="margin-top:10px">Eight rungs moved.</h2>
   ${cmp("The eleven rungs, at true size", "nano and stat are mono-only rungs",
-    pane("b", `<div>${ramp(B_FS, (v) => bTrackEm(v), false)}</div>`, "ladder 10–46 — Archivo bands"),
+    pane("b", `<div>${ramp(B_FS, (v) => bTrackEm(v), false)}</div>`, "ladder 10–46 — old bands"),
     pane("a", `<div>${ramp(A_FS, (v) => aTrackEm(v), true)}</div>`, "ladder 10–49 — optical curve"))}
 </section>
 

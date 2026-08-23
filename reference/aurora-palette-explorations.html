@@ -1,13 +1,26 @@
 <!doctype html>
 <html lang="en" data-theme="dark">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID · Aurora palette explorations</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+
 
 /* ───────────────────────────────────────────────────────────────
    AURORA palette explorations
@@ -25,7 +38,7 @@
   /* text-legible lifts of the darker palette members (for use ON dark cards) */
   --p-teal-t:#6cb6bd; --p-clay-t:#e58a5c;
   --r:28px;
-  font-family:"Archivo",system-ui,-apple-system,sans-serif;
+  font-family:"Sohne",system-ui,-apple-system,sans-serif;
 }
 *{box-sizing:border-box}
 body{margin:0;background:#070807;color:var(--chalk);
@@ -42,16 +55,16 @@ body{margin:0;background:#070807;color:var(--chalk);
 .sw{display:flex;flex-direction:column;gap:6px;align-items:center}
 .sw i{width:46px;height:46px;border-radius:12px;display:block;
   border:1px solid rgba(255,255,255,.08)}
-.sw span{font:600 9.5px/1 "JetBrains Mono",monospace;color:var(--ash);letter-spacing:.04em}
+.sw span{font:600 9.5px/1 "SohneMono",monospace;color:var(--ash);letter-spacing:.04em}
 
 /* ── gallery ── */
 .gallery{display:flex;gap:30px;overflow-x:auto;padding:34px 4px 14px;scroll-snap-type:x proximity}
 .col{flex:0 0 auto;width:392px;scroll-snap-align:start;display:flex;flex-direction:column;gap:16px}
-.col-head .n{font:700 11px/1 "JetBrains Mono",monospace;color:var(--ash);letter-spacing:.18em}
+.col-head .n{font:700 11px/1 "SohneMono",monospace;color:var(--ash);letter-spacing:.18em}
 .col-head h2{margin:8px 0 4px;font-size:21px;font-weight:900;letter-spacing:-.02em}
 .col-head p{margin:0;font-size:12.5px;line-height:1.55;color:var(--ash);min-height:54px}
 .legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
-.legend b{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 "JetBrains Mono",monospace;
+.legend b{display:inline-flex;align-items:center;gap:6px;font:600 10px/1 "SohneMono",monospace;
   color:var(--ash);background:var(--ink2);border:1px solid var(--line);border-radius:999px;padding:5px 9px}
 .legend b s{width:9px;height:9px;border-radius:3px;text-decoration:none}
 
@@ -69,7 +82,7 @@ body{margin:0;background:#070807;color:var(--chalk);
 
 /* ── shared component styles (all read CSS vars set per-variant) ── */
 .row{display:flex}.between{justify-content:space-between}.center{align-items:center}
-.mono{font-family:"JetBrains Mono",monospace}
+.mono{font-family:"SohneMono",monospace}
 .ash{color:var(--ash)}
 .accent{color:var(--acc-text)}
 .arrow{font-weight:800}
@@ -88,7 +101,7 @@ body{margin:0;background:#070807;color:var(--chalk);
   border:1px solid var(--line);display:grid;place-items:center;cursor:pointer;font-size:17px;color:var(--ash)}
 .badge{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;
   background:var(--risk);border:2px solid var(--ink);display:grid;place-items:center;
-  font:700 10px/1 "JetBrains Mono",monospace;color:#0c0d0c}
+  font:700 10px/1 "SohneMono",monospace;color:#0c0d0c}
 
 .greet{margin:16px 2px 2px}
 .greet-h{font-weight:800;font-size:15px}

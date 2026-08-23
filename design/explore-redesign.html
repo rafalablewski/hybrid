@@ -1,13 +1,13 @@
 <title>HYBRID — Explore redesign concepts</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 
 :root{
   --ink:#0c0d0c; --ink2:#141614; --card:#151715; --line:#242724;
   --lime:#c6f84f; --chalk:#f3f4ef; --ash:#8b8f86;
   --blue:#6cb6bd; --violet:#8ba0cc; --amber:#d0cd94; --red:#e58a5c; --gold:#e6c34e;
-  --font-display:"Archivo","Helvetica Neue","Segoe UI",system-ui,sans-serif;
-  --font-mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --font-display:"Sohne","Helvetica Neue","Segoe UI",system-ui,sans-serif;
+  --font-mono:"SohneMono",ui-monospace,"SF Mono",Menlo,monospace;
   --shadow-card:0 6px 22px -12px rgba(0,0,0,.55);
   --gutter:16px;
 }
@@ -221,6 +221,18 @@ body{
 
 <div class="wrap">
   <header class="masthead">
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
     <div class="brandrow"><span class="brandmark">H</span><span class="eyebrow">HYBRID — Explore</span></div>
     <h1>Explore, built to scale past 50 plans</h1>
     <p>Five redesigns of the plan-browsing surface. Every one keeps your brief — <b>three full-width feature cards up top, everything else as smaller scrollable cards below</b> — but each answers the “what happens at 50+ plans” question a different way.</p>
@@ -232,7 +244,7 @@ body{
   <div id="stageHost"></div>
 
   <footer class="footer">
-    Mockups render in HYBRID’s shipped <b>Aurora</b> dark theme using the real tokens — <code>--ink #0c0d0c</code>, <code>--lime #c6f84f</code>, Archivo + JetBrains Mono, 28px card radius, full-bleed rails. The phone screens scroll and the rails swipe horizontally — try them. Nothing here touches the codebase; it’s a preview to pick a direction from.
+    Mockups render in HYBRID’s shipped <b>Aurora</b> dark theme using the real tokens — <code>--ink #0c0d0c</code>, <code>--lime #c6f84f</code>, Sohne + SohneMono, 28px card radius, full-bleed rails. The phone screens scroll and the rails swipe horizontally — try them. Nothing here touches the codebase; it’s a preview to pick a direction from.
   </footer>
 </div>
 

@@ -1,18 +1,31 @@
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <!-- HYBRID — Liquid Glass plan-day card. Start moved under the [note].
      Three approaches to the "show all lifts" affordance, 10 examples.
-     Tokens: packages/core/src/theme/tokens.ts (Archivo / JetBrains Mono,
+     Tokens: packages/core/src/theme/tokens.ts (Sohne / SohneMono,
      ink #0c0d0c, chartreuse #c6f84f, Aurora spectrum). Standalone preview. -->
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>HYBRID — Liquid Glass · show all lifts</title>
 <style>
-  @import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap");
+  
 
   :root{
     --lime:#c6f84f; --chalk:#f3f4ef; --ash:#8b8f86;
     --teal:#3c787e; --violet:#c9a9f0; --sand:#d0cd94; --clay:#d56f3e;
-    --disp:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-    --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+    --disp:"Sohne",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --mono:"SohneMono",ui-monospace,"SF Mono",Menlo,monospace;
 
     /* page chrome — theme aware */
     --bg:#0a0b0a; --bg2:#0e100e; --frame:#22251f;

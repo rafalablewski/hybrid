@@ -1,19 +1,32 @@
 <!doctype html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Today → Train, in SwiftUI — a HYBRID design study</title>
 <style>
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap");
+
 
 /* ── HYBRID Aurora tokens — the app's own palette ─────────────────────────── */
 :root {
   --ink:#0c0d0c; --ink2:#141614; --line:#2a2d2a;
   --chalk:#f3f4ef; --mist:#b6bab0; --ash:#8b8f86;
   --lime:#c6f84f; --blue:#6cb6bd; --amber:#d0cd94; --terra:#e58a5c; --violet:#a08cd0;
-  --display:"Archivo","Archivo Fallback",system-ui,-apple-system,sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --display:"Sohne","Sohne Fallback",system-ui,-apple-system,sans-serif;
+  --mono:"SohneMono",ui-monospace,"SF Mono",Menlo,monospace;
   --sheet:rgba(255,255,255,.055); --rim:rgba(255,255,255,.10);
 }
 * { box-sizing:border-box; }
@@ -463,7 +476,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
   <div class="note grey">
     <span class="k">Deliberately not mounted</span>
     <code>ContentUnavailableView</code>. Its <em>grammar</em> is what the empty block follows, but the
-    native view styles its own type — SF Pro in the middle of a card set in Archivo — and its props are
+    native view styles its own type — SF Pro in the middle of a card set in Sohne — and its props are
     title / systemImage / description with no slot for the app's own buttons, so mounting it would split
     one block across two renderers and lose the house face for nothing. Native rendering of the two
     controls still needs a device round, as <code>swiftui-kit</code> already documents.
@@ -1508,19 +1521,19 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
       <thead><tr><th>Element</th><th>Type</th><th>Colour</th><th>Geometry</th><th>SwiftUI</th></tr></thead>
       <tbody>
         <tr><td>Section surface</td><td>—</td><td><code>ink2</code> @ .055</td><td>r 24, pad 18</td><td><code>Section</code> in <code>listStyle(.insetGrouped)</code></td></tr>
-        <tr><td>Section header</td><td>Archivo 900 / 19 / −.03em</td><td><code>chalk</code></td><td>baseline row, exit right</td><td><code>Section header</code></td></tr>
+        <tr><td>Section header</td><td>Sohne 900 / 19 / −.03em</td><td><code>chalk</code></td><td>baseline row, exit right</td><td><code>Section header</code></td></tr>
         <tr><td>Section footer</td><td>Mono 10 / .13em / upper</td><td><code>ash</code></td><td>hairline above, 11 pad</td><td><code>Section footer</code></td></tr>
-        <tr><td>Day cell</td><td>Mono 8.5 + Archivo 800 / 16</td><td><code>ash</code> / <code>mist</code></td><td>43 × 62, r 18, gap 7</td><td><code>Button</code> in <code>ScrollView</code></td></tr>
+        <tr><td>Day cell</td><td>Mono 8.5 + Sohne 800 / 16</td><td><code>ash</code> / <code>mist</code></td><td>43 × 62, r 18, gap 7</td><td><code>Button</code> in <code>ScrollView</code></td></tr>
         <tr><td>Day selection</td><td>—</td><td>chalk @ .10 + 1px rim</td><td>fills the cell</td><td><code>matchedGeometryEffect</code></td></tr>
         <tr><td>Load gauge</td><td>—</td><td><code>mist</code>; <code>lime</code> today</td><td>19 × 3, r 2</td><td><code>Gauge</code> <code>.accessoryLinearCapacity</code></td></tr>
         <tr><td>Empty symbol</td><td>SF Symbol 36 pt</td><td><code>ash</code> @ .7 (.5 past)</td><td>centred, 14 pad above</td><td><code>ContentUnavailableView</code></td></tr>
-        <tr><td>Empty title</td><td>Archivo 800 / 17 / −.02em</td><td><code>chalk</code>; <code>ash</code> when past</td><td>—</td><td>same</td></tr>
-        <tr><td>Empty description</td><td>Archivo 400 / 13 / 1.5</td><td><code>ash</code></td><td>max 31 ch</td><td>same</td></tr>
-        <tr><td>Hero figure</td><td>Archivo 900 / 46 / −.045em</td><td><code>chalk</code></td><td>tabular, unit baseline-aligned</td><td><code>contentTransition(.numericText)</code></td></tr>
+        <tr><td>Empty title</td><td>Sohne 800 / 17 / −.02em</td><td><code>chalk</code>; <code>ash</code> when past</td><td>—</td><td>same</td></tr>
+        <tr><td>Empty description</td><td>Sohne 400 / 13 / 1.5</td><td><code>ash</code></td><td>max 31 ch</td><td>same</td></tr>
+        <tr><td>Hero figure</td><td>Sohne 900 / 46 / −.045em</td><td><code>chalk</code></td><td>tabular, unit baseline-aligned</td><td><code>contentTransition(.numericText)</code></td></tr>
         <tr><td>Sub figures</td><td>Mono 12</td><td><code>ash</code></td><td>gap 16, wraps</td><td><code>monospacedDigit</code></td></tr>
-        <tr><td>Session row</td><td>Archivo 700 / 14.5 + Mono 11</td><td><code>chalk</code> / <code>ash</code></td><td>36 circle, gap 12, 44 min height</td><td><code>Label</code> + <code>SwipeActions</code></td></tr>
-        <tr><td>Primary button</td><td>Archivo 800 / 14.5</td><td><code>lime</code> on <code>onAccent</code></td><td>capsule, 10 × 18, 44 tap</td><td><code>buttonStyle(.borderedProminent)</code></td></tr>
-        <tr><td>Secondary button</td><td>Archivo 800 / 14.5</td><td>chalk @ .09 + rim</td><td>capsule, 10 × 16, 44 tap</td><td><code>buttonStyle(.bordered)</code></td></tr>
+        <tr><td>Session row</td><td>Sohne 700 / 14.5 + Mono 11</td><td><code>chalk</code> / <code>ash</code></td><td>36 circle, gap 12, 44 min height</td><td><code>Label</code> + <code>SwipeActions</code></td></tr>
+        <tr><td>Primary button</td><td>Sohne 800 / 14.5</td><td><code>lime</code> on <code>onAccent</code></td><td>capsule, 10 × 18, 44 tap</td><td><code>buttonStyle(.borderedProminent)</code></td></tr>
+        <tr><td>Secondary button</td><td>Sohne 800 / 14.5</td><td>chalk @ .09 + rim</td><td>capsule, 10 × 16, 44 tap</td><td><code>buttonStyle(.bordered)</code></td></tr>
         <tr><td>Exit row</td><td>Mono 10 / .13em / upper</td><td><code>ash</code>, ringed glyph</td><td>hairline above, 28 ring</td><td><code>Button</code> — ring = it leaves</td></tr>
         <tr><td>Sheet panel</td><td>—</td><td><code>ink2</code></td><td>r 22 top, pad <code>sheetPadBottom()</code></td><td><code>BottomSheet</code> + <code>Form</code></td></tr>
       </tbody>
@@ -1663,7 +1676,7 @@ footer span { font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; co
   <span>HYBRID design study — rev. 6</span>
   <span>Today → Train</span>
   <span>18 states</span>
-  <span>Set in Archivo &amp; JetBrains Mono — the app's own faces</span>
+  <span>Set in Sohne &amp; SohneMono — the app's own faces</span>
 </footer>
 
 </div>
