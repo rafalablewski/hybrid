@@ -84,7 +84,6 @@ export function RecipeShelf({ shelf, openCollection, openRecipe, onLayout, saved
       <ASection
         title={collectionTitle(shelf.key, t)}
         meta={`${n} ${n === 1 ? t("w.recovery.nutrition.recipeCount") : t("w.recovery.nutrition.recipesCount")}`}
-        style={{ marginHorizontal: 2 }}
       />
       <ScrollView
         horizontal
