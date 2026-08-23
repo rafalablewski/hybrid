@@ -198,7 +198,6 @@ export function UserRecipeShelf({
       <ASection
         title={t("w.recovery.nutrition.myRecipes")}
         meta={recipes.length > 0 ? String(recipes.length) : undefined}
-        style={{ marginHorizontal: 2 }}
       />
 
       {recipes.length === 0 ? (
