@@ -81,18 +81,56 @@ import { ASection } from "./kit";
  *  and forty rows is a database, not a celebration. */
 const LEDGER_CAP = 4;
 
-/** ONE PAIR — `70 × 9 → 70 × 10`, the move a record made.
+/**
+ * ONE PAIR — `70 × 9 → 70 × 10`, the move a record made.
  *
- *  Sized, not just coloured: `from` sits a rung below `to` so the line GROWS as
- *  it is read, which is the one thing every record has in common. */
-/** The delta's column, reserved even when a row has none, so a ledger of four
- *  records does not step in and out at its right edge. */
-const DELTA_W = 58;
-/** The width the ARRIVAL column reserves, so the figures a reader compares line
- *  up under each other. `120.5 × 12` is the widest real pair. */
-const ARRIVAL_W = 62;
-/** The origin's column. Narrower: it is the part being read past. */
-const ORIGIN_W = 52;
+ * Sized, not just coloured: `from` sits a rung below `to` so the line GROWS as
+ * it is read, which is the one thing every record has in common.
+ *
+ * ── THE COLUMNS WERE ALL TOO NARROW, AND HAD BEEN SINCE THEY SHIPPED ──────
+ *
+ * Every width here was a guess with a confident comment attached. The arrival
+ * column reserved 62dp and its own note claimed "`120.5 × 12` is the widest
+ * real pair" — that pair is TEN CHARACTERS of Söhne Mono at `fs.body`, which
+ * is 10 × 14 × 0.6 = 84dp. It did not fit. Neither did "100 × 10" (67dp), nor
+ * any other pair the ledger can print: the column was too narrow for the
+ * ORDINARY case, not just the extreme one, so the row had been quietly cutting
+ * the figure it exists to show.
+ *
+ * The others were the same story in miniature: the origin cut a ten-character
+ * pair, and the delta cut "+12 reps", every Polish rep delta ("+1 powt." is
+ * 62dp against 58), "+12 Wdh." and "+12.5 kg".
+ *
+ * These are MONO, so the width is the length: `monoWidthDp` in core, and the
+ * numbers below are that function's answer for the widest string each column
+ * can hold, not an estimate of it. Ten characters is the cap on a pair —
+ * five for the load ("120.5", or "1,240" in pounds), three for " × ", two for
+ * the reps — and `records.render.test.tsx` fails if any of them overruns.
+ */
+
+/**
+ * THE WIDTHS, AND THE +1 IS DELIBERATE.
+ *
+ * Each column is its widest content PLUS ONE CHARACTER. A column sized to its
+ * exact worst case has no tolerance at all: the arrival's widest pair is
+ * exactly 84.0dp in an 84dp box, and at that point a sub-pixel rounding, a
+ * locale that groups thousands where we did not expect it, or simply a string
+ * nobody thought of takes it over. One character is the smallest unit the
+ * content is made of, so it is the natural slack — and in mono it is a number
+ * rather than a feeling.
+ */
+
+/** Ten characters at `fs.caption`: "+12 powt." and "+120.5 kg" are the widest
+ *  deltas across the three languages, at nine. Reserved even when a row has no
+ *  delta, so a ledger of four records does not step in and out at its right
+ *  edge. */
+const DELTA_W = 78;
+/** Eleven characters of mono at `fs.body`. Ten is the widest pair `point()`
+ *  can build — five for the load ("120.5", or "1,240" in pounds), three for
+ *  " × ", two for the reps. */
+const ARRIVAL_W = 92;
+/** The same eleven characters at `fs.nano`. */
+const ORIGIN_W = 66;
 
 function Path({ r }: { r: PrRecord }) {
   const { palette: C } = useTheme();
@@ -335,28 +373,54 @@ function Row({ name, r, delta, a11y, onPress }: {
 }) {
   const { palette: C } = useTheme();
   const body = (
-    <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
-      {/* THE NAME TAKES WHAT IS LEFT, not a fixed 88dp. A repeated key may be
-          omitted — that is what a ledger does — but a lift appearing ONCE was
-          being cut to "Barbell Ben…" and "Dumbbell La…", which is the row
-          failing at the only job the column has. Reading size and chalk for the
-          same reason the quote's name changed: it is the subject. */}
-      <Text
-        numberOfLines={1}
-        style={{ flex: 1, minWidth: 0, fontFamily: F.semi, fontSize: fs.body, color: name ? C.chalk : C.ash }}
-      >
-        {name}
-      </Text>
+    // ── TWO LINES, AND THE ARITHMETIC IS WHY ────────────────────────────────
+    //
+    // The row carried four facts on ONE line: the lift, the origin, the
+    // arrival and the delta. Add up what they actually need and it does not
+    // close. The widest lift name in the catalogue is "Single Arm Dumbbell
+    // Row" at 166dp; the path needs 60 + 84 with its arrow and gaps, so 162;
+    // the delta needs 71; the gaps 22. That is 421dp of content on a 366dp
+    // line, and it had been fitting only because three of the four were
+    // truncating.
+    //
+    // Every way of closing that gap on one line costs something real. Shrink
+    // the columns and the figures cut — that is where this started. Shrink the
+    // NAME and the row fails at the only job its first column has, which this
+    // file already fixed once and wrote down. Drop the origin and the row
+    // stops showing the move it exists to show.
+    //
+    // So the row stops fighting for one line. THE SUBJECT AND ITS HEADLINE
+    // share the top — the lift, and how far it moved — and the workings sit
+    // underneath. The name gets 287dp and is never cut in any language; the
+    // pair gets the whole left edge and lines up down the ledger. It is the
+    // same answer the plate's base and the exercise card arrived at, for the
+    // same reason: two facts that both vary do not share a line.
+    <View style={{ gap: 2 }}>
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+        {/* THE NAME TAKES WHAT IS LEFT, not a fixed 88dp. A repeated key may be
+            omitted — that is what a ledger does — but a lift appearing ONCE was
+            being cut to "Barbell Ben…" and "Dumbbell La…", which is the row
+            failing at the only job the column has. Reading size and chalk for
+            the same reason the quote's name changed: it is the subject. */}
+        <Text
+          numberOfLines={1}
+          style={{ flex: 1, minWidth: 0, fontFamily: F.semi, fontSize: fs.body, color: name ? C.chalk : C.ash }}
+        >
+          {name}
+        </Text>
+        {/* THE DELTA IS THE ROW'S HEADLINE, so it sits on the row's own line —
+            "+1 rep" is what you read the ledger FOR, and the pair below is the
+            working that lets you check it. Its column is reserved even when a
+            row has none, so four records do not step in and out at the right
+            edge. */}
+        <Text
+          numberOfLines={1}
+          style={{ ...TABULAR, width: DELTA_W, textAlign: "right", fontFamily: F.mono, fontSize: fs.caption, color: delta ? txt(C, C.lime) : "transparent" }}
+        >
+          {delta ?? ""}
+        </Text>
+      </View>
       <Path r={r} />
-      {/* THE DELTA SITS AGAINST THE ARRIVAL. It used to be flushed to the far
-          edge while the pair ended mid-row, leaving a gutter of nothing between
-          a number and its own explanation. */}
-      <Text
-        numberOfLines={1}
-        style={{ ...TABULAR, width: DELTA_W, textAlign: "right", fontFamily: F.mono, fontSize: fs.caption, color: delta ? txt(C, C.lime) : "transparent" }}
-      >
-        {delta ?? ""}
-      </Text>
     </View>
   );
   if (!onPress) return <View accessibilityLabel={a11y}>{body}</View>;

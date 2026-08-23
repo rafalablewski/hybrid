@@ -338,7 +338,12 @@ export default function AuroraSportPage() {
       {/* ── THE REST OF THE LADDER — the rungs the headline is not ── */}
       {m.records.filter((r) => !r.promoted).map((r) => (
         <View key={r.km} style={{ flexDirection: "row", alignItems: "baseline", gap: space.md, paddingVertical: space.md, ...dividerTop }}>
-          <Text numberOfLines={1} style={{ ...label(), width: 78 }}>{rungLabel(r)}</Text>
+          {/* 86, not 78. German "Halbmarathon" is twelve characters of Söhne
+              Mono at `fs.micro` — 12 × 11 × 0.6 = 79.2dp — so the column cut
+              the one rung name long enough to need it. Thirteen characters
+              reserved: mono, so the width IS the length, and a column sized to
+              its exact worst case has no room for the next long word. */}
+          <Text numberOfLines={1} style={{ ...label(), width: 86 }}>{rungLabel(r)}</Text>
           {r.time ? (
             <>
               {/* The time leads and the pace gives way: on a narrow phone a

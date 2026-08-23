@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
-import type { ActivityRange, LoggedSession, SessionBlock } from "@hybrid/core";
+import { monoWidthDp, fs, type ActivityRange, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { renderScreen } from "./render";
 import PeriodRecords from "../components/aurora/period-records";
 
@@ -147,5 +147,63 @@ describe("Records — the path", () => {
     expect(screen.getByText("Records")).toBeTruthy();
     expect(container.textContent).toContain("70 kg");
     expect(screen.getByText("× 10")).toBeTruthy(); // the reps, as a multiplier
+  });
+});
+
+/**
+ * THE LEDGER'S COLUMNS, MEASURED — the guard the confident comments were not.
+ *
+ * Every width in period-records.tsx was a guess with a note attached, and the
+ * note was wrong: the arrival column reserved 62dp and claimed "`120.5 × 12`
+ * is the widest real pair", which is 84dp of Söhne Mono at `fs.body`. It did
+ * not fit, and neither did "100 × 10" — so the column was too narrow for the
+ * ORDINARY case and had been cutting the figure it exists to show since it
+ * shipped.
+ *
+ * jsdom does not truncate, so no render assertion can see this. Only
+ * arithmetic can, and mono makes the arithmetic trivial: the width IS the
+ * length, at a flat 0.6em.
+ */
+describe("the ledger's columns hold what the ledger can print", () => {
+  /** `point()` = `${load} × ${reps}`. Ten characters is the cap: five for the
+   *  load ("120.5", or "1,240" in pounds), three for " × ", two for the reps. */
+  const PAIRS = ["120.5 × 12", "1,240 × 12", "100 × 10", "62.5 × 8", "7.5 × 20", "265 × 10"];
+  /** Every delta the column can hold, in all three languages. */
+  const DELTAS = [
+    "+1 rep", "+12 reps", "+1 powt.", "+12 powt.", "+1 Wdh.", "+12 Wdh.",
+    "New", "Nowy", "Neu", "+2.5 kg", "+12.5 kg", "+120.5 kg", "+5 lb", "+55 lb",
+  ];
+  const ORIGIN_W = 66, ARRIVAL_W = 92, DELTA_W = 78;
+
+  it("holds every pair the ORIGIN column can print", () => {
+    for (const p of PAIRS) expect(monoWidthDp(p, fs.nano), p).toBeLessThanOrEqual(ORIGIN_W);
+  });
+
+  it("holds every pair the ARRIVAL column can print", () => {
+    for (const p of PAIRS) expect(monoWidthDp(p, fs.body), p).toBeLessThanOrEqual(ARRIVAL_W);
+  });
+
+  it("holds every delta, in all three languages", () => {
+    for (const d of DELTAS) expect(monoWidthDp(d, fs.caption), d).toBeLessThanOrEqual(DELTA_W);
+  });
+
+  it("KNOWS THE OLD WIDTHS DID NOT, so the guard is known to be able to fail", () => {
+    expect(monoWidthDp("120.5 × 12", fs.body)).toBeGreaterThan(62);   // the old ARRIVAL_W
+    expect(monoWidthDp("100 × 10", fs.body)).toBeGreaterThan(62);     // ...and the ordinary case
+    expect(monoWidthDp("120.5 × 12", fs.nano)).toBeGreaterThan(52);   // the old ORIGIN_W
+    expect(monoWidthDp("+1 powt.", fs.caption)).toBeGreaterThan(58);  // the old DELTA_W
+  });
+
+  it("leaves the NAME a line it can never be cut on", () => {
+    // The row stacks now, so the name shares its line with the delta only.
+    // 366dp content column, less the delta's column and one 8dp gap.
+    const forName = 366 - DELTA_W - 8;
+    // The widest name in the catalogue, at fs.body. Measured with the SANS
+    // table (the name is proportional), which is why this one uses a number
+    // rather than a formula — see nameplate.test.ts for the ruler.
+    expect(forName).toBeGreaterThan(170);
+    // ...and on one line with the whole path, which is what it used to do, it
+    // could not: 166 (name) + 162 (path) + 71 (delta) + 22 (gaps) = 421.
+    expect(166 + ORIGIN_W + 18 + ARRIVAL_W + DELTA_W + 22).toBeGreaterThan(366);
   });
 });

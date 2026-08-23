@@ -163,7 +163,18 @@ export const FIGURE_INK_EM = Number((FIGURE_INK.top - FIGURE_INK.bottom).toFixed
  * `~` IS ABSENT FROM THE FACE. The Wrapped prefixes estimates with a tilde, and
  * the extended trial cuts do not carry one, so it renders in the platform
  * fallback and is fitted at `ADVANCE_FALLBACK_EM`. Listed here as a known hole
- * rather than discovered as a wrapped tile. `\u00df` is the same case.
+ * rather than discovered as a wrapped tile. `\u00df` is the same case, and so
+ * are the two the TICKER DELTA draws: `\u25b2` and `\u25bc`, the up and down
+ * triangles in "\u25b2 16.7%". Neither exists in ANY of the shipped cuts —
+ * sans or mono, Buch or Halbfett — so both render in the platform's symbol
+ * fallback at a width this table cannot know. Assume about 1em rather than the
+ * mono cut's 0.6 when a slot has to hold one, and leave the slot room: the
+ * arrows are the only characters in the app whose width is genuinely outside
+ * our control.
+ *
+ * Checked with `cmap` lookups against all three binaries, not assumed. The
+ * ones that ARE present and matter: `\u00d7` (the set multiplier), `\u2013`,
+ * `\u2014`, `\u2192`, `%`, `/`, `:` and every figure.
  *
  * ── IT CARRIED NO CAPITALS UNTIL Aug 2026, AND A CAPS-ONLY RULE USED IT ────
  *

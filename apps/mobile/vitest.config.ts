@@ -107,6 +107,14 @@ export default defineConfig({
             // AsyncStorage and nothing else native, which is why those two get
             // aliases below and react-native still does not.
             "lib/recovery-reminder.test.ts",
+            // Every fixed-width text column in the app, against what the
+            // dictionary and the generators can actually put in it. Pure
+            // arithmetic over the font metrics — it has to live here rather
+            // than beside a component, because the fault it catches (a column
+            // that ellipsises its own contents) is invisible to JSDOM, which
+            // truncates nothing, and to an English screenshot, which is the
+            // shortest of the three languages we ship.
+            "lib/column-fit.test.ts",
           ],
         },
         resolve: {
