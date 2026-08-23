@@ -18,7 +18,7 @@ import {
 import { useTheme, txt } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { F, FIXED_FONT_SCALE, PressScale as Pressable, fs, leading, startGlow, tracking, ty} from "../../lib/ui";
-import { RADIUS, ASegment } from "./kit";
+import { RADIUS, ASegment, CARD_PAD } from "./kit";
 import { CtaLabel } from "./cta-label";
 import ReceiptBlock from "./receipt-block";
 import { usePlanOverrides } from "../../lib/plan-overrides";
@@ -71,10 +71,6 @@ const Caret = ({ c, open }: { c: string; open: boolean }) => (
 // Days shown at once, and how many lifts show before the fading disclosure.
 const WINDOW = 7;
 const PEEK = 2;
-/** The card's own inner padding — what the full-bleed hairline inside it bleeds
- *  by to reach the card's edges. NOT the screen gutter (this rail lives on a
- *  card), which is exactly the distinction a bare `-20` could not make. */
-const CARD_PAD = 20;
 
 /** A session's tab/label: the plan's time-of-day when it sets one (AM/PM), else a
  *  plain "Training N" — the ordinal, never a fabricated time, is the anchor. */

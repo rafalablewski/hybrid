@@ -1,5 +1,6 @@
 import { Platform } from "react-native";
 import { initialWindowMetrics } from "react-native-safe-area-context";
+import { sheetPadBottom } from "@hybrid/core";
 
 /**
  * Shared layout constants for the Aurora shell.
@@ -82,6 +83,33 @@ export const coverInsets = (screen: { top: number; bottom: number }) => {
   const w = initialWindowMetrics?.insets;
   return w ? { top: Math.max(screen.top, w.top), bottom: w.bottom } : screen;
 };
+
+/**
+ * THE PAD UNDER A COVER'S LAST ROW — the same number a sheet's last row takes,
+ * and it is the same number because it is the same geometry.
+ *
+ * A cover COVERS the tab bar (see `coverInsets` above), so the only thing
+ * beneath its last row is the home indicator — exactly a sheet's situation, and
+ * `sheetPadBottom` is already the one place both clients write that arithmetic
+ * down: MAX against the inset, never PLUS. The finish summary wrote
+ * `safe.bottom + 28` and paid the documented price, 62dp of dead band under the
+ * last row on any notched iPhone where 34 was the answer.
+ *
+ * It delegates rather than aliases so the surface is NAMED at the call site: a
+ * reader of the finish summary should not have to know that a cover and a sheet
+ * are the same shape from the bottom edge's point of view, only that this is
+ * the pad a cover takes.
+ *
+ * The argument goes through `sheetInsetBottom` even though a caller handing it
+ * `coverInsets(insets).bottom` has already given it the window's inset. That is
+ * belt AND braces on purpose: the failure it guards is a caller reaching for the
+ * ambient `insets.bottom` instead — the reading with the tab bar folded into it,
+ * which is the exact mistake that put a bar-tall dead band under every sheet.
+ * Clamping to the window costs nothing when the value is already the window's,
+ * and apps/web/__tests__/parity.test.ts requires it of every caller of the token
+ * for that reason.
+ */
+export const coverPadBottom = (coverInsetBottom: number) => sheetPadBottom(sheetInsetBottom(coverInsetBottom));
 
 /** Bottom clearance a scrollable Aurora screen must reserve for the system tab
  *  bar, given the device's bottom safe-area inset.

@@ -148,6 +148,13 @@ const DOT_ON = 18;
 const DOT_OFF = 6;
 /** What a panel leaves clear at its foot for the dot rail. */
 const DOCK_CLEARANCE = 44;
+/** What the LEDGER's last row has to clear: the panel-position dots, which are
+ *  absolutely positioned at `insets.bottom + space.xl` and would otherwise sit
+ *  on top of it. Named rather than written as a rung at the call site for the
+ *  reason the bottom-pad rule in lib/design-tokens.test.ts gives: a number
+ *  ADDED to the safe-area inset is only correct when something is standing in
+ *  that space, so the number has to say what. */
+const RAIL_CLEARANCE = space.huge;
 /** A chart never draws shorter than this, whatever the zone measured. */
 const CHART_MIN = 90;
 /** Room an instrument's own mono caption takes above its plot. */
@@ -1192,7 +1199,7 @@ export function WorkoutWrapped({
             Not a panel: it is a list, and a list is as long as it is. It stands
             on the panels' ground at the panels' gutter with the same hairline
             rows, so the handover is not a seam between two design languages. */}
-        <View style={{ backgroundColor: HERO_TAKEOVER_INK, paddingHorizontal: gutter, paddingTop: padTop, paddingBottom: insets.bottom + space.huge, minHeight: panelH }}>
+        <View style={{ backgroundColor: HERO_TAKEOVER_INK, paddingHorizontal: gutter, paddingTop: padTop, paddingBottom: insets.bottom + RAIL_CLEARANCE, minHeight: panelH }}>
           {details}
         </View>
       </ScrollView>

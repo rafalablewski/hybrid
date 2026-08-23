@@ -6,7 +6,7 @@ import {
   exerciseFavouritesFull,
   isExerciseFavourite,
   type ExerciseBrowseEntry,
-  type LoggedSession, STATE_OPACITY } from "@hybrid/core";
+  type LoggedSession, STATE_OPACITY, space } from "@hybrid/core";
 import Sheet from "./sheet";
 import { APanel, ASearch } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
@@ -103,7 +103,7 @@ export default function ExerciseFavouritesSheet({
   );
 
   const head = (label: string, count: number) => (
-    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: 16, marginBottom: 10, marginHorizontal: 2 }}>
+    <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginTop: space.lg, marginBottom: space.ms }}>
       <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk }}>{label}</Text>
       <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{count}</Text>
     </View>

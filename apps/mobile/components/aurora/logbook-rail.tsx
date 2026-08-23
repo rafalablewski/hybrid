@@ -12,11 +12,13 @@ import {
   type LoggedSession,
   type WeightUnit,
 
-  ALPHA,} from "@hybrid/core";
+  ALPHA,
+  space,
+} from "@hybrid/core";
 import { useTheme } from "../../lib/theme";
 import { useLang } from "../../lib/i18n";
 import { F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty } from "../../lib/ui";
-import { RADIUS } from "./kit";
+import { RADIUS, CARD_PAD } from "./kit";
 import AEmptyDay from "./empty-day";
 import { Glyph } from "./icons";
 import AActionPair from "./action-pair";
@@ -26,10 +28,6 @@ import { useListMotion } from "../../lib/list-motion";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
 import { withAlpha } from "./field";
 
-/** The card's own inner padding — what the full-bleed hairline inside it bleeds
- *  by to reach the card's edges. NOT the screen gutter (this rail lives on a
- *  card), which is exactly the distinction a bare `-20` could not make. */
-const CARD_PAD = 20;
 
 // ── AURORA Logbook rail (mobile) ────────────────────────────────────────────
 // "The Constant": the SAME week-rail object the plan state ships, mounted in
@@ -157,7 +155,7 @@ export default function AuroraLogbookRail({
         ref={railRef}
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ marginHorizontal: -CARD_PAD, marginTop: 14 }}
+        style={{ marginHorizontal: -CARD_PAD, marginTop: space.lg }}
         contentContainerStyle={{ paddingHorizontal: CARD_PAD, gap: DAY_GAP }}
         onContentSizeChange={() => { if (!parked.current) { parked.current = true; railRef.current?.scrollToEnd({ animated: false }); } }}
       >

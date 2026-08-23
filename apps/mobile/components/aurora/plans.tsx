@@ -157,7 +157,7 @@ function GoalShelf({ group, pick, onLayout }: { group: GoalGroup; pick: (id: str
 
   return (
     <View onLayout={onLayout} style={{ marginTop: 16 }}>
-      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12, marginBottom: 10, marginHorizontal: 2 }}>
+      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: space.md, marginBottom: space.ms }}>
         <Text accessibilityRole="header" style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{group.category}</Text>
         <Text style={ty(C, "kicker")}>
           {group.goals.length} {group.goals.length === 1 ? t("w.train.plans.goalCount") : t("w.train.plans.goalsCount")}

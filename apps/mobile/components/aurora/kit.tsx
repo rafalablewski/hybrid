@@ -1598,12 +1598,25 @@ export function AMeter({
 
 export function ASection({
   title,
+  sub,
   meta,
   action,
   titleStyle,
   style,
 }: {
   title: string;
+  /** A DESCRIPTOR under the title — "Find a coach for your goal" — for a head
+   *  whose subject needs a sentence rather than a value. It is NOT the meta
+   *  slot in a second position: meta is a VALUE (a count, a window, "Free") and
+   *  sits on the title's own row; a descriptor is prose, it would collide with
+   *  the title on a phone at PL/DE lengths, and it belongs on its own line.
+   *
+   *  It lives here because three screens had already worked that out separately
+   *  — Today's coach rail, the saved-recipes rail and the nutrition goal picker
+   *  each drew title-plus-sentence by hand, and each picked its own gap under
+   *  the title (3, 6 and 10). A variant the standard cannot express is a
+   *  variant every caller re-derives. */
+  sub?: string;
   /** Small mono uppercase, right-aligned on the title's row. A NODE is allowed
    *  (a chip, an icon + count) — the meta slot is a slot, not a string field. */
   meta?: ReactNode;
@@ -1632,8 +1645,12 @@ export function ASection({
     ) : (
       meta
     );
-  return (
-    <View style={[{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md, marginTop: space.xxl, marginBottom: space.ms }, style]}>
+  // THE RHYTHM, and it is stated once: `space.xxl` above the head, `space.ms`
+  // under it. Both are the SEAM tokens the section tier owns — a head that
+  // wants its own numbers is a head that has left the tier.
+  const rhythm: ViewStyle = { marginTop: space.xxl, marginBottom: space.ms };
+  const row = (
+    <>
       <Text
         accessibilityRole="header"
         maxFontSizeMultiplier={MAX_FONT_SCALE}
@@ -1648,6 +1665,23 @@ export function ASection({
       ) : (
         metaText
       )}
+    </>
+  );
+  const rowStyle: ViewStyle = { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: space.md };
+
+  // With no descriptor the head IS the row, and `style` reaches it directly —
+  // the shape three callers already lean on to centre or re-flow the row.
+  if (sub == null) return <View style={[rowStyle, rhythm, style]}>{row}</View>;
+
+  return (
+    <View style={[rhythm, style]}>
+      <View style={rowStyle}>{row}</View>
+      <Text
+        maxFontSizeMultiplier={MAX_FONT_SCALE}
+        style={{ fontFamily: F.mono, fontSize: fs.caption, lineHeight: leading(fs.caption), color: palette.ash, marginTop: space.xxs }}
+      >
+        {sub}
+      </Text>
     </View>
   );
 }

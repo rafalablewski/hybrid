@@ -123,8 +123,8 @@ export function SavedRecipeShelf({ recipes, openRecipe }: { recipes: Recipe[]; o
   if (recipes.length === 0) return null;
   return (
     <View style={{ marginTop: 20 }}>
-      <ASection title={t("w.recovery.nutrition.savedRecipesHead")} meta={String(recipes.length)} style={{ marginHorizontal: 2 }} />
-      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginHorizontal: 2, marginBottom: 10 }}>
+      <ASection title={t("w.recovery.nutrition.savedRecipesHead")} meta={String(recipes.length)} />
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, marginBottom: space.ms }}>
         {t("w.recovery.nutrition.savedRecipesSub")}
       </Text>
       <ScrollView
