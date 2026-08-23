@@ -552,7 +552,8 @@ export const opticalTrackEm = (size: number): number =>
  *
  * `label` and `caps` add air because an EYEBROW is small uppercase, where
  * capitals set beside one another lose their counters. A nameplate is the
- * opposite end of the same axis: ONE word, uppercase, weight 900, at
+ * opposite end of the same axis: ONE word, uppercase, in the heaviest cut
+ * shipped (Halbfett, 600 — `F.black`), at
  * `fs.display` or above. At that size and weight the stems are flat and the
  * designed sidebearings are generous, so the gaps the eyebrow roles protect do
  * not exist — the word needs air REMOVED to read as set rather than spaced.

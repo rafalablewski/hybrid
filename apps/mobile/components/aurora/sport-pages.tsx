@@ -1,13 +1,17 @@
+import { useMemo } from "react";
 import { View, Text } from "react-native";
 import {
   sportPageTitle,
   formatDisciplinePace, formatDuration, durationUnits,
+  nameplateRung,
+  type NameplateRung,
   type SportPage,
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme";
-import { F, MAX_FONT_SCALE, fs, space, tracking, ty } from "../../lib/ui";
+import { MAX_FONT_SCALE, space, ty } from "../../lib/ui";
 import Nameplate from "./nameplate";
+import { ASection } from "./kit";
 
 /**
  * ENDURANCE — every discipline you train, ON ONE SCREEN.
@@ -85,36 +89,33 @@ export default function AuroraSportPages({
    *  "Endurance" and carries the window in its right slot. */
   head?: boolean;
 }) {
-  const { palette: C } = useTheme();
   const { t } = useLang();
+  const rung = useMemo(() => nameplateRung(pages.map((p) => sportPageTitle(p, t))), [pages, t]);
   if (pages.length === 0) return null;
 
   return (
     <View>
       {head && (
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: space.sm,
-            marginHorizontal: space.xxs / 2,
-            marginBottom: space.sm,
-          }}
-        >
-          <Text style={{ fontFamily: F.black, fontSize: fs.title, letterSpacing: tracking(fs.title), color: C.chalk }}>
-            {t("endurance.title")}
-          </Text>
-          <SportPagesWindow />
-        </View>
+        <ASection
+          title={t("endurance.title")}
+          meta={t("w.home.end.window8")}
+          style={{ marginHorizontal: space.xxs / 2, marginTop: 0 }}
+        />
       )}
 
-      {/* TWO UP. Wide enough that a discipline's name sets on one line at
-          fs.display, narrow enough that six of them are one glance rather than
-          a scroll. */}
+      {/* TWO UP. Wide enough that a discipline's name sets on ONE LINE, narrow
+          enough that six of them are one glance rather than a scroll.
+
+          THE RUNG IS DECIDED HERE, ONCE, FOR THE WHOLE SET — because "how big
+          can the name be?" is a question about the SET, not about one card. A
+          plate answering it alone is how a German grid came to draw SCHWIMMEN
+          smaller than TENNIS beside it: each plate shrank itself to fit and
+          they arrived at different sizes. `nameplateRung` returns the largest
+          rung EVERY name clears (English 28, German 22, Polish 20), so the
+          plates on a screen always agree. */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>
         {pages.map((page) => (
-          <Plate key={page.key} page={page} onOpen={onOpen} />
+          <Plate key={page.key} page={page} rung={rung} onOpen={onOpen} />
         ))}
       </View>
     </View>
@@ -142,25 +143,43 @@ export function SportPagesWindow() {
 }
 
 /** One discipline. The plate is the whole target; `Nameplate` owns the type. */
-function Plate({ page, onOpen }: { page: SportPage; onOpen?: (p: SportPage) => void }) {
+function Plate({ page, rung, onOpen }: { page: SportPage; rung: NameplateRung; onOpen?: (p: SportPage) => void }) {
   const { t } = useLang();
   const title = sportPageTitle(page, t);
   const hero = formatDuration(page.minutes, durationUnits(t));
 
-  // A rate needs a discipline to be READ in. A ball sport has neither, which is
-  // the same reason it has no pace to print — it shows its longest effort, the
-  // fact a timed sport actually carries.
+  // A rate needs a discipline to be READ in. A ball sport has neither, so it
+  // shows the fact every sport carries instead: how many times you turned up.
+  //
+  // IT WAS THE LONGEST EFFORT, and it shipped ellipsised — "LONGEST 1h 3…", a
+  // plate saying a number it will not finish. In Söhne Mono, whose advance is a
+  // flat 0.6em, "LONGEST 1h 32min" is 96dp and "14h 43min" is 86.4dp; with the
+  // 8dp gap that is 190dp of content on a 153dp line.
+  //
+  // THE COUNT IS THE REPLACEMENT ON MERIT, not on width — it is COMPARABLE
+  // across every plate, which the longest effort never was: 14h over four
+  // matches and 14h over twenty are different training, and this is the fact
+  // that separates them. The longest effort keeps its place on the sport's own
+  // page.
+  //
+  // On width alone the count would not have been enough. "12 EFFORTS" is 60dp
+  // and the German "12 EINHEITEN" is 72dp, against the 58.6dp the split base
+  // row left beside "14h 43min" — so the first cut of this fix still clipped,
+  // in English by a character and in German by two. The base row is stacked
+  // now (see `nameplate.tsx`) and the note has the full 153dp, which is what
+  // makes ANY of the three languages safe here rather than the shortest one.
   const rate =
     page.secPerKm != null && page.discipline
       ? formatDisciplinePace(page.secPerKm, page.discipline)
-      : page.longestMinutes > 0
-        ? `${t("endurance.longest")} ${formatDuration(page.longestMinutes, durationUnits(t))}`
+      : page.efforts > 0
+        ? `${page.efforts} ${t("endurance.efforts")}`
         : undefined;
 
   return (
     <View style={{ flexBasis: "47%", flexGrow: 1 }}>
       <Nameplate
         name={title}
+        rung={rung}
         figure={hero}
         note={rate}
         onPress={onOpen ? () => onOpen(page) : undefined}

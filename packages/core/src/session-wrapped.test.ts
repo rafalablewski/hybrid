@@ -344,13 +344,29 @@ describe("fitScale", () => {
       expect(fitScale(v, STAT_FIT_EM), v).toBeGreaterThanOrEqual(0.5);
   });
 
-  it("over-estimates a glyph the face does not carry, rather than under", () => {
-    // `~` is absent from the shipped cuts, so an estimate prefix renders in the
-    // platform fallback and is fitted at ADVANCE_FALLBACK_EM. Guessing HIGH
+  it("over-estimates the TWO glyphs it actually serves, rather than under", () => {
+    // `~` and `ß` are absent from the shipped cuts, so they render in the
+    // platform fallback and are fitted at ADVANCE_FALLBACK_EM. Guessing HIGH
     // shrinks a value that would have fitted; guessing low lets one wrap, and a
     // wrapped figure drags its label out of line with the tiles beside it.
+    // Both are narrow shapes — a tilde is about half an em — so 0.6 guesses up.
     expect(SOHNE_ADVANCE_EM["~"]).toBeUndefined();
-    expect(ADVANCE_FALLBACK_EM).toBeGreaterThan(Math.max(...Object.values(SOHNE_ADVANCE_EM).filter((v) => v < 0.7)) * 0.9);
+    expect(SOHNE_ADVANCE_EM["ß"]).toBeUndefined();
     expect(textWidthEm("~9")).toBeCloseTo(ADVANCE_FALLBACK_EM + SOHNE_ADVANCE_EM["9"]!, 5);
+  });
+
+  it("is NOT a ceiling over the whole face, and the old assertion said it was", () => {
+    // This used to assert that 0.6 was wider than everything in the table, and
+    // it passed — because the table held only digits, punctuation and lowercase.
+    // Completing it with the capitals put `W` at 0.943 and `M` at 0.861 in
+    // range, so the fallback is now a floor for wide glyphs, not a ceiling.
+    // That is fine for what it serves and MUST NOT be relied on for anything
+    // else: a caps string measured through the fallback under-reads by up to
+    // 14%, which is exactly how the nameplate rule came to call a name that
+    // overruns its plate a fit. The invariant is stated here so nobody restores
+    // the comfortable version of it.
+    expect(ADVANCE_FALLBACK_EM).toBeLessThan(SOHNE_ADVANCE_EM["W"]!);
+    expect(ADVANCE_FALLBACK_EM).toBeLessThan(SOHNE_ADVANCE_EM["M"]!);
+    expect(ADVANCE_FALLBACK_EM).toBeGreaterThan(SOHNE_ADVANCE_EM["I"]!);
   });
 });

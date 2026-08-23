@@ -5,7 +5,9 @@ import {
   exerciseCardFigure,
   exerciseWidgetCards,
   movementsTrained,
+  nameplateRung,
   type ExerciseWidgetCard,
+  type NameplateRung,
   type LoggedSession,
   type WeightUnit,
   ALPHA,
@@ -18,8 +20,8 @@ import { useLoggerPrefs } from "../../lib/logger-prefs";
 import { useLang } from "../../lib/i18n";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { leading, tracking, fs, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
-import { APanel, GUTTER, RADIUS, withAlpha } from "./kit";
+import { leading, fs, space, F, PressScale as Pressable, FIXED_FONT_SCALE } from "../../lib/ui";
+import { APanel, ASection, GUTTER, RADIUS, withAlpha } from "./kit";
 import { AuroraExerciseAvatar } from "./exercise-media";
 
 /** purpose → stroke, theme-aware: lime/blue follow the theme accents, the
@@ -43,9 +45,40 @@ export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct
   );
 }
 
+/**
+ * ONE MODULE FOR THE WHOLE SCREEN.
+ *
+ * 179 is what two cards and an 8dp gap come to inside the 366dp content column
+ * of a 390dp screen — which is to say it is a PLATE, the same width the
+ * Endurance grid two sections down puts its disciplines in. The rail scrolls
+ * and the grid wraps, because a curated list you can grow to eight needs to
+ * scroll and a complete enumeration of what you actually trained does not; but
+ * they are now the same module at the same rhythm, so the screen reads as one
+ * grid rather than as two sections that happened to be built on different days.
+ *
+ * It was 200, which is 1.8 cards to a screen: one whole card and a second one
+ * cut down the middle, every time, forever. `snapToInterval` on the module
+ * means a rest position is always a pair — the cut card was not a taste
+ * problem, it was a scroll that had no grid to land on.
+ */
+const CARD_W = 179;
+const CARD_STEP = CARD_W + 8;
+
+/** The baseline's day, in the card's own quiet voice — "2 Aug". */
+const fmtBaselineDate = (iso: string): string =>
+  iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "";
+
 /** A figure and its unit, in the card's own convention — one core formatter for
  *  the headline AND its baseline, so the two can never print different units.
- *  It is the function that knows a swim reads "/100m" and the road "/km". */
+ *  It is the function that knows a swim reads "/100m" and the road "/km".
+ *
+ *  THE METRIC LABELS NO LONGER CARRY THE WINDOW — "Heaviest", not "Heaviest –
+ *  8 weeks". The window is stated ONCE, in the section head, which is what
+ *  Endurance already does two sections down and what the cluster's own rule
+ *  says: state a scope at the level where it stops varying. Repeating it on
+ *  every card cost 78dp of a 153dp line, and that was the line the baseline
+ *  needed — "from 100 kg – prev. 8 weeks" is 162dp and ellipsised, in all
+ *  three languages, which is the same defect the Endurance plate had. */
 function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) => string): { v: string; u: string; label: string } {
   const { value, unit } = exerciseCardFigure(card, card.value, units);
   const label =
@@ -99,8 +132,10 @@ function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) =>
  * has to disambiguate a press: with the strip gone there is no second gesture
  * to tell a tap apart from, so the 120ms dwell went with it.
  */
-function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
+function Card({ card, rung, units, C, t, onOpen, armHero, heroRefs }: {
   card: ExerciseWidgetCard;
+  /** Decided once for the whole rail — see the note on the name below. */
+  rung: NameplateRung;
   units: WeightUnit;
   C: Palette;
   t: (k: string) => string;
@@ -109,16 +144,29 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
   heroRefs: { current: Record<string, Text | null> };
 }) {
   const h = headline(card, units, t);
-  const heroStyle = { fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk } as const;
+  // The flight's departure style must be the style it actually departs FROM.
+  // It said `fs.display` while the figure was drawn at `fs.display`, and both
+  // moved when the figure receded to the bottom edge — a shared element armed
+  // with a size the source is not drawn at starts the flight with a jump.
+  const heroStyle = { fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk } as const;
   const open = () => {
     armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
     onOpen(card.name);
   };
-  // The baseline, in the SAME formatter as the headline above it.
+  // The baseline, in the SAME formatter as the headline above it. Core picks
+  // WHICH baseline (the previous window, or this window's own first point) and
+  // hands back a date only for the second — so the card names a day it actually
+  // measured, and names a period only when it measured a period.
   const from = card.prevValue == null ? null : exerciseCardFigure(card, card.prevValue, units);
-  const foot = from
-    ? t("w.home.exw.fromPrev").replace("{v}", `${from.value}${from.unit ? ` ${from.unit}` : ""}`)
-    : h.label;
+  const fromText = from ? `${from.value}${from.unit ? ` ${from.unit}` : ""}` : "";
+  const foot = !from
+    ? h.label
+    : card.prevAt
+      ? t("w.home.exw.fromAt").replace("{v}", fromText).replace("{d}", fmtBaselineDate(card.prevAt))
+      : t("w.home.exw.fromPrev").replace("{v}", fromText);
+  // Both branches now fit the card's 153dp line in every language — pinned in
+  // test/exercise-widget.render.test.tsx against `nameplateBaseFits`, because
+  // a foot line that overruns is invisible in jsdom and obvious on a phone.
 
   return (
     <APanel
@@ -128,56 +176,98 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
       // and the ordinary screen transition carries the change.
       onPress={open}
       a11y={`${card.name} — ${h.v} ${h.u} — ${foot}`}
-      style={{ width: 200, minHeight: 96, gap: 8 }}
+      // 179dp IS A PLATE'S WIDTH, and that is the whole point of the number:
+      // the Endurance grid two sections down puts two 179dp plates across the
+      // 366dp content column with an 8dp gap, so a rail on the same module
+      // makes the screen ONE grid that happens to scroll in one place. It was
+      // 200, which fitted 1.8 cards and left the second one cut down the middle
+      // — a different rhythm from its neighbour for no reason anyone could name.
+      style={{ width: CARD_W, gap: space.xs }}
     >
-      {/* THE LIFT'S MARK, then its name. This rail was the last lift surface in
-          the app with no picture of the lift on it at all, which is the one
-          place a mark earns most: you swipe a rail, and an implement is what
-          lets you find the barbell card without reading four of them.
+      {/* THE LIFT'S MARK, ON ITS OWN LINE. This rail was the last lift surface
+          in the app with no picture of the lift on it, which is the one place a
+          mark earns most: you scan a rail, and an implement is what lets you
+          find the barbell card without reading four of them.
+
+          IT USED TO SHARE THE NAME'S ROW, and that is what it cost: 30dp off a
+          153dp line, which drops the name a whole rung (measured — at
+          fs.title a name with the mark beside it needs three lines, without it
+          two). The mark is 24dp either way; above the name it costs 24dp of
+          HEIGHT, which the card has, instead of 30dp of WIDTH, which it does
+          not.
 
           Ash, not the kind's colour. The strip that used to draw kind as colour
           has gone, so the mark is now the only place purpose is drawn — and one
           channel for one fact is the argument this card's own note always made,
           it just used to be making it against three. */}
-      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6 }}>
-        <AuroraExerciseAvatar name={card.name} size={24} glyph={14} tint={C.ash} />
-        {/* TWO LINES, because the truncation was the real complaint and the
-            strip's 24dp is what pays for the fix. "Standing Overhead Press" and
-            "Dumbbell Lateral Raise" are the COMMON case in this catalogue, not
-            the outlier, and a 200dp card at fs.body fits about eighteen
-            characters — so the rail's names were being cut mid-word on most of
-            the cards most of the time.
+      <AuroraExerciseAvatar name={card.name} size={24} glyph={14} tint={C.ash} />
 
-            It is also why this rail keeps the card and does not become a deck.
-            A deck gives ONE item the full width because there are too many to
-            show; here `exerciseWidgetCards` auto-fills THREE (pins cap at
-            eight), so a deck would put one movement on screen where the rail
-            already shows two and a half — the same "one at a time in a section
-            whose job is comparison" fault that was just deleted from Endurance.
-            The name needed room, not a new container. */}
+      {/* THE NAME LEADS, and it is the same grammar as the Endurance plate:
+          name, a hairline floor, the facts on the bottom edge.
+
+          THE DEFECT THIS CLOSES. Exercises and Endurance sat 200dp apart on one
+          screen and disagreed about what a card is for — name at fs.body over a
+          figure at fs.display here, name at fs.display over a figure at
+          fs.bodyLg there. An exact mirror, and neither was derived from
+          anything: the inversion was argued for Endurance (you SCAN a grid, so
+          the name is the target) and then not applied to the section directly
+          above it, which you scan the same way.
+
+          THE RUNG IS NOT A TASTE CALL. core's `nameplateRung` returns the
+          largest size at which EVERY name in the set still sets in two lines —
+          fs.display for the six disciplines, because each is one short word;
+          fs.title here, because "Standing Overhead Press" is three. Same rule,
+          different answer, and the difference is a property of the catalogue
+          rather than of whoever built the screen. Caps follows the word count
+          for the same reason: one word is a mark, three words in capitals is
+          the wall of shouting the treatment exists to prevent. */}
+      <Text
+        maxFontSizeMultiplier={FIXED_FONT_SCALE}
+        numberOfLines={rung.lines}
+        style={{
+          fontFamily: F.black,
+          fontSize: rung.size,
+          lineHeight: leading(rung.size, "snug"),
+          letterSpacing: rung.trackingEm * rung.size,
+          ...(rung.caps ? { textTransform: "uppercase" as const } : null),
+          color: C.chalk,
+        }}
+      >
+        {card.name}
+      </Text>
+
+      {/* THE PLINTH, and the space above it is a MARGIN rather than a gap.
+          A rail stretches every card to the tallest, so a one-line name used to
+          leave a hole between the figure and the footer — the footer's
+          `marginTop: auto` parked it at the bottom and the slack showed up in
+          the middle of the card, which is exactly where it reads as a mistake.
+          Bottom-anchoring the whole base instead puts the slack ABOVE a rule,
+          where a rule turns it into breathing room. Same trick as the plate,
+          and the same reason. */}
+      <View style={{ flex: 1, minHeight: space.md }} />
+      <View style={{ height: 1, backgroundColor: C.line }} />
+
+      <View style={{ marginTop: space.sm }}>
+        {/* WHERE IT CAME FROM — the delta's own baseline, so the percentage
+            below can be checked rather than trusted. Falls back to the metric
+            name on a movement with no previous window. */}
         <Text
           maxFontSizeMultiplier={FIXED_FONT_SCALE}
-          numberOfLines={2}
-          style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, lineHeight: leading(fs.body, "snug"), color: C.chalk }}
+          numberOfLines={1}
+          style={{ fontFamily: F.mono, fontSize: fs.nano, lineHeight: leading(fs.nano, "snug"), color: C.ash }}
         >
-          {card.name}
+          {foot}
         </Text>
-      </View>
-
-      {/* THE FIGURE, and its change on the same baseline. The delta describes
-          this number, so it sits beside it. */}
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-        <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{h.u}</Text>
-        <View style={{ flex: 1 }} />
-        <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={fs.micro} />
-      </View>
-
-      {/* WHERE IT CAME FROM — the delta's own baseline, so the percentage above
-          can be checked rather than trusted. Falls back to the metric name on a
-          movement with no previous window. */}
-      <View style={{ marginTop: "auto" }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{foot}</Text>
+        {/* THE FIGURE ON THE BOTTOM EDGE, at `fs.bodyLg` — the plate's rung for
+            the same slot, so a row of cards and a grid of plates align on their
+            figures. Its change sits beside it, because the delta describes THIS
+            number and used to read as a footnote from a row away. */}
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.xs }}>
+          <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
+          <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{h.u}</Text>
+          <View style={{ flex: 1 }} />
+          <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={fs.micro} />
+        </View>
       </View>
     </APanel>
   );
@@ -227,6 +317,15 @@ export default function ExerciseWidgetRail({
   // 8-week window, so the fraction is a fraction of the same thing the cards
   // are rather than two scopes in one sentence.
   const trained = useMemo(() => movementsTrained(sessions), [sessions]);
+  // THE RUNG, decided once for the whole rail rather than per card. A rail
+  // whose cards each sized their own name would draw "Pull-Up" bigger than
+  // "Standing Overhead Press" beside it, which is a row that cannot agree how
+  // big a name is. The card content width is CARD_W less APanel's 12dp pad
+  // each side and its rim.
+  const rung = useMemo(
+    () => nameplateRung(cards.map((c) => c.name), { widthDp: CARD_W - 2 - 24 }),
+    [cards],
+  );
   // One ref per card's headline figure — only the tapped card is ever measured.
   const heroRefs = useRef<Record<string, Text | null>>({});
   const armHero = useSharedElementSource();
@@ -243,12 +342,11 @@ export default function ExerciseWidgetRail({
           whole log, had nowhere to go. A quote must add a fraction. The
           "All ›" action lives in the rail's trailing tail, per the
           one-exit rule. Mirrors web. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 8, marginHorizontal: 2 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.exw.title")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash }}>
-          {t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
-        </Text>
-      </View>
+      <ASection
+        title={t("w.home.exw.title")}
+        meta={t("w.home.group.metaMoves").replace("{a}", String(cards.length)).replace("{b}", String(trained))}
+        style={{ marginHorizontal: 2, marginTop: 0 }}
+      />
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 12dp
           gutter pull the scroll clip to the true screen edge, with matching
           internal padding so resting cards stay on the column. Cards wear the
@@ -261,11 +359,18 @@ export default function ExerciseWidgetRail({
         horizontal
         showsHorizontalScrollIndicator={false}
         decelerationRate="fast"
+        // SNAPPED TO THE MODULE, so a rest position is always a whole pair of
+        // cards. Without it a 179dp card in a 366dp column rests wherever the
+        // flick died, which is what put half a card at the screen edge on every
+        // scroll — and half a card is indistinguishable from a card that got
+        // clipped, which is the complaint people actually raise about rails.
+        snapToInterval={CARD_STEP}
+        snapToAlignment="start"
         style={{ marginHorizontal: -GUTTER }}
         contentContainerStyle={{ gap: 8, paddingVertical: 2, paddingHorizontal: GUTTER }}
       >
         {cards.map((card) => (
-          <Card key={card.name} card={card} units={units} C={C} t={t} onOpen={onOpen} armHero={armHero} heroRefs={heroRefs} />
+          <Card key={card.name} card={card} rung={rung} units={units} C={C} t={t} onOpen={onOpen} armHero={armHero} heroRefs={heroRefs} />
         ))}
         {/* THE ADD DOOR — the dashed ghost tile, at tile scale.
             #365 retired this rail's dashed ＋ for three good reasons: a dashed
@@ -282,7 +387,7 @@ export default function ExerciseWidgetRail({
           onPress={() => setAdding(true)}
           accessibilityRole="button"
           accessibilityLabel={`${t("w.home.exw.addCard")} – ${t("w.home.exw.title")}`}
-          style={{ width: 132, minHeight: 132, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, ALPHA.rim), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
+          style={{ width: CARD_W, alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: withAlpha(C.ash, ALPHA.rim), borderStyle: "dashed", borderRadius: RADIUS.field, paddingHorizontal: 12 }}
         >
           <Text style={{ fontSize: fs.title, color: C.ash }}>＋</Text>
           <Text style={{ fontFamily: F.monoBold, fontSize: fs.micro, color: txt(C, C.lime), textAlign: "center", lineHeight: leading(fs.micro) }}>{t("w.home.exw.addCard")}</Text>
@@ -296,7 +401,7 @@ export default function ExerciseWidgetRail({
         <RailTail
           onOpen={onAll}
           a11y={`${t("w.explore.seeAll")} – ${t("w.home.exw.title")}`}
-          w={132} minHeight={132}
+          w={CARD_W}
         />
       </ScrollView>
       <ExerciseFavouritesSheet visible={adding} onClose={() => setAdding(false)} sessions={sessions} />
