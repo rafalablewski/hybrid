@@ -75,6 +75,7 @@ import {
   type Equipment,
   type ScheduledDay,
   type LogbookDay,
+  sportForDiscipline,
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { bandHue, barLatched, foldProgress } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
@@ -115,6 +116,8 @@ import { useListMotion } from "../../lib/list-motion";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
+import RecordsBoard from "./records-board";
+import SportBoard from "./sport-board";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
 // so the full ritual runs on Today — the /checkin screen is the same component.
@@ -1442,16 +1445,16 @@ export default function AuroraHome() {
             place, it does not go anywhere. */}
         <HeatRow sessions={sessions} recovery={recoveryReports} />
 
-        {/* ═════ GROUP: PROGRESS — where the training is going, in ONE card.
-            The cluster used to run three named things deep (the verdict, the
-            records it produced, the movements underneath them) and then a whole
-            Endurance section below a seam, which is four screens of
-            retrospective on a page whose job is TODAY. Records, the exercise
-            rail and the Endurance pages were removed from this screen in Aug
-            2026; each one still exists where it is asked for — the records on
-            the exercise and sport pages, the movements on /exercises, the
-            disciplines on /endurance and each sport's own page — and the two
-            doors at the end of this cluster are how you get to them. ═════ */}
+        {/* ═════ GROUP: PROGRESS — where the training is going. The cluster
+            once ran four screens of GUESSED retrospective (the verdict, its
+            records, the exercise rail, a whole Endurance section) and that was
+            removed in Aug 2026 — each block answered a question that is asked
+            somewhere else and answered better there. What stands below the
+            verdict now is different in kind, not a rebuild: two WATCHLISTS
+            (Records, Sports) that render ONLY what the athlete pinned — no
+            auto-fill, absent until chosen — which is the term the retirement
+            set for anything returning here. The two doors at the end of the
+            cluster remain the way to the full depth. ═════ */}
         <GroupMark label={t("w.home.group.progress")} />
 
         {/* ───── THIS WEEK — the verdict card, and the screen's only date
@@ -1465,6 +1468,29 @@ export default function AuroraHome() {
           units={units}
           bw={bw}
           onSession={(id) => router.push(`/session/${id}`)}
+        />
+
+        {/* ───── RECORDS — the pinned movements' ledger: the PR, the day it
+            was set, the latest effort as a stock quote against it. Pins are
+            the exercise favourites (the Exercises rail's list); the block is
+            an invitation until the athlete picks. ───── */}
+        <RecordsBoard
+          sessions={sessions}
+          units={units}
+          bw={bw}
+          onOpen={(name) => router.push({ pathname: "/exercise", params: { name } })}
+        />
+
+        {/* ───── SPORTS — the pinned sports' 8-week read (distance, avg pace)
+            against the 8 weeks before. Same watchlist contract; absent for a
+            pure lifter. A row opens the sport's own page, the same resolution
+            the Endurance hub uses. ───── */}
+        <SportBoard
+          sessions={sessions}
+          onOpen={(card) => {
+            const name = card.sport ?? (card.discipline ? sportForDiscipline(card.discipline) : null);
+            if (name) router.push({ pathname: "/sport-page", params: { name } });
+          }}
         />
 
         {/* THE RETROSPECTIVE'S EXIT — the doors past this period, and now the
