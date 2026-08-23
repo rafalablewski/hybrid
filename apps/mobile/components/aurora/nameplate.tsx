@@ -1,7 +1,7 @@
 import { View, Text } from "react-native";
-import { nameplateLines } from "@hybrid/core";
+import { NAMEPLATE_LINE_DP, nameplateLines, nameplateRung, type NameplateRung } from "@hybrid/core";
 import { useTheme, txt, type Palette } from "../../lib/theme";
-import { F, MAX_FONT_SCALE, fs, leading, space, tracking } from "../../lib/ui";
+import { F, MAX_FONT_SCALE, fs, leading, space } from "../../lib/ui";
 import { APanel } from "./kit";
 
 /**
@@ -41,6 +41,7 @@ const toneColor = (C: Palette, tone: NameplateTone): string =>
 
 export default function Nameplate({
   name,
+  rung,
   figure,
   unit,
   note,
@@ -50,6 +51,16 @@ export default function Nameplate({
   a11y,
 }: {
   name: string;
+  /**
+   * The type the NAME sets at, decided for the whole SET by core's
+   * `nameplateRung` and passed down — because "does this treatment fit?" is a
+   * question about the set, not about one card. A row where one plate is at 28
+   * and its neighbour shrank itself to 25 is the fault this replaces.
+   *
+   * Optional so a single stray plate still renders; it then answers the
+   * question for a set of one, which is right for a plate with no siblings.
+   */
+  rung?: NameplateRung;
   /** The comparable measure. Omitted when this plate has no value in the
    *  reading currently selected — the plate then says so in `note` rather than
    *  printing a dash where a metric was never going to be. */
@@ -66,7 +77,12 @@ export default function Nameplate({
   a11y?: string;
 }) {
   const { palette: C } = useTheme();
-  const { lines } = nameplateLines(name);
+  const r = rung ?? nameplateRung([name]);
+  const { lines } = nameplateLines(name, {
+    budgetEm: NAMEPLATE_LINE_DP / r.size,
+    trackingEm: r.trackingEm,
+    caps: r.caps,
+  });
 
   return (
     <APanel onPress={onPress} a11y={a11y} style={{ flex: 1 }}>
@@ -75,26 +91,31 @@ export default function Nameplate({
           <Text
             key={i}
             numberOfLines={1}
-            // THE WORD SHRINKS RATHER THAN CLIPS. core's rule measures against a
-            // 5.4em budget and reports a name that will not fit, but a rule is
-            // advice at build time and this is the guarantee at paint time: a
-            // plate is flex-sized, so its real width depends on the screen, the
-            // language and Dynamic Type, and no constant can know all three.
-            // Polish "Wioślarstwo" is the live case — it measures 172dp against
-            // a ~153dp plate, and without this it loses its last three letters.
-            // iOS shrinks to fit; the floor stops the shrink becoming illegible
-            // rather than letting a long word set at any size it likes.
-            adjustsFontSizeToFit
-            minimumFontScale={0.8}
+            // THE SIZE MOVES, THE WORD DOES NOT SHRINK. This used to be
+            // `adjustsFontSizeToFit` with a 0.8 floor: set every plate at
+            // `fs.display` and let iOS squeeze the ones that overrun. It works,
+            // and it is the wrong answer twice over. It puts a name on an
+            // OFF-LADDER size (German at 91% of 28 is 25.5dp, a rung that does
+            // not exist), and it does so PER PLATE — so a German grid drew
+            // SCHWIMMEN visibly smaller than TENNIS beside it, which is a row
+            // of plates that cannot agree how big a name is.
+            //
+            // `nameplateRung` steps the WHOLE SET down instead: English gets
+            // 28, German 22, Polish 20, every plate on the screen the same and
+            // every one of them a real rung. Nobody reads two languages at
+            // once, so within-screen agreement is the consistency that pays.
             maxFontSizeMultiplier={MAX_FONT_SCALE}
             style={{
               fontFamily: F.black,
-              fontSize: fs.display,
-              lineHeight: leading(fs.display, "flush"),
-              // The nameplate rung — uppercase Halbfett needs twice the text
-              // band's tightening. See TRACKING_EM.wordmark in core/scale.
-              letterSpacing: tracking(fs.display, "wordmark"),
-              textTransform: "uppercase",
+              fontSize: r.size,
+              lineHeight: leading(r.size, "flush"),
+              // Uppercase Halbfett needs the caps air REMOVED — see
+              // CAPS_AIR_EM.wordmark in core/scale. Sentence case at a smaller
+              // rung takes the plain optical curve, and `nameplateRung`
+              // resolves which, so the measurement and the render cannot
+              // disagree about the tracking the way they once did.
+              letterSpacing: r.trackingEm * r.size,
+              ...(r.caps ? { textTransform: "uppercase" as const } : null),
               // ONE WORD, TWO WEIGHTS. The lead line holds the foreground and
               // the rest recede, so a two-word name reads as one mark with a
               // stress rather than as two things — and it costs no colour

@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   NAMEPLATE_LINE_DP,
+  NAMEPLATE_RUNGS,
+  nameplateRung,
   NAMEPLATE_LINE_EM,
   NAMEPLATE_MAX_LINES,
   NAMEPLATE_TRACK_EM,
@@ -223,5 +225,96 @@ describe("the nameplate's base", () => {
 
   it("takes a narrower line when the caller has less room", () => {
     expect(nameplateBaseFits("12 EINHEITEN", "14h 43min", { lineDp: 60 })).toBe(false);
+  });
+});
+
+describe("nameplateRung — the rule that stopped Today having two hierarchies", () => {
+  const DISCIPLINES = {
+    en: ["Running", "Cycling", "Swimming", "Rowing", "Walking", "Tennis"],
+    de: ["Laufen", "Radfahren", "Schwimmen", "Rudern", "Ski", "Gehen"],
+    pl: ["Bieganie", "Kolarstwo", "Pływanie", "Wioślarstwo", "Narciarstwo", "Chód"],
+  };
+  const MOVEMENTS = [
+    "Romanian Deadlift", "Standing Overhead Press", "Dumbbell Lateral Raise",
+    "Barbell Bench Press", "Pull-Up", "Back Squat", "Bulgarian Split Squat",
+    "Incline Dumbbell Press",
+  ];
+
+  it("gives the disciplines the WORDMARK, which is the treatment's own case", () => {
+    const r = nameplateRung(DISCIPLINES.en);
+    expect(r.size).toBe(fs.display);
+    expect(r.caps).toBe(true);
+    expect(r.lines).toBe(1);
+  });
+
+  it("gives the movement catalogue a SMALLER rung and sentence case", () => {
+    // The defect this exists to kill: Exercises had the name at fs.body under a
+    // figure at fs.display while Endurance, 200dp away, had the name at
+    // fs.display over a figure at fs.bodyLg — an exact mirror, and neither was
+    // derived from anything. Now both are: the name takes the largest rung its
+    // own set can hold, and the figure is always fs.bodyLg on the bottom edge.
+    const r = nameplateRung(MOVEMENTS);
+    expect(r.size).toBe(fs.title);
+    expect(r.caps).toBe(false);
+    expect(r.lines).toBe(2);
+    // ...and it is genuinely SMALLER than the disciplines get, which is the
+    // point: the ratio differs because the NAMES differ.
+    expect(r.size).toBeLessThan(nameplateRung(DISCIPLINES.en).size);
+  });
+
+  it("KEEPS THE WORDMARK IN EVERY LANGUAGE, by moving the size instead", () => {
+    // The alternative shipped for one merge: fs.display with
+    // `adjustsFontSizeToFit`, which renders a German plate at 91% of 28 — an
+    // off-ladder size, and a grid where SCHWIMMEN is optically smaller than
+    // TENNIS beside it. Stepping the whole set down a rung keeps every plate
+    // on one screen the same size, which is the consistency that matters,
+    // since nobody reads two languages at once.
+    for (const [lang, names] of Object.entries(DISCIPLINES)) {
+      const r = nameplateRung(names);
+      expect(r.caps, lang).toBe(true);
+      expect(r.lines, lang).toBe(1);
+    }
+    expect(nameplateRung(DISCIPLINES.en).size).toBeGreaterThan(nameplateRung(DISCIPLINES.de).size);
+    expect(nameplateRung(DISCIPLINES.de).size).toBeGreaterThan(nameplateRung(DISCIPLINES.pl).size);
+  });
+
+  it("ties CAPS to the word count, not to the size", () => {
+    // Tying it to the rung was the first cut, and it threw the treatment away
+    // in two languages: Polish "Wioślarstwo" will not set at 28 but sets
+    // happily in capitals at 20, and case has nothing to do with why.
+    expect(nameplateRung(DISCIPLINES.pl).caps).toBe(true);
+    expect(nameplateRung(DISCIPLINES.pl).size).toBeLessThan(fs.display);
+    // One multi-word name in the set is enough to drop the whole set out of
+    // capitals — a row where one card shouts and the rest do not is worse than
+    // a row where none of them do.
+    expect(nameplateRung([...DISCIPLINES.en, "Cross Country Skiing"]).caps).toBe(false);
+  });
+
+  it("aims at TWO lines, because three is what a plate tolerates not what it wants", () => {
+    // At fs.display the movement set does set inside NAMEPLATE_MAX_LINES — as
+    // three lines of 28dp capitals, which is precisely the wall of shouting
+    // this module exists to prevent. The rung is the lever that avoids it.
+    const three = nameplateRung(MOVEMENTS, { maxLines: 3 });
+    expect(three.size).toBeGreaterThan(nameplateRung(MOVEMENTS).size);
+    expect(nameplateRung(MOVEMENTS).lines).toBeLessThanOrEqual(2);
+  });
+
+  it("narrows the rung when the caller has a narrower card", () => {
+    expect(nameplateRung(DISCIPLINES.en, { widthDp: 90 }).size)
+      .toBeLessThan(nameplateRung(DISCIPLINES.en, { widthDp: 153 }).size);
+  });
+
+  it("never returns a rung outside the ladder, and never one below the floor", () => {
+    const sets = [DISCIPLINES.en, DISCIPLINES.de, DISCIPLINES.pl, MOVEMENTS,
+      ["Single Arm Dumbbell Preacher Curl With A Very Long Tail Indeed"], []];
+    for (const set of sets) {
+      const r = nameplateRung(set);
+      expect(NAMEPLATE_RUNGS, JSON.stringify(set).slice(0, 40)).toContain(r.size);
+    }
+    // A name that will not set even at the floor gets the floor, not a
+    // negative, not a crash — "use a different component" is fitsNameplate's
+    // answer to give, not this one's.
+    expect(nameplateRung(["Supercalifragilisticexpialidocious"], { widthDp: 40 }).size)
+      .toBe(NAMEPLATE_RUNGS[NAMEPLATE_RUNGS.length - 1]);
   });
 });

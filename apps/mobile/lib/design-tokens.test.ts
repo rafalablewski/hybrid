@@ -630,7 +630,7 @@ describe("named type styles", () => {
     //   reading size now, so two hand-rolled eyebrows left with them.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      166,
+      165,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );

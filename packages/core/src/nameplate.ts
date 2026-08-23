@@ -112,11 +112,19 @@ export interface NameplateName {
  */
 export function nameplateLines(
   name: string,
-  opts: { budgetEm?: number; trackingEm?: number; maxLines?: number } = {},
+  opts: { budgetEm?: number; trackingEm?: number; maxLines?: number; caps?: boolean } = {},
 ): NameplateName {
   const budgetEm = opts.budgetEm ?? NAMEPLATE_LINE_EM;
   const trackingEm = opts.trackingEm ?? NAMEPLATE_TRACK_EM;
-  const width = (s: string) => textWidthEm(s.toUpperCase(), trackingEm);
+  // MEASURE THE CASE THAT RENDERS. A nameplate sets in capitals, so this
+  // uppercases by default and that is right for the wordmark. It is wrong for
+  // a caller at a smaller rung, where the name sets as written — and the error
+  // is not small: Söhne's capitals average 0.66em against 0.55 for its
+  // lowercase, so measuring "Overhead Press" as "OVERHEAD PRESS" over-reads by
+  // about 15% and costs the name a whole rung. Same fault as measuring a
+  // monospaced string with the proportional table, one level up.
+  const caps = opts.caps ?? true;
+  const width = (s: string) => textWidthEm(caps ? s.toUpperCase() : s, trackingEm);
   const maxLines = opts.maxLines ?? NAMEPLATE_MAX_LINES;
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return { lines: [], compact: false, overflows: false };
@@ -234,4 +242,102 @@ export function nameplateBaseFits(
   if (note && monoWidthDp(note, noteSize) > line) return false;
   if (figure && monoWidthDp(figure, figureSize) > line) return false;
   return true;
+}
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * THE RUNG A SET OF NAMES CAN AFFORD — one rule, two sections, no taste
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * `fitsNameplate` answers a yes/no: may this surface use the wordmark at all?
+ * That was enough while exactly one surface asked. It stopped being enough the
+ * moment Today carried TWO name-led sections side by side, because a yes/no
+ * leaves the loser with no answer — Endurance got `fs.display` and Exercises
+ * got whatever the person building it happened to choose, which is how the
+ * screen ended up with a name at 14 over a figure at 28 sitting 200dp from a
+ * name at 28 over a figure at 16.
+ *
+ * That is not two hierarchies, it is one hierarchy and one accident. The fix is
+ * not to pick a compromise size; it is to make the size DERIVED:
+ *
+ *     THE NAME TAKES THE LARGEST RUNG AT WHICH EVERY NAME IN THE SET STILL
+ *     SETS INSIDE `maxLines`. THE FIGURE IS ALWAYS `fs.bodyLg`, ON THE BOTTOM
+ *     EDGE, UNDER A HAIRLINE.
+ *
+ * Run it over the six disciplines and it returns `fs.display` — one short word
+ * each, so the wordmark is affordable. Run it over the movement catalogue in a
+ * card of the same width and it returns `fs.subtitle`, because "Standing
+ * Overhead Press" is three words and the rung has to pay for them. Both
+ * sections then lead with the name and recede the figure; the RATIO differs
+ * because the NAMES differ, which is the system working rather than failing.
+ *
+ * CAPS IS A PROPERTY OF THE SET, not an input the caller argues about — and it
+ * follows the WORD COUNT rather than the size. A single word in capitals is a
+ * mark; three words in capitals is the wall of shouting this module exists to
+ * prevent, at any size. Tying it to the rung instead was the first cut and it
+ * gave a worse answer in two of the app's three languages: Polish
+ * "Wioślarstwo" will not set at 28 but sets happily in CAPS at 20, and a rule
+ * that dropped it to sentence case there threw away the treatment over a
+ * measurement that had nothing to do with case.
+ */
+
+/** The rungs a name may take, largest first. `fs.display` is the wordmark; the
+ *  floor is `fs.body`, below which a "name-led" card is not name-led. */
+export const NAMEPLATE_RUNGS = [fs.display, fs.headline, fs.title, fs.subtitle, fs.bodyLg, fs.body] as const;
+
+export interface NameplateRung {
+  /** The type size the name sets at. */
+  size: number;
+  /** Capitals — true only at the wordmark rung. See the note above. */
+  caps: boolean;
+  /** Letter-spacing in em at that size, for whichever case it resolved to. */
+  trackingEm: number;
+  /** The most lines any name in the set needs at this rung, so a caller can
+   *  size `numberOfLines` to the real worst case rather than to a guess. */
+  lines: number;
+}
+
+/**
+ * The largest rung at which EVERY name in `names` sets inside `maxLines`.
+ *
+ * `widthDp` is the name's own line — the card's content width, less anything
+ * sharing the name's row. Defaults to `NAMEPLATE_LINE_DP`, the two-up plate.
+ *
+ * Falls back to the smallest rung rather than reporting failure: by the time a
+ * name will not set at `fs.body` in 153dp the answer is not a smaller number,
+ * it is a different component, and `fitsNameplate` is where that question
+ * belongs.
+ */
+export function nameplateRung(
+  names: string[],
+  opts: { widthDp?: number; maxLines?: number; rungs?: readonly number[] } = {},
+): NameplateRung {
+  const width = opts.widthDp ?? NAMEPLATE_LINE_DP;
+  // TWO, not `NAMEPLATE_MAX_LINES`. Three is what a plate will TOLERATE before
+  // the name is truncated; it is not what a rung should aim at. Given a set
+  // that needs three lines at one rung and two at the next, the two-line rung
+  // is the better card every time — and picking it is the whole reason this
+  // function exists rather than a constant.
+  const maxLines = opts.maxLines ?? 2;
+  const rungs = opts.rungs ?? NAMEPLATE_RUNGS;
+  // ONE WORD EACH → it is a wordmark, and wordmarks are set in capitals.
+  const caps = names.every((n) => n.trim().split(/\s+/).filter(Boolean).length === 1);
+  const at = (size: number) => {
+    const trackingEm = caps ? CAPS_AIR_EM.wordmark + opticalTrackEm(size) : opticalTrackEm(size);
+    const broken = names.map((n) =>
+      nameplateLines(n, { budgetEm: width / size, trackingEm, maxLines, caps }),
+    );
+    return {
+      size, caps, trackingEm,
+      lines: Math.max(1, ...broken.map((b) => b.lines.length)),
+      fits: !broken.some((b) => b.overflows),
+    };
+  };
+  if (names.length === 0) return { ...at(rungs[rungs.length - 1]!), lines: 1 };
+  for (const size of rungs) {
+    const r = at(size);
+    if (r.fits) return { size: r.size, caps: r.caps, trackingEm: r.trackingEm, lines: r.lines };
+  }
+  const last = at(rungs[rungs.length - 1]!);
+  return { size: last.size, caps: last.caps, trackingEm: last.trackingEm, lines: maxLines };
 }

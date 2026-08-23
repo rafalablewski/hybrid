@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { screen } from "@testing-library/react";
-import type { LoggedSession, SessionBlock } from "@hybrid/core";
+import { nameplateBaseFits, type LoggedSession, type SessionBlock } from "@hybrid/core";
 import { renderScreen } from "./render";
 import ExerciseWidgetRail from "../components/aurora/exercise-widget";
 
@@ -65,20 +65,54 @@ describe("the exercise card", () => {
     expect(text).not.toContain("Heaviest"); // the fallback must not be reached
   });
 
-  it("names a DAY for a logged baseline and a PERIOD for the previous window", () => {
-    // A window is not a Tuesday. The card may only name a day it measured.
+  it("names a DAY only for a baseline it actually logged on a day", () => {
+    // A window is not a Tuesday. The card may only name a day it measured — so
+    // a baseline taken from the PREVIOUS WINDOW carries no date at all, and one
+    // taken from this window's own first session carries the date of that
+    // session.
     const recent = renderScreen(rail([lift("a", 20, "60"), lift("c", 6, "70")]));
-    expect(recent.container.textContent ?? "").not.toContain("prev. 8 weeks");
+    // The day's own format is the platform's (`Aug 2` under en-US, `2 Aug`
+    // under en-GB), so the assertion is that a DATE is there, not which way
+    // round the locale writes it.
+    expect(recent.container.textContent ?? "").toMatch(/from 60 kg – [A-Za-z0-9]/);
     recent.unmount();
     const windowed = renderScreen(rail(WITH_BASELINE));
-    expect(windowed.container.textContent ?? "").toContain("prev. 8 weeks");
+    const text = windowed.container.textContent ?? "";
+    expect(text).toContain("from 100 kg");
+    expect(text).not.toMatch(/from 100 kg – ./);
   });
 
-  it("carries the window on the baseline line, since the metric label no longer does", () => {
-    // "Heaviest – 8 weeks" used to be the only place the rail said what period
-    // it was answering for. Dropping the label cannot drop the window with it.
+  it("states the WINDOW ONCE, in the head, and not on every card", () => {
+    // It used to ride on the baseline line — "from 100 kg – prev. 8 weeks" —
+    // which is 162dp of a 153dp card line, so it ellipsised in all three
+    // languages once the card came down to the plate's 179dp module. The
+    // window is a scope, and a scope belongs at the level where it stops
+    // varying: every card under this head answers for the same eight weeks,
+    // which is exactly what Endurance's head already says two sections down.
     const { container } = renderScreen(rail(WITH_BASELINE));
-    expect(container.textContent ?? "").toMatch(/8 weeks/);
+    const text = container.textContent ?? "";
+    expect(text).toMatch(/movements – 8 weeks/);      // said once, in the head
+    expect(text).not.toContain("prev. 8 weeks");      // and not on the card
+    expect((text.match(/8 weeks/g) ?? []).length).toBe(1);
+  });
+
+  it("FITS every foot line inside the card, measured — not hoped", () => {
+    // jsdom does not truncate, so a render test cannot see this fault at all;
+    // the phone can see nothing else. Same guard as the plate's base, against
+    // the same ruler: mono at a flat 0.6em, over the card's real content line.
+    const LINE = 179 - 2 - 24;                        // CARD_W less rim and pad
+    const feet = [
+      "from 100 kg", "z 100 kg", "von 100 kg", "from 5:00 /km", "from 62.5 kg",
+      "from 60 kg – 2 Aug", "z 62.5 kg – 2 sie", "von 62.5 kg – 2. Aug.",
+      "Heaviest", "Maks. ciężar", "Max. Gewicht", "Najlepsze tempo",
+      "Bestes Tempo", "Objętość", "Volume", "Time", "Best pace",
+    ];
+    for (const foot of feet) {
+      expect(nameplateBaseFits(foot, undefined, { lineDp: LINE }), foot).toBe(true);
+    }
+    // ...and the string that made this necessary is still over, so the guard
+    // is known to be capable of failing.
+    expect(nameplateBaseFits("from 100 kg – prev. 8 weeks", undefined, { lineDp: LINE })).toBe(false);
   });
 
   it("falls back to the metric name when there is no previous window to measure from", () => {

@@ -7,6 +7,7 @@ import {
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
 import { F, PressScale as Pressable, TABULAR, fs, leading, space, trackFigure, tracking, ty } from "../../lib/ui";
+import { ASection } from "./kit";
 
 /**
  * RECORDS — the Progress cluster's own block: ONE QUOTE, THEN A LEDGER.
@@ -193,13 +194,17 @@ export default function PeriodRecords({
 
   return (
     <View style={{ marginTop: 24 }}>
-      {/* Explore-standard head. The right slot carries the WINDOW and NOTHING
-          ELSE — a block headed "Records" with no period would read as all-time,
-          so the window is the one thing that has to be there. */}
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, marginHorizontal: 2, marginBottom: 10 }}>
-        <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.chalk }}>{t("w.home.act.recordsTitle")}</Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), color: C.ash }}>{windowName}</Text>
-      </View>
+      {/* THE KIT'S OWN HEAD. The right slot carries the WINDOW and NOTHING ELSE
+          — a block headed "Records" with no period would read as all-time, so
+          the window is the one thing that has to be there.
+
+          IT WAS HAND-ROLLED, at mono `micro` in SENTENCE CASE, which made it
+          one of three spellings of a single eyebrow inside one scroll: sentence
+          case here, uppercase `micro` on Exercises, uppercase `nano` on
+          Endurance. All three now render through `ASection`, which is what the
+          section-head ratchet has been pointing at all along — the standard
+          existed, these three simply were not using it. */}
+      <ASection title={t("w.home.act.recordsTitle")} meta={windowName} style={{ marginHorizontal: 2, marginTop: 0 }} />
 
       {/* ── THE QUOTE — the period's biggest move, ranked by the very percent
           the rows print, so the block cannot headline one record while the
