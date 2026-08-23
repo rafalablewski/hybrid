@@ -6,7 +6,7 @@ import {
 } from "@hybrid/core";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt } from "../../lib/theme";
-import { F, PressScale as Pressable, TABULAR, fs, leading, trackFigure, tracking, ty} from "../../lib/ui";
+import { F, PressScale as Pressable, TABULAR, fs, leading, space, trackFigure, tracking, ty } from "../../lib/ui";
 
 /**
  * RECORDS — the Progress cluster's own block: ONE QUOTE, THEN A LEDGER.
@@ -84,17 +84,26 @@ const LEDGER_CAP = 4;
  *
  *  Sized, not just coloured: `from` sits a rung below `to` so the line GROWS as
  *  it is read, which is the one thing every record has in common. */
-function Path({ r, big = false }: { r: PrRecord; big?: boolean }) {
+/** The delta's column, reserved even when a row has none, so a ledger of four
+ *  records does not step in and out at its right edge. */
+const DELTA_W = 58;
+/** The width the ARRIVAL column reserves, so the figures a reader compares line
+ *  up under each other. `120.5 × 12` is the widest real pair. */
+const ARRIVAL_W = 62;
+/** The origin's column. Narrower: it is the part being read past. */
+const ORIGIN_W = 52;
+
+function Path({ r }: { r: PrRecord }) {
   const { palette: C } = useTheme();
-  const from = big ? fs.micro : fs.nano;
-  const to = big ? fs.bodyLg : fs.body;
   return (
-    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 5 }}>
-      <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: from, color: C.ash }}>
+    <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.xs }}>
+      <Text numberOfLines={1} style={{ ...TABULAR, width: ORIGIN_W, textAlign: "right", fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>
         {r.prev ? point(r.prev) : "—"}
       </Text>
-      <Text style={{ fontFamily: F.mono, fontSize: from, color: C.ash, opacity: 0.55 }}>→</Text>
-      <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: to, color: C.chalk }}>{point(r.now)}</Text>
+      <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash, opacity: 0.55 }}>→</Text>
+      <Text numberOfLines={1} style={{ ...TABULAR, width: ARRIVAL_W, textAlign: "right", fontFamily: F.mono, fontSize: fs.body, color: C.chalk }}>
+        {point(r.now)}
+      </Text>
     </View>
   );
 }
@@ -197,7 +206,10 @@ export default function PeriodRecords({
           table argues for another. ─────────────────────────────────────── */}
       <Quoted onPress={open(quote!)} a11y={spoken(quote!)}>
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
+          {/* THE LIFT IS WHAT THE CELEBRATION IS ABOUT, and it was set in the
+              smallest, quietest type in the block — 10dp ash uppercase, under a
+              46dp figure. Reading size, chalk, the display face. */}
+          <Text numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.subtitle, letterSpacing: tracking(fs.subtitle), color: C.chalk }}>
             {quote!.lift}
           </Text>
           {day && (
@@ -216,8 +228,26 @@ export default function PeriodRecords({
           <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.subtitle, color: C.ash }}>× {quote!.now.reps}</Text>
         </View>
 
-        <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 12, marginTop: 8 }}>
-          <Path r={quote!} big />
+        {/* THE ORIGIN ONLY. The quote printed the whole pair here — "50 × 8 →
+            50 × 12" — under a figure that had just said "50 kg × 12": four
+            numbers for a fact with three, with the biggest thing on the screen
+            repeated 30dp beneath itself. The arrival is already the headline,
+            so this line says the one part the headline cannot: where it came
+            from. The delta sits WITH it rather than flush to the screen edge,
+            which is where ~180dp of dead gutter used to be. */}
+        <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.sm }}>
+          {/* A DEBUT PRINTS NO ORIGIN. The ledger keeps the em dash, because
+              there the pair is a SHAPE and a first record should read like every
+              other row rather than as a special case. Here the shape is gone —
+              this is a sentence, not a column — so an origin that does not exist
+              says nothing at all, and the delta beside it already says "New".
+              Printing the word twice, 8dp apart, is the fault this whole pass is
+              about. */}
+          {quote!.prev && (
+            <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>
+              {t("w.home.act.prFrom").replace("{v}", point(quote!.prev))}
+            </Text>
+          )}
           {quoteDelta && (
             <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.bodyLg, color: txt(C, C.lime) }}>{quoteDelta}</Text>
           )}
@@ -300,16 +330,28 @@ function Row({ name, r, delta, a11y, onPress }: {
 }) {
   const { palette: C } = useTheme();
   const body = (
-    <View style={{ flexDirection: "row", alignItems: "baseline", gap: 12 }}>
-      <Text numberOfLines={1} style={{ width: 88, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color: C.ash }}>
+    <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm }}>
+      {/* THE NAME TAKES WHAT IS LEFT, not a fixed 88dp. A repeated key may be
+          omitted — that is what a ledger does — but a lift appearing ONCE was
+          being cut to "Barbell Ben…" and "Dumbbell La…", which is the row
+          failing at the only job the column has. Reading size and chalk for the
+          same reason the quote's name changed: it is the subject. */}
+      <Text
+        numberOfLines={1}
+        style={{ flex: 1, minWidth: 0, fontFamily: F.semi, fontSize: fs.body, color: name ? C.chalk : C.ash }}
+      >
         {name}
       </Text>
-      <View style={{ flex: 1 }}>
-        <Path r={r} />
-      </View>
-      {delta && (
-        <Text style={{ ...TABULAR, fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{delta}</Text>
-      )}
+      <Path r={r} />
+      {/* THE DELTA SITS AGAINST THE ARRIVAL. It used to be flushed to the far
+          edge while the pair ended mid-row, leaving a gutter of nothing between
+          a number and its own explanation. */}
+      <Text
+        numberOfLines={1}
+        style={{ ...TABULAR, width: DELTA_W, textAlign: "right", fontFamily: F.mono, fontSize: fs.caption, color: delta ? txt(C, C.lime) : "transparent" }}
+      >
+        {delta ?? ""}
+      </Text>
     </View>
   );
   if (!onPress) return <View accessibilityLabel={a11y}>{body}</View>;

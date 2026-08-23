@@ -623,9 +623,14 @@ describe("named type styles", () => {
     // collapsing them moved 108 eyebrows by 0.3dp. `kicker` (+0.085em) is the
     // label above a card or a figure; `overline` (+0.115em) is a section label,
     // where the label is structure and the extra air is the division.
+    // 168 → 166: the Records block stopped setting its SUBJECT as an eyebrow.
+    //   The lift's name — on the quote and in every ledger row — was 10dp mono
+    //   ash uppercase, which is to say the smallest, quietest type in a block
+    //   whose whole point is which lift moved. Both are the reading face at
+    //   reading size now, so two hand-rolled eyebrows left with them.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      168,
+      166,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
