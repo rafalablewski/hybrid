@@ -1,5 +1,5 @@
 import { textWidthEm } from "./session-wrapped";
-import { CAPS_AIR_EM, fs, opticalTrackEm } from "./scale";
+import { CAPS_AIR_EM, MONO_ADVANCE_EM, fs, opticalTrackEm } from "./scale";
 
 /**
  * THE NAMEPLATE — the plate whose SUBJECT is its name.
@@ -157,4 +157,78 @@ export function fitsNameplate(
   if (broken.some((b) => b.overflows)) return false;
   const compact = broken.filter((b) => b.compact).length;
   return compact * 2 >= names.length;
+}
+
+/**
+ * ─────────────────────────────────────────────────────────────────────────────
+ * THE BASE — the plate's two small facts, and the measurement that got it wrong
+ * ─────────────────────────────────────────────────────────────────────────────
+ *
+ * The name is set in the SANS, so it is measured with `textWidthEm` and Söhne's
+ * per-glyph table. The base is set in the MONO, and that is a different
+ * question with a much easier answer: Söhne Mono's `hmtx` carries a single
+ * advance — `numHMetrics` is 1 — so every glyph is 0.600em and a string's width
+ * is its LENGTH. `MONO_ADVANCE_EM` in scale.ts has said so all along.
+ *
+ * The base still shipped mis-measured, because the fitter that was to hand was
+ * the proportional one. Run "12 EFFORTS" through `textWidthEm` and it comes
+ * back 5.38em — Söhne's narrow `F`, `E` and `T` counted at their sans widths —
+ * against a true 6.00em. That is a 10% under-read, and it landed on the wrong
+ * side of a line that had 5.86em to give: the note was declared a fit with room
+ * to spare and rendered "12 EFFORT…". A proportional table applied to a
+ * monospaced face is not an approximation of it, it is a different font.
+ *
+ * These two functions exist so the next base is measured with the right ruler
+ * and against the right budget.
+ */
+
+/**
+ * THE PLATE'S LINE, IN DP — the width one fact may occupy.
+ *
+ * 390dp screen, less AuroraScreen's 12dp gutter each side, is 366; less the
+ * 8dp grid gap and halved is a 179dp plate; less `APanel`'s 12dp pad each side
+ * and its 1dp rim is 153.
+ *
+ * DP AND NOT EM, unlike `NAMEPLATE_LINE_EM`, because the base carries two
+ * DIFFERENT sizes — the note at `fs.nano`, the figure at `fs.bodyLg` — so em of
+ * whose size is not a question with one answer.
+ */
+export const NAMEPLATE_LINE_DP = 153;
+
+/** Rendered width of a mono string at `size` dp. Length × 0.6em, because that
+ *  is the whole of Söhne Mono's metric. */
+export const monoWidthDp = (value: string, size: number): number =>
+  value.length * size * MONO_ADVANCE_EM;
+
+/**
+ * Do a plate's note and figure fit — STACKED, each on its own line?
+ *
+ * This is the question the base actually asks now. It used to ask whether they
+ * fit SIDE BY SIDE, sharing one line with an 8dp gap between them, and the
+ * answer was no in every language once the figure ran to "14h 43min":
+ *
+ *     line                        153.0dp
+ *     figure "14h 43min"  9 × 9.6  86.4
+ *     gap                           8.0
+ *     ── leaving the note ─────────────── 58.6dp, which is NINE CHARACTERS
+ *     "12 EFFORTS"       10 × 6.0   60.0   over by 1.4
+ *     "12 WYSIŁKI"       10 × 6.0   60.0   over by 1.4
+ *     "12 EINHEITEN"     12 × 6.0   72.0   over by 13.4
+ *
+ * Stacked, each fact has the whole 153dp: 25 characters at `fs.nano`, 15 at
+ * `fs.bodyLg`. That is not a tuned budget, it is a different shape — which is
+ * the point, because a budget nine characters wide is one word away from
+ * failing again in a language nobody tested.
+ */
+export function nameplateBaseFits(
+  note: string | undefined,
+  figure: string | undefined,
+  opts: { lineDp?: number; noteSize?: number; figureSize?: number } = {},
+): boolean {
+  const line = opts.lineDp ?? NAMEPLATE_LINE_DP;
+  const noteSize = opts.noteSize ?? fs.nano;
+  const figureSize = opts.figureSize ?? fs.bodyLg;
+  if (note && monoWidthDp(note, noteSize) > line) return false;
+  if (figure && monoWidthDp(figure, figureSize) > line) return false;
+  return true;
 }

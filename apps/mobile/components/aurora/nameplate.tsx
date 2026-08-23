@@ -111,26 +111,54 @@ export default function Nameplate({
       <View style={{ flex: 1, minHeight: space.md }} />
 
       <View style={{ height: 1, backgroundColor: C.line }} />
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "baseline",
-          justifyContent: "space-between",
-          gap: space.sm,
-          marginTop: space.sm,
-        }}
-      >
-        {note ? (
-          <Text
-            numberOfLines={1}
-            maxFontSizeMultiplier={MAX_FONT_SCALE}
-            style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.nano, color: toneColor(C, noteTone) }}
-          >
-            {note}
-          </Text>
-        ) : (
-          <View />
-        )}
+
+      {/* THE BASE STACKS, and the split row it replaces is worth writing down
+          because the arithmetic that justified it was wrong.
+
+          It was one row: note on the left, figure on the right, sharing a
+          153dp line (a 179dp plate, less APanel's 12dp pad each side and its
+          rim). Both are set in Söhne Mono, and Söhne Mono is a FIXED 0.6em
+          advance — `numHMetrics` is 1, every glyph the same — so a character
+          costs exactly 6dp at `fs.nano` and 9.6dp at `fs.bodyLg`, and the
+          width of either fact is just its length.
+
+          "14h 43min" is nine characters: 86.4dp. Take it and the 8dp gap off
+          the line and the note has 58.6dp, which is NINE CHARACTERS. "12
+          EFFORTS" is ten. The German "12 EINHEITEN" is twelve. So the row
+          ellipsised the fact it existed to show — and it did so on the plate
+          with the LARGEST figure, i.e. exactly the sport an athlete looks at
+          first.
+
+          It shipped because the width was measured with `textWidthEm`, which
+          carries Söhne's PROPORTIONAL advance table. Run a monospaced string
+          through it and every narrow letter is under-counted: it read "12
+          EFFORTS" as 53.8dp against a true 60, and called a line that
+          overruns by 1.4dp a fit with 5dp to spare. A proportional table
+          applied to a mono face is not an approximation, it is a different
+          font.
+
+          Stacking removes the contest instead of re-tuning it. The note takes
+          the whole 153dp — every language, every count, and the 96dp longest
+          effort the row could never hold — and the figure keeps the bottom
+          edge, so a row of plates still aligns on its figures. */}
+      <View style={{ marginTop: space.sm }}>
+        <Text
+          numberOfLines={1}
+          maxFontSizeMultiplier={MAX_FONT_SCALE}
+          style={{
+            fontFamily: F.mono,
+            fontSize: fs.nano,
+            lineHeight: leading(fs.nano, "snug"),
+            color: toneColor(C, noteTone),
+          }}
+        >
+          {/* The line is RESERVED even when empty. Plates in a wrapping grid
+              stretch to their row's tallest, and the base is bottom-anchored,
+              so a plate that dropped this line would sit its plinth 13dp
+              lower than its neighbours — the one misalignment a grid of
+              rules cannot hide. */}
+          {note ?? " "}
+        </Text>
         {figure != null && (
           <Text
             numberOfLines={1}
@@ -138,10 +166,15 @@ export default function Nameplate({
             // NO trackFigure HERE, and the guard that caught it was right: the
             // figure tightening is for the 30–68dp band, where a constant dp
             // means nothing at the top of the range. At fs.bodyLg a mono
-            // numeral needs no tightening at all — `tracking(14)` is 0 — so the
+            // numeral needs no tightening at all — `tracking(16)` is 0 — so the
             // honest answer is to set none rather than to reach for the big
             // figure's tool because the thing is called a figure.
-            style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk }}
+            style={{
+              fontFamily: F.mono,
+              fontSize: fs.bodyLg,
+              lineHeight: leading(fs.bodyLg, "tight"),
+              color: C.chalk,
+            }}
           >
             {figure}
             {unit ? (

@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  NAMEPLATE_LINE_DP,
   NAMEPLATE_LINE_EM,
   NAMEPLATE_MAX_LINES,
   NAMEPLATE_TRACK_EM,
   fitsNameplate,
+  monoWidthDp,
+  nameplateBaseFits,
   nameplateLines,
 } from "./nameplate";
 import { textWidthEm } from "./session-wrapped";
+import { fs } from "./scale";
 
 /**
  * The nameplate's one load-bearing condition is that the noun is SHORT, so
@@ -125,5 +129,68 @@ describe("fitsNameplate", () => {
   it("takes a narrower line when the caller has less room", () => {
     expect(fitsNameplate(["Swimming"], { budgetEm: 3 })).toBe(false);
     expect(fitsNameplate(["Swimming"])).toBe(true);
+  });
+});
+
+describe("the nameplate's base", () => {
+  /** Every note the endurance grid can print, in all three languages. The
+   *  count is two digits because eight weeks of daily training is two digits;
+   *  one digit was the case that made the split row look survivable. */
+  const NOTES = [
+    "12 EFFORTS", "12 WYSIŁKI", "12 EINHEITEN",   // a timed sport's turn-up count
+    "4:35 /100m", "2:20 /500m", "4:48 /km", "31 km/h",
+  ];
+  const FIGURES = ["14h 43min", "112h 30min", "4h 41min", "45min", "2h"];
+
+  it("measures the MONO by length, which is the whole of Söhne Mono's metric", () => {
+    // numHMetrics is 1 in SohneMono-Buch.otf: every glyph advances 0.600em.
+    expect(monoWidthDp("12 EFFORTS", fs.nano)).toBeCloseTo(60, 5);
+    expect(monoWidthDp("14h 43min", fs.bodyLg)).toBeCloseTo(86.4, 5);
+  });
+
+  it("REJECTS the proportional table for a mono string, which is the bug", () => {
+    // `textWidthEm` carries Söhne's per-glyph SANS widths. Applied to the mono
+    // note it under-read by 10% — and the whole margin was 2%.
+    const proportional = textWidthEm("12 EFFORTS", 0) * fs.nano;
+    const actual = monoWidthDp("12 EFFORTS", fs.nano);
+    expect(proportional).toBeLessThan(actual);
+    expect(actual - proportional).toBeGreaterThan(5); // 60.0 against 53.8dp
+  });
+
+  it("shows the SPLIT ROW could not hold them, which is why the base stacks", () => {
+    // note + 8dp gap + figure on one 153dp line. This is the layout that
+    // shipped, and it fails on the plate with the largest figure — the sport
+    // an athlete looks at first.
+    const gap = 8;
+    const fig = monoWidthDp("14h 43min", fs.bodyLg);
+    for (const note of ["12 EFFORTS", "12 WYSIŁKI", "12 EINHEITEN"]) {
+      expect(monoWidthDp(note, fs.nano) + gap + fig, note).toBeGreaterThan(NAMEPLATE_LINE_DP);
+    }
+    // ...and the fact it REPLACED was over by a mile, which is the defect the
+    // count was introduced to fix. Both were true at once.
+    expect(monoWidthDp("LONGEST 1h 32min", fs.nano) + gap + fig).toBeGreaterThan(190);
+  });
+
+  it("fits every note against every figure once each has its own line", () => {
+    for (const note of NOTES) {
+      for (const figure of FIGURES) {
+        expect(nameplateBaseFits(note, figure), `${note} / ${figure}`).toBe(true);
+      }
+    }
+  });
+
+  it("still says NO to a fact that overruns the line on its own", () => {
+    expect(nameplateBaseFits("A".repeat(26), undefined)).toBe(false);   // 156dp
+    expect(nameplateBaseFits("A".repeat(25), undefined)).toBe(true);    // 150dp
+    expect(nameplateBaseFits(undefined, "1".repeat(16))).toBe(false);   // 153.6dp
+  });
+
+  it("treats an absent fact as fitting rather than as a failure", () => {
+    expect(nameplateBaseFits(undefined, undefined)).toBe(true);
+    expect(nameplateBaseFits(undefined, "14h 43min")).toBe(true);
+  });
+
+  it("takes a narrower line when the caller has less room", () => {
+    expect(nameplateBaseFits("12 EINHEITEN", "14h 43min", { lineDp: 60 })).toBe(false);
   });
 });
