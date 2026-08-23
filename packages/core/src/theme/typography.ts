@@ -116,28 +116,52 @@ export type Cut = keyof typeof cut;
  * counter with, and at `fs.stat` a mono 700's 8, 9, 6 and 0 converge at exactly
  * the distance this product is read at.
  *
- * ── AND WHY THERE IS NO LONGER A 700 AT ALL ───────────────────────────────
+ * ── AND WHY THE 700 IS BACK, WITH A SIZE FLOOR INSTEAD OF A ROLE ──────────
  *
- * The first cut of this rebuild kept `bold` for one style — `takeover`, the
- * Wrapped's cover titles — on the reasoning that irradiation runs the OTHER way
- * on a lit surface, so a 700 is correct there. That reasoning was sound and the
- * premise was FALSE: `HERO_TAKEOVER_INK` is #0a0b09, which is DARKER than
- * `colors.ink` (#0c0d0c). The Wrapped covers are the darkest ground in the app,
- * not the brightest. HYBRID has no lit full-bleed surface, so the exception had
- * nowhere to apply, and a weight with no legal surface is a weight with no
- * consumer — which is what `condensed` was deleted from tokens.ts for.
+ * The rebuild kept `bold` for one style — `takeover`, the Wrapped's cover
+ * titles — on the reasoning that irradiation runs the OTHER way on a lit
+ * surface. The premise was checked and found false (`HERO_TAKEOVER_INK` is
+ * #0a0b09, DARKER than `colors.ink`), so the exception had nowhere to apply and
+ * `weight.bold`, `text.takeover`, the `F.takeover` alias and the Dreiviertelfett
+ * binary were all deleted together.
  *
- * So `weight.bold`, `text.takeover`, the `F.takeover` alias, the `weightOnGround`
- * mechanism and the Dreiviertelfett binary all went together. One ground, one
- * ladder, three weights. If a genuinely lit surface is ever built — a chartreuse
- * fill big enough to set a heading on, a photographic cover — the correction is
- * a real one and comes back with the surface, measured against it rather than
- * assumed for it.
+ * THAT ANSWERED THE WRONG QUESTION. "Is the Wrapped cover lit?" is a question
+ * about one surface; "does the top of the hierarchy need a weight step?" is a
+ * question about the system, and it was never asked. Deleting the cut answered
+ * the first and settled the second by accident: the app was left with no weight
+ * above 600 anywhere, so `hero` went 34/700 → 35/600 — three percent bigger and
+ * a full step lighter — in the same change that grew the reading band 8-12%.
+ * The masthead got quieter while the text under it got louder, which compresses
+ * the hierarchy from both ends and is exactly the kind of change that is felt
+ * before it can be named.
+ *
+ * IRRADIATION IS A SMALL-SIZE PROBLEM. It closes counters in proportion to
+ * STEM OVER COUNTER, and that ratio falls as the type grows: Dreiviertelfett's
+ * 0.16em stem is 2.2dp against a 10dp cap at `fs.body` — the 62 sites the
+ * rebuild was right to clear — and 5.6dp against a 25dp cap at `fs.hero`, where
+ * there is nothing to fill in. The correction was right in the reading band and
+ * wrong as a ceiling on the product.
+ *
+ * SO THE RULE IS A FLOOR, NOT AN EXCEPTION: `weight.bold` is legal at
+ * `fs.display` (28) and above, and nowhere else. That is checkable — the size is
+ * in the same style object as the weight — where "except on a lit surface" was
+ * a claim about a colour three files away, which is how the first version of
+ * this rule survived being false. `text.hero` takes it; `apps/mobile`'s 60
+ * hand-rolled display-band sites take `F.takeover`; `design-tokens.test.ts`
+ * fails the build on a `F.takeover` under 28dp, and typography.test.ts on a
+ * token that names `bold` below the same rung.
+ *
+ * MONO IS STILL CAPPED AT 600 and that is not the same argument: every mono
+ * glyph sits on one 0.600em advance, so weight is the only axis left to close a
+ * counter with, and there is no size at which a mono 700's 8, 9, 6 and 0 stop
+ * converging.
  */
 export const weight = {
   regular: 400,
   medium: 500,
   semibold: 600,
+  /** DISPLAY BAND ONLY — `fs.display` (28) and above. See the note above. */
+  bold: 700,
 } as const;
 
 /** The measured stems, so the ladder's argument can be checked rather than read. */
@@ -145,6 +169,7 @@ export const WEIGHT_STEM_EM: Record<number, number> = {
   400: SOHNE.buch.stem,
   500: SOHNE.kraftig.stem,
   600: SOHNE.halbfett.stem,
+  700: SOHNE.dreiviertelfett.stem,
 };
 
 export type WeightRole = keyof typeof weight;
@@ -216,7 +241,9 @@ export const text = {
    * irradiation note on `weight`. At 35dp on near-black, Halbfett is already
    * emphatic; Dreiviertelfett is a slab with the counters filling in.
    */
-  hero: { cut: "sans", weight: weight.semibold, size: "hero", leading: "tight", ink: "primary" },
+  // THE ONE TOKEN AT 700. A masthead is seen before it is read, and it is the
+  // only rung where the heaviest cut has no counter to close — see `weight`.
+  hero: { cut: "sans", weight: weight.bold, size: "hero", leading: "tight", ink: "primary" },
   display: { cut: "sans", weight: weight.semibold, size: "display", leading: "tight", ink: "primary" },
   headline: { cut: "sans", weight: weight.semibold, size: "headline", leading: "snug", ink: "primary" },
   /** Section titles — the house standard (the Explore tab's SectionHead). */

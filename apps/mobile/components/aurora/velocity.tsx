@@ -78,7 +78,7 @@ export default function AuroraVelocity() {
 
       <ACard style={{ marginTop: 16 }}>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: txt(C, C.lime) }}>{t("w.analyze.vel.est1rm")}</Text>
-        <Text style={{ fontFamily: F.black, fontSize: 40, color: C.chalk, marginTop: 6 }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<Text style={{ fontSize: fs.title, color: C.ash }}> kg</Text></Text>
+        <Text style={{ fontFamily: F.takeover, fontSize: 40, color: C.chalk, marginTop: 6 }}>{resolved ? profile.estimated1rm.toFixed(1) : "—"}<Text style={{ fontSize: fs.title, color: C.ash }}> kg</Text></Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 2 }}>{resolved ? `${t("w.analyze.vel.mvtPrefix")} ${mvt} m/s – v₀ ${profile.v0.toFixed(2)} – r² ${profile.r2.toFixed(2)} – ${profile.n} ${t("w.analyze.vel.loads")}` : t("w.analyze.vel.needLoads")}</Text>
       </ACard>
 
@@ -105,7 +105,7 @@ export default function AuroraVelocity() {
         </View>
         {rec ? (
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.ms, flexWrap: "wrap" }}>
-            <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{rec.load} <Text style={{ fontSize: fs.bodyLg, color: C.ash }}>kg</Text></Text>
+            <Text style={{ fontFamily: F.takeover, fontSize: 30, color: txt(C, C.lime) }}>{rec.load} <Text style={{ fontSize: fs.bodyLg, color: C.ash }}>kg</Text></Text>
             <Text style={{ fontFamily: F.mono, fontSize: fs.body, color: C.ash }}>≈ {rec.percent1rm.toFixed(0)}% 1RM</Text>
             {chip(zoneColor(rec.zone.id, C), rec.zone.label)}
           </View>

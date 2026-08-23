@@ -57,16 +57,29 @@ describe("the named type styles", () => {
     expect(bad, `mono is capped at semibold:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
-  it("HARD — the ladder has no 700 to reach for", () => {
-    // There is no `weight.bold` any more. It survived the first cut of the
-    // rebuild for one style — the Wrapped's cover titles — on the reasoning that
-    // a LIT surface wants a heavier cut, and the premise was false:
-    // HERO_TAKEOVER_INK is #0a0b09, darker than `ink`. The app has no lit
-    // full-bleed surface, so the exception had nowhere to apply.
-    expect(Object.values(weight)).toEqual([400, 500, 600]);
-    expect((weight as Record<string, number>)["bold"]).toBeUndefined();
-    const bad = TOKENS.filter((t) => (text[t] as TextStyle).weight > 600);
-    expect(bad, `nothing above 600: ${bad.join(", ")}`).toEqual([]);
+  it("HARD — the 700 is floored at the display band, not banned outright", () => {
+    // THE RULE THIS REPLACED, and why it moved. `weight.bold` survived the
+    // rebuild for one style — the Wrapped's cover titles — on the reasoning
+    // that a LIT surface wants a heavier cut, and the premise was false
+    // (HERO_TAKEOVER_INK is #0a0b09, darker than `ink`). The cut was then
+    // deleted from the product, which answered "is that surface lit?" and
+    // settled "does the top of the hierarchy need a weight step?" by accident:
+    // `hero` went 34/700 → 35/600 in the same change that grew the reading band
+    // 8-12%, so the masthead got quieter as the text under it got louder.
+    //
+    // Irradiation closes counters in proportion to STEM OVER COUNTER and that
+    // ratio falls as type grows, so the floor is a size and not a surface —
+    // which is also the difference between a rule this test can check and a
+    // claim about a colour three files away.
+    expect(Object.values(weight)).toEqual([400, 500, 600, 700]);
+    const heavy = TOKENS.filter((t) => (text[t] as TextStyle).weight > weight.semibold);
+    for (const t of heavy) {
+      const st = text[t] as TextStyle;
+      expect(fs[st.size], `${t} takes 700 at ${st.size}`).toBeGreaterThanOrEqual(fs.display);
+      expect(st.cut, `${t} takes 700 in ${st.cut}`).toBe("sans");
+    }
+    // …and it is not a weight the reading band can reach by accident.
+    expect(heavy).toEqual(["hero"]);
   });
 
   it("HARD — uppercase is mono only, and only at the two smallest rungs", () => {
@@ -253,7 +266,7 @@ describe("the weight ladder on a dark ground", () => {
     // Söhne draws all four cuts on one skeleton, so a weight is its stem and
     // nothing else. If that stopped being true the irradiation argument above
     // would need re-making rather than re-reading.
-    const stems = [weight.regular, weight.medium, weight.semibold].map((w) => WEIGHT_STEM_EM[w]!);
+    const stems = [weight.regular, weight.medium, weight.semibold, weight.bold].map((w) => WEIGHT_STEM_EM[w]!);
     for (let i = 1; i < stems.length; i++) expect(stems[i]!).toBeGreaterThan(stems[i - 1]!);
     expect(WEIGHT_STEM_EM[weight.semibold]! / WEIGHT_STEM_EM[weight.regular]!).toBeCloseTo(1.56, 2);
   });

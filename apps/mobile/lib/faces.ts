@@ -22,6 +22,8 @@ export const FACE: Record<string, string> = {
   "Söhne:400": "Sohne_400Buch",
   "Söhne:500": "Sohne_500Kraftig",
   "Söhne:600": "Sohne_600Halbfett",
+  // 700 is the DISPLAY band only (fs.display and above) — see `weight` in core.
+  "Söhne:700": "Sohne_700Dreiviertelfett",
   "Söhne Mono:400": "SohneMono_400Buch",
   "Söhne Mono:500": "SohneMono_500Kraftig",
   "Söhne Mono:600": "SohneMono_600Halbfett",

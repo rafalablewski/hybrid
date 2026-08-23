@@ -725,6 +725,40 @@ describe("figures", () => {
  * tests hold — and it is the same arithmetic in the same direction: a typed box
  * is a claim about a font, and this is the only thing that checks it.
  */
+/**
+ * ── THE DISPLAY WEIGHT HAS A FLOOR, AND THE FLOOR IS CHECKABLE ─────────────
+ *
+ * `F.takeover` is Söhne Dreiviertelfett — a 0.16em stem, +78% over the regular.
+ * On this ground that is mud at reading size: the rebuild found it on 298 call
+ * sites, 62 of them at `fs.body` or below, and clearing those was right.
+ *
+ * It is not mud at 35dp, and the version of this rule that deleted the cut from
+ * the product could not tell the difference, because it was phrased as an
+ * exception for a SURFACE ("a lit full-bleed cover") — a claim about a colour
+ * constant three files away, which is why it survived being false for a
+ * release. A floor phrased as a SIZE sits in the same style object as the
+ * weight, so it can be read off the source, which is what this does.
+ */
+describe("the display weight stays in the display band", () => {
+  const FS: Record<string, number> = { ...fs };
+
+  it("HARD — `F.takeover` never appears under fs.display", () => {
+    const bad: string[] = [];
+    for (const { path, text: src } of FILES) {
+      src.split("\n").forEach((line, i) => {
+        if (!/F\.takeover/.test(line)) return;
+        if (/^\s*(\/\/|\*|\/\*)/.test(line)) return;      // a comment naming it is not a call site
+        if (path === "lib/ui.tsx") return;                // DECLARES the alias and its PostScript name
+        const m = /fontSize:\s*(fs\.([a-zA-Z]+)|[0-9]+)/.exec(line);
+        if (!m) { bad.push(`${path}:${i + 1} — the display weight with no size on the line`); return; }
+        const px = m[2] ? FS[m[2]] : Number(m[1]);
+        if (!px || px < fs.display) bad.push(`${path}:${i + 1} — ${px}dp is under the ${fs.display}dp floor`);
+      });
+    }
+    expect(bad, `\nthe 700 is display-band only — see F.takeover in lib/ui.tsx:\n  ${bad.join("\n  ")}`).toEqual([]);
+  });
+});
+
 describe("no line box is smaller than the ink it has to carry", () => {
   // `lh.flush` IS the floor — core derives it as `lineBoxFloor(FIGURE_INK.top)`
   // off the shipped binaries and asserts that identity, so reading it here keeps

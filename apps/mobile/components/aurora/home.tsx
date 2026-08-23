@@ -1995,7 +1995,7 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
             off (see `lh` in core scale.ts — RN takes a short line box out of
             the ascent). `tight` is the house rung for a display word. */}
         <Text style={{
-          fontFamily: shownFeeling ? F.black : F.reg, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: shownFeeling ? -1 : -0.2,
+          fontFamily: shownFeeling ? F.takeover : F.reg, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: shownFeeling ? -1 : -0.2,
           color: shownFeeling ? txt(C, C[READINESS_FACE[shownFeeling].accent]) : withAlpha(C.ash, 0.55),
         }}>
           {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}

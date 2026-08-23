@@ -183,7 +183,7 @@ export function FeelPrompt({
 
       {load != null && (
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: C.line }}>
-          <Text style={{ fontFamily: F.black, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
+          <Text style={{ fontFamily: F.takeover, fontSize: 30, color: txt(C, C.lime) }}>{load}</Text>
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), color: C.ash, textTransform: "uppercase" }}>{t("session.feel.load")}</Text>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk }}>{t(LOAD_BAND_KEY[loadBand(load)])}</Text>

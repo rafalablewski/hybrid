@@ -312,25 +312,35 @@ export const F = {
    * at reading size is not emphasis, it is mud.
    *
    * The type system's rule is now explicit (`weight` in core theme/typography.ts):
-   * ON THIS GROUND THE LADDER STOPS AT 600, both cuts. An alias resolving above
-   * it would be 298 call sites quietly contradicting the system they belong to.
+   * ON THIS GROUND, READING TEXT STOPS AT 600. An alias resolving above it would
+   * be 298 call sites quietly contradicting the system they belong to.
    *
-   * THE COLLAPSE IS THE POINT, not a cost being absorbed. `bold` and `black`
-   * pointing at one binary says exactly what the rule says: on `ink` there is no
-   * weight above Halbfett. A site that was leaning on the step between them was
-   * leaning on a distinction the system no longer has — and the honest fix for
-   * those is a named style (`ty(C, "hero")`, `ty(C, "title")`), not a heavier
-   * face. That migration is tracked as `weight-ladder-migration` in
-   * capabilities.ts, with the counts.
+   * THE COLLAPSE IS THE POINT for the 182 reading-band sites, not a cost being
+   * absorbed. `bold` and `black` pointing at one binary says exactly what the
+   * rule says: in the reading band there is no weight above Halbfett. A site
+   * that was leaning on the step between them was leaning on a distinction the
+   * system does not have THERE — and the honest fix is a named style
+   * (`ty(C, "title")`), not a heavier face. That migration is tracked as
+   * `weight-ladder-migration` in capabilities.ts, with the counts.
    *
-   * DREIVIERTELFETT IS GONE FROM THE APP. It was kept for one style — the
-   * Wrapped's cover titles — on the reasoning that a LIT surface wants a heavier
-   * cut. The premise was false: `HERO_TAKEOVER_INK` is #0a0b09, DARKER than
-   * `ink`. There is no lit full-bleed surface in this product, so the 700 had no
-   * legal home and stopped being bundled. `black` is an alias for the 600 and
-   * the ladder has three weights.
+   * THE DISPLAY BAND KEPT ITS 700, and this alias is not it. Dreiviertelfett
+   * left the app for a day in Aug 2026 and came back as `F.takeover` below,
+   * floored at `fs.display`: irradiation closes counters in proportion to stem
+   * over counter, which falls as the type grows, so the correction that was
+   * right at 14dp was never an argument at 35. `black` stays Halbfett because
+   * its 182 reading-band sites are the ones the correction was for.
    */
   black: "Sohne_600Halbfett",
+  /**
+   * THE DISPLAY WEIGHT — Söhne Dreiviertelfett, legal at `fs.display` (28) and
+   * above and NOWHERE else. `design-tokens.test.ts` fails the build on a site
+   * under that floor, because the argument for keeping the heaviest cut off
+   * reading text is a real one (0.16em of stem at 14dp is mud) and the argument
+   * for having no display weight at all was not — see `weight` in core's
+   * theme/typography.ts. Prefer `ty(C, "hero")`, which carries it with the
+   * size that makes it legal.
+   */
+  takeover: "Sohne_700Dreiviertelfett",
   mono: "SohneMono_400Buch",
   monoMed: "SohneMono_500Kraftig",
   monoBold: "SohneMono_600Halbfett",
@@ -419,6 +429,7 @@ export const F_POSTSCRIPT: Record<string, string> = {
   [F.mono]: "TestSohneMono-Buch",
   [F.monoMed]: "TestSohneMono-Kraftig",
   [F.monoBold]: "TestSohneMono-Halbfett",
+  [F.takeover]: "TestSohne-Dreiviertelfett",
 };
 
 /**

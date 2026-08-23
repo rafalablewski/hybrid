@@ -1738,7 +1738,7 @@ export function AStat({
         {typeof value === "string" || typeof value === "number" ? (
           <RollingNumber
             value={String(value)}
-            style={{ ...TABULAR, fontFamily: F.black, fontSize: fs.hero, color: txt(palette, c ?? palette.chalk), lineHeight: leading(fs.hero, "tight") }}
+            style={{ ...TABULAR, fontFamily: F.takeover, fontSize: fs.hero, color: txt(palette, c ?? palette.chalk), lineHeight: leading(fs.hero, "tight") }}
           />
         ) : (
           value
@@ -2168,7 +2168,7 @@ export function AScrubField({
       >
         <RollingNumber
           value={show}
-          style={{ fontFamily: F.black, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking(fs.hero) }}
+          style={{ fontFamily: F.takeover, fontSize: fs.hero, color: unset ? C.ash : C.chalk, lineHeight: leading(fs.hero, "tight"), letterSpacing: tracking(fs.hero) }}
         />
         {suffix ? (
           <Text maxFontSizeMultiplier={MAX_FONT_SCALE} style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.ash }}>

@@ -64,7 +64,7 @@ export default function ReadinessSheet({ explain, stamp, onClose }: {
           <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
             <ReadinessFace feeling={e.feeling} />
             <View style={{ flex: 1 }}>
-              <Text style={{ fontFamily: F.black, fontSize: 28, letterSpacing: tracking(28), color: txt(C, C[READINESS_FACE[e.feeling].accent]) }}>
+              <Text style={{ fontFamily: F.takeover, fontSize: 28, letterSpacing: tracking(28), color: txt(C, C[READINESS_FACE[e.feeling].accent]) }}>
                 {t(`w.recovery.readiness.${e.feeling}`)}
               </Text>
               <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 4 }}>

@@ -91,7 +91,7 @@ export default function SessionBody({
       <View style={{ flexDirection: "row", alignItems: "baseline", gap: space.sm, marginTop: space.md }}>
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
-          style={{ fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }}
+          style={{ fontFamily: F.takeover, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }}
         >
           {shown.pct}
           <Text style={{ fontSize: fs.headline, color: C.ash }}>%</Text>

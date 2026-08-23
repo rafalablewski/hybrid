@@ -67,14 +67,27 @@ export interface FaceMetrics {
  * in `typography.ts` can be reasoned about as stem width alone.
  */
 /**
- * THREE CUTS, not four — Dreiviertelfett left the bundle with `weight.bold`.
- * The app paints one ground and it is near-black, so the ladder tops out at
- * Halbfett; see the note on `weight` in typography.ts.
+ * FOUR CUTS. Dreiviertelfett left the bundle with `weight.bold` in Aug 2026 and
+ * came back a day later — the app paints one near-black ground, which is a
+ * reason to keep the heaviest cut away from READING sizes and not a reason to
+ * have no display weight at all. See the note on `weight` in typography.ts.
  */
 export const SOHNE = {
   buch: { file: "Sohne-Buch.otf", unitsPerEm: 1000, xHeight: 0.523, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.09, advanceN: 0.564, letterfitN: 0.144 },
   kraftig: { file: "Sohne-Kraftig.otf", unitsPerEm: 1000, xHeight: 0.525, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.12, advanceN: 0.563, letterfitN: 0.122 },
   halbfett: { file: "Sohne-Halbfett.otf", unitsPerEm: 1000, xHeight: 0.526, capHeight: 0.718, ascender: 0.718, descender: -0.178, stem: 0.14, advanceN: 0.573, letterfitN: 0.112 },
+  /**
+   * THE DISPLAY WEIGHT, and the one cut with a size floor rather than a role.
+   *
+   * 0.16em of stem — +78% over Buch — which is why it is mud at reading size and
+   * why it was right to take it off the 62 body-sized call sites that had it.
+   * It is NOT why it should have left the product: irradiation closes counters
+   * in proportion to stem-over-counter, and that ratio is a function of SIZE. At
+   * `fs.hero` this stem is 5.6dp against a 25dp cap; at `fs.body` it was 2.2dp
+   * against 10. See the weight ladder in typography.ts for the rule that
+   * replaced the blanket cap.
+   */
+  dreiviertelfett: { file: "Sohne-Dreiviertelfett.otf", unitsPerEm: 1000, xHeight: 0.527, capHeight: 0.718, ascender: 0.718, descender: -0.176, stem: 0.16, advanceN: 0.583, letterfitN: 0.102 },
 } as const satisfies Record<string, FaceMetrics>;
 
 /**

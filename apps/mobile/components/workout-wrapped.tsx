@@ -722,7 +722,7 @@ export function WorkoutWrapped({
                     </Text>
                     <Text numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.bodyLg, color: C.chalk, marginTop: space.xxs }}>{heroSub}</Text>
                   </View>
-                  <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.display, color: C.chalk }]}>{heroBig}</Text>
+                  <Text style={[TABULAR, { fontFamily: F.takeover, fontSize: fs.display, color: C.chalk }]}>{heroBig}</Text>
                 </View>
               )}
               {device ? (
@@ -806,7 +806,7 @@ export function WorkoutWrapped({
             subject={
               spine.topSet ? (
                 <>
-                  <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }]}>
+                  <Text style={[TABULAR, { fontFamily: F.takeover, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: C.chalk }]}>
                     {fmtWeight(spine.topSet.loadKg, units, undefined, lang)}
                     {spine.topSet.reps ? <Text style={{ fontSize: fs.title, color: C.ash }}> × {spine.topSet.reps}</Text> : null}
                   </Text>
@@ -858,7 +858,7 @@ export function WorkoutWrapped({
             subject={
               <>
                 {/* Measured, so it reads in device blue and wears no tilde. */}
-                <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: txt(C, C.blue) }]}>
+                <Text style={[TABULAR, { fontFamily: F.takeover, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: txt(C, C.blue) }]}>
                   {Math.round(hrStream.avg ?? 0)}
                   <Text style={{ fontSize: fs.title, color: C.ash }}> bpm</Text>
                 </Text>
@@ -938,7 +938,7 @@ export function WorkoutWrapped({
             metaTone={GOLD}
             subject={
               <>
-                <Text style={[TABULAR, { fontFamily: F.black, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: topFact.tone === "up" || topFact.tone === "down" ? deltaPaint(C, topFact.tone) : C.chalk }]}>
+                <Text style={[TABULAR, { fontFamily: F.takeover, fontSize: fs.hero, lineHeight: leading(fs.hero, "flush"), letterSpacing: trackFigure(fs.hero), color: topFact.tone === "up" || topFact.tone === "down" ? deltaPaint(C, topFact.tone) : C.chalk }]}>
                   {topFact.value}
                 </Text>
                 <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: C.ash, marginTop: space.xxs }}>
@@ -1030,7 +1030,7 @@ export function WorkoutWrapped({
             }
             subject={
               <>
-                <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display), lineHeight: leading(fs.display, "tight") }}>
+                <Text style={{ fontFamily: F.takeover, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display), lineHeight: leading(fs.display, "tight") }}>
                   {device.activityLabel}
                 </Text>
                 {deviceMark ? (
@@ -1114,7 +1114,7 @@ export function WorkoutWrapped({
             {...panelProps}
             mark={t("session.wrapped.device.title")}
             subject={
-              <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display), lineHeight: leading(fs.display, "tight") }}>
+              <Text style={{ fontFamily: F.takeover, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display), lineHeight: leading(fs.display, "tight") }}>
                 {t("session.wrapped.device.lead")}
               </Text>
             }

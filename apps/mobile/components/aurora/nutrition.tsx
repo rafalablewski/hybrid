@@ -2177,7 +2177,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, backgroundColor: C.ink, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.field, paddingVertical: 12, paddingHorizontal: 16, marginTop: 16 }}>
               <Pressable onPress={() => stepPortion(-1)} accessibilityLabel={t("w.recovery.nutrition.decrease")} style={{ width: 44, height: 44, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), color: txt(C, C.lime) }}>–</Text></Pressable>
               <View style={{ alignItems: "center" }}>
-                <TextInput value={portionText} onChangeText={setPortionText} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.pt.amount")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.black, fontSize: 30, lineHeight: leading(30, "flush"), letterSpacing: trackFigure(30), color: C.chalk, padding: 0 }} />
+                <TextInput value={portionText} onChangeText={setPortionText} keyboardType="decimal-pad" accessibilityLabel={t("w.recovery.nutrition.pt.amount")} style={{ minWidth: 96, textAlign: "center", fontFamily: F.takeover, fontSize: 30, lineHeight: leading(30, "flush"), letterSpacing: trackFigure(30), color: C.chalk, padding: 0 }} />
                 <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={ty(C, "overline")}>{portionUnitLabel(portionUnitActive)}</Text>
               </View>
               <Pressable onPress={() => stepPortion(1)} accessibilityLabel={t("w.recovery.nutrition.increase")} style={{ width: 44, height: 44, borderRadius: RADIUS.inner, borderWidth: 1, borderColor: withAlpha(C.lime, ALPHA.rim), alignItems: "center", justifyContent: "center" }}><Text style={{ fontFamily: F.monoBold, fontSize: fs.headline, lineHeight: 24, color: txt(C, C.lime) }}>+</Text></Pressable>
@@ -2239,7 +2239,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
               <RollingNumber
                 value={String(sc(portion.kcal))}
                 align="center"
-                style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}
+                style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}
               />
               <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "label"), textTransform: "uppercase", color: C.ash }}>kcal</Text>
             </View>
@@ -2736,8 +2736,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         <Text style={{ fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "label"), textTransform: "uppercase", color }}>{label}</Text>
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, marginTop: 8 }}>
           {fixed != null
-            ? <Text style={{ flex: 1, fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fixed}</Text>
-            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.black, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk, padding: 0 }} />}
+            ? <Text style={{ flex: 1, fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk }}>{fixed}</Text>
+            : <TextInput value={value} onChangeText={onChange} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={label} style={{ flex: 1, fontFamily: F.takeover, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk, padding: 0 }} />}
           <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>g</Text>
         </View>
       </View>
@@ -2778,8 +2778,8 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
             the meal is built from products these show the summed total. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "center", gap: 8, marginTop: 24 }}>
           {fromComps
-            ? <Text style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{compTotals.kcal}</Text>
-            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0 }} />}
+            ? <Text style={{ width: 172, textAlign: "center", fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk }}>{compTotals.kcal}</Text>
+            : <TextInput value={createForm.kcal} onChangeText={(v) => setCF({ kcal: v })} keyboardType="numeric" placeholder="0" placeholderTextColor={C.ash} accessibilityLabel={t("w.recovery.nutrition.calorie")} style={{ width: 172, textAlign: "center", fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: C.chalk, padding: 0 }} />}
           <Text style={{ fontFamily: F.mono, fontSize: fs.body, letterSpacing: tracking(fs.body, "label"), textTransform: "uppercase", color: C.ash }}>kcal</Text>
         </View>
         <Text style={{ textAlign: "center", fontFamily: F.mono, fontSize: fs.nano, letterSpacing: tracking(fs.nano, "caps"), textTransform: "uppercase", color: txt(C, C.lime) }}>{t("w.recovery.nutrition.calorie")}</Text>
@@ -3070,12 +3070,12 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
         {/* ONE name. The operator's own-language name is a search alias only —
             printing it under the English name put a second name on screen for a
             food we had already named, which read as clutter, not help. */}
-        <Text style={{ fontFamily: F.black, fontSize: 32, letterSpacing: trackFigure(32), lineHeight: leading(32, "flush"), color: C.chalk, marginTop: 24 }}>{f.name}</Text>
+        <Text style={{ fontFamily: F.takeover, fontSize: 32, letterSpacing: trackFigure(32), lineHeight: leading(32, "flush"), color: C.chalk, marginTop: 24 }}>{f.name}</Text>
         <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{t("w.recovery.nutrition.perLabel")} {f.servingLabel}</Text>
 
         {/* Energy hero — both units, because a label states both and we finally can. */}
         <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginTop: 20 }}>
-          <Text style={{ fontFamily: F.black, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{f.facts.kcal}</Text>
+          <Text style={{ fontFamily: F.takeover, fontSize: fs.stat, letterSpacing: trackFigure(fs.stat), lineHeight: leading(fs.stat, "flush"), color: C.chalk }}>{f.facts.kcal}</Text>
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, letterSpacing: tracking(fs.caption, "label"), textTransform: "uppercase", color: C.ash }}>kcal</Text>
           <View style={{ flex: 1 }} />
           <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash }}>{kj(f.facts.kcal)} kJ</Text>
@@ -3757,7 +3757,7 @@ export default function AuroraNutrition({ compact = false, root = false, onNavig
                       // looser than every other number of its size.
                       // `leading` joins it for the same reason: a figure takes
                       // a flush line box, and this was inheriting a default.
-                      style={{ fontFamily: F.black, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: heroFigures.kcal.over ? txt(C, C.amber) : C.chalk }}
+                      style={{ fontFamily: F.takeover, fontSize: fs.stat, lineHeight: leading(fs.stat, "flush"), letterSpacing: trackFigure(fs.stat), color: heroFigures.kcal.over ? txt(C, C.amber) : C.chalk }}
                     />
                     <Text style={ty(C, "kicker")}>{figureText(heroFigures.kcal.have, heroFigures.kcal.want)}</Text>
                   </View>

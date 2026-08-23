@@ -262,7 +262,7 @@ function Full({ top }: { top?: ReactNode }) {
                 the band word itself was the raw engine identifier, English on
                 every locale. Now: label, reading, provenance. */}
             <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-              <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+              <Text style={{ fontFamily: F.takeover, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
               <View style={{ flex: 1 }}>
                 <Text style={ty(C, "kicker")}>
                   {t("w.home.cockpit.freshness")}
@@ -574,7 +574,7 @@ function Comp({ C, label, value, onExplain, explainLabel }: {
       accessibilityLabel={`${label} ${value} – ${explainLabel}`}
       style={{ flex: 1, alignItems: "center" }}
     >
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display) }}>{value}</Text>
+      <Text style={{ fontFamily: F.takeover, fontSize: fs.display, color: C.chalk, letterSpacing: tracking(fs.display) }}>{value}</Text>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 }}>
         <Text style={ty(C, "kicker")}>{label}</Text>
         {/* The glyph IS a ring — wrapping it in a second bordered circle, as the
@@ -638,7 +638,7 @@ function Teaser({ paid, onUnlock, top }: { paid: boolean; onUnlock: () => void; 
       {hasData && (
         <ACard solid>
           <View style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-            <Text style={{ fontFamily: F.black, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
+            <Text style={{ fontFamily: F.takeover, fontSize: 44, color: txt(C, hpiColor(state.hpi.band, C)) }}>{state.hpi.score}</Text>
             <View style={{ flex: 1 }}>
               <Text style={ty(C, "kicker")}>
                 {t("w.home.cockpit.freshness")}

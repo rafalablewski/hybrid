@@ -127,7 +127,7 @@ function Stat({ label, value, color, C }: { label: string; value: string; color:
   return (
     <View style={{ flex: 1 }}>
       <Text style={ty(C, "kicker")}>{label}</Text>
-      <Text style={{ fontFamily: F.black, fontSize: fs.display, color, marginTop: 4 }}>{value}</Text>
+      <Text style={{ fontFamily: F.takeover, fontSize: fs.display, color, marginTop: 4 }}>{value}</Text>
     </View>
   );
 }
