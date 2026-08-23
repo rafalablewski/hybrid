@@ -39,7 +39,7 @@
  * choices, so only those are named.
  */
 
-import { fs, lh, measure, promote, STEP, tracking, trackFigure, type LeadingRole, type TrackingRole, type TypeRole } from "../scale";
+import { fs, leading, lh, measure, promote, STEP, tracking, trackFigure, type LeadingRole, type TrackingRole, type TypeRole } from "../scale";
 import { SOHNE } from "./face-metrics";
 import { fonts } from "./tokens";
 
@@ -403,12 +403,16 @@ export function resolveText(token: TextToken, scaleFactor = 1, steps = 0): Resol
   // next rung is 13, because rounding a rung and then multiplying loses the half
   // dp the exact ladder carries. A promotion has to land ON a rung.
   const size = Math.round(promote(s.size, steps) * scaleFactor);
-  const ratio = lh[s.leading];
   return {
     fontFamily: cut[s.cut],
     fontWeight: s.weight,
     fontSize: size,
-    lineHeight: Math.round(size * ratio),
+    // THROUGH `leading()`, never a second multiplication. This line was
+    // `Math.round(size * lh[s.leading])` — the same arithmetic, which is exactly
+    // why it was wrong to have: `flush` is a floor and rounds UP, so a duplicate
+    // of the formula resolves a token one dp under the box the same style gets
+    // from `leading()` at a call site.
+    lineHeight: leading(size, s.leading),
     letterSpacing: s.tracking === "figure" ? trackFigure(size) : tracking(size, s.tracking ?? "text"),
     ink: s.ink,
     tabular: s.tabular ?? false,

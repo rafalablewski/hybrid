@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { SOHNE, SOHNE_MONO, FIGURE_INK_EM, SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM, inkSpan, FACE_LIMITS, type FaceMetrics } from "./face-metrics";
-import { fs, lh, TYPE_REF } from "../scale";
+import { SOHNE, SOHNE_MONO, FACE_LINE, FIGURE_INK, FIGURE_INK_EM, NATURAL_LINE_EM, SOHNE_ADVANCE_EM, ADVANCE_FALLBACK_EM, inkSpan, lineBoxFloor, FACE_LIMITS, type FaceMetrics } from "./face-metrics";
+import { fs, leading, lh, TYPE_REF } from "../scale";
 
 /**
  * THE METRICS ARE RE-READ FROM THE BINARIES, NOT TRUSTED.
@@ -56,6 +56,14 @@ const os2 = (t: Tables) => {
     weightClass: t.buf.readUInt16BE(o + 4),
     xHeight: t.buf.readInt16BE(o + 86) / t.upem,
     capHeight: t.buf.readInt16BE(o + 88) / t.upem,
+    // The two OTHER vertical pairs a platform may lay text out with. Which one
+    // it picks depends on the OS and on fsSelection's USE_TYPO_METRICS bit, so
+    // FACE_LINE is only safe to state as one number because all three agree.
+    typoAscent: t.buf.readInt16BE(o + 68) / t.upem,
+    typoDescent: t.buf.readInt16BE(o + 70) / t.upem,
+    typoLineGap: t.buf.readInt16BE(o + 72) / t.upem,
+    winAscent: t.buf.readUInt16BE(o + 74) / t.upem,
+    winDescent: t.buf.readUInt16BE(o + 76) / t.upem,
   };
 };
 
@@ -178,12 +186,51 @@ describe("the sans, against the shipped binaries", () => {
     // Söhne's natural line box is 1.326em (hhea 1.037 + 0.289) against real ink
     // of 0.898em. That 0.428em of built-in slack is invisible in a paragraph and
     // very visible under a row of stat tiles — it is the band of nothing `flush`
-    // was cut to remove, and the reason the cut cannot go all the way down to
-    // the ink (see FLUSH_HEADROOM_EM in scale.ts).
+    // was cut to reduce, and `lh.flush` staying under it is the whole point.
     const h = hhea(open(SOHNE.buch.file));
-    expect(h.ascent - h.descent + h.lineGap).toBeCloseTo(1.326, 3);
+    expect(h.ascent - h.descent + h.lineGap).toBeCloseTo(NATURAL_LINE_EM, 3);
     expect(inkSpan(SOHNE.buch)).toBeCloseTo(0.898, 3);
     expect(lh.flush).toBeLessThan(h.ascent - h.descent);
+  });
+
+  it("HARD — every cut declares the SAME line metrics, in all three tables", () => {
+    // FACE_LINE states one ascent and one descent for the whole app, and a
+    // single number is only defensible because nothing disagrees: hhea, OS/2's
+    // typo pair and OS/2's win pair carry identical values in all six binaries,
+    // so it does not matter which table iOS, Android or a browser prefers.
+    //
+    // THE DESCENT IS THE LOAD-BEARING ONE. It is reserved under every line
+    // whether a glyph uses it or not (a figure's deepest is `/` at -0.072em),
+    // and React Native takes a short `lineHeight` out of the ASCENT — which is
+    // how `lh.flush` at 0.90 sliced the top off every figure in the product.
+    for (const [, m] of [...SANS_CUTS, ...MONO_CUTS]) {
+      const t = open(m.file);
+      const h = hhea(t);
+      const o = os2(t);
+      expect(h.ascent, `${m.file} hhea ascent`).toBeCloseTo(FACE_LINE.ascent, 4);
+      expect(-h.descent, `${m.file} hhea descent`).toBeCloseTo(FACE_LINE.descent, 4);
+      expect(h.lineGap, `${m.file} hhea lineGap`).toBeCloseTo(FACE_LINE.lineGap, 4);
+      expect(o.typoAscent, `${m.file} typo ascent`).toBeCloseTo(FACE_LINE.ascent, 4);
+      expect(-o.typoDescent, `${m.file} typo descent`).toBeCloseTo(FACE_LINE.descent, 4);
+      expect(o.winAscent, `${m.file} win ascent`).toBeCloseTo(FACE_LINE.ascent, 4);
+      expect(o.winDescent, `${m.file} win descent`).toBeCloseTo(FACE_LINE.descent, 4);
+    }
+  });
+
+  it("HARD — `flush` clears the figure ink WITH the reserved descent under it", () => {
+    // The arithmetic the shipped 0.90 got wrong, stated against the binaries
+    // rather than against a comment. A box offers `box − descent` above the
+    // baseline; the tallest figure ink is `/` at 0.732em. Anything less and the
+    // clipping is silent — no error, no ellipsis, just a flat-topped digit.
+    const h = hhea(open(SOHNE_MONO.buch.file));
+    expect(lh.flush + h.descent).toBeGreaterThanOrEqual(FIGURE_INK.top);
+    expect(lh.flush).toBe(lineBoxFloor(FIGURE_INK.top));
+    // And the rung is a FLOOR at every size in use, which is why `leading()`
+    // rounds this one role up: `fs.headline` × 1.021 is 22.46, and a rounded-
+    // down 22 is a fifth of a dp of clipping bought for nothing.
+    for (const size of Object.values(fs)) {
+      expect(leading(size, "flush") + size * h.descent, `${size}dp`).toBeGreaterThanOrEqual(size * FIGURE_INK.top);
+    }
   });
 });
 

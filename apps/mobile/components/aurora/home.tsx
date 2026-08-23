@@ -1652,7 +1652,7 @@ function ChooserCard({ C, glyph, accent, title, sub, cta, onPress }: { C: P; gly
        was a card AND a press target. There is now. The pad drops out
        entirely — 20 was already CARD_PAD, spelled as a number. */
     <APressCard onPress={onPress} a11yLabel={title} glow={accent}>
-      <Text style={{ fontSize: fs.title, lineHeight: 20, color: txt(C, accent) }}>{glyph}</Text>
+      <Text style={{ fontSize: fs.title, lineHeight: leading(fs.title, "flush"), color: txt(C, accent) }}>{glyph}</Text>
       <Text style={{ fontFamily: F.black, fontSize: 19, letterSpacing: tracking(19), color: C.chalk, marginTop: 10 }}>{title}</Text>
       <Text style={{ fontFamily: F.reg, fontSize: fs.bodyLg, color: C.ash, marginTop: 6, lineHeight: leading(fs.bodyLg, "tight") }}>{sub}</Text>
       <CtaLabel label={`${cta} →`} color={txt(C, accent)} fontSize={11} font={F.mono} style={{ letterSpacing: tracking(11, "caps"), textTransform: "uppercase", marginTop: 16 }} />
@@ -1988,9 +1988,14 @@ function FeelingCard({ C, feeling, dayMetrics, daySessions, recoveryDue, lastSes
           avoid. The i sits with it because it explains THIS reading. */}
       <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", gap: 12, marginTop: 16 }}>
         {/* display weight, not hero weight — fs.display (was 46), lineHeight
-            proportional: a status reading must never outrank the Start action */}
+            proportional: a status reading must never outrank the Start action.
+            THE BOX IS A TOKEN, not a typed 27: at fs.display a 27dp box offers
+            27 − 0.289×28 = 18.9dp above the baseline against a 20.1dp cap, so
+            the readiness word was rendering with the tops of its capitals cut
+            off (see `lh` in core scale.ts — RN takes a short line box out of
+            the ascent). `tight` is the house rung for a display word. */}
         <Text style={{
-          fontFamily: shownFeeling ? F.black : F.reg, fontSize: fs.display, lineHeight: 27, letterSpacing: shownFeeling ? -1 : -0.2,
+          fontFamily: shownFeeling ? F.black : F.reg, fontSize: fs.display, lineHeight: leading(fs.display, "tight"), letterSpacing: shownFeeling ? -1 : -0.2,
           color: shownFeeling ? txt(C, C[READINESS_FACE[shownFeeling].accent]) : withAlpha(C.ash, 0.55),
         }}>
           {shownFeeling ? t(`w.recovery.readiness.${shownFeeling}`) : "—"}

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { fs, lh, leading, tracking, trackFigure, STEP, promote, type TypeRole } from "../scale";
+import { FACE_LINE, FIGURE_INK, NATURAL_LINE_EM, lineBoxFloor } from "./face-metrics";
 import { fonts } from "./tokens";
 import { formatClock } from "../duration";
 import { cut, weight, text, resolveText, unitFor, measureFor, DESKTOP_PROMOTION, WEIGHT_STEM_EM, UNIT_RATIO, TIMES, type TextStyle, type TextToken } from "./typography";
@@ -149,20 +150,27 @@ describe("resolveText", () => {
     expect(at2.lineHeight / at2.fontSize).toBeCloseTo(at1.lineHeight / at1.fontSize, 1);
   });
 
-  it("sets a standalone figure solid — to the FIGURE SET'S INK, not to 1.0", () => {
+  it("sets a standalone figure as tight as the platform allows, and NOT tighter", () => {
     const m = resolveText("metric");
     expect(m.fontSize).toBe(fs.stat);
     expect(m.fontFamily).toBe(cut.mono);
     expect(m.tabular).toBe(true);
-    // `lh.flush` is 0.90, cut from the measured 0.804em span of the mono figure
-    // set plus the headroom React Native's baseline placement needs. 1.0 was
-    // the round number nearest the intent and still carried 0.196em of nothing —
-    // 9dp at `fs.stat`, which is the band of empty under a row of stat tiles
-    // that no padding change explains.
-    expect(m.lineHeight).toBe(Math.round(fs.stat * lh.flush));
-    expect(m.lineHeight).toBeLessThan(fs.stat);
-    // …and it still clears the ink it has to hold.
-    expect(m.lineHeight).toBeGreaterThan(fs.stat * 0.804);
+    // THE REGRESSION THIS PINS. `lh.flush` was briefly 0.90 — the figure set's
+    // measured ink span plus a guessed headroom — and every figure in the app
+    // shipped with the top of its digits cut off, because a line box does not
+    // crop the ink: React Native declares min = max line height and TextKit
+    // takes the shortfall out of the ASCENT, keeping the font's descent against
+    // the bottom of the fragment. So the room above the baseline is
+    // `box − descent`, and the floor is `inkTop + descent` (lineBoxFloor in
+    // theme/face-metrics.ts) whatever the string holds.
+    expect(m.lineHeight).toBe(leading(fs.stat, "flush"));
+    expect(m.lineHeight).toBeGreaterThanOrEqual(fs.stat * lineBoxFloor(FIGURE_INK.top));
+    // The digit tops clear the box, WITH the reserved descent under them —
+    // this is the arithmetic the screenshot of a sliced `12.24 km` failed.
+    expect(m.lineHeight - fs.stat * FACE_LINE.descent).toBeGreaterThanOrEqual(fs.stat * FIGURE_INK.top);
+    // …and it is still far tighter than the font's own box, which is the
+    // entire reason the rung exists.
+    expect(m.lineHeight).toBeLessThan(fs.stat * NATURAL_LINE_EM);
   });
 
   it("tracks figures proportionally and text absolutely", () => {

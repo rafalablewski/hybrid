@@ -108,6 +108,48 @@ export const FIGURE_INK = { top: 0.732, bottom: -0.072 } as const;
 export const FIGURE_INK_EM = Number((FIGURE_INK.top - FIGURE_INK.bottom).toFixed(3));
 
 /**
+ * THE DECLARED LINE METRICS — the numbers the PLATFORM lays text out with, and
+ * the reason a line box has a floor that has nothing to do with the ink in it.
+ *
+ * All seven shipped cuts agree exactly: hhea ascent 1.037, descent -0.289,
+ * lineGap 0 — and OS/2's typo and win pairs carry the same values, so it does
+ * not matter which table a platform prefers. `face-metrics.test.ts` re-reads all
+ * three tables from every binary.
+ *
+ * ── WHY THIS IS NOT TRIVIA, AND WHAT IT COST TO LEARN ─────────────────────
+ *
+ * React Native sets a declared `lineHeight` as BOTH the minimum and the maximum
+ * line height (RCTTextAttributes, and it adds no baseline compensation of its
+ * own). TextKit then honours it by keeping the font's DESCENT against the bottom
+ * of the line fragment and taking the difference out of the ascent — the text
+ * does not shrink and it does not centre, it slides down and the top of the
+ * glyph is clipped by the fragment.
+ *
+ * So the space a line box actually offers ABOVE the baseline is
+ * `box − descent`, whatever the string is. A box cut to the ink it carries is
+ * therefore too small by the descent it will never use, and the failure is
+ * silent: no error, no ellipsis, no reflow — the tops of the digits are simply
+ * gone, at a size where every figure on the screen is drawn the same way.
+ *
+ * `lineBoxFloor` is that arithmetic, and `lh.flush` is its one consumer today.
+ */
+export const FACE_LINE = { ascent: 1.037, descent: 0.289, lineGap: 0 } as const;
+
+/** The font's own line box — what you get when nothing declares a `lineHeight`. */
+export const NATURAL_LINE_EM = Number((FACE_LINE.ascent + FACE_LINE.descent + FACE_LINE.lineGap).toFixed(3));
+
+/**
+ * The smallest line box, in em, that can carry ink reaching `inkTop` above the
+ * baseline without the platform clipping it.
+ *
+ * The descent is added because it is RESERVED, not because anything occupies it
+ * (a figure's deepest glyph is `/` at 0.072em). It cannot be reclaimed with
+ * `lineHeight` — only by letting the box be honest and pulling the layout in
+ * around it with a negative margin, which is a call-site decision.
+ */
+export const lineBoxFloor = (inkTop: number): number => Number((inkTop + FACE_LINE.descent).toFixed(3));
+
+/**
  * PER-GLYPH ADVANCES, Söhne Halbfett — the widths a proportional fitter needs.
  *
  * `MONO_ADVANCE_EM` answers "how wide is a mono figure" with one number because

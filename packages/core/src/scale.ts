@@ -12,7 +12,7 @@
 // need ever appears, split into WEB_FS / MOBILE_FS here and the call sites
 // (fs.body, …) won't have to change.
 
-import { SOHNE, FIGURE_INK_EM } from "./theme/face-metrics";
+import { SOHNE, FIGURE_INK, lineBoxFloor } from "./theme/face-metrics";
 
 /**
  * RE-EXPORTED so the ONE place a font metric is written down stays
@@ -305,7 +305,7 @@ export const sheetPadBottom = (insetBottom = 0) => Math.max(insetBottom, space.x
 // ─────────────────────────────────────────────────────────────────────────────
 
 export type LeadingRole =
-  | "flush" //     0.90 — a STANDALONE FIGURE, cut to the figure set's own ink
+  | "flush" //     1.02 — a STANDALONE FIGURE, cut as close to its ink as iOS allows
   | "tight" //     1.15 — display/hero titles
   | "snug" //      1.30 — headings, list rows, anything one-to-two lines
   | "normal" //    1.50 — the default for reading text
@@ -314,7 +314,7 @@ export type LeadingRole =
 /**
  * Line-height RATIOS. Multiply by the font size (see `leading`).
  *
- * ── `flush` IS CUT TO THE FIGURE SET'S INK, AND 1.00 WAS NEVER THAT ────────
+ * ── `flush` IS A FLOOR, AND THE FLOOR IS NOT THE INK ──────────────────────
  *
  * `tight` used to be documented as covering "display/hero titles, stat figures"
  * and it is wrong for the second half of that. A figure has no second line and
@@ -331,31 +331,46 @@ export type LeadingRole =
  * at the rest. Seventeen more figure sites set no lineHeight at all and took
  * whatever the platform's default was.
  *
- * BUT 1.00 WAS ITSELF A GUESS — the round number nearest the intent, not the
- * intent. Measured (theme/face-metrics.ts `FIGURE_INK`), the mono cut's figure
- * characters span 0.804em: digits from +0.729 to -0.011, and `/` — which is in
- * `5:12 /km` — from +0.732 to -0.072. So a 1.00 box was still carrying 0.196em
- * of nothing, 9dp of it at `fs.stat`, which is the same defect one notch
- * quieter.
+ * ── THE 0.90 THAT SHIPPED, AND WHAT IT DID ────────────────────────────────
  *
- * `flush` IS 0.90, NOT 0.804, and the gap is deliberate. React Native positions
- * a line's baseline from the font's own ascent (Söhne's hhea ascent is 1.037em,
- * so the natural box is 1.326em), and a declared lineHeight far below that
- * starts to move the baseline rather than only tightening the box. 0.90 clears
- * the measured ink by 0.096em — about 4.7dp at `fs.stat` — which is headroom for
- * that placement rather than slack in the design. The theoretical floor is
- * written down here so the next person shaving it knows which number is the
- * design and which is the platform.
+ * This rung was briefly 0.90 — the mono figure set's measured ink span (0.804em)
+ * plus 0.096em called "headroom for React Native's baseline placement". The
+ * ink measurement is right and the conclusion drawn from it is not, and the app
+ * shipped every figure in the product with the top of its digits sliced off:
+ * `12.24 km` on the week verdict lost 3.4dp of a 20.1dp digit.
  *
- * IT IS SAFE ONLY BECAUSE THE FIGURE SET IS CLOSED. `flush` is legal on `mono`
- * figures and nothing else — typography.test.ts holds that — and a figure is
- * drawn from `0123456789 : . % × / + -`. Put a lowercase `g` in a flush box and
- * its descender is outside the ink this number was cut to.
+ * A LINE BOX IS NOT A CROP OF THE INK. React Native declares a `lineHeight` as
+ * both the minimum and the maximum line height and adds no baseline
+ * compensation; TextKit honours that by holding the font's DESCENT against the
+ * bottom of the fragment and taking the shortfall out of the ascent. So the room
+ * above the baseline is `box − descent` no matter what the string contains, and
+ * the descent is 0.289em in all seven shipped cuts whether it is used or not.
+ * The ink's own depth (`/` at -0.072em) never enters into it.
+ *
+ * THE FLOOR IS THEREFORE `inkTop + descent` — 0.732 + 0.289 = 1.021em
+ * (`lineBoxFloor` in theme/face-metrics.ts, which owns both measurements). One
+ * consequence worth stating plainly, because it is the part that reads as a
+ * regression: this is LARGER than the 1.00 it was cut from, so 1.00 was already
+ * a fraction under the floor — half a dp at `stat`, which is why nothing was
+ * ever seen. 0.90 was under it by 0.121em, which at `display` is 3.4dp, which is
+ * a sixth of the digit.
+ *
+ * WHAT IS STILL WORTH WANTING: at the floor the visible band under a figure is
+ * the reserved descent minus the ink's own depth, ~0.217em. That space is real
+ * and it is the platform's, not the design's — `lineHeight` cannot reach it, and
+ * the only honest way to close a row up is to let the box be correct and pull
+ * the LAYOUT in around it with a negative margin at the call site. A tighter
+ * ratio does not remove the band; it removes the top of the number.
+ *
+ * IT IS STILL A FIGURE'S RUNG. `flush` is legal on `mono` figures and nothing
+ * else — typography.test.ts holds that — because the floor is computed from the
+ * FIGURE ink set (`0123456789 : . % × / + -`, plus the unit letters that ride
+ * inside a formatted value, whose 0.718em tops sit under `/`'s 0.732em). Put a
+ * lowercase `g` in a flush box and its descender is outside the ink this number
+ * was cut to.
  */
-const FLUSH_HEADROOM_EM = 0.096;
-
 export const lh: Record<LeadingRole, number> = {
-  flush: Number((FIGURE_INK_EM + FLUSH_HEADROOM_EM).toFixed(2)), // 0.804 + 0.096 = 0.90
+  flush: lineBoxFloor(FIGURE_INK.top), // 0.732 + 0.289 = 1.021 — see above
   tight: 1.15,
   snug: 1.3,
   normal: 1.5,
@@ -368,9 +383,16 @@ export const lh: Record<LeadingRole, number> = {
  * React Native needs `lineHeight` in dp, so this is the mobile entry point;
  * pass the ratio (`lh.normal`) directly wherever a ratio is accepted. Rounded
  * to a whole dp because a fractional line box lands text off the pixel grid.
+ *
+ * `flush` ROUNDS UP, and the asymmetry is the whole point of the rung. Every
+ * other role is a PREFERENCE with slack built into it, so half a dp either way
+ * is nothing; `flush` is a FLOOR (see `lh` above), and rounding a floor down is
+ * how you get a box that is correct in the ratio and clipping on the screen —
+ * `fs.headline` is the worst of the rungs at 0.46dp under. A dp of unused box is
+ * invisible; a dp off the top of a digit is the bug this rung just had.
  */
 export const leading = (size: number, role: LeadingRole = "normal"): number =>
-  Math.round(size * lh[role]);
+  role === "flush" ? Math.ceil(size * lh.flush) : Math.round(size * lh[role]);
 
 export type TrackingRole =
   | "text" //  derived from the SIZE by a continuous curve — see `OPTICAL_K`
