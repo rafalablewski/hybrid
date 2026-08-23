@@ -970,7 +970,7 @@ export function APill({
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
           numberOfLines={1}
-          style={{ fontFamily: F.bold, fontSize: compact ? fs.bodyLg : fs.subtitle, color: fg }}
+          style={[ty(palette, compact ? "buttonSm" : "button"), { color: fg }]}
         >
           {label}
         </Text>
@@ -988,7 +988,7 @@ export function APill({
         >
           {state === "saving" && <ActivityIndicator size="small" color={fg} />}
           {state === "saved" && <AuroraIcon name="check" size={compact ? 14 : 17} color={fg} />}
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: compact ? fs.bodyLg : fs.subtitle, color: fg }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={[ty(palette, compact ? "buttonSm" : "button"), { color: fg }]}>
             {stateLabel}
           </Text>
         </Animated.View>

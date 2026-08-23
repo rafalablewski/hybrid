@@ -130,7 +130,6 @@ const SANS_CUTS: Array<[string, FaceMetrics, number]> = [
   ["buch", SOHNE.buch, 400],
   ["kraftig", SOHNE.kraftig, 500],
   ["halbfett", SOHNE.halbfett, 600],
-  ["dreiviertelfett", SOHNE.dreiviertelfett, 700],
 ];
 const MONO_CUTS: Array<[string, FaceMetrics, number]> = [
   ["buch", SOHNE_MONO.buch, 400],
@@ -156,7 +155,7 @@ describe("the sans, against the shipped binaries", () => {
 
   it("draws every weight on ONE skeleton — only the stem moves", () => {
     // The property the weight ladder in typography.ts is reasoned about with:
-    // Söhne's four cuts share an x-height to within 0.004em and a cap-height
+    // Söhne's cuts share an x-height to within 0.004em and a cap-height
     // exactly, so a weight change is a change of stem and nothing else. If a
     // future cut broke that, the ladder's "a heavier weight is the same letter
     // with more ink" argument would stop holding.
@@ -333,12 +332,9 @@ describe("the proportional advance table", () => {
   it("HARD — it is Halbfett's, because that is what F.black draws", () => {
     // The Wrapped's figures use `F.black`, which resolves to Halbfett since the
     // weight ladder was capped at 600. If the alias ever moves, this table moves
-    // with it — the cuts differ by ~1% here, which is inside the fitter's
-    // tolerance but is not nothing at 96px.
-    const halb = open(SOHNE.halbfett.file);
-    const drei = open(SOHNE.dreiviertelfett.file);
-    expect(advance(halb, "m")).toBeCloseTo(SOHNE_ADVANCE_EM["m"]!, 3);
-    expect(advance(drei, "m")).not.toBeCloseTo(SOHNE_ADVANCE_EM["m"]!, 3);
+    // with it — a lighter cut's advances differ by enough to matter at 96px.
+    expect(advance(open(SOHNE.halbfett.file), "m")).toBeCloseTo(SOHNE_ADVANCE_EM["m"]!, 3);
+    expect(advance(open(SOHNE.kraftig.file), "m")).not.toBeCloseTo(SOHNE_ADVANCE_EM["m"]!, 3);
   });
 
   it("HARD — `~` really is absent, so the fallback is load-bearing", () => {

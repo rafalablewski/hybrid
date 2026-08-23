@@ -195,14 +195,14 @@ describe("native face map", () => {
     for (const alias of Object.values(F)) expect(psFor(alias)).not.toBe(alias);
   });
 
-  it("HARD — the 700 cut is reachable, and by exactly one alias", () => {
-    // Dreiviertelfett stays loaded because `weight.bold` still resolves to it
-    // for `ty(C, "takeover")` — the Wrapped's lit cover panels, where a 700 is
-    // correct. If this ever finds no alias, the face is dead weight in the
-    // bundle; if it finds two, `black` has crept back onto it.
-    const seven = Object.entries(F).filter(([, a]) => a.includes("700"));
-    expect(seven.map(([k]) => k)).toEqual(["takeover"]);
-    // …and `black` is NOT it. This is the correction itself, pinned.
+  it("HARD — there is no 700 alias, because there is no 700 binary", () => {
+    // Dreiviertelfett left the bundle with `weight.bold`. It had survived for
+    // one style — the Wrapped's cover titles — on the reasoning that a LIT
+    // surface wants a heavier cut, and HERO_TAKEOVER_INK turned out to be
+    // #0a0b09: darker than `ink`. No lit full-bleed surface exists, so the
+    // exception had nowhere to apply and the face was dead weight.
+    expect(Object.entries(F).filter(([, a]) => a.includes("700"))).toEqual([]);
+    // `black` is an alias for the 600 — the correction itself, pinned.
     expect(F["black"]).toBe(F["bold"]);
     expect(F["black"]).toContain("600");
   });

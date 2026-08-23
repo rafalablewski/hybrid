@@ -213,7 +213,6 @@ footer{padding:56px 0 80px;border-top:1px solid var(--line);color:var(--ash);fon
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
-<div class="standin"><div class="shell"><b>STAND-IN LETTERFORMS.</b> Söhne → Libre Franklin, Söhne Mono → IBM Plex Mono, ITC Garamond → Newsreader. These faces are licensed and cannot be served from a public page, so every size, weight, leading and tracking here is exact and the <em>shapes</em> are not. Face names below label the ROLE, not what you are looking at.</div></div>
 <div class="shell">
 <header style="padding:88px 0 8px">
   <p class="overline">HYBRID — type specification — August 2026</p>
@@ -272,7 +271,7 @@ and its number stays in Söhne, proportional — a figure in prose is prose.</di
 <p class="lead dim">Söhne, Söhne Mono and ITC Garamond were swapped in underneath a system designed around a different pair of faces.
 The swap moved the faces and left every optical constant where it was. Four consequences, each invisible on any single screen:</p>
 <ul class="clean">
-  <li><span class="k">Tracking</span><span><strong>The bands belonged to the old face.</strong> They were adopted with a note that their values were chosen so the the previous face call sites would not move. Söhne is fitted tighter — <span class="m">n</span> carries 0.144em of sidebearing against its ~0.17 — so that tightening on top of Söhne's own tighter fit over-tightened <em>every heading in the app</em>.</span></li>
+  <li><span class="k">Tracking</span><span><strong>The bands belonged to the old face.</strong> They were adopted with a note that their values were chosen so the old face's call sites would not move. Söhne is fitted tighter — <span class="m">n</span> carries 0.144em of sidebearing against its ~0.17 — so that tightening on top of Söhne's own tighter fit over-tightened <em>every heading in the app</em>.</span></li>
   <li><span class="k">Weight</span><span><strong>The heaviest cut was the default.</strong> Dreiviertelfett (0.16em stem) carried 298 call sites against 258 for the regular and 81 for the medium — the distribution inverted — with 62 of them at reading size or below, where a 2.2dp stroke closes the counters of <span class="m">a</span>, <span class="m">e</span> and <span class="m">s</span>.</span></li>
   <li><span class="k">Leading</span><span><strong>A figure's line box was a round number.</strong> <span class="m">flush</span> was 1.00 — the value nearest the intent. The mono figure set spans 0.804em, so every hero figure carried 9dp of box nothing could occupy.</span></li>
   <li><span class="k">Pairing</span><span><strong>The serif's x-height was a stale literal.</strong> 0.445 in the source against 0.4409 in the binary, and its leading ratio multiplied an em the size compensation had already inflated by 18.6% — so a display-size pull quote was set at body leading.</span></li>
@@ -345,7 +344,6 @@ that silently changes meaning at every size it touches.</p>
 <th>Size</th><th>Line-height</th><th>×</th><th>Tracking</th><th>em</th><th>Desktop</th><th>Measure</th>
 </tr></thead><tbody>
 <tr><td class="role">hero</td><td class="sub">Display / Hero</td><td><span class="cut sans">Söhne</span></td><td class="t">600 Halbfett</td><td class="t">35 / 2.188rem</td><td class="t">40</td><td class="t sub">1.143</td><td class="t">-0.5</td><td class="t sub">-0.0143</td><td class="t sub">39 / 45</td><td class="t sub">1303</td></tr>
-<tr><td class="role">takeover</td><td class="sub">Display / Hero (lit ground)</td><td><span class="cut sans">Söhne</span></td><td class="t">700 Dreiviertelfett</td><td class="t">35 / 2.188rem</td><td class="t">40</td><td class="t sub">1.143</td><td class="t">-0.5</td><td class="t sub">-0.0143</td><td class="t sub">39 / 45</td><td class="t sub">1303</td></tr>
 <tr><td class="role">display</td><td class="sub">H1</td><td><span class="cut sans">Söhne</span></td><td class="t">600 Halbfett</td><td class="t">28 / 1.75rem</td><td class="t">32</td><td class="t sub">1.143</td><td class="t">-0.3</td><td class="t sub">-0.0107</td><td class="t sub">31 / 36</td><td class="t sub">1042</td></tr>
 <tr><td class="role">headline</td><td class="sub">H2</td><td><span class="cut sans">Söhne</span></td><td class="t">600 Halbfett</td><td class="t">22 / 1.375rem</td><td class="t">29</td><td class="t sub">1.318</td><td class="t">-0.1</td><td class="t sub">-0.0045</td><td class="t sub">25 / 33</td><td class="t sub">819</td></tr>
 <tr><td class="role">title</td><td class="sub">H3</td><td><span class="cut sans">Söhne</span></td><td class="t">600 Halbfett</td><td class="t">20 / 1.25rem</td><td class="t">26</td><td class="t sub">1.300</td><td class="t">-0.1</td><td class="t sub">-0.0050</td><td class="t sub">22 / 29</td><td class="t sub">744</td></tr>
@@ -357,8 +355,8 @@ that silently changes meaning at every size it touches.</p>
 <tr><td class="role">labelSm</td><td class="sub">Label</td><td><span class="cut sans">Söhne</span></td><td class="t">500 Kräftig</td><td class="t">11 / 0.6875rem</td><td class="t">14</td><td class="t sub">1.273</td><td class="t">+0.1</td><td class="t sub">+0.0091</td><td class="t sub">13 / 17</td><td class="t sub">409</td></tr>
 <tr><td class="role">kicker</td><td class="sub">Label (eyebrow)</td><td><span class="cut mono">Söhne Mono</span></td><td class="t">500 Kräftig</td><td class="t">10 / 0.625rem</td><td class="t">13</td><td class="t sub">1.300</td><td class="t">+0.9</td><td class="t sub">+0.0900</td><td class="t sub">11 / 14</td><td class="t sub">372</td></tr>
 <tr><td class="role">overline</td><td class="sub">Label (structural)</td><td><span class="cut mono">Söhne Mono</span></td><td class="t">500 Kräftig</td><td class="t">10 / 0.625rem</td><td class="t">13</td><td class="t sub">1.300</td><td class="t">+1.2</td><td class="t sub">+0.1200</td><td class="t sub">11 / 14</td><td class="t sub">372</td></tr>
-<tr><td class="role">button</td><td class="sub">Button</td><td><span class="cut sans">Söhne</span></td><td class="t">500 Kräftig</td><td class="t">16 / 1rem</td><td class="t">21</td><td class="t sub">1.313</td><td class="t">0</td><td class="t sub">0</td><td class="t sub">18 / 23</td><td class="t sub">596</td></tr>
-<tr><td class="role">buttonSm</td><td class="sub">Button Small</td><td><span class="cut sans">Söhne</span></td><td class="t">500 Kräftig</td><td class="t">13 / 0.8125rem</td><td class="t">17</td><td class="t sub">1.308</td><td class="t">+0.1</td><td class="t sub">+0.0077</td><td class="t sub">14 / 18</td><td class="t sub">484</td></tr>
+<tr><td class="role">button</td><td class="sub">Button</td><td><span class="cut sans">Söhne</span></td><td class="t">600 Halbfett</td><td class="t">18 / 1.125rem</td><td class="t">23</td><td class="t sub">1.278</td><td class="t">0</td><td class="t sub">0</td><td class="t sub">20 / 26</td><td class="t sub">670</td></tr>
+<tr><td class="role">buttonSm</td><td class="sub">Button (compact)</td><td><span class="cut sans">Söhne</span></td><td class="t">600 Halbfett</td><td class="t">16 / 1rem</td><td class="t">21</td><td class="t sub">1.313</td><td class="t">0</td><td class="t sub">0</td><td class="t sub">18 / 23</td><td class="t sub">596</td></tr>
 <tr><td class="role">metric</td><td class="sub">Numeric — hero</td><td><span class="cut mono">Söhne Mono</span></td><td class="t">600 Halbfett</td><td class="t">49 / 3.062rem</td><td class="t">44</td><td class="t sub">0.898</td><td class="t">-1.7</td><td class="t sub">-0.0347</td><td class="t sub">55 / 50</td><td class="t sub">1824</td></tr>
 <tr><td class="role">figureLg</td><td class="sub">Numeric — KPI</td><td><span class="cut mono">Söhne Mono</span></td><td class="t">600 Halbfett</td><td class="t">28 / 1.75rem</td><td class="t">25</td><td class="t sub">0.893</td><td class="t">-1.0</td><td class="t sub">-0.0357</td><td class="t sub">31 / 28</td><td class="t sub">1042</td></tr>
 <tr><td class="role">figure</td><td class="sub">Numeric — tile</td><td><span class="cut mono">Söhne Mono</span></td><td class="t">600 Halbfett</td><td class="t">22 / 1.375rem</td><td class="t">20</td><td class="t sub">0.909</td><td class="t">-0.8</td><td class="t sub">-0.0364</td><td class="t sub">25 / 23</td><td class="t sub">819</td></tr>
@@ -366,7 +364,6 @@ that silently changes meaning at every size it touches.</p>
 <tr><td class="role">figureSm</td><td class="sub">Numeric — row</td><td><span class="cut mono">Söhne Mono</span></td><td class="t">600 Halbfett</td><td class="t">16 / 1rem</td><td class="t">21</td><td class="t sub">1.313</td><td class="t">0</td><td class="t sub">0</td><td class="t sub">18 / 23</td><td class="t sub">596</td></tr>
 <tr><td class="role">datum</td><td class="sub">Numeric — quiet</td><td><span class="cut mono">Söhne Mono</span></td><td class="t">400 Buch</td><td class="t">14 / 0.875rem</td><td class="t">18</td><td class="t sub">1.286</td><td class="t">0</td><td class="t sub">0</td><td class="t sub">16 / 21</td><td class="t sub">521</td></tr>
 <tr><td class="role">editorial</td><td class="sub">Editorial quote</td><td><span class="cut serif">ITC Garamond</span></td><td class="t">400 Buch</td><td class="t">33 / 2.062rem</td><td class="t">41</td><td class="t sub">1.242</td><td class="t">-0.2</td><td class="t sub">-0.0061</td><td class="t sub">37 / 46</td><td class="t sub">1228</td></tr>
-<tr><td class="role">attribution</td><td class="sub">Quote attribution</td><td><span class="cut sans">Söhne</span></td><td class="t">500 Kräftig</td><td class="t">13 / 0.8125rem</td><td class="t">17</td><td class="t sub">1.308</td><td class="t">+0.1</td><td class="t sub">+0.0077</td><td class="t sub">14 / 18</td><td class="t sub">484</td></tr>
 </tbody></table></div>
 <div class="grid2">
 <div class="note"><strong>Measure is answered in characters, not pixels.</strong> 66 characters is the classic centre of the 45–75 band;
@@ -386,7 +383,7 @@ and every other rung is a clean power of the ratio away from it.</div>
 <tr><td class="role">regular</td><td class="t">Buch</td><td class="t">400</td><td class="t">0.090em</td><td class="t sub">—</td><td class="sub" style="text-align:left">Reading text, quiet figures, the serif</td></tr>
 <tr><td class="role">medium</td><td class="t">Kräftig</td><td class="t">500</td><td class="t">0.120em</td><td class="t sub">+33%</td><td class="sub" style="text-align:left">Emphasised body, labels, controls, live readouts</td></tr>
 <tr><td class="role">semibold</td><td class="t">Halbfett</td><td class="t">600</td><td class="t">0.140em</td><td class="t sub">+56%</td><td class="sub" style="text-align:left">Every heading, every result figure. <strong>The ceiling on <span class="m">ink</span>.</strong></td></tr>
-<tr><td class="role" style="color:var(--red)">bold</td><td class="t">Dreiviertelfett</td><td class="t">700</td><td class="t">0.160em</td><td class="t sub">+78%</td><td class="sub" style="text-align:left">Lit surfaces only — one style, <span class="m">takeover</span></td></tr>
+<tr><td class="role" style="color:var(--red)">— retired —</td><td class="t sub">Dreiviertelfett</td><td class="t sub">700</td><td class="t sub">0.160em</td><td class="t sub">+78%</td><td class="sub" style="text-align:left">No legal surface. The app paints ONE ground and it is near-black, so the 700 left the bundle.</td></tr>
 </tbody></table></div>
 <div class="ba">
   <div class="was"><p class="tag">Was — Dreiviertelfett as the default</p>
@@ -410,10 +407,11 @@ exactly inverted, with the heaviest cut as the default and the text weights as t
     Every glyph already sits on the same 0.600em advance, so weight is the only axis left to close a counter with.
     At 49dp a mono 700's <span class="m">8 9 6 0</span> converge at arm's length — the exact distance and the exact figures
     this product is read at.</p></div>
-  <div class="card"><h4>Where 700 is right</h4><p class="dim" style="font-size:14px;line-height:1.55;margin-top:8px">
-    Irradiation runs the other way on a lit surface: dark ink on a bright ground reads <em>lighter</em> than it measures.
-    <code>weightOnGround()</code> steps the same ladder one rung up rather than forking a second one, and
-    <span class="m">takeover</span> — the Wrapped's full-bleed covers — is its one consumer.</p></div>
+  <div class="card"><h4>Where 700 would have been right — and why it is gone</h4><p class="dim" style="font-size:14px;line-height:1.55;margin-top:8px">
+    Irradiation runs the other way on a <em>lit</em> surface: dark ink on a bright ground reads lighter than it measures. The 700 was
+    kept for the Wrapped's covers on exactly that argument — and the premise was false. <span class="m">HERO_TAKEOVER_INK</span> is
+    <span class="m">#0a0b09</span>, <strong>darker</strong> than the page ground. This product has no lit full-bleed surface, so the
+    exception had nowhere to apply and the cut left the bundle.</p></div>
 </div>
 </div></section>
 <section id="rhythm"><div class="head"><div class="meta"><p class="overline">06 — Rhythm &amp; spacing</p></div><h2>A 4dp grid, and the two half-rungs that admit they are off it.</h2></div>
@@ -613,7 +611,7 @@ instead, it is 1.23 — 41dp, or 1.45× apparent.</p>
 <li><span class="k">Never</span><span>Never a figure, unit, control, label, badge or state. Never uppercase, never letterspaced positive, never in the accent colour — the accent means <em>go</em>, and a conclusion is not a destination.</span></li>
 <li><span class="k">Floor</span><span><strong>Never below 24dp.</strong> Garamond's joins break up on the near-black ground under that.</span></li>
 <li><span class="k">Language</span><span><strong>English only.</strong> The binary carries <span class="m">Ł ł ó</span> but not <span class="m">ą ę ś ż ź ć ń</span>, so a Polish or Czech string cannot be set in it at all. Every consumer falls back to the sans rather than rendering a line with holes in it.</span></li>
-<li><span class="k">Pairing</span><span><strong>Never mix the two faces in one line.</strong> The attribution under a quote is <em>sans</em> — a serif source line reads as one continuous piece of setting, so it competes with the sentence instead of receding from it. The face change is the demotion.</span></li>
+<li><span class="k">Pairing</span><span><strong>Never mix the two faces in one line.</strong> A source line under a quote is <em>sans</em> — a serif source line reads as one continuous piece of setting, so it competes with the sentence instead of receding from it. The face change is the demotion.</span></li>
 </ul></div>
 </div></section>
 <section id="pairings"><div class="head"><div class="meta"><p class="overline">10 — Pairings</p></div><h2>Worked examples, at true size.</h2></div>
@@ -650,7 +648,7 @@ has nowhere to go from a number they already earned.</p>
 <p class="attrib">Marek Wiśniewski, strength coach</p>
 <p class="dim" style="font-size:12.5px;line-height:1.5;margin-top:18px;padding-top:14px;border-top:1px solid var(--line)">
 <span class="m" style="color:var(--red)">editorial</span> (serif, 33/41) then
-<span class="m" style="color:var(--lime)">attribution</span> (sans, 13/17, secondary). Two faces, two lines, never one line.</p>
+a source line in <span class="m" style="color:var(--lime)">caption</span> (sans, 13/17, secondary). Two faces, two lines, never one line.</p>
 </div>
 <div class="spec-band">
 <p class="kicker" style="margin-bottom:18px">A logged set, in a row</p>
@@ -716,8 +714,9 @@ each one rung up, or they read thin.</p></div>
 </div>
 <div class="grid3">
 <div class="card"><h4>Weight</h4><p class="dim" style="font-size:14px;line-height:1.55;margin-top:8px">
-<code>weightOnGround(w, "light")</code> — one step up, capped at 700. On <span class="m">ink</span> it is the identity, because the
-app's ground is dark and the ladder as written is the dark ladder.</p></div>
+One step up on a lit ground — in principle. In practice this product has <strong>no lit full-bleed surface</strong>: even the Wrapped
+covers are <span class="m">#0a0b09</span>, darker than the page. So the ladder is three cuts, the 700 left the bundle, and the
+correction returns only if a surface that needs it is ever built.</p></div>
 <div class="card"><h4>Tracking</h4><p class="dim" style="font-size:14px;line-height:1.55;margin-top:8px">
 Unchanged. Irradiation thickens strokes, not sidebearings — the counters close before the fit does, so tracking is the wrong
 lever and reaching for it here would loosen text that is not too tight.</p></div>

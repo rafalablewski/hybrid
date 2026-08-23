@@ -62,15 +62,19 @@ export interface FaceMetrics {
  * THE SANS, ALL FOUR CUTS.
  *
  * Note `xHeight` and `capHeight` barely move across the weight axis (0.523 →
- * 0.527, 0.718 flat): Söhne's weights are drawn on one skeleton, so a weight
+ * 0.526, 0.718 flat): Söhne's weights are drawn on one skeleton, so a weight
  * change is a change of `stem` and nothing else. That is why the weight ladder
  * in `typography.ts` can be reasoned about as stem width alone.
+ */
+/**
+ * THREE CUTS, not four — Dreiviertelfett left the bundle with `weight.bold`.
+ * The app paints one ground and it is near-black, so the ladder tops out at
+ * Halbfett; see the note on `weight` in typography.ts.
  */
 export const SOHNE = {
   buch: { file: "Sohne-Buch.otf", unitsPerEm: 1000, xHeight: 0.523, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.09, advanceN: 0.564, letterfitN: 0.144 },
   kraftig: { file: "Sohne-Kraftig.otf", unitsPerEm: 1000, xHeight: 0.525, capHeight: 0.718, ascender: 0.718, descender: -0.18, stem: 0.12, advanceN: 0.563, letterfitN: 0.122 },
   halbfett: { file: "Sohne-Halbfett.otf", unitsPerEm: 1000, xHeight: 0.526, capHeight: 0.718, ascender: 0.718, descender: -0.178, stem: 0.14, advanceN: 0.573, letterfitN: 0.112 },
-  dreiviertelfett: { file: "Sohne-Dreiviertelfett.otf", unitsPerEm: 1000, xHeight: 0.527, capHeight: 0.718, ascender: 0.718, descender: -0.176, stem: 0.16, advanceN: 0.583, letterfitN: 0.102 },
 } as const satisfies Record<string, FaceMetrics>;
 
 /**
@@ -153,9 +157,8 @@ export const FIGURE_INK_EM = Number((FIGURE_INK.top - FIGURE_INK.bottom).toFixed
  * out — see `sansHasNoOpenTypeFeatures` — so proportional is what renders.)
  *
  * HALBFETT because that is what `F.black` resolves to since the weight ladder
- * was capped at 600; the Wrapped's figures are drawn with it. The cuts differ by
- * about 1% here, which is inside the fitter's tolerance, but if `F.black` ever
- * moves again this table moves with it.
+ * was capped at 600, and the Wrapped's figures are drawn with it. If `F.black`
+ * ever moves again this table moves with it.
  *
  * `~` IS ABSENT FROM THE FACE. The Wrapped prefixes estimates with a tilde, and
  * the extended trial cuts do not carry one, so it renders in the platform

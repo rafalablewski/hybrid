@@ -99,67 +99,58 @@ export const cut = {
 export type Cut = keyof typeof cut;
 
 /**
- * FOUR WEIGHTS, AND ON THIS GROUND THE LADDER STOPS AT 600 — BOTH CUTS.
+ * THREE WEIGHTS, AND THE LADDER STOPS AT 600 BECAUSE THE APP HAS ONE GROUND.
  *
  * The names are the product's, not the foundry's, so a face swap does not
- * rename every call site: `semibold` is Söhne Halbfett, `bold` is
- * Dreiviertelfett.
+ * rename every call site: `semibold` is Söhne Halbfett.
  *
  * ── THE STEMS, MEASURED, BECAUSE THIS IS AN ARGUMENT ABOUT INK ─────────────
  *
- * Söhne draws all four cuts on ONE skeleton — x-height 0.523-0.527, cap-height
- * 0.718 flat (theme/face-metrics.ts) — so a weight IS its stem and nothing else:
+ * Söhne draws its cuts on ONE skeleton — x-height 0.523-0.526, cap-height 0.718
+ * flat (theme/face-metrics.ts) — so a weight IS its stem and nothing else:
  *
- *     Buch             0.090em    regular
- *     Kräftig          0.120em    medium      +33%
- *     Halbfett         0.140em    semibold    +56%
- *     Dreiviertelfett  0.160em    bold        +78%
+ *     Buch      0.090em    regular
+ *     Kräftig   0.120em    medium      +33%
+ *     Halbfett  0.140em    semibold    +56%
  *
- * ── WHY `bold` IS BANNED IN MONO ───────────────────────────────────────────
+ * ── WHY IT STOPS THERE, IN BOTH CUTS ──────────────────────────────────────
  *
- * Every glyph in a monospaced face already sits on the same 0.600em advance, so
- * weight is the only axis left to close a counter with. At `fs.stat` a mono
- * 700's 8, 9, 6 and 0 converge at arm's length — which is the exact distance and
- * the exact figures this product is read at. 600 is the ceiling and the digits
- * are more legible for it. (The face ships no mono 700 at all, so the rule is
- * also simply the truth about what is loadable.)
+ * HYBRID paints near-black and sets light type on it. Light-on-dark IRRADIATES:
+ * the lit strokes bleed outward into the ground, so every weight reads heavier
+ * than it measures, and the correct ladder here is one step lighter than the one
+ * you would use on paper. The app had it inverted — Dreiviertelfett (0.16em
+ * stem, +78%) at 298 call sites against 258 for the regular and 81 for the
+ * medium, 62 of them at `fs.body` or below where that is a 2.2dp stroke with the
+ * counters of `a`, `e` and `s` closing up. Heavy type at reading size is not
+ * emphasis, it is mud.
  *
- * ── AND WHY, ON THE APP'S GROUND, THE SANS STOPS THERE TOO ─────────────────
+ * In MONO the argument is separate and lands the same way: every glyph already
+ * sits on the same 0.600em advance, so weight is the only axis left to close a
+ * counter with, and at `fs.stat` a mono 700's 8, 9, 6 and 0 converge at exactly
+ * the distance this product is read at.
  *
- * New in Aug 2026, and the largest single correction in the type rebuild.
+ * ── AND WHY THERE IS NO LONGER A 700 AT ALL ───────────────────────────────
  *
- * HYBRID paints near-black (`colors.ink`, L* 3.5) and sets light type on it.
- * Light-on-dark IRRADIATES: the lit strokes bleed outward into the dark ground,
- * so every weight reads heavier than the same weight would on paper. The
- * standard response — the one every careful dark interface makes — is to set one
- * step LIGHTER than you otherwise would.
+ * The first cut of this rebuild kept `bold` for one style — `takeover`, the
+ * Wrapped's cover titles — on the reasoning that irradiation runs the OTHER way
+ * on a lit surface, so a 700 is correct there. That reasoning was sound and the
+ * premise was FALSE: `HERO_TAKEOVER_INK` is #0a0b09, which is DARKER than
+ * `colors.ink` (#0c0d0c). The Wrapped covers are the darkest ground in the app,
+ * not the brightest. HYBRID has no lit full-bleed surface, so the exception had
+ * nowhere to apply, and a weight with no legal surface is a weight with no
+ * consumer — which is what `condensed` was deleted from tokens.ts for.
  *
- * The app did the opposite. `F.black`, the heaviest cut, carried 298 call sites
- * against 258 for the regular and 81 for the medium: the weight distribution was
- * INVERTED, with the heaviest cut as the default and the text weights as the
- * exceptions. Worse, 62 of those sites sat at `fs.body` or below, where a 0.16em
- * stem is a 2.2dp stroke and the counters of `a`, `e` and `s` close up. Heavy
- * type at reading size is not emphasis, it is mud — and it is most of the answer
- * to why a Söhne/Garamond pairing that should read expensive read cheap.
- *
- * So: NO NAMED STYLE ON THE DARK GROUND TAKES `bold`, and typography.test.ts
- * holds it. `hero` — the masthead, the one place a 700 had a real argument — is
- * `semibold` now, because at 35dp on near-black Halbfett is already emphatic and
- * Dreiviertelfett is a slab.
- *
- * `bold` IS NOT DEAD, and that is what makes this a rule rather than a deletion:
- * irradiation runs the OTHER WAY on a light or accent-filled surface, where dark
- * ink on a lit ground reads lighter than it measures. There the ladder steps up,
- * `bold` becomes correct, and `text.takeover` — the Wrapped's full-bleed cover
- * title, the app's only such surface — is its one consumer. `weightOnGround`
- * below is the mechanism, stated once.
+ * So `weight.bold`, `text.takeover`, the `F.takeover` alias, the `weightOnGround`
+ * mechanism and the Dreiviertelfett binary all went together. One ground, one
+ * ladder, three weights. If a genuinely lit surface is ever built — a chartreuse
+ * fill big enough to set a heading on, a photographic cover — the correction is
+ * a real one and comes back with the surface, measured against it rather than
+ * assumed for it.
  */
 export const weight = {
   regular: 400,
   medium: 500,
   semibold: 600,
-  /** LIGHT / ACCENT GROUNDS ONLY — see `weightOnGround`. Never on `ink`. */
-  bold: 700,
 } as const;
 
 /** The measured stems, so the ladder's argument can be checked rather than read. */
@@ -167,27 +158,7 @@ export const WEIGHT_STEM_EM: Record<number, number> = {
   400: SOHNE.buch.stem,
   500: SOHNE.kraftig.stem,
   600: SOHNE.halbfett.stem,
-  700: SOHNE.dreiviertelfett.stem,
 };
-
-/** What a surface does to apparent weight. `dark` is the app's ground. */
-export type Ground = "dark" | "light";
-
-/**
- * ONE STEP UP ON A LIGHT GROUND, and nothing else, ever.
- *
- * Dark ink on a lit surface loses apparent weight exactly as light ink on a dark
- * one gains it, so a style that reads correct on `ink` reads thin inside a
- * chartreuse pill or on a Wrapped cover. Rather than a second weight ladder —
- * which would drift from the first the week after it was written — the light
- * ground takes the SAME ladder shifted one rung. That is the whole of the
- * correction, and it is reversible by construction.
- *
- * It stops at `bold`: there is no rung above, so a style already there is as
- * heavy as this system goes.
- */
-export const weightOnGround = (w: number, ground: Ground = "dark"): number =>
-  ground === "light" ? Math.min(weight.bold, w + 100) : w;
 
 export type WeightRole = keyof typeof weight;
 
@@ -259,17 +230,6 @@ export const text = {
    * emphatic; Dreiviertelfett is a slab with the counters filling in.
    */
   hero: { cut: "sans", weight: weight.semibold, size: "hero", leading: "tight", ink: "primary" },
-  /**
-   * THE TAKEOVER TITLE — the ONE style that takes `bold`, and the only one that
-   * may, because it is the only one that never touches the app's dark ground.
-   *
-   * It sets the Wrapped's cover titles, which are full-bleed accent or
-   * photographic panels: dark ink on a lit surface, where the irradiation that
-   * makes `bold` a slab on `ink` runs the other way and takes weight OFF. It is
-   * `hero`'s size at `hero`'s leading, one weight up, and a call site reaching
-   * for it on a normal screen is making the mistake this pair exists to name.
-   */
-  takeover: { cut: "sans", weight: weight.bold, size: "hero", leading: "tight", ink: "primary" },
   display: { cut: "sans", weight: weight.semibold, size: "display", leading: "tight", ink: "primary" },
   headline: { cut: "sans", weight: weight.semibold, size: "headline", leading: "snug", ink: "primary" },
   /** Section titles — the house standard (the Explore tab's SectionHead). */
@@ -295,20 +255,27 @@ export const text = {
 
   // ── CONTROLS — the sans cut, and they are NOT body text ──────────────────
   /**
-   * A BUTTON LABEL, and the reason it is its own token rather than `bodyLg` in
-   * a pill is that a control's label has no measure and never wraps.
+   * A BUTTON LABEL, and it is its own token rather than `subtitle` in a pill
+   * because a control's label has no measure and never wraps.
    *
-   * `medium`, because a control is already marked out by its container — a
-   * filled pill, a ring, a 44dp target — and setting its label `semibold` on top
-   * of that is the same mistake as the app's inverted weight distribution, one
-   * component down. The chrome carries the emphasis; the label carries the word.
+   * THE SIZES ARE APill'S, NOT AN IDEAL. The first cut of this token was
+   * designed against the specification and not against the app: it set `button`
+   * at `bodyLg` and `buttonSm` at `caption`, while APill — the button primitive
+   * every pill in the app is drawn by — had long since settled on `subtitle`
+   * for a full-width control and `bodyLg` for a compact one. That is a THIRD
+   * answer to a settled question, and wiring it would have shrunk every button
+   * in the product by a rung. The token now names what APill already does, so
+   * adopting it is a refactor rather than a restyle.
    *
-   * Ink is PRIMARY: a control the athlete is meant to press cannot be set in the
-   * colour the system uses for things that are merely true.
+   * `semibold` for the same reason. The design argument for a lighter control
+   * label — the chrome carries the emphasis, so the word need not — is a real
+   * one and is NOT made here: it would move every button in the app, and this
+   * rebuild deliberately stopped at the layer that does not change what renders.
+   * It is recorded as `control-label-weight` instead.
    */
-  button: { cut: "sans", weight: weight.medium, size: "bodyLg", leading: "snug", ink: "primary" },
-  /** A chip, a segmented-control segment, a dense row's inline action. */
-  buttonSm: { cut: "sans", weight: weight.medium, size: "caption", leading: "snug", ink: "primary" },
+  button: { cut: "sans", weight: weight.semibold, size: "subtitle", leading: "snug", ink: "primary" },
+  /** A compact control — one sitting in a row beside other content. */
+  buttonSm: { cut: "sans", weight: weight.semibold, size: "bodyLg", leading: "snug", ink: "primary" },
   /**
    * THE EYEBROW, AND THERE ARE TWO OF THEM — this is the app's dominant label
    * voice and the pair is not a redundancy.
@@ -353,20 +320,6 @@ export const text = {
    * mono cut, and a sentence has no column to line up with.
    */
   editorial: { cut: "serif", weight: weight.regular, size: "editorial", leading: "editorial", tracking: "serif", ink: "primary" },
-  /**
-   * THE ATTRIBUTION under a quote, and it is SANS on purpose.
-   *
-   * "Never mix the two faces in the same line" is the pairing's governing rule,
-   * and an attribution is where it is most often broken — a serif quote with a
-   * serif source line reads as one continuous piece of typesetting, so the
-   * source competes with the sentence instead of receding from it. The face
-   * change IS the demotion: sans, secondary ink, small, on its own line.
-   *
-   * It is not `caption`, which is metadata; this is a named human, and it sits
-   * in a fixed relationship to `editorial` that a general-purpose token would
-   * not carry.
-   */
-  attribution: { cut: "sans", weight: weight.medium, size: "caption", leading: "snug", ink: "secondary" },
 } as const satisfies Record<string, TextStyle>;
 
 export type TextToken = keyof typeof text;

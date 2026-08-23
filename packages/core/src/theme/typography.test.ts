@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { fs, lh, tracking, trackFigure, STEP, promote, type TypeRole } from "../scale";
 import { fonts } from "./tokens";
 import { formatClock } from "../duration";
-import { cut, weight, text, resolveText, unitFor, measureFor, DESKTOP_PROMOTION, weightOnGround, WEIGHT_STEM_EM, UNIT_RATIO, TIMES, type TextStyle, type TextToken } from "./typography";
+import { cut, weight, text, resolveText, unitFor, measureFor, DESKTOP_PROMOTION, WEIGHT_STEM_EM, UNIT_RATIO, TIMES, type TextStyle, type TextToken } from "./typography";
 
 const TOKENS = Object.keys(text) as TextToken[];
 
@@ -56,13 +56,16 @@ describe("the named type styles", () => {
     expect(bad, `mono is capped at semibold:\n  ${bad.join("\n  ")}`).toEqual([]);
   });
 
-  it("HARD — bold is display-only", () => {
-    // Rule 02/20. 700 below `display` is volume, not hierarchy. Since Aug 2026
-    // the stronger rule below supersedes this one on the dark ground — `bold` is
-    // reachable by exactly one style — but this stays as the SIZE half of the
-    // constraint, which survives independently of the ground argument.
-    const bad = TOKENS.filter((t) => (text[t] as TextStyle).weight === weight.bold && fs[(text[t] as TextStyle).size] < fs.display);
-    expect(bad, `700 is for 26dp and up:\n  ${bad.join("\n  ")}`).toEqual([]);
+  it("HARD — the ladder has no 700 to reach for", () => {
+    // There is no `weight.bold` any more. It survived the first cut of the
+    // rebuild for one style — the Wrapped's cover titles — on the reasoning that
+    // a LIT surface wants a heavier cut, and the premise was false:
+    // HERO_TAKEOVER_INK is #0a0b09, darker than `ink`. The app has no lit
+    // full-bleed surface, so the exception had nowhere to apply.
+    expect(Object.values(weight)).toEqual([400, 500, 600]);
+    expect((weight as Record<string, number>)["bold"]).toBeUndefined();
+    const bad = TOKENS.filter((t) => (text[t] as TextStyle).weight > 600);
+    expect(bad, `nothing above 600: ${bad.join(", ")}`).toEqual([]);
   });
 
   it("HARD — uppercase is mono only, and only at the two smallest rungs", () => {
@@ -238,38 +241,13 @@ describe("figure formats", () => {
  * why each one needs a guard: none of them looks broken in isolation.
  */
 describe("the weight ladder on a dark ground", () => {
-  it("HARD — no named style takes `bold`, except the one that never touches `ink`", () => {
-    // Light-on-dark irradiates, so every weight reads heavier than it measures
-    // and the correct ladder on this ground stops at `semibold`. The app had it
-    // exactly inverted — the 0.16em cut was the default at 298 sites, 62 of them
-    // at reading size — and that is most of why the pairing read cheap.
-    const bold = TOKENS.filter((t) => (text[t] as TextStyle).weight === weight.bold);
-    expect(bold, "only the takeover title may be bold").toEqual(["takeover"]);
-  });
-
-  it("HARD — the takeover title is display-sized, since that is its whole excuse", () => {
-    // `bold` is legal there because a Wrapped cover is a LIT surface. A `bold`
-    // that crept down the ladder would be claiming that excuse at a size where
-    // no full-bleed panel exists.
-    expect(fs[(text.takeover as TextStyle).size]).toBeGreaterThanOrEqual(fs.display);
-    expect((text.takeover as TextStyle).cut).toBe("sans");
-  });
-
-  it("steps exactly one rung up on a light ground, and stops at bold", () => {
-    expect(weightOnGround(weight.regular, "light")).toBe(weight.medium);
-    expect(weightOnGround(weight.semibold, "light")).toBe(weight.bold);
-    expect(weightOnGround(weight.bold, "light")).toBe(weight.bold);
-    // `dark` is the identity — the app's ground is the ladder as written.
-    for (const w of Object.values(weight)) expect(weightOnGround(w)).toBe(w);
-  });
-
   it("the ladder is a ladder in INK, which is the thing being reasoned about", () => {
     // Söhne draws all four cuts on one skeleton, so a weight is its stem and
     // nothing else. If that stopped being true the irradiation argument above
     // would need re-making rather than re-reading.
-    const stems = [weight.regular, weight.medium, weight.semibold, weight.bold].map((w) => WEIGHT_STEM_EM[w]!);
+    const stems = [weight.regular, weight.medium, weight.semibold].map((w) => WEIGHT_STEM_EM[w]!);
     for (let i = 1; i < stems.length; i++) expect(stems[i]!).toBeGreaterThan(stems[i - 1]!);
-    expect(WEIGHT_STEM_EM[weight.bold]! / WEIGHT_STEM_EM[weight.regular]!).toBeCloseTo(1.78, 2);
+    expect(WEIGHT_STEM_EM[weight.semibold]! / WEIGHT_STEM_EM[weight.regular]!).toBeCloseTo(1.56, 2);
   });
 
   it("gives the heading band a weight step, not just a size step", () => {
@@ -302,30 +280,23 @@ describe("the editorial voice", () => {
     expect(resolveText("editorial").lineHeight / fs.display).toBeLessThan(1.5);
   });
 
-  it("HARD — the attribution is SANS, so the two faces never share a line", () => {
-    // The pairing's governing rule, at the place it is most often broken: a
-    // serif quote with a serif source reads as one continuous piece of setting,
-    // so the source competes with the sentence instead of receding from it. The
-    // face change IS the demotion.
-    expect((text.attribution as TextStyle).cut).toBe("sans");
-    expect((text.attribution as TextStyle).cut).not.toBe((text.editorial as TextStyle).cut);
-    expect((text.attribution as TextStyle).ink).toBe("secondary");
-    expect(resolveText("attribution").fontSize).toBeLessThan(resolveText("editorial").fontSize);
-  });
 });
 
 describe("controls", () => {
-  it("a button label is marked out by its container, not by its weight", () => {
-    // The app's inverted weight distribution, one component down: a filled pill
-    // with a 44dp target is already emphatic, and a `semibold` label on top of
-    // that is the same mistake at a smaller scale.
-    expect(resolveText("button").fontWeight).toBe(weight.medium);
-    expect(resolveText("button").fontWeight).toBeLessThan(weight.semibold);
-    // ...but it is PRIMARY ink. A control meant to be pressed cannot be set in
-    // the colour reserved for things that are merely true.
+  it("names the sizes APill already draws, so adopting it is a refactor", () => {
+    // The first cut of these tokens was designed against the specification and
+    // not against the app — `bodyLg` and `caption`, where APill had long since
+    // settled on `subtitle` for a full-width control and `bodyLg` for a compact
+    // one. Wiring that would have shrunk every button in the product by a rung.
+    expect(resolveText("button").fontSize).toBe(fs.subtitle);
+    expect(resolveText("buttonSm").fontSize).toBe(fs.bodyLg);
+    expect(resolveText("button").fontWeight).toBe(weight.semibold);
+    expect(resolveText("buttonSm").fontWeight).toBe(weight.semibold);
+    // PRIMARY ink: a control meant to be pressed cannot be set in the colour
+    // reserved for things that are merely true. (APill overrides it per variant
+    // — a pill's ink is its variant's business — but the token's default is the
+    // one a bare control gets.)
     expect(resolveText("button").ink).toBe("primary");
-    expect(resolveText("buttonSm").ink).toBe("primary");
-    expect(resolveText("buttonSm").fontSize).toBeLessThan(resolveText("button").fontSize);
   });
 });
 
