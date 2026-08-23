@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { recordsBoard } from "./records-board";
+import { recordsBoard, RECORD_TREND_MIN } from "./records-board";
+import { resolveActivityRange } from "./activity-window";
 import type { LoggedSession, StrengthSet } from "./engines/session";
 
 const DAY = 86_400_000;
@@ -73,5 +74,84 @@ describe("recordsBoard", () => {
 
   it("a conditioning pin draws no row — a metcon has no record figure", () => {
     expect(recordsBoard([metcon(3)], ["Assault Bike"], { now })).toEqual([]);
+  });
+});
+
+/* THE FOLD'S READ. The row's figures say where you are; the fold says which
+   way you have been going — over the SCREEN's window, against a record that
+   window does not govern. Two scopes, one sentence, each named. */
+describe("recordsBoard read", () => {
+  const d30 = () => resolveActivityRange("d30", now);
+
+  it("is absent unless a range is passed — the model works off a filtered screen", () => {
+    const [r] = recordsBoard([lift(10, "100"), lift(3, "110")], ["Back Squat"], { now });
+    expect(r!.read).toBeNull();
+  });
+
+  it("climbing: the window's second half beats its first, still under the record", () => {
+    const sessions = [
+      lift(200, "150"), // the record, long before the window
+      lift(25, "100"), lift(20, "105"), lift(12, "115"), lift(4, "120"),
+    ];
+    const [r] = recordsBoard(sessions, ["Back Squat"], { now, range: d30() });
+    expect(r!.read).toMatchObject({ kind: "climbing", trend: "up", sessions: 4 });
+    // The gap is unsigned — the sentence supplies the direction in words.
+    expect(r!.read!.gapPct).toBe(20);
+  });
+
+  it("slipping: the same window run backwards", () => {
+    const sessions = [
+      lift(200, "150"),
+      lift(25, "120"), lift(20, "115"), lift(12, "105"), lift(4, "100"),
+    ];
+    const [r] = recordsBoard(sessions, ["Back Squat"], { now, range: d30() });
+    expect(r!.read).toMatchObject({ kind: "slipping", trend: "down" });
+  });
+
+  it("holding: a move under the threshold is the bar rounding, not the athlete", () => {
+    // 100 → 101.25 across the window is +1.25%, under RECORD_TREND_PCT.
+    const sessions = [
+      lift(200, "150"),
+      lift(25, "100"), lift(20, "100"), lift(12, "101"), lift(4, "101.5"),
+    ];
+    const [r] = recordsBoard(sessions, ["Back Squat"], { now, range: d30() });
+    expect(r!.read).toMatchObject({ kind: "holding", trend: "flat" });
+  });
+
+  it("thin: fewer than three efforts claims no direction at all", () => {
+    const sessions = [lift(200, "150"), lift(20, "100"), lift(4, "130")];
+    const [r] = recordsBoard(sessions, ["Back Squat"], { now, range: d30() });
+    expect(r!.read).toMatchObject({ kind: "thin", trend: null });
+    expect(r!.read!.sessions).toBeLessThan(RECORD_TREND_MIN);
+  });
+
+  it("none: a quiet window still states the record, never a 0% trend", () => {
+    const sessions = [lift(200, "150"), lift(120, "140")];
+    const [r] = recordsBoard(sessions, ["Back Squat"], { now, range: d30() });
+    expect(r!.read).toMatchObject({ kind: "none", sessions: 0, trend: null });
+  });
+
+  it("first: one data point in the whole log is a mark, not a shortfall", () => {
+    const [r] = recordsBoard([lift(4, "100")], ["Back Squat"], { now, range: d30() });
+    expect(r!.read).toMatchObject({ kind: "first", trend: null });
+  });
+
+  it("atBest wins over any direction — standing on the record is the larger fact", () => {
+    const sessions = [lift(25, "100"), lift(20, "105"), lift(12, "115"), lift(4, "130")];
+    const [r] = recordsBoard(sessions, ["Back Squat"], { now, range: d30() });
+    expect(r!.atBest).toBe(true);
+    expect(r!.read).toMatchObject({ kind: "atBest", gapPct: 0, trend: null });
+  });
+
+  it("pace reads its direction in the metric's own favour — faster is climbing", () => {
+    // 6:00 → 5:00 per km across the window: the raw change is NEGATIVE and the
+    // trend is up, which is the whole point of the `better: "low"` branch.
+    const sessions = [
+      run(200, 10, 40), // the record: 4:00/km
+      run(25, 10, 60), run(20, 10, 58), run(12, 10, 52), run(4, 10, 50),
+    ];
+    const [r] = recordsBoard(sessions, ["Easy Run"], { now, range: d30() });
+    expect(r!.kind).toBe("cardio");
+    expect(r!.read).toMatchObject({ kind: "climbing", trend: "up" });
   });
 });

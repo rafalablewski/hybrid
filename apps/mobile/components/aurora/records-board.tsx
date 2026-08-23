@@ -8,6 +8,8 @@ import {
   disciplinePaceFigure,
   disciplinePaceUnit,
   formatDisciplinePace,
+  pluralForm,
+  TODAY_RANGE_STORE_KEY,
   type BodyweightInput,
   type LoggedSession,
   type RecordRow,
@@ -20,6 +22,7 @@ import { ASection, ADrawer } from "./kit";
 import { TickerDelta } from "./exercise-widget";
 import { DoorRow } from "./week-verdict";
 import ExerciseFavouritesSheet from "./exercise-favourites-sheet";
+import { useActivityRange, useRangeLabels } from "./range-filter";
 import { useExerciseFavourites } from "../../lib/exercise-favourites";
 import { haptic } from "../../lib/haptics";
 
@@ -74,14 +77,20 @@ export default function RecordsBoard({
   onOpen: (name: string) => void;
 }) {
   const { palette: C } = useTheme();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const favourites = useExerciseFavourites();
   const [pickOpen, setPickOpen] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
+  // READ, NEVER WRITTEN — the cluster's period, for the FOLD only. The record
+  // itself is all-time and stays so; the window governs the trend sentence,
+  // which is a different question ("how have I been going lately") and the one
+  // place on this block where the filter has anything to say.
+  const { range } = useActivityRange(TODAY_RANGE_STORE_KEY);
+  const windowTitle = useRangeLabels(range).title;
 
   const rows = useMemo(
-    () => recordsBoard(sessions, favourites, { units, bw }),
-    [sessions, favourites, units, bw],
+    () => recordsBoard(sessions, favourites, { units, bw, range }),
+    [sessions, favourites, units, bw, range],
   );
   if (sessions.length === 0) return null;
 
@@ -110,6 +119,34 @@ export default function RecordsBoard({
       : r.discipline
         ? disciplinePaceFigure(r.best, r.discipline)
         : paceClock(r.best);
+
+  /**
+   * The fold's sentence. Core decided WHICH read the row deserves; this maps
+   * that decision onto its wording and fills the three slots — the window, the
+   * gap, and the record's day.
+   *
+   * A pace row takes its own three directions: "building" and "easing off" are
+   * about load and would read as nonsense over a run, where the same movements
+   * are getting faster and slowing. Everything else (nothing logged, too few
+   * sessions, a first entry, standing on the record) is true in the same words
+   * either way.
+   */
+  const readSentence = (r: RecordRow): string => {
+    const read = r.read!;
+    const paced = r.kind === "cardio";
+    const suffix =
+      read.kind === "climbing" ? (paced ? "paceClimbing" : "climbing")
+      : read.kind === "holding" ? (paced ? "paceHolding" : "holding")
+      : read.kind === "slipping" ? (paced ? "paceSlipping" : "slipping")
+      : read.kind;
+    return t(`w.home.rb.read.${suffix}`)
+      .replace("{w}", windowTitle)
+      .replace("{g}", String(read.gapPct))
+      .replace("{d}", day(r.bestAt));
+  };
+
+  const sessionCount = (n: number): string =>
+    t(`w.home.rb.sessN.${pluralForm(n, lang)}`).replace("{n}", String(n));
 
   const row = (r: RecordRow) => {
     const [value, unit] = latestFigure(r);
@@ -173,16 +210,27 @@ export default function RecordsBoard({
           </Pressable>
         </View>
 
-        {/* THE PROOF. All-time is stated HERE, as dates that can be checked,
-            rather than as a period label competing with the cluster's filter. */}
+        {/* THE READ. The collapsed row already carries the figures, so the fold
+            does not reprint them in words — it answers what the figures raise
+            and cannot settle: which way this movement has been going, over the
+            period the screen is showing, against a record that period does not
+            govern. Both scopes are named inside the sentence (the window as an
+            apposition, the record by its date) so neither can be read for the
+            other. Core picks the shape; this only fills it in. */}
         <ADrawer open={isOpen}>
-          <View style={{ paddingBottom: space.ms, gap: space.xxs }}>
-            <Text style={ty(C, "kicker")}>
-              {t("w.home.rb.best")} {bestText(r)} – {day(r.bestAt)}
-            </Text>
-            <Text style={ty(C, "kicker")}>
-              {t("w.home.rb.latest")} {value} {unit} – {day(r.latestAt)}
-            </Text>
+          <View style={{ paddingBottom: space.ms, gap: space.xs }}>
+            {r.read && (
+              <Text
+                maxFontSizeMultiplier={MAX_FONT_SCALE}
+                style={{ fontFamily: F.reg, fontSize: fs.caption, lineHeight: leading(fs.caption, "relaxed"), color: C.chalk }}
+              >
+                {readSentence(r)}
+              </Text>
+            )}
+            {/* The evidence the direction rests on. It sits OUTSIDE the
+                sentence so the count can take its language's plural without
+                a sentence variant per form. */}
+            {r.read && r.read.sessions > 0 && <Text style={ty(C, "kicker")}>{sessionCount(r.read.sessions)}</Text>}
             {r.proof?.kind === "climb" && r.proof.from && (
               <Text style={ty(C, "kicker")}>
                 {t("w.home.rb.climbedFrom").replace("{v}", r.proof.from)} {r.proof.delta}
