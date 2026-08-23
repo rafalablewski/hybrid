@@ -96,8 +96,12 @@ describe("the endurance grid", () => {
     const text = container.textContent ?? "";
     expect(text).not.toContain("km");
     expect(text).not.toContain("—");
-    // ...and shows instead the fact a timed sport actually carries.
-    expect(text.toLowerCase()).toContain("longest");
+    // ...and shows instead the fact EVERY sport carries: how many times you
+    // turned up. It was the longest effort, and "LONGEST 1h 32min" beside a
+    // "14h 43min" figure measures 168dp inside a 153dp plate — it shipped
+    // ellipsised, which is a plate saying a number it will not finish.
+    expect(text.toLowerCase()).toContain("effort");
+    expect(text).not.toMatch(/…|\.\.\./);
   });
 
   it("renders the rate in the discipline's OWN unit where it carries one", () => {

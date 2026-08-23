@@ -51,6 +51,29 @@ describe("the exercise card", () => {
     expect(text).toContain("from 100 kg"); // ...and the baseline that change is against
   });
 
+  it("SHOWS A BASELINE TO A THREE-WEEK-OLD ACCOUNT, dated", () => {
+    // The regression that reached a real phone: with only recent data the card
+    // printed "Heaviest – 8 weeks" and nothing else — no baseline, no change —
+    // because the baseline required a PREVIOUS 8-week window. Most athletes do
+    // not have one on most movements, so the whole change was invisible.
+    const { container } = renderScreen(
+      rail([lift("a", 20, "60"), lift("b", 13, "65"), lift("c", 6, "70")]),
+    );
+    const text = container.textContent ?? "";
+    expect(text).toContain("from 60 kg");   // its own opening session
+    expect(text).toContain("16.7%");        // ...and the change measured from it
+    expect(text).not.toContain("Heaviest"); // the fallback must not be reached
+  });
+
+  it("names a DAY for a logged baseline and a PERIOD for the previous window", () => {
+    // A window is not a Tuesday. The card may only name a day it measured.
+    const recent = renderScreen(rail([lift("a", 20, "60"), lift("c", 6, "70")]));
+    expect(recent.container.textContent ?? "").not.toContain("prev. 8 weeks");
+    recent.unmount();
+    const windowed = renderScreen(rail(WITH_BASELINE));
+    expect(windowed.container.textContent ?? "").toContain("prev. 8 weeks");
+  });
+
   it("carries the window on the baseline line, since the metric label no longer does", () => {
     // "Heaviest – 8 weeks" used to be the only place the rail said what period
     // it was answering for. Dropping the label cannot drop the window with it.

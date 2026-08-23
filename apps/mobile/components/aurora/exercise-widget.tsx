@@ -43,6 +43,10 @@ export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct
   );
 }
 
+/** The baseline's day, in the card's own quiet voice — "2 Aug". */
+const fmtBaselineDate = (iso: string): string =>
+  iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "";
+
 /** A figure and its unit, in the card's own convention — one core formatter for
  *  the headline AND its baseline, so the two can never print different units.
  *  It is the function that knows a swim reads "/100m" and the road "/km". */
@@ -114,11 +118,17 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
     armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
     onOpen(card.name);
   };
-  // The baseline, in the SAME formatter as the headline above it.
+  // The baseline, in the SAME formatter as the headline above it. Core picks
+  // WHICH baseline (the previous window, or this window's own first point) and
+  // hands back a date only for the second — so the card names a day it actually
+  // measured, and names a period only when it measured a period.
   const from = card.prevValue == null ? null : exerciseCardFigure(card, card.prevValue, units);
-  const foot = from
-    ? t("w.home.exw.fromPrev").replace("{v}", `${from.value}${from.unit ? ` ${from.unit}` : ""}`)
-    : h.label;
+  const fromText = from ? `${from.value}${from.unit ? ` ${from.unit}` : ""}` : "";
+  const foot = !from
+    ? h.label
+    : card.prevAt
+      ? t("w.home.exw.fromAt").replace("{v}", fromText).replace("{d}", fmtBaselineDate(card.prevAt))
+      : t("w.home.exw.fromPrev").replace("{v}", fromText);
 
   return (
     <APanel

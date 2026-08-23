@@ -147,14 +147,22 @@ function Plate({ page, onOpen }: { page: SportPage; onOpen?: (p: SportPage) => v
   const title = sportPageTitle(page, t);
   const hero = formatDuration(page.minutes, durationUnits(t));
 
-  // A rate needs a discipline to be READ in. A ball sport has neither, which is
-  // the same reason it has no pace to print — it shows its longest effort, the
-  // fact a timed sport actually carries.
+  // A rate needs a discipline to be READ in. A ball sport has neither, so it
+  // shows the fact every sport carries instead: how many times you turned up.
+  //
+  // IT WAS THE LONGEST EFFORT AND THAT DID NOT FIT. "LONGEST 1h 32min" beside a
+  // "14h 43min" figure measures 168dp inside a 153dp plate, so it shipped
+  // ellipsised — "LONGEST 1h 3…" — which is a plate saying a number it will not
+  // finish. The count is short in all three languages (the German "4 EINHEITEN"
+  // is the widest at 145dp) and it is COMPARABLE across every plate, which the
+  // longest effort never was: 14h over four matches and 14h over twenty are
+  // different training, and this is the fact that separates them. The longest
+  // effort keeps its place on the sport's own page.
   const rate =
     page.secPerKm != null && page.discipline
       ? formatDisciplinePace(page.secPerKm, page.discipline)
-      : page.longestMinutes > 0
-        ? `${t("endurance.longest")} ${formatDuration(page.longestMinutes, durationUnits(t))}`
+      : page.efforts > 0
+        ? `${page.efforts} ${t("endurance.efforts")}`
         : undefined;
 
   return (

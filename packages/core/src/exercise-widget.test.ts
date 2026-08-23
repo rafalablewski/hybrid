@@ -316,6 +316,47 @@ describe("the card's figure and its baseline", () => {
     expect(exerciseCardFigure(none, 288, "kg")).toEqual({ value: "4:48", unit: "/km" });
   });
 
+  it("SPEAKS TO A NEW ATHLETE — a baseline inside the window when there is no window before it", () => {
+    // THE BUG THIS PINS, and it shipped: the baseline was the previous 8-week
+    // window and nothing else, so a three-week-old account climbing 60 → 65 →
+    // 70 kg printed "Heaviest — 8 weeks" and no change at all. The card it
+    // replaced, minus a chart. Sixteen weeks of history is not a precondition
+    // for having something to say.
+    const c = exerciseWidgetCard(
+      [
+        lift(20, [{ load: "60", reps: "5" }]),
+        lift(13, [{ load: "65", reps: "5" }]),
+        lift(6, [{ load: "70", reps: "5" }]),
+      ],
+      "Deadlift",
+      now,
+    )!;
+    expect(c.value).toBe(70);
+    expect(c.prevValue).toBe(60);       // the window's own opening point
+    expect(c.deltaPct).toBe(16.7);      // ...and the change measured from IT
+    expect(c.prevAt).toBeTruthy();      // dated, because it is a real session
+  });
+
+  it("prefers the previous WINDOW over the spark, and dates only the spark", () => {
+    // The previous window is the better comparison and stays first. It is a
+    // PERIOD, not a day, so it carries no date — the card must not name a
+    // Tuesday it did not measure.
+    const c = exerciseWidgetCard(
+      [lift(70, [{ load: "100", reps: "5" }]), lift(5, [{ load: "110", reps: "5" }])],
+      "Deadlift",
+      now,
+    )!;
+    expect(c.prevValue).toBe(100);
+    expect(c.prevAt).toBeNull();
+  });
+
+  it("still says nothing when there is genuinely nothing to compare", () => {
+    const c = exerciseWidgetCard([lift(5, [{ load: "110", reps: "5" }])], "Deadlift", now)!;
+    expect(c.prevValue).toBeNull();
+    expect(c.deltaPct).toBeNull();
+    expect(c.prevAt).toBeNull();
+  });
+
   it("THE INVARIANT — a delta and its baseline are null together", () => {
     // The card prints both. If one could exist without the other it would
     // either show a percentage nobody can check, or a baseline measuring
