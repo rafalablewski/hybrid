@@ -1526,16 +1526,19 @@ export default function AuroraHome() {
               right={isAthlete ? <SportPagesWindow /> : undefined}
             />
 
-            {/* ───── ONE PAGE PER SPORT, swiped sideways. The full screen
-                width per sport, snapped, ordered by the volume in the window —
-                so page one is the sport actually being trained, which under the
-                lanes was usually a ball sport exiled to a second block below
-                the fold.
+            {/* ───── EVERY DISCIPLINE AT ONCE — two-up nameplates, ordered by
+                the volume in the window, so the sport actually being trained
+                leads. Under the lanes that was usually a ball sport exiled to a
+                second block below the fold; under the PAGER that replaced them
+                it was page one of six, which is the same exile with a gesture
+                in front of it.
 
-                A page carries the name, ONE figure (minutes, the only measure
-                every sport shares), the eight-week ridge, and two or three
-                facts. Zones, splits, pace history and every effort live one tap
-                away on the sport's own page, which already owns them.
+                A plate carries the NAME at display size (a discipline is one
+                short word, which is the whole reason the treatment fits here),
+                ONE figure — minutes, the only measure every sport shares — and
+                the discipline's own rate in its own unit. Distance, zones,
+                splits and every effort live one tap away on the sport's own
+                page, which already owns them.
 
                 NOT gated on dayIsToday: an eight-week window is not a property
                 of the day you happen to be scrubbed to. Headless — the

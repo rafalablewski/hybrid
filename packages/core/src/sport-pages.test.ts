@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { ridgeGeometry, sportPages, sportPagesTotal, sportPageTitle } from "./sport-pages";
+import { sportPages, sportPagesTotal, sportPageTitle } from "./sport-pages";
 import { SPORT_PAGE_WEEKS } from "./sport-page";
 import type { LoggedSession } from "./engines/session";
 
@@ -122,41 +122,3 @@ describe("sportPages", () => {
   });
 });
 
-describe("ridgeGeometry", () => {
-  it("draws oldest at x=0 and newest at the full width", () => {
-    const g = ridgeGeometry([1, 2, 3, 4], 100, 40);
-    expect(g.line.startsWith("M0.0,")).toBe(true);
-    expect(g.tip.x).toBe(100);
-  });
-
-  it("puts the peak at the top and a zero week on the floor", () => {
-    const g = ridgeGeometry([0, 10], 100, 40, 3);
-    // The peak sits at the top pad, the empty week on the bottom pad.
-    expect(g.tip.y).toBeCloseTo(3, 5);
-    expect(g.line).toContain("37.0"); // h - pad, the zero week
-  });
-
-  it("never overshoots below the baseline on a spiky series", () => {
-    const g = ridgeGeometry([0, 90, 0, 4, 0, 80, 0, 12], 300, 100, 3);
-    // Every coordinate in the path is an `x,y` pair — take the y of each.
-    const ys = [...g.line.matchAll(/([\d.]+),([\d.]+)/g)].map((m) => Number(m[2]));
-    // Control points share their endpoint's y, so nothing can be drawn outside
-    // the [pad, h-pad] band — a Catmull-Rom here would dip below zero.
-    expect(Math.max(...ys)).toBeLessThanOrEqual(97);
-  });
-
-  it("closes the area down to the baseline", () => {
-    const g = ridgeGeometry([1, 2], 100, 40);
-    expect(g.area.endsWith("L100.0,40.0 L0,40.0 Z")).toBe(true);
-  });
-
-  it("flags a window with nothing in it", () => {
-    const g = ridgeGeometry([0, 0, 0, 0], 100, 40);
-    expect(g.flat).toBe(true);
-    expect(g.tip.y).toBe(37);
-  });
-
-  it("survives an empty series", () => {
-    expect(ridgeGeometry([], 100, 40)).toEqual({ line: "", area: "", tip: { x: 0, y: 40 }, flat: true });
-  });
-});

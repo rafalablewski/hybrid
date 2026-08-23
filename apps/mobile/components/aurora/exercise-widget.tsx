@@ -2,21 +2,14 @@ import { useMemo, useRef, useState } from "react";
 import { View, Text, ScrollView } from "react-native";
 import {
   SHARED_ELEMENTS,
-  exerciseCardReading,
-  exerciseStripBars,
+  exerciseCardFigure,
   exerciseWidgetCards,
-  fmtWeight,
-  fmtTonnage,
-  formatDisciplinePace,
   movementsTrained,
-  paceClock,
   type ExerciseWidgetCard,
   type LoggedSession,
   type WeightUnit,
-
-  ALPHA,} from "@hybrid/core";
-import HistoryStrip from "./history-strip";
-import { useChartScrub } from "./chart-scrub";
+  ALPHA,
+} from "@hybrid/core";
 import RailTail from "./rail-tail";
 import ExerciseFavouritesSheet from "./exercise-favourites-sheet";
 import { useBodyweightLookup } from "../../lib/use-bodyweight";
@@ -35,20 +28,11 @@ import { AuroraExerciseAvatar } from "./exercise-media";
 export const kindStroke = (C: Palette, kind: ExerciseWidgetCard["kind"]): string =>
   kind === "strength" ? C.lime : kind === "cardio" ? txt(C, C.blue) : txt(C, C.amber);
 
-/** How long a finger must rest on a card's strip before it answers instead of
- *  opening the page. The web twin's HOLD_MS. */
-const HOLD_MS = 120;
-
-/** A strip point's date, in the card's own quiet voice. */
-const fmtStripDate = (iso: string) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: "numeric", month: "short" }) : "");
-
-/** "213 kg" → parts so the number can lead and the unit recede. */
-const splitVal = (s: string): { v: string; u: string } => {
-  const i = s.lastIndexOf(" ");
-  return i < 0 ? { v: s, u: "" } : { v: s.slice(0, i), u: s.slice(i + 1) };
-};
-
-/** The stock-ticker delta — plain coloured text, no pill (variant B). */
+/** The stock-ticker delta — plain coloured text, no pill.
+ *
+ *  Exported because the exercise PAGE prints the same delta for its own hero,
+ *  and two drawings of one signed percentage is how the arrow ends up pointing
+ *  the wrong way on one of them. */
 export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct: number | null; improving: boolean | null; size?: number }) {
   const { palette: C } = useTheme();
   if (deltaPct == null || improving == null) return null;
@@ -59,41 +43,61 @@ export function TickerDelta({ deltaPct, improving, size = fs.micro }: { deltaPct
   );
 }
 
-/** A rate in ITS DISCIPLINE'S convention — "/km" running, "/100m" swimming,
- *  "/500m" rowing, "km/h" cycling. `formatDisciplinePace` is the one function
- *  that knows; the card used to print a hard-coded "/km" and showed a swimmer
- *  "38:36 /km" while the Endurance lane below it printed the same rate as
- *  "3:52 /100m". A card with no resolved discipline keeps the /km fallback,
- *  which is what the canonical value already is. */
-function paceParts(card: ExerciseWidgetCard): { v: string; u: string } {
-  if (!card.discipline) return { v: paceClock(card.value), u: "/km" };
-  const s = formatDisciplinePace(card.value, card.discipline);
-  const i = s.lastIndexOf(" ");
-  return i < 0 ? { v: s, u: "" } : { v: s.slice(0, i), u: s.slice(i + 1) };
-}
-
+/** A figure and its unit, in the card's own convention — one core formatter for
+ *  the headline AND its baseline, so the two can never print different units.
+ *  It is the function that knows a swim reads "/100m" and the road "/km". */
 function headline(card: ExerciseWidgetCard, units: WeightUnit, t: (k: string) => string): { v: string; u: string; label: string } {
-  if (card.metric === "pace") return { ...paceParts(card), label: t("w.home.exw.bestPace") };
-  if (card.metric === "weight") return { ...splitVal(fmtWeight(card.value, units)), label: t("w.home.exw.heaviest") };
-  if (card.metric === "time") return { v: String(card.value), u: "min", label: t("w.home.exw.time") };
-  return { ...splitVal(fmtTonnage(card.value, units)), label: t("w.home.exw.volume") };
+  const { value, unit } = exerciseCardFigure(card, card.value, units);
+  const label =
+    card.metric === "pace" ? t("w.home.exw.bestPace")
+    : card.metric === "weight" ? t("w.home.exw.heaviest")
+    : card.metric === "time" ? t("w.home.exw.time")
+    : t("w.home.exw.volume");
+  return { v: value, u: unit, label };
 }
-
 
 /**
- * One favourite's card — name, the window's headline figure, its eight-week
- * strip, then the metric and its delta.
+ * One favourite's card — the mark, the name, the window's figure with its
+ * change, and the figure that change was measured FROM.
  *
- * The card is a BUTTON that opens the movement's page, and the strip inside it
- * is a chart you can hold. A press therefore has to declare which it meant, and
- * the dwell does it: a tap ends before the hold and opens the page, a hold
- * passes it and reads the strip instead. Parity: the web twin's `Card`, where
- * the same dwell separates a tap from a read (and a mouse gets both at once —
- * hover to read, click to open).
+ * ── THE CHART IS GONE, AND WHAT REPLACED IT IS NOT A SMALLER CHART ────────
  *
- * Held, the card answers in the slots it already has: the FIGURE becomes that
- * point's, and the footer's metric name becomes its date. The strip is 24dp
- * tall; a pinned pill would cover the card.
+ * The card carried an eight-bar strip of the last eight sessions, normalised
+ * onto a floored band so the shape would show. That normalisation is the whole
+ * problem: the bars encode a RELATIVE nudge, not a load, so the shortest is not
+ * zero and the tallest is not a record, and nobody can read 62.5 → 70 kg off
+ * them. It cost 24dp of a 132dp card, drew kind as colour for the third time on
+ * one surface, and everything it was actually good for lived behind a 120ms
+ * press-and-hold — a chart that must be held to be read is a chart that is not
+ * being read.
+ *
+ * IN ITS PLACE, THE COMPARISON ITSELF. The bars only ever meant "is this going
+ * up?", and two numbers answer that exactly: what it is, and what it was. The
+ * delta moves up beside the figure it describes (it sat a row down and 100dp
+ * away, reading as a footnote), and the baseline takes the line underneath.
+ *
+ * ── WHY THE BASELINE IS `prevValue` AND NOT `spark[0]` ────────────────────
+ *
+ * Because the card prints a percentage, and the two must be the same
+ * comparison. `deltaPct` measures this window against the previous one;
+ * `spark[0]` is the first point of the SPARK, which falls back to all-time
+ * points when the window is thin and can predate the window entirely. Printing
+ * that beside this percentage would put two baselines on one card and invite
+ * the reader to check the arithmetic and find it wrong. Core exposes
+ * `prevValue` for exactly this, and the two are null together by construction.
+ *
+ * ── THE LABEL SURVIVES ONLY WHERE IT IS STILL THE BEST THING TO SAY ───────
+ *
+ * "Heaviest – 8 weeks" was labelling the obvious on a card the athlete pinned
+ * themselves — but it also carried the WINDOW, which nothing else on the rail
+ * says. So the from-line carries the window instead ("from 62.5 kg – prev. 8
+ * weeks"), and the old label is kept as the fallback for a movement with no
+ * previous window, where there is no baseline to print and the metric name is
+ * still the most useful thing the line can hold.
+ *
+ * The card remains a BUTTON that opens the movement's page, and it no longer
+ * has to disambiguate a press: with the strip gone there is no second gesture
+ * to tell a tap apart from, so the 120ms dwell went with it.
  */
 function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
   card: ExerciseWidgetCard;
@@ -105,19 +109,17 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
   heroRefs: { current: Record<string, Text | null> };
 }) {
   const h = headline(card, units, t);
-  const stroke = kindStroke(C, card.kind);
   const heroStyle = { fontFamily: F.mono, fontSize: fs.display, letterSpacing: tracking(fs.display), color: C.chalk } as const;
   const open = () => {
     armHero(SHARED_ELEMENTS.exerciseHero, heroRefs.current[card.name] ?? null, h.v, heroStyle);
     onOpen(card.name);
   };
-  const scrub = useChartScrub(card.spark.length, "band", undefined, { holdMs: HOLD_MS, onTap: open });
-  const read = scrub.index >= 0 ? exerciseCardReading(card, scrub.index, units) : null;
-  const when = read?.weekStart
-    ? card.sparkBy === "week"
-      ? t("chart.weekOf").replace("{date}", fmtStripDate(read.weekStart))
-      : fmtStripDate(read.weekStart)
-    : "";
+  // The baseline, in the SAME formatter as the headline above it.
+  const from = card.prevValue == null ? null : exerciseCardFigure(card, card.prevValue, units);
+  const foot = from
+    ? t("w.home.exw.fromPrev").replace("{v}", `${from.value}${from.unit ? ` ${from.unit}` : ""}`)
+    : h.label;
+
   return (
     <APanel
       // SHARED ELEMENT: the headline figure flies into the exercise
@@ -125,45 +127,57 @@ function Card({ card, units, C, t, onOpen, armHero, heroRefs }: {
       // press time; if the destination never claims it the arm expires
       // and the ordinary screen transition carries the change.
       onPress={open}
-      a11y={`${card.name} — ${h.v} ${h.u}`}
-      style={{ width: 200, minHeight: 132, gap: 8 }}
+      a11y={`${card.name} — ${h.v} ${h.u} — ${foot}`}
+      style={{ width: 200, minHeight: 96, gap: 8 }}
     >
       {/* THE LIFT'S MARK, then its name. This rail was the last lift surface in
           the app with no picture of the lift on it at all, which is the one
           place a mark earns most: you swipe a rail, and an implement is what
           lets you find the barbell card without reading four of them.
 
-          It costs the name 30dp, and the delta was moved OFF this row for
-          exactly that reason — but a delta is a variable-width number that
-          reads as well from the footer, and a fixed 24dp mark is not the same
-          bargain. Ash, not the kind's colour: the strip below already draws
-          kind as colour and the mark now draws it as a SHAPE, and this card's
-          own note argues against spending a third channel on one fact. */}
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+          Ash, not the kind's colour. The strip that used to draw kind as colour
+          has gone, so the mark is now the only place purpose is drawn — and one
+          channel for one fact is the argument this card's own note always made,
+          it just used to be making it against three. */}
+      <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 6 }}>
         <AuroraExerciseAvatar name={card.name} size={24} glyph={14} tint={C.ash} />
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, color: C.chalk }}>{card.name}</Text>
-      </View>
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
-        <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={[heroStyle, read?.best ? { color: txt(C, C.lime) } : null]}>
-          {read ? read.value : h.v}
+        {/* TWO LINES, because the truncation was the real complaint and the
+            strip's 24dp is what pays for the fix. "Standing Overhead Press" and
+            "Dumbbell Lateral Raise" are the COMMON case in this catalogue, not
+            the outlier, and a 200dp card at fs.body fits about eighteen
+            characters — so the rail's names were being cut mid-word on most of
+            the cards most of the time.
+
+            It is also why this rail keeps the card and does not become a deck.
+            A deck gives ONE item the full width because there are too many to
+            show; here `exerciseWidgetCards` auto-fills THREE (pins cap at
+            eight), so a deck would put one movement on screen where the rail
+            already shows two and a half — the same "one at a time in a section
+            whose job is comparison" fault that was just deleted from Endurance.
+            The name needed room, not a new container. */}
+        <Text
+          maxFontSizeMultiplier={FIXED_FONT_SCALE}
+          numberOfLines={2}
+          style={{ flex: 1, fontFamily: F.bold, fontSize: fs.body, lineHeight: leading(fs.body, "snug"), color: C.chalk }}
+        >
+          {card.name}
         </Text>
-        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? read.unit : h.u}</Text>
       </View>
-      <View {...scrub.bind} style={{ marginTop: "auto" }}>
-        <HistoryStrip bars={exerciseStripBars(card)} color={stroke} held={scrub.index} />
+
+      {/* THE FIGURE, and its change on the same baseline. The delta describes
+          this number, so it sits beside it. */}
+      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4 }}>
+        <Text ref={(n) => { heroRefs.current[card.name] = n; }} style={heroStyle}>{h.v}</Text>
+        <Text style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{h.u}</Text>
+        <View style={{ flex: 1 }} />
+        <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={fs.micro} />
       </View>
-      {/* The footer says the metric and its window, then the delta.
-          The KIND word ("Strength") is gone: the purpose was already
-          encoded twice — the strip is drawn in kindStroke's chartreuse
-          for a lift and teal for cardio, and the metric name entails it
-          ("Heaviest" is only ever a lift, "Best pace" only ever
-          cardio). Three channels for one fact is not reinforcement; it
-          is the slot a real fact could have used. Colour keeps the
-          visual channel and the metric name the text one, so nothing
-          here is colour-only. */}
-      <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
-        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ flexShrink: 1, fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{read ? when : h.label}</Text>
-        {!read && <TickerDelta deltaPct={card.deltaPct} improving={card.improving} size={9.5} />}
+
+      {/* WHERE IT CAME FROM — the delta's own baseline, so the percentage above
+          can be checked rather than trusted. Falls back to the metric name on a
+          movement with no previous window. */}
+      <View style={{ marginTop: "auto" }}>
+        <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.mono, fontSize: fs.nano, color: C.ash }}>{foot}</Text>
       </View>
     </APanel>
   );
@@ -238,10 +252,11 @@ export default function ExerciseWidgetRail({
       {/* Full-bleed rail — negative margins the width of AuroraScreen's 12dp
           gutter pull the scroll clip to the true screen edge, with matching
           internal padding so resting cards stay on the column. Cards wear the
-          cluster's ONE TILE SKELETON (consistency wave 2): name row → figure →
-          chart zone → footer meta, radius 16, the shared HistoryStrip as the
-          chart. The 340×200 sparkline hero retired with it — the rail lost
-          theatre and the cluster gained a single voice. Mirrors web. */}
+          cluster's tile skeleton — name row → figure → footer meta, radius 16 —
+          minus the chart zone, which went when the bars did (see Card). The
+          340×200 sparkline hero had retired one wave earlier; the strip that
+          replaced it has now gone the same way, and the card is 96dp instead of
+          132. Mirrors web. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

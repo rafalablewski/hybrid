@@ -596,10 +596,11 @@ function VolumeBars({ weeks, avg, C, accent, held, bind, readout }: { weeks: Spo
             borderRadius: RADIUS.mark,
             // Held, the finger's week is the lit one — the "this week" accent
             // would otherwise compete with the answer the athlete asked for.
-            // Full strength / ALPHA.line is the shared HistoryStrip's own pair,
-            // so a sport's weeks read identically here and in the rail on Today
-            // that opened this page. (The unlit rung was ALPHA.rim, a BORDER
-            // rung, on a surface.)
+            // FULL STRENGTH FOR THE ANSWER, ALPHA.line for the rest: a SURFACE
+            // rung, not ALPHA.rim, which is a border rung and was what this
+            // used before. The pair came from the shared 24dp history strip the
+            // Today rail drew; that strip has since been retired with the bars
+            // it fed, so the convention is stated here rather than borrowed.
             backgroundColor: (held >= 0 ? i === held : i === weeks.length - 1) ? accent : withAlpha(accent, ALPHA.line),
           }}
         />

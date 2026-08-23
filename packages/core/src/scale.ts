@@ -439,6 +439,7 @@ export type TrackingRole =
   | "text" //  derived from the SIZE by a continuous curve — see `OPTICAL_K`
   | "label" // +0.085em of CAPS AIR over the curve — the app's dominant eyebrow
   | "caps" //  +0.115em of CAPS AIR over the curve — section labels, nav eyebrows
+  | "wordmark" // −0.030em: caps air REMOVED — a nameplate, see CAPS_AIR_EM
   | "serif"; // ITC Garamond, which takes half the curve — see below
 
 /**
@@ -545,7 +546,30 @@ export const opticalTrackEm = (size: number): number =>
  * move by 0.1dp, and they move in the direction the model says they always
  * should have: smaller caps, more air.
  */
-export const CAPS_AIR_EM = { label: 0.085, caps: 0.115 } as const;
+/**
+ * THE NAMEPLATE IS THE THIRD UPPERCASE VOICE, and it is the only one whose air
+ * is NEGATIVE — which is the point, not an exception.
+ *
+ * `label` and `caps` add air because an EYEBROW is small uppercase, where
+ * capitals set beside one another lose their counters. A nameplate is the
+ * opposite end of the same axis: ONE word, uppercase, weight 900, at
+ * `fs.display` or above. At that size and weight the stems are flat and the
+ * designed sidebearings are generous, so the gaps the eyebrow roles protect do
+ * not exist — the word needs air REMOVED to read as set rather than spaced.
+ *
+ * Same axis, same composition, opposite sign. It is stated as caps air rather
+ * than as a factor on the curve because that is what it is: a decision about
+ * CASE AND WEIGHT, which a size cannot report, exactly like the two above it.
+ *
+ * −0.030em over the curve resolves to −1.0dp at `fs.display` 26 and −1.5dp at
+ * `fs.hero` 34 — the values the nameplate shipped with under the band table it
+ * was first derived against, so the drawing did not move when the curve
+ * replaced the bands.
+ *
+ * ONLY FOR A NAMEPLATE — a single uppercase word carrying a card. A mixed-case
+ * heading at 26 takes the plain curve; this would close its counters.
+ */
+export const CAPS_AIR_EM = { label: 0.085, caps: 0.115, wordmark: -0.030 } as const;
 
 /**
  * THE SERIF TAKES HALF THE CURVE, and the halving is the rule for any face the

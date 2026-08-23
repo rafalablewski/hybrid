@@ -623,9 +623,14 @@ describe("named type styles", () => {
     // collapsing them moved 108 eyebrows by 0.3dp. `kicker` (+0.085em) is the
     // label above a card or a figure; `overline` (+0.115em) is a section label,
     // where the label is structure and the extra air is the division.
+    // 168 → 166: the Records block stopped setting its SUBJECT as an eyebrow.
+    //   The lift's name — on the quote and in every ledger row — was 10dp mono
+    //   ash uppercase, which is to say the smallest, quietest type in a block
+    //   whose whole point is which lift moved. Both are the reading face at
+    //   reading size now, so two hand-rolled eyebrows left with them.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      168,
+      166,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
@@ -753,7 +758,11 @@ describe("geometry", () => {
     // the argument for why this rule is a ratchet with a human in it rather than
     // a codemod: the pattern can find a raw radius, it cannot tell you which of
     // five tokens the object wanted.
-    burnDown(hits(/borderRadius:\s*\d/g), 116, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 116 → 115: the shared 24dp history strip was retired with the bars it
+    //   fed (see exercise-card-then-now), and its one raw radius went with the
+    //   file. Claimed rather than left as headroom, which is what this guard
+    //   asks for — an unspent win is a licence for the next violation.
+    burnDown(hits(/borderRadius:\s*\d/g), 115, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
