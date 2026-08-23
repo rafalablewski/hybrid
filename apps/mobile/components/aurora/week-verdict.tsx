@@ -13,7 +13,7 @@ import {
   type VerdictDirection, type WeightUnit, deltaRole, STATE_OPACITY } from "@hybrid/core";
 import { ACard, withAlpha , RADIUS} from "./kit";
 import ActivityCompare from "./activity-compare";
-import { RangeFilter, RangeHead, useActivityRange, useRangeLabels } from "./range-filter";
+import { useActivityRange, useRangeLabels } from "./range-filter";
 import Sheet from "./sheet";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, deltaPaint } from "../../lib/theme";
@@ -414,7 +414,14 @@ export default function AuroraWeekVerdict({
 
   // The chosen period, persisted per device under the PROGRESS key — the
   // shared filter owns the reading, the storage and the midnight re-derive.
-  const { range, pick: setRange } = useActivityRange(TODAY_RANGE_STORE_KEY);
+  //
+  // READ, NEVER WRITTEN HERE. The control that sets it is not in this card any
+  // more: it governs the whole Progress cluster (this card, the Records ledger
+  // and the Sports board), and a control's PLACEMENT is a claim about its
+  // reach — inside a card it claims one card, at the chapter's head it claims
+  // the chapter. Only the second was true, so the control sits on the cluster
+  // now and this card is a pure readout of the period it names.
+  const { range } = useActivityRange(TODAY_RANGE_STORE_KEY);
   const { title, span } = useRangeLabels(range);
   const [open, setOpen] = useState<ActivityMetric | null>(null);
   const [group, setGroup] = useState<string | null>(null);
@@ -443,11 +450,16 @@ export default function AuroraWeekVerdict({
 
   // A new period is a new breakdown: the open column's group filter and its
   // "show all" must not carry over into a window they were never chosen in.
-  const pick = (id: string) => {
-    setRange(id);
+  //
+  // AN EFFECT, NOT A TAP HANDLER, and the difference is load-bearing now the
+  // control lives on the cluster head rather than on this card. A handler only
+  // fires for a tap THIS card saw; the reset has to answer to the period
+  // itself, however it changed — from the cluster control, from another
+  // mounted surface reading the same store, or from the midnight re-derive.
+  useEffect(() => {
     setGroup(null);
     setAll(false);
-  };
+  }, [range.id]);
 
   // THE PAGER. The card is two pages wide: the verdict, and the comparison.
   // `page` is the settled index (momentum end), `pageW` the content width the
@@ -653,17 +665,15 @@ export default function AuroraWeekVerdict({
       .replace("{b}", fmt(openFig.metric, openFig.previous))
     : null;
 
+  // NO HEAD, NO FILTER. Both left for the cluster head in Aug 2026 (see the
+  // `range` read above). The head had become the period said twice — a
+  // display-face "Last 30 days" twelve points under a lit 30D segment — and
+  // the span it carried is the one fact of the pair that the segments do not,
+  // so the span went up to the GroupMark's right slot and the title was
+  // dropped rather than moved. The card opens on its verdict now, which is the
+  // only thing on it the filter cannot say.
   return (
-    <View style={{ marginTop: 20 }}>
-      {/* Explore-standard head: display-face title left, mono meta right. The
-          head names the window so no figure below it needs a qualifier. */}
-      <RangeHead title={title} meta={span} />
-
-      {/* ── THE DATE FILTER — the shared control (aurora/range-filter.tsx):
-          neutral pill at rest, clear glass lens on touch/drag, per the iOS 26
-          system control, with the Month segment intercepting to its picker
-          sheet. Shared because the Endurance section carries one too. ────── */}
-      <RangeFilter range={range} sessions={sessions} onPick={pick} />
+    <View>
 
       {/* ACard, not a hand-drawn copy of it. This spelled out ACard's exact
           base style (hairline, ink2, cardShadow, CARD_PAD) with the radius as

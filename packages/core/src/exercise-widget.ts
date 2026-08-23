@@ -143,7 +143,7 @@ const ts = (iso: string): number => new Date(iso).getTime();
  * lanes' own `blockDiscipline`, never re-classified here: two definitions of
  * "what sport is this" is how a swim ends up measured in kilometres.
  */
-function moveDiscipline(sessions: LoggedSession[], name: string): CardioDiscipline | undefined {
+export function moveDiscipline(sessions: LoggedSession[], name: string): CardioDiscipline | undefined {
   let out: CardioDiscipline | undefined;
   let at = -Infinity;
   for (const s of sessions) {

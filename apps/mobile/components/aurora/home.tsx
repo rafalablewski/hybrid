@@ -75,6 +75,8 @@ import {
   type Equipment,
   type ScheduledDay,
   type LogbookDay,
+  sportForDiscipline,
+  TODAY_RANGE_STORE_KEY,
   ALPHA, STATE_OPACITY } from "@hybrid/core";
 import { bandHue, barLatched, foldProgress } from "@hybrid/core";
 import { fetchAssignments, createCheckin, undoCheckinRead, fetchRoutines, favouriteRoutine, deleteSession, type Assignment } from "../../lib/api";
@@ -115,6 +117,9 @@ import { useListMotion } from "../../lib/list-motion";
 import ReadinessDaySheet from "./readiness-day-sheet";
 import FetchError from "./fetch-error";
 import AuroraWeekVerdict, { DoorRow } from "./week-verdict";
+import { RangeFilter, useActivityRange, useRangeLabels } from "./range-filter";
+import RecordsBoard from "./records-board";
+import SportBoard from "./sport-board";
 import CoachRail from "./coach-rail";
 // The guided daily check-in, hosted INSIDE Today's feeling card (see FeelingCard)
 // so the full ritual runs on Today — the /checkin screen is the same component.
@@ -436,6 +441,12 @@ export default function AuroraHome() {
   const hasData = sessionsRead.ready && sessions.length > 0;
   const units = useLoggerPrefs().units;
   const bw = useBodyweightLookup();
+  // THE PROGRESS CLUSTER'S PERIOD, owned at cluster altitude because that is
+  // the altitude it governs: the verdict card, the Records ledger's neighbours
+  // and the Sports board all answer to this one control. Every block below
+  // reads the same store, so none of them needs it passed down.
+  const { range: progressRange, pick: pickProgressRange } = useActivityRange(TODAY_RANGE_STORE_KEY);
+  const progressSpan = useRangeLabels(progressRange).span;
   // The date-anchored WEEK RAIL replaces the count-based plan hero whenever an
   // enrolled program + a start date resolve (parity with web home). The shared
   // engine (planSchedule) reconciles each calendar date against logged sessions
@@ -1442,29 +1453,76 @@ export default function AuroraHome() {
             place, it does not go anywhere. */}
         <HeatRow sessions={sessions} recovery={recoveryReports} />
 
-        {/* ═════ GROUP: PROGRESS — where the training is going, in ONE card.
-            The cluster used to run three named things deep (the verdict, the
-            records it produced, the movements underneath them) and then a whole
-            Endurance section below a seam, which is four screens of
-            retrospective on a page whose job is TODAY. Records, the exercise
-            rail and the Endurance pages were removed from this screen in Aug
-            2026; each one still exists where it is asked for — the records on
-            the exercise and sport pages, the movements on /exercises, the
-            disciplines on /endurance and each sport's own page — and the two
-            doors at the end of this cluster are how you get to them. ═════ */}
-        <GroupMark label={t("w.home.group.progress")} />
+        {/* ═════ GROUP: PROGRESS — where the training is going. The cluster
+            once ran four screens of GUESSED retrospective (the verdict, its
+            records, the exercise rail, a whole Endurance section) and that was
+            removed in Aug 2026 — each block answered a question that is asked
+            somewhere else and answered better there. What stands below the
+            verdict now is different in kind, not a rebuild: two WATCHLISTS
+            (Records, Sports) that render ONLY what the athlete pinned — no
+            auto-fill, absent until chosen — which is the term the retirement
+            set for anything returning here. The two doors at the end of the
+            cluster remain the way to the full depth. ═════ */}
+        {/* THE SPAN RIDES THE HEADLINE. The GroupMark's right slot is the
+            Explore SectionHead grammar at cluster altitude — a small mono meta
+            beside the title — and the dates are exactly that: the one fact the
+            lit segment below cannot state. The five-segment CONTROL was tried
+            in this slot first and rejected: it had to shrink to fit beside the
+            title, which is the layout dictating the control. It gets its own
+            full-width row instead, and the three cluster headlines stay
+            uniformly bare of furniture. */}
+        <GroupMark
+          label={t("w.home.group.progress")}
+          right={<Text style={ty(C, "kicker")}>{progressSpan}</Text>}
+        />
 
-        {/* ───── THIS WEEK — the verdict card, and the screen's only date
-            filter. A verdict with its working-out shown. Replaces the
-            Statistics and Analytics destinations on Today (both are now
-            promotedTo "today" in core nav.ts). It used to carry a RECORDS
-            block underneath, on the same window; the records went with the rest
-            of the retrospective and live on the pages that own them. ───── */}
+        {/* ───── THE CLUSTER'S PERIOD — one control, at the altitude it
+            governs. It sat inside the verdict card until Aug 2026, which made
+            its placement claim one card while its reach was the whole chapter;
+            the Sports board two blocks down obeyed a control nothing on screen
+            connected it to. You now cross the scope on the way into the
+            section, and everything beneath inherits it. The shared control
+            (aurora/range-filter.tsx): neutral pill at rest, clear glass lens
+            on touch/drag per the iOS 26 system control, with the Month segment
+            intercepting to its picker sheet. ───── */}
+        <View style={{ marginTop: 20 }}>
+          <RangeFilter range={progressRange} sessions={sessions} onPick={pickProgressRange} />
+        </View>
+
+        {/* ───── THIS WEEK — the verdict card. A verdict with its working-out
+            shown. Replaces the Statistics and Analytics destinations on Today
+            (both are now promotedTo "today" in core nav.ts). It used to carry a
+            RECORDS block underneath, on the same window; the records went with
+            the rest of the retrospective and came back as the watchlist
+            below. ───── */}
         <AuroraWeekVerdict
           sessions={sessions}
           units={units}
           bw={bw}
           onSession={(id) => router.push(`/session/${id}`)}
+        />
+
+        {/* ───── RECORDS — the pinned movements' ledger: the PR, the day it
+            was set, the latest effort as a stock quote against it. Pins are
+            the exercise favourites (the Exercises rail's list); the block is
+            an invitation until the athlete picks. ───── */}
+        <RecordsBoard
+          sessions={sessions}
+          units={units}
+          bw={bw}
+          onOpen={(name) => router.push({ pathname: "/exercise", params: { name } })}
+        />
+
+        {/* ───── SPORTS — the pinned sports' 8-week read (distance, avg pace)
+            against the 8 weeks before. Same watchlist contract; absent for a
+            pure lifter. A row opens the sport's own page, the same resolution
+            the Endurance hub uses. ───── */}
+        <SportBoard
+          sessions={sessions}
+          onOpen={(card) => {
+            const name = card.sport ?? (card.discipline ? sportForDiscipline(card.discipline) : null);
+            if (name) router.push({ pathname: "/sport-page", params: { name } });
+          }}
         />
 
         {/* THE RETROSPECTIVE'S EXIT — the doors past this period, and now the

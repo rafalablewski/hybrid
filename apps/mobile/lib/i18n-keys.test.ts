@@ -75,6 +75,23 @@ const TEMPLATED: string[] = [
   "w.home.band.noun.walking",
   "w.home.band.noun.sport",
   "w.home.band.noun.other",
+  // records-board.tsx — readSentence(): `w.home.rb.read.${kind}` over
+  // RecordReadKind, with the three directional kinds taking a pace variant so
+  // a run is never told it has been "building".
+  "w.home.rb.read.none",
+  "w.home.rb.read.thin",
+  "w.home.rb.read.first",
+  "w.home.rb.read.atBest",
+  "w.home.rb.read.climbing",
+  "w.home.rb.read.holding",
+  "w.home.rb.read.slipping",
+  "w.home.rb.read.paceClimbing",
+  "w.home.rb.read.paceHolding",
+  "w.home.rb.read.paceSlipping",
+  // records-board.tsx — the fold's evidence line, through pluralForm().
+  "w.home.rb.sessN.one",
+  "w.home.rb.sessN.few",
+  "w.home.rb.sessN.many",
 ];
 
 describe("i18n keys", () => {
