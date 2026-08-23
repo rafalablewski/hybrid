@@ -198,7 +198,6 @@ export default function RootLayout() {
     Sohne_400Buch: require("../assets/fonts/Sohne-Buch.otf"),
     Sohne_500Kraftig: require("../assets/fonts/Sohne-Kraftig.otf"),
     Sohne_600Halbfett: require("../assets/fonts/Sohne-Halbfett.otf"),
-    Sohne_700Dreiviertelfett: require("../assets/fonts/Sohne-Dreiviertelfett.otf"),
     SohneMono_400Buch: require("../assets/fonts/SohneMono-Buch.otf"),
     SohneMono_500Kraftig: require("../assets/fonts/SohneMono-Kraftig.otf"),
     SohneMono_600Halbfett: require("../assets/fonts/SohneMono-Halbfett.otf"),

@@ -1,16 +1,15 @@
-/* Two faces, and that is the identity — Archivo and JetBrains Mono. Archivo
+/* Two faces, and that is the identity — Söhne and Söhne Mono. Söhne
    Narrow was dropped in Aug 2026 (core theme/tokens.ts `fonts` writes down why:
    the mobile app, which is the product, never loaded it). Keep this in step
    with core `fontImportUrl`. */
 /* SÖHNE, SELF-HOSTED. A licensed face cannot come from a public font host, so
    the binaries live in `public/fonts` and are declared here rather than
    @import-ed. `fontImportUrl` in @hybrid/core is now an empty string with a
-   note saying why — an @import reappearing there would quietly pull Archivo
+   note saying why — an @import reappearing there would quietly pull a public face
    back alongside these and the two would fight over the same tokens. */
 @font-face{font-family:"Söhne";font-weight:400;font-style:normal;font-display:swap;src:url("/fonts/Sohne-Buch.woff2") format("woff2")}
 @font-face{font-family:"Söhne";font-weight:500;font-style:normal;font-display:swap;src:url("/fonts/Sohne-Kraftig.woff2") format("woff2")}
 @font-face{font-family:"Söhne";font-weight:600;font-style:normal;font-display:swap;src:url("/fonts/Sohne-Halbfett.woff2") format("woff2")}
-@font-face{font-family:"Söhne";font-weight:700;font-style:normal;font-display:swap;src:url("/fonts/Sohne-Dreiviertelfett.woff2") format("woff2")}
 @font-face{font-family:"Söhne Mono";font-weight:400;font-style:normal;font-display:swap;src:url("/fonts/SohneMono-Buch.woff2") format("woff2")}
 @font-face{font-family:"Söhne Mono";font-weight:500;font-style:normal;font-display:swap;src:url("/fonts/SohneMono-Kraftig.woff2") format("woff2")}
 @font-face{font-family:"Söhne Mono";font-weight:600;font-style:normal;font-display:swap;src:url("/fonts/SohneMono-Halbfett.woff2") format("woff2")}
@@ -39,7 +38,7 @@
 
   --font-display: "Söhne", system-ui, sans-serif;
   --font-mono: "Söhne Mono", ui-monospace, monospace;
-  /* Heading face — Archivo (the display sans, at heading weights). */
+  /* Heading face — Söhne (the display sans, at heading weights). */
   --font-heading: "Söhne", system-ui, sans-serif;
 }
 
@@ -311,7 +310,10 @@ html {
   .adm-tbl tr td:last-child { border-bottom: none !important; }
   .adm-tbl td::before {
     content: attr(data-label); flex: 0 0 auto; text-align: left;
-    font-family: var(--font-mono); font-size: 9px; letter-spacing: .08em;
+    /* fs.nano + the `label` eyebrow voice (core scale.ts). This was 9px at
+       .08em — below the system's own 10px legibility floor, and the only text
+       on either client that sat under it. */
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: .094em;
     text-transform: uppercase; color: var(--color-ash);
   }
   .adm-tbl td[data-label=""]::before,

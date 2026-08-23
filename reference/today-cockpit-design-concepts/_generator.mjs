@@ -475,13 +475,13 @@ const themes = [
       accent: '#c8a24b', 'accent-ink': '#1a1a1a', 'accent-text': '#d8b765',
       'accent-soft': 'rgba(200,162,75,.12)', 'accent-line': 'rgba(200,162,75,.28)', 'ring-track': '#26262a',
       warn: '#cf7d52', 'warn-soft': 'rgba(207,125,82,.12)', 'warn-line': 'rgba(207,125,82,.3)',
-      display: "'Inter',sans-serif", body: "'Inter',sans-serif", mono: "'JetBrains Mono',monospace",
+      display: "'Inter',sans-serif", body: "'Inter',sans-serif", mono: "'SohneMono',monospace",
       'r-screen': '36px', 'r-card': '20px', 'r-btn': '12px', 'r-field': '12px', 'r-avatar': '12px',
       frame: '1px solid #1f1f22', 'screen-shadow': '0 40px 90px -40px rgba(0,0,0,.7)',
       'card-shadow': 'inset 0 1px 0 rgba(255,255,255,.03)', 'screen-pad': '22px',
       'head-weight': '700', 'display-tracking': '-.022em', 'display-weight': '800',
     },
-    extraFonts: 'family=JetBrains+Mono:wght@400;500;600;700',
+    extraFonts: 'family=SohneMono:wght@400;500;600;700',
     css: `.kicker{color:var(--muted)}`,
   },
 
@@ -551,16 +551,16 @@ const themes = [
     name: 'Aurora — disciplined',
     inspiration: 'Your brand, fixed',
     lede: 'Your existing lime, but as the ONLY accent. The slop wasn’t the lime — it was lime + blue + violet + amber + red competing at once. Here: a true neutral charcoal ramp, lime for energy, and red kept strictly for risk. Same brand, finally consistent.',
-    fonts: 'family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700',
-    principles: ['ONE accent (lime) — blue/violet/amber retired as decoration', 'Red kept strictly semantic: injury & risk only', 'Neutral charcoal ramp carries all structure', 'Archivo + JetBrains Mono, your real type stack'],
-    typeNote: '<b>Archivo</b> display · <b>JetBrains Mono</b><br>your shipped type stack',
+    fonts: 'family=Sohne:wght@400;500;600;700;800;900&family=SohneMono:wght@400;500;600;700',
+    principles: ['ONE accent (lime) — blue/violet/amber retired as decoration', 'Red kept strictly semantic: injury & risk only', 'Neutral charcoal ramp carries all structure', 'Sohne + SohneMono, your real type stack'],
+    typeNote: '<b>Sohne</b> display · <b>SohneMono</b><br>your shipped type stack',
     vars: {
       page: '#0a0b0a', screen: '#0c0d0c', card: '#151715', surface2: '#1d201d',
       line: '#242724', text: '#f3f4ef', muted: '#8b8f86',
       accent: '#c4f035', 'accent-ink': '#0c0d0c', 'accent-text': '#c4f035',
       'accent-soft': 'rgba(196,240,53,.12)', 'accent-line': 'rgba(196,240,53,.3)', 'ring-track': '#242724',
       warn: '#e0625e', 'warn-soft': 'rgba(224,98,94,.12)', 'warn-line': 'rgba(224,98,94,.32)',
-      display: "'Archivo',sans-serif", body: "'Archivo',sans-serif", mono: "'JetBrains Mono',monospace",
+      display: "'Sohne',sans-serif", body: "'Sohne',sans-serif", mono: "'SohneMono',monospace",
       'r-screen': '34px', 'r-card': '24px', 'r-btn': '14px', 'r-field': '14px', 'r-avatar': '12px',
       frame: '1px solid #1f211f', 'screen-shadow': '0 40px 90px -40px rgba(0,0,0,.7)',
       'card-shadow': 'none', 'screen-pad': '22px',
@@ -584,7 +584,7 @@ function swatchRow(v) {
 
 function page(t, idx) {
   const fontLinks = [t.fonts, t.extraFonts].filter(Boolean)
-    .map((f) => `<link rel="stylesheet" href="https://fonts.googleapis.com/css2?${f}&display=swap">`).join('\n');
+    .map((f) => ``).join('\n');
   const prev = themes[(idx + themes.length - 1) % themes.length];
   const next = themes[(idx + 1) % themes.length];
   return `<!doctype html>
@@ -671,17 +671,17 @@ function indexPage() {
 <title>HYBRID — Today &amp; Cockpit · 10 design concepts</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0c0d0c;color:#f3f4ef;font-family:'Inter',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:64px 28px 90px}
 .wrap{max-width:1180px;margin:0 auto}
 a{color:inherit;text-decoration:none}
-.tag{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#c4f035;margin-bottom:16px}
+.tag{font-family:'SohneMono',monospace;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:#c4f035;margin-bottom:16px}
 h1{font-size:clamp(36px,6vw,68px);line-height:1.02;letter-spacing:-.03em;font-weight:800;margin-bottom:18px}
 .lede{max-width:760px;color:#9a9e94;font-size:17px;margin-bottom:14px}
 .lede b{color:#f3f4ef;font-weight:600}
-.note{max-width:760px;color:#7c7f76;font-size:14px;font-family:'JetBrains Mono',monospace;line-height:1.7;border-left:2px solid #242724;padding-left:16px;margin-bottom:48px}
+.note{max-width:760px;color:#7c7f76;font-size:14px;font-family:'SohneMono',monospace;line-height:1.7;border-left:2px solid #242724;padding-left:16px;margin-bottom:48px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:18px}
 .ix-card{display:block;text-decoration:none;border:1px solid #242724;border-radius:18px;overflow:hidden;background:#121312;transition:transform .18s ease,border-color .18s ease}
 .ix-card:hover{transform:translateY(-4px);border-color:#3a3d3a}
@@ -692,7 +692,7 @@ h1{font-size:clamp(36px,6vw,68px);line-height:1.02;letter-spacing:-.03em;font-we
 .ix-l.sm{width:55%;opacity:.4}
 .ix-chip{position:absolute;right:14px;bottom:14px;width:30px;height:30px;border-radius:8px}
 .ix-meta{padding:16px 18px 20px;display:flex;flex-direction:column;gap:3px;border-top:1px solid #242724}
-.ix-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:#6e7269;letter-spacing:.1em}
+.ix-num{font-family:'SohneMono',monospace;font-size:11px;color:#6e7269;letter-spacing:.1em}
 .ix-name{font-size:18px;font-weight:700;letter-spacing:-.01em}
 .ix-insp{font-size:12.5px;color:#8b8f86}
 .foot{margin-top:54px;padding-top:26px;border-top:1px solid #242724;font-size:13px;color:#7c7f76;max-width:760px;line-height:1.7}

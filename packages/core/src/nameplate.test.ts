@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  NAMEPLATE_LINE_CHARS,
+  NAMEPLATE_LINE_EM,
   NAMEPLATE_MAX_LINES,
+  NAMEPLATE_TRACK_EM,
   fitsNameplate,
   nameplateLines,
 } from "./nameplate";
+import { textWidthEm } from "./session-wrapped";
 
 /**
  * The nameplate's one load-bearing condition is that the noun is SHORT, so
@@ -36,11 +38,25 @@ describe("nameplateLines", () => {
     expect(n.compact).toBe(true);
   });
 
-  it("never breaks inside a word, even when the word alone overruns the line", () => {
+  it("never breaks inside a word, and SAYS SO when the word alone overruns", () => {
+    // "Kettlebell" measures 5.59em against a 5.4em line. The rule does not
+    // hyphenate it, does not cut it, and does not pretend it fits: it hands the
+    // whole word back with `overflows`, and the surface decides.
     const n = nameplateLines("Kettlebell");
     expect(n.lines).toEqual(["Kettlebell"]);
-    // It is honest about being tight rather than hyphenating or truncating.
-    expect(n.lines[0]!.length).toBeLessThanOrEqual(NAMEPLATE_LINE_CHARS);
+    expect(n.overflows).toBe(true);
+    expect(textWidthEm("KETTLEBELL", NAMEPLATE_TRACK_EM)).toBeGreaterThan(NAMEPLATE_LINE_EM);
+  });
+
+  it("MEASURES rather than counts, which is what a character budget got wrong", () => {
+    // The first cut of this rule budgeted ELEVEN CHARACTERS. Polish
+    // "Wioślarstwo" is exactly eleven, so it reported FITS — while the word
+    // measures 6.15em against a 5.4em line and would have been clipped on the
+    // phone. A count cannot know that W and I are different widths.
+    const pl = nameplateLines("Wioślarstwo");
+    expect(pl.lines).toEqual(["Wioślarstwo"]);   // never cut
+    expect(pl.overflows).toBe(true);              // ...and never called a fit
+    expect("Wioślarstwo".length).toBe(11);        // the count that fooled it
   });
 
   it("reports overflow instead of truncating a name the plate cannot hold", () => {
@@ -69,10 +85,22 @@ describe("nameplateLines", () => {
 });
 
 describe("fitsNameplate", () => {
-  it("passes the endurance disciplines — the set the treatment was chosen for", () => {
+  it("passes the endurance disciplines in English", () => {
     expect(
       fitsNameplate(["Running", "Cycling", "Swimming", "Rowing", "Walking", "Tennis"]),
     ).toBe(true);
+  });
+
+  it("REPORTS that Polish does not fit the two-up plate at full size", () => {
+    // The finding the measurement bought, and it is a real one: "Wioślarstwo"
+    // and "Narciarstwo" overrun a 5.4em line, so the Polish set is not a
+    // full-size fit. The plate does not clip them — the component sets
+    // `adjustsFontSizeToFit` with a floor, which is the paint-time guarantee —
+    // but the RULE must not call this a fit, because the next surface asking
+    // the question may have no such fallback.
+    expect(fitsNameplate(["Bieganie", "Kolarstwo", "Pływanie", "Wioślarstwo", "Narciarstwo", "Chód"])).toBe(false);
+    // German and English both clear it outright.
+    expect(fitsNameplate(["Laufen", "Radfahren", "Schwimmen", "Rudern", "Ski", "Gehen"])).toBe(true);
   });
 
   it("fails the movement catalogue, which is why Today keeps the other shape", () => {
@@ -95,7 +123,7 @@ describe("fitsNameplate", () => {
   });
 
   it("takes a narrower line when the caller has less room", () => {
-    expect(fitsNameplate(["Swimming"], { chars: 6 })).toBe(false);
+    expect(fitsNameplate(["Swimming"], { budgetEm: 3 })).toBe(false);
     expect(fitsNameplate(["Swimming"])).toBe(true);
   });
 });

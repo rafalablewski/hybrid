@@ -1,17 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<style>
+/* The product's real faces, from the repo's own bundle. These mockups
+   used to pull two retired families off Google Fonts; the app has not drawn
+   either since Aug 2026. Relative paths, so this renders when the file is
+   opened from a checkout and nothing is fetched. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Today header — SHIPPED (Option 5)</title>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#050605;font-family:"Archivo",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:16px;padding:34px 16px 60px}
-.label{font-family:"JetBrains Mono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8b8f86}
+body{background:#050605;font-family:"Sohne",system-ui,sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;gap:16px;padding:34px 16px 60px}
+.label{font-family:"SohneMono",monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#8b8f86}
 .label b{color:#c4f035}
 .frames{display:flex;gap:26px;flex-wrap:wrap;justify-content:center}
-.cap{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:10px}
+.cap{font-family:"SohneMono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:center;margin-bottom:10px}
 
 /* theme scopes */
 .dark{--ink:#0c0d0c;--ink2:#141614;--line:#2a2d2a;--lime:#c4f035;--limeT:#c4f035;--chalk:#f3f4ef;--ash:#8b8f86;--violet:#c9a9f0;--red:#e0625e}
@@ -37,21 +50,21 @@ body{background:#050605;font-family:"Archivo",system-ui,sans-serif;min-height:10
 .logo .rule{width:26px;height:3px;border-radius:2px;background:var(--lime)}
 .bell{position:relative;width:44px;height:44px;border-radius:14px;background:var(--ink2);border:1px solid var(--line);display:grid;place-items:center;cursor:pointer}
 .bell svg{width:20px;height:20px}
-.badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);border:2px solid var(--ink);display:grid;place-items:center;font-family:"JetBrains Mono",monospace;font-size:10px;font-weight:700;color:#fff}
+.badge{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:var(--red);border:2px solid var(--ink);display:grid;place-items:center;font-family:"SohneMono",monospace;font-size:10px;font-weight:700;color:#fff}
 
 /* card */
 .card{margin-top:20px;background:var(--ink2);border:1px solid var(--line);border-radius:26px;padding:20px;box-shadow:0 8px 20px rgba(0,0,0,.22)}
 .row{display:flex;justify-content:space-between;align-items:center}
-.kick{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--limeT)}
+.kick{font-family:"SohneMono",monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--limeT)}
 .ring{width:46px;height:46px;border-radius:50%;background:conic-gradient(var(--lime) 0 320deg,var(--line) 0);display:grid;place-items:center}
 .ring span{width:34px;height:34px;border-radius:50%;background:var(--ink2);display:grid;place-items:center;font-weight:900;font-size:14px}
 .start{background:var(--lime);color:#0c0d0c;border:none;border-radius:999px;padding:9px 16px;font-weight:800;font-size:13px;cursor:pointer}
 .h2{font-size:23px;font-weight:900;margin-top:10px}
-.sub{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--violet);margin-top:3px}
+.sub{font-family:"SohneMono",monospace;font-size:12px;color:var(--violet);margin-top:3px}
 .ex{display:flex;justify-content:space-between;padding-top:9px;margin-top:9px;border-top:1px solid var(--line)}
 .ex.first{border-top:none;margin-top:8px}
 .ex b{font-weight:700;font-size:14px}
-.ex .m{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ash)}
+.ex .m{font-family:"SohneMono",monospace;font-size:12px;color:var(--ash)}
 .dots{display:flex;gap:7px;justify-content:center;margin-top:14px}
 .dots i{width:7px;height:7px;border-radius:999px;background:var(--line)}
 .dots i.on{width:20px;background:var(--lime)}

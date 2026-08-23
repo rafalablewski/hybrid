@@ -378,7 +378,7 @@ describe("type scale", () => {
     //
     //   17 → fs.subtitle (16), 17 sites. 17 is not a near-miss of anything in
     //     this system, it is SF PRO'S BODY SIZE — iOS's default — leaking into
-    //     an Archivo one, which is how the same "card title" ended up 17 here
+    //     one of the app's own, which is how the same "card title" ended up 17 here
     //     and 16 (already a rung) three files over. Every one of them is a card,
     //     sheet or section title, which is what `subtitle` is for. 1dp.
     //
@@ -435,8 +435,8 @@ describe("type scale", () => {
 
   it("HARD — weight is a FACE (F.*), never a `fontWeight`", () => {
     // THE FONT BUG THIS RULE EXISTS FOR. `F` names six loaded faces and each is
-    // registered under its OWN family name — "JetBrainsMono_400Regular",
-    // "Archivo_700Bold". So `fontFamily: F.mono` declares a family with exactly
+    // registered under its OWN family name — "SohneMono_400Buch",
+    // "Sohne_600Halbfett". So `fontFamily: F.mono` declares a family with exactly
     // one face in it, and asking that family for 700 asks for a weight it does
     // not have: iOS falls back toward the system face, Android smears a
     // synthetic bold onto the regular. Either way the label stops being our
@@ -653,7 +653,7 @@ describe("named type styles", () => {
 
   it("HARD — every named style resolves to a face the app actually loads", () => {
     // The weight map in lib/ui.tsx is lossy by design (the system specifies four
-    // weights per cut; the app loads four Archivo and two mono). Lossy is fine;
+    // weights per cut; the app loads four sans and three mono). Lossy is fine;
     // MISSING is not — an unmapped pair falls back to F.reg, which is a silent
     // wrong face, the same failure mode as an unresolvable PostScript name in
     // SwiftUI. This fails the build instead.
@@ -1042,8 +1042,8 @@ describe("touch targets", () => {
     // filter). It is the RAIL chip, and it is genuinely a different object from
     // AChip rather than a ninth spelling of it: a rail is chrome, so it speaks
     // the hero's mono voice, where AChip lives in the content column and speaks
-    // Archivo. Borrowing AChip for the rail is precisely why mobile History drew
-    // Archivo 13 in a band where the other three rails drew mono 12. It arrived
+    // the display face. Borrowing AChip for the rail is precisely why mobile History drew
+    // display 13 in a band where the other three rails drew mono 12. It arrived
     // by RETIRING four hand-rolled rails (History and Plans, both clients) and
     // it carries a stricter guard of its own than this one —
     // apps/web/__tests__/dock-rail.test.ts, which checks both clients together.

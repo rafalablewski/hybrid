@@ -74,6 +74,17 @@ export default function Nameplate({
           <Text
             key={i}
             numberOfLines={1}
+            // THE WORD SHRINKS RATHER THAN CLIPS. core's rule measures against a
+            // 5.4em budget and reports a name that will not fit, but a rule is
+            // advice at build time and this is the guarantee at paint time: a
+            // plate is flex-sized, so its real width depends on the screen, the
+            // language and Dynamic Type, and no constant can know all three.
+            // Polish "Wioślarstwo" is the live case — it measures 172dp against
+            // a ~153dp plate, and without this it loses its last three letters.
+            // iOS shrinks to fit; the floor stops the shrink becoming illegible
+            // rather than letting a long word set at any size it likes.
+            adjustsFontSizeToFit
+            minimumFontScale={0.8}
             maxFontSizeMultiplier={MAX_FONT_SCALE}
             style={{
               fontFamily: F.black,

@@ -1,11 +1,23 @@
 <!doctype html>
 <html lang="en" data-template="aurora"><head>
+<style>
+/* The product's real faces, from the repo's own bundle. This mockup used
+   to carry two retired families; the app has not drawn either since Aug 2026.
+   Relative paths, so it renders from a checkout and fetches nothing. */
+@font-face{font-family:"Sohne";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Buch.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Kraftig.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Halbfett.otf") format("opentype")}
+@font-face{font-family:"Sohne";font-weight:700;font-style:normal;src:url("../apps/mobile/assets/fonts/Sohne-Dreiviertelfett.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:400;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Buch.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:500;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Kraftig.otf") format("opentype")}
+@font-face{font-family:"SohneMono";font-weight:600;font-style:normal;src:url("../apps/mobile/assets/fonts/SohneMono-Halbfett.otf") format("opentype")}
+</style>
 <meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>HYBRID — Concept 3 · Bento Grid</title>
 <style>
   :root{--ink:#0c0d0c;--ink2:#141614;--line:#242724;--chalk:#f3f4ef;--ash:#8b8f86;--lime:#c7ef00;--blue:#3c787e;--sand:#d0cd94;--terra:#d56f3e;--violet:#c9a9f0;--card:20px;--pill:999px;--max:400px}
   *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:#070807;color:var(--chalk);font-family:"Archivo",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  html,body{background:#070807;color:var(--chalk);font-family:"Sohne",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
   body{padding:30px 16px 100px;display:flex;flex-direction:column;align-items:center;gap:22px}
   .intro{max-width:880px;width:100%;text-align:center}
   .intro .tag{font-size:11px;letter-spacing:.22em;color:var(--lime);font-weight:800}

@@ -1,3 +1,6 @@
+import { textWidthEm } from "./session-wrapped";
+import { CAPS_AIR_EM, fs, opticalTrackEm } from "./scale";
+
 /**
  * THE NAMEPLATE — the plate whose SUBJECT is its name.
  *
@@ -21,9 +24,9 @@
  * ── THE RULE, AND IT IS THE WHOLE RULE ────────────────────────────────────
  *
  * A NAMEPLATE NEEDS A SHORT NOUN. That is not a preference, it is the
- * treatment's one load-bearing condition: at display size a name gets roughly
- * eleven characters to a line, so "Running" is a nameplate and "Standing
- * Overhead Press" is three lines of shouting. `nameplateLines` is where that
+ * treatment's one load-bearing condition: a line is about five and a half em
+ * wide at display size, so "Running" is a nameplate and "Standing Overhead
+ * Press" is three lines of shouting. `nameplateLines` is where that
  * condition is CHECKED rather than assumed — a caller asks, and a surface whose
  * nouns do not fit is told so instead of shipping a wall of ellipses.
  *
@@ -40,16 +43,39 @@
  * it is shared, so it cannot drift.
  */
 
-/** Characters a nameplate line holds at `fs.display` in the 900 cut, measured
- *  against the widest real names in the catalogue ("Standing Overhead Press",
- *  "Dumbbell Lateral Raise"). Caps at that weight run wide; this is deliberately
- *  the CONSERVATIVE count, because a nameplate that wraps unexpectedly is worse
- *  than one that was never offered the treatment. */
-export const NAMEPLATE_LINE_CHARS = 11;
+/**
+ * THE LINE'S BUDGET, IN EM OF THE NAME'S OWN SIZE — 5.4em, which is the two-up
+ * plate on a 390dp screen: 366 content, less an 8dp gap and halved is 179, less
+ * `APanel`'s 12dp pad on each side and its rim is ~153dp, over `fs.display`.
+ *
+ * IT IS EM AND NOT CHARACTERS, and that is the correction rather than a
+ * refinement. A character count was the first cut and it shipped a bug within
+ * one merge: it said "eleven characters" and Polish "Wioślarstwo" is exactly
+ * eleven, so the rule reported FITS while the word measured 172dp against a
+ * 153dp plate and would have been clipped on the phone. A count cannot know
+ * that `W` and `I` are not the same width, and a nameplate is set in caps at
+ * weight 900 where that difference is at its widest.
+ *
+ * So the rule MEASURES, through `textWidthEm` and the same Söhne advance table
+ * the wrapped-summary hero fits its figures with. It also means the rule
+ * survives the type ladder moving underneath it — which is exactly what caught
+ * it out: `fs.display` went 26 → 28 when the scale was re-derived from the
+ * shipped binaries, and a count has no way to notice.
+ */
+export const NAMEPLATE_LINE_EM = 5.4;
 
 /** Lines a plate can set before the treatment stops being a nameplate and
  *  starts being a paragraph in capitals. */
 export const NAMEPLATE_MAX_LINES = 3;
+
+/**
+ * The tracking a nameplate is ACTUALLY drawn with, so the rule measures the
+ * thing that gets rendered. Defaulting this to zero measured a nameplate that
+ * does not exist and made the rule pessimistic by about 4% of its width —
+ * enough to split "Back Squat" onto two lines on paper while the phone set it
+ * happily on one.
+ */
+export const NAMEPLATE_TRACK_EM = CAPS_AIR_EM.wordmark + opticalTrackEm(fs.display);
 
 export interface NameplateName {
   /** The word(s) per line, top to bottom. The FIRST line is the lead and takes
@@ -83,9 +109,11 @@ export interface NameplateName {
  */
 export function nameplateLines(
   name: string,
-  opts: { chars?: number; maxLines?: number } = {},
+  opts: { budgetEm?: number; trackingEm?: number; maxLines?: number } = {},
 ): NameplateName {
-  const chars = opts.chars ?? NAMEPLATE_LINE_CHARS;
+  const budgetEm = opts.budgetEm ?? NAMEPLATE_LINE_EM;
+  const trackingEm = opts.trackingEm ?? NAMEPLATE_TRACK_EM;
+  const width = (s: string) => textWidthEm(s.toUpperCase(), trackingEm);
   const maxLines = opts.maxLines ?? NAMEPLATE_MAX_LINES;
   const words = name.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return { lines: [], compact: false, overflows: false };
@@ -96,14 +124,14 @@ export function nameplateLines(
     // Greedy fill, except once the plate is on its final allowed line: from
     // there everything remaining joins it, so `overflows` reports a real
     // measurement of the name rather than the point the loop gave up.
-    if (last >= 0 && (lines.length >= maxLines || (lines[last]!.length + 1 + word.length) <= chars)) {
+    if (last >= 0 && (lines.length >= maxLines || width(`${lines[last]} ${word}`) <= budgetEm)) {
       lines[last] = `${lines[last]} ${word}`;
     } else {
       lines.push(word);
     }
   }
 
-  const overflows = lines.length > maxLines || lines.some((l) => l.length > chars);
+  const overflows = lines.length > maxLines || lines.some((l) => width(l) > budgetEm);
   return { lines, compact: lines.length === 1 && !overflows, overflows };
 }
 
@@ -120,7 +148,10 @@ export function nameplateLines(
  * movement catalogue does not, which is the whole reason Today's Exercises
  * keeps the other shape.
  */
-export function fitsNameplate(names: string[], opts: { chars?: number; maxLines?: number } = {}): boolean {
+export function fitsNameplate(
+  names: string[],
+  opts: { budgetEm?: number; trackingEm?: number; maxLines?: number } = {},
+): boolean {
   if (names.length === 0) return false;
   const broken = names.map((n) => nameplateLines(n, opts));
   if (broken.some((b) => b.overflows)) return false;

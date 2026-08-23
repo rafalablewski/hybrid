@@ -21,7 +21,7 @@ UX and the engines. This monorepo turns them into a running, deployed product.
 ## Visual identity
 
 - Near-black `#0c0d0c` (ink), acid-lime `#c4f035` (lime).
-- Fonts: Archivo (display/body), Archivo Narrow (condensed), JetBrains Mono.
+- Fonts: the previous face (display/body), the previous face Narrow (condensed), the previous mono.
 - Full token set lives in `packages/core` so both clients share it.
 
 ## Sprint plan (parallel web + native, shared core)

@@ -21,7 +21,7 @@ import { HeroScreen, type HeroSpec, type HeroScrollerFn } from "./hero";
 /**
  * AURORA template UI kit (mobile). Soft, rounded primitives adapted from the
  * mobile Figma design — big corner radii, pill buttons, a floating-card feel —
- * but built on the HYBRID brand tokens (lime accent, ink surfaces, Archivo type)
+ * but built on the HYBRID brand tokens (lime accent, ink surfaces, Söhne type)
  * via the shared theme palette, so the new look stays on-brand and theme-aware.
  */
 /**
@@ -970,7 +970,7 @@ export function APill({
         <Text
           maxFontSizeMultiplier={MAX_FONT_SCALE}
           numberOfLines={1}
-          style={{ fontFamily: F.bold, fontSize: compact ? fs.bodyLg : fs.subtitle, color: fg }}
+          style={[ty(palette, compact ? "buttonSm" : "button"), { color: fg }]}
         >
           {label}
         </Text>
@@ -988,7 +988,7 @@ export function APill({
         >
           {state === "saving" && <ActivityIndicator size="small" color={fg} />}
           {state === "saved" && <AuroraIcon name="check" size={compact ? 14 : 17} color={fg} />}
-          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: compact ? fs.bodyLg : fs.subtitle, color: fg }}>
+          <Text maxFontSizeMultiplier={MAX_FONT_SCALE} numberOfLines={1} style={[ty(palette, compact ? "buttonSm" : "button"), { color: fg }]}>
             {stateLabel}
           </Text>
         </Animated.View>
@@ -1123,11 +1123,11 @@ const chipLabel = (label: string, count: number | undefined, color: string) => (
  * reference/dock-rail-design.html.
  *
  * NOT `AChip`, which mobile History used to borrow. AChip is an IN-CONTENT
- * filter — it lives in the content column, in the content face (Archivo bold),
+ * filter — it lives in the content column, in the content face (display bold),
  * and 37 other call sites want it exactly as it is. A rail is CHROME: it sits
  * in the same band as the hero's eyebrow, meta line and accessory, all of which
  * speak the app's mono voice. Borrowing the content chip for the rail is why
- * mobile History drew Archivo 13 while all three other rails drew mono 12.
+ * mobile History drew the display face at 13 while all three other rails drew mono 12.
  *
  * FULL-BLEED is the rail's own job, per the house rule: the scaffolds' rail
  * slots reach the true screen edge and add NO padding, and this supplies the
@@ -1914,7 +1914,7 @@ const SCRUB_TRAVEL = 14;
  * WHAT AN EMPTY FIGURE READS AS — an EN dash, and exported so the guard that
  * asserts a field looks empty cannot drift from the glyph that makes it so.
  *
- * Deliberately not an em dash: at `fs.hero` in Archivo's 900 weight an em dash
+ * Deliberately not an em dash: at `fs.hero` in the display face's heaviest weight an em dash
  * draws a bar as wide as the type is tall, which reads as a horizontal RULE
  * across the field rather than as a field waiting to be filled.
  */

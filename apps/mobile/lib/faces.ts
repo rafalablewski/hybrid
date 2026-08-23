@@ -6,8 +6,8 @@
  *
  * ── IT IS 1:1 NOW, WHICH IS WHAT THE INDIRECTION WAS FOR ───────────────────
  *
- * While the app ran Archivo this map was deliberately lossy: the system
- * specifies four weights per cut and only four Archivo plus two JetBrains Mono
+ * Under the previous display face this map was deliberately lossy: the system
+ * specifies four weights per cut and only four sans plus two mono binaries
  * were loaded, so sans 500 resolved to the same binary as 600. A call site
  * named the weight it MEANT and this map said which binary was available to
  * mean it. The face swap was then one edit here plus one in `F` — no call site
@@ -22,7 +22,6 @@ export const FACE: Record<string, string> = {
   "Söhne:400": "Sohne_400Buch",
   "Söhne:500": "Sohne_500Kraftig",
   "Söhne:600": "Sohne_600Halbfett",
-  "Söhne:700": "Sohne_700Dreiviertelfett",
   "Söhne Mono:400": "SohneMono_400Buch",
   "Söhne Mono:500": "SohneMono_500Kraftig",
   "Söhne Mono:600": "SohneMono_600Halbfett",
