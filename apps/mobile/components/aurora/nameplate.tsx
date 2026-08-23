@@ -14,7 +14,8 @@ import { APanel } from "./kit";
  * target and the figure is what you get once you've found it. The app had 13dp
  * of name under 26dp of number, and the name was the part that truncated.
  *
- * So the name takes `fs.display` at weight 900 in caps, the figure recedes to
+ * So the name takes `fs.display` in `F.black` — Söhne Halbfett, 600, the
+ * heaviest cut the app ships — in caps, the figure recedes to
  * the bottom edge at reading size, and a hairline between them gives the word a
  * floor. The rule for whether a surface may use this at all lives in core
  * (`nameplateLines` / `fitsNameplate`): a nameplate needs a SHORT noun, and
@@ -90,7 +91,7 @@ export default function Nameplate({
               fontFamily: F.black,
               fontSize: fs.display,
               lineHeight: leading(fs.display, "flush"),
-              // The nameplate rung — uppercase at 900 needs twice the text
+              // The nameplate rung — uppercase Halbfett needs twice the text
               // band's tightening. See TRACKING_EM.wordmark in core/scale.
               letterSpacing: tracking(fs.display, "wordmark"),
               textTransform: "uppercase",

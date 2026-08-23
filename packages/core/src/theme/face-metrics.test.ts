@@ -347,6 +347,33 @@ describe("the proportional advance table", () => {
     expect(ADVANCE_FALLBACK_EM).toBe(0.6);
   });
 
+  it("carries every LETTER, in both cases — the hole a caps-only rule fell into", () => {
+    // The table was built for the Wrapped's figures, so it held the lowercase
+    // those values contain and nothing else. `nameplateLines` UPPERCASES its
+    // input before measuring, so every glyph it looked up missed and it was
+    // really computing `length × 0.6` — a character count with a decimal
+    // point, which is the exact mistake that rule exists to avoid.
+    for (const ch of "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ") {
+      expect(SOHNE_ADVANCE_EM[ch], ch).toBeDefined();
+    }
+    // ...and the three languages' accents, since two of them are the ones with
+    // the long names.
+    for (const ch of "ĄĆĘŁŃÓŚŻŹÄÖÜąćęłńóśżźäöü") expect(SOHNE_ADVANCE_EM[ch], ch).toBeDefined();
+  });
+
+  it("HARD — the capitals really do spread 3.5×, which is why a constant failed", () => {
+    const f = open(SOHNE.halbfett.file);
+    expect(advance(f, "W")).toBeCloseTo(0.943, 3);
+    expect(advance(f, "I")).toBeCloseTo(0.272, 3);
+    expect(advance(f, "W") / advance(f, "I")).toBeGreaterThan(3.4);
+    // The German name that decided it: nine capitals, assumed 5.40em under the
+    // fallback, actually 6.27 — against a 5.4em nameplate line.
+    let real = 0;
+    for (const ch of "SCHWIMMEN") real += advance(f, ch);
+    expect(real).toBeCloseTo(6.27, 2);
+    expect("SCHWIMMEN".length * ADVANCE_FALLBACK_EM).toBeCloseTo(5.4, 5);
+  });
+
   it("carries every digit, because one digit constant cannot serve ten", () => {
     for (const d of "0123456789") expect(SOHNE_ADVANCE_EM[d], d).toBeDefined();
     const digits = [..."0123456789"].map((d) => SOHNE_ADVANCE_EM[d]!);

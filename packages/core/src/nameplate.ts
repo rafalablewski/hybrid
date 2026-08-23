@@ -17,7 +17,9 @@ import { CAPS_AIR_EM, MONO_ADVANCE_EM, fs, opticalTrackEm } from "./scale";
  * the app had them the other way round — 13dp of name under 26dp of number,
  * with the name the part that truncated.
  *
- * A nameplate inverts it. The name takes `fs.display` at weight 900 in caps,
+ * A nameplate inverts it. The name takes `fs.display` in the heaviest cut the
+ * app ships — `F.black`, which resolves to Söhne HALBFETT (600) since the
+ * weight ladder was capped; there is no 900 in this family any more — in caps,
  * the figure recedes to a caption on the bottom edge, and a hairline between
  * them gives the word a floor.
  *
@@ -54,7 +56,8 @@ import { CAPS_AIR_EM, MONO_ADVANCE_EM, fs, opticalTrackEm } from "./scale";
  * eleven, so the rule reported FITS while the word measured 172dp against a
  * 153dp plate and would have been clipped on the phone. A count cannot know
  * that `W` and `I` are not the same width, and a nameplate is set in caps at
- * weight 900 where that difference is at its widest.
+ * Halbfett caps, where that difference is at its widest: `W` is 0.943em against
+ * `I` at 0.272, a 3.5× spread.
  *
  * So the rule MEASURES, through `textWidthEm` and the same Söhne advance table
  * the wrapped-summary hero fits its figures with. It also means the rule

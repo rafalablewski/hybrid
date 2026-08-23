@@ -163,16 +163,59 @@ export const FIGURE_INK_EM = Number((FIGURE_INK.top - FIGURE_INK.bottom).toFixed
  * `~` IS ABSENT FROM THE FACE. The Wrapped prefixes estimates with a tilde, and
  * the extended trial cuts do not carry one, so it renders in the platform
  * fallback and is fitted at `ADVANCE_FALLBACK_EM`. Listed here as a known hole
- * rather than discovered as a wrapped tile.
+ * rather than discovered as a wrapped tile. `\u00df` is the same case.
+ *
+ * ── IT CARRIED NO CAPITALS UNTIL Aug 2026, AND A CAPS-ONLY RULE USED IT ────
+ *
+ * The table was built for the Wrapped's figures, so it held digits, punctuation
+ * and the lowercase letters those values happen to contain. Every other
+ * character fell to `ADVANCE_FALLBACK_EM`, which is fine for a stray unit
+ * string and catastrophic for `nameplateLines` — a rule that UPPERCASES its
+ * input before measuring it. Not one glyph it measured was in the table, so
+ * "measured" meant `length × 0.6`: a character count wearing a decimal point,
+ * which is precisely the mistake the rule was rewritten to stop making.
+ *
+ * Söhne Halbfett's capitals run 0.272em (`I`) to 0.943em (`W`) — a 3.5×
+ * spread, against a constant. The under-read reached 14%:
+ *
+ *     SCHWIMMEN   5.40 assumed   6.27 real     the German name that decided it
+ *     RADFAHREN   5.40           6.11
+ *     ROMANIAN    4.80           5.43
+ *     SQUASH      3.60           4.08
+ *     TENNIS      3.60           3.56          ...and sometimes it over-read
+ *
+ * That is not a rounding difference, it is the difference between "German
+ * clears the plate outright" — which `fitsNameplate` and capabilities.ts both
+ * asserted — and German being the language that does not. The full Latin set is
+ * here now, both cases, plus the Polish and German accents, all read off the
+ * binary and re-read by the test beside this file.
  */
 export const SOHNE_ADVANCE_EM: Record<string, number> = {
   " ": 0.202, ".": 0.24, ",": 0.24, ":": 0.24, "/": 0.416,
   "+": 0.403, "\u2212": 0.403, "-": 0.368, "%": 0.594, "\u00b0": 0.412,
   "0": 0.639, "1": 0.402, "2": 0.576, "3": 0.58, "4": 0.615,
   "5": 0.58, "6": 0.599, "7": 0.557, "8": 0.606, "9": 0.599,
-  a: 0.544, c: 0.525, d: 0.6, e: 0.548, g: 0.601, h: 0.573, i: 0.255,
-  k: 0.562, l: 0.255, m: 0.879, n: 0.573, o: 0.57, p: 0.6, r: 0.391,
-  s: 0.501, t: 0.35, u: 0.573,
+  // Lowercase — the fitter's original set, completed. b, f, j, q, v, w, x, y
+  // and z were absent and fell to the 0.6 fallback, which is 86% too wide for
+  // `f` and 19% too narrow for `w`.
+  a: 0.544, b: 0.6, c: 0.525, d: 0.6, e: 0.548, f: 0.323, g: 0.601, h: 0.573,
+  i: 0.255, j: 0.255, k: 0.562, l: 0.255, m: 0.879, n: 0.573, o: 0.57, p: 0.6,
+  q: 0.6, r: 0.391, s: 0.501, t: 0.35, u: 0.573, v: 0.523, w: 0.74, x: 0.528,
+  y: 0.523, z: 0.507,
+  // UPPERCASE — see the note above about the nameplate. Not one of these was
+  // in the table, and the nameplate rule measures nothing else.
+  A: 0.721, B: 0.644, C: 0.671, D: 0.702, E: 0.597, F: 0.581, G: 0.73,
+  H: 0.738, I: 0.272, J: 0.407, K: 0.671, L: 0.555, M: 0.861, N: 0.731,
+  O: 0.733, P: 0.639, Q: 0.733, R: 0.66, S: 0.596, T: 0.628, U: 0.696,
+  V: 0.698, W: 0.943, X: 0.687, Y: 0.662, Z: 0.634,
+  // Polish and German, both cases. The app ships three languages and the two
+  // that are not English are the ones whose names run long.
+  "\u0104": 0.721, "\u0106": 0.671, "\u0118": 0.597, "\u0141": 0.555, "\u0143": 0.731,
+  "\u00d3": 0.733, "\u015a": 0.596, "\u017b": 0.634, "\u0179": 0.634,
+  "\u00c4": 0.721, "\u00d6": 0.733, "\u00dc": 0.696,
+  "\u0105": 0.544, "\u0107": 0.525, "\u0119": 0.548, "\u0142": 0.255, "\u0144": 0.573,
+  "\u00f3": 0.57, "\u015b": 0.501, "\u017c": 0.507, "\u017a": 0.507,
+  "\u00e4": 0.544, "\u00f6": 0.57, "\u00fc": 0.573,
 };
 
 /**

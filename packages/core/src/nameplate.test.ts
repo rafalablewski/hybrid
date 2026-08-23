@@ -35,11 +35,28 @@ describe("nameplateLines", () => {
     expect(n.overflows).toBe(false);
   });
 
-  it("packs words that share a line rather than spending a line per word", () => {
-    // "Back Squat" is 10 characters — inside the line, so it stays one mark.
+  it("packs words that share a line, and only when they actually share one", () => {
+    // "Deadlift" packs nothing after it, but "Romanian Deadlift" proves the
+    // greedy fill runs. The case that USED to live here is now the case below:
+    // "Back Squat" was asserted to stay on one line because ten characters at
+    // 0.6em is 6.0 and the budget is 5.4 — no, wait, it was asserted because
+    // the ten characters were CAPITALS and none of them were in the advance
+    // table, so all ten measured 0.6. They do not. See the next test.
+    const n = nameplateLines("Standing Press");
+    expect(n.lines).toEqual(["Standing", "Press"]);
+  });
+
+  it("BACK SQUAT does not fit a line, and the old table said it did", () => {
+    // Set in caps at Halbfett: B .644 A .721 C .671 K .671 ␣ .202 S .596
+    // Q .733 U .696 A .721 T .628 = 6.283em, less 10 × .0406 of tracking =
+    // 5.88 against a 5.4em line. Under the fallback constant every one of
+    // those glyphs measured 0.600 and the sum came to 5.60 — inside the line
+    // by a whisker, which is how a name that wraps on the phone was pinned as
+    // a one-liner in a test.
     const n = nameplateLines("Back Squat");
-    expect(n.lines).toEqual(["Back Squat"]);
-    expect(n.compact).toBe(true);
+    expect(n.lines).toEqual(["Back", "Squat"]);
+    expect(n.compact).toBe(false);
+    expect(textWidthEm("BACK SQUAT", NAMEPLATE_TRACK_EM)).toBeGreaterThan(NAMEPLATE_LINE_EM);
   });
 
   it("never breaks inside a word, and SAYS SO when the word alone overruns", () => {
@@ -84,7 +101,9 @@ describe("nameplateLines", () => {
   });
 
   it("collapses runs of whitespace rather than setting an empty line", () => {
-    expect(nameplateLines("Back    Squat").lines).toEqual(["Back Squat"]);
+    // Two lines because BACK SQUAT overruns one (above), not three because the
+    // gap between them was read as a word.
+    expect(nameplateLines("Back    Squat").lines).toEqual(["Back", "Squat"]);
   });
 });
 
@@ -95,16 +114,24 @@ describe("fitsNameplate", () => {
     ).toBe(true);
   });
 
-  it("REPORTS that Polish does not fit the two-up plate at full size", () => {
-    // The finding the measurement bought, and it is a real one: "Wioślarstwo"
-    // and "Narciarstwo" overrun a 5.4em line, so the Polish set is not a
-    // full-size fit. The plate does not clip them — the component sets
-    // `adjustsFontSizeToFit` with a floor, which is the paint-time guarantee —
-    // but the RULE must not call this a fit, because the next surface asking
-    // the question may have no such fallback.
+  it("REPORTS that NEITHER Polish NOR German fits the two-up plate at full size", () => {
+    // Polish was already known: "Wioślarstwo" and "Narciarstwo" overrun a 5.4em
+    // line. GERMAN WAS NOT, and the reason it was not is the whole lesson —
+    // the advance table carried no capitals, so `fitsNameplate` measured every
+    // one of them at the 0.6em fallback and reported "Radfahren 5.03em, clears
+    // it outright". Set in the real face those nine capitals are 6.11em, and
+    // "Schwimmen" is 6.27. Both overrun.
     expect(fitsNameplate(["Bieganie", "Kolarstwo", "Pływanie", "Wioślarstwo", "Narciarstwo", "Chód"])).toBe(false);
-    // German and English both clear it outright.
-    expect(fitsNameplate(["Laufen", "Radfahren", "Schwimmen", "Rudern", "Ski", "Gehen"])).toBe(true);
+    expect(fitsNameplate(["Laufen", "Radfahren", "Schwimmen", "Rudern", "Ski", "Gehen"])).toBe(false);
+    // ENGLISH GENUINELY CLEARS IT, and now that is a measurement rather than a
+    // coincidence of the constant: "Swimming" is the worst at 4.94em.
+    expect(fitsNameplate(["Running", "Cycling", "Swimming", "Rowing", "Walking", "Tennis"])).toBe(true);
+    expect(textWidthEm("SWIMMING", NAMEPLATE_TRACK_EM)).toBeLessThan(NAMEPLATE_LINE_EM);
+    // None of the three CLIPS on the phone — aurora/nameplate.tsx sets
+    // `adjustsFontSizeToFit` with a 0.8 floor, and the worst of these needs
+    // 0.91 — but the rule must not call an overrun a fit, because the next
+    // surface to ask may have no such fallback.
+    expect(NAMEPLATE_LINE_EM / textWidthEm("SCHWIMMEN", NAMEPLATE_TRACK_EM)).toBeGreaterThan(0.8);
   });
 
   it("fails the movement catalogue, which is why Today keeps the other shape", () => {
@@ -154,7 +181,11 @@ describe("the nameplate's base", () => {
     const proportional = textWidthEm("12 EFFORTS", 0) * fs.nano;
     const actual = monoWidthDp("12 EFFORTS", fs.nano);
     expect(proportional).toBeLessThan(actual);
-    expect(actual - proportional).toBeGreaterThan(5); // 60.0 against 53.8dp
+    // 60.0dp against 55.6. It read 53.8 when the capitals were still missing
+    // from the advance table — a wrong number that happened to point the same
+    // way. The gap narrowed when that was fixed and the conclusion did not:
+    // the proportional ruler still says this note fits a line it overruns.
+    expect(actual - proportional).toBeGreaterThan(4);
   });
 
   it("shows the SPLIT ROW could not hold them, which is why the base stacks", () => {
