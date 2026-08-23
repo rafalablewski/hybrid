@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { sportBoard, sportChoices } from "./sport-board";
+import { resolveActivityRange } from "./activity-window";
 import { normalizeSportFavourites, toggleSportFavourite, MAX_SPORT_FAVOURITES } from "./sport-favourites";
 import type { LoggedSession } from "./engines/session";
 
@@ -77,6 +78,43 @@ describe("sportBoard", () => {
     const [tennis] = sportBoard(SESSIONS, ["s:tennis"], { now });
     expect(tennis!.key).toBe("s:Tennis");
     expect(tennis!.sport).toBe("Tennis");
+  });
+});
+
+/* THE SCREEN'S PERIOD, NOT THE BOARD'S — the board must answer for whatever
+   window the Progress cluster's one control is showing, against the window
+   before it, so no figure on that screen answers for a period of its own. */
+describe("sportBoard with a range", () => {
+  it("reports the CONTROL's window, and it is not the one the board used to invent", () => {
+    const range = resolveActivityRange("d30", now);
+    const [run] = sportBoard(SESSIONS, ["d:running"], { now, range });
+    // "Last 30 days" is today plus the 29 before, so it holds the 6-day run
+    // alone — 12 km. The hard-coded 8-week window this replaced said 30 km,
+    // under a control reading 30D. That gap IS the bug: two figures, one
+    // screen, neither answering the period the reader chose.
+    expect(run!.page!.distanceKm).toBe(12);
+    expect(sportBoard(SESSIONS, ["d:running"], { now })[0]!.page!.distanceKm).toBe(30);
+  });
+
+  it("measures against the window BEFORE the chosen one, the verdict card's own axis", () => {
+    const range = resolveActivityRange("d30", now);
+    const [run] = sportBoard(SESSIONS, ["d:running"], { now, range });
+    // The preceding 30 days hold the 18 km long run: 12 against 18 is −33.3%.
+    expect(run!.prev!.distanceKm).toBe(18);
+    expect(run!.volumeDeltaPct).toBe(-33.3);
+    expect(run!.volumeImproving).toBe(false);
+  });
+
+  it("widens with the control: year-to-date holds every effort", () => {
+    const range = resolveActivityRange("ytd", now);
+    const [run] = sportBoard(SESSIONS, ["d:running"], { now, range });
+    expect(run!.page!.distanceKm).toBe(50);
+  });
+
+  it("without a range it keeps the trailing eight weeks (the model off a filtered screen)", () => {
+    const [run] = sportBoard(SESSIONS, ["d:running"], { now });
+    expect(run!.page!.distanceKm).toBe(30);
+    expect(run!.prev!.distanceKm).toBe(20);
   });
 });
 

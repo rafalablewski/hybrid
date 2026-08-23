@@ -155,18 +155,26 @@ function windowSlice(sessions: LoggedSession[], from: number, to: number): Logge
 
 /** Minutes per trailing 7-day bucket, oldest → newest — the same bucketing
  *  `weeklyMileage` uses, so a page's ridge and the sport page's volume chart
- *  can never disagree about where a week starts. */
+ *  can never disagree about where a week starts.
+ *
+ *  `floor` is the window's own start: when a caller asks for an explicit window
+ *  whose span is not a whole number of weeks, the oldest bucket is CLAMPED to
+ *  it rather than reaching back past the period the figures above it report on.
+ *  A partial oldest bucket is the same honesty `activityBaselineWindows` shows
+ *  when it truncates a baseline to the elapsed length. */
 function weeklyMinutes(
   sessions: LoggedSession[],
   weeks: number,
   now: number,
   keep: (b: CardioBlock) => boolean,
+  floor = -Infinity,
 ): { weeks: number[]; weekStarts: string[] } {
   const mins: number[] = [];
   const starts: string[] = [];
   for (let w = weeks - 1; w >= 0; w--) {
     const to = now - w * WEEK_MS;
-    const from = to - WEEK_MS;
+    const from = Math.max(floor, to - WEEK_MS);
+    if (from >= to) continue;
     starts.push(new Date(from).toISOString());
     mins.push(Math.round(totalsIn(sessions, from, to, keep).minutes));
   }
@@ -185,11 +193,23 @@ const ZERO_ZONES: EffortSplit = { easy: 0, moderate: 0, hard: 0 };
  */
 export function sportPages(
   sessions: LoggedSession[],
-  opts: { weeks?: number; now?: number } = {},
+  opts: { weeks?: number; now?: number; from?: number } = {},
 ): SportPage[] {
-  const weeks = opts.weeks ?? SPORT_PAGE_WEEKS;
   const now = opts.now ?? Date.now();
-  const from = now - weeks * WEEK_MS;
+  // AN EXPLICIT WINDOW, OR A TRAILING ONE. `from` exists so a caller that is
+  // governed by a period control (Today's Progress cluster reads ONE range for
+  // the whole screen) can ask this model for THAT window instead of inventing
+  // its own — the fault the lanes had worst was figures answering for
+  // different periods under one headline. The sport PAGE passes no `from` and
+  // keeps its trailing eight weeks exactly as before.
+  const from = opts.from ?? now - (opts.weeks ?? SPORT_PAGE_WEEKS) * WEEK_MS;
+  // The ridge spans the window it reports on: an explicit window sizes its own
+  // bucket count (clamped at the start, see weeklyMinutes), a trailing one
+  // keeps the caller's.
+  const weeks =
+    opts.from != null
+      ? Math.max(1, Math.ceil((now - from) / WEEK_MS))
+      : (opts.weeks ?? SPORT_PAGE_WEEKS);
   const all = () => true;
   const pages: SportPage[] = [];
 
@@ -212,7 +232,7 @@ export function sportPages(
       distanceKm: t.km > 0 ? roundKm(t.km) : null,
       secPerKm: t.km > 0 && t.seconds > 0 ? t.seconds / t.km : null,
       longestMinutes: Math.round(t.longestMinutes),
-      ...weeklyMinutes(slice, weeks, now, all),
+      ...weeklyMinutes(slice, weeks, now, all, from),
       zones: paceEffortSplit(windowSlice(slice, from, now)),
       lastAt: t.lastAt > 0 ? new Date(t.lastAt).toISOString() : null,
     });
@@ -247,7 +267,7 @@ export function sportPages(
       distanceKm: t.km > 0 ? roundKm(t.km) : null,
       secPerKm: t.km > 0 && t.seconds > 0 ? t.seconds / t.km : null,
       longestMinutes: Math.round(t.longestMinutes),
-      ...weeklyMinutes(trued, weeks, now, keep),
+      ...weeklyMinutes(trued, weeks, now, keep, from),
       // A timed sport has no pace, so it has no split to show. Running
       // paceEffortSplit over a slice with no paced volume would return zeros
       // anyway; saying so here is cheaper and states the reason.

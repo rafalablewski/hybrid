@@ -3,6 +3,7 @@ import { DISCIPLINE_META } from "./endurance";
 import { pctChange } from "./exercise-widget";
 import { SPORT_PAGE_WEEKS } from "./sport-page";
 import { sportPages, type SportPage } from "./sport-pages";
+import { activityBaselineWindows, type ActivityRange } from "./activity-window";
 
 /**
  * SPORTS — the Progress cluster's watchlist of the sports the athlete PINNED.
@@ -68,15 +69,42 @@ function identity(key: string): Pick<SportBoardCard, "kind" | "discipline" | "sp
   return { kind: "sport", discipline: null, sport: key.slice(2), labelKey: null };
 }
 
-/** One card per pinned sport, in pin order. */
+/**
+ * One card per pinned sport, in pin order.
+ *
+ * THE WINDOW IS THE SCREEN'S, NOT THE BOARD'S. Pass the `range` the Progress
+ * cluster's control is showing (core TODAY_RANGE_STORE_KEY) and every figure
+ * here answers for exactly that period, measured against the window before it
+ * — the SAME axis the verdict card above uses, through the same
+ * `activityBaselineWindows`. This board shipped first with a hard-coded eight
+ * weeks, which put a third period on a screen that already had two and
+ * reproduced the fault the endurance lanes had worst: whole-history totals
+ * under an ALL TIME head, over an eight-week chart, beneath a THIS WEEK card.
+ * A block does not get its own period unless it is genuinely its own scope,
+ * and a volume total is not.
+ *
+ * `range` is optional so the model stays usable off a screen that has no
+ * filter (and so the sport page's own trailing window keeps working); omitting
+ * it keeps the original trailing-8-weeks behaviour.
+ */
 export function sportBoard(
   sessions: LoggedSession[],
   favourites: readonly string[],
-  opts: { now?: number } = {},
+  opts: { now?: number; range?: ActivityRange } = {},
 ): SportBoardCard[] {
   const now = opts.now ?? Date.now();
-  const cur = sportPages(sessions, { now });
-  const prior = sportPages(sessions, { now: now - SPORT_PAGE_WEEKS * WEEK_MS });
+  const range = opts.range;
+  // The window before this one, truncated to the elapsed length — the verdict
+  // card's own baseline, so the two blocks cannot disagree about "previous".
+  const before = range ? activityBaselineWindows(range)[0] : null;
+  const cur = range
+    ? sportPages(sessions, { from: range.from, now: range.through })
+    : sportPages(sessions, { now });
+  const prior = range
+    ? before
+      ? sportPages(sessions, { from: before.from, now: before.to })
+      : []
+    : sportPages(sessions, { now: now - SPORT_PAGE_WEEKS * WEEK_MS });
 
   return favourites.map((key) => {
     const page = cur.find((p) => sameKey(p.key, key)) ?? null;
