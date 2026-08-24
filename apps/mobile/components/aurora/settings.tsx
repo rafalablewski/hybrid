@@ -1,5 +1,5 @@
 import { useState, useCallback, type ReactNode } from "react";
-import { View, Text, TextInput, ActivityIndicator, AccessibilityInfo, Share, Image } from "react-native";
+import { View, Text, TextInput, AccessibilityInfo, Share, Image } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { type Lang, ACCOUNT_NOTIF_ROWS, ACCOUNT_PRIVACY_ROWS, SETTINGS_GROUPS, SETTINGS_CATEGORIES, matchSettings, passwordStrength, profileCompleteness, type SettingsCategory, type SettingsCategoryId , ALPHA, FEEDBACK, type AccentKey } from "@hybrid/core";
 import { resetAccount, deleteAccount } from "../../lib/api";
@@ -13,9 +13,9 @@ import { pushSupported, usePushSwitch } from "../../lib/push";
 import { getMyProfile } from "../../lib/social-api";
 import { useLang } from "../../lib/i18n";
 import { useTheme, txt, accentColor } from "../../lib/theme";
-import { leading, tracking, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE } from "../../lib/ui";
+import { leading, tracking, fs, space, F, PressScale, Chip, FIXED_FONT_SCALE, ty } from "../../lib/ui";
 import { ToggleRow } from "../toggle-row";
-import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS, ASearch } from "./kit";
+import { AuroraScreen, ACard, AField, ASegment, APill, AHeading, RADIUS, ASearch, Ring } from "./kit";
 import MfaSettings from "./mfa-settings";
 import { AuroraIcon } from "./icons";
 import { MetaLine } from "./meta";
@@ -65,8 +65,11 @@ export default function AuroraSettings({ landOn }: {
    *  screen (see ROUTES) are routed there by the caller instead. */
   landOn?: SettingsCategoryId;
 } = {}) {
-  // Survivors of a filter MOVE to their new positions; only arrivals fade.
-  const refilter = useListMotion();
+  // One motion hook for every layout change the user causes here: survivors of
+  // a search re-filter MOVE to their new positions (only arrivals fade), and
+  // the hub ⇄ category drill-in travels instead of teleporting — the whole
+  // body swaps, which is exactly the class of change that must not hard-cut.
+  const motion = useListMotion();
   const { palette: C } = useTheme();
   const router = useRouter();
   const { t, lang, setLang } = useLang();
@@ -217,7 +220,7 @@ export default function AuroraSettings({ landOn }: {
       <>
         <MfaSettings />
         <Section label={t("w.account.settings.sec-login-recovery")}>
-          <Label color={C.ash} tight>{t("w.account.settings.change-password").toUpperCase()}</Label>
+          <Label color={C.ash} tight>{t("w.account.settings.change-password")}</Label>
           {!emailProvider ? (
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{t("w.account.settings.signin-with")} {acct.provider} {t("w.account.settings.manage-password-there")}</Text>
           ) : (
@@ -235,11 +238,11 @@ export default function AuroraSettings({ landOn }: {
               {!!acct.passwordMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: acct.passwordMsg.startsWith("✓") ? txt(C, C.lime) : C.ash, marginTop: 8 }}>{acct.passwordMsg}</Text>}
             </>
           )}
-          <Label color={C.ash} top>{t("w.account.settings.connected-account").toUpperCase()}</Label>
+          <Label color={C.ash} top>{t("w.account.settings.connected-account")}</Label>
           <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk, lineHeight: leading(fs.caption) }}>{!emailProvider ? acct.provider : (acct.email || t("w.account.settings.new-password-ph"))}</Text>
         </Section>
         <Section label={t("w.account.settings.sec-checks")}>
-          <Label color={C.ash} tight>{t("w.account.settings.where-logged-in").toUpperCase()}</Label>
+          <Label color={C.ash} tight>{t("w.account.settings.where-logged-in")}</Label>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 8 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: txt(C, C.lime) }} />
             <Text style={{ fontFamily: F.reg, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.this-device")}</Text>
@@ -314,7 +317,10 @@ export default function AuroraSettings({ landOn }: {
               </View>
             ))}
           </View>
-          {acct.exportBusy ? <ActivityIndicator color={txt(C, C.lime)} /> : <APill label={t("w.account.settings.download-data")} variant="soft" onPress={acct.exportData} style={{ paddingVertical: 12 }} />}
+          {/* APill's commit state, not a spinner swapped in where the button
+              was — the pill holds its width and reports in place, so the
+              screen doesn't reflow the moment the export starts. */}
+          <APill label={t("w.account.settings.download-data")} variant="soft" state={acct.exportBusy ? "saving" : "idle"} onPress={acct.exportData} style={{ paddingVertical: 12 }} />
           {!!acct.exportMsg && <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.ash, marginTop: 8 }}>{acct.exportMsg}</Text>}
         </Section>
       </>
@@ -330,6 +336,7 @@ export default function AuroraSettings({ landOn }: {
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeReset")}</Text>
           <TextInput
             value={confirm} onChangeText={setConfirm} placeholder="RESET" placeholderTextColor={C.ash}
+            accessibilityLabel={t("settings.typeReset")}
             autoCapitalize="characters" autoCorrect={false}
             style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armed ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
           />
@@ -348,6 +355,7 @@ export default function AuroraSettings({ landOn }: {
           <Text style={{ fontFamily: F.mono, fontSize: fs.micro, color: C.ash, marginTop: 12 }}>{t("settings.typeDelete")}</Text>
           <TextInput
             value={delConfirm} onChangeText={setDelConfirm} placeholder="DELETE" placeholderTextColor={C.ash}
+            accessibilityLabel={t("settings.typeDelete")}
             autoCapitalize="characters" autoCorrect={false}
             style={{ fontFamily: F.mono, fontSize: fs.bodyLg, color: C.chalk, backgroundColor: C.ink, borderWidth: 1, borderColor: armedDelete ? C.red : C.line, borderRadius: RADIUS.field, paddingHorizontal: 16, paddingVertical: 12, marginTop: 8 }}
           />
@@ -389,9 +397,8 @@ export default function AuroraSettings({ landOn }: {
 
   const openCat = (c: SettingsCategory) => {
     const nav = ROUTES[c.id];
-    setQuery("");
-    if (nav) (router.push as (p: string) => void)(nav);
-    else setCat(c.id);
+    if (nav) { setQuery(""); (router.push as (p: string) => void)(nav); return; }
+    motion(() => { setQuery(""); setCat(c.id); });
   };
 
   // A render HELPER (not a component) so it doesn't remount on each keystroke.
@@ -408,7 +415,10 @@ export default function AuroraSettings({ landOn }: {
         key={c.id}
         onPress={() => openCat(c)}
         accessibilityRole="button"
-        accessibilityLabel={c.title}
+        // The value line is part of what the row SAYS ("Notifications, 3/4") —
+        // a label of just the title would read less to VoiceOver than the row
+        // shows everyone else.
+        accessibilityLabel={line ? `${c.title}, ${line}` : c.title}
         style={{ flexDirection: "row", alignItems: "center", gap: space.md, paddingVertical: 12, borderTopWidth: first ? 0 : 1, borderTopColor: C.line }}
       >
         <View style={{ width: 40, height: 40, borderRadius: RADIUS.inner, backgroundColor: c.danger ? withAlpha(C.red, ALPHA.solid) : tile, alignItems: "center", justifyContent: "center" }}>
@@ -431,7 +441,7 @@ export default function AuroraSettings({ landOn }: {
     return (
       <AuroraScreen
         hero={{ rank: "title", title: active.title, accent: active.danger ? C.red : undefined }}
-        back={() => setCat(null)}
+        back={() => motion(() => setCat(null))}
         backLabel={t("nav.settings")}
       >
         {renderBody(active.id)}
@@ -443,51 +453,51 @@ export default function AuroraSettings({ landOn }: {
   return (
     <AuroraScreen>
       <AHeading style={{ marginBottom: 16 }}>{t("w.account.settings.title")}</AHeading>
-      {/* Profile header — tappable → Edit profile, with a completeness ring
-          around the avatar (a clay accent ring + a proportional bar, since RN has no
-          inline SVG here), the % + "add a photo & bio" nudge, the FREE/FULL pill,
-          and quick-action chips. Shared completeness math with web. */}
+      {/* Profile header — tappable → Edit profile. The completeness reading is
+          the kit's Ring AROUND the avatar (the ring the original comment wanted
+          and couldn't draw before Ring existed — the linear bar it settled for
+          restated the same figure a second time, one line under the % that
+          already says it). A PERSON is a circle, so the avatar is one — the
+          square tile was borrowing the THING radius (see AMarkTile's shape
+          grammar). Shared completeness math with web. */}
       <View style={{ padding: 16, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.card }}>
-        <PressScale onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={t("w.account.settings.edit-profile")} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
-          <View style={{ width: 56, height: 56, borderRadius: RADIUS.card, borderWidth: 2.5, borderColor: txt(C, C.lime), alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            {profile?.avatarUrl ? (
-              <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
-            ) : (
-              <LinearGradient colors={[C.lime, C.blue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
-                <Text style={{ fontFamily: F.black, fontSize: fs.headline, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
-              </LinearGradient>
-            )}
-          </View>
+        <PressScale onPress={openEditProfile} accessibilityRole="button" accessibilityLabel={`${t("w.account.settings.edit-profile")} — ${name || t("w.account.settings.your-account")}, ${completeness.percent}%`} style={{ flexDirection: "row", alignItems: "center", gap: space.md }}>
+          <Ring value={completeness.percent} size={60} color={txt(C, C.lime) as string} track={C.line}>
+            <View style={{ width: 44, height: 44, borderRadius: RADIUS.pill, overflow: "hidden", alignItems: "center", justifyContent: "center" }}>
+              {profile?.avatarUrl ? (
+                <Image source={{ uri: profile.avatarUrl }} style={{ width: "100%", height: "100%" }} />
+              ) : (
+                <LinearGradient colors={[C.lime, C.blue]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
+                  <Text style={{ fontFamily: F.black, fontSize: fs.title, color: C.onAccent }}>{(name || acct.email || "?").slice(0, 1).toUpperCase()}</Text>
+                </LinearGradient>
+              )}
+            </View>
+          </Ring>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text maxFontSizeMultiplier={FIXED_FONT_SCALE} numberOfLines={1} style={{ fontFamily: F.bold, fontSize: fs.title, color: C.chalk }}>{name || t("w.account.settings.your-account")}</Text>
             <View style={{ marginTop: 3 }}><MetaLine text={`${completeness.percent}% · ${nudge}`} textStyle={{ fontFamily: F.mono, fontSize: fs.micro, color: completeness.complete ? (txt(C, C.lime) as string) : C.ash }} /></View>
-            <View style={{ height: 5, borderRadius: 5, backgroundColor: C.line, marginTop: 8, overflow: "hidden" }}>
-              <View style={{ width: `${completeness.percent}%`, height: "100%", backgroundColor: txt(C, C.lime) }} />
-            </View>
           </View>
           <Chip color={entitlement === "paid" ? C.lime : C.ash} tone="outline">{entitlement === "paid" ? t("w.account.settings.full-paid") : t("w.account.settings.free")}</Chip>
         </PressScale>
-        {/* Quick actions */}
+        {/* Quick actions — the kit's compact pill (a button in a ROW), not a
+            hand-rolled chip pair: same vocabulary as every other row action,
+            and the 44dp target the chips were quietly under. */}
         <View style={{ flexDirection: "row", gap: space.sm, marginTop: 16, flexWrap: "wrap" }}>
-          <PressScale onPress={openEditProfile} style={{ borderWidth: 1, borderColor: withAlpha(txt(C, C.lime), ALPHA.rim), backgroundColor: withAlpha(C.lime, ALPHA.wash), borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
-            <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: txt(C, C.lime) }}>{t("w.account.settings.edit-profile")}</Text>
-          </PressScale>
+          <APill label={t("w.account.settings.edit-profile")} size="compact" variant="soft" onPress={openEditProfile} />
           {/* No mark. The text arrow that used to lead this label was a third drawing
               of share — after the recipe cover's SF Symbol and the finish
-              summary's — standing in a chip whose SIBLING carries no mark at
+              summary's — standing beside a button that carries no mark at
               all, so it read as a stray arrow rather than an icon language.
-              The label already says what the chip does. */}
+              The label already says what the button does. */}
           {!!profile?.handle && (
-            <PressScale onPress={shareProfile} style={{ borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, paddingHorizontal: 12, paddingVertical: 8 }}>
-              <Text style={{ fontFamily: F.mono, fontSize: fs.caption, color: C.chalk }}>{t("w.account.settings.share-profile")}</Text>
-            </PressScale>
+            <APill label={t("w.account.settings.share-profile")} size="compact" variant="outline" onPress={() => void shareProfile()} />
           )}
         </View>
       </View>
 
       {/* Search */}
       <View style={{ marginTop: 20 }}>
-        <ASearch value={query} onChange={(v: string) => refilter(() => setQuery(v))} placeholder={t("w.account.settings.search")} />
+        <ASearch value={query} onChange={(v: string) => motion(() => setQuery(v))} placeholder={t("w.account.settings.search")} />
       </View>
 
       {query ? (
@@ -514,8 +524,11 @@ export default function AuroraSettings({ landOn }: {
 }
 
 function Label({ children, color, top, tight }: { children: ReactNode; color: string; top?: boolean; tight?: boolean }) {
+  const { palette: C } = useTheme();
+  // The system's section-label voice (ty "overline"), not a hand-rolled copy of
+  // it — one of the ~325 reassembled eyebrows the token layer exists to end.
   return (
-    <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color, marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }}>
+    <Text style={[ty(C, "overline", color), { marginTop: tight ? 0 : top ? 18 : 14, marginBottom: 10 }]}>
       {children}
     </Text>
   );
@@ -528,7 +541,7 @@ function Section({ label, tone, children }: { label: string; tone?: string; chil
   const { palette: C } = useTheme();
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ fontFamily: F.mono, fontSize: fs.micro, textTransform: "uppercase", letterSpacing: tracking(fs.micro, "caps"), color: tone ?? C.ash, marginLeft: 4, marginBottom: 10 }}>{label}</Text>
+      <Text style={[ty(C, "overline", tone), { marginLeft: 4, marginBottom: 10 }]}>{label}</Text>
       <ACard>{children}</ACard>
     </View>
   );

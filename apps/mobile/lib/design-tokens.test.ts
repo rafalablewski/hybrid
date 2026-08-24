@@ -633,6 +633,11 @@ describe("named type styles", () => {
     // collapsing them moved 108 eyebrows by 0.3dp. `kicker` (+0.085em) is the
     // label above a card or a figure; `overline` (+0.115em) is a section label,
     // where the label is structure and the extra air is the division.
+    // 164 → 161 with the History + Settings refit: Settings' own Label and
+    //   Section header were each a hand-rolled overline (the very shape this
+    //   rule names as the destination), and History's Trend range toggle
+    //   carried a third inside a hand-rolled segmented control that is the
+    //   kit's ASegment now.
     // 168 → 166: the Records block stopped setting its SUBJECT as an eyebrow.
     //   The lift's name — on the quote and in every ledger row — was 10dp mono
     //   ash uppercase, which is to say the smallest, quietest type in a block
@@ -640,7 +645,7 @@ describe("named type styles", () => {
     //   reading size now, so two hand-rolled eyebrows left with them.
     burnDown(
       hits(/fontFamily: F\.mono[^}]*textTransform: "uppercase"/g),
-      164,
+      161,
       "2027-02-28",
       'a mono uppercase eyebrow → ty(C, "kicker") or ty(C, "overline")',
     );
@@ -854,7 +859,11 @@ describe("geometry", () => {
     //   fed (see exercise-card-then-now), and its one raw radius went with the
     //   file. Claimed rather than left as headroom, which is what this guard
     //   asks for — an unspent win is a licence for the next violation.
-    burnDown(hits(/borderRadius:\s*\d/g), 115, "2027-02-28", "raw borderRadius → RADIUS.*");
+    // 115 → 114: Settings' profile header stopped drawing its completeness as
+    //   a raw-radius linear bar under the % that already said it — the reading
+    //   is the kit's Ring around the avatar now, and the bar's radius went
+    //   with the bar.
+    burnDown(hits(/borderRadius:\s*\d/g), 114, "2027-02-28", "raw borderRadius → RADIUS.*");
   });
 });
 
@@ -1307,7 +1316,10 @@ describe("loading", () => {
     // (leave-plan, and Settings' erase + delete), which is the resize-under-a-
     // resting-finger defect APill's `state` owns. Moving those buttons onto
     // APill deleted the indicator along with the hand-rolled pill.
-    burnDown(hits(/<ActivityIndicator/g), 15, "2026-10-31", "content ActivityIndicator → <Loading />");
+    // 15 → 14: Settings' data export was the last of that same shape — a
+    // spinner swapped in where the download button stood, reflowing the card
+    // mid-export. It rides APill's commit state now.
+    burnDown(hits(/<ActivityIndicator/g), 14, "2026-10-31", "content ActivityIndicator → <Loading />");
   });
 });
 
@@ -2341,7 +2353,10 @@ describe("spacing", () => {
   });
 
   it("BURN-DOWN — and then the screens", () => {
-    burnDown(offLadder((p) => !VOCABULARY.test(p)), 588, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
+    // 588 → 587: Settings' quick-action chips took their off-ladder padding
+    // with them when they became <APill size="compact" /> — the pill's
+    // geometry is the kit's, so the site stopped declaring any.
+    burnDown(offLadder((p) => !VOCABULARY.test(p)), 587, "2027-11-30", "off-ladder spacing on a screen → a space.* rung");
   });
 
   /**

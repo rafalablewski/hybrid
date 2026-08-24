@@ -31,7 +31,7 @@ import { SHARED_ELEMENTS } from "@hybrid/core";
 import { useSharedElementSource } from "../../lib/shared-element";
 import { useTheme, txt, type Palette } from "../../lib/theme";
 import { Chip, F, FIXED_FONT_SCALE, MAX_FONT_SCALE, PressScale as Pressable, fs, leading, tracking, ty} from "../../lib/ui";
-import { ACard, APressCard, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
+import { ACard, APressCard, ASegment, RADIUS, CARD_PAD, withAlpha, DockRail, DockChip } from "./kit";
 
 // ── AURORA History views (mobile) ───────────────────────────────────────────
 // The four merged History × Calendar layouts (agenda / weeks / timeline / trend)
@@ -378,24 +378,10 @@ export function TrendView({ ctx }: { ctx: ViewCtx }) {
 
   return (
     <View style={{ gap: 12 }}>
-      <View style={{ flexDirection: "row", gap: 4, backgroundColor: C.ink2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.pill, padding: 3 }}>
-        {TREND_RANGES.map((rg) => {
-          const on = range === rg.id;
-          return (
-            <Pressable
-              key={rg.id}
-              onPress={() => setRange(rg.id)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: on }}
-              style={{ flex: 1, paddingVertical: 8, borderRadius: RADIUS.pill, alignItems: "center", backgroundColor: on ? C.lime : "transparent" }}
-            >
-              <Text style={{ fontFamily: F.mono, fontSize: fs.micro, letterSpacing: tracking(fs.micro, "label"), textTransform: "uppercase", color: on ? C.onAccent : C.ash }}>
-                {t(rg.key)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {/* The range picker is the kit's segmented control, not a hand-rolled
+          twin of it — same track, same thumb, same 44dp floor as every other
+          equal-width switch in the app ("one entry point, ONE rendering"). */}
+      <ASegment options={TREND_RANGES.map((rg) => ({ id: rg.id, label: t(rg.key) }))} value={range} onPick={setRange} />
 
       <ACard>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
